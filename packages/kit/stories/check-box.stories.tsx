@@ -19,9 +19,17 @@ export const Matrix: Story = () => {
   const dark = useDark();
   return (
     <Column gap={12}>
-      {DISPLAY_STYLES.flatMap((displayStyle) => [true, false].map((value) => (
-        <CheckBox key={`${displayStyle}-${String(value)}`} dark={dark} displayStyle={displayStyle} defaultValue={value} label={`${displayStyle} ${value ? 'on' : 'off'}`} />
-      )))}
+      {DISPLAY_STYLES.flatMap((displayStyle) =>
+        [true, false].map((value) => (
+          <CheckBox
+            key={`${displayStyle}-${String(value)}`}
+            dark={dark}
+            displayStyle={displayStyle}
+            defaultValue={value}
+            label={`${displayStyle} ${value ? 'on' : 'off'}`}
+          />
+        )),
+      )}
       <CheckBox dark={dark} label="Required" checks={[{ valid: false, message: 'You must accept the terms.' }]} />
     </Column>
   );

@@ -11,9 +11,17 @@ export const Controls: Story<ListProps> = (args) => {
   const dark = useDark();
   return (
     <List {...args}>
-      {ITEMS.map((label) => <Badge key={label} dark={dark} label={label} size="lg" pill />)}
+      {ITEMS.map((label) => (
+        <Badge key={label} dark={dark} label={label} size="lg" pill />
+      ))}
     </List>
   );
 };
 Controls.args = { direction: 'horizontal', align: 'start', gap: 8, padding: 4 };
-Controls.argTypes = { direction: select(['vertical', 'horizontal']), align: select(['start', 'center', 'end', 'stretch']), gap: number, padding: number, weight: number };
+Controls.argTypes = {
+  direction: select(['vertical', 'horizontal']),
+  align: select(['start', 'center', 'end', 'stretch']),
+  gap: number,
+  padding: number,
+  weight: number,
+};

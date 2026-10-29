@@ -38,24 +38,42 @@ const CREATE_TIMEOUT_MESSAGE = 'Opening the local message store timed out.';
 type WebXmtpClient = Client<unknown>;
 
 export async function openClientForAccount(
-  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, savedInstallationId: string | null | Promise<string | null>,
+  rec: AccountRecord,
+  env: XmtpEnv,
+  opts: CreateOpts,
+  savedInstallationId: string | null | Promise<string | null>,
   recovered = false,
 ): Promise<OpenedClient<WebXmtpClient>> {
   const signer = await signerForRecord(rec);
   try {
     return await openPersistedClient<WebXmtpClient>({
-      open: () => withCreateTimeout(
-        () => Client.create(signer, { ...opts, disableAutoRegister: true }),
-        CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE,
-        (late) => { attempt(() => { late.close(); }, 'cleanup'); },
-      ),
+      open: () =>
+        withCreateTimeout(
+          () => Client.create(signer, { ...opts, disableAutoRegister: true }),
+          CREATE_TIMEOUT_MS,
+          CREATE_TIMEOUT_MESSAGE,
+          (late) => {
+            attempt(() => {
+              late.close();
+            }, 'cleanup');
+          },
+        ),
       isRegistered: (client) => client.isRegistered(),
-      register: (client) => whileRegistering(async () => { await client.register(); }),
+      register: (client) =>
+        whileRegistering(async () => {
+          await client.register();
+        }),
       installationIdOf: (client) => client.installationId ?? '',
-      close: (client) => { client.close(); },
+      close: (client) => {
+        client.close();
+      },
       savedInstallationId,
       retryable: isStoreLocked,
-      onEvent: (event, e) => { void Promise.resolve(savedInstallationId).then((saved) => { reportOpenEvent(event, saved, e); }); },
+      onEvent: (event, e) => {
+        void Promise.resolve(savedInstallationId).then((saved) => {
+          reportOpenEvent(event, saved, e);
+        });
+      },
     });
   } catch (e) {
     if (!recovered && isStoreCorruption(e)) {

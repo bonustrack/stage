@@ -14,7 +14,11 @@ const accessChecks = new Map<string, symbol>();
 const accessChanges = makeListeners();
 export const subscribeChannelAccess = accessChanges.subscribe;
 
-subscribeAccountEpoch(() => { accessCache.clear(); accessChecks.clear(); accessChanges.notify(); });
+subscribeAccountEpoch(() => {
+  accessCache.clear();
+  accessChecks.clear();
+  accessChanges.notify();
+});
 
 export function cachedChannelAccess(convId: string | undefined): GroupAccess {
   const cached = convId ? accessCache.get(convId.toLowerCase()) : undefined;
@@ -58,7 +62,7 @@ async function membershipAccess(context: AccountClient, conv: Conv): Promise<Gro
   const members = await conv.members().catch(recover('xmtp.channelMembers', []));
   context.assertCurrent();
   if (members.length === 0) return 'checking';
-  if (!members.some(member => member.inboxId === context.client.inboxId)) return 'outside';
+  if (!members.some((member) => member.inboxId === context.client.inboxId)) return 'outside';
   const active = await sdk.isActive(conv);
   context.assertCurrent();
   return active ? 'member' : 'waiting';
@@ -85,7 +89,7 @@ async function reconcileChannel(context: AccountClient, id: string): Promise<voi
   const consent = state.hidden ? 'denied' : 'allowed';
   if (previous === consent) return;
   await sdk.setConsent(conv, consent);
-  if (state.hidden || await channelAccess(context, conv) !== 'member') return;
+  if (state.hidden || (await channelAccess(context, conv)) !== 'member') return;
   if ((await loadHiddenChannels(context.account.id))[id]?.hidden) return;
   context.assertCurrent();
   await conv.sync();
@@ -106,9 +110,12 @@ async function reconcile(context: AccountClient): Promise<void> {
 
 export function reconcileHiddenConsent(context: AccountClient): Promise<void> {
   const result = (pending.get(context.client) ?? Promise.resolve()).then(() => reconcile(context));
-  pending.set(context.client, result.catch((error: unknown) => {
-    if (!(error instanceof AccountChangedError)) report('xmtp.hiddenConsent', error);
-  }));
+  pending.set(
+    context.client,
+    result.catch((error: unknown) => {
+      if (!(error instanceof AccountChangedError)) report('xmtp.hiddenConsent', error);
+    }),
+  );
   return result;
 }
 

@@ -84,7 +84,8 @@ function checkLength(schema: JsonObject, value: string): string[] {
 
 export function checkString(schema: JsonObject, value: JsonValue): string[] {
   if (typeof value !== 'string') return [];
-  const pattern = typeof schema.pattern === 'string' && !patternMatches(schema.pattern, value) ? [`Expected a value matching ${schema.pattern}.`] : [];
+  const pattern =
+    typeof schema.pattern === 'string' && !patternMatches(schema.pattern, value) ? [`Expected a value matching ${schema.pattern}.`] : [];
   return [...pattern, ...checkFormat(schema, value), ...checkLength(schema, value)];
 }
 
@@ -93,8 +94,10 @@ export function checkNumber(schema: JsonObject, value: JsonValue): string[] {
   const out: string[] = [];
   if (typeof schema.minimum === 'number' && value < schema.minimum) out.push(`Expected a number >= ${schema.minimum}.`);
   if (typeof schema.maximum === 'number' && value > schema.maximum) out.push(`Expected a number <= ${schema.maximum}.`);
-  if (typeof schema.exclusiveMinimum === 'number' && value <= schema.exclusiveMinimum) out.push(`Expected a number > ${schema.exclusiveMinimum}.`);
-  if (typeof schema.exclusiveMaximum === 'number' && value >= schema.exclusiveMaximum) out.push(`Expected a number < ${schema.exclusiveMaximum}.`);
+  if (typeof schema.exclusiveMinimum === 'number' && value <= schema.exclusiveMinimum)
+    out.push(`Expected a number > ${schema.exclusiveMinimum}.`);
+  if (typeof schema.exclusiveMaximum === 'number' && value >= schema.exclusiveMaximum)
+    out.push(`Expected a number < ${schema.exclusiveMaximum}.`);
   return out;
 }
 

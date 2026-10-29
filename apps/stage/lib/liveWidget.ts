@@ -7,7 +7,13 @@ import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
 import type { LiveSource } from '@stage-labs/client/xmtp/readState';
 import { FRAME_ADD_TOASTS } from '../components/dashboard/dashboard.model';
 import {
-  EMPTY_LIVE, LIVE_REFRESH_MS, liveProblemText, liveRefetchInterval, liveStateAfter, type LivePreview, type LiveState,
+  EMPTY_LIVE,
+  LIVE_REFRESH_MS,
+  liveProblemText,
+  liveRefetchInterval,
+  liveStateAfter,
+  type LivePreview,
+  type LiveState,
 } from '../components/dashboard/liveWidget.model';
 import { getAccountEpoch, useAccountEpoch } from './accountEpoch';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
@@ -71,22 +77,38 @@ function useLiveActive(): boolean {
 
 async function streamWidget(key: readonly unknown[], widgetId: string, epoch: number, load: boolean, run: Run): Promise<LiveState> {
   const client = getQueryClient();
-  const latest = (): LiveState => client.getQueryData<LiveState>(key) ?? client.getQueryData<LiveState>([SNAPSHOT_QUERY, widgetId, epoch]) ?? EMPTY_LIVE;
-  const { result, applied } = await streamInto(liveWidgetKey(widgetId), load, (frame) => { client.setQueryData(key, { ...latest(), frame }); }, run);
+  const latest = (): LiveState =>
+    client.getQueryData<LiveState>(key) ?? client.getQueryData<LiveState>([SNAPSHOT_QUERY, widgetId, epoch]) ?? EMPTY_LIVE;
+  const { result, applied } = await streamInto(
+    liveWidgetKey(widgetId),
+    load,
+    (frame) => {
+      client.setQueryData(key, { ...latest(), frame });
+    },
+    run,
+  );
   return liveStateAfter(latest(), result, Date.now(), applied);
 }
 
-async function loadWidget(key: readonly unknown[], widgetId: string, epoch: number, source: LiveSource, signal: AbortSignal): Promise<LiveState> {
-  const next = await streamWidget(key, widgetId, epoch, true,
-    (onMessage) => loadNode(source.url, source.key, { capabilities: RENDERER_CAPABILITIES, signal, onMessage }));
+async function loadWidget(
+  key: readonly unknown[],
+  widgetId: string,
+  epoch: number,
+  source: LiveSource,
+  signal: AbortSignal,
+): Promise<LiveState> {
+  const next = await streamWidget(key, widgetId, epoch, true, (onMessage) =>
+    loadNode(source.url, source.key, { capabilities: RENDERER_CAPABILITIES, signal, onMessage }),
+  );
   if (next.problem === null) saveSnapshot(widgetId, next);
   return next;
 }
 
 async function sendWidget(key: readonly unknown[], widgetId: string, epoch: number, source: LiveSource, out: FrameOut): Promise<void> {
   await getQueryClient().cancelQueries({ queryKey: key });
-  const next = await streamWidget(key, widgetId, epoch, false,
-    (onMessage) => sendNodeMessage(source.url, source.key, nodeRequestOf(out), { capabilities: RENDERER_CAPABILITIES, onMessage }));
+  const next = await streamWidget(key, widgetId, epoch, false, (onMessage) =>
+    sendNodeMessage(source.url, source.key, nodeRequestOf(out), { capabilities: RENDERER_CAPABILITIES, onMessage }),
+  );
   const problem = liveProblemText(next);
   if (problem !== null) {
     capabilities.toast(`Could not send: ${problem.toLowerCase()}`);
@@ -111,7 +133,7 @@ export function useLiveWidget(widgetId: string, source: LiveSource): { state: Li
     queryFn: ({ signal }) => loadWidget(key, widgetId, epoch, source, signal),
     enabled: active && snapshot.isFetched,
     staleTime: LIVE_REFRESH_MS,
-    refetchInterval: query => liveRefetchInterval(active, query.state.data),
+    refetchInterval: (query) => liveRefetchInterval(active, query.state.data),
     refetchIntervalInBackground: false,
     retry: false,
   });

@@ -28,17 +28,17 @@ const memberIdsByConv = new WeakMap<IdentityConv, Promise<string[]>>();
 function memberIdsOf(conv: IdentityConv): Promise<string[]> {
   const known = memberIdsByConv.get(conv);
   if (known) return known;
-  const ids = conv.members().then(ms => ms.map(m => m.inboxId));
+  const ids = conv.members().then((ms) => ms.map((m) => m.inboxId));
   memberIdsByConv.set(conv, ids);
-  ids.catch(() => { memberIdsByConv.delete(conv); });
+  ids.catch(() => {
+    memberIdsByConv.delete(conv);
+  });
   return ids;
 }
 
 export async function primeConversationMembers(client: IdentityClient, convs: IdentityConv[]): Promise<void> {
   try {
-    const memberLists = await Promise.all(convs.map(c =>
-      memberIdsOf(c).catch(recover<string[]>('xmtp.primeMembers', [])),
-    ));
+    const memberLists = await Promise.all(convs.map((c) => memberIdsOf(c).catch(recover<string[]>('xmtp.primeMembers', []))));
     await primeInboxEthCache(inboxEthCache, fetchInboxEth(client), memberLists.flat());
   } catch (err) {
     report('xmtp.primeMembers', err);
@@ -76,9 +76,12 @@ export async function convMembers(conv: IdentityConv): Promise<ConvMembers> {
       if (addr) inboxToAddr[id] = addr;
     }
     const otherAddresses = sdk.isGroup(conv)
-      ? memberIds.filter(id => id !== client.inboxId).map(id => found[id]).filter((a): a is string => !!a)
+      ? memberIds
+          .filter((id) => id !== client.inboxId)
+          .map((id) => found[id])
+          .filter((a): a is string => !!a)
       : [];
-    return { peerAddress: peerId ? found[peerId] ?? null : null, inboxToAddr, otherAddresses };
+    return { peerAddress: peerId ? (found[peerId] ?? null) : null, inboxToAddr, otherAddresses };
   } catch (err) {
     report('xmtp.convMembers', err);
     return NO_MEMBERS;

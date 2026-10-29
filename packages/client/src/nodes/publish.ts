@@ -11,7 +11,11 @@ export type PublishResult = { ok: true; url: string } | { ok: false; problem: Pu
 type PublishMethod = 'PUT' | 'DELETE';
 
 const STATUS_PROBLEMS: ReadonlyMap<number, PublishProblem> = new Map([
-  [400, 'refused'], [413, 'too-large'], [429, 'busy'], [503, 'not-ready'], [507, 'full'],
+  [400, 'refused'],
+  [413, 'too-large'],
+  [429, 'busy'],
+  [503, 'not-ready'],
+  [507, 'full'],
 ]);
 
 export function ownNodeUrl(key: string): string | null {
@@ -29,8 +33,13 @@ async function call(method: PublishMethod, proxyBase: string, key: string, body:
   if (body !== '') headers['Content-Type'] = 'application/javascript';
   try {
     return await fetch(url, {
-      method, headers, body: body === '' ? undefined : body,
-      credentials: 'omit', redirect: 'error', cache: 'no-store', referrerPolicy: 'no-referrer',
+      method,
+      headers,
+      body: body === '' ? undefined : body,
+      credentials: 'omit',
+      redirect: 'error',
+      cache: 'no-store',
+      referrerPolicy: 'no-referrer',
       signal: AbortSignal.timeout(PUBLISH_TIMEOUT_MS),
     });
   } catch {

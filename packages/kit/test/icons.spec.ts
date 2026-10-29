@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  HERO_ICON_DEFAULTS,
-  heroIconPaths,
-  iconStroke,
-  iconStrokeWidth,
-} from '../src/icons';
+import { HERO_ICON_DEFAULTS, heroIconPaths, iconStroke, iconStrokeWidth } from '../src/icons';
 
 describe('iconStroke', () => {
   test('explicit color always wins', () => {

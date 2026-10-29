@@ -39,9 +39,7 @@ export interface DmRowId {
   route: { from: string; to: string } | null;
 }
 
-export function dmRowId(
-  routes: ConvRoutes, convId: string, peerAddress: string | null, knownByPeer: ReadonlyMap<string, string>,
-): DmRowId {
+export function dmRowId(routes: ConvRoutes, convId: string, peerAddress: string | null, knownByPeer: ReadonlyMap<string, string>): DmRowId {
   const routed = routeOf(routes, convId);
   if (routed !== convId || peerAddress === null) return { rowId: routed, route: null };
   const known = knownByPeer.get(peerAddress.toLowerCase());
@@ -50,7 +48,7 @@ export function dmRowId(
 }
 
 export function uniqueByConvId<R extends { convId: string }>(rows: readonly R[]): R[] {
-  return uniqueBy(rows, row => row.convId);
+  return uniqueBy(rows, (row) => row.convId);
 }
 
 export function isImportReplay(sentNs: number, importedUntilNs: number): boolean {

@@ -16,15 +16,41 @@ export function useComposerState(initialPending: Attachment[] = []) {
   const [txOpen, setTxOpen] = useState(false);
   const [focusNonce, setFocusNonce] = useState(0);
   const [blurNonce, setBlurNonce] = useState(0);
-  const bumpFocus = (): void => { setFocusNonce((n) => n + 1); };
-  const bumpBlur = (): void => { setBlurNonce((n) => n + 1); };
+  const bumpFocus = (): void => {
+    setFocusNonce((n) => n + 1);
+  };
+  const bumpBlur = (): void => {
+    setBlurNonce((n) => n + 1);
+  };
   return {
-    text, setText, selection, setSelection, pending, setPending,
-    uploading, setUploading, err, setErr,
-    recording, setRecording, recordSecs, setRecordSecs, levels, setLevels,
-    attachMenuOpen, setAttachMenuOpen,
-    pollOpen, setPollOpen, sigOpen, setSigOpen, txOpen, setTxOpen,
-    focusNonce, bumpFocus, blurNonce, bumpBlur,
+    text,
+    setText,
+    selection,
+    setSelection,
+    pending,
+    setPending,
+    uploading,
+    setUploading,
+    err,
+    setErr,
+    recording,
+    setRecording,
+    recordSecs,
+    setRecordSecs,
+    levels,
+    setLevels,
+    attachMenuOpen,
+    setAttachMenuOpen,
+    pollOpen,
+    setPollOpen,
+    sigOpen,
+    setSigOpen,
+    txOpen,
+    setTxOpen,
+    focusNonce,
+    bumpFocus,
+    blurNonce,
+    bumpBlur,
   };
 }
 

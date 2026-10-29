@@ -23,15 +23,12 @@ export interface Group extends GroupLike {
 
 export function asGroup(conv: unknown): Group | null {
   const g = conv as GroupLike;
-  const readableAppData =
-    typeof g?.appData === 'function' || typeof g?.appData === 'string' || g?.appData === undefined;
-  return g && typeof g.updateAppData === 'function' && readableAppData
-    ? (g as Group)
-    : null;
+  const readableAppData = typeof g?.appData === 'function' || typeof g?.appData === 'string' || g?.appData === undefined;
+  return g && typeof g.updateAppData === 'function' && readableAppData ? (g as Group) : null;
 }
 
 async function readAppData(group: Group): Promise<string> {
-  if (typeof group.appData === 'function') return await group.appData() ?? '';
+  if (typeof group.appData === 'function') return (await group.appData()) ?? '';
   return group.appData ?? '';
 }
 
@@ -80,12 +77,12 @@ export function categoryOf(value: unknown): string | null {
 }
 
 export const CHANNEL_PRIORITIES = ['Urgent', 'High', 'Medium', 'Low'] as const;
-export type ChannelPriority = typeof CHANNEL_PRIORITIES[number];
+export type ChannelPriority = (typeof CHANNEL_PRIORITIES)[number];
 export type ChannelField = 'category' | 'status' | 'priority';
 export const CHANNEL_FIELD_NOUNS: Record<ChannelField, string> = { category: 'project', status: 'status', priority: 'priority' };
 
 export function priorityOf(value: unknown): ChannelPriority | null {
-  return CHANNEL_PRIORITIES.find(priority => priority === categoryOf(value)) ?? null;
+  return CHANNEL_PRIORITIES.find((priority) => priority === categoryOf(value)) ?? null;
 }
 
 export function channelFieldOf(field: ChannelField, value: unknown): string | null {
@@ -93,7 +90,11 @@ export function channelFieldOf(field: ChannelField, value: unknown): string | nu
 }
 
 export interface GroupTags {
-  labels: string[]; category: string | null; status: string | null; priority: ChannelPriority | null; assigned: string[];
+  labels: string[];
+  category: string | null;
+  status: string | null;
+  priority: ChannelPriority | null;
+  assigned: string[];
 }
 
 export const NO_TAGS: GroupTags = { labels: [], category: null, status: null, priority: null, assigned: [] };
@@ -104,8 +105,11 @@ export async function groupTagsOf(conv: unknown): Promise<GroupTags> {
   try {
     const blob = parseBlob(await readAppData(group));
     return {
-      labels: readLabels(blob), category: categoryOf(blob.category), status: categoryOf(blob.status),
-      priority: priorityOf(blob.priority), assigned: assignedAddresses(blob.assigned),
+      labels: readLabels(blob),
+      category: categoryOf(blob.category),
+      status: categoryOf(blob.status),
+      priority: priorityOf(blob.priority),
+      assigned: assignedAddresses(blob.assigned),
     };
   } catch {
     return NO_TAGS;
@@ -169,7 +173,9 @@ async function writeBlob(group: Group, patch: (blob: Record<string, unknown>) =>
   };
   const pending = previous ? previous.then(task, task) : task();
   appDataWrites.set(key, pending);
-  try { await pending; } finally {
+  try {
+    await pending;
+  } finally {
     if (appDataWrites.get(key) === pending) appDataWrites.delete(key);
   }
 }
@@ -183,10 +189,7 @@ async function writeTags(group: Group, what: string, patch: (blob: Record<string
   }
 }
 
-export async function writeLabels(
-  group: Group,
-  fn: (labels: string[]) => string[],
-): Promise<string[]> {
+export async function writeLabels(group: Group, fn: (labels: string[]) => string[]): Promise<string[]> {
   let next: string[] = [];
   await writeTags(group, 'labels', (existing) => {
     next = readLabels({ labels: fn(readLabels(existing)) });
@@ -196,13 +199,19 @@ export async function writeLabels(
 }
 
 export async function writeChannelField(
-  group: Group, field: ChannelField, value: string | null, expected?: string | null,
+  group: Group,
+  field: ChannelField,
+  value: string | null,
+  expected?: string | null,
 ): Promise<string | null> {
   const next = channelFieldOf(field, value);
   if (field === 'priority' && value !== null && value.trim() !== '' && next === null) throw new Error('Choose a valid priority.');
   const noun = CHANNEL_FIELD_NOUNS[field];
-  await writeTags(group, `the ${noun}`, existing => {
-    if (expected !== undefined && channelFieldOf(field, existing[field])?.toLowerCase() !== channelFieldOf(field, expected)?.toLowerCase()) {
+  await writeTags(group, `the ${noun}`, (existing) => {
+    if (
+      expected !== undefined &&
+      channelFieldOf(field, existing[field])?.toLowerCase() !== channelFieldOf(field, expected)?.toLowerCase()
+    ) {
       throw new Error(`The ${noun} changed. Try again.`);
     }
     return { [field]: next ?? undefined };
@@ -211,7 +220,7 @@ export async function writeChannelField(
 }
 
 export function assignedAddresses(value: unknown): string[] {
-  return [...new Set(validMemberAddresses(stringList(value)).map(address => address.toLowerCase()))];
+  return [...new Set(validMemberAddresses(stringList(value)).map((address) => address.toLowerCase()))];
 }
 
 export async function groupAssignedOf(conv: unknown): Promise<string[]> {
@@ -221,12 +230,12 @@ export async function groupAssignedOf(conv: unknown): Promise<string[]> {
 
 export async function writeAssigned(group: Group, assigned: string[], members: () => Promise<string[]>): Promise<string[]> {
   const next = assignedAddresses(assigned);
-  if (next.length !== new Set(assigned.map(address => address.trim().toLowerCase())).size) {
+  if (next.length !== new Set(assigned.map((address) => address.trim().toLowerCase())).size) {
     throw new Error('Choose valid channel members.');
   }
   await writeBlob(group, async () => {
     const current = new Set(assignedAddresses(await members()));
-    if (next.some(address => !current.has(address))) throw new Error('Assignees must be current channel members.');
+    if (next.some((address) => !current.has(address))) throw new Error('Assignees must be current channel members.');
     return { assigned: next };
   });
   return next;

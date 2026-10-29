@@ -15,17 +15,22 @@ export const persistenceBackend = {
     try {
       const f = new File(appDocumentsDir(), name);
       return f.exists ? (JSON.parse(await f.text()) as T) : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   },
   write(name: string, value: unknown): void {
     attempt(() => {
       const f = new File(appDocumentsDir(), name);
-      if (value === null) { if (f.exists) f.delete(); }
-      else f.write(JSON.stringify(value));
+      if (value === null) {
+        if (f.exists) f.delete();
+      } else f.write(JSON.stringify(value));
     }, 'cache');
   },
   onFlushSignal(flushAll: () => void): void {
-    AppState.addEventListener('change', (state) => { if (state !== 'active') flushAll(); });
+    AppState.addEventListener('change', (state) => {
+      if (state !== 'active') flushAll();
+    });
   },
 };
 

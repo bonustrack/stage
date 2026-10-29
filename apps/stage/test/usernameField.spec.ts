@@ -16,9 +16,14 @@ describe('usernameStatus', () => {
     expect(usernameStatus({ label: 'less', phase: 'checking' }, 'less')).toEqual({ kind: 'checking' });
     expect(usernameStatus({ label: 'lessss', phase: 'available' }, 'lessss')).toEqual({ kind: 'ok', tip: 'Available' });
     expect(usernameStatus({ label: 'lessss', phase: 'unavailable' }, 'lessss')).toEqual({ kind: 'error', tip: 'Already taken' });
-    expect(usernameStatus({ label: 'ab', phase: 'invalid', detail: 'At least 6 characters.' }, 'ab')).toEqual({ kind: 'error', tip: 'At least 6 characters.' });
-    expect(usernameStatus({ label: 'alice-', phase: 'invalid', detail: 'Only a-z, 0-9 and single inner hyphens.' }, 'alice-'))
-      .toEqual({ kind: 'error', tip: 'Cannot end with a hyphen' });
+    expect(usernameStatus({ label: 'ab', phase: 'invalid', detail: 'At least 6 characters.' }, 'ab')).toEqual({
+      kind: 'error',
+      tip: 'At least 6 characters.',
+    });
+    expect(usernameStatus({ label: 'alice-', phase: 'invalid', detail: 'Only a-z, 0-9 and single inner hyphens.' }, 'alice-')).toEqual({
+      kind: 'error',
+      tip: 'Cannot end with a hyphen',
+    });
   });
 
   test('the text hint under the field covers claimed and failed only', () => {

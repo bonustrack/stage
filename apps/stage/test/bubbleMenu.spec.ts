@@ -12,27 +12,40 @@ describe('bubbleMenuItems', () => {
   });
 
   test('web text message drops Select and keeps the rest', () => {
-    expect(bubbleMenuItems(true, { selectText: false }).map(i => i.label)).toEqual(['Reply', 'Copy', 'Share link']);
+    expect(bubbleMenuItems(true, { selectText: false }).map((i) => i.label)).toEqual(['Reply', 'Copy', 'Share link']);
   });
 
   test('a frame can be added to the dashboard, before Share link', () => {
-    expect(bubbleMenuItems(true, { selectText: false, frame: true, developerMode: true })).toContainEqual(
-      { id: 'addToDashboard', icon: 'IconBento', label: 'Add to dashboard' },
-    );
-    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, frame: true, developerMode: true }).map(i => i.id))
-      .toEqual(['reply', 'copy', 'addToDashboard', 'shareLink', 'delete']);
-    expect(bubbleMenuItems(true, { selectText: false }).map(i => i.id)).not.toContain('addToDashboard');
+    expect(bubbleMenuItems(true, { selectText: false, frame: true, developerMode: true })).toContainEqual({
+      id: 'addToDashboard',
+      icon: 'IconBento',
+      label: 'Add to dashboard',
+    });
+    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, frame: true, developerMode: true }).map((i) => i.id)).toEqual([
+      'reply',
+      'copy',
+      'addToDashboard',
+      'shareLink',
+      'delete',
+    ]);
+    expect(bubbleMenuItems(true, { selectText: false }).map((i) => i.id)).not.toContain('addToDashboard');
   });
 
   test('a frame keeps normal actions but hides Add to dashboard unless developer mode is on', () => {
-    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, frame: true }).map(i => i.id))
-      .toEqual(['reply', 'copy', 'shareLink', 'delete']);
-    expect(bubbleMenuItems(false, { selectText: false, frame: true, developerMode: false }).map(i => i.id))
-      .toEqual(['reply', 'shareLink']);
+    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, frame: true }).map((i) => i.id)).toEqual([
+      'reply',
+      'copy',
+      'shareLink',
+      'delete',
+    ]);
+    expect(bubbleMenuItems(false, { selectText: false, frame: true, developerMode: false }).map((i) => i.id)).toEqual([
+      'reply',
+      'shareLink',
+    ]);
   });
 
   test('message without text offers only Reply and Share link', () => {
-    expect(bubbleMenuItems(false, { selectText: true }).map(i => i.id)).toEqual(['reply', 'shareLink']);
-    expect(bubbleMenuItems(false, { selectText: false }).map(i => i.id)).toEqual(['reply', 'shareLink']);
+    expect(bubbleMenuItems(false, { selectText: true }).map((i) => i.id)).toEqual(['reply', 'shareLink']);
+    expect(bubbleMenuItems(false, { selectText: false }).map((i) => i.id)).toEqual(['reply', 'shareLink']);
   });
 });

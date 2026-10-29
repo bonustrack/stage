@@ -18,12 +18,18 @@ export const Matrix: Story = () => {
     <Column gap={12}>
       {VARIANTS.map((variant) => (
         <Row key={variant} gap={8} align="center" wrap>
-          <Text size="sm" color="secondary">{variant}</Text>
-          {COLORS.map((c) => <Badge key={c} dark={dark} color={c} variant={variant} label={c} />)}
+          <Text size="sm" color="secondary">
+            {variant}
+          </Text>
+          {COLORS.map((c) => (
+            <Badge key={c} dark={dark} color={c} variant={variant} label={c} />
+          ))}
         </Row>
       ))}
       <Row gap={8} align="center" wrap>
-        {SIZES.map((s) => <Badge key={s} dark={dark} size={s} label={s} />)}
+        {SIZES.map((s) => (
+          <Badge key={s} dark={dark} size={s} label={s} />
+        ))}
         <Badge dark={dark} label="pill" pill />
       </Row>
     </Column>

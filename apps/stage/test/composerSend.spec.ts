@@ -5,11 +5,7 @@ import type { Attachment } from '../components/composer/types';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from '../lib/xmtp.types';
 
 function makeSenders() {
-  return {
-    text: mock(async () => 'text-id'),
-    reply: mock(async () => 'reply-id'),
-    attachments: mock(async () => 'attachment-id'),
-  };
+  return { text: mock(async () => 'text-id'), reply: mock(async () => 'reply-id'), attachments: mock(async () => 'attachment-id') };
 }
 
 function attachment(kind: string, size = 11_000_000): Attachment {
@@ -26,9 +22,11 @@ describe('composer sends encrypted remote attachments', () => {
     expect(steps).toHaveLength(1);
     expect(steps[0]?.attachments).toEqual([audio]);
     expect(await steps[0]?.run()).toBe('attachment-id');
-    expect(senders.attachments).toHaveBeenCalledWith('line', [{
-      fileUri: audio.url, mimeType: 'audio/m4a', filename: 'voice.m4a',
-    }], undefined);
+    expect(senders.attachments).toHaveBeenCalledWith(
+      'line',
+      [{ fileUri: audio.url, mimeType: 'audio/m4a', filename: 'voice.m4a' }],
+      undefined,
+    );
   });
 
   test('mixed audio and video keep their order and metadata in one attachment step', async () => {
@@ -38,17 +36,21 @@ describe('composer sends encrypted remote attachments', () => {
     expect(steps).toHaveLength(1);
     expect(steps[0]?.attachments).toEqual(files);
     await steps[0]?.run();
-    expect(senders.attachments).toHaveBeenCalledWith('line', [
-      { fileUri: 'file:///voice.m4a', mimeType: 'audio/m4a', filename: 'voice.m4a' },
-      { fileUri: 'file:///clip.mp4', mimeType: 'video/mp4', filename: 'clip.mp4' },
-    ], undefined);
+    expect(senders.attachments).toHaveBeenCalledWith(
+      'line',
+      [
+        { fileUri: 'file:///voice.m4a', mimeType: 'audio/m4a', filename: 'voice.m4a' },
+        { fileUri: 'file:///clip.mp4', mimeType: 'video/mp4', filename: 'clip.mp4' },
+      ],
+      undefined,
+    );
   });
 
   test('text precedes attachments with distinct optimistic ids', async () => {
     const senders = makeSenders();
     let id = 0;
     const steps = planSendSteps('line', 'caption', [attachment('video')], undefined, senders, () => `local-${id++}`);
-    expect(steps.map(step => step.localId)).toEqual(['local-0', 'local-1']);
+    expect(steps.map((step) => step.localId)).toEqual(['local-0', 'local-1']);
     expect(steps[0]?.text).toBe('caption');
     expect(steps[0]?.attachments).toEqual([]);
     expect(await steps[0]?.run()).toBe('text-id');
@@ -76,13 +78,20 @@ describe('composer sends encrypted remote attachments', () => {
     const upload = Promise.withResolvers<{ url: string; contentDigest: string }[]>();
     const sent = Promise.withResolvers<string>();
     const onUploaded = mock(() => undefined);
-    const steps = planSendSteps('line', '', [attachment('video')], undefined, {
-      ...makeSenders(),
-      attachments: async (_line: string, _files: LocalAttachmentInput[], notify?: OnAttachmentsUploaded) => {
-        notify?.(await upload.promise);
-        return sent.promise;
+    const steps = planSendSteps(
+      'line',
+      '',
+      [attachment('video')],
+      undefined,
+      {
+        ...makeSenders(),
+        attachments: async (_line: string, _files: LocalAttachmentInput[], notify?: OnAttachmentsUploaded) => {
+          notify?.(await upload.promise);
+          return sent.promise;
+        },
       },
-    }, () => 'local-id');
+      () => 'local-id',
+    );
     const step = steps[0];
     if (!step) throw new Error('Missing attachment step');
     const result = step.run(onUploaded);
@@ -97,7 +106,9 @@ describe('composer sends encrypted remote attachments', () => {
 
   test('an upload failure rejects the attachment step', async () => {
     const senders = makeSenders();
-    senders.attachments.mockImplementation(async () => { throw new Error('upload failed (413)'); });
+    senders.attachments.mockImplementation(async () => {
+      throw new Error('upload failed (413)');
+    });
     const steps = planSendSteps('line', '', [attachment('video')], undefined, senders, () => 'local-id');
     const step = steps[0];
     if (!step) throw new Error('Missing attachment step');
@@ -114,14 +125,19 @@ describe('composer sends a pending location', () => {
     const senders = makeSenders();
     let id = 0;
     const steps = planSendSteps('line', 'meet here', [location, photo], undefined, senders, () => `local-${id++}`);
-    expect(steps.map(step => step.text)).toEqual(['meet here', '', locationText]);
-    expect(steps.map(step => step.attachments)).toEqual([[], [photo], []]);
+    expect(steps.map((step) => step.text)).toEqual(['meet here', '', locationText]);
+    expect(steps.map((step) => step.attachments)).toEqual([[], [photo], []]);
     expect(steps[2]?.location).toEqual(location);
     for (const step of steps) await step.run();
-    expect(senders.text.mock.calls).toEqual([['line', 'meet here'], ['line', locationText]]);
-    expect(senders.attachments).toHaveBeenCalledWith('line', [
-      { fileUri: 'file:///photo.jpg', mimeType: 'image/jpeg', filename: 'photo.jpg' },
-    ], undefined);
+    expect(senders.text.mock.calls).toEqual([
+      ['line', 'meet here'],
+      ['line', locationText],
+    ]);
+    expect(senders.attachments).toHaveBeenCalledWith(
+      'line',
+      [{ fileUri: 'file:///photo.jpg', mimeType: 'image/jpeg', filename: 'photo.jpg' }],
+      undefined,
+    );
   });
 
   test('a location alone replies when a reply is set, and never goes out as a file', async () => {
@@ -147,7 +163,10 @@ const voice = { id: 'a2', url: 'blob:voice' };
 
 describe('composer draft after a failed send', () => {
   test('everything stays when nothing went out', () => {
-    const unsent = [{ text: 'hi', attachments: [] }, { text: '', attachments: [photo] }];
+    const unsent = [
+      { text: 'hi', attachments: [] },
+      { text: '', attachments: [photo] },
+    ];
     expect(unsentDraft('hi ', [photo], unsent)).toEqual({ text: 'hi ', pending: [photo] });
   });
 

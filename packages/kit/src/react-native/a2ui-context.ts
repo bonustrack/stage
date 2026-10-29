@@ -120,19 +120,21 @@ export function spacingOf(value: unknown): number | Spacing | undefined {
 const BORDER_SIDES = ['top', 'right', 'bottom', 'left'] as const;
 
 function borderSideOf(ctx: RenderContext, value: unknown): ResolvedBoxBorderSide | undefined {
-  const spec = typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : { size: value };
+  const spec = typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : { size: value };
   const width = sizeOf(spec.size);
   if (width === undefined) return undefined;
   return { width, color: colorOf(ctx, spec.color) ?? ctx.palette.border, style: asEnum(spec.style, BORDER_STYLES) };
 }
 
 export function borderOf(ctx: RenderContext, value: unknown): ResolvedBoxBorder | undefined {
-  const record = typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+  const record = typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
   if (record !== undefined && BORDER_SIDES.some((side) => record[side] !== undefined)) {
-    const sides = Object.fromEntries(BORDER_SIDES.flatMap((side) => {
-      const resolved = borderSideOf(ctx, record[side]);
-      return resolved === undefined ? [] : [[side, resolved]];
-    }));
+    const sides = Object.fromEntries(
+      BORDER_SIDES.flatMap((side) => {
+        const resolved = borderSideOf(ctx, record[side]);
+        return resolved === undefined ? [] : [[side, resolved]];
+      }),
+    );
     return Object.keys(sides).length === 0 ? undefined : sides;
   }
   const side = borderSideOf(ctx, value);

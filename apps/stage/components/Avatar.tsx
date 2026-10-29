@@ -12,12 +12,27 @@ const AVATAR_PLACEHOLDER = '#282a2d';
 
 const SQUARE_RADIUS_RATIO = 0.12;
 
-export function AvatarImage({ src, size, square, style }: {
-  src: string | null | undefined; size: number; square?: boolean; style?: StyleProp<ImageStyle>;
+export function AvatarImage({
+  src,
+  size,
+  square,
+  style,
+}: {
+  src: string | null | undefined;
+  size: number;
+  square?: boolean;
+  style?: StyleProp<ImageStyle>;
 }): React.ReactElement {
   return (
-    <Image url={src?.trim() ?? ''} variant="avatar" size={size} fit="cover" background={AVATAR_PLACEHOLDER}
-      radius={square === true ? Math.round(size * SQUARE_RADIUS_RATIO) : 'full'} style={style} />
+    <Image
+      url={src?.trim() ?? ''}
+      variant="avatar"
+      size={size}
+      fit="cover"
+      background={AVATAR_PLACEHOLDER}
+      radius={square === true ? Math.round(size * SQUARE_RADIUS_RATIO) : 'full'}
+      style={style}
+    />
   );
 }
 
@@ -30,19 +45,13 @@ interface Props {
   onPress?: (fullUri: string | null) => void;
 }
 
-function resolveAvatarUri(
-  address: string | null | undefined,
-  imageUri: string | null | undefined,
-  stampPx: number,
-): string | null {
+function resolveAvatarUri(address: string | null | undefined, imageUri: string | null | undefined, stampPx: number): string | null {
   if (imageUri?.trim()) return avatarRenderUrl(imageUri);
   if (!address) return null;
   return stampAvatarUrl(address, stampPx, avatarCacheKey(getPeerAvatar(address)));
 }
 
-export function Avatar({
-  address, imageUri, size = 'md', square, style, onPress,
-}: Props): React.ReactElement {
+export function Avatar({ address, imageUri, size = 'md', square, style, onPress }: Props): React.ReactElement {
   usePeerProfiles([imageUri?.trim() ? null : address]);
   const px = typeof size === 'number' ? size : AVATAR_SIZES[size];
   const uri = resolveAvatarUri(address, imageUri, px);
@@ -54,7 +63,12 @@ export function Avatar({
   const fullUri = resolveAvatarUri(address, imageUri, FULLSCREEN_FETCH_PX / 2);
 
   return (
-    <Pressable onPress={() => { onPress(fullUri); }} hitSlop={8}>
+    <Pressable
+      onPress={() => {
+        onPress(fullUri);
+      }}
+      hitSlop={8}
+    >
       {inner}
     </Pressable>
   );

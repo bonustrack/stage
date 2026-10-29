@@ -30,8 +30,18 @@ import { channelTitle } from '../conversation/convTitle';
 import { Column, VirtualList, Row, PAGE_GUTTER } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 
-function ChannelProfileHeader({ imageUrl, channelId, insetTop, onView, children }: {
-  imageUrl: string; channelId: string; insetTop: number; onView: () => void; children: ReactNode;
+function ChannelProfileHeader({
+  imageUrl,
+  channelId,
+  insetTop,
+  onView,
+  children,
+}: {
+  imageUrl: string;
+  channelId: string;
+  insetTop: number;
+  onView: () => void;
+  children: ReactNode;
 }): React.ReactElement {
   const { bg, border: rowBg } = usePalette();
   const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), PROFILE_AVATAR_SIZE) : '';
@@ -40,11 +50,16 @@ function ChannelProfileHeader({ imageUrl, channelId, insetTop, onView, children 
       insetTop={insetTop}
       avatar={
         <Pressable onPress={onView} disabled={!imageUrl} hitSlop={8}>
-          <Image fit="cover"
+          <Image
+            fit="cover"
             url={imageUrl ? avatarRenderUrl(imageUrl) : fallbackUri}
             style={{
-              width: PROFILE_AVATAR_SIZE, height: PROFILE_AVATAR_SIZE, borderRadius: Math.round(PROFILE_AVATAR_SIZE * 0.12),
-              backgroundColor: rowBg, borderWidth: 3, borderColor: bg,
+              width: PROFILE_AVATAR_SIZE,
+              height: PROFILE_AVATAR_SIZE,
+              borderRadius: Math.round(PROFILE_AVATAR_SIZE * 0.12),
+              backgroundColor: rowBg,
+              borderWidth: 3,
+              borderColor: bg,
             }}
           />
         </Pressable>
@@ -61,20 +76,30 @@ function ChannelTitle({ name, description }: { name: string | null; description:
   return (
     <>
       <Column padding={{ x: PAGE_GUTTER, top: 14, bottom: 16 }}>
-        <TitleText title={channelTitle(name)} fontWeight="semibold" size="2xl" color={head} style={{ textAlign: 'left' }}/>
+        <TitleText title={channelTitle(name)} fontWeight="semibold" size="2xl" color={head} style={{ textAlign: 'left' }} />
       </Column>
       {about ? (
         <Column padding={{ x: PAGE_GUTTER, bottom: 16 }}>
           <Eyebrow>DESCRIPTION</Eyebrow>
-          <Text size="xs" color={fg} style={{ marginTop: 6 }}>{about}</Text>
+          <Text size="xs" color={fg} style={{ marginTop: 6 }}>
+            {about}
+          </Text>
         </Column>
       ) : null}
     </>
   );
 }
 
-function MemberBadge({ badge, border, sub, dark }: {
-  badge: MemberRowBadge; border: string; sub: string; dark: boolean;
+function MemberBadge({
+  badge,
+  border,
+  sub,
+  dark,
+}: {
+  badge: MemberRowBadge;
+  border: string;
+  sub: string;
+  dark: boolean;
 }): React.ReactElement {
   const owner = badge.role === 'owner';
   return (
@@ -89,11 +114,23 @@ function MemberBadge({ badge, border, sub, dark }: {
 }
 
 function MemberRow({
-  item, isSelf, isRemovingThis, role, name, dark, onPress, onRemove,
+  item,
+  isSelf,
+  isRemovingThis,
+  role,
+  name,
+  dark,
+  onPress,
+  onRemove,
 }: {
-  item: string; isSelf: boolean; isRemovingThis: boolean;
-  role: ChannelMemberRole; name: string | null | undefined;
-  dark: boolean; onPress: () => void; onRemove: () => void;
+  item: string;
+  isSelf: boolean;
+  isRemovingThis: boolean;
+  role: ChannelMemberRole;
+  name: string | null | undefined;
+  dark: boolean;
+  onPress: () => void;
+  onRemove: () => void;
 }): React.ReactElement {
   const { text: sub, border } = usePalette();
   const model = memberRowModel({ shortAddress: shortAddress(item), name, isSelf, role });
@@ -118,9 +155,7 @@ function MemberRow({
               <Text size="md" variant="caption" text={model.addressLine} color="secondary" truncate />
             )}
           </Column>
-          {model.badge === undefined ? null : (
-            <MemberBadge badge={model.badge} border={border} sub={sub} dark={dark} />
-          )}
+          {model.badge === undefined ? null : <MemberBadge badge={model.badge} border={border} sub={sub} dark={dark} />}
           {isSelf ? null : (
             <Button
               color="primary"
@@ -155,10 +190,15 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
 
   useEffect(() => {
     const cached = cachedSelfEthAddress();
-    if (cached) { setSelfAddress(cached.toLowerCase()); return; }
-    void selfEthAddress().then(addr => {
-      if (addr) setSelfAddress(addr.toLowerCase());
-    }).catch(reported('channel.selfAddress'));
+    if (cached) {
+      setSelfAddress(cached.toLowerCase());
+      return;
+    }
+    void selfEthAddress()
+      .then((addr) => {
+        if (addr) setSelfAddress(addr.toLowerCase());
+      })
+      .catch(reported('channel.selfAddress'));
   }, []);
 
   return (
@@ -167,23 +207,37 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
         insetTop={insets.top}
         trailing={
           <ProfileCoverMenu
-            items={channelProfileMenuItems(canEditGroup(g.rights))} loading={g.leaving}
-            onSelect={(id) => { if (id === 'edit') setEditOpen(true); else void g.leaveChannel(); }}
+            items={channelProfileMenuItems(canEditGroup(g.rights))}
+            loading={g.leaving}
+            onSelect={(id) => {
+              if (id === 'edit') setEditOpen(true);
+              else void g.leaveChannel();
+            }}
           />
         }
       />
       <ChannelProfileHeader
-        insetTop={insets.top} imageUrl={g.imageUrl} channelId={convId}
-        onView={() => { setViewerOpen(true); }}
+        insetTop={insets.top}
+        imageUrl={g.imageUrl}
+        channelId={convId}
+        onView={() => {
+          setViewerOpen(true);
+        }}
       >
         <ChannelTitle name={g.name} description={g.description} />
       </ChannelProfileHeader>
-      <ChannelMembersSection convId={convId} count={g.members.length}/>
+      <ChannelMembersSection convId={convId} count={g.members.length} />
       <VirtualList
         data={g.members}
         extraData={g.memberNames}
-        keyExtractor={addr => addr.toLowerCase()}
-        ListFooterComponent={<><ChannelAssignees convId={convId}/><ChannelFields convId={convId}/><ChannelLabels convId={convId} labels={labels}/></>}
+        keyExtractor={(addr) => addr.toLowerCase()}
+        ListFooterComponent={
+          <>
+            <ChannelAssignees convId={convId} />
+            <ChannelFields convId={convId} />
+            <ChannelLabels convId={convId} labels={labels} />
+          </>
+        }
         renderItem={({ item }) => (
           <MemberRow
             item={item}
@@ -192,21 +246,33 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
             role={g.memberRoles[item]}
             name={g.memberNames[item]}
             dark={dark}
-            onPress={() => { router.push(profileLinkOf(item)); }}
-            onRemove={() => { void g.removeMember(item); }}
+            onPress={() => {
+              router.push(profileLinkOf(item));
+            }}
+            onRemove={() => {
+              void g.removeMember(item);
+            }}
           />
         )}
       />
       <EditChannelModal
         visible={editOpen}
-        onClose={() => { setEditOpen(false); }}
-        convId={convId} name={g.name} description={g.description} imageUrl={g.imageUrl} rights={g.rights}
+        onClose={() => {
+          setEditOpen(false);
+        }}
+        convId={convId}
+        name={g.name}
+        description={g.description}
+        imageUrl={g.imageUrl}
+        rights={g.rights}
         labels={labels}
       />
       <ImageViewer
         uri={g.imageUrl ? avatarRenderUrl(g.imageUrl) : ''}
         visible={viewerOpen}
-        onClose={() => { setViewerOpen(false); }}
+        onClose={() => {
+          setViewerOpen(false);
+        }}
       />
     </Column>
   );

@@ -40,15 +40,12 @@ function sizeInspector(ast) {
   }
   function inspectValue(node, mode) {
     const alternatives = ast.branches(node);
-    if (alternatives) return alternatives.some(value => inspect(value, mode));
-    if (node.type === 'ObjectExpression') return node.properties.some(property => propertyHasSize(property, mode));
-    if (node.type === 'ArrayExpression') return node.elements.some(value => inspect(value, mode));
+    if (alternatives) return alternatives.some((value) => inspect(value, mode));
+    if (node.type === 'ObjectExpression') return node.properties.some((property) => propertyHasSize(property, mode));
+    if (node.type === 'ArrayExpression') return node.elements.some((value) => inspect(value, mode));
     return false;
   }
-  return {
-    style: node => inspect(node, 'style'),
-    props: node => inspect(node, 'props'),
-  };
+  return { style: (node) => inspect(node, 'style'), props: (node) => inspect(node, 'props') };
 }
 
 function kitTextAttribute(attr, ast, sizes) {
@@ -63,7 +60,8 @@ export default {
     docs: { description: 'use named Kit font sizes in app source and the size prop on Kit Text' },
     schema: [],
     messages: {
-      token: 'Use a named Kit font size (FONT_SIZE or fontSize from @stage-labs/kit/tokens), not a custom size. Define semantic typography inside Kit.',
+      token:
+        'Use a named Kit font size (FONT_SIZE or fontSize from @stage-labs/kit/tokens), not a custom size. Define semantic typography inside Kit.',
       text: 'Kit Text must use its size prop, not a fontSize style override.',
       css: 'Do not define font sizes in app CSS strings. Use Kit typography components.',
     },
@@ -92,8 +90,12 @@ export default {
       JSXAttribute(node) {
         checkSize(node, ast.key(node.name), node.value?.expression ?? node.value);
       },
-      Literal(node) { checkCss(node, node.value); },
-      TemplateElement(node) { checkCss(node, node.value.cooked ?? node.value.raw); },
+      Literal(node) {
+        checkCss(node, node.value);
+      },
+      TemplateElement(node) {
+        checkCss(node, node.value.cooked ?? node.value.raw);
+      },
       JSXOpeningElement(node) {
         if (!ast.imported(node.name, KIT_TEXT, 'Text')) return;
         for (const attr of node.attributes) {

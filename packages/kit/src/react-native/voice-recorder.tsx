@@ -34,29 +34,48 @@ export interface VoiceRecorderProps {
   onComplete?: () => void;
 }
 
-function RecordingBar({ head, sub, levels, recordSecs, slideX, slideThresholdPx }: {
-  head: string; sub: string; levels: number[]; recordSecs: number;
-  slideX: Animated.Value; slideThresholdPx: number;
+function RecordingBar({
+  head,
+  sub,
+  levels,
+  recordSecs,
+  slideX,
+  slideThresholdPx,
+}: {
+  head: string;
+  sub: string;
+  levels: number[];
+  recordSecs: number;
+  slideX: Animated.Value;
+  slideThresholdPx: number;
 }): React.ReactElement {
   return (
     <Row height={28} padding={{ x: 4 }} align="center">
-      <Animated.View style={{
-        flexDirection: 'row', alignItems: 'center', gap: 6,
-        transform: [{ translateX: slideX }],
-        opacity: slideX.interpolate({
-          inputRange: [-slideThresholdPx, -16, 0],
-          outputRange: [1, 0.7, 0.4],
-          extrapolate: 'clamp',
-        }),
-      }}>
-        <Glyph icon={IconArrowLeft} size={14} color={sub}/>
+      <Animated.View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          transform: [{ translateX: slideX }],
+          opacity: slideX.interpolate({ inputRange: [-slideThresholdPx, -16, 0], outputRange: [1, 0.7, 0.4], extrapolate: 'clamp' }),
+        }}
+      >
+        <Glyph icon={IconArrowLeft} size={14} color={sub} />
         <Text size="3xs" color="secondary">
           Slide to cancel
         </Text>
       </Animated.View>
       <Row height={28} weight={1} align="center" justify="end" style={{ overflow: 'hidden' }}>
-        {[...(Array<number>(Math.max(0, 40 - levels.length)).fill(0.05)), ...levels].slice(-40).map((lvl, i) => (
-          <Column width={3} radius="2xs" height={Math.max(3, Math.round(lvl * 26))} background={head} margin={{ x: 1 }} key={i} style={{ opacity: 0.85 }}/>
+        {[...Array<number>(Math.max(0, 40 - levels.length)).fill(0.05), ...levels].slice(-40).map((lvl, i) => (
+          <Column
+            width={3}
+            radius="2xs"
+            height={Math.max(3, Math.round(lvl * 26))}
+            background={head}
+            margin={{ x: 1 }}
+            key={i}
+            style={{ opacity: 0.85 }}
+          />
         ))}
       </Row>
       <Text size="3xs" color="secondary" style={{ minWidth: 40, textAlign: 'center' }}>
@@ -66,15 +85,20 @@ function RecordingBar({ head, sub, levels, recordSecs, slideX, slideThresholdPx 
   );
 }
 
-function CancelBtn({ onPress, fg, chipBg }: {
-  onPress: () => void; fg: string; chipBg: string;
-}): React.ReactElement {
+function CancelBtn({ onPress, fg, chipBg }: { onPress: () => void; fg: string; chipBg: string }): React.ReactElement {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({
-      width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: pressed ? chipBg : 'transparent',
-    })}>
-      <Glyph icon={IconCrossMedium} size={22} color={fg}/>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        width: 38,
+        height: 38,
+        borderRadius: 999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: pressed ? chipBg : 'transparent',
+      })}
+    >
+      <Glyph icon={IconCrossMedium} size={22} color={fg} />
     </Pressable>
   );
 }
@@ -90,9 +114,18 @@ export function VoiceRecorder(props: VoiceRecorderProps): React.ReactElement {
   const handlersRef = useRef({ onStart, onCancel, onComplete });
   handlersRef.current = { onStart, onCancel, onComplete };
 
-  const fireStart = (): void => { recordingRef.current = true; handlersRef.current.onStart?.(); };
-  const fireCancel = (): void => { recordingRef.current = false; handlersRef.current.onCancel?.(); };
-  const fireComplete = (): void => { recordingRef.current = false; handlersRef.current.onComplete?.(); };
+  const fireStart = (): void => {
+    recordingRef.current = true;
+    handlersRef.current.onStart?.();
+  };
+  const fireCancel = (): void => {
+    recordingRef.current = false;
+    handlersRef.current.onCancel?.();
+  };
+  const fireComplete = (): void => {
+    recordingRef.current = false;
+    handlersRef.current.onComplete?.();
+  };
   const release = (): number => {
     pressingRef.current = false;
     const dx = slideXRef.current;
@@ -101,60 +134,101 @@ export function VoiceRecorder(props: VoiceRecorderProps): React.ReactElement {
     return dx;
   };
 
-  const micPanResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => {
-      pressingRef.current = true;
-      micPressStart.current = Date.now();
-      slideXRef.current = 0;
-      slideX.setValue(0);
-      if (recordingRef.current) { fireComplete(); return; }
-      fireStart();
-    },
-    onPanResponderMove: (_, g) => {
-      const dx = Math.max(-120, Math.min(0, g.dx));
-      slideXRef.current = dx;
-      slideX.setValue(dx);
-    },
-    onPanResponderRelease: () => {
-      const held = Date.now() - micPressStart.current;
-      const dx = release();
-      if (!recordingRef.current) return;
-      if (dx <= -slideThresholdPx) { fireCancel(); return; }
-      if (held >= 350) fireComplete();
-    },
-    onPanResponderTerminate: () => { release(); },
-    onPanResponderTerminationRequest: () => false,
-  }), []);
+  const micPanResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: () => {
+          pressingRef.current = true;
+          micPressStart.current = Date.now();
+          slideXRef.current = 0;
+          slideX.setValue(0);
+          if (recordingRef.current) {
+            fireComplete();
+            return;
+          }
+          fireStart();
+        },
+        onPanResponderMove: (_, g) => {
+          const dx = Math.max(-120, Math.min(0, g.dx));
+          slideXRef.current = dx;
+          slideX.setValue(dx);
+        },
+        onPanResponderRelease: () => {
+          const held = Date.now() - micPressStart.current;
+          const dx = release();
+          if (!recordingRef.current) return;
+          if (dx <= -slideThresholdPx) {
+            fireCancel();
+            return;
+          }
+          if (held >= 350) fireComplete();
+        },
+        onPanResponderTerminate: () => {
+          release();
+        },
+        onPanResponderTerminationRequest: () => false,
+      }),
+    [],
+  );
 
   return (
-    <RecorderView props={props} slideX={slideX} panHandlers={micPanResponder.panHandlers} onCancelPress={fireCancel} onCompletePress={fireComplete} />
+    <RecorderView
+      props={props}
+      slideX={slideX}
+      panHandlers={micPanResponder.panHandlers}
+      onCancelPress={fireCancel}
+      onCompletePress={fireComplete}
+    />
   );
 }
 
-function MicView({ recording, fg, hoverFg, slideX, panHandlers }: {
-  recording: boolean; fg: string; hoverFg: string; slideX: Animated.Value;
+function MicView({
+  recording,
+  fg,
+  hoverFg,
+  slideX,
+  panHandlers,
+}: {
+  recording: boolean;
+  fg: string;
+  hoverFg: string;
+  slideX: Animated.Value;
   panHandlers: ReturnType<typeof PanResponder.create>['panHandlers'];
 }): React.ReactElement {
   const [hovered, setHovered] = useState(false);
   return (
     <Animated.View
       {...panHandlers}
-      onPointerEnter={() => { setHovered(true); }}
-      onPointerLeave={() => { setHovered(false); }}
+      onPointerEnter={() => {
+        setHovered(true);
+      }}
+      onPointerLeave={() => {
+        setHovered(false);
+      }}
       style={{
-        width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+        width: 38,
+        height: 38,
+        borderRadius: 999,
+        alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: recording ? '#e2622f' : 'transparent',
         transform: [{ translateX: slideX }],
       }}
     >
-      <Glyph icon={IconMicrophone} size={22} color={recording ? '#ffffff' : hovered ? hoverFg : fg}/>
+      <Glyph icon={IconMicrophone} size={22} color={recording ? '#ffffff' : hovered ? hoverFg : fg} />
     </Animated.View>
   );
 }
 
-function RecorderView({ props, slideX, panHandlers, onCancelPress, onCompletePress }: {
+function RecorderView({
+  props,
+  slideX,
+  panHandlers,
+  onCancelPress,
+  onCompletePress,
+}: {
   props: VoiceRecorderProps;
   slideX: Animated.Value;
   panHandlers: ReturnType<typeof PanResponder.create>['panHandlers'];
@@ -162,21 +236,47 @@ function RecorderView({ props, slideX, panHandlers, onCancelPress, onCompletePre
   onCompletePress: () => void;
 }): React.ReactElement {
   const {
-    recording, levels = [], recordSecs = 0, fg, head, sub, bg, chipBg, primary, dark = false,
-    inputSlot, leftControls, rightAction, slideThresholdPx = SLIDE_CANCEL_THRESHOLD_PX, wrapMic,
+    recording,
+    levels = [],
+    recordSecs = 0,
+    fg,
+    head,
+    sub,
+    bg,
+    chipBg,
+    primary,
+    dark = false,
+    inputSlot,
+    leftControls,
+    rightAction,
+    slideThresholdPx = SLIDE_CANCEL_THRESHOLD_PX,
+    wrapMic,
   } = props;
   const micView = <MicView recording={recording} fg={fg} hoverFg={head} slideX={slideX} panHandlers={panHandlers} />;
   return (
     <Column>
-      {recording ? <RecordingBar head={head} sub={sub} levels={levels} recordSecs={recordSecs} slideX={slideX} slideThresholdPx={slideThresholdPx} /> : inputSlot}
+      {recording ? (
+        <RecordingBar head={head} sub={sub} levels={levels} recordSecs={recordSecs} slideX={slideX} slideThresholdPx={slideThresholdPx} />
+      ) : (
+        inputSlot
+      )}
       <Row align="center" gap={4} height={40}>
         {recording ? <CancelBtn onPress={onCancelPress} fg={fg} chipBg={chipBg} /> : leftControls}
         <Column weight={1} />
         {wrapMic ? wrapMic(micView) : micView}
         {recording ? (
-          <Button variant="primary" size="md" pill dark={dark} tintBg={primary}
-            onPress={onCompletePress} icon={<Glyph icon={IconCheckmark1} size={20} color={bg} />} />
-        ) : rightAction}
+          <Button
+            variant="primary"
+            size="md"
+            pill
+            dark={dark}
+            tintBg={primary}
+            onPress={onCompletePress}
+            icon={<Glyph icon={IconCheckmark1} size={20} color={bg} />}
+          />
+        ) : (
+          rightAction
+        )}
       </Row>
     </Column>
   );

@@ -1,16 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { boardArrowMove } from '../components/board/boardKeys.model';
 
-const column = (key: string, ...convIds: string[]): { key: string; rows: { convId: string }[] } => (
-  { key, rows: convIds.map(convId => ({ convId })) }
-);
+const column = (key: string, ...convIds: string[]): { key: string; rows: { convId: string }[] } => ({
+  key,
+  rows: convIds.map((convId) => ({ convId })),
+});
 
-const columns = [
-  column('todo', 'a', 'b', 'c'),
-  column('empty'),
-  column('doing', 'd', 'e'),
-  column('done', 'f', 'g', 'h', 'i'),
-];
+const columns = [column('todo', 'a', 'b', 'c'), column('empty'), column('doing', 'd', 'e'), column('done', 'f', 'g', 'h', 'i')];
 
 describe('boardArrowMove', () => {
   test('moves up and down within the column and stops at its ends', () => {

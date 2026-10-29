@@ -7,9 +7,7 @@ import { resolveTextSize } from '../src/text.styles';
 import { FONT_SIZE, FONT_SIZE_SNAP, fontName, fontSize, type FontSizeName } from '../src/tokens';
 import { BALANCE_TITLE_STYLE, HERO_TITLE_STYLE } from '../src/title.styles';
 
-const TEXT_SIZES: Record<FontSizeName, number> = {
-  '3xs': 13, '2xs': 14, xs: 16, sm: 17, md: 18, lg: 19, xl: 20, '2xl': 24, '3xl': 26,
-};
+const TEXT_SIZES: Record<FontSizeName, number> = { '3xs': 13, '2xs': 14, xs: 16, sm: 17, md: 18, lg: 19, xl: 20, '2xl': 24, '3xl': 26 };
 
 describe('hero title typography', () => {
   test('4xl matches the landing headline without a semibold font', () => {
@@ -40,9 +38,23 @@ describe('text size tokens', () => {
 
   test('snapping uses current names and promotes removed 15px text to xs', () => {
     expect(FONT_SIZE_SNAP).toEqual({
-      '10': '3xs', '11': '3xs', '12': '3xs', '13': '3xs', '14': '2xs',
-      '15': 'xs', '16': 'xs', '17': 'sm', '18': 'md', '19': 'lg', '20': 'xl',
-      '22': '2xl', '24': '2xl', '26': '3xl', '28': '3xl', '34': '3xl', '38': '3xl',
+      '10': '3xs',
+      '11': '3xs',
+      '12': '3xs',
+      '13': '3xs',
+      '14': '2xs',
+      '15': 'xs',
+      '16': 'xs',
+      '17': 'sm',
+      '18': 'md',
+      '19': 'lg',
+      '20': 'xl',
+      '22': '2xl',
+      '24': '2xl',
+      '26': '3xl',
+      '28': '3xl',
+      '34': '3xl',
+      '38': '3xl',
     });
     for (const token of Object.values(FONT_SIZE_SNAP)) expect(FONT_SIZE[token]).toBeDefined();
   });
@@ -78,8 +90,11 @@ describe('xs typography', () => {
         for (const dark of [false, true]) {
           const colors = controlColors(variant, dark);
           expect(controlTextStyle(size, colors)).toEqual({
-            color: colors.text, fontSize: resolveTextSize(size, undefined),
-            fontFamily: fontName.sans, padding: 0, margin: 0,
+            color: colors.text,
+            fontSize: resolveTextSize(size, undefined),
+            fontFamily: fontName.sans,
+            padding: 0,
+            margin: 0,
           });
           expect(controlBoxStyle(size, variant, colors, 8)).toMatchObject({
             minHeight: CONTROL_SIZES[size].minHeight,

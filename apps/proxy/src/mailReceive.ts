@@ -1,7 +1,12 @@
 import { hexToBytes } from 'viem';
 import { bytesToBase64 } from '@stage-labs/client/text/base64';
 import {
-  MAIL_MAX_BYTES, isMailPublicKey, mailboxLabel, sealMailIndex, sealMailPart, type MailIndex,
+  MAIL_MAX_BYTES,
+  isMailPublicKey,
+  mailboxLabel,
+  sealMailIndex,
+  sealMailPart,
+  type MailIndex,
 } from '@stage-labs/client/mail/mailbox';
 import type { ArchiveStub } from './historyStore.ts';
 import type { MailChain } from './mailApi.ts';
@@ -30,7 +35,12 @@ interface ReceiveDeps {
   now?: () => number;
 }
 
-interface Destination { label: string; stub: ArchiveStub; key: MailKeyRecord; publicKey: Uint8Array }
+interface Destination {
+  label: string;
+  stub: ArchiveStub;
+  key: MailKeyRecord;
+  publicKey: Uint8Array;
+}
 
 function newMailId(now: number): string {
   return `${String(now).padStart(13, '0')}-${crypto.randomUUID()}`;

@@ -3,7 +3,10 @@ import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
 
 type Answer = { result: unknown } | { error: unknown };
-interface RpcBody { result?: unknown; error?: { code?: unknown } }
+interface RpcBody {
+  result?: unknown;
+  error?: { code?: unknown };
+}
 
 const FIXTURE = new URL('./fixtures/base-rpc.json', import.meta.url);
 const RECORD = process.env.STAGE_RPC_RECORD === '1';

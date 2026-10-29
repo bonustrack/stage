@@ -1,7 +1,14 @@
 import { describe, expect, jest, test } from 'bun:test';
 import {
-  historyProblemMessage, historySyncIsActive, historySyncPhaseLabel, isMissingArchive, settleBy, timeLeftLabel, within,
-  HISTORY_COPY, HistoryProblem,
+  historyProblemMessage,
+  historySyncIsActive,
+  historySyncPhaseLabel,
+  isMissingArchive,
+  settleBy,
+  timeLeftLabel,
+  within,
+  HISTORY_COPY,
+  HistoryProblem,
 } from '../lib/history.model';
 
 function afterFakeTime<T>(ms: number, start: () => Promise<T>): Promise<T> {
@@ -40,7 +47,9 @@ describe('historyProblemMessage', () => {
   });
 
   test('blames an older version when the archive sits on the retired XMTP server', () => {
-    const err = new Error('reqwest error: HTTP status client error (400 Bad Request) for url (https://message-history.production.ephemera.network/files/abc)');
+    const err = new Error(
+      'reqwest error: HTTP status client error (400 Bad Request) for url (https://message-history.production.ephemera.network/files/abc)',
+    );
     expect(isMissingArchive(err)).toBe(false);
     expect(historyProblemMessage(err, 'fallback')).toBe(HISTORY_COPY.olderVersion);
   });

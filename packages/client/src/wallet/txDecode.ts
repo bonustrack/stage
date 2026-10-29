@@ -1,6 +1,4 @@
-import {
-  decodeFunctionData, parseAbiItem, toFunctionSelector, type Abi, type Hex,
-} from 'viem';
+import { decodeFunctionData, parseAbiItem, toFunctionSelector, type Abi, type Hex } from 'viem';
 
 interface DecodedArg {
   name: string;
@@ -44,8 +42,11 @@ function fmtArg(v: unknown): string {
   if (typeof v === 'string') return v;
   if (Array.isArray(v)) return `[${v.map(fmtArg).join(', ')}]`;
   if (v && typeof v === 'object') {
-    try { return JSON.stringify(v, (_k, x: unknown) => (typeof x === 'bigint' ? x.toString() : x)); }
-    catch { return safeObjectToString(v); }
+    try {
+      return JSON.stringify(v, (_k, x: unknown) => (typeof x === 'bigint' ? x.toString() : x));
+    } catch {
+      return safeObjectToString(v);
+    }
   }
   return String(v);
 }
@@ -63,8 +64,10 @@ function implementationOf(meta: SourcifyContract): string | undefined {
 async function sourcifyContract(chainId: number, address: string): Promise<SourcifyContract | null> {
   try {
     const res = await fetch(`${SOURCIFY_BASE}/${chainId}/${address}?fields=abi,proxyResolution`);
-    return res.ok ? (await res.json()) as SourcifyContract : null;
-  } catch { return null; }
+    return res.ok ? ((await res.json()) as SourcifyContract) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function verifiedAbiOf(meta: SourcifyContract | null, chainId: number, followProxy: boolean): Promise<Abi | null> {
@@ -76,9 +79,7 @@ async function verifiedAbiOf(meta: SourcifyContract | null, chainId: number, fol
   return implAbi ? [...abi, ...implAbi.abi] : null;
 }
 
-async function fetchSourcifyAbi(
-  chainId: number, address: string, followProxy = true,
-): Promise<{ abi: Abi; verified: boolean } | null> {
+async function fetchSourcifyAbi(chainId: number, address: string, followProxy = true): Promise<{ abi: Abi; verified: boolean } | null> {
   const key = `${chainId}:${address.toLowerCase()}:${followProxy ? 'proxy' : 'impl'}`;
   const hit = abiCache.get(key);
   if (hit !== undefined) return hit;
@@ -94,59 +95,48 @@ async function fetch4byteSig(selector: string): Promise<string | null> {
   try {
     const res = await fetch(`${FOURBYTE_BASE}?hex_signature=${selector}`);
     if (res.ok) {
-      const json = (await res.json()) as {
-        results?: { id: number; text_signature: string }[];
-      };
+      const json = (await res.json()) as { results?: { id: number; text_signature: string }[] };
       const best = (json.results ?? []).sort((a, b) => a.id - b.id)[0];
       if (best?.text_signature) {
         sigCache.set(selector, best.text_signature);
         return best.text_signature;
       }
     }
-  } catch { }
+  } catch {}
   sigCache.set(selector, null);
   return null;
 }
 
-function mapDecodedArgs(
-  rawArgs: readonly unknown[] | undefined,
-  inputs: readonly { name?: string; type: string }[],
-): DecodedArg[] {
+function mapDecodedArgs(rawArgs: readonly unknown[] | undefined, inputs: readonly { name?: string; type: string }[]): DecodedArg[] {
   return (rawArgs ?? []).map((v, i) => {
     const input = inputs[i];
     const argName = input?.name;
-    return {
-      name: argName !== undefined && argName.length > 0 ? argName : `arg${i}`,
-      type: input?.type ?? '',
-      value: fmtArg(v),
-    };
+    return { name: argName !== undefined && argName.length > 0 ? argName : `arg${i}`, type: input?.type ?? '', value: fmtArg(v) };
   });
 }
 
 function abiHasSelector(abi: Abi, selector: string): boolean {
   return abi.some((i) => {
     if (i.type !== 'function') return false;
-    try { return toFunctionSelector(i).toLowerCase() === selector; }
-    catch { return false; }
+    try {
+      return toFunctionSelector(i).toLowerCase() === selector;
+    } catch {
+      return false;
+    }
   });
 }
 
-function decodeWithSourcify(
-  abi: Abi, verified: boolean, data: string, selector: string,
-): DecodedCall | null {
+function decodeWithSourcify(abi: Abi, verified: boolean, data: string, selector: string): DecodedCall | null {
   try {
     const decoded = decodeFunctionData({ abi, data: data as Hex });
-    const fn = abi.find(
-      (i): i is Extract<Abi[number], { type: 'function' }> =>
-        i.type === 'function' && i.name === decoded.functionName,
-    );
+    const fn = abi.find((i): i is Extract<Abi[number], { type: 'function' }> => i.type === 'function' && i.name === decoded.functionName);
     const inputs = fn?.inputs ?? [];
     return {
       decoded: true,
       verified,
       source: 'sourcify',
       functionName: decoded.functionName,
-      signature: fn ? `${fn.name}(${inputs.map(p => p.type).join(',')})` : decoded.functionName,
+      signature: fn ? `${fn.name}(${inputs.map((p) => p.type).join(',')})` : decoded.functionName,
       args: mapDecodedArgs(decoded.args, inputs),
       selector,
       note: undefined,
@@ -171,9 +161,7 @@ async function buildMismatch(verified: boolean, selector: string): Promise<Decod
   };
 }
 
-async function decodeViaSourcify(
-  abi: Abi, verified: boolean, data: string, selector: string,
-): Promise<DecodedCall> {
+async function decodeViaSourcify(abi: Abi, verified: boolean, data: string, selector: string): Promise<DecodedCall> {
   if (abiHasSelector(abi, selector)) {
     const calm = decodeWithSourcify(abi, verified, data, selector);
     if (calm) return calm;
@@ -207,9 +195,7 @@ async function decodeVia4byte(data: string, selector: string): Promise<DecodedCa
   };
 }
 
-export async function decodeCall(
-  to: string | undefined, data: string | undefined, chainId: number,
-): Promise<DecodedCall> {
+export async function decodeCall(to: string | undefined, data: string | undefined, chainId: number): Promise<DecodedCall> {
   const selector = selectorOf(data);
   if (!selector || !to || !data) {
     return { decoded: false, verified: false, source: 'none', args: [], selector, note: 'No calldata to decode.' };
@@ -223,14 +209,7 @@ export async function decodeCall(
   const fourByte = await decodeVia4byte(data, selector);
   if (fourByte) return fourByte;
 
-  return {
-    decoded: false,
-    verified: false,
-    source: 'none',
-    args: [],
-    selector,
-    note: 'Could not decode this call.',
-  };
+  return { decoded: false, verified: false, source: 'none', args: [], selector, note: 'Could not decode this call.' };
 }
 
 export function spoofWarning(call: DecodedCall | null, description?: string): string | undefined {

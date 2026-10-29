@@ -1,12 +1,8 @@
 import type { DecodedCall } from './txDecode';
 
-const TRANSFER_FNS = new Set([
-  'transfer', 'transferfrom', 'send', 'safetransferfrom', 'pay',
-]);
+const TRANSFER_FNS = new Set(['transfer', 'transferfrom', 'send', 'safetransferfrom', 'pay']);
 
-export function isTransferRequest(
-  decoded: DecodedCall | null, isErc20Transfer: boolean,
-): boolean {
+export function isTransferRequest(decoded: DecodedCall | null, isErc20Transfer: boolean): boolean {
   if (isErc20Transfer) return true;
   if (!decoded?.decoded) return true;
   const fn = (decoded.functionName ?? '').toLowerCase();
@@ -45,8 +41,6 @@ export function humanizeAction(decoded: DecodedCall | null): string {
   return words.join(' ');
 }
 
-export function txActionLabel(
-  decoded: DecodedCall | null, isErc20Transfer: boolean,
-): string {
+export function txActionLabel(decoded: DecodedCall | null, isErc20Transfer: boolean): string {
   return isTransferRequest(decoded, isErc20Transfer) ? 'Pay' : humanizeAction(decoded);
 }

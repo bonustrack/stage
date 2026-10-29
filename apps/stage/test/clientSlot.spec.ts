@@ -6,7 +6,10 @@ describe('createClientSlot', () => {
     const slot = createClientSlot<string>(() => undefined);
     let builds = 0;
     const build = Promise.withResolvers<string>();
-    const create = (): Promise<string> => { builds += 1; return build.promise; };
+    const create = (): Promise<string> => {
+      builds += 1;
+      return build.promise;
+    };
     const a = slot.getOrCreate(create);
     const b = slot.getOrCreate(create);
     build.resolve('client-a');
@@ -32,7 +35,10 @@ describe('createClientSlot', () => {
     const fresh = Promise.withResolvers<string>();
     const next = slot.getOrCreate(() => fresh.promise);
     let builds = 0;
-    const joined = slot.getOrCreate(() => { builds += 1; return Promise.resolve('third'); });
+    const joined = slot.getOrCreate(() => {
+      builds += 1;
+      return Promise.resolve('third');
+    });
     stale.resolve('client-a');
     await Promise.resolve();
     fresh.resolve('client-b');
@@ -45,7 +51,12 @@ describe('createClientSlot', () => {
 
   test('reset rejects every joined obsolete caller and discards its client exactly once', async () => {
     const discarded: string[] = [];
-    const slot = createClientSlot<string>(() => undefined, (client) => { discarded.push(client); });
+    const slot = createClientSlot<string>(
+      () => undefined,
+      (client) => {
+        discarded.push(client);
+      },
+    );
     const work = Promise.withResolvers<string>();
     const first = slot.getOrCreate(() => work.promise).catch((e: unknown) => e);
     const joined = slot.getOrCreate(() => Promise.resolve('unused')).catch((e: unknown) => e);

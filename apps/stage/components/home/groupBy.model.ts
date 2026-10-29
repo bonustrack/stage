@@ -11,12 +11,13 @@ export interface GroupableRow {
 
 export type NameOf = (address: string) => string;
 
-export const GROUP_BY_LABELS: Record<GroupKey, string> = {
-  assignee: 'Assignees', category: 'Project', label: 'Label', status: 'Status',
-};
+export const GROUP_BY_LABELS: Record<GroupKey, string> = { assignee: 'Assignees', category: 'Project', label: 'Label', status: 'Status' };
 
 export const NO_GROUP_TITLES: Record<GroupKey, string> = {
-  assignee: 'Unassigned', category: 'No project', label: 'No label', status: 'No status',
+  assignee: 'Unassigned',
+  category: 'No project',
+  label: 'No label',
+  status: 'No status',
 };
 
 export function groupValuesOf(row: GroupableRow, by: GroupKey): string[] {
@@ -37,7 +38,10 @@ export interface Bucket<R> {
 }
 
 export function bucketRows<R extends GroupableRow>(
-  rows: readonly R[], by: GroupKey, nameOf: NameOf, keyOf: (value: string) => string,
+  rows: readonly R[],
+  by: GroupKey,
+  nameOf: NameOf,
+  keyOf: (value: string) => string,
 ): { buckets: Bucket<R>[]; none: R[] } {
   const buckets = new Map<string, Bucket<R>>();
   const none: R[] = [];

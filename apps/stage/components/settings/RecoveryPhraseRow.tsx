@@ -9,8 +9,12 @@ import { capabilities } from '../../lib/capabilities';
 import { revealActiveRecoveryPhrase } from '../../lib/zerodev/keyring';
 import { createValueStore } from '../../lib/persistedStore';
 import {
-  BACKUP_PHRASE_COPY, SHOW_PHRASE_COPY, SHOWN_PHRASE_TIMEOUT_MS,
-  phrasePanelActions, phraseRowCopy, type PhraseRowMode,
+  BACKUP_PHRASE_COPY,
+  SHOW_PHRASE_COPY,
+  SHOWN_PHRASE_TIMEOUT_MS,
+  phrasePanelActions,
+  phraseRowCopy,
+  type PhraseRowMode,
 } from './SecuritySettings.model';
 import { IconShieldCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldCheck';
 import { SettingsButtonRow } from './SettingsPage';
@@ -31,7 +35,12 @@ export function useWalletBackedUp(): boolean | null {
   return data ?? null;
 }
 
-interface PanelProps { mode: PhraseRowMode; phrase: string; onHide: () => void; onSaved: () => void }
+interface PanelProps {
+  mode: PhraseRowMode;
+  phrase: string;
+  onHide: () => void;
+  onSaved: () => void;
+}
 
 function RevealedPhrase({ mode, phrase, onHide, onSaved }: PanelProps): React.ReactElement {
   const dark = useKitScheme() === 'dark';
@@ -46,8 +55,12 @@ function RevealedPhrase({ mode, phrase, onHide, onSaved }: PanelProps): React.Re
           <Text text={phrase} size="xs" fontFamily="mono" color="text" selectable style={{ lineHeight: 24 }} />
         </Column>
         <Row gap={8}>
-          {actions.includes('hide') ? <Button dark={dark} variant="ghost" size="md" fullWidth style={{ flex: 1 }} label="Hide" onPress={onHide} /> : null}
-          {actions.includes('saved') ? <Button variant="primary" dark={dark} size="md" fullWidth style={{ flex: 1 }} label="I saved it" onPress={onSaved} /> : null}
+          {actions.includes('hide') ? (
+            <Button dark={dark} variant="ghost" size="md" fullWidth style={{ flex: 1 }} label="Hide" onPress={onHide} />
+          ) : null}
+          {actions.includes('saved') ? (
+            <Button variant="primary" dark={dark} size="md" fullWidth style={{ flex: 1 }} label="I saved it" onPress={onSaved} />
+          ) : null}
         </Row>
       </Column>
     </ListViewItem>
@@ -59,7 +72,9 @@ function useAutoHide(active: boolean, hide: () => void): void {
   useEffect(() => {
     if (!active) return undefined;
     const timer = setTimeout(hide, SHOWN_PHRASE_TIMEOUT_MS);
-    return () => { clearTimeout(timer); };
+    return () => {
+      clearTimeout(timer);
+    };
   }, [active, hide]);
 }
 
@@ -76,7 +91,9 @@ export function RecoveryPhraseRow({ rec, mode }: { rec: AccountRecord; mode: Phr
   const queryClient = useQueryClient();
   const [phrase, setPhrase] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const hide = useCallback((): void => { setPhrase(null); }, []);
+  const hide = useCallback((): void => {
+    setPhrase(null);
+  }, []);
   useAutoHide(mode === 'show' && phrase !== null, hide);
 
   const reveal = (): void => {
@@ -107,7 +124,5 @@ export function RecoveryPhraseRow({ rec, mode }: { rec: AccountRecord; mode: Phr
 
   const copy = phraseRowCopy(mode);
   if (phrase !== null) return <RevealedPhrase mode={mode} phrase={phrase} onHide={hide} onSaved={saved} />;
-  return (
-    <SettingsButtonRow label={copy.label} description={copy.description} iconStart={IconShieldCheck} onPress={reveal} />
-  );
+  return <SettingsButtonRow label={copy.label} description={copy.description} iconStart={IconShieldCheck} onPress={reveal} />;
 }

@@ -9,9 +9,7 @@ describe('the native feed follows new messages unless the reader has scrolled ba
   });
 
   test('reading older messages holds the visible row in place', () => {
-    expect(feedPositionHold(false, true, FOLLOW_WITHIN)).toEqual({
-      minIndexForVisible: 0, autoscrollToTopThreshold: FOLLOW_WITHIN,
-    });
+    expect(feedPositionHold(false, true, FOLLOW_WITHIN)).toEqual({ minIndexForVisible: 0, autoscrollToTopThreshold: FOLLOW_WITHIN });
   });
 });
 

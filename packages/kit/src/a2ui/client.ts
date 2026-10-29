@@ -1,17 +1,27 @@
 import { createCatalogRegistry, type CatalogRegistry } from './catalog';
 import { bump, createAgentCalls, receiveMessage, type Runtime } from './client.messages';
-import {
-  evaluateChecks, resolveDynamic, safeResolve, toDiagnostic,
-  type Diagnostic, type EvalEnv, type Scope,
-} from './evaluate';
+import { evaluateChecks, resolveDynamic, safeResolve, toDiagnostic, type Diagnostic, type EvalEnv, type Scope } from './evaluate';
 import { checkedUrl, createBasicFunctions, type FunctionImpl } from './functions';
 import { coerceToString, resolveLocale } from './functions.format';
 import { KIT_CATALOG, KIT_CATALOG_ID } from './kit-catalog';
 import { setAt } from './pointer';
 import {
-  A2UI_VERSION, BASIC_CATALOG_ID, ERROR_CODES, isEventAction, isFunctionAction, isJsonObject,
-  type Action, type CheckRule, type DynamicValue, type EventAction, type JsonObject,
-  type JsonValue, type RendererCapabilities, type RendererDataModel, type RendererMessage, type ValidationResult,
+  A2UI_VERSION,
+  BASIC_CATALOG_ID,
+  ERROR_CODES,
+  isEventAction,
+  isFunctionAction,
+  isJsonObject,
+  type Action,
+  type CheckRule,
+  type DynamicValue,
+  type EventAction,
+  type JsonObject,
+  type JsonValue,
+  type RendererCapabilities,
+  type RendererDataModel,
+  type RendererMessage,
+  type ValidationResult,
 } from './protocol';
 import { BASIC_CATALOG } from './schemas';
 import { parseMessages } from './stream';
@@ -81,7 +91,13 @@ function functionTable(options: A2uiClientOptions, catalogs: readonly JsonObject
   return (catalogId) => table[catalogId];
 }
 
-function sendEvent(rt: Runtime, env: EvalEnv, action: EventAction, ids: { surfaceId: string; sourceComponentId: string }, scope: Scope): void {
+function sendEvent(
+  rt: Runtime,
+  env: EvalEnv,
+  action: EventAction,
+  ids: { surfaceId: string; sourceComponentId: string },
+  scope: Scope,
+): void {
   const { name, userMessage, context } = action.event;
   const resolved = resolveDynamic(context ?? {}, env, scope, true);
   const message = userMessage === undefined ? undefined : coerceToString(resolveDynamic(userMessage, env, scope, true));
@@ -118,7 +134,10 @@ export function createA2uiClient(options: A2uiClientOptions = {}): A2uiClient {
   const functions = functionTable(options, catalogs);
   const send = (message: RendererMessage, surfaceId?: string): void => {
     const surface = surfaceId === undefined ? undefined : surfaces.get(surfaceId);
-    const metadata: TransportMetadata | undefined = surface?.sendDataModel === true ? { a2uiRendererDataModel: { version: A2UI_VERSION, surfaces: { [surface.id]: surface.data } } } : undefined;
+    const metadata: TransportMetadata | undefined =
+      surface?.sendDataModel === true
+        ? { a2uiRendererDataModel: { version: A2UI_VERSION, surfaces: { [surface.id]: surface.data } } }
+        : undefined;
     options.send?.(message, metadata);
   };
   const agent = createAgentCalls({ surfaces, send, emit: events.emit });
@@ -150,7 +169,10 @@ export function createA2uiClient(options: A2uiClientOptions = {}): A2uiClient {
   return {
     registry,
     receive: (input) => {
-      for (const message of parseMessages(input, (text) => { rt.diagnose({ code: ERROR_CODES.validation, message: text }); })) receiveMessage(rt, message);
+      for (const message of parseMessages(input, (text) => {
+        rt.diagnose({ code: ERROR_CODES.validation, message: text });
+      }))
+        receiveMessage(rt, message);
     },
     capabilities: (opts) => ({
       'v1.0': { supportedCatalogIds: registry.catalogIds(), ...(opts?.inline === true ? { inlineCatalogs: [...catalogs] } : {}) },
@@ -158,9 +180,10 @@ export function createA2uiClient(options: A2uiClientOptions = {}): A2uiClient {
     surfaceIds: () => [...surfaces.keys()],
     surface: (id) => surfaces.get(id),
     subscribe: events.subscribe,
-    resolve: (surfaceId, value, scope) => safeResolve(value, rt.envFor(surfaces.get(surfaceId)), scope, (d) => {
-      rt.diagnose(d, surfaceId);
-    }),
+    resolve: (surfaceId, value, scope) =>
+      safeResolve(value, rt.envFor(surfaces.get(surfaceId)), scope, (d) => {
+        rt.diagnose(d, surfaceId);
+      }),
     checks: (surfaceId, checks, scope) => evaluateChecks(checks, rt.envFor(surfaces.get(surfaceId)), scope),
     write: (surfaceId, path, value) => {
       const surface = surfaces.get(surfaceId);

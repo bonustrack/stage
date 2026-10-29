@@ -1,4 +1,3 @@
-
 import { describe, expect, test } from 'bun:test';
 import { internalLinkPath, isAllowedLinkScheme } from '../lib/safeOpenLink';
 
@@ -52,26 +51,41 @@ describe('internalLinkPath', () => {
       ['stage://wallet/send?to=alice', '/wallet/send?to=alice'],
       ['https://stage.box/#/settings/display?theme=dark', '/settings/display?theme=dark'],
       ['https://stage.box/frame?convId=channel72&id=abc', '/frame?convId=channel72&id=abc'],
-    ]) expect(internalLinkPath(url ?? '')).toBe(path);
+    ])
+      expect(internalLinkPath(url ?? '')).toBe(path);
   });
 
   test('never treats other hosts, credentials, ports or schemes as internal', () => {
     for (const url of [
-      'https://example.com/#/settings', 'https://stage.box.evil.test/channel/abc',
-      'https://stage.box@evil.test/#/contacts', 'https://evil.test@stage.box/#/settings',
-      'https://stage.box:8080/#/profile/alice', 'https://stage.box\\@evil.test/#/settings',
-      'https://stage.box./#/settings', 'https://dev.stage.box/#/settings',
-      'javascript:https://stage.box/#/settings', 'file://stage.box/settings',
-      '//stage.box/#/settings', '/settings', 'stage://profile/%ZZ',
-      'stage://channel/bad#fragment', 'https://stage.box/#/channel/bad#fragment',
-    ]) expect(internalLinkPath(url)).toBeNull();
+      'https://example.com/#/settings',
+      'https://stage.box.evil.test/channel/abc',
+      'https://stage.box@evil.test/#/contacts',
+      'https://evil.test@stage.box/#/settings',
+      'https://stage.box:8080/#/profile/alice',
+      'https://stage.box\\@evil.test/#/settings',
+      'https://stage.box./#/settings',
+      'https://dev.stage.box/#/settings',
+      'javascript:https://stage.box/#/settings',
+      'file://stage.box/settings',
+      '//stage.box/#/settings',
+      '/settings',
+      'stage://profile/%ZZ',
+      'stage://channel/bad#fragment',
+      'https://stage.box/#/channel/bad#fragment',
+    ])
+      expect(internalLinkPath(url)).toBeNull();
   });
 
   test('never routes a stage.box link to a path the router opens as another site', () => {
     for (const url of [
-      'https://stage.box//evil.test/', 'https://stage.box/#//evil.test', 'https://stage.box/#///evil.test',
-      'stage:///evil.test', 'stage:////evil.test', 'metro:///evil.test',
-    ]) expect(internalLinkPath(url)).toBeNull();
+      'https://stage.box//evil.test/',
+      'https://stage.box/#//evil.test',
+      'https://stage.box/#///evil.test',
+      'stage:///evil.test',
+      'stage:////evil.test',
+      'metro:///evil.test',
+    ])
+      expect(internalLinkPath(url)).toBeNull();
   });
 
   test('keeps preview-build launch actions outside the app router', () => {

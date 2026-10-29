@@ -1,11 +1,30 @@
 import {
-  createGroupWith, addGroupMembersWith, requireValidMembers, currentMemberAddresses, updateGroupMetaWith, groupEditRightsOf, groupRoleOf,
-  type CreateGroupResult, type GroupEditRights, type GroupMetaPatch,
+  createGroupWith,
+  addGroupMembersWith,
+  requireValidMembers,
+  currentMemberAddresses,
+  updateGroupMetaWith,
+  groupEditRightsOf,
+  groupRoleOf,
+  type CreateGroupResult,
+  type GroupEditRights,
+  type GroupMetaPatch,
 } from '@stage-labs/client/xmtp/groups';
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  addLabel, asGroup, assignedAddresses, channelFieldOf, moveLabel, removeLabel, renameLabels, stringList, writeAssigned, writeChannelField,
-  writeLabels, type ChannelField, type Group,
+  addLabel,
+  asGroup,
+  assignedAddresses,
+  channelFieldOf,
+  moveLabel,
+  removeLabel,
+  renameLabels,
+  stringList,
+  writeAssigned,
+  writeChannelField,
+  writeLabels,
+  type ChannelField,
+  type Group,
 } from '@stage-labs/client/xmtp/labels';
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { uniqueBy } from '@stage-labs/client/collections';
@@ -35,7 +54,7 @@ const latestRefresh = new Map<string, number>();
 let refreshSeq = 0;
 
 function hasGroupRow(convId: string): boolean {
-  return getCachedRows()?.some(r => r.convId === convId && r.peerAddress == null) ?? false;
+  return getCachedRows()?.some((r) => r.convId === convId && r.peerAddress == null) ?? false;
 }
 
 async function loadGroupRow(convId: string, seq: number): Promise<void> {
@@ -58,7 +77,10 @@ export async function createGroup(addresses: string[], appData?: string, name?: 
   const context = await accountClient();
   const { client } = context;
   const created = await createGroupWith(
-    addresses, lineOfConv, (members) => sdk.newGroup(client, members, { appData, name }), (address) => sdk.inboxIdOfAddress(client, address),
+    addresses,
+    lineOfConv,
+    (members) => sdk.newGroup(client, members, { appData, name }),
+    (address) => sdk.inboxIdOfAddress(client, address),
   );
   markFreshFeed(created.line);
   rememberChannelMember(context, created.id);
@@ -100,7 +122,11 @@ export async function updateGroupAssigned(convId: string, assigned: string[]): P
     return await writeAssigned(group, assigned, async () => {
       const client = await sdk.client();
       const members = await conv.members();
-      return currentMemberAddresses(assignedAddresses(assigned), members.map(member => member.inboxId), address => sdk.inboxIdOfAddress(client, address));
+      return currentMemberAddresses(
+        assignedAddresses(assigned),
+        members.map((member) => member.inboxId),
+        (address) => sdk.inboxIdOfAddress(client, address),
+      );
     });
   } finally {
     refreshGroupRow(convId);
@@ -140,23 +166,27 @@ export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
 
 function patchRow(convId: string | null, patch: (row: CachedRow) => Partial<CachedRow>): void {
   const rows = getCachedRows();
-  const cur = rows?.find(r => r.convId === convId);
+  const cur = rows?.find((r) => r.convId === convId);
   if (!rows || !cur) return;
-  setCachedRows(rows.map(r => (r === cur ? { ...r, ...patch(r) } : r)));
+  setCachedRows(rows.map((r) => (r === cur ? { ...r, ...patch(r) } : r)));
 }
 
 function patchRowLabels(convId: string | null, next: (labels: string[]) => string[]): void {
-  patchRow(convId, r => ({ labels: next(stringList(r.labels)) }));
+  patchRow(convId, (r) => ({ labels: next(stringList(r.labels)) }));
 }
 
-interface LabelWrites { base: string[]; pending: number; failed: boolean }
+interface LabelWrites {
+  base: string[];
+  pending: number;
+  failed: boolean;
+}
 const labelWrites = new Map<string, LabelWrites>();
 
 function startLabelWrite(convId: string | null): LabelWrites | null {
   if (convId === null) return null;
   let writes = labelWrites.get(convId);
   if (!writes) {
-    const row = getCachedRows()?.find(r => r.convId === convId);
+    const row = getCachedRows()?.find((r) => r.convId === convId);
     if (!row) return null;
     writes = { base: stringList(row.labels), pending: 0, failed: false };
     labelWrites.set(convId, writes);
@@ -213,11 +243,18 @@ export async function renameGroupLabel(line: string, from: string, to: string): 
 }
 
 export async function setGroupField(
-  line: string, field: ChannelField, value: string | null, expected?: string | null,
+  line: string,
+  field: ChannelField,
+  value: string | null,
+  expected?: string | null,
 ): Promise<string | null> {
   const convId = convIdOfLine(line);
   if (expected === undefined) patchRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
-  try { return await writeChannelField(await groupOfLine(line), field, value, expected); } finally { refreshGroupRow(convId); }
+  try {
+    return await writeChannelField(await groupOfLine(line), field, value, expected);
+  } finally {
+    refreshGroupRow(convId);
+  }
 }
 
 export function setGroupCategory(line: string, category: string | null): Promise<string | null> {
@@ -225,7 +262,10 @@ export function setGroupCategory(line: string, category: string | null): Promise
 }
 
 function knownLabels(): string[] {
-  const labels = uniqueBy((getCachedRows() ?? []).flatMap(row => stringList(row.labels)), label => label.toLowerCase());
+  const labels = uniqueBy(
+    (getCachedRows() ?? []).flatMap((row) => stringList(row.labels)),
+    (label) => label.toLowerCase(),
+  );
   return labels.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 

@@ -31,31 +31,69 @@ function useSharedComposer(share: Extract<IncomingShare, { status: 'ready' }>) {
   current.current = state;
   useEffect(() => {
     prepareAttachments(fileInputs(state.pending));
-    return () => { forgetAttachments(fileInputs(current.current.pending)); };
+    return () => {
+      forgetAttachments(fileInputs(current.current.pending));
+    };
   }, []);
   return state;
 }
 
-function ShareSessionBody({ send, selection, state, accountLabel, picker, onChoose }: {
-  send: ReturnType<typeof useShareSender>; selection: ShareSelection | null; state: ComposerState;
-  accountLabel: string; picker: ReactNode; onChoose: () => void;
+function ShareSessionBody({
+  send,
+  selection,
+  state,
+  accountLabel,
+  picker,
+  onChoose,
+}: {
+  send: ReturnType<typeof useShareSender>;
+  selection: ShareSelection | null;
+  state: ComposerState;
+  accountLabel: string;
+  picker: ReactNode;
+  onChoose: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const waiting = send.sent || send.busy || send.closed;
   return (
     <Column gap={12}>
       {send.error === null ? null : <Text color="danger">{send.error}</Text>}
-      {waiting ? <Text>{send.sent ? 'Your share was sent.' : send.closed ? 'Closing this share…' : 'Finishing the share you confirmed…'}</Text> : selection === null ? picker : (
-        <ShareReview destination={selection.destination} state={state} account={accountLabel} busy={send.busy}
-          onChoose={onChoose} onSubmit={() => { void send.sender.send(); }}/>
+      {waiting ? (
+        <Text>{send.sent ? 'Your share was sent.' : send.closed ? 'Closing this share…' : 'Finishing the share you confirmed…'}</Text>
+      ) : selection === null ? (
+        picker
+      ) : (
+        <ShareReview
+          destination={selection.destination}
+          state={state}
+          account={accountLabel}
+          busy={send.busy}
+          onChoose={onChoose}
+          onSubmit={() => {
+            void send.sender.send();
+          }}
+        />
       )}
-      <Button dark={dark} label={send.sent ? 'Close' : 'Cancel share'} variant="soft" color="secondary" disabled={send.busy} onPress={send.close}/>
+      <Button
+        dark={dark}
+        label={send.sent ? 'Close' : 'Cancel share'}
+        variant="soft"
+        color="secondary"
+        disabled={send.busy}
+        onPress={send.close}
+      />
     </Column>
   );
 }
 
-export function ShareSession({ share, active, onDismiss }: {
-  share: Extract<IncomingShare, { status: 'ready' }>; active: boolean; onDismiss: (keepFiles: boolean) => Promise<void>;
+export function ShareSession({
+  share,
+  active,
+  onDismiss,
+}: {
+  share: Extract<IncomingShare, { status: 'ready' }>;
+  active: boolean;
+  onDismiss: (keepFiles: boolean) => Promise<void>;
 }): React.ReactElement {
   const state = useSharedComposer(share);
   const epoch = useAccountEpoch();
@@ -75,15 +113,37 @@ export function ShareSession({ share, active, onDismiss }: {
     try {
       await checkShareDestination(accountReady, epoch, destination);
       setSelected({ destination, accountId: accountReady, epoch });
-    } catch { send.setError('This channel is not ready to receive shares. Choose another channel or refresh.'); }
-    finally { setChecking(false); }
+    } catch {
+      send.setError('This channel is not ready to receive shares. Choose another channel or refresh.');
+    } finally {
+      setChecking(false);
+    }
   };
-  const accountLabel = account?.id === accountReady ? account.label ?? account.address : 'Opening account…';
+  const accountLabel = account?.id === accountReady ? (account.label ?? account.address) : 'Opening account…';
   return (
     <AppModal visible={active} title={sessionTitle(send.sent, selection !== null)} onClose={send.close} dismissable={!send.busy}>
-      <ShareSessionBody send={send} selection={selection} state={state} accountLabel={accountLabel} onChoose={() => { setSelected(null); }}
-        picker={<SharePicker rows={shareDestinations(list.rows, cleared, '')} loading={list.loading || accountReady === null}
-          checking={checking} error={list.error} account={accountLabel} onChoose={row => { void choose(row); }} onRetry={list.refresh}/>}/>
+      <ShareSessionBody
+        send={send}
+        selection={selection}
+        state={state}
+        accountLabel={accountLabel}
+        onChoose={() => {
+          setSelected(null);
+        }}
+        picker={
+          <SharePicker
+            rows={shareDestinations(list.rows, cleared, '')}
+            loading={list.loading || accountReady === null}
+            checking={checking}
+            error={list.error}
+            account={accountLabel}
+            onChoose={(row) => {
+              void choose(row);
+            }}
+            onRetry={list.refresh}
+          />
+        }
+      />
     </AppModal>
   );
 }

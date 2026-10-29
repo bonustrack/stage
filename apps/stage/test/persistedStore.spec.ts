@@ -17,8 +17,8 @@ const storage = {
 
 mock.module('../platform/storage', () => ({ appStorage: storage, secureStorage: {} }));
 mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => activeId === null ? null : { id: activeId },
-  getActiveAccountStrict: async () => activeId === null ? null : { id: activeId },
+  getActiveAccount: async () => (activeId === null ? null : { id: activeId }),
+  getActiveAccountStrict: async () => (activeId === null ? null : { id: activeId }),
 }));
 const { createValueStore } = await import('../lib/persistedStore');
 
@@ -48,14 +48,14 @@ describe('persisted value stores', () => {
   test('keeps the existing per-account key and loads before updating', async () => {
     values.set('counter.alice', '4');
     const store = accountStore();
-    await store.update(n => n + 1);
+    await store.update((n) => n + 1);
     expect(store.get()).toBe(5);
     expect(values.get('counter.alice')).toBe('5');
   });
 
   test('composes concurrent updates against the latest value', async () => {
     const store = accountStore();
-    await Promise.all([store.update(n => n + 1), store.update(n => n + 1)]);
+    await Promise.all([store.update((n) => n + 1), store.update((n) => n + 1)]);
     expect(store.get()).toBe(2);
     expect(values.get('counter.alice')).toBe('2');
   });
@@ -66,7 +66,7 @@ describe('persisted value stores', () => {
     const store = accountStore();
     await store.load();
     activeId = 'bob';
-    await store.update(n => n + 1);
+    await store.update((n) => n + 1);
     expect(store.get()).toBe(9);
     expect(values.get('counter.alice')).toBe('4');
     expect(values.get('counter.bob')).toBe('9');
@@ -78,7 +78,7 @@ describe('persisted value stores', () => {
     await store.load();
     activeId = 'bob';
     failRead = true;
-    await expect(store.update(n => n + 1)).rejects.toThrow('storage unavailable');
+    await expect(store.update((n) => n + 1)).rejects.toThrow('storage unavailable');
     expect(store.get()).toBe(4);
     expect(writes).toEqual([]);
     expect(values.get('counter.alice')).toBe('4');
@@ -99,17 +99,17 @@ describe('persisted value stores', () => {
     expect(store.accountId()).toBeNull();
     await store.load();
     expect(store.accountId()).toBe('alice');
-    await store.update(n => n + 1, 'bob');
-    await store.update(n => n + 10, 'alice');
+    await store.update((n) => n + 1, 'bob');
+    await store.update((n) => n + 10, 'alice');
     expect(store.get()).toBe(14);
     expect(values.has('counter.bob')).toBe(false);
   });
 
   test('does not persist without an account or when an update is unchanged', async () => {
     const store = accountStore();
-    await store.update(n => n);
+    await store.update((n) => n);
     activeId = null;
-    await store.update(n => n + 1);
+    await store.update((n) => n + 1);
     expect(store.get()).toBe(1);
     expect(writes).toEqual([]);
   });
@@ -120,9 +120,9 @@ describe('persisted value stores', () => {
     const store = accountStore();
     expect(await store.loadFor('bob')).toBe(8);
     expect(await store.loadFor('carol')).toBe(0);
-    await store.updateFor('bob', n => n + 1);
-    await store.updateFor('alice', n => n + 10);
-    await store.updateFor('carol', n => n);
+    await store.updateFor('bob', (n) => n + 1);
+    await store.updateFor('alice', (n) => n + 10);
+    await store.updateFor('carol', (n) => n);
     expect(store.get()).toBe(14);
     expect(values.get('counter.bob')).toBe('9');
     expect(values.has('counter.carol')).toBe(false);
@@ -132,12 +132,16 @@ describe('persisted value stores', () => {
     values.set('counter.alice', '4');
     values.set('counter.bob', '8');
     const store = createValueStore({
-      key: 'counter.', default: 1, deserialize: Number, perAccount: true, restore: (local: number, stored: number) => local * stored,
+      key: 'counter.',
+      default: 1,
+      deserialize: Number,
+      perAccount: true,
+      restore: (local: number, stored: number) => local * stored,
     });
     store.set(3);
     expect(await store.load()).toBe(12);
     activeId = 'bob';
-    await store.update(n => n);
+    await store.update((n) => n);
     expect(store.get()).toBe(8);
   });
 });

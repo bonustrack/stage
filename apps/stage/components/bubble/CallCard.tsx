@@ -24,7 +24,9 @@ function useTicking(ticking: boolean): void {
   useEffect(() => {
     if (!ticking) return;
     const id = setInterval(render, TICK_MS);
-    return (): void => { clearInterval(id); };
+    return (): void => {
+      clearInterval(id);
+    };
   }, [ticking]);
 }
 
@@ -49,18 +51,27 @@ export function CallCard({ record, line }: { record: CallRecord; line: string })
   };
   return (
     <Pressable
-      testID="call-card" accessibilityRole="button" accessibilityLabel={`${model.title}, ${model.status}`}
-      accessibilityState={{ disabled: !pressable }} disabled={!pressable} onPress={onPress}
-      pressedOpacity={0.85} style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }} {...hoverProps}
+      testID="call-card"
+      accessibilityRole="button"
+      accessibilityLabel={`${model.title}, ${model.status}`}
+      accessibilityState={{ disabled: !pressable }}
+      disabled={!pressable}
+      onPress={onPress}
+      pressedOpacity={0.85}
+      style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}
+      {...hoverProps}
     >
       <Card dark={scheme === 'dark'} background={pal.bg} padding={12}>
         <IconTileRow
-          title={model.title} titleColor={hovered && pressable ? pal.link : pal.text} subtitle={model.status} tabular
-          icon={<Glyph icon={record.video ? IconVideo : IconCall} size={24} color={toneColor(model, pal)}/>}
+          title={model.title}
+          titleColor={hovered && pressable ? pal.link : pal.text}
+          subtitle={model.status}
+          tabular
+          icon={<Glyph icon={record.video ? IconVideo : IconCall} size={24} color={toneColor(model, pal)} />}
         >
           {pressable && model.action === 'join' ? (
             <Column pointerEvents="none" aria-hidden>
-              <Button variant="primary" size="sm" pill label="Join" tintBg={pal.success} tintFg={pal.bg} focusable={false}/>
+              <Button variant="primary" size="sm" pill label="Join" tintBg={pal.success} tintFg={pal.bg} focusable={false} />
             </Column>
           ) : null}
         </IconTileRow>

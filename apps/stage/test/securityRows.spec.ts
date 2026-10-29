@@ -1,13 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  BACKUP_PHRASE_COPY, SHOW_PHRASE_COPY, SHOWN_PHRASE_TIMEOUT_MS,
-  phrasePanelActions, phraseRowCopy, securityRows, type SecurityRowsInput,
+  BACKUP_PHRASE_COPY,
+  SHOW_PHRASE_COPY,
+  SHOWN_PHRASE_TIMEOUT_MS,
+  phrasePanelActions,
+  phraseRowCopy,
+  securityRows,
+  type SecurityRowsInput,
 } from '../components/settings/SecuritySettings.model';
 
-const SMART: SecurityRowsInput = {
-  isSmart: true, backedUp: true,
-  canExportKey: false, keyRevealed: false,
-};
+const SMART: SecurityRowsInput = { isSmart: true, backedUp: true, canExportKey: false, keyRevealed: false };
 
 describe('securityRows', () => {
   test('a backed-up smart account only offers its recovery phrase', () => {

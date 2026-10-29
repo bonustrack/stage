@@ -1,17 +1,5 @@
 {
   "extends": "@stage-labs/config/tsconfig/base.json",
-  "compilerOptions": {
-    "jsx": "react-jsx",
-    "types": [
-      "vite/client"
-    ]
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "stories/**/*.tsx",
-    "gallery/**/*.ts",
-    "gallery/**/*.tsx",
-    "vite.config.ts"
-  ]
+  "compilerOptions": { "jsx": "react-jsx", "types": ["vite/client"] },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "stories/**/*.tsx", "gallery/**/*.ts", "gallery/**/*.tsx", "vite.config.ts"]
 }

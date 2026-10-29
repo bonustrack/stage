@@ -181,8 +181,16 @@ const close: Op = async (storage) => {
 };
 
 const OPS: Record<string, Op> = {
-  register, key: readKey, challenge, consume, session: openSession, auth: authorize, delete: remove, close,
-  signedList: signedIn(list), signedRead: signedIn(read),
+  register,
+  key: readKey,
+  challenge,
+  consume,
+  session: openSession,
+  auth: authorize,
+  delete: remove,
+  close,
+  signedList: signedIn(list),
+  signedRead: signedIn(read),
 };
 
 async function store(request: Request, storage: MailStorage): Promise<Response> {
@@ -197,7 +205,13 @@ async function store(request: Request, storage: MailStorage): Promise<Response> 
   const usage = (typeof used === 'number' ? used : 0) + bytes.byteLength;
   if (usage > MAILBOX_MAX_BYTES) return done(507);
   await putChunks(storage, bytes, bodyPrefix(id));
-  const record: MailRecord = { id, ts: Number(id.slice(0, 13)), owner, size: bytes.byteLength, index: request.headers.get('x-mail-index') ?? '' };
+  const record: MailRecord = {
+    id,
+    ts: Number(id.slice(0, 13)),
+    owner,
+    size: bytes.byteLength,
+    index: request.headers.get('x-mail-index') ?? '',
+  };
   await storage.put({ [mailKey(id)]: record, [USAGE]: usage });
   return done(204);
 }

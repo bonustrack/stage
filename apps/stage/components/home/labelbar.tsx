@@ -5,9 +5,7 @@ import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { channelsLabelChips, selectChannelsFilter } from './model';
 import { LabelChip } from '../LabelChip';
-import {
-  clearSearchFilters, setSearchQuery, toggleSearchLabel, toggleSearchUnread, useSearchState,
-} from '../../lib/searchState';
+import { clearSearchFilters, setSearchQuery, toggleSearchLabel, toggleSearchUnread, useSearchState } from '../../lib/searchState';
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, Row, PAGE_GUTTER, LIST_TOP_GAP } from '../layout';
 
@@ -23,8 +21,13 @@ export function useHomeFilters(): {
   const search = useSearchState();
   const enabledLabels = useMemo(() => new Set(search.labels), [search.labels]);
   return {
-    enabledLabels, toggleLabel: toggleSearchLabel, unreadOnly: search.unreadOnly, toggleUnread: toggleSearchUnread,
-    clearAllFilters: clearSearchFilters, query: search.query, setQuery: setSearchQuery,
+    enabledLabels,
+    toggleLabel: toggleSearchLabel,
+    unreadOnly: search.unreadOnly,
+    toggleUnread: toggleSearchUnread,
+    clearAllFilters: clearSearchFilters,
+    query: search.query,
+    setQuery: setSearchQuery,
   };
 }
 
@@ -33,7 +36,14 @@ const STRETCH = { alignSelf: 'stretch' } as const;
 const WEB = Platform.OS === 'web';
 const ChipPress = WEB ? GesturePressable : Pressable;
 
-export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggleUnread, onClearAll }: {
+export function LabelFilterBar({
+  labels,
+  enabled,
+  unreadOnly,
+  onToggle,
+  onToggleUnread,
+  onClearAll,
+}: {
   labels: string[];
   enabled: Set<string>;
   unreadOnly: boolean;
@@ -46,16 +56,18 @@ export function LabelFilterBar({ labels, enabled, unreadOnly, onToggle, onToggle
     selectChannelsFilter({ onClearAll, onToggleUnread, onToggleLabel: onToggle }, value);
   };
 
-  const gesture = useMemo(
-    () => (WEB ? Gesture.Native() : Gesture.Native().disallowInterruption(true).shouldCancelWhenOutside(false)),
-    [],
-  );
+  const gesture = useMemo(() => (WEB ? Gesture.Native() : Gesture.Native().disallowInterruption(true).shouldCancelWhenOutside(false)), []);
 
   const scroll = (
     <List direction="horizontal" showsHorizontalScrollIndicator={false}>
       <Row gap={8} padding={CHIPS_PADDING}>
         {chips.map((chip) => (
-          <ChipPress key={chip.value === '' ? '__all__' : chip.value} onPress={() => { select(chip.value); }}>
+          <ChipPress
+            key={chip.value === '' ? '__all__' : chip.value}
+            onPress={() => {
+              select(chip.value);
+            }}
+          >
             <LabelChip label={chip.label} selected={chip.selected === true} size="md" />
           </ChipPress>
         ))}

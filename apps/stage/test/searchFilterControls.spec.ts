@@ -1,7 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  FILTER_FIELDS, clearQueryFilters, parseSearchFilter, searchFilterCount, searchQueryText,
-  memberFilterOption, sameSearchFilterValue, searchFilterOptionMatches, selectedSearchFilters, setSearchQueryText, toggleSearchFilter,
+  FILTER_FIELDS,
+  clearQueryFilters,
+  parseSearchFilter,
+  searchFilterCount,
+  searchQueryText,
+  memberFilterOption,
+  sameSearchFilterValue,
+  searchFilterOptionMatches,
+  selectedSearchFilters,
+  setSearchQueryText,
+  toggleSearchFilter,
 } from '../components/searchFilter.model';
 
 describe('separate query and filter controls', () => {
@@ -10,7 +19,12 @@ describe('separate query and filter controls', () => {
     expect(searchQueryText(query)).toBe('release notes');
     const changed = setSearchQueryText(query, 'draft notes ');
     expect(searchQueryText(changed)).toBe('draft notes ');
-    expect(parseSearchFilter(changed)).toMatchObject({ members: ['@me'], categories: ['Stage'], exclude: { statuses: ['In review'] }, text: 'draft notes' });
+    expect(parseSearchFilter(changed)).toMatchObject({
+      members: ['@me'],
+      categories: ['Stage'],
+      exclude: { statuses: ['In review'] },
+      text: 'draft notes',
+    });
     expect(searchFilterCount(changed)).toBe(3);
   });
 
@@ -18,7 +32,11 @@ describe('separate query and filter controls', () => {
     const query = 'category:Stage priority:High release';
     expect(parseSearchFilter(setSearchQueryText(query, ''))).toMatchObject({ categories: ['Stage'], priorities: ['High'], text: '' });
     expect(clearQueryFilters(query)).toBe('release');
-    expect(parseSearchFilter(clearQueryFilters(query, 'category'))).toMatchObject({ categories: [], priorities: ['High'], text: 'release' });
+    expect(parseSearchFilter(clearQueryFilters(query, 'category'))).toMatchObject({
+      categories: [],
+      priorities: ['High'],
+      text: 'release',
+    });
   });
 
   test('toggles every structured field without replacing the free text', () => {
@@ -36,30 +54,37 @@ describe('separate query and filter controls', () => {
     expect(selectedSearchFilters(excluded, 'status')).toEqual(['Done']);
     expect(selectedSearchFilters(excluded, 'status', true)).toEqual(['Blocked', 'todo']);
     expect(selectedSearchFilters(toggleSearchFilter(excluded, 'status', 'TODO', true), 'status', true)).toEqual(['Blocked']);
-    expect(parseSearchFilter(clearQueryFilters(excluded, 'status'))).toMatchObject({ statuses: [], exclude: { statuses: [] }, text: 'release' });
+    expect(parseSearchFilter(clearQueryFilters(excluded, 'status'))).toMatchObject({
+      statuses: [],
+      exclude: { statuses: [] },
+      text: 'release',
+    });
   });
 
-  test.each(['member', 'category', 'status', 'priority', 'label'] as const)('counts only excluded %s selections through toggles and clears', field => {
-    const count = (query: string): number => selectedSearchFilters(query, field, true).length;
-    const included = toggleSearchFilter('release notes', field, 'High');
-    expect(count(included)).toBe(0);
-    const excluded = toggleSearchFilter(included, field, 'Low', true);
-    expect(count(excluded)).toBe(1);
-    expect(searchFilterCount(excluded)).toBe(2);
-    const moved = toggleSearchFilter(excluded, field, 'HIGH', true);
-    expect(count(moved)).toBe(2);
-    expect(selectedSearchFilters(moved, field)).toEqual([]);
-    expect(searchFilterCount(moved)).toBe(2);
-    const removed = toggleSearchFilter(moved, field, 'low', true);
-    expect(count(removed)).toBe(1);
-    expect(count(toggleSearchFilter(removed, field, 'High', true))).toBe(0);
-    for (const cleared of [clearQueryFilters(moved, field), clearQueryFilters(moved)]) {
-      expect(count(cleared)).toBe(0);
-      expect(searchFilterCount(cleared)).toBe(0);
-      expect(searchQueryText(cleared)).toBe('release notes');
-    }
-    expect(count('has:label -status: -label:""')).toBe(0);
-  });
+  test.each(['member', 'category', 'status', 'priority', 'label'] as const)(
+    'counts only excluded %s selections through toggles and clears',
+    (field) => {
+      const count = (query: string): number => selectedSearchFilters(query, field, true).length;
+      const included = toggleSearchFilter('release notes', field, 'High');
+      expect(count(included)).toBe(0);
+      const excluded = toggleSearchFilter(included, field, 'Low', true);
+      expect(count(excluded)).toBe(1);
+      expect(searchFilterCount(excluded)).toBe(2);
+      const moved = toggleSearchFilter(excluded, field, 'HIGH', true);
+      expect(count(moved)).toBe(2);
+      expect(selectedSearchFilters(moved, field)).toEqual([]);
+      expect(searchFilterCount(moved)).toBe(2);
+      const removed = toggleSearchFilter(moved, field, 'low', true);
+      expect(count(removed)).toBe(1);
+      expect(count(toggleSearchFilter(removed, field, 'High', true))).toBe(0);
+      for (const cleared of [clearQueryFilters(moved, field), clearQueryFilters(moved)]) {
+        expect(count(cleared)).toBe(0);
+        expect(searchFilterCount(cleared)).toBe(0);
+        expect(searchQueryText(cleared)).toBe('release notes');
+      }
+      expect(count('has:label -status: -label:""')).toBe(0);
+    },
+  );
 
   test('member handle aliases toggle the same selection', () => {
     expect(toggleSearchFilter('member:emma123 hello', 'member', '@Emma123')).toBe('hello');
@@ -75,7 +100,7 @@ describe('separate query and filter controls', () => {
     const resolved = memberFilterOption(address, '@emma123', ['@emma123', 'emma123.stage.base.eth', 'Emma']);
     const query = toggleSearchFilter('hello', 'member', pending.value);
     expect(resolved.value).toBe(pending.value);
-    expect(selectedSearchFilters(query, 'member').every(value => searchFilterOptionMatches('member', resolved, value))).toBe(true);
+    expect(selectedSearchFilters(query, 'member').every((value) => searchFilterOptionMatches('member', resolved, value))).toBe(true);
     expect(toggleSearchFilter(query, 'member', resolved.value, false, resolved.aliases)).toBe('hello');
     const excluded = toggleSearchFilter(`${query} member:emma123`, 'member', resolved.value, true, resolved.aliases);
     expect(selectedSearchFilters(excluded, 'member')).toEqual([]);
@@ -85,7 +110,11 @@ describe('separate query and filter controls', () => {
 
   test('filter edits preserve quoted names in other and same-field selections', () => {
     const query = 'category:"Client "A" work" priority:High notes';
-    for (const changed of [toggleSearchFilter(query, 'status', 'Todo'), clearQueryFilters(query, 'priority'), toggleSearchFilter(query, 'category', 'Other')]) {
+    for (const changed of [
+      toggleSearchFilter(query, 'status', 'Todo'),
+      clearQueryFilters(query, 'priority'),
+      toggleSearchFilter(query, 'category', 'Other'),
+    ]) {
       expect(selectedSearchFilters(changed, 'category')).toContain('Client "A" work');
       expect(searchQueryText(changed)).toBe('notes');
     }

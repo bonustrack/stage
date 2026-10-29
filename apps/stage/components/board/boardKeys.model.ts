@@ -20,10 +20,13 @@ function sideways(columns: readonly NavColumn[], from: number, step: number, row
 }
 
 export function boardArrowMove(
-  columns: readonly NavColumn[], columnIndex: number, convId: string | null, arrow: Arrow,
+  columns: readonly NavColumn[],
+  columnIndex: number,
+  convId: string | null,
+  arrow: Arrow,
 ): BoardCardRef | null {
   const column = columns[columnIndex];
-  const row = column?.rows.findIndex(r => r.convId === convId) ?? -1;
+  const row = column?.rows.findIndex((r) => r.convId === convId) ?? -1;
   if (column === undefined || row === -1) return null;
   if (arrow === 'ArrowLeft' || arrow === 'ArrowRight') {
     return sideways(columns, columnIndex, arrow === 'ArrowLeft' ? -1 : 1, row);

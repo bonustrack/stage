@@ -1,7 +1,5 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import {
-  dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress, repairDmMembership,
-} from './xmtp.conv';
+import { dmUnreachableReason, findExistingDmWithAddress, openDmWithAddress, repairDmMembership } from './xmtp.conv';
 import { xmtpClient } from './xmtp.client';
 import { perfTime } from './perf';
 import { recover } from './errorPolicy';

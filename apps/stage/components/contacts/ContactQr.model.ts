@@ -17,8 +17,12 @@ export function parseContactQr(value: string): string | null {
   return publicAddress(address);
 }
 
-export function contactScanResult(value: string, ownAddress: string, selection: number, currentSelection: number):
-  { path: string; error?: never } | { error: string; path?: never } | null {
+export function contactScanResult(
+  value: string,
+  ownAddress: string,
+  selection: number,
+  currentSelection: number,
+): { path: string; error?: never } | { error: string; path?: never } | null {
   if (selection !== currentSelection) return null;
   const address = parseContactQr(value);
   if (address === null) return { error: 'Use a Stage contact QR code or a public address.' };

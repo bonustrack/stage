@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -47,31 +46,36 @@ function deliver(r: ImagePicker.ImagePickerResult, props: FilePickerProps): void
 }
 
 async function runLibrary(props: FilePickerProps): Promise<void> {
-  deliver(await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: toImageMediaTypes(props.mediaTypes),
-    quality: props.quality,
-    allowsMultipleSelection: props.multiple,
-    selectionLimit: props.selectionLimit,
-    allowsEditing: props.allowsEditing,
-    aspect: props.aspect,
-  }), props);
+  deliver(
+    await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: toImageMediaTypes(props.mediaTypes),
+      quality: props.quality,
+      allowsMultipleSelection: props.multiple,
+      selectionLimit: props.selectionLimit,
+      allowsEditing: props.allowsEditing,
+      aspect: props.aspect,
+    }),
+    props,
+  );
 }
 
 async function runCamera(props: FilePickerProps): Promise<void> {
   const perm = await ImagePicker.requestCameraPermissionsAsync();
-  if (!perm.granted) { props.onCancel?.(); return; }
+  if (!perm.granted) {
+    props.onCancel?.();
+    return;
+  }
   deliver(await ImagePicker.launchCameraAsync({ mediaTypes: toImageMediaTypes(props.mediaTypes), quality: props.quality }), props);
 }
 
 async function runDocument(props: FilePickerProps): Promise<void> {
   const r = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
   const asset = r.canceled ? undefined : r.assets[0];
-  if (asset === undefined) { props.onCancel?.(); return; }
-  props.onPick?.([{
-    uri: asset.uri,
-    mime: asset.mimeType ?? 'application/octet-stream',
-    name: asset.name,
-  }]);
+  if (asset === undefined) {
+    props.onCancel?.();
+    return;
+  }
+  props.onPick?.([{ uri: asset.uri, mime: asset.mimeType ?? 'application/octet-stream', name: asset.name }]);
 }
 
 function runPicker(props: FilePickerProps): void {

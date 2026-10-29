@@ -25,7 +25,10 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
     if (count === 0 || submitting) return;
     setSubmitting(true);
     try {
-      await addGroupMembers(convId, members.map(m => m.address));
+      await addGroupMembers(
+        convId,
+        members.map((m) => m.address),
+      );
       refreshConv(convId);
       onDone();
       capabilities.toast(count === 1 ? 'Member added' : `${count} members added`);
@@ -37,10 +40,22 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
 
   return (
     <Column gap={16}>
-      <MemberPicker state={picker} dark={dark} exclude={memberAddrs}/>
-      <Button variant="primary" size="lg" fullWidth pill dark={dark} loading={submitting} disabled={count === 0}
-        tintBg={primary} tintFg={bg} label={count > 0 ? `Add to channel (${count})` : 'Add to channel'}
-        onPress={() => { void submit(); }}/>
+      <MemberPicker state={picker} dark={dark} exclude={memberAddrs} />
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth
+        pill
+        dark={dark}
+        loading={submitting}
+        disabled={count === 0}
+        tintBg={primary}
+        tintFg={bg}
+        label={count > 0 ? `Add to channel (${count})` : 'Add to channel'}
+        onPress={() => {
+          void submit();
+        }}
+      />
     </Column>
   );
 }
@@ -48,10 +63,12 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
 export function AddMembersHost(): React.ReactElement {
   const convId = useAddMembersConv();
   const pathname = usePathname();
-  useEffect(() => { closeAddMembers(); }, [pathname]);
+  useEffect(() => {
+    closeAddMembers();
+  }, [pathname]);
   return (
     <AppModal visible={convId !== null} onClose={closeAddMembers} title="Add members">
-      {convId === null ? null : <AddMembersForm key={convId} convId={convId} onDone={closeAddMembers}/>}
+      {convId === null ? null : <AddMembersForm key={convId} convId={convId} onDone={closeAddMembers} />}
     </AppModal>
   );
 }

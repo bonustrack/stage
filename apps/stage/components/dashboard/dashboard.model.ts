@@ -1,6 +1,14 @@
 import {
-  DASHBOARD_FRAME_KIND, DASHBOARD_HEIGHTS, DASHBOARD_LIVE_KIND, DASHBOARD_MAX_WIDGETS, DASHBOARD_WIDTHS,
-  type DashboardHeight, type DashboardSource, type DashboardWidget, type DashboardWidth, type LiveSource,
+  DASHBOARD_FRAME_KIND,
+  DASHBOARD_HEIGHTS,
+  DASHBOARD_LIVE_KIND,
+  DASHBOARD_MAX_WIDGETS,
+  DASHBOARD_WIDTHS,
+  type DashboardHeight,
+  type DashboardSource,
+  type DashboardWidget,
+  type DashboardWidth,
+  type LiveSource,
 } from '@stage-labs/client/xmtp/readState';
 
 export const DASHBOARD_ROW = 128;
@@ -9,14 +17,17 @@ const WIDE_GRID_MIN = 560;
 const SPAN: Readonly<Record<DashboardWidth, number>> = { full: 4, half: 2, quarter: 1 };
 const WIDTH_LABEL: Readonly<Record<DashboardWidth, string>> = { full: 'Full', half: 'Half', quarter: 'Quarter' };
 
-interface WidgetSize { w?: DashboardWidth; h?: DashboardHeight }
+interface WidgetSize {
+  w?: DashboardWidth;
+  h?: DashboardHeight;
+}
 
 function heightLabel(h: number): string {
   return `${h * DASHBOARD_ROW}\u00a0px`;
 }
 
-export const WIDTH_OPTIONS = DASHBOARD_WIDTHS.map(value => ({ value, label: WIDTH_LABEL[value] }));
-export const HEIGHT_OPTIONS = DASHBOARD_HEIGHTS.map(value => ({ value, label: heightLabel(value) }));
+export const WIDTH_OPTIONS = DASHBOARD_WIDTHS.map((value) => ({ value, label: WIDTH_LABEL[value] }));
+export const HEIGHT_OPTIONS = DASHBOARD_HEIGHTS.map((value) => ({ value, label: heightLabel(value) }));
 
 export function canAddWidget(widgets: readonly DashboardWidget[]): boolean {
   return widgets.length < DASHBOARD_MAX_WIDGETS;
@@ -38,38 +49,45 @@ function sameSource(widget: DashboardWidget, source: DashboardSource): boolean {
 }
 
 export function frameWidgetAdd(widgets: readonly DashboardWidget[], source: DashboardSource): FrameWidgetAdd {
-  if (widgets.some(widget => sameSource(widget, source))) return 'exists';
+  if (widgets.some((widget) => sameSource(widget, source))) return 'exists';
   return canAddWidget(widgets) ? 'added' : 'full';
 }
 
 export function addFrameWidget(widgets: DashboardWidget[], id: string, source: DashboardSource, w: DashboardWidth): DashboardWidget[] {
-  if (frameWidgetAdd(widgets, source) !== 'added' || widgets.some(widget => widget.id === id)) return widgets;
+  if (frameWidgetAdd(widgets, source) !== 'added' || widgets.some((widget) => widget.id === id)) return widgets;
   return [...widgets, { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_FRAME_KIND, source }];
 }
 
 export function liveWidgetAdd(widgets: readonly DashboardWidget[], url: string): FrameWidgetAdd {
-  if (widgets.some(widget => widget.kind === DASHBOARD_LIVE_KIND && widget.source.url === url)) return 'exists';
+  if (widgets.some((widget) => widget.kind === DASHBOARD_LIVE_KIND && widget.source.url === url)) return 'exists';
   return canAddWidget(widgets) ? 'added' : 'full';
 }
 
 export function addLiveWidget(widgets: DashboardWidget[], id: string, source: LiveSource, w: DashboardWidth): DashboardWidget[] {
-  if (liveWidgetAdd(widgets, source.url) !== 'added' || widgets.some(widget => widget.id === id)) return widgets;
-  const widget: DashboardWidget = { id, w, h: FRAME_WIDGET_HEIGHT, kind: DASHBOARD_LIVE_KIND, source: { url: source.url }, key: source.key };
+  if (liveWidgetAdd(widgets, source.url) !== 'added' || widgets.some((widget) => widget.id === id)) return widgets;
+  const widget: DashboardWidget = {
+    id,
+    w,
+    h: FRAME_WIDGET_HEIGHT,
+    kind: DASHBOARD_LIVE_KIND,
+    source: { url: source.url },
+    key: source.key,
+  };
   return [...widgets, source.origin === undefined ? widget : { ...widget, origin: source.origin }];
 }
 
 export function removedLiveIds(before: readonly DashboardWidget[], after: readonly DashboardWidget[]): string[] {
-  const kept = new Set(after.map(widget => widget.id));
-  return before.filter(widget => widget.kind === DASHBOARD_LIVE_KIND && !kept.has(widget.id)).map(widget => widget.id);
+  const kept = new Set(after.map((widget) => widget.id));
+  return before.filter((widget) => widget.kind === DASHBOARD_LIVE_KIND && !kept.has(widget.id)).map((widget) => widget.id);
 }
 
 export function removeWidget(widgets: DashboardWidget[], id: string): DashboardWidget[] {
-  const next = widgets.filter(widget => widget.id !== id);
+  const next = widgets.filter((widget) => widget.id !== id);
   return next.length === widgets.length ? widgets : next;
 }
 
 export function resizeWidget(widgets: DashboardWidget[], id: string, size: WidgetSize): DashboardWidget[] {
-  const index = widgets.findIndex(widget => widget.id === id);
+  const index = widgets.findIndex((widget) => widget.id === id);
   const current = widgets[index];
   if (current === undefined) return widgets;
   const next = { ...current, w: size.w ?? current.w, h: size.h ?? current.h };
@@ -78,8 +96,8 @@ export function resizeWidget(widgets: DashboardWidget[], id: string, size: Widge
 }
 
 export function moveWidget(widgets: DashboardWidget[], id: string, targetId: string): DashboardWidget[] {
-  const from = widgets.findIndex(widget => widget.id === id);
-  const to = widgets.findIndex(widget => widget.id === targetId);
+  const from = widgets.findIndex((widget) => widget.id === id);
+  const to = widgets.findIndex((widget) => widget.id === targetId);
   const moved = widgets[from];
   if (moved === undefined || to === -1 || from === to) return widgets;
   const next = widgets.filter((_, i) => i !== from);
@@ -95,9 +113,18 @@ export function widgetSpan(width: DashboardWidth, columns: number): number {
   return Math.min(SPAN[width], columns);
 }
 
-export interface WidgetCell { col: number; row: number; span: number; rows: number }
+export interface WidgetCell {
+  col: number;
+  row: number;
+  span: number;
+  rows: number;
+}
 
-export interface GridLayout { columns: number; rows: number; cells: WidgetCell[] }
+export interface GridLayout {
+  columns: number;
+  rows: number;
+  cells: WidgetCell[];
+}
 
 function isFree(taken: readonly boolean[][], cell: WidgetCell): boolean {
   for (let row = cell.row; row < cell.row + cell.rows; row++) {
@@ -136,12 +163,20 @@ export function packWidgets(widgets: readonly DashboardWidget[], columns: number
   return { columns, rows: taken.length, cells };
 }
 
-export interface WidgetRect { x: number; y: number; width: number; height: number }
+export interface WidgetRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export function cellRects(layout: GridLayout, width: number): WidgetRect[] {
   const column = width / layout.columns;
-  return layout.cells.map(cell => ({
-    x: cell.col * column, y: cell.row * DASHBOARD_ROW, width: cell.span * column, height: cell.rows * DASHBOARD_ROW,
+  return layout.cells.map((cell) => ({
+    x: cell.col * column,
+    y: cell.row * DASHBOARD_ROW,
+    width: cell.span * column,
+    height: cell.rows * DASHBOARD_ROW,
   }));
 }
 
@@ -164,7 +199,10 @@ export function dropTarget(rects: readonly WidgetRect[], x: number, y: number, f
     if (rect === undefined) continue;
     if (contains(rect, x, y)) return i;
     const d = distance(rect, x, y);
-    if (d < best) { best = d; nearest = i; }
+    if (d < best) {
+      best = d;
+      nearest = i;
+    }
   }
   return nearest;
 }

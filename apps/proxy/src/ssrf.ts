@@ -2,22 +2,13 @@ import { concatBytes } from 'viem';
 
 export const UA = 'Mozilla/5.0 (compatible; StageLinkPreview/1.0; +https://stage.box)';
 
-const BLOCKED_HOST_SUFFIXES = [
-  'localhost',
-  '.localhost',
-  '.local',
-  '.internal',
-  '.stage.box',
-];
+const BLOCKED_HOST_SUFFIXES = ['localhost', '.localhost', '.local', '.internal', '.stage.box'];
 
-const BLOCKED_HOSTS = new Set([
-  'stage.box',
-  'metadata.google.internal',
-]);
+const BLOCKED_HOSTS = new Set(['stage.box', 'metadata.google.internal']);
 
 function isIPv4(s: string): boolean {
   const p = s.split('.');
-  return p.length === 4 && p.every(o => /^\d+$/.test(o) && Number(o) <= 255);
+  return p.length === 4 && p.every((o) => /^\d+$/.test(o) && Number(o) <= 255);
 }
 
 export function isPrivateIp(host: string): boolean {
@@ -30,10 +21,10 @@ const PRIVATE_V4_RULES: { a: number; b?: (b: number) => boolean }[] = [
   { a: 10 },
   { a: 127 },
   { a: 0 },
-  { a: 169, b: b => b === 254 },
-  { a: 172, b: b => b >= 16 && b <= 31 },
-  { a: 192, b: b => b === 168 },
-  { a: 100, b: b => b >= 64 && b <= 127 },
+  { a: 169, b: (b) => b === 254 },
+  { a: 172, b: (b) => b >= 16 && b <= 31 },
+  { a: 192, b: (b) => b === 168 },
+  { a: 100, b: (b) => b >= 64 && b <= 127 },
 ];
 
 function isPrivateV4(ip: string): boolean {
@@ -41,7 +32,7 @@ function isPrivateV4(ip: string): boolean {
   const a = parts[0] ?? NaN;
   const b = parts[1] ?? NaN;
   if (a >= 224) return true;
-  return PRIVATE_V4_RULES.some(r => r.a === a && (r.b ? r.b(b) : true));
+  return PRIVATE_V4_RULES.some((r) => r.a === a && (r.b ? r.b(b) : true));
 }
 
 const PRIVATE_V6_EXACT = new Set(['::1', '::']);
@@ -62,7 +53,7 @@ function mappedV4(x: string): string | undefined {
 function isPrivateV6(ip: string): boolean {
   const x = ip.toLowerCase().replace(/^\[|\]$/g, '');
   if (PRIVATE_V6_EXACT.has(x)) return true;
-  if (PRIVATE_V6_PREFIXES.some(p => x.startsWith(p))) return true;
+  if (PRIVATE_V6_PREFIXES.some((p) => x.startsWith(p))) return true;
   const v4 = mappedV4(x);
   return v4 !== undefined ? isPrivateV4(v4) : false;
 }
@@ -70,30 +61,36 @@ function isPrivateV6(ip: string): boolean {
 function isBlockedHost(host: string): boolean {
   const h = host.toLowerCase().replace(/\.+$/, '');
   if (BLOCKED_HOSTS.has(h)) return true;
-  return BLOCKED_HOST_SUFFIXES.some(s => (s.startsWith('.') ? h.endsWith(s) : h === s));
+  return BLOCKED_HOST_SUFFIXES.some((s) => (s.startsWith('.') ? h.endsWith(s) : h === s));
 }
 
 export class SsrfError extends Error {}
 
-async function drain(
-  reader: ReadableStreamDefaultReader<Uint8Array>, maxBytes: number, reject: boolean,
-): Promise<Uint8Array | null> {
+async function drain(reader: ReadableStreamDefaultReader<Uint8Array>, maxBytes: number, reject: boolean): Promise<Uint8Array | null> {
   const chunks: Uint8Array[] = [];
   let total = 0;
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
     if (!value) continue;
-    if (reject && total + value.length > maxBytes) { void reader.cancel(); return null; }
+    if (reject && total + value.length > maxBytes) {
+      void reader.cancel();
+      return null;
+    }
     chunks.push(value);
     total += value.length;
-    if (!reject && total >= maxBytes) { void reader.cancel(); break; }
+    if (!reject && total >= maxBytes) {
+      void reader.cancel();
+      break;
+    }
   }
   return concatBytes(chunks);
 }
 
 export async function readCappedBytes(
-  res: Response, maxBytes: number, mode: 'truncate' | 'reject' = 'truncate',
+  res: Response,
+  maxBytes: number,
+  mode: 'truncate' | 'reject' = 'truncate',
 ): Promise<Uint8Array | null> {
   const reader = res.body?.getReader() as ReadableStreamDefaultReader<Uint8Array> | undefined;
   if (!reader) {
@@ -104,9 +101,7 @@ export async function readCappedBytes(
   return drain(reader, maxBytes, mode === 'reject');
 }
 
-export async function readCappedText(
-  res: Response, maxBytes: number, mode: 'truncate' | 'reject' = 'truncate',
-): Promise<string | null> {
+export async function readCappedText(res: Response, maxBytes: number, mode: 'truncate' | 'reject' = 'truncate'): Promise<string | null> {
   if (!res.body) {
     const text = await res.text();
     if (new TextEncoder().encode(text).length <= maxBytes) return text;

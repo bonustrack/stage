@@ -13,7 +13,14 @@ interface RowRouter {
 
 export const rowDataSet = (convId: string): MarkedNode => ({ dataSet: { channelrow: convId } });
 
-export function useRowArrows({ rows, items, activePath, router, listRef, paused }: {
+export function useRowArrows({
+  rows,
+  items,
+  activePath,
+  router,
+  listRef,
+  paused,
+}: {
   rows: readonly Row[];
   items: readonly HomeListItem[];
   activePath: string;
@@ -21,7 +28,7 @@ export function useRowArrows({ rows, items, activePath, router, listRef, paused 
   listRef: React.RefObject<VirtualListHandle | null>;
   paused: boolean;
 }): void {
-  const open = rows.find(row => isActiveConversationPath(activePath, row.convId, row.peerAddress)) ?? null;
+  const open = rows.find((row) => isActiveConversationPath(activePath, row.convId, row.peerAddress)) ?? null;
   useArrowKeys(open !== null && !paused, VERTICAL_ARROWS, (arrow) => {
     const next = stepRow(rows, open?.convId ?? null, arrow);
     if (next === null) return;

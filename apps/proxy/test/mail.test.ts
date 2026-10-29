@@ -2,10 +2,21 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import { verifyMessage, type Hex } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import {
-  closeMailbox, deleteMail, fetchMail, listMail, openMailSession, registerMailKey, type MailSession,
+  closeMailbox,
+  deleteMail,
+  fetchMail,
+  listMail,
+  openMailSession,
+  registerMailKey,
+  type MailSession,
 } from '@stage-labs/client/mail/api';
 import {
-  MAIL_MAX_BYTES, deriveMailKey, mailSessionMessage, openMailIndex, openMailPart, type MailKeyPair,
+  MAIL_MAX_BYTES,
+  deriveMailKey,
+  mailSessionMessage,
+  openMailIndex,
+  openMailPart,
+  type MailKeyPair,
 } from '@stage-labs/client/mail/mailbox';
 import { handleMail, type MailChain, type MailDeps } from '../src/mailApi.ts';
 import { NONCE_TTL_MS, SESSION_TTL_MS, mailboxFetch } from '../src/mailBox.ts';
@@ -39,15 +50,23 @@ function mailbox(label: string): { fetch(input: string, init?: RequestInit): Pro
 }
 
 const deps: MailDeps = { mailbox, chain, clientIp: '203.0.113.7', now: () => clock.now };
-const signer = (account: PrivateKeyAccount) => (message: string): Promise<Hex> => account.signMessage({ message });
+const signer =
+  (account: PrivateKeyAccount) =>
+  (message: string): Promise<Hex> =>
+    account.signMessage({ message });
 
 function incoming(to: string, raw = MIME, rawSize?: number): { message: IncomingMail; rejected: string[] } {
   const bytes = new TextEncoder().encode(raw);
   const rejected: string[] = [];
   const message: IncomingMail = {
-    from: 'bounce@example.com', to, rawSize: rawSize ?? bytes.byteLength, raw: new Blob([bytes]).stream(),
+    from: 'bounce@example.com',
+    to,
+    rawSize: rawSize ?? bytes.byteLength,
+    raw: new Blob([bytes]).stream(),
     headers: new Headers({ from: 'Ann <ann@example.com>', to, subject: 'Quarterly numbers' }),
-    setReject: (reason) => { rejected.push(reason); },
+    setReject: (reason) => {
+      rejected.push(reason);
+    },
   };
   return { message, rejected };
 }
@@ -196,10 +215,10 @@ describe('st.box mail access', () => {
     const keys = await activate('alice1', ALICE);
     await expect(registerMailKey(BASE, 'alice1', keys, signer(ALICE), clock.now - 1)).rejects.toThrow('(409)');
     await expect(registerMailKey(BASE, 'alice1', keys, signer(ALICE), clock.now - 11 * 60 * 1000)).rejects.toThrow('(400)');
-    const limited = await handleMail(
-      new Request(`${BASE}/mail/challenge`, { method: 'POST', body: '{}' }),
-      { ...deps, limiter: { limit: () => Promise.resolve({ success: false }) } },
-    );
+    const limited = await handleMail(new Request(`${BASE}/mail/challenge`, { method: 'POST', body: '{}' }), {
+      ...deps,
+      limiter: { limit: () => Promise.resolve({ success: false }) },
+    });
     expect(limited.status).toBe(429);
   });
 });

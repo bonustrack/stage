@@ -4,8 +4,20 @@ import { serializeErc6492Signature } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { deriveHpkeKeyPair, hpkeOpen, hpkeSeal } from '../src/mail/hpke';
 import {
-  deriveMailKey, isMailboxLabel, isMailId, mailAddressOf, mailboxLabel, mailKeyMessage, mailPublicKeyHex,
-  mailRegisterMessage, mailSessionMessage, openMailIndex, openMailPart, sealMailIndex, sealMailPart, type MailIndex,
+  deriveMailKey,
+  isMailboxLabel,
+  isMailId,
+  mailAddressOf,
+  mailboxLabel,
+  mailKeyMessage,
+  mailPublicKeyHex,
+  mailRegisterMessage,
+  mailSessionMessage,
+  openMailIndex,
+  openMailPart,
+  sealMailIndex,
+  sealMailPart,
+  type MailIndex,
 } from '../src/mail/mailbox';
 
 const RFC9180_A1 = {
@@ -24,8 +36,13 @@ const RFC9180_A1 = {
 const OWNER = privateKeyToAccount('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d');
 const ID = '1759430000000-9ef6fdd0-0635-4130-8b77-aaeae0f65158';
 const INDEX: MailIndex = {
-  envelopeFrom: 'bounce@example.com', from: 'Ann <ann@example.com>', to: 'alice1@st.box',
-  subject: 'Hello', date: 'Thu, 2 Oct 2026 18:00:00 +0000', messageId: '<1@example.com>', size: 42,
+  envelopeFrom: 'bounce@example.com',
+  from: 'Ann <ann@example.com>',
+  to: 'alice1@st.box',
+  subject: 'Hello',
+  date: 'Thu, 2 Oct 2026 18:00:00 +0000',
+  messageId: '<1@example.com>',
+  size: 42,
 };
 
 describe('HPKE (RFC 9180 DHKEM X25519, HKDF-SHA256, AES-128-GCM)', () => {
@@ -40,8 +57,11 @@ describe('HPKE (RFC 9180 DHKEM X25519, HKDF-SHA256, AES-128-GCM)', () => {
 
   test('seals to the RFC A.1 enc and ciphertext, and opens it again', () => {
     const sealed = hpkeSeal(
-      hexToBytes(RFC9180_A1.pkRm), hexToBytes(RFC9180_A1.info), hexToBytes(RFC9180_A1.aad),
-      hexToBytes(RFC9180_A1.pt), hexToBytes(RFC9180_A1.skEm),
+      hexToBytes(RFC9180_A1.pkRm),
+      hexToBytes(RFC9180_A1.info),
+      hexToBytes(RFC9180_A1.aad),
+      hexToBytes(RFC9180_A1.pt),
+      hexToBytes(RFC9180_A1.skEm),
     );
     expect(bytesToHex(sealed)).toBe(RFC9180_A1.pkEm + RFC9180_A1.ct);
     const opened = hpkeOpen(hexToBytes(RFC9180_A1.skRm), hexToBytes(RFC9180_A1.info), hexToBytes(RFC9180_A1.aad), sealed);
@@ -100,9 +120,12 @@ describe('mail keys and messages', () => {
 
   test('derives the same key before and after a smart account is deployed', async () => {
     const deployed = (message: string) => OWNER.signMessage({ message });
-    const undeployed = async (message: string) => serializeErc6492Signature({
-      address: '0x00000000000000000000000000000000DeaDBeef', data: '0x1234', signature: await deployed(message),
-    });
+    const undeployed = async (message: string) =>
+      serializeErc6492Signature({
+        address: '0x00000000000000000000000000000000DeaDBeef',
+        data: '0x1234',
+        signature: await deployed(message),
+      });
     expect(mailPublicKeyHex(await deriveMailKey('alice1', undeployed))).toBe(mailPublicKeyHex(await deriveMailKey('alice1', deployed)));
   });
 
@@ -113,10 +136,12 @@ describe('mail keys and messages', () => {
   });
 
   test('binds the register and sign-in messages to the name, key, nonce and times', () => {
-    expect(mailRegisterMessage({ label: 'alice1', publicKey: '0xAB', issuedAt: 5 }))
-      .toBe('Register st.box mail key\nname: alice1.stage.base.eth\nkey: 0xab\nissued: 5');
-    expect(mailSessionMessage({ label: 'alice1', nonce: 'n1', expiresAt: 9 }))
-      .toBe('Sign in to st.box mail\nname: alice1.stage.base.eth\nnonce: n1\nexpires: 9');
+    expect(mailRegisterMessage({ label: 'alice1', publicKey: '0xAB', issuedAt: 5 })).toBe(
+      'Register st.box mail key\nname: alice1.stage.base.eth\nkey: 0xab\nissued: 5',
+    );
+    expect(mailSessionMessage({ label: 'alice1', nonce: 'n1', expiresAt: 9 })).toBe(
+      'Sign in to st.box mail\nname: alice1.stage.base.eth\nnonce: n1\nexpires: 9',
+    );
   });
 
   test('seals the index and body to one mailbox and mail id only', async () => {

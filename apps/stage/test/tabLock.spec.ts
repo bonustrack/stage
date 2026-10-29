@@ -14,13 +14,23 @@ class FakeLockManager {
 
   forTab(tab: string): LockRequester {
     return {
-      request: (_name, options, granted) => new Promise((resolve, reject) => {
-        const entry: Pending = { tab, granted, resolve, reject };
-        if (options.steal) { this.steal(entry); return; }
-        if (this.holder && options.ifAvailable) { void granted(null).then(resolve, reject); return; }
-        if (!this.holder) { this.grant(entry); return; }
-        this.queue.push(entry);
-      }),
+      request: (_name, options, granted) =>
+        new Promise((resolve, reject) => {
+          const entry: Pending = { tab, granted, resolve, reject };
+          if (options.steal) {
+            this.steal(entry);
+            return;
+          }
+          if (this.holder && options.ifAvailable) {
+            void granted(null).then(resolve, reject);
+            return;
+          }
+          if (!this.holder) {
+            this.grant(entry);
+            return;
+          }
+          this.queue.push(entry);
+        }),
     };
   }
 
@@ -38,7 +48,10 @@ class FakeLockManager {
   private steal(entry: Pending): void {
     const previous = this.holder;
     this.grant(entry);
-    if (previous) queueMicrotask(() => { previous.reject(new Error('AbortError')); });
+    if (previous)
+      queueMicrotask(() => {
+        previous.reject(new Error('AbortError'));
+      });
   }
 
   private grant(entry: Pending): void {
@@ -57,7 +70,9 @@ async function settle(): Promise<void> {
 }
 
 function openTab(manager: FakeLockManager, tab: string, lost: string[]): TabLock {
-  return createTabLock(manager.forTab(tab), 'stage.xmtp', () => { lost.push(tab); });
+  return createTabLock(manager.forTab(tab), 'stage.xmtp', () => {
+    lost.push(tab);
+  });
 }
 
 describe('createTabLock', () => {
@@ -81,7 +96,9 @@ describe('createTabLock', () => {
     const second = openTab(manager, 'b', lost);
     await settle();
     const seen: string[] = [];
-    second.subscribe(() => { seen.push(second.role()); });
+    second.subscribe(() => {
+      seen.push(second.role());
+    });
     manager.closeTab('a');
     await settle();
     expect(second.role()).toBe('active');
@@ -163,7 +180,9 @@ describe('createTabLock', () => {
   test('when the browser refuses the lock, the tab runs Stage rather than hanging', async () => {
     const broken: LockRequester = { request: () => Promise.reject(new Error('SecurityError')) };
     const lost: string[] = [];
-    const tab = createTabLock(broken, 'stage.xmtp', () => { lost.push('a'); });
+    const tab = createTabLock(broken, 'stage.xmtp', () => {
+      lost.push('a');
+    });
     await settle();
     expect(tab.role()).toBe('active');
     expect(lost).toEqual([]);

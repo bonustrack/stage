@@ -28,7 +28,7 @@ describe('applyInbound', () => {
     const rows = [row({ convId: 'a' }), row({ convId: 'b', unreadCount: 1 })];
     const result = applyInbound(rows, { ...update, convId: 'b' });
     expect(result).not.toBeNull();
-    expect(result?.next.map(r => r.convId)).toEqual(['b', 'a']);
+    expect(result?.next.map((r) => r.convId)).toEqual(['b', 'a']);
     expect(result?.next[0]?.unreadCount).toBe(2);
     expect(result?.next[0]?.lastPreview).toBe('hi');
     expect(result?.next[0]?.markedUnread).toBe(false);
@@ -58,9 +58,7 @@ describe('applyInbound', () => {
 
   test('patch merges platform fields from the pre-update row', () => {
     const rows = [row({ convId: 'a', peer: '0x1' })];
-    const result = applyInbound(rows, { ...update, convId: 'a' }, cur => ({
-      lastSenderAddress: cur.peer,
-    }));
+    const result = applyInbound(rows, { ...update, convId: 'a' }, (cur) => ({ lastSenderAddress: cur.peer }));
     expect(result?.next[0]?.lastSenderAddress).toBe('0x1');
   });
 });

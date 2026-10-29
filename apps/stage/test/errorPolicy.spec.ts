@@ -6,13 +6,26 @@ const DB_KEY = 'q'.repeat(44);
 
 function captureLogs(): { lines: string[]; restore: () => void } {
   const lines: string[] = [];
-  const warn = spyOn(console, 'warn').mockImplementation((line: unknown) => { lines.push(String(line)); });
-  const error = spyOn(console, 'error').mockImplementation((line: unknown) => { lines.push(String(line)); });
-  return { lines, restore: () => { warn.mockRestore(); error.mockRestore(); } };
+  const warn = spyOn(console, 'warn').mockImplementation((line: unknown) => {
+    lines.push(String(line));
+  });
+  const error = spyOn(console, 'error').mockImplementation((line: unknown) => {
+    lines.push(String(line));
+  });
+  return {
+    lines,
+    restore: () => {
+      warn.mockRestore();
+      error.mockRestore();
+    },
+  };
 }
 
 let restoreLogs: (() => void) | null = null;
-afterEach(() => { restoreLogs?.(); restoreLogs = null; });
+afterEach(() => {
+  restoreLogs?.();
+  restoreLogs = null;
+});
 
 describe('describeError', () => {
   test('keeps the message and a non-generic error name', () => {
@@ -58,8 +71,15 @@ describe('best effort', () => {
 
   test('attempt swallows sync throws and async rejections', async () => {
     let ran = 0;
-    attempt(() => { ran += 1; throw new Error('sync'); }, 'cleanup');
-    attempt(async () => { ran += 1; await Promise.resolve(); throw new Error('async'); }, 'ui');
+    attempt(() => {
+      ran += 1;
+      throw new Error('sync');
+    }, 'cleanup');
+    attempt(async () => {
+      ran += 1;
+      await Promise.resolve();
+      throw new Error('async');
+    }, 'ui');
     ignore(Promise.reject(new Error('dropped')), 'cache');
     ignore(null, 'cache');
     await Promise.resolve();

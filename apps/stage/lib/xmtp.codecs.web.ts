@@ -13,7 +13,5 @@ export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
     getIdentifier: () => ({ identifier: key.address.toLowerCase(), identifierKind: IdentifierKind.Ethereum }),
     signMessage: async (message: string): Promise<Uint8Array> => hexToBytes(await key.signMessage(message)),
   };
-  return key.kind === 'SCW'
-    ? { type: 'SCW', ...identity, getChainId: () => BigInt(key.chainId) }
-    : { type: 'EOA', ...identity };
+  return key.kind === 'SCW' ? { type: 'SCW', ...identity, getChainId: () => BigInt(key.chainId) } : { type: 'EOA', ...identity };
 }

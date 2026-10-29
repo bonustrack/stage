@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { ATTACHMENT_MAX_HEIGHT, VIDEO_PLACEHOLDER_RATIO, mediaAspectRatio, mediaMaxWidth, validSize } from '../components/bubble/imageBox.model';
+import {
+  ATTACHMENT_MAX_HEIGHT,
+  VIDEO_PLACEHOLDER_RATIO,
+  mediaAspectRatio,
+  mediaMaxWidth,
+  validSize,
+} from '../components/bubble/imageBox.model';
 
 describe('attachment layout', () => {
   test('media retain landscape, portrait and square ratios', () => {

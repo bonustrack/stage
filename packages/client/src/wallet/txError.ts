@@ -1,4 +1,3 @@
-
 interface ViemErrorLike {
   shortMessage?: unknown;
   details?: unknown;
@@ -15,7 +14,8 @@ function str(v: unknown): string | undefined {
 function humanize(s: string): string {
   if (/AA21/i.test(s)) return 'Gas sponsorship failed (account could not pay). Try again.';
   if (/AA2[3-4]/i.test(s) || /signature error/i.test(s)) return 'Signature rejected by the account. Try again.';
-  if (/AA3[0-9]/i.test(s) || /paymaster/i.test(s)) return 'Gas sponsor declined this transaction (paymaster). It may be out of credit or this call is not allowed.';
+  if (/AA3[0-9]/i.test(s) || /paymaster/i.test(s))
+    return 'Gas sponsor declined this transaction (paymaster). It may be out of credit or this call is not allowed.';
   if (/insufficient funds/i.test(s)) return 'Insufficient funds for this transaction.';
   if (/user rejected|user denied|rejected the request/i.test(s)) return 'Request rejected.';
   if (/nonce/i.test(s)) return 'Transaction nonce conflict. Try again.';
@@ -25,7 +25,12 @@ function humanize(s: string): string {
 
 function metaMessage(e: ViemErrorLike): string | undefined {
   if (!Array.isArray(e.metaMessages)) return undefined;
-  return str((e.metaMessages as unknown[]).map(m => str(m)).filter(Boolean).join(' '));
+  return str(
+    (e.metaMessages as unknown[])
+      .map((m) => str(m))
+      .filter(Boolean)
+      .join(' '),
+  );
 }
 
 function collect(err: unknown, depth = 0): string | undefined {

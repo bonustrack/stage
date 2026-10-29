@@ -57,7 +57,14 @@ export function createPaneWidth(opts: PaneWidthOptions): PaneWidth {
 
   const use = (): number => useStoreValue(listeners.subscribe, get);
 
-  return { get, set, reset: () => { set(opts.initial); }, use };
+  return {
+    get,
+    set,
+    reset: () => {
+      set(opts.initial);
+    },
+    use,
+  };
 }
 
 export const channelsPaneWidth = createPaneWidth({
@@ -66,6 +73,7 @@ export const channelsPaneWidth = createPaneWidth({
   min: 280,
   max: 600,
   styleId: 'stage-pane-width',
-  css: (width) => `[data-stagepane="1"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH + width}px; }`
-    + ` [data-stagepane="rail"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH}px; }`,
+  css: (width) =>
+    `[data-stagepane="1"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH + width}px; }` +
+    ` [data-stagepane="rail"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH}px; }`,
 });

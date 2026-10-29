@@ -59,24 +59,94 @@ const MAX_BLOCKS = 3000;
 const MAX_STACK = 256;
 const PIXEL_MAX = 2;
 const BULLET = '•';
-const SINGLE_QUOTE = '\'';
+const SINGLE_QUOTE = "'";
 
 const BLOCK_TAGS: ReadonlySet<string> = new Set([
-  'address', 'article', 'aside', 'blockquote', 'body', 'center', 'dd', 'div', 'dl', 'dt', 'fieldset', 'figcaption',
-  'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'html', 'li', 'main', 'nav', 'ol', 'p',
-  'pre', 'section', 'table', 'tbody', 'tfoot', 'thead', 'tr', 'ul',
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'body',
+  'center',
+  'dd',
+  'div',
+  'dl',
+  'dt',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'footer',
+  'form',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'html',
+  'li',
+  'main',
+  'nav',
+  'ol',
+  'p',
+  'pre',
+  'section',
+  'table',
+  'tbody',
+  'tfoot',
+  'thead',
+  'tr',
+  'ul',
 ]);
 const VOID_TAGS: ReadonlySet<string> = new Set([
-  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr',
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
 ]);
 const RAW_TEXT_TAGS: ReadonlySet<string> = new Set([
-  'iframe', 'noembed', 'noframes', 'noscript', 'script', 'style', 'textarea', 'title', 'xmp',
+  'iframe',
+  'noembed',
+  'noframes',
+  'noscript',
+  'script',
+  'style',
+  'textarea',
+  'title',
+  'xmp',
 ]);
 const HIDDEN_TAGS: ReadonlySet<string> = new Set(['head', 'math', 'object', 'select', 'svg', 'template']);
 const STYLE_TAGS: Readonly<Record<string, StyleFlag>> = {
-  b: 'bold', strong: 'bold', th: 'bold', h1: 'bold', h2: 'bold', h3: 'bold', h4: 'bold', h5: 'bold', h6: 'bold',
-  i: 'italic', em: 'italic', cite: 'italic', u: 'underline', ins: 'underline',
-  code: 'code', kbd: 'code', samp: 'code', tt: 'code', pre: 'code',
+  b: 'bold',
+  strong: 'bold',
+  th: 'bold',
+  h1: 'bold',
+  h2: 'bold',
+  h3: 'bold',
+  h4: 'bold',
+  h5: 'bold',
+  h6: 'bold',
+  i: 'italic',
+  em: 'italic',
+  cite: 'italic',
+  u: 'underline',
+  ins: 'underline',
+  code: 'code',
+  kbd: 'code',
+  samp: 'code',
+  tt: 'code',
+  pre: 'code',
 };
 const HEADINGS: Readonly<Record<string, number>> = { h1: 1, h2: 2, h3: 3, h4: 4, h5: 5, h6: 6 };
 const HIDDEN_STYLE = /display\s*:\s*none|visibility\s*:\s*hidden|mso-hide\s*:\s*all/i;
@@ -345,7 +415,9 @@ function linkSpans(text: string): MailSpan[] {
 }
 
 export function mailTextBlocks(text: string): MailBlock[] {
-  return text.replace(/\r\n?/g, '\n').split(/\n[ \t]*\n/)
+  return text
+    .replace(/\r\n?/g, '\n')
+    .split(/\n[ \t]*\n/)
     .map((paragraph) => paragraph.replace(/^\n+/, '').trimEnd())
     .filter((paragraph) => paragraph !== '')
     .slice(0, MAX_BLOCKS)

@@ -1,4 +1,3 @@
-
 export interface StripResult {
   bytes: Uint8Array;
   stripped: boolean;
@@ -20,9 +19,10 @@ function tiffReaderFor(payload: Uint8Array): TiffReader | undefined {
   const be = at(tiff) === 0x4d && at(tiff + 1) === 0x4d;
   if (!le && !be) return undefined;
   const u16 = (o: number): number => (le ? at(o) | (at(o + 1) << 8) : (at(o) << 8) | at(o + 1));
-  const u32 = (o: number): number => (le
-    ? at(o) | (at(o + 1) << 8) | (at(o + 2) << 16) | (at(o + 3) << 24)
-    : (at(o) << 24) | (at(o + 1) << 16) | (at(o + 2) << 8) | at(o + 3));
+  const u32 = (o: number): number =>
+    le
+      ? at(o) | (at(o + 1) << 8) | (at(o + 2) << 16) | (at(o + 3) << 24)
+      : (at(o) << 24) | (at(o + 1) << 16) | (at(o + 2) << 8) | at(o + 3);
   return { u16, u32, tiff };
 }
 
@@ -45,14 +45,32 @@ function readJpegOrientation(payload: Uint8Array): number | undefined {
 
 function buildOrientationApp1(orientation: number): number[] {
   const tiff = [
-    0x49, 0x49, 0x2a, 0x00,
-    0x08, 0x00, 0x00, 0x00,
-    0x01, 0x00,
-    0x12, 0x01,
-    0x03, 0x00,
-    0x01, 0x00, 0x00, 0x00,
-    orientation & 0xff, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
+    0x49,
+    0x49,
+    0x2a,
+    0x00,
+    0x08,
+    0x00,
+    0x00,
+    0x00,
+    0x01,
+    0x00,
+    0x12,
+    0x01,
+    0x03,
+    0x00,
+    0x01,
+    0x00,
+    0x00,
+    0x00,
+    orientation & 0xff,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
   ];
   const payload = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00, ...tiff];
   const len = payload.length + 2;
@@ -81,16 +99,25 @@ function handleJpegSegment(b: Uint8Array, at: (o: number) => number, i: number, 
 
 function stepJpegMarker(b: Uint8Array, at: (o: number) => number, i: number, s: JpegScan): void {
   if (at(i) !== 0xff) {
-    s.out.push(at(i)); s.next = i + 1; return;
+    s.out.push(at(i));
+    s.next = i + 1;
+    return;
   }
   const marker = at(i + 1);
-  if (marker === 0xd9) { s.out.push(0xff, 0xd9); s.next = -1; return; }
+  if (marker === 0xd9) {
+    s.out.push(0xff, 0xd9);
+    s.next = -1;
+    return;
+  }
   if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) {
-    s.out.push(0xff, marker); s.next = i + 2; return;
+    s.out.push(0xff, marker);
+    s.next = i + 2;
+    return;
   }
   if (marker === 0xda) {
     for (let j = i; j < b.length; j += 1) s.out.push(at(j));
-    s.next = -1; return;
+    s.next = -1;
+    return;
   }
   handleJpegSegment(b, at, i, marker, s);
 }
@@ -167,7 +194,11 @@ function detect(b: Uint8Array): StripResult['format'] {
   return 'unsupported';
 }
 
-const STRIPPERS: Partial<Record<StripResult['format'], (b: Uint8Array) => Uint8Array>> = { jpeg: stripJpeg, png: stripPng, webp: stripWebp };
+const STRIPPERS: Partial<Record<StripResult['format'], (b: Uint8Array) => Uint8Array>> = {
+  jpeg: stripJpeg,
+  png: stripPng,
+  webp: stripWebp,
+};
 
 export function stripMetadataBytes(input: Uint8Array): StripResult {
   const format = detect(input);

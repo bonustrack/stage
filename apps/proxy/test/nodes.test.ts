@@ -11,7 +11,12 @@ const NOW = 1_760_000_000_000;
 const CODE = 'export default { fetch: () => Response.json({ type: "Card", children: [] }) };';
 const API_BASE = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/dispatch/namespaces/${NODES_NAMESPACE}`;
 
-interface ApiCall { url: string; method: string; auth: string | null; body: FormData | null }
+interface ApiCall {
+  url: string;
+  method: string;
+  auth: string | null;
+  body: FormData | null;
+}
 
 function cloudflare(routes: Record<string, () => Response> = {}): { api: NodesApi; calls: ApiCall[] } {
   const calls: ApiCall[] = [];
@@ -68,11 +73,13 @@ describe('publishing a node', () => {
     const id = idOf(key);
     expect(id).toMatch(/^[0-9a-f]{32}$/);
     expect(await res.json()).toEqual({ id, url: `https://nodes.stage.box/${id}` });
-    expect(calls.map(call => `${call.method} ${call.url}`)).toEqual([`GET ${API_BASE}`, `PUT ${API_BASE}/scripts/node-${id}`]);
-    expect(calls.every(call => call.auth === `Bearer ${TOKEN}`)).toBe(true);
+    expect(calls.map((call) => `${call.method} ${call.url}`)).toEqual([`GET ${API_BASE}`, `PUT ${API_BASE}/scripts/node-${id}`]);
+    expect(calls.every((call) => call.auth === `Bearer ${TOKEN}`)).toBe(true);
     const form = calls[1]?.body;
     expect(JSON.parse(String(form?.get('metadata')))).toEqual({
-      main_module: 'node.js', compatibility_date: '2026-06-01', compatibility_flags: ['global_fetch_strictly_public', 'disable_ctx_exports'],
+      main_module: 'node.js',
+      compatibility_date: '2026-06-01',
+      compatibility_flags: ['global_fetch_strictly_public', 'disable_ctx_exports'],
       bindings: [],
     });
     const module = form?.get('node.js') as File;
@@ -88,7 +95,7 @@ describe('publishing a node', () => {
     await run(signed('PUT', key, CODE), api);
     await run(signed('PUT', key, `${CODE}\n`), api);
     await run(signed('PUT', newNodeKey(), CODE), api);
-    const names = calls.filter(call => call.method === 'PUT').map(call => call.url.split('/').pop());
+    const names = calls.filter((call) => call.method === 'PUT').map((call) => call.url.split('/').pop());
     expect(names[0]).toBe(names[1]);
     expect(names[2]).not.toBe(names[0]);
   });
@@ -98,7 +105,9 @@ describe('publishing a node', () => {
     const { api, calls } = cloudflare();
     const tampered = signed('PUT', key, CODE);
     const swapped = new Request(URL_NODES, {
-      method: 'PUT', body: `${CODE} `, headers: { ...Object.fromEntries(tampered.headers), 'content-length': String(CODE.length + 1) },
+      method: 'PUT',
+      body: `${CODE} `,
+      headers: { ...Object.fromEntries(tampered.headers), 'content-length': String(CODE.length + 1) },
     });
     const otherKey = new Headers(signed('PUT', key, CODE).headers);
     otherKey.set('stage-key', nodeKeyId(newNodeKey()));
@@ -121,7 +130,8 @@ describe('publishing a node', () => {
   test('refuses code that imports a module, so a node can not call itself past its limits', async () => {
     const { api, calls } = cloudflare();
     for (const code of [
-      `import { exports } from 'cloudflare:workers';\n${CODE}`, `import{connect}from"cloudflare:sockets";${CODE}`,
+      `import { exports } from 'cloudflare:workers';\n${CODE}`,
+      `import{connect}from"cloudflare:sockets";${CODE}`,
       'export default { fetch: async () => (await import("cloudflare:workers")).exports.default.fetch("https://x/") };',
       `import * as w from 'cloudflare:workers'; ${CODE}`,
     ]) {
@@ -139,12 +149,19 @@ describe('publishing a node', () => {
     const { api, calls } = cloudflare();
     const big = 'x'.repeat(64 * 1024 + 1);
     expect((await run(signed('PUT', key, big), api)).status).toBe(413);
-    const chunked = new Request(URL_NODES, { method: 'PUT', body: new Blob([CODE]).stream(), headers: nodeHeaders('PUT', URL_NODES, CODE, key, NOW) });
+    const chunked = new Request(URL_NODES, {
+      method: 'PUT',
+      body: new Blob([CODE]).stream(),
+      headers: nodeHeaders('PUT', URL_NODES, CODE, key, NOW),
+    });
     expect((await run(chunked, api)).status).toBe(411);
-    const empty = new Request(URL_NODES, { method: 'PUT', headers: { ...nodeHeaders('PUT', URL_NODES, '', key, NOW), 'content-length': '0' } });
+    const empty = new Request(URL_NODES, {
+      method: 'PUT',
+      headers: { ...nodeHeaders('PUT', URL_NODES, '', key, NOW), 'content-length': '0' },
+    });
     expect((await run(empty, api)).status).toBe(400);
     expect((await run(signed('PUT', key, 'x'.repeat(64 * 1024)), api)).status).toBe(200);
-    expect(calls.filter(call => call.method === 'PUT')).toHaveLength(1);
+    expect(calls.filter((call) => call.method === 'PUT')).toHaveLength(1);
   });
 
   test('answers CORS preflight, refuses other methods and rate limits before any work', async () => {
@@ -168,18 +185,23 @@ describe('publishing a node', () => {
     const atLimit = cloudflare({ 'GET ': full, [`GET /scripts/node-${id}`]: missing });
     const refused = await run(signed('PUT', key, CODE), atLimit.api);
     expect(refused.status).toBe(507);
-    expect(atLimit.calls.some(call => call.method === 'PUT')).toBe(false);
+    expect(atLimit.calls.some((call) => call.method === 'PUT')).toBe(false);
     const existing = cloudflare({ 'GET ': full, [`GET /scripts/node-${id}`]: () => Response.json({ success: true, result: {} }) });
     expect((await run(signed('PUT', key, CODE), existing.api)).status).toBe(200);
-    expect(existing.calls.map(call => call.method)).toEqual(['GET', 'GET', 'PUT']);
+    expect(existing.calls.map((call) => call.method)).toEqual(['GET', 'GET', 'PUT']);
   });
 
   test('maps Cloudflare answers without leaking account details', async () => {
     const key = newNodeKey();
     const script = `PUT /scripts/node-${idOf(key)}`;
-    const syntax = (): Response => Response.json({
-      success: false, errors: [{ code: 10021, message: `Uncaught SyntaxError: Unexpected token\n  at node.js:1:7 in account ${ACCOUNT}` }],
-    }, { status: 400 });
+    const syntax = (): Response =>
+      Response.json(
+        {
+          success: false,
+          errors: [{ code: 10021, message: `Uncaught SyntaxError: Unexpected token\n  at node.js:1:7 in account ${ACCOUNT}` }],
+        },
+        { status: 400 },
+      );
     const refused = await run(signed('PUT', key, CODE), cloudflare({ [script]: syntax }).api);
     expect(refused.status).toBe(400);
     expect(await refused.json()).toEqual({ error: 'Uncaught SyntaxError: Unexpected token at node.js:1:7 in account -' });
@@ -188,11 +210,15 @@ describe('publishing a node', () => {
     const down = await run(signed('PUT', key, CODE), cloudflare({ [script]: () => new Response('oops', { status: 500 }) }).api);
     expect(down.status).toBe(502);
     expect(await down.json()).toEqual({ error: 'node hosting failed' });
-    const noNamespace = await run(signed('PUT', key, CODE), cloudflare({ 'GET ': () => Response.json({ success: false }, { status: 404 }) }).api);
+    const noNamespace = await run(
+      signed('PUT', key, CODE),
+      cloudflare({ 'GET ': () => Response.json({ success: false }, { status: 404 }) }).api,
+    );
     expect(noNamespace.status).toBe(503);
     const offline = cloudflareApi(TOKEN, ACCOUNT, (() => Promise.reject(new Error('network'))) as unknown as typeof fetch);
     expect((await run(signed('PUT', key, CODE), offline)).status).toBe(502);
-    const badToken = (): Response => Response.json({ success: false, errors: [{ code: 10001, message: 'Authentication failed (status: 400)' }] }, { status: 400 });
+    const badToken = (): Response =>
+      Response.json({ success: false, errors: [{ code: 10001, message: 'Authentication failed (status: 400)' }] }, { status: 400 });
     const unauthorized = await run(signed('PUT', key, CODE), cloudflare({ 'GET ': badToken }).api);
     expect(unauthorized.status).toBe(502);
     expect(await unauthorized.json()).toEqual({ error: 'node hosting failed' });
@@ -218,7 +244,12 @@ describe('signature edge cases', () => {
     forged[0] = 1;
     const b64url = (bytes: Uint8Array): string => Buffer.from(bytes).toString('base64url');
     const { api, calls } = cloudflare();
-    const headers = { 'stage-key': b64url(identity), 'stage-timestamp': String(NOW / 1000), 'stage-signature': b64url(forged), 'content-length': String(CODE.length) };
+    const headers = {
+      'stage-key': b64url(identity),
+      'stage-timestamp': String(NOW / 1000),
+      'stage-signature': b64url(forged),
+      'content-length': String(CODE.length),
+    };
     expect((await run(new Request(URL_NODES, { method: 'PUT', body: CODE, headers }), api)).status).toBe(401);
     expect(calls).toEqual([]);
   });
@@ -227,16 +258,33 @@ describe('signature edge cases', () => {
     const key = newNodeKey();
     const { api, calls } = cloudflare({ 'GET ': () => Response.json({ success: true, result: {} }) });
     expect((await run(signed('PUT', key, CODE), api)).status).toBe(200);
-    expect(calls.map(call => call.method)).toEqual(['GET', 'PUT']);
+    expect(calls.map((call) => call.method)).toEqual(['GET', 'PUT']);
   });
 
   test('the proxy limits publishes per IPv6 /64 and in all', async () => {
     const keys: string[] = [];
-    const allow = { limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success: true }); } };
-    const deny = { limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success: false }); } };
-    const env = { NODES_CF_API_TOKEN: TOKEN, NODES_CF_ACCOUNT_ID: ACCOUNT, NODE_PUBLISHES: allow, NODE_PUBLISHES_ALL: deny } as unknown as Parameters<typeof worker.fetch>[1];
+    const allow = {
+      limit: ({ key }: { key: string }) => {
+        keys.push(key);
+        return Promise.resolve({ success: true });
+      },
+    };
+    const deny = {
+      limit: ({ key }: { key: string }) => {
+        keys.push(key);
+        return Promise.resolve({ success: false });
+      },
+    };
+    const env = {
+      NODES_CF_API_TOKEN: TOKEN,
+      NODES_CF_ACCOUNT_ID: ACCOUNT,
+      NODE_PUBLISHES: allow,
+      NODE_PUBLISHES_ALL: deny,
+    } as unknown as Parameters<typeof worker.fetch>[1];
     const request = signed('PUT', newNodeKey(), CODE, Date.now());
-    const withIp = new Request(request, { headers: { ...Object.fromEntries(request.headers), 'cf-connecting-ip': '2001:db8:1:2:aaaa::1' } });
+    const withIp = new Request(request, {
+      headers: { ...Object.fromEntries(request.headers), 'cf-connecting-ip': '2001:db8:1:2:aaaa::1' },
+    });
     const res = await worker.fetch(withIp, env, {} as ExecutionContext);
     expect(res.status).toBe(429);
     expect(keys).toEqual(['2001:db8:1:2::/64', 'all']);
@@ -250,7 +298,7 @@ describe('deleting a node', () => {
     const res = await run(signed('DELETE', key), api);
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ id: idOf(key) });
-    expect(calls.map(call => `${call.method} ${call.url}`)).toEqual([`DELETE ${API_BASE}/scripts/node-${idOf(key)}`]);
+    expect(calls.map((call) => `${call.method} ${call.url}`)).toEqual([`DELETE ${API_BASE}/scripts/node-${idOf(key)}`]);
   });
 
   test('says when there is no such node and refuses a bad signature', async () => {
@@ -262,6 +310,6 @@ describe('deleting a node', () => {
     const { api, calls } = cloudflare();
     expect((await run(new Request(URL_NODES, { method: 'DELETE', headers: forged }), api)).status).toBe(401);
     expect((await run(signed('PUT', key, CODE), api)).status).toBe(200);
-    expect(calls.some(call => call.method === 'DELETE')).toBe(false);
+    expect(calls.some((call) => call.method === 'DELETE')).toBe(false);
   });
 });

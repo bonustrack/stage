@@ -10,8 +10,13 @@ import { mentionLabel } from '@stage-labs/client/xmtp/messageBody';
 import { splitGraphemes } from 'unicode-segmenter/grapheme';
 import { toDisplay, type LabelOf } from '../composer/mentions.model';
 
-export function firstMessageChannelName(text: string, labelOf: LabelOf = address => mentionLabel(shortAddress(address))): string | undefined {
-  const plain = toDisplay(text, labelOf).replace(/[\s\p{Cc}]+/gu, ' ').trim();
+export function firstMessageChannelName(
+  text: string,
+  labelOf: LabelOf = (address) => mentionLabel(shortAddress(address)),
+): string | undefined {
+  const plain = toDisplay(text, labelOf)
+    .replace(/[\s\p{Cc}]+/gu, ' ')
+    .trim();
   const encoder = new TextEncoder();
   const suffix = encoder.encode(plain).length > CHANNEL_NAME_MAX ? '…' : '';
   const maxBytes = CHANNEL_NAME_MAX - encoder.encode(suffix).length;
@@ -37,7 +42,10 @@ export function newChatDraftKey(account: { id: string } | null): string | null {
   return account === null ? null : `new-chat:${account.id}`;
 }
 
-interface NewChatNav { href: '/' | '/new'; push: boolean }
+interface NewChatNav {
+  href: '/' | '/new';
+  push: boolean;
+}
 
 export function newChatNav(wide: boolean, board: boolean, pathname: string): NewChatNav {
   if (!wide) return { href: '/new', push: true };
@@ -49,7 +57,10 @@ export function membersDraftKey(draftKey: string | null): string | null {
   return draftKey === null ? null : `${draftKey}:members`;
 }
 
-export interface Picks { added: string[]; chosen: string[] | null }
+export interface Picks {
+  added: string[];
+  chosen: string[] | null;
+}
 
 export const NO_PICKS: Picks = { added: [], chosen: null };
 
@@ -65,7 +76,10 @@ interface PeerRow {
   lastTs?: number | null;
 }
 
-export interface DmPeer { convId: string; peer: string }
+export interface DmPeer {
+  convId: string;
+  peer: string;
+}
 
 function peerOf(row: PeerRow): string | null {
   return typeof row.peerAddress === 'string' && row.peerAddress !== '' ? row.peerAddress.toLowerCase() : null;
@@ -85,30 +99,42 @@ export function recentDmPeers(rows: readonly PeerRow[], self: string | null): Dm
 }
 
 export function recipientCandidates(
-  peers: readonly DmPeer[], self: string | null, requests: ReadonlySet<string> = new Set(), pool: readonly string[] = SUGGESTED_CONTACTS,
+  peers: readonly DmPeer[],
+  self: string | null,
+  requests: ReadonlySet<string> = new Set(),
+  pool: readonly string[] = SUGGESTED_CONTACTS,
 ): string[] {
-  const accepted = peers.map(p => p.peer).filter(peer => !requests.has(peer));
-  const suggested = suggestedContacts(peers.map(p => p.peer), self, pool).map(address => address.toLowerCase());
+  const accepted = peers.map((p) => p.peer).filter((peer) => !requests.has(peer));
+  const suggested = suggestedContacts(
+    peers.map((p) => p.peer),
+    self,
+    pool,
+  ).map((address) => address.toLowerCase());
   return [...accepted, ...suggested];
 }
 
 function lowerSet(list: readonly string[]): Set<string> {
-  return new Set(list.map(address => address.toLowerCase()));
+  return new Set(list.map((address) => address.toLowerCase()));
 }
 
 export function shownRecipients(
-  candidates: readonly string[], added: readonly string[], picked: readonly string[], max = MAX_SHOWN_RECIPIENTS,
+  candidates: readonly string[],
+  added: readonly string[],
+  picked: readonly string[],
+  max = MAX_SHOWN_RECIPIENTS,
 ): string[] {
   const known = lowerSet(candidates);
-  const all = [...added.filter(address => !known.has(address.toLowerCase())), ...candidates];
+  const all = [...added.filter((address) => !known.has(address.toLowerCase())), ...candidates];
   const chosen = lowerSet(picked);
   const listed = lowerSet(all);
-  const hidden = picked.filter(address => !listed.has(address.toLowerCase()));
+  const hidden = picked.filter((address) => !listed.has(address.toLowerCase()));
   return [...all.filter((address, i) => i < max || chosen.has(address.toLowerCase())), ...hidden];
 }
 
 export function pickedRecipients(
-  picked: readonly string[] | null, candidates: readonly string[], remembered: readonly string[] = [],
+  picked: readonly string[] | null,
+  candidates: readonly string[],
+  remembered: readonly string[] = [],
 ): string[] {
   if (picked !== null) return [...picked];
   if (remembered.length > 0) return [...remembered];
@@ -118,20 +144,32 @@ export function pickedRecipients(
 
 const MEMBER_RE = /^0x[0-9a-f]{40}$/;
 
-export interface MemberStat { count: number; at: number }
+export interface MemberStat {
+  count: number;
+  at: number;
+}
 
-export interface MemberHistory { last: string[]; stats: Record<string, MemberStat> }
+export interface MemberHistory {
+  last: string[];
+  stats: Record<string, MemberStat>;
+}
 
 export const NO_MEMBER_HISTORY: MemberHistory = { last: [], stats: {} };
 
 function validMembers(list: readonly string[], self: string | null): string[] {
   const own = self?.toLowerCase() ?? null;
-  return [...new Set(list.map(address => address.toLowerCase()).filter(address => MEMBER_RE.test(address) && address !== own))];
+  return [...new Set(list.map((address) => address.toLowerCase()).filter((address) => MEMBER_RE.test(address) && address !== own))];
 }
 
 function isMemberStat(value: unknown): value is MemberStat {
-  return typeof value === 'object' && value !== null && 'count' in value && 'at' in value
-    && typeof value.count === 'number' && typeof value.at === 'number';
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'count' in value &&
+    'at' in value &&
+    typeof value.count === 'number' &&
+    typeof value.at === 'number'
+  );
 }
 
 function memberHistoryOf(parsed: unknown): MemberHistory {
@@ -142,7 +180,11 @@ function memberHistoryOf(parsed: unknown): MemberHistory {
 }
 
 export function parseMemberHistory(raw: string): MemberHistory {
-  try { return memberHistoryOf(JSON.parse(raw)); } catch { return NO_MEMBER_HISTORY; }
+  try {
+    return memberHistoryOf(JSON.parse(raw));
+  } catch {
+    return NO_MEMBER_HISTORY;
+  }
 }
 
 export function startedChatWith(history: MemberHistory, members: readonly string[], at: number): MemberHistory {
@@ -163,7 +205,7 @@ export function rankedCandidates(candidates: readonly string[], history: MemberH
     const stat = history.stats[address.toLowerCase()];
     return { address, index, count: stat?.count ?? 0, at: stat?.at ?? 0 };
   });
-  return ranked.sort((a, b) => b.count - a.count || b.at - a.at || a.index - b.index).map(entry => entry.address);
+  return ranked.sort((a, b) => b.count - a.count || b.at - a.at || a.index - b.index).map((entry) => entry.address);
 }
 
 export function askPlaceholder(names: readonly string[]): string | undefined {

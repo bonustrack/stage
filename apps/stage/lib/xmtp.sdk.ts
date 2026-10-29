@@ -1,6 +1,14 @@
 import {
-  Client, Dm, Group, PublicIdentity, addGroupMembers, createGroupWithIdentities, staticKeyPackageStatuses,
-  type Conversation, type ConversationId, type MessageId,
+  Client,
+  Dm,
+  Group,
+  PublicIdentity,
+  addGroupMembers,
+  createGroupWithIdentities,
+  staticKeyPackageStatuses,
+  type Conversation,
+  type ConversationId,
+  type MessageId,
 } from '@xmtp/react-native-sdk';
 import { buildReply } from '@stage-labs/client/xmtp/builders';
 import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
@@ -9,8 +17,16 @@ import { UNKNOWN_GROUP_POLICY, groupMetaPolicyOfSet, type GroupMetaPolicy } from
 import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
 import {
-  NO_GROUP_ADMINS, NO_GROUP_INFO, VISIBLE_CONSENT, convFinder, notAGroup, sendableFinder,
-  type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
+  NO_GROUP_ADMINS,
+  NO_GROUP_INFO,
+  VISIBLE_CONSENT,
+  convFinder,
+  notAGroup,
+  sendableFinder,
+  type MessageDeletion,
+  type MessageQuery,
+  type MessageTarget,
+  type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt, ignored } from './errorPolicy';
 import { prepareSenderFilters } from './pushRegister';
@@ -22,7 +38,10 @@ type NativeMessagesOptions = NonNullable<Parameters<Conversation['messages']>[0]
 type InstallationIds = Parameters<typeof staticKeyPackageStatuses>[1];
 
 const LIST_OPTIONS: NonNullable<Parameters<NativeClient['conversations']['list']>[0]> = {
-  isActive: false, name: false, imageUrl: false, description: false,
+  isActive: false,
+  name: false,
+  imageUrl: false,
+  description: false,
 };
 
 const asConversationId = (id: string): ConversationId => id as ConversationId;
@@ -42,8 +61,17 @@ function asGroup(conv: Conversation): Group {
 }
 
 const NON_FILE_CONTENT_TYPES = [
-  'text', 'group_updated', 'group_membership_change', 'reaction', 'read_receipt', 'leave_request',
-  'markdown', 'actions', 'intent', 'transaction_reference', 'wallet_send_calls',
+  'text',
+  'group_updated',
+  'group_membership_change',
+  'reaction',
+  'read_receipt',
+  'leave_request',
+  'markdown',
+  'actions',
+  'intent',
+  'transaction_reference',
+  'wallet_send_calls',
 ];
 
 function nativeBeforeNs(q: MessageQuery): number | undefined {
@@ -64,7 +92,11 @@ function nativeQuery(q: MessageQuery): NativeMessagesOptions {
 }
 
 function contentOf(m: NativeMessage): unknown {
-  try { return m.content(); } catch { return undefined; }
+  try {
+    return m.content();
+  } catch {
+    return undefined;
+  }
 }
 
 function conversationIdField(m: NativeMessage): string | undefined {
@@ -104,55 +136,83 @@ async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
 }
 
 async function streamAllMessages(
-  client: NativeClient, onMessage: (m: NativeMessage | undefined) => void, onClose: () => void,
+  client: NativeClient,
+  onMessage: (m: NativeMessage | undefined) => void,
+  onClose: () => void,
 ): Promise<() => void> {
   await client.conversations.streamAllMessages(
-    (m) => { onMessage(m); return Promise.resolve(); },
+    (m) => {
+      onMessage(m);
+      return Promise.resolve();
+    },
     'all',
     VISIBLE_CONSENT,
     onClose,
   );
   return () => {
-    attempt(() => { client.conversations.cancelStreamAllMessages(); }, 'cleanup');
+    attempt(() => {
+      client.conversations.cancelStreamAllMessages();
+    }, 'cleanup');
   };
 }
 
 function streamConversations(client: NativeClient, onConv: (conv: Conversation) => void): () => void {
   let live = true;
-  void client.conversations.stream((conv) => { if (live) onConv(conv); return Promise.resolve(); }).catch(reported('xmtp.convStream'));
+  void client.conversations
+    .stream((conv) => {
+      if (live) onConv(conv);
+      return Promise.resolve();
+    })
+    .catch(reported('xmtp.convStream'));
   return () => {
     live = false;
-    attempt(() => { client.conversations.cancelStream(); }, 'cleanup');
+    attempt(() => {
+      client.conversations.cancelStream();
+    }, 'cleanup');
   };
 }
 
 function streamConsent(client: NativeClient, onChange: (convIds: string[]) => void): () => void {
   let live = true;
-  void client.preferences.streamConsent((consent) => {
-    if (live) onChange([consent.value]);
-    return Promise.resolve();
-  }).catch(reported('xmtp.consentStream'));
+  void client.preferences
+    .streamConsent((consent) => {
+      if (live) onChange([consent.value]);
+      return Promise.resolve();
+    })
+    .catch(reported('xmtp.consentStream'));
   return () => {
     live = false;
-    attempt(() => { client.preferences.cancelStreamConsent(); }, 'cleanup');
+    attempt(() => {
+      client.preferences.cancelStreamConsent();
+    }, 'cleanup');
   };
 }
 
 async function streamPreferences(client: NativeClient, onChange: () => void, onClose: () => void): Promise<() => void> {
-  await client.preferences.streamPreferenceUpdates(() => { onChange(); return Promise.resolve(); }, onClose);
-  return () => { attempt(() => { client.preferences.cancelStreamPreferenceUpdates(); }, 'cleanup'); };
+  await client.preferences.streamPreferenceUpdates(() => {
+    onChange();
+    return Promise.resolve();
+  }, onClose);
+  return () => {
+    attempt(() => {
+      client.preferences.cancelStreamPreferenceUpdates();
+    }, 'cleanup');
+  };
 }
 
 function streamDeletions(client: NativeClient, onDeleted: (deletion: MessageDeletion) => void): () => void {
   let live = true;
   let cancel: (() => void) | null = null;
-  void client.conversations.streamMessageDeletions((messageId, convId) => {
-    if (live) onDeleted({ convId, messageId });
-    return Promise.resolve();
-  }).then((stop) => {
-    if (live) cancel = stop;
-    else attempt(stop, 'cleanup');
-  }).catch(reported('xmtp.deletionStream'));
+  void client.conversations
+    .streamMessageDeletions((messageId, convId) => {
+      if (live) onDeleted({ convId, messageId });
+      return Promise.resolve();
+    })
+    .then((stop) => {
+      if (live) cancel = stop;
+      else attempt(stop, 'cleanup');
+    })
+    .catch(reported('xmtp.deletionStream'));
   return () => {
     live = false;
     if (cancel) attempt(cancel, 'cleanup');
@@ -166,14 +226,14 @@ function absentMessage(err: unknown): undefined {
 
 async function messageTarget(client: NativeClient, messageId: string): Promise<MessageTarget<Conversation> | null> {
   const message = await client.conversations.findMessage(asMessageId(messageId));
-  const convId = message ? convIdFromTopic(message.topic) ?? conversationIdField(message) : undefined;
+  const convId = message ? (convIdFromTopic(message.topic) ?? conversationIdField(message)) : undefined;
   const conv = convId ? await client.conversations.findConversation(asConversationId(convId)) : undefined;
   return message && conv ? { conv, contentTypeId: message.contentTypeId } : null;
 }
 
 async function keyPackageErrors(_client: NativeClient, installationIds: string[]): Promise<(string | null | undefined)[]> {
   const { statuses } = await staticKeyPackageStatuses('production', installationIds as InstallationIds);
-  return [...statuses.values()].map(s => s.validationError);
+  return [...statuses.values()].map((s) => s.validationError);
 }
 
 type LogWriterArgs = Parameters<typeof Client.activatePersistentLibXMTPLogWriter>;
@@ -218,20 +278,27 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
       peerInboxId: () => client.findInboxIdFromIdentity(identity),
     });
   },
-  forceAddMember: (client, convId, inboxId) =>
-    addGroupMembers(client.installationId, asConversationId(convId), [inboxId]),
+  forceAddMember: (client, convId, inboxId) => addGroupMembers(client.installationId, asConversationId(convId), [inboxId]),
   memberInstallationIds: null,
   inboxIdOfAddress: (client, address) => client.findInboxIdFromIdentity(identityOf(address)),
-  installationIdsOf: async (client, inboxId) =>
-    ((await client.inboxStates(true, [inboxId]))[0]?.installations ?? []).map(i => i.id),
+  installationIdsOf: async (client, inboxId) => ((await client.inboxStates(true, [inboxId]))[0]?.installations ?? []).map((i) => i.id),
   keyPackageErrors,
   ethAddressesOf: async (client, inboxIds) => {
     const states = await client.inboxStates(true, inboxIds);
-    return inboxIds.map((_, i) => states[i]?.identities.find(it => it.kind === 'ETHEREUM')?.identifier);
+    return inboxIds.map((_, i) => states[i]?.identities.find((it) => it.kind === 'ETHEREUM')?.identifier);
   },
-  newGroup: (client, addresses, meta) => createGroupWithIdentities(
-    client, identitiesOf(addresses), 'all_members', meta.name, meta.imageUrl, undefined, undefined, undefined, meta.appData,
-  ),
+  newGroup: (client, addresses, meta) =>
+    createGroupWithIdentities(
+      client,
+      identitiesOf(addresses),
+      'all_members',
+      meta.name,
+      meta.imageUrl,
+      undefined,
+      undefined,
+      undefined,
+      meta.appData,
+    ),
   streamAllMessages,
   streamConversations,
   streamConsent,
@@ -274,9 +341,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   consentOf: (conv) => conv.consentState(),
   setConsent: (conv, state) => conv.updateConsent(state),
   messages: (conv, query) => conv.messages(nativeQuery(query)),
-  rowOf: (m) => ({
-    id: m.id, content: contentOf(m), contentTypeId: m.contentTypeId, senderInboxId: m.senderInboxId, sentNs: m.sentNs,
-  }),
+  rowOf: (m) => ({ id: m.id, content: contentOf(m), contentTypeId: m.contentTypeId, senderInboxId: m.senderInboxId, sentNs: m.sentNs }),
   envelopeOf: (m, line) => mapDecodedToEnvelope(m, line),
   sentNsOf: (m) => m.sentNs,
   convIdOf: (m) => convIdFromTopic(m.topic) ?? conversationIdField(m),
@@ -291,4 +356,6 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
 
 export const convOfLine = convFinder(sdk);
 
-export const sendableConvOfLine = sendableFinder(sdk, (client, conv, timing) => prepareSenderFilters(client, groupTopicOf(conv.id), timing));
+export const sendableConvOfLine = sendableFinder(sdk, (client, conv, timing) =>
+  prepareSenderFilters(client, groupTopicOf(conv.id), timing),
+);

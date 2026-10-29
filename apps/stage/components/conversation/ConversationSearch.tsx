@@ -10,9 +10,7 @@ import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';
 
 type ConvState = ReturnType<typeof useConversationState>;
 
-export function ConversationSearch({ line, query, c }: {
-  line: string; query: string; c: ConvState;
-}): React.ReactElement {
+export function ConversationSearch({ line, query, c }: { line: string; query: string; c: ConvState }): React.ReactElement {
   const { text: sub, bg } = usePalette();
   const [result, setResult] = useState<SearchScanResult>({ hits: [], truncated: false });
   const [scanning, setScanning] = useState(false);
@@ -24,19 +22,35 @@ export function ConversationSearch({ line, query, c }: {
 
   useEffect(() => {
     const epoch = ++scanEpoch.current;
-    if (q.length < 2) { setResult({ hits: [], truncated: false }); setScanning(false); return; }
+    if (q.length < 2) {
+      setResult({ hits: [], truncated: false });
+      setScanning(false);
+      return;
+    }
     setScanning(true);
     const t = setTimeout(() => {
       void searchLocalHistory(
-        line, q,
-        partial => { if (scanEpoch.current === epoch) setResult(partial); },
+        line,
+        q,
+        (partial) => {
+          if (scanEpoch.current === epoch) setResult(partial);
+        },
         () => scanEpoch.current !== epoch,
-      ).finally(() => { if (scanEpoch.current === epoch) setScanning(false); });
+      ).finally(() => {
+        if (scanEpoch.current === epoch) setScanning(false);
+      });
     }, 220);
-    return () => { clearTimeout(t); };
+    return () => {
+      clearTimeout(t);
+    };
   }, [q, line]);
 
-  useEffect(() => () => { scanEpoch.current += 1; }, []);
+  useEffect(
+    () => () => {
+      scanEpoch.current += 1;
+    },
+    [],
+  );
 
   const showEmpty = q.length >= 2 && !scanning && result.hits.length === 0;
 
@@ -46,27 +60,37 @@ export function ConversationSearch({ line, query, c }: {
       data={result.hits}
       extraData={extraData}
       inverted
-      keyExtractor={h => h.id}
+      keyExtractor={(h) => h.id}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       renderItem={renderItem}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingTop: 12, paddingBottom: 12 }}
       ListEmptyComponent={
-        showEmpty
-          ? <Column padding={{ y: 28 }} align="center"><Text size="2xs" color="secondary">No matches</Text></Column>
-          : null
+        showEmpty ? (
+          <Column padding={{ y: 28 }} align="center">
+            <Text size="2xs" color="secondary">
+              No matches
+            </Text>
+          </Column>
+        ) : null
       }
       ListFooterComponent={
         <>
           {scanning ? (
             <Row align="center" justify="center" gap={8} padding={{ y: 14 }}>
               <ActivityIndicator size="small" color={sub} />
-              <Text size="2xs" color="secondary">Searching…</Text>
+              <Text size="2xs" color="secondary">
+                Searching…
+              </Text>
             </Row>
           ) : null}
           {!scanning && result.truncated && result.hits.length > 0 ? (
-            <Column padding={{ x: PAGE_GUTTER, y: 10 }}><Text size="3xs" color="secondary">Showing first matches in recent history.</Text></Column>
+            <Column padding={{ x: PAGE_GUTTER, y: 10 }}>
+              <Text size="3xs" color="secondary">
+                Showing first matches in recent history.
+              </Text>
+            </Column>
           ) : null}
         </>
       }

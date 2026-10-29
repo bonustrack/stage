@@ -6,8 +6,14 @@ import { sdk } from './xmtp.sdk';
 import { historyServer } from './historyServer';
 import { markHistoryImported } from './dmRoutes';
 import {
-  historyProblemMessage, historySyncIsActive, isMissingArchive, settleBy, within,
-  HISTORY_COPY, HistoryProblem, type HistorySyncPhase,
+  historyProblemMessage,
+  historySyncIsActive,
+  isMissingArchive,
+  settleBy,
+  within,
+  HISTORY_COPY,
+  HistoryProblem,
+  type HistorySyncPhase,
 } from './history.model';
 import { report } from './errorPolicy';
 
@@ -50,7 +56,9 @@ async function processHistoryArchive(): Promise<void> {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => { setTimeout(resolve, ms); });
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function messagingReady(): Promise<void> {

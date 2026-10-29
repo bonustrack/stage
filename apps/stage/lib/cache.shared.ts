@@ -30,7 +30,12 @@ export class PersistentStore<T> {
   ) {
     if (!flushSignalWired) {
       flushSignalWired = true;
-      backend.onFlushSignal(() => { for (const s of dirtyStores) attempt(() => { s.flushNow(); }, 'cache'); });
+      backend.onFlushSignal(() => {
+        for (const s of dirtyStores)
+          attempt(() => {
+            s.flushNow();
+          }, 'cache');
+      });
     }
   }
 
@@ -41,7 +46,10 @@ export class PersistentStore<T> {
   }
 
   flushNow(): void {
-    if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
     if (this.dirty) this.writeBacking();
   }
 
@@ -61,7 +69,9 @@ export class PersistentStore<T> {
     return this.hydration.run();
   }
 
-  get(): T | null { return this.value; }
+  get(): T | null {
+    return this.value;
+  }
 
   set(next: T | null): void {
     this.value = next;
@@ -77,7 +87,10 @@ export class PersistentStore<T> {
   }
 
   clear(): void {
-    if (this.flushTimer) { clearTimeout(this.flushTimer); this.flushTimer = null; }
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
     this.dirty = false;
     dirtyStores.delete(this);
     this.value = null;
@@ -92,7 +105,11 @@ export class PersistentStore<T> {
 }
 
 export async function getSecure(key: string): Promise<string | null> {
-  try { return await secureStorage.get(key); } catch { return null; }
+  try {
+    return await secureStorage.get(key);
+  } catch {
+    return null;
+  }
 }
 export async function setSecure(key: string, value: string): Promise<void> {
   try {

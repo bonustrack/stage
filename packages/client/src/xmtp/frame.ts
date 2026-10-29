@@ -3,20 +3,26 @@ import type { FrameActionContent, FrameContent, FrameMessage } from './frame.sch
 
 export type { FrameActionContent, FrameContent, FrameMessage } from './frame.schema';
 
-export const FRAME_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'frame', versionMajor: 2, versionMinor: 0,
-};
+export const FRAME_CONTENT_TYPE: XmtpContentTypeId = { authorityId: 'stage.box', typeId: 'frame', versionMajor: 2, versionMinor: 0 };
 
 export const FRAME_ACTION_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'frameAction', versionMajor: 2, versionMinor: 0,
+  authorityId: 'stage.box',
+  typeId: 'frameAction',
+  versionMajor: 2,
+  versionMinor: 0,
 };
 
-interface Component { id?: unknown; component?: unknown; text?: unknown; variant?: unknown }
+interface Component {
+  id?: unknown;
+  component?: unknown;
+  text?: unknown;
+  variant?: unknown;
+}
 
 type Body = { surfaceId?: unknown; components?: unknown } | undefined;
 
 export function frameStartSurface(frame: Pick<FrameContent, 'messages' | 'start'>): string | undefined {
-  const ids = frame.messages.map(m => (m.createSurface as Body)?.surfaceId).filter((id): id is string => typeof id === 'string');
+  const ids = frame.messages.map((m) => (m.createSurface as Body)?.surfaceId).filter((id): id is string => typeof id === 'string');
   return frame.start !== undefined && ids.includes(frame.start) ? frame.start : ids[0];
 }
 
@@ -31,14 +37,18 @@ function surfaceComponents(messages: readonly FrameMessage[], surfaceId: string)
 }
 
 export function frameSummaryOf(
-  frame: Pick<FrameContent, 'messages' | 'start'>, surfaceId = frameStartSurface(frame),
+  frame: Pick<FrameContent, 'messages' | 'start'>,
+  surfaceId = frameStartSurface(frame),
 ): { title?: string; description?: string } {
   const components = surfaceId === undefined ? [] : surfaceComponents(frame.messages, surfaceId);
   const textsOf = (match: (c: Component) => boolean): string[] =>
-    components.filter(match).map(c => (typeof c.text === 'string' ? c.text.trim() : '')).filter(text => text !== '');
-  const texts = textsOf(c => c.component === 'Text' && c.variant !== 'caption');
-  const title = textsOf(c => c.component === 'Title')[0] ?? texts[0];
-  return { title, description: texts.find(text => text !== title) };
+    components
+      .filter(match)
+      .map((c) => (typeof c.text === 'string' ? c.text.trim() : ''))
+      .filter((text) => text !== '');
+  const texts = textsOf((c) => c.component === 'Text' && c.variant !== 'caption');
+  const title = textsOf((c) => c.component === 'Title')[0] ?? texts[0];
+  return { title, description: texts.find((text) => text !== title) };
 }
 
 export function frameFallbackText(frame: FrameContent): string {
@@ -47,7 +57,7 @@ export function frameFallbackText(frame: FrameContent): string {
 }
 
 export function frameActionText(content: { label?: string; action: { name: string; userMessage?: string } }): string {
-  const label = [content.label, content.action.userMessage].find(text => text !== undefined && text.trim() !== '');
+  const label = [content.label, content.action.userMessage].find((text) => text !== undefined && text.trim() !== '');
   return label === undefined ? `Tapped ${content.action.name}` : `Tapped "${label}"`;
 }
 

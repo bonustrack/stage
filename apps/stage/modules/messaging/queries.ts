@@ -9,18 +9,13 @@ import { fetchConvDetails, fetchGroupRoles } from './groupDetails';
 import { NO_DETAILS, isGroupRow, listedConvRow, sameConvRow, type ConvDetails, type ConvRow } from './convRow.model';
 
 export const messagingKeys = {
-  conv: (convId: string | null | undefined) =>
-    ['xmtp', 'conv', convId ?? ''] as const,
-  convRow: (convId: string | null | undefined) =>
-    ['xmtp', 'conv', convId ?? '', 'row'] as const,
-  convDetails: (convId: string | null | undefined) =>
-    ['xmtp', 'conv', convId ?? '', 'details'] as const,
-  groupEditRights: (convId: string | null | undefined) =>
-    ['xmtp', 'conv', convId ?? '', 'editRights'] as const,
+  conv: (convId: string | null | undefined) => ['xmtp', 'conv', convId ?? ''] as const,
+  convRow: (convId: string | null | undefined) => ['xmtp', 'conv', convId ?? '', 'row'] as const,
+  convDetails: (convId: string | null | undefined) => ['xmtp', 'conv', convId ?? '', 'details'] as const,
+  groupEditRights: (convId: string | null | undefined) => ['xmtp', 'conv', convId ?? '', 'editRights'] as const,
   groupRoles: (convId: string | null | undefined, inboxIds: readonly string[]) =>
     ['xmtp', 'conv', convId ?? '', 'roles', [...inboxIds].sort().join(',')] as const,
-  messages: (account: number, line: string) =>
-    ['xmtp', 'messages', account, line] as const,
+  messages: (account: number, line: string) => ['xmtp', 'messages', account, line] as const,
 } as const;
 
 export { fetchGroupRoles };
@@ -64,7 +59,7 @@ export function useConvRow(convId?: string | null): ConvRow | null {
 
 export function useConvRows(convIds: readonly string[]): (ConvRow | null)[] {
   const rows = useStoreValue(subscribeCachedRows, getCachedRows);
-  const listed = convIds.map(id => listedConvRow(rows, id));
+  const listed = convIds.map((id) => listedConvRow(rows, id));
   const fetched = useQueries({ queries: convIds.map((id, i) => convRowOptions(id, listed[i] !== undefined)) });
   return convIds.map((_, i) => listed[i] ?? fetched[i]?.data ?? null);
 }
@@ -82,7 +77,7 @@ export function useConvDetails(convId: string | null | undefined, row: ConvRow |
 export function patchConvDetails(convId: string, patch: Partial<ConvDetails>): void {
   const queryClient = getQueryClient();
   const key = messagingKeys.convDetails(convId);
-  queryClient.setQueryData<ConvDetails>(key, d => (d ? { ...d, ...patch } : d));
+  queryClient.setQueryData<ConvDetails>(key, (d) => (d ? { ...d, ...patch } : d));
   void queryClient.invalidateQueries({ queryKey: messagingKeys.conv(convId) });
 }
 

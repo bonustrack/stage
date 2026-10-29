@@ -6,17 +6,30 @@ export const BASENAME_REVERSE_REGISTRAR = '0x79EA96012eEa67A83431F1701B3dFf7e37F
 
 const L2_RESOLVER_WRITE_ABI = [
   {
-    name: 'setText', type: 'function', stateMutability: 'nonpayable',
-    inputs: [{ name: 'node', type: 'bytes32' }, { name: 'key', type: 'string' }, { name: 'value', type: 'string' }],
+    name: 'setText',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'node', type: 'bytes32' },
+      { name: 'key', type: 'string' },
+      { name: 'value', type: 'string' },
+    ],
     outputs: [],
   },
   {
-    name: 'setAddr', type: 'function', stateMutability: 'nonpayable',
-    inputs: [{ name: 'node', type: 'bytes32' }, { name: 'a', type: 'address' }],
+    name: 'setAddr',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'node', type: 'bytes32' },
+      { name: 'a', type: 'address' },
+    ],
     outputs: [],
   },
   {
-    name: 'multicall', type: 'function', stateMutability: 'nonpayable',
+    name: 'multicall',
+    type: 'function',
+    stateMutability: 'nonpayable',
     inputs: [{ name: 'data', type: 'bytes[]' }],
     outputs: [{ name: 'results', type: 'bytes[]' }],
   },
@@ -24,17 +37,23 @@ const L2_RESOLVER_WRITE_ABI = [
 
 const REVERSE_REGISTRAR_ABI = [
   {
-    name: 'setName', type: 'function', stateMutability: 'nonpayable',
+    name: 'setName',
+    type: 'function',
+    stateMutability: 'nonpayable',
     inputs: [{ name: 'name', type: 'string' }],
     outputs: [{ name: '', type: 'bytes32' }],
   },
 ] as const;
 
-export interface ContractCall { to: Hex; data: Hex }
+export interface ContractCall {
+  to: Hex;
+  data: Hex;
+}
 
 function textCalls(node: Hex, records: Record<string, string>): Hex[] {
   return Object.entries(records).map(([key, value]) =>
-    encodeFunctionData({ abi: L2_RESOLVER_WRITE_ABI, functionName: 'setText', args: [node, key, value] }));
+    encodeFunctionData({ abi: L2_RESOLVER_WRITE_ABI, functionName: 'setText', args: [node, key, value] }),
+  );
 }
 
 function resolverCall(resolver: Hex, calls: Hex[]): ContractCall {

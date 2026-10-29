@@ -3,9 +3,13 @@ import type { MenuItem } from '../appIcons';
 type BubbleMenuItem = MenuItem<'reply' | 'copy' | 'select' | 'addToDashboard' | 'shareLink' | 'delete'>;
 
 export function bubbleMenuItems(
-  hasText: boolean, { selectText, canDelete = false, frame = false, developerMode = false }: {
-    selectText: boolean; canDelete?: boolean; frame?: boolean; developerMode?: boolean;
-  },
+  hasText: boolean,
+  {
+    selectText,
+    canDelete = false,
+    frame = false,
+    developerMode = false,
+  }: { selectText: boolean; canDelete?: boolean; frame?: boolean; developerMode?: boolean },
 ): BubbleMenuItem[] {
   const items: (BubbleMenuItem | false)[] = [
     { id: 'reply', icon: 'IconArrowUndoUp', label: 'Reply' },

@@ -16,7 +16,17 @@ test('channelKey escapes every other byte as _ and two hex digits', () => {
 });
 
 test('channelKey never maps two branch names to one channel', () => {
-  const branches = ['feat/foo', 'feat-foo', 'feat_foo', 'feat_2ffoo', 'feat/foo/bar', 'feat-foo/bar', 'feat/foo-bar', 'Feat/foo', 'feat/fóo'];
+  const branches = [
+    'feat/foo',
+    'feat-foo',
+    'feat_foo',
+    'feat_2ffoo',
+    'feat/foo/bar',
+    'feat-foo/bar',
+    'feat/foo-bar',
+    'Feat/foo',
+    'feat/fóo',
+  ];
   assert.equal(new Set(branches.map(channelKey)).size, branches.length);
 });
 

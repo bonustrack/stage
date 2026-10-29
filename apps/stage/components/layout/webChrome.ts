@@ -45,9 +45,7 @@ export function stickyAt(top: string, zIndex: number): ViewStyle | null {
   return WEB ? css({ position: 'sticky', top, zIndex }) : null;
 }
 
-export const STICKY_UNDER_CHROME: ViewStyle = WEB
-  ? css({ position: 'sticky', top: 'var(--stage-top-inset, 0px)', zIndex: 2 })
-  : {};
+export const STICKY_UNDER_CHROME: ViewStyle = WEB ? css({ position: 'sticky', top: 'var(--stage-top-inset, 0px)', zIndex: 2 }) : {};
 
 export function pinnedTop(zIndex: number): ViewStyle {
   return WEB

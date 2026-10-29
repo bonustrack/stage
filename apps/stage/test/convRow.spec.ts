@@ -11,10 +11,17 @@ describe('listedConvRow', () => {
   });
 
   test('a listed channel gives its name, image and the other members', () => {
-    const rows = [{
-      convId: 'g', peerAddress: null, groupName: 'Team', title: '3 members', avatarUri: 'https://x/a.png', selfInboxId: 'me',
-      inboxToAddr: { me: '0xme', i1: '0xa', i2: '0xb' },
-    }];
+    const rows = [
+      {
+        convId: 'g',
+        peerAddress: null,
+        groupName: 'Team',
+        title: '3 members',
+        avatarUri: 'https://x/a.png',
+        selfInboxId: 'me',
+        inboxToAddr: { me: '0xme', i1: '0xa', i2: '0xb' },
+      },
+    ];
     const row = listedConvRow(rows, 'g') ?? null;
     expect(row?.groupName).toBe('Team');
     expect(row?.avatarUri).toBe('https://x/a.png');
@@ -23,8 +30,13 @@ describe('listedConvRow', () => {
   });
 
   test('a channel row without a name or image never borrows the list title', () => {
-    expect(listedConvRow([{ convId: 'g', peerAddress: null, title: '3 members', avatarUri: null }], 'g'))
-      .toEqual({ peerAddress: null, groupName: undefined, avatarUri: null, inboxToAddr: {}, selfInboxId: '' });
+    expect(listedConvRow([{ convId: 'g', peerAddress: null, title: '3 members', avatarUri: null }], 'g')).toEqual({
+      peerAddress: null,
+      groupName: undefined,
+      avatarUri: null,
+      inboxToAddr: {},
+      selfInboxId: '',
+    });
   });
 
   test('unresolved peers and unknown chats are not listed', () => {
@@ -40,7 +52,7 @@ describe('rowCreatedTs', () => {
   const original = { id: 'original', createdNs: 10_000_000 };
   const replacement = { id: 'replacement', createdNs: 90_000_000 };
   const ns = (conv: typeof original): number => conv.createdNs;
-  const lookup = async (id: string): Promise<typeof original | null> => id === original.id ? original : null;
+  const lookup = async (id: string): Promise<typeof original | null> => (id === original.id ? original : null);
   const missing = async (): Promise<null> => null;
 
   test('channels and unmapped DMs use their SDK creation time', async () => {

@@ -5,7 +5,10 @@ const ALLOWED_PHASES = new Set<string>(SEND_PHASES);
 const MAX_SENDS = 10;
 const MAX_PHASES = 64;
 
-interface Sample { phase: SendPhase; durationMs: number }
+interface Sample {
+  phase: SendPhase;
+  durationMs: number;
+}
 
 export function makeSendTimingDiagnostic(now = () => performance.now()) {
   let enabled = false;
@@ -14,7 +17,9 @@ export function makeSendTimingDiagnostic(now = () => performance.now()) {
   const pending = new Set<Sample[]>();
   const clock = (): number => {
     let value = Number.NaN;
-    attempt(() => { value = now(); }, 'probe');
+    attempt(() => {
+      value = now();
+    }, 'probe');
     return value;
   };
   const clear = (): void => {
@@ -23,9 +28,15 @@ export function makeSendTimingDiagnostic(now = () => performance.now()) {
     for (const samples of pending) samples.length = 0;
     pending.clear();
   };
-  const stop = (): void => { enabled = false; clear(); };
-  const start = (): void => { clear(); enabled = true; };
-  const read = (): Sample[][] => completed.map(samples => samples.map(({ phase, durationMs }) => ({ phase, durationMs })));
+  const stop = (): void => {
+    enabled = false;
+    clear();
+  };
+  const start = (): void => {
+    clear();
+    enabled = true;
+  };
+  const read = (): Sample[][] => completed.map((samples) => samples.map(({ phase, durationMs }) => ({ phase, durationMs })));
 
   function begin(): SendTiming | undefined {
     if (!enabled || pending.size >= MAX_SENDS) return undefined;

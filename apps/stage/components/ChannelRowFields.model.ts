@@ -29,14 +29,14 @@ function visibleLabels(labels: string[] = []): string[] {
 }
 
 function uniqueAddresses(addresses: string[]): string[] {
-  return [...new Set(addresses.map(address => address.trim().toLowerCase()).filter(Boolean))];
+  return [...new Set(addresses.map((address) => address.trim().toLowerCase()).filter(Boolean))];
 }
 
 function peopleAddresses(data: ChannelRowFieldData, field: 'members' | 'assignees'): string[] {
   const members = uniqueAddresses(Object.values(data.inboxToAddr ?? {}));
   if (field === 'members') return members;
-  const assigned = new Set((data.assigned ?? []).map(address => address.toLowerCase()));
-  return members.filter(address => assigned.has(address));
+  const assigned = new Set((data.assigned ?? []).map((address) => address.toLowerCase()));
+  return members.filter((address) => assigned.has(address));
 }
 
 function metadataText(data: ChannelRowFieldData, field: 'category' | 'status' | 'priority'): string {

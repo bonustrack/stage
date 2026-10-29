@@ -23,24 +23,39 @@ import { IconPeopleAdd } from '@central-icons-react-native/round-outlined-radius
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { Column } from './layout';
 
-function AccountSwitchRow({ account, active, onSwitch }: {
-  account: AccountRecord; active: boolean; onSwitch: (id: string) => void;
+function AccountSwitchRow({
+  account,
+  active,
+  onSwitch,
+}: {
+  account: AccountRecord;
+  active: boolean;
+  onSwitch: (id: string) => void;
 }): React.ReactElement {
   const { link: head, text, border } = usePalette();
   const { hovered, hoverProps } = useHover();
   const menuText = useDropdownMenuText();
   return (
     <Pressable
-      onPress={() => { onSwitch(account.id); }}
+      onPress={() => {
+        onSwitch(account.id);
+      }}
       accessibilityRole="menuitem"
       {...hoverProps}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 10,
-        paddingHorizontal: DROPDOWN_MENU.itemPadX, paddingVertical: DROPDOWN_MENU.itemPadY,
-        backgroundColor: pressed ? withAlpha(head, DROPDOWN_MENU.pressedAlpha) : hovered ? withAlpha(head, DROPDOWN_MENU.hoverAlpha) : 'transparent',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        paddingHorizontal: DROPDOWN_MENU.itemPadX,
+        paddingVertical: DROPDOWN_MENU.itemPadY,
+        backgroundColor: pressed
+          ? withAlpha(head, DROPDOWN_MENU.pressedAlpha)
+          : hovered
+            ? withAlpha(head, DROPDOWN_MENU.hoverAlpha)
+            : 'transparent',
       })}
     >
-      <Avatar address={account.address} size={26} style={{ backgroundColor: border }}/>
+      <Avatar address={account.address} size={26} style={{ backgroundColor: border }} />
       <Column minWidth={0} weight={1}>
         <Text {...menuText} fontWeight="semibold" numberOfLines={1} color={head}>
           {getPeerName(account.address) ?? account.label ?? shortAddress(account.address)}
@@ -54,7 +69,11 @@ function AccountSwitchRow({ account, active, onSwitch }: {
   );
 }
 
-export function MenuSheet({ visible, anchor, onClose }: {
+export function MenuSheet({
+  visible,
+  anchor,
+  onClose,
+}: {
   visible: boolean;
   anchor: MenuPoint | null;
   onClose: () => void;
@@ -65,12 +84,14 @@ export function MenuSheet({ visible, anchor, onClose }: {
 
   useEffect(() => {
     if (!visible) return;
-    void Promise.all([loadAccounts(), getActiveAccountId()]).then(([list, active]) => {
-      setAccounts(list);
-      setActiveId(active);
-    }).catch(reported('menu.accounts'));
+    void Promise.all([loadAccounts(), getActiveAccountId()])
+      .then(([list, active]) => {
+        setAccounts(list);
+        setActiveId(active);
+      })
+      .catch(reported('menu.accounts'));
   }, [visible]);
-  usePeerProfiles(accounts.map(a => a.address));
+  usePeerProfiles(accounts.map((a) => a.address));
 
   function go(href: typeof SIGNUP_ROUTE | typeof IMPORT_ROUTE): void {
     onClose();
@@ -93,10 +114,24 @@ export function MenuSheet({ visible, anchor, onClose }: {
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
       {accounts.map((a) => (
-        <AccountSwitchRow key={a.id} account={a} active={a.id === activeId} onSwitch={onSwitch}/>
+        <AccountSwitchRow key={a.id} account={a} active={a.id === activeId} onSwitch={onSwitch} />
       ))}
-      <MenuRow key="new-account" icon={IconPeopleAdd} label="New account" onPress={() => { go(SIGNUP_ROUTE); }}/>
-      <MenuRow key="import" icon={IconQrCode} label="Import account" onPress={() => { go(IMPORT_ROUTE); }}/>
+      <MenuRow
+        key="new-account"
+        icon={IconPeopleAdd}
+        label="New account"
+        onPress={() => {
+          go(SIGNUP_ROUTE);
+        }}
+      />
+      <MenuRow
+        key="import"
+        icon={IconQrCode}
+        label="Import account"
+        onPress={() => {
+          go(IMPORT_ROUTE);
+        }}
+      />
     </AnchoredMenu>
   );
 }

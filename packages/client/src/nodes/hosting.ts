@@ -39,5 +39,8 @@ export function clientRateKey(ip: string): string {
   const address = ip.trim().toLowerCase();
   if (!address.includes(':')) return address;
   if (address.includes('.')) return address.slice(address.lastIndexOf(':') + 1);
-  return `${ipv6Groups(address).slice(0, 4).map(group => group.replace(/^0+(?=.)/, '')).join(':')}::/64`;
+  return `${ipv6Groups(address)
+    .slice(0, 4)
+    .map((group) => group.replace(/^0+(?=.)/, ''))
+    .join(':')}::/64`;
 }

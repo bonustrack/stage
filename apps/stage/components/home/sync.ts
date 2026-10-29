@@ -6,8 +6,15 @@ import { getXmtpBootstrapPhase, isActiveConv, registerHiddenConv } from '../../l
 import { primeConversationMembers } from '../../lib/xmtp.identity';
 import { subscribeAllMessages } from '../../lib/xmtp.stream';
 import {
-  listVisibleConversations, syncConversationsFromNetwork, streamNewConversations, streamConvConsent,
-  conversationIsSyncGroup, getConvConsentState, createdBySelf, groupAccessOf, isFreshOwnGroup,
+  listVisibleConversations,
+  syncConversationsFromNetwork,
+  streamNewConversations,
+  streamConvConsent,
+  conversationIsSyncGroup,
+  getConvConsentState,
+  createdBySelf,
+  groupAccessOf,
+  isFreshOwnGroup,
 } from '../../lib/xmtp.conv';
 import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { summarizeConversation } from '../../modules/messaging/conversation';
@@ -65,9 +72,14 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
   let refreshInFlight = false;
 
   const runRefresh = (): void => {
-    if (refreshInFlight) { armFullRefresh(); return; }
+    if (refreshInFlight) {
+      armFullRefresh();
+      return;
+    }
     refreshInFlight = true;
-    void refresh().finally(() => { refreshInFlight = false; });
+    void refresh().finally(() => {
+      refreshInFlight = false;
+    });
   };
   function armFullRefresh(): void {
     if (missTimer) clearTimeout(missTimer);
@@ -86,15 +98,21 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
 }
 
 function rowPreviewOf(msg: StreamedMessage): string {
-  try { return previewOfXmtpContent(msg.content, msg.contentTypeId); }
-  catch { return `[${msg.contentTypeId ?? 'unknown'}]`; }
+  try {
+    return previewOfXmtpContent(msg.content, msg.contentTypeId);
+  } catch {
+    return `[${msg.contentTypeId ?? 'unknown'}]`;
+  }
 }
 
 function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
     if (isCancelled() || !msg || isCallSignalType(msg.contentTypeId) || isChannelHidden(streamConvId)) return;
-    if (isDeleteRequestType(msg.contentTypeId)) { onMiss(streamConvId); return; }
+    if (isDeleteRequestType(msg.contentTypeId)) {
+      onMiss(streamConvId);
+      return;
+    }
     if (typeof msg.content === 'string' && isControlBody(msg.content)) return;
     const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
     const lastPreview = rowPreviewOf(msg).slice(0, ROW_PREVIEW_MAX_CHARS);
@@ -106,20 +124,27 @@ function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
 }
 
 function applyToRows(
-  msgConvId: string | null, msg: StreamedMessage, lastTs: number, lastPreview: string,
+  msgConvId: string | null,
+  msg: StreamedMessage,
+  lastTs: number,
+  lastPreview: string,
 ): { needsRefresh: boolean; notify: NotifyCtx | null } {
   const unchanged = { needsRefresh: false, notify: null };
   const prev = homeRows();
   if (!prev) return unchanged;
-  const target = prev.find(r => r.convId === msgConvId);
+  const target = prev.find((r) => r.convId === msgConvId);
   if (target?.peerAddress != null && isGroupUpdateTypeId(msg.contentTypeId)) return unchanged;
   const result = applyInbound(
     prev,
     {
-      convId: msgConvId, senderInboxId: msg.senderInboxId, sentNs: msg.sentNs, lastTs, lastPreview,
+      convId: msgConvId,
+      senderInboxId: msg.senderInboxId,
+      sentNs: msg.sentNs,
+      lastTs,
+      lastPreview,
       countsAsUnread: !isGroupUpdateTypeId(msg.contentTypeId) && !alreadyCounted(msg.id),
     },
-    cur => ({
+    (cur) => ({
       avatarAddress: cur.peerAddress ?? cur.avatarAddress,
       lastSenderAddress: cur.inboxToAddr[msg.senderInboxId] ?? null,
       lastFromSelf: msg.senderInboxId === cur.selfInboxId,
@@ -132,22 +157,21 @@ function applyToRows(
   return {
     needsRefresh: false,
     notify: {
-      title: current.title, senderAddr: current.inboxToAddr[msg.senderInboxId] ?? null,
-      isGroup: current.peerAddress == null, fromSelf: msg.senderInboxId === current.selfInboxId,
+      title: current.title,
+      senderAddr: current.inboxToAddr[msg.senderInboxId] ?? null,
+      isGroup: current.peerAddress == null,
+      fromSelf: msg.senderInboxId === current.selfInboxId,
     },
   };
 }
 
 function notifyTitleBody(n: NotifyCtx, preview: string): { title: string; body: string } {
-  const senderName = getPeerName(n.senderAddr)
-    ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');
+  const senderName = getPeerName(n.senderAddr) ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');
   if (n.isGroup) return { title: n.title, body: `${senderName}: ${preview}` };
   return { title: getPeerName(n.senderAddr) ?? n.title, body: preview };
 }
 
-function maybeNotify(
-  n: NotifyCtx | null, convId: string | null, msgId: string | undefined, preview: string,
-): void {
+function maybeNotify(n: NotifyCtx | null, convId: string | null, msgId: string | undefined, preview: string): void {
   if (!n || n.fromSelf || !convId || isActiveConv(convId)) return;
   if (msgId && alreadyNotified(msgId)) return;
   const { title, body } = notifyTitleBody(n, preview);
@@ -157,7 +181,7 @@ function maybeNotify(
 const INIT_TIMEOUT_MS = 30_000;
 
 async function summarize(conv: Conversation, selfInboxId: string, alreadySynced = false): Promise<Row> {
-  return { ...await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(homeRows() ?? [])) };
+  return { ...(await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(homeRows() ?? []))) };
 }
 
 interface SyncArgs {
@@ -186,21 +210,18 @@ interface Refreshers {
   reconcile: () => Promise<void>;
 }
 
-function makeRefreshers(
-  client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, selfInboxId: string,
-  run: SyncRun,
-): Refreshers {
+function makeRefreshers(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, selfInboxId: string, run: SyncRun): Refreshers {
   let lastRefreshAt = 0;
   const THROTTLE_MS = 30_000;
   const paintFrom = async (convs: Conversation[]): Promise<boolean> => {
-    const beforeIds = (homeRows() ?? []).map(r => r.convId);
+    const beforeIds = (homeRows() ?? []).map((r) => r.convId);
     await primeConversationMembers(client, convs);
-    const previous = new Map((homeRows() ?? []).map(r => [r.convId, r]));
-    const summarized = (await Promise.all(
-      convs.map(c => summarize(c, selfInboxId, true).catch(() => previous.get(c.id) ?? null)),
-    )).filter((r): r is Row => r !== null);
+    const previous = new Map((homeRows() ?? []).map((r) => [r.convId, r]));
+    const summarized = (
+      await Promise.all(convs.map((c) => summarize(c, selfInboxId, true).catch(() => previous.get(c.id) ?? null)))
+    ).filter((r): r is Row => r !== null);
     if (run.cancelled) return false;
-    updateHomeRows(prev => mergePaintedRows(beforeIds, prev, uniqueByConvId(summarized)));
+    updateHomeRows((prev) => mergePaintedRows(beforeIds, prev, uniqueByConvId(summarized)));
     lastRefreshAt = Date.now();
     clearTimeout(run.initTimer);
     return true;
@@ -230,13 +251,20 @@ function makeRefreshers(
       const rows = homeRows();
       if (rows === null) return;
       const visible = await listVisibleConversations();
-      const { added, gone } = visibleRowsDiff(rows.map(r => r.convId), visible.map(c => c.id));
+      const { added, gone } = visibleRowsDiff(
+        rows.map((r) => r.convId),
+        visible.map((c) => c.id),
+      );
       if (added.length === 0 && gone.length === 0) return;
-      const fresh = (await Promise.all(visible.filter(c => added.includes(c.id))
-        .map(c => summarize(c, selfInboxId, createdBySelf(c, selfInboxId)).catch(recover<Row | null>('home.reconcile', null)))))
-        .filter((r): r is Row => r !== null);
+      const fresh = (
+        await Promise.all(
+          visible
+            .filter((c) => added.includes(c.id))
+            .map((c) => summarize(c, selfInboxId, createdBySelf(c, selfInboxId)).catch(recover<Row | null>('home.reconcile', null))),
+        )
+      ).filter((r): r is Row => r !== null);
       if (run.cancelled) return;
-      updateHomeRows(prev => uniqueByConvId([...fresh, ...(prev ?? []).filter(r => !gone.includes(r.convId))]));
+      updateHomeRows((prev) => uniqueByConvId([...fresh, ...(prev ?? []).filter((r) => !gone.includes(r.convId))]));
     } catch (err) {
       report('home.reconcile', err);
     }
@@ -246,12 +274,15 @@ function makeRefreshers(
 
 async function onNewConversation(conv: Conversation, selfInboxId: string, run: SyncRun): Promise<void> {
   schedulePushTopicRefresh();
-  if (await conversationIsSyncGroup(conv).catch(recover('home.newConversation', false))) { registerHiddenConv(conv.id); return; }
+  if (await conversationIsSyncGroup(conv).catch(recover('home.newConversation', false))) {
+    registerHiddenConv(conv.id);
+    return;
+  }
   if ((await getConvConsentState(conv.id).catch(recover('home.newConversation', null))) === 'denied') return;
-  if (await groupAccessOf(conv.id).catch(recover('home.newConversationAccess', 'waiting')) === 'outside') return;
+  if ((await groupAccessOf(conv.id).catch(recover('home.newConversationAccess', 'waiting'))) === 'outside') return;
   const row = await summarize(conv, selfInboxId, createdBySelf(conv, selfInboxId)).catch(recover('home.newConversation', null));
   if (!row || run.cancelled) return;
-  updateHomeRows(prev => (prev ? [row, ...prev.filter(x => x.convId !== row.convId)] : [row]));
+  updateHomeRows((prev) => (prev ? [row, ...prev.filter((x) => x.convId !== row.convId)] : [row]));
 }
 
 function subscribeConvStream(selfInboxId: string, run: SyncRun): void {
@@ -265,7 +296,7 @@ function subscribeConvStream(selfInboxId: string, run: SyncRun): void {
 }
 
 async function reconcileUnlessOwnNew(convIds: string[], selfInboxId: string, reconcile: () => Promise<void>): Promise<void> {
-  const own = await Promise.all(convIds.map(id => isFreshOwnGroup(id, selfInboxId).catch(recover('home.ownConsent', false))));
+  const own = await Promise.all(convIds.map((id) => isFreshOwnGroup(id, selfInboxId).catch(recover('home.ownConsent', false))));
   if (own.length > 0 && own.every(Boolean)) return;
   await reconcile();
 }
@@ -273,14 +304,14 @@ async function reconcileUnlessOwnNew(convIds: string[], selfInboxId: string, rec
 function subscribeLiveStreams(run: SyncRun, r: Refreshers, selfInboxId: string): void {
   run.reconcileVisibility = r.reconcile;
   try {
-    run.cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({
-      isCancelled: () => run.cancelled, refresh: r.refresh,
-    }));
+    run.cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({ isCancelled: () => run.cancelled, refresh: r.refresh }));
   } catch (err) {
     report('home.messageStream', err);
   }
   try {
-    run.cancelConsentStream = streamConvConsent((convIds) => { void reconcileUnlessOwnNew(convIds, selfInboxId, r.reconcile); });
+    run.cancelConsentStream = streamConvConsent((convIds) => {
+      void reconcileUnlessOwnNew(convIds, selfInboxId, r.reconcile);
+    });
   } catch (err) {
     report('home.consentStream', err);
   }
@@ -305,7 +336,10 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     subscribeLiveStreams(run, r, selfInboxId);
     await syncPreferences();
   } catch (e) {
-    if (run.cancelled || e instanceof NoAccountError) { clearTimeout(run.initTimer); return; }
+    if (run.cancelled || e instanceof NoAccountError) {
+      clearTimeout(run.initTimer);
+      return;
+    }
     if (!hasHomeRows()) args.setError((e as Error).message);
   }
 }
@@ -315,19 +349,21 @@ export function useChannelsSync(args: SyncArgs): void {
   useEffect(() => {
     if (!enabled) return;
     setError('');
-    const run: SyncRun = {
-      cancelled: false,
-      cancelConvStream: null, cancelMsgStream: null, cancelConsentStream: null, appStateSub: null,
-    };
+    const run: SyncRun = { cancelled: false, cancelConvStream: null, cancelMsgStream: null, cancelConsentStream: null, appStateSub: null };
     const armInitTimer = (): void => {
       run.initTimer = setTimeout(() => {
         if (run.cancelled || hasHomeRows()) return;
-        if (getXmtpBootstrapPhase() === 'registering') { armInitTimer(); return; }
+        if (getXmtpBootstrapPhase() === 'registering') {
+          armInitTimer();
+          return;
+        }
         setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
       }, INIT_TIMEOUT_MS);
     };
     armInitTimer();
-    const removeHidden = (): void => { if (homeRows() !== null) updateHomeRows(rows => rows); };
+    const removeHidden = (): void => {
+      if (homeRows() !== null) updateHomeRows((rows) => rows);
+    };
     const stopVisibility = subscribeHiddenChannels(() => {
       removeHidden();
       void run.reconcileVisibility?.();
@@ -348,7 +384,10 @@ export function useChannelsSync(args: SyncArgs): void {
         if (stop) attempt(stop, 'cleanup');
       }
       const appStateSub = run.appStateSub;
-      if (appStateSub) attempt(() => { appStateSub.remove(); }, 'cleanup');
+      if (appStateSub)
+        attempt(() => {
+          appStateSub.remove();
+        }, 'cleanup');
     };
   }, [accountEpoch, enabled]);
 }

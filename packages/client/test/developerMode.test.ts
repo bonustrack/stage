@@ -1,16 +1,23 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  collectSyncReplay, DEFAULT_DEVELOPER_MODE, mergeDeveloperMode, parseSyncState, type DeveloperModeContent, type SyncMessage,
+  collectSyncReplay,
+  DEFAULT_DEVELOPER_MODE,
+  mergeDeveloperMode,
+  parseSyncState,
+  type DeveloperModeContent,
+  type SyncMessage,
 } from '../src/xmtp/readState';
 import { SYNC_CODECS } from '../src/xmtp/jsonCodecs';
 
 const state = (enabled: boolean, at: number): DeveloperModeContent => ({ enabled, at });
 const message = (content: unknown, sentNs: number, senderInboxId = 'self'): SyncMessage => ({
-  content, sentNs, senderInboxId, contentTypeId: 'stage.box/developerMode:1.0',
+  content,
+  sentNs,
+  senderInboxId,
+  contentTypeId: 'stage.box/developerMode:1.0',
 });
-const replay = (messages: SyncMessage[], afterNs = 0): DeveloperModeContent | null => (
-  collectSyncReplay(messages, afterNs, { inboxId: 'self', nowMs: 100 }).latest.developerMode
-);
+const replay = (messages: SyncMessage[], afterNs = 0): DeveloperModeContent | null =>
+  collectSyncReplay(messages, afterNs, { inboxId: 'self', nowMs: 100 }).latest.developerMode;
 
 describe('developer mode sync', () => {
   test('defaults OFF and validates a complete, nonnegative clocked boolean', () => {

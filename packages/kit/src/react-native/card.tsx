@@ -88,5 +88,9 @@ export function Card(props: CardProps): React.ReactElement {
     );
   }
 
-  return <View {...accessibilityProps(accessibility)} style={[base, style]}>{body}</View>;
+  return (
+    <View {...accessibilityProps(accessibility)} style={[base, style]}>
+      {body}
+    </View>
+  );
 }

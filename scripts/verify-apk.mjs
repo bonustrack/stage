@@ -19,7 +19,8 @@ const SIGNATURE_ALGORITHMS = new Map([
   [0x0301, { hash: 'sha256' }],
 ]);
 
-const USAGE = 'usage: bun scripts/verify-apk.mjs <file.apk> [--package id] [--version-code n] [--version-name v] [--runtime hash] [--commit sha] [--cert sha256]';
+const USAGE =
+  'usage: bun scripts/verify-apk.mjs <file.apk> [--package id] [--version-code n] [--version-name v] [--runtime hash] [--commit sha] [--cert sha256]';
 
 function fail(message) {
   throw new Error(message);
@@ -132,7 +133,11 @@ function verifyV2(apk, zip) {
   const digestList = lengthPrefixed(signedData.value, 0);
   const [certificate] = sequence(lengthPrefixed(signedData.value, digestList.next).value);
   if (!certificate) fail('v2 signer has no certificate');
-  const digests = new Map(sequence(digestList.value).map(idAndBytes).map(({ id, bytes }) => [id, bytes]));
+  const digests = new Map(
+    sequence(digestList.value)
+      .map(idAndBytes)
+      .map(({ id, bytes }) => [id, bytes]),
+  );
   const signatures = sequence(signatureList.value).map(idAndBytes);
   const signatureIds = signatures.map(({ id }) => id).sort();
   if (signatureIds.join() !== [...digests.keys()].sort().join()) fail('v2 digest and signature algorithms differ');
@@ -167,9 +172,10 @@ function stringPool(chunk) {
   const count = chunk.readUInt32LE(8);
   const utf8 = (chunk.readUInt32LE(16) & 0x100) !== 0;
   const stringsStart = chunk.readUInt32LE(20);
-  const varLength = (offset) => chunk[offset] & 0x80
-    ? { length: ((chunk[offset] & 0x7f) << 8) | chunk[offset + 1], next: offset + 2 }
-    : { length: chunk[offset], next: offset + 1 };
+  const varLength = (offset) =>
+    chunk[offset] & 0x80
+      ? { length: ((chunk[offset] & 0x7f) << 8) | chunk[offset + 1], next: offset + 2 }
+      : { length: chunk[offset], next: offset + 1 };
   return Array.from({ length: count }, (_, index) => {
     const offset = stringsStart + chunk.readUInt32LE(headerSize + index * 4);
     if (utf8) {
@@ -240,7 +246,7 @@ function inspect(path) {
     versionName: manifest.versionName ?? null,
     debuggable: application.debuggable === true,
     runtime,
-    commit: appConfig ? JSON.parse(appConfig.toString('utf8')).extra?.gitHash ?? null : null,
+    commit: appConfig ? (JSON.parse(appConfig.toString('utf8')).extra?.gitHash ?? null) : null,
     ...signature,
     abis,
   };

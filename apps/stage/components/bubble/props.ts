@@ -3,7 +3,11 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import type { CallRecord } from './callCard.model';
 import type { PollOpenAnswers, PollOwnVotes, PollVotes } from './poll.model';
 
-export interface MenuAnchor { y: number; height: number; point?: MenuPoint | null }
+export interface MenuAnchor {
+  y: number;
+  height: number;
+  point?: MenuPoint | null;
+}
 
 export function initialMenuAnchor(cached: MenuAnchor, hasNode: boolean): MenuAnchor | null {
   const cachedAnchorIsValid = cached.height > 0;
@@ -12,12 +16,17 @@ export function initialMenuAnchor(cached: MenuAnchor, hasNode: boolean): MenuAnc
 }
 
 export interface MessengerBubbleProps {
-  entry: HistoryEntry; dark: boolean; pending?: boolean; replyTarget?: boolean;
-  onReact?: (emoji: string) => void; onReply?: () => void;
+  entry: HistoryEntry;
+  dark: boolean;
+  pending?: boolean;
+  replyTarget?: boolean;
+  onReact?: (emoji: string) => void;
+  onReply?: () => void;
   onOpenMenu?: (anchor: MenuAnchor) => void;
   onReplyPreviewPress?: () => void;
   onAnswer?: (label: string) => void;
-  replyPreview?: string; reactions?: Map<string, string[]>;
+  replyPreview?: string;
+  reactions?: Map<string, string[]>;
   pendingReactions?: string[];
   pendingRemovals?: string[];
   ownEmojis?: Set<string>;

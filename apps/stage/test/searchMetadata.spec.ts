@@ -1,7 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
 import {
-  FILTER_FIELDS, PRIORITY_OPTIONS, parseSearchFilter, searchFilterSources, searchFilterToken, searchFilterValues, searchRowMatcher,
+  FILTER_FIELDS,
+  PRIORITY_OPTIONS,
+  parseSearchFilter,
+  searchFilterSources,
+  searchFilterToken,
+  searchFilterValues,
+  searchRowMatcher,
   type FilterRow,
 } from '../components/searchFilter.model';
 import { ALICE, BOB, NAMES, group } from './searchFixtures';
@@ -15,15 +21,19 @@ const rows: FilterRow[] = [
   { ...group('empty', []), category: '  ', status: '', priority: null },
 ];
 const namesOf = (address: string): string[] => NAMES[address] ?? [];
-const draftOf = (convId: string): string => convId === 'ship' ? 'release' : '';
-const matching = (query: string): string[] => (
-  rows.filter(searchRowMatcher(parseSearchFilter(query), namesOf, draftOf)).map(row => row.convId)
-);
+const draftOf = (convId: string): string => (convId === 'ship' ? 'release' : '');
+const matching = (query: string): string[] =>
+  rows.filter(searchRowMatcher(parseSearchFilter(query), namesOf, draftOf)).map((row) => row.convId);
 
 describe('channel metadata search filters', () => {
   test('parses field names without case, commas, repeated tokens and unfinished quotes', () => {
-    expect(parseSearchFilter('CATEGORY:Stage,"Client work" STATUS:Backlog status:"🚧 In progress" PRIORITY:High,Urgent ship')).toMatchObject({
-      categories: ['Stage', 'Client work'], statuses: ['Backlog', '🚧 In progress'], priorities: ['High', 'Urgent'], text: 'ship',
+    expect(
+      parseSearchFilter('CATEGORY:Stage,"Client work" STATUS:Backlog status:"🚧 In progress" PRIORITY:High,Urgent ship'),
+    ).toMatchObject({
+      categories: ['Stage', 'Client work'],
+      statuses: ['Backlog', '🚧 In progress'],
+      priorities: ['High', 'Urgent'],
+      text: 'ship',
     });
     expect(parseSearchFilter('status:"🚧 In').statuses).toEqual(['🚧 In']);
     expect(parseSearchFilter('category:"Client work", category:Stage').categories).toEqual(['Client work', 'Stage']);
@@ -54,8 +64,9 @@ describe('channel metadata search filters', () => {
   test('ORs values within fields and ANDs metadata with existing tokens and free text', () => {
     expect(matching('status:Backlog,Todo')).toEqual(['build', 'plan']);
     expect(matching('category:Stage category:Snapshot')).toEqual(['build', 'ship', 'plan']);
-    expect(matching('category:Stage status:Backlog,"🚧 In progress" priority:Urgent label:Bug member:bob.base.eth has:draft shi'))
-      .toEqual(['ship']);
+    expect(matching('category:Stage status:Backlog,"🚧 In progress" priority:Urgent label:Bug member:bob.base.eth has:draft shi')).toEqual([
+      'ship',
+    ]);
     expect(matching('category:Stage priority:Low')).toEqual([]);
     expect(matching('status:Backlog priority:High -category:Stage')).toEqual([]);
   });
@@ -68,9 +79,9 @@ describe('channel metadata search filters', () => {
   });
 
   test('empty values and clearing the query remove only the query restrictions', () => {
-    expect(matching('category: status:"" priority: -category: -status: -priority:')).toEqual(rows.map(row => row.convId));
+    expect(matching('category: status:"" priority: -category: -status: -priority:')).toEqual(rows.map((row) => row.convId));
     expect(matching('category:Stage')).toEqual(['build', 'ship']);
-    expect(matching('')).toEqual(rows.map(row => row.convId));
+    expect(matching('')).toEqual(rows.map((row) => row.convId));
     expect(rows[0]).toMatchObject({ category: 'Stage', status: 'Backlog', priority: 'High' });
   });
 
@@ -92,8 +103,8 @@ describe('channel metadata search filters', () => {
     for (const by of ['status', 'category', 'label'] as const) {
       const columns = boardColumns(rows, [], [], by);
       const shown = searchedColumns(columns, 'category:Stage status:Backlog priority:High label:Bug member:alice123', namesOf);
-      expect(shown.map(column => column.key)).toEqual(columns.map(column => column.key));
-      expect(shown.flatMap(column => column.rows.map(row => row.convId))).toEqual(['build']);
+      expect(shown.map((column) => column.key)).toEqual(columns.map((column) => column.key));
+      expect(shown.flatMap((column) => column.rows.map((row) => row.convId))).toEqual(['build']);
     }
   });
 });
@@ -109,14 +120,21 @@ describe('metadata filter suggestions', () => {
     const board = searchFilterSources([...rows, duplicate, dm], 'board');
     expect(board.categories).toEqual(['Client work', 'Snapshot', 'Stage']);
     expect(board.statuses).toEqual(['🚧 In progress', 'Backlog', 'Ready, next', 'Todo']);
-    expect(searchFilterSources(rows.filter(row => row.convId === 'missing' || row.convId === 'empty'), 'board'))
-      .toMatchObject({ categories: [], statuses: [] });
+    expect(
+      searchFilterSources(
+        rows.filter((row) => row.convId === 'missing' || row.convId === 'empty'),
+        'board',
+      ),
+    ).toMatchObject({ categories: [], statuses: [] });
     expect(searchFilterSources([dm], 'chats')).toMatchObject({ categories: ['Private'], statuses: ['DM only'] });
   });
 
   test('uses the fixed priority values in their existing order', () => {
-    expect(PRIORITY_OPTIONS.map(option => [option.label, option.value])).toEqual([
-      ['Urgent', 'Urgent'], ['High', 'High'], ['Medium', 'Medium'], ['Low', 'Low'],
+    expect(PRIORITY_OPTIONS.map((option) => [option.label, option.value])).toEqual([
+      ['Urgent', 'Urgent'],
+      ['High', 'High'],
+      ['Medium', 'Medium'],
+      ['Low', 'Low'],
     ]);
   });
 

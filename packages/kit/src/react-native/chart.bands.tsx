@@ -52,9 +52,12 @@ export function ChartBands({ categories, height, setActive }: ChartBandsProps): 
   return (
     <>
       {categories.map((c, i) => (
-        <View key={i} collapsable={false}
+        <View
+          key={i}
+          collapsable={false}
           style={{ position: 'absolute', top: 0, left: c.start, width: Math.max(1, c.end - c.start), height }}
-          {...(IS_WEB ? webHandlers(i, setActive) : touchHandlers(i, setActive, origin))} />
+          {...(IS_WEB ? webHandlers(i, setActive) : touchHandlers(i, setActive, origin))}
+        />
       ))}
     </>
   );

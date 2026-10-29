@@ -17,33 +17,55 @@ const categoryOrder = ['category:metro', 'category:stage', 'category:Labs'];
 describe('configured channel field options', () => {
   test('includes unused statuses in saved board order ahead of observed legacy values', () => {
     expect(configuredFieldOptions('status', sources.statuses, statusOrder)).toEqual([
-      '🗒️ Backlog', '🚧 In progress', '🔍 In review', '✅ Done', '👀 In review',
+      '🗒️ Backlog',
+      '🚧 In progress',
+      '🔍 In review',
+      '✅ Done',
+      '👀 In review',
     ]);
   });
 
   test('includes unused categories in shared board/list order and keeps observed display names', () => {
-    expect(configuredFieldOptions('category', sources.categories, categoryOrder)).toEqual([
-      'Metro', 'Stage', 'Labs', 'Client work',
-    ]);
+    expect(configuredFieldOptions('category', sources.categories, categoryOrder)).toEqual(['Metro', 'Stage', 'Labs', 'Client work']);
   });
 
   test('keeps all configured values when channels are absent or filtered out', () => {
-    const filtered = searchFilterSources(rows.filter(row => row.convId === 'active'), 'board');
+    const filtered = searchFilterSources(
+      rows.filter((row) => row.convId === 'active'),
+      'board',
+    );
     expect(configuredFieldOptions('status', filtered.statuses, statusOrder)).toEqual([
-      '🗒️ Backlog', '🚧 In progress', '🔍 In review', '✅ Done',
+      '🗒️ Backlog',
+      '🚧 In progress',
+      '🔍 In review',
+      '✅ Done',
     ]);
     expect(configuredFieldOptions('category', filtered.categories, categoryOrder)).toEqual(['metro', 'Stage', 'Labs']);
-    expect(configuredFieldOptions('status', [], statusOrder)).toEqual(statusOrder.map(key => key.slice(7)));
+    expect(configuredFieldOptions('status', [], statusOrder)).toEqual(statusOrder.map((key) => key.slice(7)));
     expect(configuredFieldOptions('category', [], categoryOrder)).toEqual(['metro', 'stage', 'Labs']);
   });
 
   test('deduplicates case variants without merging different emoji identities or inventing unset values', () => {
-    expect(configuredFieldOptions('status', sources.statuses, [
-      'status:✅ Done', 'status:✅ done', 'category:Wrong', 'label:Todo', 'status:', 'status:   ', ...statusOrder,
-    ])).toEqual(['✅ Done', '🗒️ Backlog', '🚧 In progress', '🔍 In review', '👀 In review']);
-    expect(configuredFieldOptions('category', sources.categories, [
-      'category:metro', 'category:Metro', 'status:Wrong', 'category:', ...categoryOrder,
-    ])).toEqual(['Metro', 'Stage', 'Labs', 'Client work']);
+    expect(
+      configuredFieldOptions('status', sources.statuses, [
+        'status:✅ Done',
+        'status:✅ done',
+        'category:Wrong',
+        'label:Todo',
+        'status:',
+        'status:   ',
+        ...statusOrder,
+      ]),
+    ).toEqual(['✅ Done', '🗒️ Backlog', '🚧 In progress', '🔍 In review', '👀 In review']);
+    expect(
+      configuredFieldOptions('category', sources.categories, [
+        'category:metro',
+        'category:Metro',
+        'status:Wrong',
+        'category:',
+        ...categoryOrder,
+      ]),
+    ).toEqual(['Metro', 'Stage', 'Labs', 'Client work']);
   });
 
   test('keeps configured order when a different current value is selected', () => {
@@ -64,10 +86,17 @@ describe('configured channel field options', () => {
   test('follows a later configured reorder without mutating source lists', () => {
     const reordered = ['status:✅ Done', 'status:🗒️ Backlog', 'status:🔍 In review', 'status:🚧 In progress'];
     expect(configuredFieldOptions('status', sources.statuses, reordered)).toEqual([
-      '✅ Done', '🗒️ Backlog', '🔍 In review', '🚧 In progress', '👀 In review',
+      '✅ Done',
+      '🗒️ Backlog',
+      '🔍 In review',
+      '🚧 In progress',
+      '👀 In review',
     ]);
     expect(configuredFieldOptions('category', sources.categories, [...categoryOrder].reverse())).toEqual([
-      'Labs', 'Stage', 'Metro', 'Client work',
+      'Labs',
+      'Stage',
+      'Metro',
+      'Client work',
     ]);
     expect(statusOrder[0]).toBe('status:🗒️ Backlog');
     expect(sources).toEqual(searchFilterSources(rows, 'chats'));

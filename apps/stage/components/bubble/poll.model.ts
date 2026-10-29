@@ -18,21 +18,10 @@ export type PollVotes = Map<number, Map<number, Set<string>>>;
 export type PollOwnVotes = Map<number, Set<number>>;
 export type PollOpenAnswers = Map<number, Map<string, { text: string; ts: string }>>;
 
-function optionRow(
-  option: PollOption,
-  votes: number,
-  total: number,
-  selected: boolean,
-  multiSelect: boolean,
-): PollOptionRow {
+function optionRow(option: PollOption, votes: number, total: number, selected: boolean, multiSelect: boolean): PollOptionRow {
   const pct = total > 0 ? Math.round((votes / total) * 100) : 0;
   const prefix = selected ? '✓ ' : multiSelect ? '☐ ' : '';
-  return {
-    label: `${prefix}${option.label}`,
-    stats: `${pct}% · ${votes}`,
-    fillPct: Math.max(0, Math.min(100, pct)),
-    selected,
-  };
+  return { label: `${prefix}${option.label}`, stats: `${pct}% · ${votes}`, fillPct: Math.max(0, Math.min(100, pct)), selected };
 }
 
 function headerLabel(q: PollQuestion): string | undefined {
@@ -56,15 +45,7 @@ function questionBlock(
     question: showQuestion ? q.question : undefined,
     header: headerLabel(q),
     totalLabel: `${total} vote${total === 1 ? '' : 's'}`,
-    options: options.map((option, i) =>
-      optionRow(
-        option,
-        votes?.get(i)?.size ?? 0,
-        total,
-        own?.has(i) ?? false,
-        q.multiSelect === true,
-      ),
-    ),
+    options: options.map((option, i) => optionRow(option, votes?.get(i)?.size ?? 0, total, own?.has(i) ?? false, q.multiSelect === true)),
   };
 }
 
@@ -74,7 +55,5 @@ export function pollQuestionBlocks(
   ownVotes: PollOwnVotes | undefined,
 ): PollQuestionBlock[] {
   const multiQuestion = questions.length > 1;
-  return questions.map((q, qi) =>
-    questionBlock(q, qi, multiQuestion, votes?.get(qi), ownVotes?.get(qi)),
-  );
+  return questions.map((q, qi) => questionBlock(q, qi, multiQuestion, votes?.get(qi), ownVotes?.get(qi)));
 }

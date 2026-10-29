@@ -1,12 +1,19 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import {
-  EMPTY_SNAPSHOT, INLINE_DATA_LIMIT, SNAPSHOT_LINES, decodeSnapshot, encodeSnapshot, lineEntries,
-  snapshotEntries, withLine, withSelf,
+  EMPTY_SNAPSHOT,
+  INLINE_DATA_LIMIT,
+  SNAPSHOT_LINES,
+  decodeSnapshot,
+  encodeSnapshot,
+  lineEntries,
+  snapshotEntries,
+  withLine,
+  withSelf,
 } from '../lib/feedSnapshot.model';
 import { entry } from './helpers';
 
-const ids = (entries: readonly HistoryEntry[]): string[] => entries.map(e => e.id);
+const ids = (entries: readonly HistoryEntry[]): string[] => entries.map((e) => e.id);
 const messages = (n: number): HistoryEntry[] => Array.from({ length: n }, (_, i) => entry(`m${i}`));
 
 describe('feed snapshot', () => {
@@ -14,9 +21,11 @@ describe('feed snapshot', () => {
     const slice = [
       entry('sending', { pending: true }),
       entry('r1', { payload: { reactTo: 'm0', emoji: '+1' } }),
-      entry('m0'), entry('m1'),
+      entry('m0'),
+      entry('m1'),
       entry('r2', { payload: { reactTo: 'm2', emoji: '+1' } }),
-      entry('m2'), entry('m3'),
+      entry('m2'),
+      entry('m3'),
     ];
     expect(ids(snapshotEntries(slice, 2))).toEqual(['r1', 'm0', 'm1', 'r2']);
     expect(snapshotEntries(messages(30))).toHaveLength(20);
@@ -24,9 +33,21 @@ describe('feed snapshot', () => {
 
   test('drops inline file data that is too large to keep', () => {
     const big = 'A'.repeat(INLINE_DATA_LIMIT + 1);
-    const withFile = entry('file', { payload: { attachments: [{ kind: 'file', name: 'a.bin', dataB64: big }, { kind: 'image', dataB64: 'AAAA' }] } });
+    const withFile = entry('file', {
+      payload: {
+        attachments: [
+          { kind: 'file', name: 'a.bin', dataB64: big },
+          { kind: 'image', dataB64: 'AAAA' },
+        ],
+      },
+    });
     const [kept] = snapshotEntries([withFile]);
-    expect(kept?.payload).toEqual({ attachments: [{ kind: 'file', name: 'a.bin', dataB64: undefined }, { kind: 'image', dataB64: 'AAAA' }] });
+    expect(kept?.payload).toEqual({
+      attachments: [
+        { kind: 'file', name: 'a.bin', dataB64: undefined },
+        { kind: 'image', dataB64: 'AAAA' },
+      ],
+    });
     const small = entry('small', { payload: { attachments: [{ kind: 'image', dataB64: 'AAAA' }] } });
     expect(snapshotEntries([small])[0]).toBe(small);
   });
@@ -45,11 +66,17 @@ describe('feed snapshot', () => {
 
   test('round-trips file keys and big numbers', () => {
     const secret = new Uint8Array([1, 2, 3, 250]);
-    const remote = entry('remote', { payload: { attachments: [{ kind: 'image', remote: { url: 'https://x', secret, contentLength: 12n } }] } });
+    const remote = entry('remote', {
+      payload: { attachments: [{ kind: 'image', remote: { url: 'https://x', secret, contentLength: 12n } }] },
+    });
     const snapshot = withSelf(withLine(EMPTY_SNAPSHOT, 'line-a', [remote], 5), 'inbox-a');
     const decoded = decodeSnapshot(encodeSnapshot(snapshot));
     expect(decoded?.self).toBe('inbox-a');
-    const att = (lineEntries(decoded ?? EMPTY_SNAPSHOT, 'line-a')?.[0]?.payload as { attachments: { remote: { secret: Uint8Array; contentLength: bigint } }[] }).attachments[0];
+    const att = (
+      lineEntries(decoded ?? EMPTY_SNAPSHOT, 'line-a')?.[0]?.payload as {
+        attachments: { remote: { secret: Uint8Array; contentLength: bigint } }[];
+      }
+    ).attachments[0];
     expect(att?.remote.secret).toEqual(secret);
     expect(att?.remote.contentLength).toBe(12n);
   });
@@ -57,7 +84,15 @@ describe('feed snapshot', () => {
   test('reads nothing from a damaged record', () => {
     expect(decodeSnapshot('not json')).toBeNull();
     expect(decodeSnapshot('{"self":null}')).toBeNull();
-    const decoded = decodeSnapshot(JSON.stringify({ self: 7, lines: [{ line: 'a', at: 1, entries: [{ id: 'x' }] }, { line: 'b', at: 2, entries: [] }] }));
+    const decoded = decodeSnapshot(
+      JSON.stringify({
+        self: 7,
+        lines: [
+          { line: 'a', at: 1, entries: [{ id: 'x' }] },
+          { line: 'b', at: 2, entries: [] },
+        ],
+      }),
+    );
     expect(decoded).toEqual({ self: null, lines: [{ line: 'b', at: 2, entries: [] }] });
   });
 });

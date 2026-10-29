@@ -9,14 +9,21 @@ export interface GithubRef {
 }
 
 const SEG = '[A-Za-z0-9._-]+';
-const RE = new RegExp(
-  `https?://github\\.com/(${SEG})/(${SEG})(?:/(pull|issues)/(\\d+))?`,
-  'i',
-);
+const RE = new RegExp(`https?://github\\.com/(${SEG})/(${SEG})(?:/(pull|issues)/(\\d+))?`, 'i');
 
 const RESERVED = new Set([
-  'orgs', 'sponsors', 'marketplace', 'features', 'topics', 'collections',
-  'settings', 'notifications', 'explore', 'about', 'pricing', 'login',
+  'orgs',
+  'sponsors',
+  'marketplace',
+  'features',
+  'topics',
+  'collections',
+  'settings',
+  'notifications',
+  'explore',
+  'about',
+  'pricing',
+  'login',
 ]);
 
 function kindOf(sub: string | undefined): GithubKind {

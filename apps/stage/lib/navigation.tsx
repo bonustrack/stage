@@ -1,6 +1,4 @@
-import {
-  createStackNavigator, TransitionPresets, TransitionSpecs, type StackNavigationOptions,
-} from 'expo-router/js-stack';
+import { createStackNavigator, TransitionPresets, TransitionSpecs, type StackNavigationOptions } from 'expo-router/js-stack';
 import { withLayoutContext } from 'expo-router';
 
 export const RootStack = withLayoutContext(createStackNavigator().Navigator);
@@ -13,10 +11,7 @@ export function rootStackScreenOptions(bg: string): StackNavigationOptions {
     gestureEnabled: true,
     gestureResponseDistance: 9999,
     ...TransitionPresets.SlideFromRightIOS,
-    transitionSpec: {
-      open: { animation: 'timing', config: { duration: 0 } },
-      close: TransitionSpecs.TransitionIOSSpec,
-    },
+    transitionSpec: { open: { animation: 'timing', config: { duration: 0 } }, close: TransitionSpecs.TransitionIOSSpec },
   };
 }
 

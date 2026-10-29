@@ -1,8 +1,20 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  isChatCleared, isRowCleared, revivesClearedChat, isSyncGroupName, isSyncType, mergeClearedChats, parseSyncState,
-  shouldApplyReadState, syncGroupName, collectSyncReplay, pickPublishGroup, isOwnSyncGroup,
-  type SyncGroupFacts, type SyncMessage, type SyncReplay,
+  isChatCleared,
+  isRowCleared,
+  revivesClearedChat,
+  isSyncGroupName,
+  isSyncType,
+  mergeClearedChats,
+  parseSyncState,
+  shouldApplyReadState,
+  syncGroupName,
+  collectSyncReplay,
+  pickPublishGroup,
+  isOwnSyncGroup,
+  type SyncGroupFacts,
+  type SyncMessage,
+  type SyncReplay,
 } from '../src/xmtp/readState';
 
 const ME = 'inbox-me';
@@ -16,7 +28,11 @@ const CLEAR = 'stage.box/clearState:1.0';
 const BOARD = 'stage.box/boardState:1.0';
 
 function replayOf(messages: Omit<SyncMessage, 'senderInboxId'>[], afterNs = 0): SyncReplay {
-  return collectSyncReplay(messages.map((m) => ({ ...m, senderInboxId: ME })), afterNs, MINE);
+  return collectSyncReplay(
+    messages.map((m) => ({ ...m, senderInboxId: ME })),
+    afterNs,
+    MINE,
+  );
 }
 
 describe('read state payload', () => {
@@ -176,7 +192,6 @@ describe('deleted chats', () => {
   });
 });
 
-
 describe('restored sync groups', () => {
   test('publishes only to a group this device is active in', () => {
     const groups = [
@@ -188,8 +203,14 @@ describe('restored sync groups', () => {
   });
 
   test('devices converge on the lowest id once they are active in the same groups', () => {
-    const laptop = [{ id: 'g2', createdAtNs: 1, active: true }, { id: 'g1', createdAtNs: 9, active: true }];
-    const phone = [{ id: 'g1', createdAtNs: 2, active: true }, { id: 'g2', createdAtNs: 3, active: true }];
+    const laptop = [
+      { id: 'g2', createdAtNs: 1, active: true },
+      { id: 'g1', createdAtNs: 9, active: true },
+    ];
+    const phone = [
+      { id: 'g1', createdAtNs: 2, active: true },
+      { id: 'g2', createdAtNs: 3, active: true },
+    ];
     expect(pickPublishGroup(laptop)?.id).toBe('g1');
     expect(pickPublishGroup(phone)?.id).toBe('g1');
   });
@@ -247,9 +268,12 @@ describe('restored sync groups', () => {
 
   test('keeps the newest search by its own clock, not by arrival', () => {
     const SEARCH = 'stage.box/searchState:1.0';
-    const search = (query: string, at: number): { query: string; labels: string[]; unreadOnly: boolean; at: number } => (
-      { query, labels: [], unreadOnly: false, at }
-    );
+    const search = (query: string, at: number): { query: string; labels: string[]; unreadOnly: boolean; at: number } => ({
+      query,
+      labels: [],
+      unreadOnly: false,
+      at,
+    });
     const replay = replayOf([
       { contentTypeId: SEARCH, content: search('a', 5), sentNs: 1 },
       { contentTypeId: SEARCH, content: search('b', 9), sentNs: 2 },
@@ -277,7 +301,11 @@ describe('restored sync groups', () => {
   test('keeps the newest dashboard by its own clock and never reads it as a board', () => {
     const DASHBOARD = 'stage.box/dashboardLayout:1.0';
     const frame = (id: string, w = 'half', h = 1): Record<string, unknown> => ({
-      id, w, h, kind: 'frame', source: { conversationId: 'conv', messageId: id },
+      id,
+      w,
+      h,
+      kind: 'frame',
+      source: { conversationId: 'conv', messageId: id },
     });
     const replay = replayOf([
       { contentTypeId: DASHBOARD, content: { widgets: [frame('a')], at: 5 }, sentNs: 1 },
@@ -312,9 +340,7 @@ describe('restored sync groups', () => {
   });
 
   test('skips messages at or before the cursor', () => {
-    const replay = replayOf([
-      { contentTypeId: READ, content: { convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }, sentNs: 10 },
-    ], 10);
+    const replay = replayOf([{ contentTypeId: READ, content: { convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }, sentNs: 10 }], 10);
     expect(replay.reads).toEqual([]);
     expect(replay.cleared).toBeNull();
     expect(replay.latestNs).toBe(10);
@@ -324,7 +350,12 @@ describe('restored sync groups', () => {
 describe('sync group trust', () => {
   const OWNER = { address: '0xAbC', inboxId: ME };
   const own = (id: string, active = true): SyncGroupFacts => ({
-    id, createdAtNs: 1, active, name: syncGroupName('0xabc'), addedByInboxId: ME, memberInboxIds: [ME, ME],
+    id,
+    createdAtNs: 1,
+    active,
+    name: syncGroupName('0xabc'),
+    addedByInboxId: ME,
+    memberInboxIds: [ME, ME],
   });
 
   test('a group with your sync name is yours only when you made it and only you are in it', () => {

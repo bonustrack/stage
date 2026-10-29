@@ -1,11 +1,26 @@
 import { Platform } from 'react-native';
-import { parseNameCheck, parseNameClaim, type NameCheck, type ProfileImage, type ProfileProgress, type ProfileSetup, ProfileNameTakenError, runProfileSetup } from '@stage-labs/client/profile/setup';
+import {
+  parseNameCheck,
+  parseNameClaim,
+  type NameCheck,
+  type ProfileImage,
+  type ProfileProgress,
+  type ProfileSetup,
+  ProfileNameTakenError,
+  runProfileSetup,
+} from '@stage-labs/client/profile/setup';
 import { base } from 'viem/chains';
 import { createWalletClient, namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
 import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
-import { BASENAME_REGISTRY, REGISTRY_ABI, PROFILE_TEXT_KEYS, baseProfileClient, inspectNameSetup } from '@stage-labs/client/identity/onchainProfile';
+import {
+  BASENAME_REGISTRY,
+  REGISTRY_ABI,
+  PROFILE_TEXT_KEYS,
+  baseProfileClient,
+  inspectNameSetup,
+} from '@stage-labs/client/identity/onchainProfile';
 import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { getSelectedAccount, getViemAccount, type AccountRecord } from './accounts';
@@ -17,7 +32,10 @@ import { ignore, recover, reported } from './errorPolicy';
 import { claimMailKey, registerOwnMailKey } from './mailKey';
 import { profileRequest, readPicture } from './profileFetch';
 
-interface ProfileAccount { record: AccountRecord; assertCurrent: () => void }
+interface ProfileAccount {
+  record: AccountRecord;
+  assertCurrent: () => void;
+}
 
 async function profileAccount(address?: string): Promise<ProfileAccount> {
   const selected = getAccountSelection();
@@ -103,7 +121,10 @@ async function recordsFor(changes: ProfileChanges): Promise<Record<string, strin
 
 async function nameResolver(name: string): Promise<Hex> {
   const resolver = await baseProfileClient().readContract({
-    address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName: 'resolver', args: [namehash(normalize(name))],
+    address: BASENAME_REGISTRY,
+    abi: REGISTRY_ABI,
+    functionName: 'resolver',
+    args: [namehash(normalize(name))],
   });
   if (resolver === '0x0000000000000000000000000000000000000000') throw new Error('The name has no resolver yet. Try again to check it.');
   return resolver;
@@ -156,16 +177,18 @@ async function claimForAccount(account: ProfileAccount, label: string): Promise<
   const issuedAt = Date.now();
   const signature = await signForAccount(account, claimMessage({ label, address, issuedAt, mailKey }));
   assertCurrent();
-  const name = await profileRequest(`${linkProxyBase()}/names/claim`, {
-    method: 'POST', headers: HEADERS, body: JSON.stringify({ label, address, issuedAt, signature, mailKey }),
-  }, async (res) => {
-    const body = parseNameClaim(await res.json());
-    if (res.status === 409 && body.error === 'name already taken') throw new ProfileNameTakenError();
-    if (!res.ok) throw new Error(body.error ?? `claim failed (${res.status})`);
-    if (body.name !== stageNameOf(label)) throw new Error('The name service did not confirm your username.');
-    if (body.mailKey === 'failed') void registerOwnMailKey(record, label).catch(reported('mail.key'));
-    return body.name;
-  });
+  const name = await profileRequest(
+    `${linkProxyBase()}/names/claim`,
+    { method: 'POST', headers: HEADERS, body: JSON.stringify({ label, address, issuedAt, signature, mailKey }) },
+    async (res) => {
+      const body = parseNameClaim(await res.json());
+      if (res.status === 409 && body.error === 'name already taken') throw new ProfileNameTakenError();
+      if (!res.ok) throw new Error(body.error ?? `claim failed (${res.status})`);
+      if (body.name !== stageNameOf(label)) throw new Error('The name service did not confirm your username.');
+      if (body.mailKey === 'failed') void registerOwnMailKey(record, label).catch(reported('mail.key'));
+      return body.name;
+    },
+  );
   assertCurrent();
   return name;
 }
@@ -184,24 +207,32 @@ export async function setUpStageName(address: string, label: string, records: Re
 }
 
 export async function applyProfileSetup(
-  address: string, profile: ProfileSetup, progress: ProfileProgress, checkpoint: (next: ProfileProgress) => Promise<void>,
+  address: string,
+  profile: ProfileSetup,
+  progress: ProfileProgress,
+  checkpoint: (next: ProfileProgress) => Promise<void>,
 ): Promise<void> {
   const account = await profileAccount(address);
-  await runProfileSetup({
-    assertCurrent: account.assertCurrent,
-    upload: (image) => uploadAvatar(image.uri, image.mime, image.name),
-    inspect: (label, records) => inspectNameSetup(baseProfileClient(), address, stageNameOf(label), records),
-    claim: (label) => claimForAccount(account, label),
-    send: async (label, records) => {
-      if (account.record.type !== 'smart') throw new Error('The prepared account is not a smart wallet.');
-      const name = stageNameOf(label);
-      const calls = encodeNameSetup(name, address as Hex, records, await nameResolver(name));
-      const kernel = await kernelClientForRecord(account.record);
-      account.assertCurrent();
-      return kernel.sendTransaction({ calls: calls.map(call => ({ ...call, value: 0n })) });
+  await runProfileSetup(
+    {
+      assertCurrent: account.assertCurrent,
+      upload: (image) => uploadAvatar(image.uri, image.mime, image.name),
+      inspect: (label, records) => inspectNameSetup(baseProfileClient(), address, stageNameOf(label), records),
+      claim: (label) => claimForAccount(account, label),
+      send: async (label, records) => {
+        if (account.record.type !== 'smart') throw new Error('The prepared account is not a smart wallet.');
+        const name = stageNameOf(label);
+        const calls = encodeNameSetup(name, address as Hex, records, await nameResolver(name));
+        const kernel = await kernelClientForRecord(account.record);
+        account.assertCurrent();
+        return kernel.sendTransaction({ calls: calls.map((call) => ({ ...call, value: 0n })) });
+      },
+      confirm: async (hash) => (await baseProfileClient().waitForTransactionReceipt({ hash })).status === 'success',
     },
-    confirm: async (hash) => (await baseProfileClient().waitForTransactionReceipt({ hash })).status === 'success',
-  }, profile, progress, checkpoint);
+    profile,
+    progress,
+    checkpoint,
+  );
   account.assertCurrent();
   refreshProfileCaches(address, profile.image !== undefined);
 }

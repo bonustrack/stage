@@ -27,8 +27,15 @@ function InboxRowView({ row }: { row: InboxRow }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   const { primary } = usePalette();
   return (
-    <ListViewItem align="center" gap={12} dark={dark} padding={ROW_PADDING}
-      onPress={() => { capabilities.navigate(mailRoute(row.label, row.id)); }}>
+    <ListViewItem
+      align="center"
+      gap={12}
+      dark={dark}
+      padding={ROW_PADDING}
+      onPress={() => {
+        capabilities.navigate(mailRoute(row.label, row.id));
+      }}
+    >
       <Column width={DOT} height={DOT} radius="full" background={row.unread ? primary : 'transparent'} />
       <Column weight={1} minWidth={0} gap={2}>
         <Row align="center" gap={8}>
@@ -64,7 +71,9 @@ function EmptyMailbox({ boxes }: { boxes: readonly Mailbox[] }): React.ReactElem
   return (
     <CenterNote>
       <Glyph icon={IconEmail1} size={32} color={sub} />
-      {boxes.map((box) => <Text key={box.mailAddress} text={box.mailAddress} size="xs" fontWeight="semibold" color="link" textAlign="center" />)}
+      {boxes.map((box) => (
+        <Text key={box.mailAddress} text={box.mailAddress} size="xs" fontWeight="semibold" color="link" textAlign="center" />
+      ))}
       <Text text="No mail yet" size="xs" color="secondary" textAlign="center" />
     </CenterNote>
   );
@@ -81,11 +90,18 @@ function MailList({ boxes, state }: { boxes: readonly Mailbox[]; state: InboxSta
   return (
     <>
       {state.failed.length === 0 ? null : (
-        <Text size="md" variant="caption" text={`Could not open ${state.failed.join(', ')}. Try again later.`} color="danger"
-          style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 16 }} />
+        <Text
+          size="md"
+          variant="caption"
+          text={`Could not open ${state.failed.join(', ')}. Try again later.`}
+          color="danger"
+          style={{ paddingHorizontal: PAGE_GUTTER, paddingTop: 16 }}
+        />
       )}
       <SettingsGroup footnote={footnoteFor(boxes)}>
-        {rows.map((row) => <InboxRowView key={row.key} row={row} />)}
+        {rows.map((row) => (
+          <InboxRowView key={row.key} row={row} />
+        ))}
       </SettingsGroup>
     </>
   );
@@ -95,12 +111,32 @@ function InboxBody(): React.ReactElement {
   const mailboxes = useMailboxes();
   const inbox = useInbox(mailboxes.data);
   const boxes = mailboxes.data;
-  if (mailboxes.isError) return <RetryNotice message="Could not look up your Stage names." onRetry={() => { void mailboxes.refetch(); }} />;
+  if (mailboxes.isError)
+    return (
+      <RetryNotice
+        message="Could not look up your Stage names."
+        onRetry={() => {
+          void mailboxes.refetch();
+        }}
+      />
+    );
   if (boxes === undefined) return <Opening />;
   if (boxes.length === 0) {
-    return <CenterNote><Text text="Claim a Stage name to get mail at name@st.box." size="xs" color="secondary" textAlign="center" /></CenterNote>;
+    return (
+      <CenterNote>
+        <Text text="Claim a Stage name to get mail at name@st.box." size="xs" color="secondary" textAlign="center" />
+      </CenterNote>
+    );
   }
-  if (inbox.isError) return <RetryNotice message="Could not open your mailbox. Check your connection and try again." onRetry={() => { void inbox.refetch(); }} />;
+  if (inbox.isError)
+    return (
+      <RetryNotice
+        message="Could not open your mailbox. Check your connection and try again."
+        onRetry={() => {
+          void inbox.refetch();
+        }}
+      />
+    );
   if (inbox.data === undefined) return <Opening />;
   return <MailList boxes={boxes} state={inbox.data} />;
 }

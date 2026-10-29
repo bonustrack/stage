@@ -5,9 +5,18 @@ import { KIT_CATALOG_ID } from '../../src/a2ui/kit-catalog';
 import type { JsonObject } from '../../src/a2ui/protocol';
 import { a2uiSnapshot } from '../../src/a2ui/snapshot';
 
-const surface = (id: string, rest: JsonObject = {}): JsonObject => ({ version: 'v1.0', createSurface: { surfaceId: id, catalogId: KIT_CATALOG_ID, ...rest } });
-const components = (id: string, list: JsonObject[]): JsonObject => ({ version: 'v1.0', updateComponents: { surfaceId: id, components: list } });
-const data = (id: string, path: string, value: JsonObject[keyof JsonObject]): JsonObject => ({ version: 'v1.0', updateDataModel: { surfaceId: id, path, value } });
+const surface = (id: string, rest: JsonObject = {}): JsonObject => ({
+  version: 'v1.0',
+  createSurface: { surfaceId: id, catalogId: KIT_CATALOG_ID, ...rest },
+});
+const components = (id: string, list: JsonObject[]): JsonObject => ({
+  version: 'v1.0',
+  updateComponents: { surfaceId: id, components: list },
+});
+const data = (id: string, path: string, value: JsonObject[keyof JsonObject]): JsonObject => ({
+  version: 'v1.0',
+  updateDataModel: { surfaceId: id, path, value },
+});
 
 const HOME = [
   surface('home'),
@@ -15,7 +24,12 @@ const HOME = [
     { id: 'root', component: 'Column', children: ['title', 'go'] },
     { id: 'title', component: 'Title', text: { '@path': '/title' } },
     { id: 'go-label', component: 'Text', text: 'Details' },
-    { id: 'go', component: 'Button', child: 'go-label', action: { functionCall: { '@call': 'openSurface', args: { surfaceId: 'details' } } } },
+    {
+      id: 'go',
+      component: 'Button',
+      child: 'go-label',
+      action: { functionCall: { '@call': 'openSurface', args: { surfaceId: 'details' } } },
+    },
   ]),
   data('home', '/title', 'Hello'),
 ];
@@ -42,7 +56,11 @@ describe('A2UI snapshot', () => {
 describe('Kit catalog functions', () => {
   test('openSurface and closeSurface reach the host on a user gesture only', () => {
     const navs: SurfaceNav[] = [];
-    const client = createA2uiClient({ navigate: (nav) => { navs.push(nav); } });
+    const client = createA2uiClient({
+      navigate: (nav) => {
+        navs.push(nav);
+      },
+    });
     for (const message of HOME) client.receive(message);
     const go = client.surface('home')?.components.get('go');
     const action = go?.action as JsonObject;
@@ -55,17 +73,24 @@ describe('Kit catalog functions', () => {
 
   test('the agent may call the Kit formatting functions, not the basic ones or navigation', () => {
     const sent: JsonObject[] = [];
-    const client = createA2uiClient({ send: (message) => { sent.push(message as unknown as JsonObject); } });
+    const client = createA2uiClient({
+      send: (message) => {
+        sent.push(message as unknown as JsonObject);
+      },
+    });
     const call = (id: string, catalogId: string, name: string, args: JsonObject = {}): JsonObject => ({
-      version: 'v1.0', callRendererFunction: { functionCallId: id, callFunction: { '@call': name, catalogId, args } },
+      version: 'v1.0',
+      callRendererFunction: { functionCallId: id, callFunction: { '@call': name, catalogId, args } },
     });
     client.receive(call('kit', KIT_CATALOG_ID, 'formatNumber', { value: 1234.5 }));
     client.receive(call('basic', 'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json', 'formatNumber', { value: 1 }));
     client.receive(call('nav', KIT_CATALOG_ID, 'openSurface', { surfaceId: 'x' }));
-    const answers = Object.fromEntries(sent.map((m) => {
-      const response = m.rendererFunctionResponse as JsonObject;
-      return [String(response.functionCallId), response.error === undefined ? 'value' : (response.error as JsonObject).code];
-    }));
+    const answers = Object.fromEntries(
+      sent.map((m) => {
+        const response = m.rendererFunctionResponse as JsonObject;
+        return [String(response.functionCallId), response.error === undefined ? 'value' : (response.error as JsonObject).code];
+      }),
+    );
     expect(answers).toEqual({ kit: 'value', basic: 'INVALID_FUNCTION_CALL', nav: 'INVALID_FUNCTION_CALL' });
   });
 });

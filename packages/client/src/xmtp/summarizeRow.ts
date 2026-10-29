@@ -22,16 +22,17 @@ export interface StreamedMessage extends RowMessage {
   id: string;
 }
 
-export function countUnreadEntries(
-  entries: readonly UnreadCountEntry[],
-  lastReadNs: number,
-  selfInboxId: string,
-): number {
+export function countUnreadEntries(entries: readonly UnreadCountEntry[], lastReadNs: number, selfInboxId: string): number {
   let unreadCount = 0;
   for (const m of entries) {
     if (!m.sentNs || m.sentNs <= lastReadNs) break;
-    if (m.senderInboxId === selfInboxId || isGroupUpdateTypeId(m.contentTypeId) || isDeleteRequestType(m.contentTypeId)
-      || isCallSignalType(m.contentTypeId)) continue;
+    if (
+      m.senderInboxId === selfInboxId ||
+      isGroupUpdateTypeId(m.contentTypeId) ||
+      isDeleteRequestType(m.contentTypeId) ||
+      isCallSignalType(m.contentTypeId)
+    )
+      continue;
     unreadCount += 1;
   }
   return unreadCount;
@@ -67,11 +68,5 @@ export interface InitialMarkedUnreadInputs {
 }
 
 export function initialMarkedUnread(i: InitialMarkedUnreadInputs): boolean {
-  return (
-    (i.consentUnknown ?? true)
-    && i.lastReadNs === 0
-    && i.unreadCount === 0
-    && i.hasLast
-    && !i.lastFromSelf
-  );
+  return (i.consentUnknown ?? true) && i.lastReadNs === 0 && i.unreadCount === 0 && i.hasLast && !i.lastFromSelf;
 }

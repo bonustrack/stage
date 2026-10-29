@@ -15,7 +15,12 @@ function withCrashReport(config) {
       throw new Error('Crash report cannot replace an unknown app component factory');
     }
     app.$['android:appComponentFactory'] = FACTORY;
-    const replace = new Set((app.$['tools:replace'] || '').split(',').map((s) => s.trim()).filter(Boolean));
+    const replace = new Set(
+      (app.$['tools:replace'] || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+    );
     replace.add('android:appComponentFactory');
     app.$['tools:replace'] = [...replace].join(',');
     app.activity = (app.activity || []).filter((activity) => activity.$['android:name'] !== ACTIVITY);
@@ -29,21 +34,26 @@ function withCrashReport(config) {
         'android:excludeFromRecents': 'true',
         'android:theme': '@android:style/Theme.Material.Light.NoActionBar',
       },
-      'intent-filter': [{
-        action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
-        category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }],
-      }],
+      'intent-filter': [
+        {
+          action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
+          category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }],
+        },
+      ],
     });
     return cfg;
   });
-  return withDangerousMod(next, ['android', async (cfg) => {
-    const target = path.join(cfg.modRequest.platformProjectRoot, 'app/src/main/java/box/stage/diagnostics');
-    await fs.mkdir(target, { recursive: true });
-    for (const name of ['CrashReportFactory.java', 'CrashReportActivity.java', 'NativeTombstone.java']) {
-      await fs.copyFile(path.join(__dirname, 'crash-report', name), path.join(target, name));
-    }
-    return cfg;
-  }]);
+  return withDangerousMod(next, [
+    'android',
+    async (cfg) => {
+      const target = path.join(cfg.modRequest.platformProjectRoot, 'app/src/main/java/box/stage/diagnostics');
+      await fs.mkdir(target, { recursive: true });
+      for (const name of ['CrashReportFactory.java', 'CrashReportActivity.java', 'NativeTombstone.java']) {
+        await fs.copyFile(path.join(__dirname, 'crash-report', name), path.join(target, name));
+      }
+      return cfg;
+    },
+  ]);
 }
 
 module.exports = withCrashReport;

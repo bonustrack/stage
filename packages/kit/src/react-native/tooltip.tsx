@@ -24,8 +24,12 @@ function arrowStyle(side: Exclude<TooltipArrow, 'none'>, color: string): ViewSty
   const a = TOOLTIP.arrow;
   if (side === 'left') {
     return {
-      borderTopWidth: a, borderBottomWidth: a, borderRightWidth: a,
-      borderTopColor: 'transparent', borderBottomColor: 'transparent', borderRightColor: color,
+      borderTopWidth: a,
+      borderBottomWidth: a,
+      borderRightWidth: a,
+      borderTopColor: 'transparent',
+      borderBottomColor: 'transparent',
+      borderRightColor: color,
     };
   }
   const sides: ViewStyle = { borderLeftWidth: a, borderRightWidth: a, borderLeftColor: 'transparent', borderRightColor: 'transparent' };
@@ -38,7 +42,17 @@ const ARROW_FIRST: readonly TooltipArrow[] = ['left', 'up'];
 
 const SHAPE_SHADOW: ViewStyle = Platform.OS === 'web' ? { filter: OVERLAY_DROP_SHADOW } : OVERLAY_SHADOW;
 
-export function Tooltip({ label, trailing, arrow = 'down', dark, background, color, bubbleOffset = 0, onBubbleWidth, style }: TooltipProps): React.ReactElement {
+export function Tooltip({
+  label,
+  trailing,
+  arrow = 'down',
+  dark,
+  background,
+  color,
+  bubbleOffset = 0,
+  onBubbleWidth,
+  style,
+}: TooltipProps): React.ReactElement {
   const pal = useKitPaletteFor(dark);
   const fill = background ?? pal.border;
   const arrowBox = arrow === 'none' ? null : <View style={{ width: 0, height: 0, ...arrowStyle(arrow, fill) }} />;
@@ -48,14 +62,22 @@ export function Tooltip({ label, trailing, arrow = 'down', dark, background, col
       {arrowFirst ? arrowBox : null}
       <View
         style={{
-          flexDirection: 'row', alignItems: 'center', gap: TOOLTIP.gap,
-          backgroundColor: fill, borderRadius: TOOLTIP.radius,
-          paddingHorizontal: TOOLTIP.padX, paddingVertical: TOOLTIP.padY,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: TOOLTIP.gap,
+          backgroundColor: fill,
+          borderRadius: TOOLTIP.radius,
+          paddingHorizontal: TOOLTIP.padX,
+          paddingVertical: TOOLTIP.padY,
           transform: [{ translateX: bubbleOffset }],
         }}
-        onLayout={(e) => { onBubbleWidth?.(e.nativeEvent.layout.width); }}
+        onLayout={(e) => {
+          onBubbleWidth?.(e.nativeEvent.layout.width);
+        }}
       >
-        <Text size="sm" color={color ?? pal.link} numberOfLines={1} style={{ lineHeight: TOOLTIP.lineHeight, flexShrink: 1 }}>{label}</Text>
+        <Text size="sm" color={color ?? pal.link} numberOfLines={1} style={{ lineHeight: TOOLTIP.lineHeight, flexShrink: 1 }}>
+          {label}
+        </Text>
         {trailing}
       </View>
       {arrowFirst ? null : arrowBox}

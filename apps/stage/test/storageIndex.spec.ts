@@ -1,7 +1,20 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  DELETED_LIMIT, FILE_PAGE_SIZE, applyFindings, decodeIndex, deletesToCheck, emptyIndex, encodeIndex, fileKey,
-  filesOfMessage, findingsOf, finishScan, nextCursorNs, type ScannedMessage, type StorageIndex, type StoredFile,
+  DELETED_LIMIT,
+  FILE_PAGE_SIZE,
+  applyFindings,
+  decodeIndex,
+  deletesToCheck,
+  emptyIndex,
+  encodeIndex,
+  fileKey,
+  filesOfMessage,
+  findingsOf,
+  finishScan,
+  nextCursorNs,
+  type ScannedMessage,
+  type StorageIndex,
+  type StoredFile,
 } from '../lib/storageIndex.model';
 import { ScanStopped, scanConversations, scanQuery, type ScanSink, type ScanSource } from '../lib/storageScan.model';
 import type { MessageQuery } from '../lib/xmtp.sdk.core';
@@ -12,7 +25,10 @@ const MS = 1_000_000;
 
 function message(id: string, fields: Partial<ScannedMessage> = {}): ScannedMessage {
   return {
-    id, convId: 'c1', senderInboxId: ME, sentNs: 1_700_000_000_000 * MS,
+    id,
+    convId: 'c1',
+    senderInboxId: ME,
+    sentNs: 1_700_000_000_000 * MS,
     contentTypeId: 'xmtp.org/multiRemoteStaticAttachment:1.0',
     content: { attachments: [{ filename: `${id}.pdf`, contentLength: '2048', url: 'https://x' }] },
     ...fields,
@@ -28,17 +44,19 @@ function indexWith(fields: Partial<StorageIndex>): StorageIndex {
 }
 
 const keys = (index: StorageIndex): string[] => index.files.map(fileKey);
-const ids = (index: StorageIndex): string[] => index.files.map(f => f.messageId);
+const ids = (index: StorageIndex): string[] => index.files.map((f) => f.messageId);
 
 describe('storage index model', () => {
   test('reads every file of a message with its position, name and size', () => {
-    const multi = message('m1', { content: { attachments: [
-      { filename: 'a.png', contentLength: 12n },
-      { filename: ' ', contentLength: 'oops' },
-      { contentLength: 30 },
-    ] } });
-    expect(filesOfMessage(multi).map(f => [f.index, f.name, f.size])).toEqual([
-      [0, 'a.png', 12], [1, 'attachment-2', 0], [2, 'attachment-3', 30],
+    const multi = message('m1', {
+      content: {
+        attachments: [{ filename: 'a.png', contentLength: 12n }, { filename: ' ', contentLength: 'oops' }, { contentLength: 30 }],
+      },
+    });
+    expect(filesOfMessage(multi).map((f) => [f.index, f.name, f.size])).toEqual([
+      [0, 'a.png', 12],
+      [1, 'attachment-2', 0],
+      [2, 'attachment-3', 30],
     ]);
     const webInline = message('m2', { contentTypeId: 'attachment', content: { filename: 'v.m4a', content: new Uint8Array(5) } });
     const nativeInline = message('m3', { contentTypeId: 'xmtp.org/attachment:1.0', content: { filename: 'n.txt', data: 'AAAAAA==' } });
@@ -51,31 +69,52 @@ describe('storage index model', () => {
 
   test('indexes single-remote text-file replies from both SDK shapes, not ordinary replies', () => {
     const remote = {
-      url: 'https://store.example/encrypted', filename: 'message.txt', contentDigest: 'digest',
-      secret: 'secret', salt: 'salt', nonce: 'nonce', contentLength: '4097',
+      url: 'https://store.example/encrypted',
+      filename: 'message.txt',
+      contentDigest: 'digest',
+      secret: 'secret',
+      salt: 'salt',
+      nonce: 'nonce',
+      contentLength: '4097',
     };
-    const native = message('native', { contentTypeId: 'xmtp.org/reply:1.0', content: { reference: 'original', content: { remoteAttachment: remote } } });
-    const web = message('web', { contentTypeId: 'reply', content: { referenceId: 'original', content: {
-      ...remote, secret: new Uint8Array([1]), salt: new Uint8Array([2]), nonce: new Uint8Array([3]), contentLength: 4097,
-    }, contentType: async () => ({ typeId: 'remoteStaticAttachment' }) } });
-    for (const entry of [native, web]) expect(filesOfMessage(entry)).toEqual([
-      { messageId: entry.id, convId: 'c1', index: 0, name: 'message.txt', size: 4097, sentMs: 1_700_000_000_000 },
-    ]);
-    expect(filesOfMessage(message('text-reply', { contentTypeId: 'reply', content: { referenceId: 'original', content: 'hello' } }))).toEqual([]);
-    expect(filesOfMessage(message('incomplete', { contentTypeId: 'reply', content: { content: { ...remote, nonce: undefined } } }))).toEqual([]);
-    expect(findingsOf([native, { ...web, senderInboxId: PEER }], ME).files.map(f => f.messageId)).toEqual(['native']);
+    const native = message('native', {
+      contentTypeId: 'xmtp.org/reply:1.0',
+      content: { reference: 'original', content: { remoteAttachment: remote } },
+    });
+    const web = message('web', {
+      contentTypeId: 'reply',
+      content: {
+        referenceId: 'original',
+        content: { ...remote, secret: new Uint8Array([1]), salt: new Uint8Array([2]), nonce: new Uint8Array([3]), contentLength: 4097 },
+        contentType: async () => ({ typeId: 'remoteStaticAttachment' }),
+      },
+    });
+    for (const entry of [native, web])
+      expect(filesOfMessage(entry)).toEqual([
+        { messageId: entry.id, convId: 'c1', index: 0, name: 'message.txt', size: 4097, sentMs: 1_700_000_000_000 },
+      ]);
+    expect(
+      filesOfMessage(message('text-reply', { contentTypeId: 'reply', content: { referenceId: 'original', content: 'hello' } })),
+    ).toEqual([]);
+    expect(
+      filesOfMessage(message('incomplete', { contentTypeId: 'reply', content: { content: { ...remote, nonce: undefined } } })),
+    ).toEqual([]);
+    expect(findingsOf([native, { ...web, senderInboxId: PEER }], ME).files.map((f) => f.messageId)).toEqual(['native']);
   });
 
   test('keeps only files I sent and collects deletions', () => {
-    const findings = findingsOf([
-      message('mine'),
-      message('theirs', { senderInboxId: PEER }),
-      message('gone', { contentTypeId: 'deletedMessage', content: { deletedBy: 'sender' } }),
-      message('del1', { contentTypeId: 'xmtp.org/deleteMessage:1.0', content: { messageId: 'old' } }),
-      message('del2', { contentTypeId: 'deleteMessage', senderInboxId: PEER, content: { messageId: 'mine' } }),
-      message('del3', { contentTypeId: 'deleteMessage', content: {} }),
-    ], ME);
-    expect(findings.files.map(f => f.messageId)).toEqual(['mine']);
+    const findings = findingsOf(
+      [
+        message('mine'),
+        message('theirs', { senderInboxId: PEER }),
+        message('gone', { contentTypeId: 'deletedMessage', content: { deletedBy: 'sender' } }),
+        message('del1', { contentTypeId: 'xmtp.org/deleteMessage:1.0', content: { messageId: 'old' } }),
+        message('del2', { contentTypeId: 'deleteMessage', senderInboxId: PEER, content: { messageId: 'mine' } }),
+        message('del3', { contentTypeId: 'deleteMessage', content: {} }),
+      ],
+      ME,
+    );
+    expect(findings.files.map((f) => f.messageId)).toEqual(['mine']);
     expect(findings.deletedIds).toEqual(['gone', 'old']);
     expect(findings.foreignDeletes).toEqual([{ convId: 'c1', target: 'mine', by: PEER }]);
     expect(deletesToCheck(emptyIndex(ME), findings)).toEqual(findings.foreignDeletes);
@@ -107,13 +146,17 @@ describe('storage index model', () => {
     expect(decoded && keys(decoded)).toEqual(['b:0', 'a:0']);
     expect(decodeIndex('nope')).toBeNull();
     expect(decodeIndex(JSON.stringify({ v: 2, inboxId: ME, cursorNs: 0 }))).toBeNull();
-    const partial = decodeIndex(JSON.stringify({ v: 1, inboxId: ME, cursorNs: 0, files: [{ messageId: 'a' }, file('b', 2)], retry: { c1: 'x' } }));
+    const partial = decodeIndex(
+      JSON.stringify({ v: 1, inboxId: ME, cursorNs: 0, files: [{ messageId: 'a' }, file('b', 2)], retry: { c1: 'x' } }),
+    );
     expect(partial?.files).toEqual([file('b', 2)]);
     expect(partial?.retry).toEqual({});
   });
 });
 
-interface StoredMessage extends ScannedMessage { insertedNs: number }
+interface StoredMessage extends ScannedMessage {
+  insertedNs: number;
+}
 
 function fakeChats(chats: Record<string, StoredMessage[]>, failing = new Set<string>()) {
   const queries: (MessageQuery & { conv: string })[] = [];
@@ -121,8 +164,8 @@ function fakeChats(chats: Record<string, StoredMessage[]>, failing = new Set<str
     queries.push({ ...query, conv });
     if (failing.has(conv)) return Promise.reject(new Error('broken chat'));
     const rows = (chats[conv] ?? [])
-      .filter(m => query.insertedAfterNs === undefined || m.insertedNs > query.insertedAfterNs)
-      .filter(m => query.beforeNs === undefined || m.sentNs < query.beforeNs)
+      .filter((m) => query.insertedAfterNs === undefined || m.insertedNs > query.insertedAfterNs)
+      .filter((m) => query.beforeNs === undefined || m.sentNs < query.beforeNs)
       .sort((a, b) => b.sentNs - a.sentNs)
       .slice(0, query.limit);
     return Promise.resolve(rows);
@@ -136,8 +179,12 @@ function memorySink(start: StorageIndex): ScanSink & { progressed: number[] } {
   return {
     progressed,
     index: () => index,
-    apply: (findings) => { index = applyFindings(index, findings); },
-    progress: (done) => { progressed.push(done); },
+    apply: (findings) => {
+      index = applyFindings(index, findings);
+    },
+    progress: (done) => {
+      progressed.push(done);
+    },
   };
 }
 
@@ -166,8 +213,8 @@ describe('storage scan', () => {
     expect(failed.size).toBe(0);
     expect(sink.index().files).toHaveLength(long.length);
     expect(sink.progressed).toEqual([1, 2, 3]);
-    expect(chats.queries.every(q => q.insertedAfterNs === undefined && q.filesOnly === true)).toBe(true);
-    expect(chats.queries.filter(q => q.conv === 'sync')).toEqual([]);
+    expect(chats.queries.every((q) => q.insertedAfterNs === undefined && q.filesOnly === true)).toBe(true);
+    expect(chats.queries.filter((q) => q.conv === 'sync')).toEqual([]);
   });
 
   test('files that share the sent time of a page boundary are all found', async () => {
@@ -179,12 +226,14 @@ describe('storage scan', () => {
   });
 
   test('a later scan reads only what was stored since, history imports and deletions included', async () => {
-    const chats = fakeChats({ c1: [
-      stored('old', 1_000, 1_000),
-      stored('imported', 500, 9_000),
-      stored('fresh', 9_100, 9_100),
-      stored('del', 9_200, 9_200, { contentTypeId: 'deleteMessage', content: { messageId: 'kept' } }),
-    ] });
+    const chats = fakeChats({
+      c1: [
+        stored('old', 1_000, 1_000),
+        stored('imported', 500, 9_000),
+        stored('fresh', 9_100, 9_100),
+        stored('del', 9_200, 9_200, { contentTypeId: 'deleteMessage', content: { messageId: 'kept' } }),
+      ],
+    });
     const start = indexWith({ cursorNs: 5_000 * MS, files: [file('kept', 800)] });
     const sink = memorySink(start);
     expect((await scanConversations(['c1'], start, source(chats.page), sink)).size).toBe(0);
@@ -201,7 +250,12 @@ describe('storage scan', () => {
       c2: [del('x3', 'inbox-admin', 'f3', 'c2')],
     });
     const sink = memorySink(emptyIndex(ME));
-    await scanConversations(['c1', 'c2'], emptyIndex(ME), source(chats.page, { superAdmins: () => Promise.resolve(new Set(['inbox-admin'])) }), sink);
+    await scanConversations(
+      ['c1', 'c2'],
+      emptyIndex(ME),
+      source(chats.page, { superAdmins: () => Promise.resolve(new Set(['inbox-admin'])) }),
+      sink,
+    );
     expect(ids(sink.index())).toEqual(['f3', 'f1']);
   });
 
@@ -210,7 +264,16 @@ describe('storage scan', () => {
     const errors: unknown[] = [];
     const start = indexWith({ cursorNs: 0 });
     const sink = memorySink(start);
-    const failed = await scanConversations(['c1', 'c2'], start, source(chats.page, { failed: (err) => { errors.push(err); } }), sink);
+    const failed = await scanConversations(
+      ['c1', 'c2'],
+      start,
+      source(chats.page, {
+        failed: (err) => {
+          errors.push(err);
+        },
+      }),
+      sink,
+    );
     expect(errors).toHaveLength(1);
     expect([...failed]).toEqual([['c1', 0]]);
     expect(ids(sink.index())).toEqual(['b']);
@@ -219,8 +282,8 @@ describe('storage scan', () => {
     const again = fakeChats({ c1: [stored('a', 1, 1)], c2: [] });
     const failedAgain = await scanConversations(['c1', 'c2'], next, source(again.page), memorySink(next));
     expect(failedAgain.size).toBe(0);
-    expect(again.queries.find(q => q.conv === 'c1')?.insertedAfterNs).toBeUndefined();
-    expect(again.queries.find(q => q.conv === 'c2')?.insertedAfterNs).toBe(7_000 * MS);
+    expect(again.queries.find((q) => q.conv === 'c1')?.insertedAfterNs).toBeUndefined();
+    expect(again.queries.find((q) => q.conv === 'c2')?.insertedAfterNs).toBe(7_000 * MS);
   });
 
   test('a switched account stops the scan before the next query', async () => {

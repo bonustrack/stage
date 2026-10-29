@@ -7,19 +7,24 @@ A node is any HTTPS URL that answers with [A2UI v1.0](https://a2ui.org) messages
 `GET <url>`, signed (see Signing). Answer `200` with A2UI v1.0 server messages: a JSON array, `{"messages": [...]}`, a single message, or one message per line (JSON Lines). Only `createSurface`, `updateComponents`, `updateDataModel` and `deleteSurface` are allowed, and at least one surface must end up with a `root` component. Any other body is refused.
 
 ```json
-[{"version": "v1.0", "createSurface": {
-  "surfaceId": "main",
-  "catalogId": "https://kit.stage.box/a2ui/v1_0/catalog.json",
-  "dataModel": {"price": "$64,210"},
-  "components": [
-    {"id": "root", "component": "Card", "child": "col"},
-    {"id": "col", "component": "Column", "children": ["title", "price", "refresh"]},
-    {"id": "title", "component": "Title", "text": "BTC"},
-    {"id": "price", "component": "Text", "text": {"@path": "/price"}},
-    {"id": "label", "component": "Text", "text": "Refresh"},
-    {"id": "refresh", "component": "Button", "child": "label", "action": {"event": {"name": "refresh"}}}
-  ]
-}}]
+[
+  {
+    "version": "v1.0",
+    "createSurface": {
+      "surfaceId": "main",
+      "catalogId": "https://kit.stage.box/a2ui/v1_0/catalog.json",
+      "dataModel": { "price": "$64,210" },
+      "components": [
+        { "id": "root", "component": "Card", "child": "col" },
+        { "id": "col", "component": "Column", "children": ["title", "price", "refresh"] },
+        { "id": "title", "component": "Title", "text": "BTC" },
+        { "id": "price", "component": "Text", "text": { "@path": "/price" } },
+        { "id": "label", "component": "Text", "text": "Refresh" },
+        { "id": "refresh", "component": "Button", "child": "label", "action": { "event": { "name": "refresh" } } }
+      ]
+    }
+  }
+]
 ```
 
 To stream, answer with `Content-Type: application/jsonl` (or `application/x-ndjson`) and one message per line, flushed as you go: Stage reads the reply as it arrives, applies each line at once and shows the frame as soon as a surface has a root, so a slow part does not hold back the rest. Until then the widget keeps showing what it had. The same works for replies to renderer messages. Other replies are read whole, then applied in order. Either way, a bad line stops the reply there, and the limits below count the whole reply.
@@ -29,7 +34,12 @@ Use the A2UI basic catalog (`https://a2ui.org/specification/v1_0/catalogs/basic/
 A node can create several surfaces. The first one shows (or the one a chat frame names in `start`). A button whose action calls the Kit catalog function `openSurface` with another surface id opens it as a new screen with a back button, and `closeSurface` goes back:
 
 ```json
-{"id": "more", "component": "Button", "child": "moreLabel", "action": {"functionCall": {"@call": "openSurface", "args": {"surfaceId": "details"}}}}
+{
+  "id": "more",
+  "component": "Button",
+  "child": "moreLabel",
+  "action": { "functionCall": { "@call": "openSurface", "args": { "surfaceId": "details" } } }
+}
 ```
 
 Stage loads it when the widget shows, then every minute while the Dashboard is open and the app is in front. After a failure it waits longer, up to 5 minutes. Offline or on an error, the widget keeps the last good version and its header says why and since when.
@@ -60,11 +70,11 @@ Answer with A2UI messages, in any of the Load formats: the surface messages, plu
 
 Every request carries three signing headers:
 
-| Header | Value |
-|---|---|
-| `Stage-Key` | the widget's Ed25519 public key, 32 bytes, base64url without padding |
-| `Stage-Timestamp` | Unix time in seconds |
-| `Stage-Signature` | Ed25519 signature, 64 bytes, base64url without padding |
+| Header            | Value                                                                |
+| ----------------- | -------------------------------------------------------------------- |
+| `Stage-Key`       | the widget's Ed25519 public key, 32 bytes, base64url without padding |
+| `Stage-Timestamp` | Unix time in seconds                                                 |
+| `Stage-Signature` | Ed25519 signature, 64 bytes, base64url without padding               |
 
 The `Stage-A2UI-Capabilities` header is informational and not signed.
 
@@ -107,10 +117,16 @@ The code is one ES module of at most 64 KB, with no `import`, whose default expo
 ```js
 export default {
   async fetch() {
-    return Response.json([{ version: 'v1.0', createSurface: {
-      surfaceId: 'main', catalogId: 'https://kit.stage.box/a2ui/v1_0/catalog.json',
-      components: [{ id: 'root', component: 'Text', text: new Date().toISOString() }],
-    } }]);
+    return Response.json([
+      {
+        version: 'v1.0',
+        createSurface: {
+          surfaceId: 'main',
+          catalogId: 'https://kit.stage.box/a2ui/v1_0/catalog.json',
+          components: [{ id: 'root', component: 'Text', text: new Date().toISOString() }],
+        },
+      },
+    ]);
   },
 };
 ```

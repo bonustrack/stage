@@ -2,8 +2,17 @@ import { describe, expect, test } from 'bun:test';
 import { serializeErc6492Signature } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import {
-  clearConversationBody, clearedConvOfTopic, deleteInstallationBody, derivePushGroupKey, groupIdOfTopic, isPushRpc,
-  isWelcomeTopic, joinDeviceGroupBody, pushGroupKeyMessage, pushRpcPath, registerInstallationBody,
+  clearConversationBody,
+  clearedConvOfTopic,
+  deleteInstallationBody,
+  derivePushGroupKey,
+  groupIdOfTopic,
+  isPushRpc,
+  isWelcomeTopic,
+  joinDeviceGroupBody,
+  pushGroupKeyMessage,
+  pushRpcPath,
+  registerInstallationBody,
   subscribeWithMetadataBody,
 } from '../src/xmtp/pushServer';
 
@@ -15,7 +24,9 @@ const CONV = '0123456789abcdef0123456789abcdef';
 describe('request bodies', () => {
   test('registers with the token field matching the platform', () => {
     expect(registerInstallationBody('inst', 'tok', 'android')).toEqual({
-      installationId: 'inst', deliveryMechanism: { firebaseDeviceToken: 'tok' }, payloadFormat: 'PAYLOAD_FORMAT_V3',
+      installationId: 'inst',
+      deliveryMechanism: { firebaseDeviceToken: 'tok' },
+      payloadFormat: 'PAYLOAD_FORMAT_V3',
     });
     expect(registerInstallationBody('inst', 'tok', 'ios').deliveryMechanism).toEqual({ apnsDeviceToken: 'tok' });
   });
@@ -62,7 +73,9 @@ describe('clearing a conversation on the other devices', () => {
   test('asks to clear the conversation topic and nothing else', () => {
     expect(joinDeviceGroupBody('inst', 'key')).toEqual({ installationId: 'inst', groupKey: 'key' });
     expect(clearConversationBody('inst', 'key', CONV)).toEqual({
-      installationId: 'inst', groupKey: 'key', topic: `/xmtp/mls/1/g-${CONV}/proto`,
+      installationId: 'inst',
+      groupKey: 'key',
+      topic: `/xmtp/mls/1/g-${CONV}/proto`,
     });
   });
 
@@ -86,9 +99,12 @@ describe('clearing a conversation on the other devices', () => {
 
   test('keeps the key when a smart account gets deployed', async () => {
     const deployed = (message: string) => OWNER.signMessage({ message });
-    const undeployed = async (message: string) => serializeErc6492Signature({
-      address: '0x00000000000000000000000000000000DeaDBeef', data: '0x1234', signature: await deployed(message),
-    });
+    const undeployed = async (message: string) =>
+      serializeErc6492Signature({
+        address: '0x00000000000000000000000000000000DeaDBeef',
+        data: '0x1234',
+        signature: await deployed(message),
+      });
     expect(await derivePushGroupKey(ADDRESS, undeployed)).toBe(await derivePushGroupKey(ADDRESS, deployed));
   });
 

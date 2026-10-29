@@ -43,8 +43,8 @@ No other file in the app may touch any of the above.
      device. It is not the Settings display path.
    - `revealPrivateKey(id)` keeps native device authentication for the
      explicit "Export private key" action and its destructive UI warning.
-   These APIs never log key material. Storage, signing and other sensitive
-   actions are unchanged.
+     These APIs never log key material. Storage, signing and other sensitive
+     actions are unchanged.
 
 ## Everyday / view path needs no key, no biometric
 

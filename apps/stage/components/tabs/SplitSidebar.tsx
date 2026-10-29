@@ -16,7 +16,9 @@ function usePaneScope(scope: string | null): void {
   useEffect(() => {
     if (typeof document === 'undefined' || scope === null) return;
     document.documentElement.dataset.stagepane = scope;
-    return () => { delete document.documentElement.dataset.stagepane; };
+    return () => {
+      delete document.documentElement.dataset.stagepane;
+    };
   }, [scope]);
 }
 
@@ -38,9 +40,9 @@ function SidePane({ full, children }: { full: boolean; children: React.ReactNode
         pinnedEdges({ top: inset, bottom: 0, left: WEB_TAB_RAIL_WIDTH, right: full ? 0 : undefined }, 3),
         full ? null : { borderRightWidth: 1, borderRightColor: border },
       ]}
->
+    >
       {children}
-      {full ? null : <PaneResizeHandle pane={channelsPaneWidth} edge="right"/>}
+      {full ? null : <PaneResizeHandle pane={channelsPaneWidth} edge="right" />}
     </Column>
   );
 }
@@ -56,9 +58,9 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
   if (!active && !railOnly) return null;
   return (
     <>
-      {isTabRoute(pathname) ? null : <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>}
+      {isTabRoute(pathname) ? null : <WebTabRail pathname={pathname} unreadBadge={unreadBadge} />}
       <SidePane full={railOnly}>
-        <HomeScreen pane board={boardHome}/>
+        <HomeScreen pane board={boardHome} />
       </SidePane>
     </>
   );

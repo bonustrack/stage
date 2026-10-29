@@ -18,8 +18,12 @@ function useSurface(messages: string | JsonValue[]): { client: ReturnType<typeof
       send: (message: RendererMessage, metadata) => {
         setLog((prev) => [JSON.stringify(metadata === undefined ? message : { message, metadata }), ...prev].slice(0, 6));
       },
-      onDiagnostic: (d) => { setLog((prev) => [`diagnostic ${d.code}: ${d.message}`, ...prev].slice(0, 6)); },
-      openUrl: (url) => { window.open(url, '_blank', 'noopener,noreferrer'); },
+      onDiagnostic: (d) => {
+        setLog((prev) => [`diagnostic ${d.code}: ${d.message}`, ...prev].slice(0, 6));
+      },
+      openUrl: (url) => {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      },
     });
     if (typeof messages === 'string') created.receive(messages);
     else for (const message of messages) created.receive(message);
@@ -34,9 +38,19 @@ function Playground({ messages, surfaceId }: { messages: string | JsonValue[]; s
     <Column gap={16} maxWidth={520}>
       <A2uiSurface client={client} surfaceId={surfaceId} renderers={MEDIA_RENDERERS} />
       <Column gap={4}>
-        <Text size="sm" color="secondary">Renderer to agent</Text>
-        {log.length === 0 ? <Text size="xs" color="muted">Interact with the surface to see messages.</Text> : null}
-        {log.map((line, i) => <Text key={`${i}:${line}`} size="2xs" fontFamily="mono" selectable>{line}</Text>)}
+        <Text size="sm" color="secondary">
+          Renderer to agent
+        </Text>
+        {log.length === 0 ? (
+          <Text size="xs" color="muted">
+            Interact with the surface to see messages.
+          </Text>
+        ) : null}
+        {log.map((line, i) => (
+          <Text key={`${i}:${line}`} size="2xs" fontFamily="mono" selectable>
+            {line}
+          </Text>
+        ))}
       </Column>
     </Column>
   );
@@ -54,7 +68,10 @@ export const KitDataBlock: Story = () => <Playground messages={DATA_BLOCK} surfa
 
 export const BasicCatalog: Story = () => <Playground messages={BASIC_GALLERY} surfaceId="basic_gallery" />;
 
-const CONTACT_FORM = contactForm.split('\n').filter((line) => line.trim() !== '' && !line.includes('deleteSurface')).join('\n');
+const CONTACT_FORM = contactForm
+  .split('\n')
+  .filter((line) => line.trim() !== '' && !line.includes('deleteSurface'))
+  .join('\n');
 
 export const OfficialContactForm: Story = () => <Playground messages={CONTACT_FORM} surfaceId="contact_form_1" />;
 
@@ -71,7 +88,14 @@ export const Controls: Story<{ json: string }> = ({ json }) => {
 };
 Controls.args = {
   json: JSON.stringify([
-    { version: 'v1.0', createSurface: { surfaceId: 'playground', catalogId: 'https://kit.stage.box/a2ui/v1_0/catalog.json', components: [{ id: 'root', component: 'Text', text: 'Edit the **JSON** control.', size: 'xl' }] } },
+    {
+      version: 'v1.0',
+      createSurface: {
+        surfaceId: 'playground',
+        catalogId: 'https://kit.stage.box/a2ui/v1_0/catalog.json',
+        components: [{ id: 'root', component: 'Text', text: 'Edit the **JSON** control.', size: 'xl' }],
+      },
+    },
   ]),
 };
 Controls.argTypes = { json: { control: { type: 'text' } } };

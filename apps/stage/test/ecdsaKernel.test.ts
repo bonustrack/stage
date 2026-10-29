@@ -66,12 +66,7 @@ describe('ECDSA owner signing', () => {
       maxPriorityFeePerGas: 1n,
       signature: '0x',
     } as const;
-    const hash = getUserOperationHash({
-      userOperation,
-      entryPointAddress: ENTRY_POINT.address,
-      entryPointVersion: '0.7',
-      chainId: 8453,
-    });
+    const hash = getUserOperationHash({ userOperation, entryPointAddress: ENTRY_POINT.address, entryPointVersion: '0.7', chainId: 8453 });
     const signature = await validator.signUserOperation(userOperation);
     expect(await recoverMessageAddress({ message: { raw: hash }, signature })).toBe(owner.address);
   });

@@ -25,7 +25,13 @@ import type { ConvTitle } from './convTitle';
 import { Modal } from '@stage-labs/kit/react-native/modal';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 
-interface HeaderAvatarProps { peerAddr: string | null; groupImage: string; channelId: string; isGroup: boolean; border: string }
+interface HeaderAvatarProps {
+  peerAddr: string | null;
+  groupImage: string;
+  channelId: string;
+  isGroup: boolean;
+  border: string;
+}
 
 export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: HeaderAvatarProps): React.ReactElement | null {
   if (peerAddr) {
@@ -40,55 +46,93 @@ export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border 
   return null;
 }
 
-export function ConvTopnavShell({ fg, border, safeTop, onBack, children }: {
-  fg: string; border: string; safeTop: number; onBack: () => void; children: React.ReactNode;
+export function ConvTopnavShell({
+  fg,
+  border,
+  safeTop,
+  onBack,
+  children,
+}: {
+  fg: string;
+  border: string;
+  safeTop: number;
+  onBack: () => void;
+  children: React.ReactNode;
 }): React.ReactElement {
   const { link } = usePalette();
   const back = useHover();
   const wide = useWebTabRail();
   return (
     <Column style={pinnedTop(2)}>
-    <Row height={TOPNAV_HEIGHT + safeTop} surface="toolbar" padding={{ top: safeTop, left: wide ? PAGE_GUTTER : 0 }} align="stretch" style={wide ? { borderBottomWidth: 1, borderBottomColor: border } : undefined}>
-      {!wide ? (
-        <Pressable
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back"
-          {...back.hoverProps}
-          style={{ paddingLeft: PAGE_GUTTER, paddingRight: 8, justifyContent: 'center' }}
->
-          <Glyph icon={IconArrowLeft} size={24} color={back.hovered ? link : fg}/>
-        </Pressable>
-      ) : null}
-      {children}
-    </Row>
-    {wide ? null : <TopnavFade top={TOPNAV_HEIGHT + safeTop}/>}
+      <Row
+        height={TOPNAV_HEIGHT + safeTop}
+        surface="toolbar"
+        padding={{ top: safeTop, left: wide ? PAGE_GUTTER : 0 }}
+        align="stretch"
+        style={wide ? { borderBottomWidth: 1, borderBottomColor: border } : undefined}
+      >
+        {!wide ? (
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            {...back.hoverProps}
+            style={{ paddingLeft: PAGE_GUTTER, paddingRight: 8, justifyContent: 'center' }}
+          >
+            <Glyph icon={IconArrowLeft} size={24} color={back.hovered ? link : fg} />
+          </Pressable>
+        ) : null}
+        {children}
+      </Row>
+      {wide ? null : <TopnavFade top={TOPNAV_HEIGHT + safeTop} />}
     </Column>
   );
 }
 
-export function ConvTopnavIdentity({ head, title, onPress, ...avatar }: HeaderAvatarProps & {
-  head: string; title: ConvTitle; onPress?: () => void;
-}): React.ReactElement {
+export function ConvTopnavIdentity({
+  head,
+  title,
+  onPress,
+  ...avatar
+}: HeaderAvatarProps & { head: string; title: ConvTitle; onPress?: () => void }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
       disabled={!onPress}
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
->
-      <HeaderAvatar {...avatar}/>
-      <TitleText title={title} fontWeight={avatar.isGroup ? 'medium' : 'semibold'} size="xl" color={head} style={{ flex: 1 }} numberOfLines={1}/>
+    >
+      <HeaderAvatar {...avatar} />
+      <TitleText
+        title={title}
+        fontWeight={avatar.isGroup ? 'medium' : 'semibold'}
+        size="xl"
+        color={head}
+        style={{ flex: 1 }}
+        numberOfLines={1}
+      />
     </Pressable>
   );
 }
 
-function ReactionStrip({ stripBg, onReact }: {
-  stripBg: string; onReact: (e: string) => void;
-}): React.ReactElement {
+function ReactionStrip({ stripBg, onReact }: { stripBg: string; onReact: (e: string) => void }): React.ReactElement {
   return (
-    <Row background={stripBg} radius="full" padding={{ x: 10, y: 6 }} align="center" gap={4} style={{ alignSelf: 'flex-start', ...OVERLAY_SHADOW }}>
-      {REACT_PRESETS.map(e => (
-        <Pressable key={e} onPress={() => { onReact(e); }} hitSlop={4} style={{ paddingHorizontal: 2 }}>
+    <Row
+      background={stripBg}
+      radius="full"
+      padding={{ x: 10, y: 6 }}
+      align="center"
+      gap={4}
+      style={{ alignSelf: 'flex-start', ...OVERLAY_SHADOW }}
+    >
+      {REACT_PRESETS.map((e) => (
+        <Pressable
+          key={e}
+          onPress={() => {
+            onReact(e);
+          }}
+          hitSlop={4}
+          style={{ paddingHorizontal: 2 }}
+        >
           <Text size="2xl">{e}</Text>
         </Pressable>
       ))}
@@ -97,26 +141,38 @@ function ReactionStrip({ stripBg, onReact }: {
 }
 
 interface BubbleActions {
-  reply: () => void; copy: () => void; select: () => void; addToDashboard: () => void; shareLink: () => void; delete: () => void;
+  reply: () => void;
+  copy: () => void;
+  select: () => void;
+  addToDashboard: () => void;
+  shareLink: () => void;
+  delete: () => void;
 }
 
 const SELECT_TEXT = Platform.OS !== 'web';
 
-function ActionDropdown({ items, on }: {
-  items: ReturnType<typeof bubbleMenuItems>; on: BubbleActions;
-}): React.ReactElement {
+function ActionDropdown({ items, on }: { items: ReturnType<typeof bubbleMenuItems>; on: BubbleActions }): React.ReactElement {
   return (
     <DropdownMenu>
-      {items.map(item => (
+      {items.map((item) => (
         <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={on[item.id]} />
       ))}
     </DropdownMenu>
   );
 }
 
-function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
-  open: boolean; point: MenuPoint; onClose: () => void;
-  strip: React.ReactNode; dropdown: React.ReactNode;
+function AnchoredBubbleMenu({
+  open,
+  point,
+  onClose,
+  strip,
+  dropdown,
+}: {
+  open: boolean;
+  point: MenuPoint;
+  onClose: () => void;
+  strip: React.ReactNode;
+  dropdown: React.ReactNode;
 }): React.ReactElement {
   const viewport = useWindowDimensions();
   const placement = anchoredMenuStyle(point, viewport);
@@ -126,14 +182,10 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
         width={MENU_WIDTH}
         align="start"
         pointerEvents="box-none"
-        style={{
-          position: 'absolute',
-          top: placement.top, bottom: placement.bottom,
-          left: placement.left, right: placement.right,
-        }}
+        style={{ position: 'absolute', top: placement.top, bottom: placement.bottom, left: placement.left, right: placement.right }}
       >
         {strip}
-        <Column height={STRIP_GAP} pointerEvents="none"/>
+        <Column height={STRIP_GAP} pointerEvents="none" />
         {dropdown}
       </Column>
     </AnchoredOverlay>
@@ -141,11 +193,25 @@ function AnchoredBubbleMenu({ open, point, onClose, strip, dropdown }: {
 }
 
 export function BubbleActionMenu({
-  target, anchor, canDelete, onClose, onReact, onReply, onCopy, onSelect, onAddToDashboard, onShareLink, onDelete,
+  target,
+  anchor,
+  canDelete,
+  onClose,
+  onReact,
+  onReply,
+  onCopy,
+  onSelect,
+  onAddToDashboard,
+  onShareLink,
+  onDelete,
 }: {
-  target: HistoryEntry | null; anchor: MenuAnchor; canDelete: boolean;
+  target: HistoryEntry | null;
+  anchor: MenuAnchor;
+  canDelete: boolean;
   onClose: () => void;
-  onReact: (emoji: string) => void; onReply: () => void; onCopy: () => void;
+  onReact: (emoji: string) => void;
+  onReply: () => void;
+  onCopy: () => void;
   onSelect: () => void;
   onAddToDashboard?: () => void;
   onShareLink: () => void;
@@ -156,41 +222,47 @@ export function BubbleActionMenu({
   const pal = usePalette();
   const windowHeight = Dimensions.get('window').height;
   const developerMode = useDeveloperMode();
-  const items = bubbleMenuItems(!!target?.text, { selectText: SELECT_TEXT, canDelete, frame: onAddToDashboard !== undefined, developerMode });
+  const items = bubbleMenuItems(!!target?.text, {
+    selectText: SELECT_TEXT,
+    canDelete,
+    frame: onAddToDashboard !== undefined,
+    developerMode,
+  });
   const { stripTop, dropdownAbove } = menuPlacement(anchor.y, items.length, windowHeight);
-  const reactAndClose = (e: string): void => { onReact(e); onClose(); };
+  const reactAndClose = (e: string): void => {
+    onReact(e);
+    onClose();
+  };
 
   const dropdown = (
     <ActionDropdown
       items={items}
-      on={{ reply: onReply, copy: onCopy, select: onSelect, addToDashboard: onAddToDashboard ?? onClose, shareLink: onShareLink, delete: onDelete }}
+      on={{
+        reply: onReply,
+        copy: onCopy,
+        select: onSelect,
+        addToDashboard: onAddToDashboard ?? onClose,
+        shareLink: onShareLink,
+        delete: onDelete,
+      }}
     />
   );
-  const strip = (
-    <ReactionStrip stripBg={pal.border} onReact={reactAndClose} />
-  );
+  const strip = <ReactionStrip stripBg={pal.border} onReact={reactAndClose} />;
 
   if (anchored && anchor.point) {
-    return (
-      <AnchoredBubbleMenu
-        open={!!target} point={anchor.point} onClose={onClose} strip={strip} dropdown={dropdown}
-      />
-    );
+    return <AnchoredBubbleMenu open={!!target} point={anchor.point} onClose={onClose} strip={strip} dropdown={dropdown} />;
   }
 
   return (
-    <Modal
-      open={!!target}
-      onClose={onClose}
-      animationType="none"
-      backdropColor="rgba(0,0,0,0.45)"
-      fullBleedPanel
-    >
+    <Modal open={!!target} onClose={onClose} animationType="none" backdropColor="rgba(0,0,0,0.45)" fullBleedPanel>
       <Column
-        align="start" pointerEvents="box-none"
-        style={dropdownAbove
-          ? { position: 'absolute', left: 12, right: 12, bottom: windowHeight - stripTop + STRIP_GAP }
-          : { position: 'absolute', left: 12, right: 12, top: stripTop + MENU_STRIP_HEIGHT + STRIP_GAP }}
+        align="start"
+        pointerEvents="box-none"
+        style={
+          dropdownAbove
+            ? { position: 'absolute', left: 12, right: 12, bottom: windowHeight - stripTop + STRIP_GAP }
+            : { position: 'absolute', left: 12, right: 12, top: stripTop + MENU_STRIP_HEIGHT + STRIP_GAP }
+        }
       >
         {dropdownAbove ? dropdown : null}
       </Column>
@@ -198,7 +270,7 @@ export function BubbleActionMenu({
         {strip}
         {dropdownAbove ? null : (
           <>
-            <Column height={STRIP_GAP} pointerEvents="none"/>
+            <Column height={STRIP_GAP} pointerEvents="none" />
             {dropdown}
           </>
         )}

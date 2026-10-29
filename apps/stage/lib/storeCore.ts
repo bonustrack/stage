@@ -1,26 +1,29 @@
 import { useCallback, useSyncExternalStore } from 'react';
 import { report } from './errorPolicy';
 
-interface StoredSchema<T> { safeParse: (value: unknown) => { success: true; data: T } | { success: false } }
+interface StoredSchema<T> {
+  safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+}
 
 export function jsonWith<T>(schema: StoredSchema<T>): (raw: string) => T | undefined {
   return (raw) => {
     try {
       const parsed = schema.safeParse(JSON.parse(raw));
       return parsed.success ? parsed.data : undefined;
-    } catch { return undefined; }
+    } catch {
+      return undefined;
+    }
   };
 }
 
-export function useStoreValue<T>(
-  subscribe: (cb: () => void) => () => void,
-  get: () => T,
-  prime?: () => void,
-): T {
-  const subscribeAndPrime = useCallback((cb: () => void): (() => void) => {
-    prime?.();
-    return subscribe(cb);
-  }, [subscribe, prime]);
+export function useStoreValue<T>(subscribe: (cb: () => void) => () => void, get: () => T, prime?: () => void): T {
+  const subscribeAndPrime = useCallback(
+    (cb: () => void): (() => void) => {
+      prime?.();
+      return subscribe(cb);
+    },
+    [subscribe, prime],
+  );
   return useSyncExternalStore(subscribeAndPrime, get, get);
 }
 
@@ -29,15 +32,13 @@ export function memoized<T>(cache: Map<string, Promise<T>>, key: string, make: (
   if (known !== undefined) return known;
   const pending = make();
   cache.set(key, pending);
-  pending.catch(() => { if (cache.get(key) === pending) cache.delete(key); });
+  pending.catch(() => {
+    if (cache.get(key) === pending) cache.delete(key);
+  });
   return pending;
 }
 
-export function makeListeners<T = void>(): {
-  notify: (v: T) => void;
-  subscribe: (cb: (v: T) => void) => () => void;
-  size: () => number;
-} {
+export function makeListeners<T = void>(): { notify: (v: T) => void; subscribe: (cb: (v: T) => void) => () => void; size: () => number } {
   const listeners = new Set<(v: T) => void>();
   const notify = (v: T): void => {
     for (const cb of listeners) {
@@ -50,13 +51,18 @@ export function makeListeners<T = void>(): {
   };
   const subscribe = (cb: (v: T) => void): (() => void) => {
     listeners.add(cb);
-    return () => { listeners.delete(cb); };
+    return () => {
+      listeners.delete(cb);
+    };
   };
   return { notify, subscribe, size: () => listeners.size };
 }
 
 export function makeValue<T>(initial: T): {
-  get: () => T; set: (next: T) => void; use: () => T; subscribe: (cb: () => void) => () => void;
+  get: () => T;
+  set: (next: T) => void;
+  use: () => T;
+  subscribe: (cb: () => void) => () => void;
 } {
   let value = initial;
   const { notify, subscribe } = makeListeners();
@@ -77,10 +83,18 @@ export function makeSharedSource<S, T = void>(
 ): (source: S, cb: (value: T) => void) => () => void {
   const listeners = makeListeners<T>();
   let running: { source: S; close: () => void } | null = null;
-  const close = (): void => { running?.close(); running = null; };
+  const close = (): void => {
+    running?.close();
+    running = null;
+  };
   return (source, cb) => {
     if (running !== null && running.source !== source) close();
-    running ??= { source, close: open(source, (value) => { listeners.notify(value); }) };
+    running ??= {
+      source,
+      close: open(source, (value) => {
+        listeners.notify(value);
+      }),
+    };
     const unsubscribe = listeners.subscribe(cb);
     let active = true;
     return () => {
@@ -104,13 +118,23 @@ export function hydrateOnce<T>(reader: () => Promise<T>): {
     run(): Promise<T> {
       if (inFlight) return inFlight;
       inFlight = (async (): Promise<T> => {
-        try { return await reader(); }
-        finally { loaded = true; inFlight = null; }
+        try {
+          return await reader();
+        } finally {
+          loaded = true;
+          inFlight = null;
+        }
       })();
       return inFlight;
     },
     done: (): boolean => loaded,
-    markDone(): void { loaded = true; inFlight = null; },
-    reset(): void { loaded = false; inFlight = null; },
+    markDone(): void {
+      loaded = true;
+      inFlight = null;
+    },
+    reset(): void {
+      loaded = false;
+      inFlight = null;
+    },
   };
 }

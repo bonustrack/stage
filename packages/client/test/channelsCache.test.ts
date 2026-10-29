@@ -1,7 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  applyGroupMeta, applyInbound, applyRead, applyReadUpTo, applyUnread, applySentPatch, normalizeChannelRowTitle,
-  type CachedChannelRow, type GroupRowMeta,
+  applyGroupMeta,
+  applyInbound,
+  applyRead,
+  applyReadUpTo,
+  applyUnread,
+  applySentPatch,
+  normalizeChannelRowTitle,
+  type CachedChannelRow,
+  type GroupRowMeta,
 } from '../src/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
 
@@ -17,7 +24,16 @@ const base: Row[] = [
 ];
 
 describe('normalizeChannelRowTitle', () => {
-  const row = { convId: 'a', unreadCount: 0, lastReadNs: 0, peerAddress: null, groupName: '', title: 'proto', selfInboxId: 'self', inboxToAddr: {} };
+  const row = {
+    convId: 'a',
+    unreadCount: 0,
+    lastReadNs: 0,
+    peerAddress: null,
+    groupName: '',
+    title: 'proto',
+    selfInboxId: 'self',
+    inboxToAddr: {},
+  };
 
   test('normalizes known group metadata before the row is published or searched', () => {
     expect(normalizeChannelRowTitle(row).title).toBe('Untitled channel');
@@ -52,7 +68,13 @@ describe('applyRead', () => {
 describe('applyReadUpTo', () => {
   const rows: Row[] = [{ convId: 'a', unreadCount: 1, lastReadNs: 5_000_000, markedUnread: true, lastTs: 9 }];
   test('a read older than the last message keeps the unread count', () => {
-    expect(applyReadUpTo(rows, 'a', 7_000_000)?.[0]).toEqual({ convId: 'a', unreadCount: 1, lastReadNs: 7_000_000, markedUnread: false, lastTs: 9 });
+    expect(applyReadUpTo(rows, 'a', 7_000_000)?.[0]).toEqual({
+      convId: 'a',
+      unreadCount: 1,
+      lastReadNs: 7_000_000,
+      markedUnread: false,
+      lastTs: 9,
+    });
   });
   test('a read that covers the last message zeros the count', () => {
     expect(applyReadUpTo(rows, 'a', 9_000_000)?.[0]?.unreadCount).toBe(0);
@@ -107,7 +129,16 @@ describe('applyInbound', () => {
 });
 
 describe('applyGroupMeta', () => {
-  const meta: GroupRowMeta = { title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'], category: null, status: null, priority: null, assigned: [] };
+  const meta: GroupRowMeta = {
+    title: 'Ops',
+    avatarUri: null,
+    avatarAddress: 'seed',
+    labels: ['Todo'],
+    category: null,
+    status: null,
+    priority: null,
+    assigned: [],
+  };
   const rows: Row[] = [
     { convId: 'a', unreadCount: 2, lastReadNs: 7, lastTs: 9, lastPreview: 'hi', ...meta },
     { convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2 },
@@ -136,7 +167,7 @@ describe('applyGroupMeta', () => {
     expect(applyGroupMeta(rows, 'b', meta)?.[1]).toEqual({ ...rows[1], convId: 'b', ...meta });
   });
 
-  test.each(['status', 'priority'])('clears %s without changing other row fields', field => {
+  test.each(['status', 'priority'])('clears %s without changing other row fields', (field) => {
     const filled: Row[] = [{ ...rows[0], convId: 'a', [field]: 'High' }];
     expect(applyGroupMeta(filled, 'a', meta)?.[0]).toEqual({ ...filled[0], [field]: null });
   });

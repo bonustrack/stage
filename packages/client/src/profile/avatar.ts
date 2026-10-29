@@ -1,4 +1,3 @@
-
 export const STAMP_URL = 'https://stamp.fyi';
 
 export function avatarRenderUrl(avatar: string): string {

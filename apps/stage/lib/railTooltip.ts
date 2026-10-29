@@ -7,7 +7,12 @@ export type RailTooltipState =
 
 const ICON_HALF = 12;
 
-export interface DomRectLike { left: number; top: number; width: number; height: number }
+export interface DomRectLike {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
 
 export function hoverRect(event: { currentTarget: unknown }): DomRectLike | undefined {
   const target = event.currentTarget as { getBoundingClientRect?: () => DomRectLike } | null;
@@ -38,7 +43,11 @@ export function tooltipLabel(text: string): string {
 
 const tooltip = makeValue<RailTooltipState | null>(null);
 
-export function showRailTooltip(next: RailTooltipState): void { tooltip.set(next); }
-export function hideRailTooltip(): void { if (tooltip.get() !== null) tooltip.set(null); }
+export function showRailTooltip(next: RailTooltipState): void {
+  tooltip.set(next);
+}
+export function hideRailTooltip(): void {
+  if (tooltip.get() !== null) tooltip.set(null);
+}
 
 export const useRailTooltip = tooltip.use;

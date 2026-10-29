@@ -21,9 +21,7 @@ export class XmtpSetupError extends Error {
   }
 }
 
-export async function bringMessagingOnline(
-  accountId: string, onStage?: (s: Stage) => void,
-): Promise<void> {
+export async function bringMessagingOnline(accountId: string, onStage?: (s: Stage) => void): Promise<void> {
   onStage?.('messaging');
   try {
     await switchToAccount(accountId);
@@ -35,8 +33,12 @@ export async function bringMessagingOnline(
 export type SetupWarning = { title: string; message: string } | null;
 
 const creation = makeOnboarding({
-  read: readPendingSetup, write: writePendingSetup, clear: clearPendingSetup,
-  preserveImage: preserveProfileImage, create: createSmartAccount, resume: resumeSmartAccount,
+  read: readPendingSetup,
+  write: writePendingSetup,
+  clear: clearPendingSetup,
+  preserveImage: preserveProfileImage,
+  create: createSmartAccount,
+  resume: resumeSmartAccount,
   messaging: (id) => bringMessagingOnline(id),
   profile: (account, profile, progress, checkpoint) => applyProfileSetup(account.address, profile, progress, checkpoint),
 });
@@ -59,7 +61,10 @@ export async function restoreWallet(phrase: string, onStage?: (s: Stage) => void
   const { record, alreadyImported } = await restoreSmartAccount(await addPhrase(phrase));
   await bringMessagingOnline(record.id, onStage);
   if (!alreadyImported) return null;
-  return { title: 'Already on this device', message: 'This account was already imported here, so we switched to it instead of adding it again.' };
+  return {
+    title: 'Already on this device',
+    message: 'This account was already imported here, so we switched to it instead of adding it again.',
+  };
 }
 
 export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {

@@ -4,8 +4,19 @@ import { makeSeenCheck } from '../components/conversation/markRead.model';
 function setup(initial: boolean) {
   let seen = initial;
   let marks = 0;
-  const check = makeSeenCheck(() => seen, () => { marks += 1; });
-  return { check, set: (next: boolean) => { seen = next; }, marks: () => marks };
+  const check = makeSeenCheck(
+    () => seen,
+    () => {
+      marks += 1;
+    },
+  );
+  return {
+    check,
+    set: (next: boolean) => {
+      seen = next;
+    },
+    marks: () => marks,
+  };
 }
 
 describe('makeSeenCheck', () => {

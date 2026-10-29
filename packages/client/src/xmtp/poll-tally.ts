@@ -72,23 +72,21 @@ export interface VoteEvent {
   ts: string;
 }
 
-export function votesByPoll(
-  events: VoteEvent[],
-  pollMessageId: string,
-  multiSelect = false,
-  questionIndex = 0,
-): Map<number, Set<string>> {
+export function votesByPoll(events: VoteEvent[], pollMessageId: string, multiSelect = false, questionIndex = 0): Map<number, Set<string>> {
   const optOf = (e: VoteEvent): number | null => {
     if (e.reference !== pollMessageId || e.schema !== 'custom') return null;
     const k = parseVoteKey(e.content);
     return k?.q === questionIndex ? k.o : null;
   };
-  return latestVotes(events, optOf, multiSelect ? (voter, idx) => `${voter} ${idx}` : voter => voter);
+  return latestVotes(events, optOf, multiSelect ? (voter, idx) => `${voter} ${idx}` : (voter) => voter);
 }
 
 function addVoter(out: Map<number, Set<string>>, idx: number, voter: string): void {
   let s = out.get(idx);
-  if (!s) { s = new Set(); out.set(idx, s); }
+  if (!s) {
+    s = new Set();
+    out.set(idx, s);
+  }
   s.add(voter);
 }
 
@@ -110,14 +108,8 @@ function latestVotes(
   return out;
 }
 
-export function ownVotes(
-  events: VoteEvent[],
-  myVoter: string,
-  pollMessageId: string,
-  multiSelect = false,
-  questionIndex = 0,
-): Set<number> {
-  const mine = events.filter(e => e.voter === myVoter);
+export function ownVotes(events: VoteEvent[], myVoter: string, pollMessageId: string, multiSelect = false, questionIndex = 0): Set<number> {
+  const mine = events.filter((e) => e.voter === myVoter);
   const tally = votesByPoll(mine, pollMessageId, multiSelect, questionIndex);
   const out = new Set<number>();
   for (const [idx, voters] of tally) if (voters.has(myVoter)) out.add(idx);

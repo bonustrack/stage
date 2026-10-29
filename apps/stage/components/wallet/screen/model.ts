@@ -64,10 +64,13 @@ export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowFiel
   };
 }
 
-export interface TokenChoice { symbol: string; chainId: number }
+export interface TokenChoice {
+  symbol: string;
+  chainId: number;
+}
 
 export function sendTokenFor(symbol?: string, chainId?: string): TokenChoice {
   const cid = chainId ? Number(chainId) : WALLET_CHAIN_ID;
-  const hit = WALLET_ASSETS.find(a => a.symbol === symbol && a.chainId === cid);
+  const hit = WALLET_ASSETS.find((a) => a.symbol === symbol && a.chainId === cid);
   return { symbol: hit?.symbol ?? 'ETH', chainId: WALLET_CHAIN_ID };
 }

@@ -62,7 +62,9 @@ bun run typecheck:tsc  # the same with tsc from TypeScript 5.9 (fallback)
 bun run lint        # stage lint (oxlint with type-aware rules over the whole repo)
 bun run lint:fix    # stage lint --fix
 bun run lint:changed  # lint only the files changed since the upstream branch
-bun run check       # lint + typecheck
+bun fmt             # format the repo (Prettier style, @stage-labs/config/prettier)
+bun fmt --check     # fail when a file needs formatting (the first CI gate)
+bun run check       # format check + lint + typecheck
 bun run knip        # unused files / deps / exports
 bun run madge       # circular-dependency check
 ```
@@ -116,12 +118,12 @@ bun run --cwd packages/kit storybook    # gallery of every kit component (Vite, 
 value is public). Set them in the Netlify site (web) and the EAS build profiles
 (`eas.json`, mobile); secrets never go in `eas.json` or the repo.
 
-| Var | Purpose |
-|---|---|
-| `EXPO_PUBLIC_ZERODEV_PROJECT_ID` | ZeroDev smart-account project (Base) |
-| `EXPO_PUBLIC_ZERODEV_RPC` | Optional RPC override for the smart-account client |
-| `EXPO_PUBLIC_LINKPROXY_URL` | Base URL of the proxy Worker (default `https://proxy.stage.box`) |
-| `EXPO_PUBLIC_PUSH_SERVER_URL` | Push server base URL |
+| Var                              | Purpose                                                          |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `EXPO_PUBLIC_ZERODEV_PROJECT_ID` | ZeroDev smart-account project (Base)                             |
+| `EXPO_PUBLIC_ZERODEV_RPC`        | Optional RPC override for the smart-account client               |
+| `EXPO_PUBLIC_LINKPROXY_URL`      | Base URL of the proxy Worker (default `https://proxy.stage.box`) |
+| `EXPO_PUBLIC_PUSH_SERVER_URL`    | Push server base URL                                             |
 
 Attachments (already client-side encrypted) upload to the proxy Worker
 (`POST /attachments`), which stores the ciphertext in the `stage` R2 bucket

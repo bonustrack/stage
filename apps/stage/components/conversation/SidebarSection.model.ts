@@ -2,11 +2,22 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { cleanLabel } from '@stage-labs/client/xmtp/labels';
 
-export interface ListEdits { added: string[]; removed: string[] }
+export interface ListEdits {
+  added: string[];
+  removed: string[];
+}
 
-export interface PickerAnchor { point: MenuPoint; width: number }
+export interface PickerAnchor {
+  point: MenuPoint;
+  width: number;
+}
 
-interface Rect { left: number; right: number; bottom: number; width: number }
+interface Rect {
+  left: number;
+  right: number;
+  bottom: number;
+  width: number;
+}
 
 export const PICKER_MAX_WIDTH = 400;
 
@@ -48,7 +59,11 @@ export function matchesQuery(query: string, ...texts: string[]): boolean {
   return q === '' || texts.some((text) => text.toLowerCase().includes(q));
 }
 
-export function tagSearch(query: string, options: readonly string[], draft: readonly string[]): { shown: string[]; typed: string; creatable: boolean } {
+export function tagSearch(
+  query: string,
+  options: readonly string[],
+  draft: readonly string[],
+): { shown: string[]; typed: string; creatable: boolean } {
   const all = uniqueKeys([...options, ...draft]);
   const typed = cleanLabel(query);
   return { shown: all.filter((label) => matchesQuery(query, label)), typed, creatable: typed !== '' && !includesKey(all, typed) };

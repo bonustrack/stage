@@ -4,33 +4,51 @@ import { isSyncType, type SyncKind } from '../src/xmtp/readState';
 
 const WIRE: Record<SyncKind, { typeId: string; fallback: string; json: string }> = {
   read: {
-    typeId: 'readState', fallback: 'Stage read state',
+    typeId: 'readState',
+    fallback: 'Stage read state',
     json: '{"convId":"c1","lastReadNs":1700000000000000000,"markedUnread":false,"at":1759500000000}',
   },
   pin: { typeId: 'pinState', fallback: 'Stage pin state', json: '{"convId":"c1","pinned":true,"order":["c1","c2"],"at":1759500000001}' },
   clear: { typeId: 'clearState', fallback: 'Stage deleted chats', json: '{"cleared":{"0xabc":1759500000002}}' },
   board: { typeId: 'boardState', fallback: 'Stage board layout', json: '{"order":["label:Todo","label:Done"],"at":1759500000003}' },
   categoryOrder: {
-    typeId: 'categoryOrderState', fallback: 'Stage category order', json: '{"order":["category:work","category:home"],"at":1759500000004}',
+    typeId: 'categoryOrderState',
+    fallback: 'Stage category order',
+    json: '{"order":["category:work","category:home"],"at":1759500000004}',
   },
   search: { typeId: 'searchState', fallback: 'Stage search', json: '{"query":"","labels":["work"],"unreadOnly":true,"at":1759500000005}' },
   homeView: {
-    typeId: 'homeView', fallback: 'Stage home view', json: '{"view":"chats","groupBy":"category","columnBy":"label","at":1759500000006}',
+    typeId: 'homeView',
+    fallback: 'Stage home view',
+    json: '{"view":"chats","groupBy":"category","columnBy":"label","at":1759500000006}',
   },
   dashboard: {
-    typeId: 'dashboardLayout', fallback: 'Stage dashboard',
+    typeId: 'dashboardLayout',
+    fallback: 'Stage dashboard',
     json: '{"widgets":[{"id":"w1","w":"half","h":2,"kind":"frame","source":{"conversationId":"c1","messageId":"m1"}}],"at":1759500000007}',
   },
   developerMode: { typeId: 'developerMode', fallback: 'Stage developer mode', json: '{"enabled":false,"at":1759500000008}' },
 };
 
 const REGISTRY = [
-  'metro.box/poll:1.0:true', 'metro.box/signatureRequest:1.0:true', 'metro.box/signatureReference:1.0:true',
-  'xmtp.org/walletSendCalls:1.0:true', 'stage.box/readState:1.0:false', 'stage.box/pinState:1.0:false',
-  'stage.box/clearState:1.0:false', 'stage.box/boardState:1.0:false', 'stage.box/categoryOrderState:1.0:false',
-  'stage.box/searchState:1.0:false', 'stage.box/homeView:1.0:false', 'stage.box/dashboardLayout:1.0:false',
-  'stage.box/developerMode:1.0:false', 'stage.box/callInvite:1.0:true',
-  'stage.box/callSignal:1.0:false', 'stage.box/frame:2.0:true', 'stage.box/frameAction:2.0:true', 'stage.box/deleteRequest:1.0:false',
+  'metro.box/poll:1.0:true',
+  'metro.box/signatureRequest:1.0:true',
+  'metro.box/signatureReference:1.0:true',
+  'xmtp.org/walletSendCalls:1.0:true',
+  'stage.box/readState:1.0:false',
+  'stage.box/pinState:1.0:false',
+  'stage.box/clearState:1.0:false',
+  'stage.box/boardState:1.0:false',
+  'stage.box/categoryOrderState:1.0:false',
+  'stage.box/searchState:1.0:false',
+  'stage.box/homeView:1.0:false',
+  'stage.box/dashboardLayout:1.0:false',
+  'stage.box/developerMode:1.0:false',
+  'stage.box/callInvite:1.0:true',
+  'stage.box/callSignal:1.0:false',
+  'stage.box/frame:2.0:true',
+  'stage.box/frameAction:2.0:true',
+  'stage.box/deleteRequest:1.0:false',
 ];
 
 describe('device sync wire format', () => {
@@ -52,7 +70,9 @@ describe('device sync wire format', () => {
   }
 
   test('registers silent developer settings alongside existing codecs, and other types are not sync state', () => {
-    const ids = STAGE_JSON_CODECS.map(({ contentType: t, shouldPush }) => `${t.authorityId}/${t.typeId}:${t.versionMajor}.${t.versionMinor}:${shouldPush()}`);
+    const ids = STAGE_JSON_CODECS.map(
+      ({ contentType: t, shouldPush }) => `${t.authorityId}/${t.typeId}:${t.versionMajor}.${t.versionMinor}:${shouldPush()}`,
+    );
     expect(ids).toEqual(REGISTRY);
     expect(isSyncType('stage.box/frame:2.0')).toBe(false);
     expect(isSyncType(undefined)).toBe(false);

@@ -8,20 +8,23 @@ import { isReaction } from './feed-helpers';
 import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
 import { deletedViewCache } from './messageDeletion.model';
 import { isLeftOnlyUpdate } from './systemNames.model';
-import {
-  optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState,
-} from './outboundRows.model';
+import { optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
 import { useStableCallback } from '../../lib/useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
 import { useUploadedAttachments } from '../../lib/localAttachmentCache';
 import type { OptimisticEntry } from '../composer/types';
 
 function useStickyBottom(
-  allBubblesLength: number, convId: string | undefined, atBottom: () => boolean,
-  setShowJump: (v: boolean) => void, scrollToNewest: () => void,
+  allBubblesLength: number,
+  convId: string | undefined,
+  atBottom: () => boolean,
+  setShowJump: (v: boolean) => void,
+  scrollToNewest: () => void,
 ): void {
   const prevBubbleCount = useRef(0);
-  useEffect(() => { prevBubbleCount.current = 0; }, [convId]);
+  useEffect(() => {
+    prevBubbleCount.current = 0;
+  }, [convId]);
   useEffect(() => {
     if (allBubblesLength > prevBubbleCount.current && prevBubbleCount.current > 0 && atBottom()) {
       scrollToNewest();
@@ -57,12 +60,13 @@ export function useOutboundLayer(
 
   const deletedView = useMemo(deletedViewCache, []);
   const liveBubbles = useMemo(
-    () => events
-      .filter(e => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e) && !isCallSignalEntry(e))
-      .map((e) => {
-        const by = deletedIds.get(e.id);
-        return by ? deletedView(e, by) : e;
-      }),
+    () =>
+      events
+        .filter((e) => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e) && !isCallSignalEntry(e))
+        .map((e) => {
+          const by = deletedIds.get(e.id);
+          return by ? deletedView(e, by) : e;
+        }),
     [events, deletedIds, deletedView],
   );
   const uploaded = useUploadedAttachments();
@@ -72,43 +76,73 @@ export function useOutboundLayer(
     [view, liveBubbles, myUri],
   );
   useEffect(() => {
-    if (view.confirmed.size) setOutbound(s => settleOutbound(s, outboundView(s, liveBubbles, myUri, uploaded)));
+    if (view.confirmed.size) setOutbound((s) => settleOutbound(s, outboundView(s, liveBubbles, myUri, uploaded)));
   }, [view, liveBubbles, myUri, uploaded]);
   const { localIdOf } = view;
   const rowKeyOf = useCallback((e: HistoryEntry): string => localIdOf.get(e.id) ?? e.id, [localIdOf]);
   useStickyBottom(allBubbles.length, convId, atBottom, setShowJump, scrollToNewest);
   const jumpToMessage = useStableCallback((messageId: string) => {
-    const idx = allBubbles.findIndex(b => b.id === messageId);
+    const idx = allBubbles.findIndex((b) => b.id === messageId);
     setJumpHighlightId(messageId);
     if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current);
-    jumpClearTimer.current = setTimeout(() => { setJumpHighlightId(null); }, 1800);
+    jumpClearTimer.current = setTimeout(() => {
+      setJumpHighlightId(null);
+    }, 1800);
     if (idx < 0) return;
     const index = Platform.OS === 'web' ? allBubbles.length - 1 - idx : idx;
-    attempt(() => { listRef.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 }); }, 'ui');
+    attempt(() => {
+      listRef.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 });
+    }, 'ui');
   });
-  useEffect(() => () => { if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current); }, []);
+  useEffect(
+    () => () => {
+      if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current);
+    },
+    [],
+  );
 
-  const onOptimistic = useCallback(({ localId, text, attachments, replyTo, payload }: OptimisticEntry) => {
-    setOutbound(s => ({ ...s, optimistic: [{
-      id: localId, ts: new Date().toISOString(),
-      station: 'xmtp', line: activeLine,
-      from: myUri, to: activeLine,
-      text: text || undefined,
-      ...(replyTo ? { replyTo } : {}),
-      ...(payload ? { payload } : attachments.length ? { payload: { attachments } } : {}),
-    }, ...s.optimistic] }));
-    isAtBottomRef.current = true;
-    scrollToNewest();
-    setShowJump(false);
-    if (convId) patchRowSent(convId, optimisticRowPreview(text, attachments));
-  }, [activeLine, myUri, convId, isAtBottomRef]);
+  const onOptimistic = useCallback(
+    ({ localId, text, attachments, replyTo, payload }: OptimisticEntry) => {
+      setOutbound((s) => ({
+        ...s,
+        optimistic: [
+          {
+            id: localId,
+            ts: new Date().toISOString(),
+            station: 'xmtp',
+            line: activeLine,
+            from: myUri,
+            to: activeLine,
+            text: text || undefined,
+            ...(replyTo ? { replyTo } : {}),
+            ...(payload ? { payload } : attachments.length ? { payload: { attachments } } : {}),
+          },
+          ...s.optimistic,
+        ],
+      }));
+      isAtBottomRef.current = true;
+      scrollToNewest();
+      setShowJump(false);
+      if (convId) patchRowSent(convId, optimisticRowPreview(text, attachments));
+    },
+    [activeLine, myUri, convId, isAtBottomRef],
+  );
 
   const onSent = useCallback((localId: string, _error: unknown, sentId?: string) => {
-    setOutbound(s => recordSent(s, localId, sentId));
+    setOutbound((s) => recordSent(s, localId, sentId));
   }, []);
 
   return {
-    showJump, setShowJump, scrollToNewest, jumpHighlightId,
-    listRef, confirmedIds: outbound.confirmedIds, allBubbles, rowKeyOf, jumpToMessage, onOptimistic, onSent,
+    showJump,
+    setShowJump,
+    scrollToNewest,
+    jumpHighlightId,
+    listRef,
+    confirmedIds: outbound.confirmedIds,
+    allBubbles,
+    rowKeyOf,
+    jumpToMessage,
+    onOptimistic,
+    onSent,
   };
 }

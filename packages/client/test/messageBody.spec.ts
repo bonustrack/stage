@@ -1,15 +1,24 @@
 import { describe, expect, test } from 'bun:test';
 import { channelRefToken } from '../src/xmtp/channelRefs';
 import {
-  bodySegments, bodyView, mentionAddresses, mentionLabel, namedPlainText, withMentionLabels, type LinkFinder,
+  bodySegments,
+  bodyView,
+  mentionAddresses,
+  mentionLabel,
+  namedPlainText,
+  withMentionLabels,
+  type LinkFinder,
 } from '../src/xmtp/messageBody';
 
 const A = '0x59445094f08d01213bd6ba7215a6ab7a4bc29a4a';
 const B = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';
 const OPS = channelRefToken('c0ffee02', 'Ops');
-const findLinks: LinkFinder = text => [...text.matchAll(/(?:https?:\/\/|stage:\/\/|metro:\/\/)\S+/g)].map(m => (
-  { index: m.index, lastIndex: m.index + m[0].length, url: m[0] }
-));
+const findLinks: LinkFinder = (text) =>
+  [...text.matchAll(/(?:https?:\/\/|stage:\/\/|metro:\/\/)\S+/g)].map((m) => ({
+    index: m.index,
+    lastIndex: m.index + m[0].length,
+    url: m[0],
+  }));
 
 describe('mention labels', () => {
   test('prefixes a name with a single @', () => {
@@ -24,8 +33,8 @@ describe('mention labels', () => {
 
   test('replaces every mention with its label and keeps the text around it', () => {
     const names: Record<string, string> = { [A]: '@chen', [B]: '@tony' };
-    expect(withMentionLabels(`added @${A} and @${B}`, a => names[a] ?? a)).toBe('added @chen and @tony');
-    expect(withMentionLabels('hello', a => a)).toBe('hello');
+    expect(withMentionLabels(`added @${A} and @${B}`, (a) => names[a] ?? a)).toBe('added @chen and @tony');
+    expect(withMentionLabels('hello', (a) => a)).toBe('hello');
   });
 
   test('shows names in plain views of a body that mentions someone', () => {
@@ -39,8 +48,21 @@ describe('mention labels', () => {
     for (const body of ['hello there', 'a well-known fact, 3.14 and more\nsecond line', 'Done 10 of 12', 'e.g. this']) {
       expect(bodyView(body, false)).toBe('plain');
     }
-    for (const body of ['**hello**', 'see stage.box', 'mail me at a@b.co', '1. one', '- item', '> quote', 'Tom &amp; Jerry',
-      '# title', 'x_y_z', '`code`', 'a | b', '[docs](https://example.com)', 'https://stage.box']) {
+    for (const body of [
+      '**hello**',
+      'see stage.box',
+      'mail me at a@b.co',
+      '1. one',
+      '- item',
+      '> quote',
+      'Tom &amp; Jerry',
+      '# title',
+      'x_y_z',
+      '`code`',
+      'a | b',
+      '[docs](https://example.com)',
+      'https://stage.box',
+    ]) {
       expect(bodyView(body, false, findLinks)).toBe('markdown');
     }
   });
@@ -86,8 +108,10 @@ describe('mention labels', () => {
   test('uses channel segments for URL forms beside text and mentions, retaining routes', () => {
     const url = 'stage://channel/c0ffee02?m=123&focus=1';
     expect(bodySegments(`join ${url} with @${A}`, findLinks)).toEqual([
-      { type: 'text', text: 'join ' }, { type: 'channel', convId: 'c0ffee02', url },
-      { type: 'text', text: ' with ' }, { type: 'mention', address: A },
+      { type: 'text', text: 'join ' },
+      { type: 'channel', convId: 'c0ffee02', url },
+      { type: 'text', text: ' with ' },
+      { type: 'mention', address: A },
     ]);
     expect(bodySegments(`[Join here](${url})`, findLinks)).toEqual([{ type: 'channel', convId: 'c0ffee02', url, text: 'Join here' }]);
     expect(bodySegments(`[#Ops](${url})`, findLinks)).toEqual([{ type: 'channel', convId: 'c0ffee02', url, text: '#Ops', label: 'Ops' }]);
@@ -98,7 +122,8 @@ describe('mention labels', () => {
   test('keeps punctuation, profile URLs and code separate from channel links', () => {
     const url = 'stage://channel/c0ffee02';
     expect(bodySegments(`${url}.`, findLinks)).toEqual([
-      { type: 'channel', convId: 'c0ffee02', url }, { type: 'text', text: '.' },
+      { type: 'channel', convId: 'c0ffee02', url },
+      { type: 'text', text: '.' },
     ]);
     expect(bodySegments(`\`${url}\``, findLinks)).toEqual([{ type: 'text', text: `\`${url}\``, literal: true }]);
     const profile = `https://stage.box/user/${A}`;
@@ -113,17 +138,26 @@ describe('mention labels', () => {
       expect(bodySegments(code, findLinks)).toEqual([{ type: 'text', text: code, literal: true }]);
       expect(bodyView(`**read** ${code}`, false, findLinks)).toBe('markdown');
       expect(bodyView(code, true, findLinks)).toBe('plain');
-      expect(bodySegments(`${code} @${B}`, findLinks).filter(s => s.type === 'mention')).toEqual([{ type: 'mention', address: B }]);
+      expect(bodySegments(`${code} @${B}`, findLinks).filter((s) => s.type === 'mention')).toEqual([{ type: 'mention', address: B }]);
     }
   });
 
   test('plain views retain ordinary Markdown URLs and resolve mentions within their labels', () => {
     const source = `read [ping @${A}](https://example.com) today stage://channel/c0ffee02`;
-    const result = namedPlainText(bodySegments(source, findLinks, true), () => '@Chen', () => '#Ops');
+    const result = namedPlainText(
+      bodySegments(source, findLinks, true),
+      () => '@Chen',
+      () => '#Ops',
+    );
     expect(result).toBe('read [ping @Chen](https://example.com) today #Ops');
     expect(bodyView(`[ping @${A}](https://example.com)`, true, findLinks)).toBe('namedPlain');
-    expect(namedPlainText(bodySegments(`code \`@${A}\` and @${B}`, findLinks, true), () => '@Chen', () => '#Ops'))
-      .toBe(`code \`@${A}\` and @Chen`);
+    expect(
+      namedPlainText(
+        bodySegments(`code \`@${A}\` and @${B}`, findLinks, true),
+        () => '@Chen',
+        () => '#Ops',
+      ),
+    ).toBe(`code \`@${A}\` and @Chen`);
   });
 
   test('channel fallbacks work in formatted Markdown links with titles', () => {

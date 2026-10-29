@@ -13,7 +13,11 @@ export interface FrameSessionHost {
 
 export type FrameApplied = { kind: 'frame'; frame: FrameContent } | { kind: 'unchanged' } | { kind: 'invalid' };
 
-interface QueuedMessage { message: RendererMessage; client: A2uiClient; metadata?: TransportMetadata }
+interface QueuedMessage {
+  message: RendererMessage;
+  client: A2uiClient;
+  metadata?: TransportMetadata;
+}
 
 interface FrameSession {
   frame: FrameContent | null;
@@ -53,9 +57,15 @@ export function releaseFrameSession(key: string): void {
 
 function buildClient(key: string): A2uiClient {
   const client: A2uiClient = createA2uiClient({
-    send: (message, metadata) => { deliver(key, { message, client, metadata }); },
-    navigate: (nav) => { hostOf(key)?.navigate(nav); },
-    openUrl: (url) => { hostOf(key)?.openUrl(url); },
+    send: (message, metadata) => {
+      deliver(key, { message, client, metadata });
+    },
+    navigate: (nav) => {
+      hostOf(key)?.navigate(nav);
+    },
+    openUrl: (url) => {
+      hostOf(key)?.openUrl(url);
+    },
   });
   return client;
 }
@@ -101,7 +111,9 @@ function withoutHost(key: string, host: FrameSessionHost): FrameSessionHost[] {
 export function setFrameSessionHost(key: string, host: FrameSessionHost): () => void {
   hostsByKey.set(key, [...withoutHost(key, host), host]);
   releaseFrameSession(key);
-  return () => { withoutHost(key, host); };
+  return () => {
+    withoutHost(key, host);
+  };
 }
 
 export function activateFrameSessionHost(key: string, host: FrameSessionHost): void {
@@ -154,7 +166,10 @@ export function applyToFrameSession(key: string, messages: readonly Record<strin
 }
 
 export async function streamInto(
-  key: string, load: boolean, onFrame: (frame: FrameContent) => void, run: (onMessage: (message: FrameMessage) => void) => Promise<NodeResult>,
+  key: string,
+  load: boolean,
+  onFrame: (frame: FrameContent) => void,
+  run: (onMessage: (message: FrameMessage) => void) => Promise<NodeResult>,
 ): Promise<{ result: NodeResult; applied: FrameApplied }> {
   const token = load ? startFrameLoad(key) : undefined;
   let applied: FrameApplied = { kind: 'unchanged' };

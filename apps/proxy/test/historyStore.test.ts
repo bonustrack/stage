@@ -15,7 +15,11 @@ function randomBytes(length: number): Uint8Array {
 describe('parseHistoryRoute', () => {
   test('maps uploads and file downloads per environment', () => {
     expect(parseHistoryRoute('/xmtp-history/production/upload', 'POST')).toEqual({ kind: 'upload', env: 'production' });
-    expect(parseHistoryRoute(`/xmtp-history/production/upload/${FILE_ID}`, 'POST')).toEqual({ kind: 'part', env: 'production', id: FILE_ID });
+    expect(parseHistoryRoute(`/xmtp-history/production/upload/${FILE_ID}`, 'POST')).toEqual({
+      kind: 'part',
+      env: 'production',
+      id: FILE_ID,
+    });
     expect(parseHistoryRoute(`/xmtp-history/dev/files/${FILE_ID}`, 'GET')).toEqual({ kind: 'file', env: 'dev', id: FILE_ID });
   });
 
@@ -29,20 +33,27 @@ describe('parseHistoryRoute', () => {
     expect(parseHistoryRoute('/xmtp-history/production/files/abc-123', 'GET')).toBeNull();
     expect(parseHistoryRoute('/xmtp-history/production/files', 'GET')).toBeNull();
     expect(parseHistoryRoute('/other', 'GET')).toBeNull();
-    for (const method of ['GET', 'PUT', 'DELETE']) expect(parseHistoryRoute(`/xmtp-history/production/transfer/${'a'.repeat(64)}`, method)).toBeNull();
+    for (const method of ['GET', 'PUT', 'DELETE'])
+      expect(parseHistoryRoute(`/xmtp-history/production/transfer/${'a'.repeat(64)}`, method)).toBeNull();
   });
 });
 
 describe('handleHistory', () => {
   test('answers preflight with permissive CORS headers', async () => {
-    const res = await handleHistory(new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'OPTIONS' }), memoryNamespace(archiveObjectFetch, 1_000));
+    const res = await handleHistory(
+      new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'OPTIONS' }),
+      memoryNamespace(archiveObjectFetch, 1_000),
+    );
     expect(res.status).toBe(204);
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
     expect(res.headers.get('access-control-allow-methods')).toContain('POST');
   });
 
   test('returns a CORS-tagged 404 for paths outside the route table', async () => {
-    const res = await handleHistory(new Request('https://proxy.stage.box/xmtp-history/production/nope', { method: 'GET' }), memoryNamespace(archiveObjectFetch, 1_000));
+    const res = await handleHistory(
+      new Request('https://proxy.stage.box/xmtp-history/production/nope', { method: 'GET' }),
+      memoryNamespace(archiveObjectFetch, 1_000),
+    );
     expect(res.status).toBe(404);
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
   });
@@ -50,7 +61,10 @@ describe('handleHistory', () => {
   test('stores an upload and serves the same bytes back by id', async () => {
     const ns = memoryNamespace(archiveObjectFetch, 1_000);
     const archive = randomBytes(2_500_000);
-    const uploaded = await handleHistory(new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'POST', body: archive }), ns);
+    const uploaded = await handleHistory(
+      new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'POST', body: archive }),
+      ns,
+    );
     expect(uploaded.status).toBe(200);
     const id = await uploaded.text();
     expect(parseHistoryRoute(`/xmtp-history/production/files/${id}`, 'GET')).not.toBeNull();
@@ -65,7 +79,10 @@ describe('handleHistory', () => {
 
   test('keeps environments apart and 404s unknown or expired archives', async () => {
     const ns = memoryNamespace(archiveObjectFetch, 1_000);
-    const uploaded = await handleHistory(new Request('https://proxy.stage.box/xmtp-history/dev/upload', { method: 'POST', body: randomBytes(10) }), ns);
+    const uploaded = await handleHistory(
+      new Request('https://proxy.stage.box/xmtp-history/dev/upload', { method: 'POST', body: randomBytes(10) }),
+      ns,
+    );
     const id = await uploaded.text();
     const otherEnv = await handleHistory(new Request(`https://proxy.stage.box/xmtp-history/production/files/${id}`), ns);
     expect(otherEnv.status).toBe(404);
@@ -75,7 +92,10 @@ describe('handleHistory', () => {
   });
 
   test('rejects empty uploads and answers 503 without storage', async () => {
-    const empty = await handleHistory(new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'POST', body: new Uint8Array(0) }), memoryNamespace(archiveObjectFetch, 1_000));
+    const empty = await handleHistory(
+      new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'POST', body: new Uint8Array(0) }),
+      memoryNamespace(archiveObjectFetch, 1_000),
+    );
     expect(empty.status).toBe(400);
     const missing = await handleHistory(new Request(`https://proxy.stage.box/xmtp-history/production/files/${FILE_ID}`), undefined);
     expect(missing.status).toBe(503);
@@ -84,7 +104,11 @@ describe('handleHistory', () => {
   test('builds one archive from parts and serves it only once complete', async () => {
     const ns = memoryNamespace(archiveObjectFetch, 1_000);
     const archive = randomBytes(2_600_000);
-    const post = (path: string, from: number, to: number): Promise<Response> => handleHistory(new Request(`https://proxy.stage.box/xmtp-history/production/${path}`, { method: 'POST', body: archive.slice(from, to) }), ns);
+    const post = (path: string, from: number, to: number): Promise<Response> =>
+      handleHistory(
+        new Request(`https://proxy.stage.box/xmtp-history/production/${path}`, { method: 'POST', body: archive.slice(from, to) }),
+        ns,
+      );
     const first = await post(`upload?size=${archive.byteLength}`, 0, 1_000_500);
     expect(first.status).toBe(200);
     const id = await first.text();
@@ -101,7 +125,8 @@ describe('handleHistory', () => {
 
   test('refuses sizes over the cap, parts past the declared size and unknown archives', async () => {
     const ns = memoryNamespace(archiveObjectFetch, 1_000);
-    const post = (path: string, body: Uint8Array): Promise<Response> => handleHistory(new Request(`https://proxy.stage.box/xmtp-history/dev/${path}`, { method: 'POST', body }), ns);
+    const post = (path: string, body: Uint8Array): Promise<Response> =>
+      handleHistory(new Request(`https://proxy.stage.box/xmtp-history/dev/${path}`, { method: 'POST', body }), ns);
     expect((await post(`upload?size=${MAX_ARCHIVE_BYTES + 1}`, randomBytes(10))).status).toBe(413);
     expect((await post('upload?size=abc', randomBytes(10))).status).toBe(400);
     expect([...ns.objects.values()].every((object) => object.data.size === 0)).toBe(true);
@@ -114,7 +139,10 @@ describe('handleHistory', () => {
 
   test('answers a storage failure with a CORS-tagged 502', async () => {
     const broken = { idFromName: (name: string) => name, get: () => ({ fetch: () => Promise.reject(new Error('storage down')) }) };
-    const res = await handleHistory(new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'POST', body: randomBytes(10) }), broken);
+    const res = await handleHistory(
+      new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'POST', body: randomBytes(10) }),
+      broken,
+    );
     expect(res.status).toBe(502);
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
   });

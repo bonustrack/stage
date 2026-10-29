@@ -1,10 +1,20 @@
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { errorMessage } from '@stage-labs/client/errors';
-import { parsePendingSetup, samePreparedAccount, type PendingSetup, type ProfileProgress, type ProfileSetup } from '@stage-labs/client/profile/setup';
+import {
+  parsePendingSetup,
+  samePreparedAccount,
+  type PendingSetup,
+  type ProfileProgress,
+  type ProfileSetup,
+} from '@stage-labs/client/profile/setup';
 import { ignored } from './errorPolicy';
 
 export class AccountSetupError extends Error {
-  constructor(readonly stage: PendingSetup['stage'], readonly accountId: string | undefined, cause: unknown) {
+  constructor(
+    readonly stage: PendingSetup['stage'],
+    readonly accountId: string | undefined,
+    cause: unknown,
+  ) {
     super(errorMessage(cause));
     this.name = 'AccountSetupError';
   }
@@ -18,7 +28,12 @@ export interface OnboardingDeps {
   create: (onPrepared: (account: AccountRecord) => Promise<void>) => Promise<AccountRecord>;
   resume: (account: NonNullable<PendingSetup['account']>) => Promise<AccountRecord>;
   messaging: (accountId: string) => Promise<void>;
-  profile: (account: AccountRecord, profile: ProfileSetup, progress: ProfileProgress, checkpoint: (progress: ProfileProgress) => Promise<void>) => Promise<void>;
+  profile: (
+    account: AccountRecord,
+    profile: ProfileSetup,
+    progress: ProfileProgress,
+    checkpoint: (progress: ProfileProgress) => Promise<void>,
+  ) => Promise<void>;
 }
 
 interface Attempt {
@@ -31,10 +46,14 @@ interface Attempt {
 function setupFailure(attempt: Attempt, cause: unknown): AccountSetupError {
   return new AccountSetupError(attempt.pending?.stage ?? 'wallet', attempt.pending?.account?.id, cause);
 }
-export interface EditableProfile { profile: ProfileSetup; labelLocked: boolean }
+export interface EditableProfile {
+  profile: ProfileSetup;
+  labelLocked: boolean;
+}
 
 function assertBoundAccount(attempt: Attempt, pending: PendingSetup | null): void {
-  if (attempt.pending?.account !== undefined && pending?.account?.id !== attempt.pending.account.id) throw new Error('The saved setup changed. Nothing else was changed.');
+  if (attempt.pending?.account !== undefined && pending?.account?.id !== attempt.pending.account.id)
+    throw new Error('The saved setup changed. Nothing else was changed.');
 }
 
 async function readAttempt(deps: OnboardingDeps, attempt: Attempt): Promise<PendingSetup | null> {
@@ -73,9 +92,17 @@ async function prepareAttempt(deps: OnboardingDeps, attempt: Attempt, resuming: 
 }
 async function openPreparedAccount(deps: OnboardingDeps, attempt: Attempt, pending: PendingSetup): Promise<AccountRecord> {
   if (pending.account !== undefined) return deps.resume(pending.account);
-  return deps.create(async (account) => { await persist(deps, attempt, parsePendingSetup(JSON.stringify({ ...pending, account }))); });
+  return deps.create(async (account) => {
+    await persist(deps, attempt, parsePendingSetup(JSON.stringify({ ...pending, account })));
+  });
 }
-async function saveRequestedProfile(deps: OnboardingDeps, attempt: Attempt, pending: PendingSetup, record: AccountRecord, onStage?: StageChange): Promise<void> {
+async function saveRequestedProfile(
+  deps: OnboardingDeps,
+  attempt: Attempt,
+  pending: PendingSetup,
+  record: AccountRecord,
+  onStage?: StageChange,
+): Promise<void> {
   const profile = pending.profile;
   if (profile === undefined) return;
   let state: PendingSetup = { ...pending, stage: 'profile' };
@@ -92,13 +119,18 @@ async function continueSetup(deps: OnboardingDeps, attempt: Attempt, resuming: b
     onStage?.('wallet');
     const record = await openPreparedAccount(deps, attempt, pending);
     const state = attempt.pending;
-    if (state === null || state.account === undefined || !samePreparedAccount(state.account, record)) throw new Error('The prepared wallet was not saved. Nothing else was changed.');
+    if (state === null || state.account === undefined || !samePreparedAccount(state.account, record))
+      throw new Error('The prepared wallet was not saved. Nothing else was changed.');
     onStage?.('messaging');
     await persist(deps, attempt, { ...state, stage: 'messaging' });
     await deps.messaging(record.id);
     await saveRequestedProfile(deps, attempt, state, record, onStage);
     await deps.clear();
-    attempt.started = false; attempt.requested = undefined; attempt.pending = null; attempt.stored = null; attempt.unconfirmed = false;
+    attempt.started = false;
+    attempt.requested = undefined;
+    attempt.pending = null;
+    attempt.stored = null;
+    attempt.unconfirmed = false;
   } catch (e) {
     throw setupFailure(attempt, e);
   }
@@ -107,7 +139,8 @@ async function continueSetup(deps: OnboardingDeps, attempt: Attempt, resuming: b
 async function editableProfile(deps: OnboardingDeps, attempt: Attempt): Promise<EditableProfile> {
   const pending = await readAttempt(deps, attempt);
   const progress = pending?.progress ?? {};
-  if (progress.submitting === true || (progress.transactions ?? []).length > 0) throw new Error('Check the pending profile save before changing your profile.');
+  if (progress.submitting === true || (progress.transactions ?? []).length > 0)
+    throw new Error('Check the pending profile save before changing your profile.');
   const profile = pending?.profile ?? attempt.requested;
   if (profile === undefined) throw new Error('No requested profile was found. Try again to check the saved setup.');
   return { profile, labelLocked: progress.claiming === true || progress.claimed === true };
@@ -115,12 +148,17 @@ async function editableProfile(deps: OnboardingDeps, attempt: Attempt): Promise<
 
 async function editProfile(deps: OnboardingDeps, attempt: Attempt, profile: ProfileSetup): Promise<void> {
   const previous = await editableProfile(deps, attempt);
-  if (previous.labelLocked && previous.profile.label !== profile.label) throw new Error('Continue with the username already being registered for this wallet.');
-  const pending = await readAttempt(deps, attempt) ?? { version: 1, stage: 'wallet' };
+  if (previous.labelLocked && previous.profile.label !== profile.label)
+    throw new Error('Continue with the username already being registered for this wallet.');
+  const pending = (await readAttempt(deps, attempt)) ?? { version: 1, stage: 'wallet' };
   const preserved = await deps.preserveImage(profile);
   const { avatar, ...progress } = pending.progress ?? {};
   const sameImage = previous.profile.image?.uri === preserved.image?.uri;
-  const next = { ...pending, profile: preserved, ...(pending.account === undefined ? {} : { progress: { ...progress, ...(sameImage && avatar !== undefined ? { avatar } : {}) } }) };
+  const next = {
+    ...pending,
+    profile: preserved,
+    ...(pending.account === undefined ? {} : { progress: { ...progress, ...(sameImage && avatar !== undefined ? { avatar } : {}) } }),
+  };
   await persist(deps, attempt, next);
   attempt.requested = preserved;
   attempt.started = true;
@@ -138,12 +176,19 @@ export function makeOnboarding(deps: OnboardingDeps): {
     if (inFlight) return inFlight;
     const pending = continueSetup(deps, attempt, resuming, onStage);
     inFlight = pending;
-    void pending.finally(() => { if (inFlight === pending) inFlight = null; }).catch(ignored(undefined, 'cleanup'));
+    void pending
+      .finally(() => {
+        if (inFlight === pending) inFlight = null;
+      })
+      .catch(ignored(undefined, 'cleanup'));
     return pending;
   };
   return {
     run: (profile, onStage) => {
-      if (!inFlight) { attempt.requested = profile; attempt.started = true; }
+      if (!inFlight) {
+        attempt.requested = profile;
+        attempt.started = true;
+      }
       return start(false, onStage);
     },
     resume: (onStage) => start(true, onStage),

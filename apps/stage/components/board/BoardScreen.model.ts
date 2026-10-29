@@ -41,13 +41,16 @@ function rememberedColumns(order: readonly string[], known: ReadonlySet<string>,
 }
 
 function valueColumns<T extends GroupableRow>(
-  rows: readonly T[], by: GroupKey, nameOf: NameOf, hidden: (row: T) => boolean,
+  rows: readonly T[],
+  by: GroupKey,
+  nameOf: NameOf,
+  hidden: (row: T) => boolean,
 ): BoardColumn<T>[] {
-  const { buckets, none } = bucketRows(rows, by, nameOf, value => columnKeyOf(by, value));
-  const shown = (list: readonly T[]): T[] => list.filter(row => !hidden(row));
+  const { buckets, none } = bucketRows(rows, by, nameOf, (value) => columnKeyOf(by, value));
+  const shown = (list: readonly T[]): T[] => list.filter((row) => !hidden(row));
   const columns = buckets.map(({ key, title, rows: inBucket }) => ({ key, label: title, rows: shown(inBucket) }));
   const rest = shown(none);
-  const showUnset = by !== 'label' && (rest.length > 0 || (by === 'status' && columns.some(column => column.rows.length > 0)));
+  const showUnset = by !== 'label' && (rest.length > 0 || (by === 'status' && columns.some((column) => column.rows.length > 0)));
   return [
     ...columns.sort((a, b) => compareNames(a.label, b.label)),
     ...(showUnset ? [{ key: columnKeyOf(by, ''), label: NO_GROUP_TITLES[by], rows: rest }] : []),
@@ -55,27 +58,44 @@ function valueColumns<T extends GroupableRow>(
 }
 
 export function boardColumns<T extends ChannelListRow & GroupableRow>(
-  rows: T[], pinned: readonly string[], order: readonly string[], by: GroupKey = DEFAULT_HOME_VIEW.columnBy,
-  nameOf: NameOf = value => value, hidden: (row: T) => boolean = () => false,
-  sort: HomeSort = homeSortOf({ ...DEFAULT_HOME_VIEW, view: 'board' }), statusOrder: readonly string[] = order,
+  rows: T[],
+  pinned: readonly string[],
+  order: readonly string[],
+  by: GroupKey = DEFAULT_HOME_VIEW.columnBy,
+  nameOf: NameOf = (value) => value,
+  hidden: (row: T) => boolean = () => false,
+  sort: HomeSort = homeSortOf({ ...DEFAULT_HOME_VIEW, view: 'board' }),
+  statusOrder: readonly string[] = order,
 ): BoardColumn<T>[] {
-  const columns = valueColumns(sortHomeRows(rows.filter(row => !row.peerAddress), pinned, sort, statusOrder), by, nameOf, hidden);
-  return [...columns, ...rememberedColumns(order, new Set(columns.map(column => column.key.toLowerCase())), by, nameOf)];
+  const columns = valueColumns(
+    sortHomeRows(
+      rows.filter((row) => !row.peerAddress),
+      pinned,
+      sort,
+      statusOrder,
+    ),
+    by,
+    nameOf,
+    hidden,
+  );
+  return [...columns, ...rememberedColumns(order, new Set(columns.map((column) => column.key.toLowerCase())), by, nameOf)];
 }
 
 export function searchedColumns<T extends FilterRow>(
-  columns: BoardColumn<T>[], query: string, namesOf: MemberNames = () => [], draftOf: (convId: string) => string = () => '',
+  columns: BoardColumn<T>[],
+  query: string,
+  namesOf: MemberNames = () => [],
+  draftOf: (convId: string) => string = () => '',
   activityCutoff: number | null = null,
 ): BoardColumn<T>[] {
   const matches = searchRowMatcher(parseSearchFilter(query), namesOf, draftOf, activityCutoff);
-  return columns.map(column => ({ ...column, rows: column.rows.filter(matches) }));
+  return columns.map((column) => ({ ...column, rows: column.rows.filter(matches) }));
 }
 
 export const columnMovable = (key: string): boolean => key !== columnKeyOf('category', '') && key !== columnKeyOf('status', '');
 
-export const columnEditable = (key: string): boolean => (
-  ['label', 'status', 'category'].some(by => key.startsWith(`${by}:`) && key !== `${by}:`)
-);
+export const columnEditable = (key: string): boolean =>
+  ['label', 'status', 'category'].some((by) => key.startsWith(`${by}:`) && key !== `${by}:`);
 
 export function acceptsColumnMove(move: SortMove): boolean {
   const target = moveAnchor(move);
@@ -84,67 +104,69 @@ export function acceptsColumnMove(move: SortMove): boolean {
 
 export const acceptsCardMove = (move: SortMove): boolean => move.fromListId !== move.toListId;
 
-export function cardLanding<T extends { convId: string }>(columns: readonly BoardColumn<T>[], move: SortMove, sorted: (rows: T[]) => T[]): number {
-  const row = columns.flatMap(column => column.rows).find(r => r.convId === move.itemId);
-  const target = columns.find(column => column.key === move.toListId);
+export function cardLanding<T extends { convId: string }>(
+  columns: readonly BoardColumn<T>[],
+  move: SortMove,
+  sorted: (rows: T[]) => T[],
+): number {
+  const row = columns.flatMap((column) => column.rows).find((r) => r.convId === move.itemId);
+  const target = columns.find((column) => column.key === move.toListId);
   if (row === undefined || target === undefined) return move.toIndex;
-  return sorted([...target.rows.filter(r => r.convId !== row.convId), row]).indexOf(row);
+  return sorted([...target.rows.filter((r) => r.convId !== row.convId), row]).indexOf(row);
 }
 
 export function orderedColumns<C extends { key: string }>(columns: readonly C[], order: readonly string[]): C[] {
-  return savedFirst(columns, order.map(key => key.toLowerCase()), column => column.key.toLowerCase());
+  return savedFirst(
+    columns,
+    order.map((key) => key.toLowerCase()),
+    (column) => column.key.toLowerCase(),
+  );
 }
 
 function withShown(saved: readonly string[], shown: readonly string[]): string[] {
-  const current = new Map(shown.map(key => [key.toLowerCase(), key]));
+  const current = new Map(shown.map((key) => [key.toLowerCase(), key]));
   const seen = new Set<string>();
   const kept = saved.flatMap((key) => {
     if (seen.has(key.toLowerCase())) return [];
     seen.add(key.toLowerCase());
     return [current.get(key.toLowerCase()) ?? key];
   });
-  return [...kept, ...shown.filter(key => !seen.has(key.toLowerCase()))];
+  return [...kept, ...shown.filter((key) => !seen.has(key.toLowerCase()))];
 }
 
-export function movedColumnOrder(
-  shown: readonly string[], saved: readonly string[], from: string, to: string,
-): string[] | null {
+export function movedColumnOrder(shown: readonly string[], saved: readonly string[], from: string, to: string): string[] | null {
   if (from === to || !shown.includes(from) || !shown.includes(to)) return null;
   return movedKey(withShown(saved, shown), from, to);
 }
 
-export function keptColumnOrder(
-  columns: readonly BoardColumn<unknown>[], saved: readonly string[], from: string,
-): string[] | null {
-  const column = columns.find(c => c.key === from);
+export function keptColumnOrder(columns: readonly BoardColumn<unknown>[], saved: readonly string[], from: string): string[] | null {
+  const column = columns.find((c) => c.key === from);
   if (column === undefined || column.rows.length > 1) return null;
-  const next = withShown(saved, columns.map(c => c.key));
+  const next = withShown(
+    saved,
+    columns.map((c) => c.key),
+  );
   return next.length === saved.length && next.every((key, index) => key === saved[index]) ? null : next;
 }
 
 type CardColumnEdit = { by: 'status' | 'category'; value: string | null } | { by: 'label'; from: string; to: string };
 
-export function cardColumnEdit(
-  columns: readonly BoardColumn<unknown>[], from: string, to: string, by: GroupKey,
-): CardColumnEdit | null {
+export function cardColumnEdit(columns: readonly BoardColumn<unknown>[], from: string, to: string, by: GroupKey): CardColumnEdit | null {
   if (!columnsEditable(by) || from === to) return null;
   const prefix = columnKeyOf(by, '');
   if (!from.startsWith(prefix) || !to.startsWith(prefix)) return null;
-  const source = columns.find(column => column.key === from);
-  const target = columns.find(column => column.key === to);
+  const source = columns.find((column) => column.key === from);
+  const target = columns.find((column) => column.key === to);
   if (!source || !target) return null;
-  return by === 'label'
-    ? { by, from: source.label, to: target.label }
-    : { by, value: to === prefix ? null : target.label };
+  return by === 'label' ? { by, from: source.label, to: target.label } : { by, value: to === prefix ? null : target.label };
 }
 
-const carries = (row: GroupableRow, key: string, by: EditableColumnBy): boolean => (
-  groupValuesOf(row, by).some(value => value.toLowerCase() === key)
-);
+const carries = (row: GroupableRow, key: string, by: EditableColumnBy): boolean =>
+  groupValuesOf(row, by).some((value) => value.toLowerCase() === key);
 
 export function columnCarriers(rows: readonly ChannelListRow[], value: string, by: EditableColumnBy): string[] {
   const key = value.toLowerCase();
-  return rows.filter(r => !r.peerAddress && carries(r, key, by)).map(r => r.convId);
+  return rows.filter((r) => !r.peerAddress && carries(r, key, by)).map((r) => r.convId);
 }
 
 const typedName = (name: string): string => name.trim().replace(/\s+/g, ' ');
@@ -159,22 +181,23 @@ export function addColumnProblem(columns: readonly BoardColumn<unknown>[], name:
   const problem = renameProblem(name);
   if (problem !== null) return problem;
   const key = typedName(name).toLowerCase();
-  const taken = columns.find(c => columnEditable(c.key) && c.label.toLowerCase() === key)?.label;
+  const taken = columns.find((c) => columnEditable(c.key) && c.label.toLowerCase() === key)?.label;
   return taken === undefined ? null : `A column named ${taken} already exists.`;
 }
 
 export function addedColumnOrder(
-  shown: readonly string[], saved: readonly string[], name: string, by: EditableColumnBy = 'label',
+  shown: readonly string[],
+  saved: readonly string[],
+  name: string,
+  by: EditableColumnBy = 'label',
 ): string[] {
   return [...withShown(saved, shown), columnKeyOf(by, typedName(name))];
 }
 
-export function renameTarget(
-  columns: readonly BoardColumn<unknown>[], from: string, name: string,
-): { name: string; merge: boolean } {
+export function renameTarget(columns: readonly BoardColumn<unknown>[], from: string, name: string): { name: string; merge: boolean } {
   const typed = typedName(name);
   const key = typed.toLowerCase();
-  const existing = key === from.toLowerCase() ? null : columns.find(c => columnEditable(c.key) && c.label.toLowerCase() === key)?.label;
+  const existing = key === from.toLowerCase() ? null : columns.find((c) => columnEditable(c.key) && c.label.toLowerCase() === key)?.label;
   return existing == null ? { name: typed, merge: false } : { name: existing, merge: true };
 }
 
@@ -192,17 +215,13 @@ export function draftNote(columns: readonly BoardColumn<unknown>[], name: string
   return tried || typedName(name) !== '' ? addColumnProblem(columns, name) : null;
 }
 
-export function renameEdit(
-  columns: readonly BoardColumn<unknown>[], from: string, name: string, via: TitleCommit,
-): TitleEdit {
+export function renameEdit(columns: readonly BoardColumn<unknown>[], from: string, name: string, via: TitleCommit): TitleEdit {
   if (renameProblem(name) !== null) return unsaved(via);
   const target = renameTarget(columns, from, name);
   return target.name === from ? { kind: 'close' } : { kind: 'save', name: target.name };
 }
 
-export function renameNote(
-  columns: readonly BoardColumn<unknown>[], from: string, name: string, tried: boolean,
-): string | null {
+export function renameNote(columns: readonly BoardColumn<unknown>[], from: string, name: string, tried: boolean): string | null {
   const problem = renameProblem(name);
   if (problem !== null) return tried || typedName(name) !== '' ? problem : null;
   const target = renameTarget(columns, from, name);
@@ -210,12 +229,16 @@ export function renameNote(
 }
 
 export function renamedColumnOrder(
-  shown: readonly string[], saved: readonly string[], from: string, to: string, by: EditableColumnBy = 'label',
+  shown: readonly string[],
+  saved: readonly string[],
+  from: string,
+  to: string,
+  by: EditableColumnBy = 'label',
 ): string[] {
   const fromKey = columnKeyOf(by, from).toLowerCase();
   const toKey = columnKeyOf(by, to);
   const full = withShown(saved, shown);
-  const merging = full.some(key => key.toLowerCase() === toKey.toLowerCase() && key.toLowerCase() !== fromKey);
+  const merging = full.some((key) => key.toLowerCase() === toKey.toLowerCase() && key.toLowerCase() !== fromKey);
   return full.flatMap((key) => {
     if (key.toLowerCase() !== fromKey) return [key];
     return merging ? [] : [toKey];
@@ -223,31 +246,32 @@ export function renamedColumnOrder(
 }
 
 export function deletedColumnOrder(
-  shown: readonly string[], saved: readonly string[], label: string, by: EditableColumnBy = 'label',
+  shown: readonly string[],
+  saved: readonly string[],
+  label: string,
+  by: EditableColumnBy = 'label',
 ): string[] {
   const key = columnKeyOf(by, label).toLowerCase();
-  return withShown(saved, shown).filter(k => k.toLowerCase() !== key);
+  return withShown(saved, shown).filter((k) => k.toLowerCase() !== key);
 }
 
-export function deleteColumnConfirm(
-  label: string, carriers: number, by: EditableColumnBy = 'label',
-): { title: string; message: string } {
+export function deleteColumnConfirm(label: string, carriers: number, by: EditableColumnBy = 'label'): { title: string; message: string } {
   const channels = carriers === 1 ? '1 channel' : `${carriers} channels`;
   const noun = columnNoun(by);
   const moved = by === 'label' ? 'Channels with no other label leave the board.' : `They move to ${NO_GROUP_TITLES[by]}. Labels are kept.`;
   return {
     title: 'Delete column',
-    message: carriers === 0
-      ? `No channel has the ${label} ${noun}.`
-      : `This removes the ${label} ${noun} from ${channels}. ${moved}`,
+    message: carriers === 0 ? `No channel has the ${label} ${noun}.` : `This removes the ${label} ${noun} from ${channels}. ${moved}`,
   };
 }
 
 export function activeColumnIndex(
-  columns: readonly { key: string; rows: readonly { convId: string }[] }[], convId: string | null, from: string | null = null,
+  columns: readonly { key: string; rows: readonly { convId: string }[] }[],
+  convId: string | null,
+  from: string | null = null,
 ): number {
-  const holds = (column: (typeof columns)[number]): boolean => column.rows.some(row => row.convId === convId);
-  const preferred = columns.findIndex(column => column.key === from && holds(column));
+  const holds = (column: (typeof columns)[number]): boolean => column.rows.some((row) => row.convId === convId);
+  const preferred = columns.findIndex((column) => column.key === from && holds(column));
   return preferred === -1 ? columns.findIndex(holds) : preferred;
 }
 

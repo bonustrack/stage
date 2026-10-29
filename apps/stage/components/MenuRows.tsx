@@ -16,25 +16,56 @@ import { useHover } from './hover';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 import { Column, Row } from './layout';
 
-function MenuRowContent({ label, value, count, role }: {
-  label: string; value?: string; count?: number; role: 'danger' | 'link';
+function MenuRowContent({
+  label,
+  value,
+  count,
+  role,
+}: {
+  label: string;
+  value?: string;
+  count?: number;
+  role: 'danger' | 'link';
 }): React.ReactElement {
   const menuText = useDropdownMenuText();
   return (
     <Row align="center" gap={DROPDOWN_MENU.itemGap}>
       <Column style={{ flexShrink: 1, minWidth: 0 }}>
         <Text {...menuText} color={role} truncate>
-          {label}{value === undefined ? null : <>: <Text {...menuText} color="secondary">{value}</Text></>}
+          {label}
+          {value === undefined ? null : (
+            <>
+              :{' '}
+              <Text {...menuText} color="secondary">
+                {value}
+              </Text>
+            </>
+          )}
         </Text>
       </Column>
-      {count === undefined ? null : <CountTag count={count}/>}
+      {count === undefined ? null : <CountTag count={count} />}
     </Row>
   );
 }
 
-export function MenuRow({ icon, label, value, count, onPress, danger, divider = danger === true, selected }: {
-  icon?: AppIconRef; label: string; value?: string; count?: number; onPress: () => void;
-  danger?: boolean; divider?: boolean; selected?: boolean;
+export function MenuRow({
+  icon,
+  label,
+  value,
+  count,
+  onPress,
+  danger,
+  divider = danger === true,
+  selected,
+}: {
+  icon?: AppIconRef;
+  label: string;
+  value?: string;
+  count?: number;
+  onPress: () => void;
+  danger?: boolean;
+  divider?: boolean;
+  selected?: boolean;
 }): React.ReactElement {
   const tone = danger === true ? 'danger' : 'link';
   const name = value === undefined ? label : `${label}: ${value}`;
@@ -42,10 +73,13 @@ export function MenuRow({ icon, label, value, count, onPress, danger, divider = 
     <>
       {divider ? <DropdownMenuSeparator /> : null}
       <DropdownMenuItem
-        label={count === undefined ? name : `${name} (${count})`} danger={danger} selected={selected} onPress={onPress}
+        label={count === undefined ? name : `${name} (${count})`}
+        danger={danger}
+        selected={selected}
+        onPress={onPress}
         icon={icon === undefined ? undefined : <AppIcon name={icon} size={DROPDOWN_MENU.icon} color={tone} />}
       >
-        {value === undefined && count === undefined ? null : <MenuRowContent label={label} value={value} count={count} role={tone}/>}
+        {value === undefined && count === undefined ? null : <MenuRowContent label={label} value={value} count={count} role={tone} />}
       </DropdownMenuItem>
     </>
   );
@@ -63,15 +97,32 @@ export type OverflowMenuItem = MenuItem<string, AppIconRef>;
 
 type OverflowSelect = (id: string, anchor: MenuPoint) => void;
 
-function OverflowMenuItems({ anchor, onClose, items, onSelect }: {
-  anchor: MenuPoint | null; onClose: () => void; items: OverflowMenuItem[]; onSelect: OverflowSelect;
+function OverflowMenuItems({
+  anchor,
+  onClose,
+  items,
+  onSelect,
+}: {
+  anchor: MenuPoint | null;
+  onClose: () => void;
+  items: OverflowMenuItem[];
+  onSelect: OverflowSelect;
 }): React.ReactElement {
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
       {items.map((item, index) => (
-        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} selected={item.selected}
+        <MenuRow
+          key={item.id}
+          icon={item.icon}
+          label={item.label}
+          danger={item.danger}
+          selected={item.selected}
           divider={item.danger === true && index > 0}
-          onPress={() => { onClose(); if (anchor !== null) onSelect(item.id, anchor); }} />
+          onPress={() => {
+            onClose();
+            if (anchor !== null) onSelect(item.id, anchor);
+          }}
+        />
       ))}
     </AnchoredMenu>
   );
@@ -81,8 +132,16 @@ const OVERFLOW_TRIGGER_HIT = 40;
 
 export const SMALL_OVERFLOW_ICON = 16;
 
-export function OverflowButton({ color, label, size, onPress }: {
-  color: string; label?: string; size: number; onPress: (event: GestureResponderEvent) => void;
+export function OverflowButton({
+  color,
+  label,
+  size,
+  onPress,
+}: {
+  color: string;
+  label?: string;
+  size: number;
+  onPress: (event: GestureResponderEvent) => void;
 }): React.ReactElement {
   const { link } = usePalette();
   const trigger = useHover();
@@ -93,29 +152,73 @@ export function OverflowButton({ color, label, size, onPress }: {
   );
 }
 
-export function OverflowMenu({ color, items, onSelect, label, size = 24 }: {
-  color: string; items: OverflowMenuItem[]; onSelect: OverflowSelect; label?: string; size?: number;
+export function OverflowMenu({
+  color,
+  items,
+  onSelect,
+  label,
+  size = 24,
+}: {
+  color: string;
+  items: OverflowMenuItem[];
+  onSelect: OverflowSelect;
+  label?: string;
+  size?: number;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   return (
     <>
-      <OverflowButton color={color} label={label} size={size} onPress={(e) => { setAnchor(menuPointBelow(e)); }} />
-      <OverflowMenuItems anchor={anchor} onClose={() => { setAnchor(null); }} items={items} onSelect={onSelect} />
+      <OverflowButton
+        color={color}
+        label={label}
+        size={size}
+        onPress={(e) => {
+          setAnchor(menuPointBelow(e));
+        }}
+      />
+      <OverflowMenuItems
+        anchor={anchor}
+        onClose={() => {
+          setAnchor(null);
+        }}
+        items={items}
+        onSelect={onSelect}
+      />
     </>
   );
 }
 
-export function RoundOverflowMenu({ items, onSelect, loading, background }: {
-  items: OverflowMenuItem[]; onSelect: (id: string) => void; loading?: boolean; background?: string;
+export function RoundOverflowMenu({
+  items,
+  onSelect,
+  loading,
+  background,
+}: {
+  items: OverflowMenuItem[];
+  onSelect: (id: string) => void;
+  loading?: boolean;
+  background?: string;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   return (
     <>
       <RoundIconButton
-        icon={IconDotGrid1x3Vertical} label="More" loading={loading} background={background}
-        onPress={(e) => { setAnchor(menuPointBelowEnd(e)); }}
+        icon={IconDotGrid1x3Vertical}
+        label="More"
+        loading={loading}
+        background={background}
+        onPress={(e) => {
+          setAnchor(menuPointBelowEnd(e));
+        }}
       />
-      <OverflowMenuItems anchor={anchor} onClose={() => { setAnchor(null); }} items={items} onSelect={onSelect} />
+      <OverflowMenuItems
+        anchor={anchor}
+        onClose={() => {
+          setAnchor(null);
+        }}
+        items={items}
+        onSelect={onSelect}
+      />
     </>
   );
 }

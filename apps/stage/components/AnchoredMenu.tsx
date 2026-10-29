@@ -22,7 +22,13 @@ export function menuPointOf(event: GestureResponderEvent): MenuPoint {
   return { x: pageX - scroll.x, y: pageY - scroll.y };
 }
 
-interface AnchorRect { left: number; right: number; top: number; bottom: number; width: number }
+interface AnchorRect {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  width: number;
+}
 
 function rectOf(node: unknown): AnchorRect | undefined {
   if (typeof node !== 'object' || node === null) return undefined;
@@ -54,25 +60,32 @@ export function menuPointBelowEnd(event: GestureResponderEvent): MenuPoint {
   return rect === undefined ? menuPointOf(event) : { x: rect.right, y: rect.bottom + MENU_GAP };
 }
 
-export function AnchoredOverlay({ open, onClose, children }: {
+export function AnchoredOverlay({
+  open,
+  onClose,
+  children,
+}: {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
 }): React.ReactElement {
   return (
     <Modal open={open} onClose={onClose} animationType="none" backdropColor="transparent" fullBleedPanel>
-      <Pressable
-        onPress={onClose}
-        style={StyleSheet.absoluteFill}
-        {...dismissContextMenuProps(onClose)}
-      >
+      <Pressable onPress={onClose} style={StyleSheet.absoluteFill} {...dismissContextMenuProps(onClose)}>
         {children}
       </Pressable>
     </Modal>
   );
 }
 
-export function AnchoredMenu({ visible, onClose, anchor, forceAnchor = false, avoidKeyboard, children }: {
+export function AnchoredMenu({
+  visible,
+  onClose,
+  anchor,
+  forceAnchor = false,
+  avoidKeyboard,
+  children,
+}: {
   visible: boolean;
   onClose: () => void;
   anchor?: MenuPoint | null;
@@ -86,7 +99,13 @@ export function AnchoredMenu({ visible, onClose, anchor, forceAnchor = false, av
 
   if ((!anchored && !forceAnchor) || !anchor) {
     return (
-      <DropdownMenuSheet open={visible} onClose={onClose} side={centered ? 'center' : 'bottom'} maxWidth={MENU_WIDTH} avoidKeyboard={avoidKeyboard}>
+      <DropdownMenuSheet
+        open={visible}
+        onClose={onClose}
+        side={centered ? 'center' : 'bottom'}
+        maxWidth={MENU_WIDTH}
+        avoidKeyboard={avoidKeyboard}
+      >
         {children}
       </DropdownMenuSheet>
     );
@@ -96,7 +115,9 @@ export function AnchoredMenu({ visible, onClose, anchor, forceAnchor = false, av
   return (
     <AnchoredOverlay open={visible} onClose={onClose}>
       <Pressable
-        onPress={(e) => { e.stopPropagation(); }}
+        onPress={(e) => {
+          e.stopPropagation();
+        }}
         style={{ position: 'absolute', ...position }}
       >
         <DropdownMenu maxHeight={maxHeight}>{children}</DropdownMenu>

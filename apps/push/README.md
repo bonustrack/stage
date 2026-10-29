@@ -8,7 +8,7 @@ into a contentless push on the user's devices.
 ## What it sees and what it cannot see
 
 The server holds no XMTP identity and is not a member of any conversation. It
-subscribes to the *topics* devices register, receives the MLS ciphertext
+subscribes to the _topics_ devices register, receives the MLS ciphertext
 envelopes published on those topics, and forwards them as data-only pushes. It
 cannot decrypt them. Each device registers the HMAC keys of its own
 conversations, so the server can recognise and drop that device's own sends
@@ -102,15 +102,15 @@ writes, not a proof that every SDK-internal race is impossible.
 
 Devices call the server's Connect API over HTTPS with JSON bodies:
 
-| Call | Purpose |
-|---|---|
-| `POST /notifications.v1.Notifications/RegisterInstallation` | installation id + FCM or APNs token |
-| `POST /notifications.v1.Notifications/SubscribeWithMetadata` | topics with their HMAC keys |
-| `POST /notifications.v1.Notifications/DeleteInstallation` | when the user turns push off |
-| `POST /stage.v1.Push/JoinDeviceGroup` | installation id + the account's group key, once per installation |
-| `POST /stage.v1.Push/ClearConversation` | installation id + group key + a conversation topic, when a chat is read |
-| `POST /stage.v1.Push/PublishSenderFilters` | signed account/inbox-group enrollment and topic HMAC keys, no push token |
-| `GET /stage.v1.Push/SenderFilterVersion` | public deployed Stage commit and sender-filter protocol version |
+| Call                                                         | Purpose                                                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `POST /notifications.v1.Notifications/RegisterInstallation`  | installation id + FCM or APNs token                                      |
+| `POST /notifications.v1.Notifications/SubscribeWithMetadata` | topics with their HMAC keys                                              |
+| `POST /notifications.v1.Notifications/DeleteInstallation`    | when the user turns push off                                             |
+| `POST /stage.v1.Push/JoinDeviceGroup`                        | installation id + the account's group key, once per installation         |
+| `POST /stage.v1.Push/ClearConversation`                      | installation id + group key + a conversation topic, when a chat is read  |
+| `POST /stage.v1.Push/PublishSenderFilters`                   | signed account/inbox-group enrollment and topic HMAC keys, no push token |
+| `GET /stage.v1.Push/SenderFilterVersion`                     | public deployed Stage commit and sender-filter protocol version          |
 
 The app does not use the SDK's built-in push client on Android because that
 client dials the server over plaintext gRPC; the JSON path above stays on TLS.
@@ -127,7 +127,7 @@ next to the XMTP API). The Docker build applies both and runs their tests.
   installation joins one group for good.
 - When a chat is read, the device sends the conversation topic with the key.
   The server sends a data-only push with the topic `/stage/clear/<conversation
-  id>` to the other installations of that group that subscribe to that topic,
+id>` to the other installations of that group that subscribe to that topic,
   and each removes its own cards for that chat. No content, nothing the server
   did not already know.
 - Rate limits: 30 calls per group, refilled one every 2 seconds, and 100 calls
@@ -207,15 +207,15 @@ You need `flyctl` logged in to the bonustrack Fly organisation.
 
 ## Environment reference
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `DB_CONNECTION_STRING` or `DATABASE_URL` | required | Postgres connection string, a managed database outside Fly |
-| `XMTP_GRPC_ADDRESS` | `production.xmtp.network:5556` | XMTP node the listener streams from |
-| `XMTP_LISTENER_TLS` | `true` | TLS to the XMTP node |
-| `LISTENER_TYPE` | `v3` | `v3` today; `v4` once the app moves to the decentralised network |
-| `FCM_PROJECT_ID`, `FCM_CREDENTIALS_JSON` | project set, credential secret | Firebase Cloud Messaging |
-| `APNS_TOPIC`, `APNS_MODE`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_CERTIFICATE` | topic and mode set, rest secret | Apple Push Notification service |
-| `LOG_ENCODING`, `LOG_LEVEL`, `NUM_WORKERS`, `API_PORT` | `json`, `info`, `50`, `8080` | Server tuning |
+| Variable                                                                        | Default                         | Meaning                                                          |
+| ------------------------------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------- |
+| `DB_CONNECTION_STRING` or `DATABASE_URL`                                        | required                        | Postgres connection string, a managed database outside Fly       |
+| `XMTP_GRPC_ADDRESS`                                                             | `production.xmtp.network:5556`  | XMTP node the listener streams from                              |
+| `XMTP_LISTENER_TLS`                                                             | `true`                          | TLS to the XMTP node                                             |
+| `LISTENER_TYPE`                                                                 | `v3`                            | `v3` today; `v4` once the app moves to the decentralised network |
+| `FCM_PROJECT_ID`, `FCM_CREDENTIALS_JSON`                                        | project set, credential secret  | Firebase Cloud Messaging                                         |
+| `APNS_TOPIC`, `APNS_MODE`, `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_P8_CERTIFICATE` | topic and mode set, rest secret | Apple Push Notification service                                  |
+| `LOG_ENCODING`, `LOG_LEVEL`, `NUM_WORKERS`, `API_PORT`                          | `json`, `info`, `50`, `8080`    | Server tuning                                                    |
 
 ## Checking it works
 

@@ -24,15 +24,31 @@ function MyQr({ address }: { address: string }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   return (
     <Column gap={18} align="center">
-      <Text size="md" textAlign="center">Let someone scan this code to open your Stage profile.</Text>
-      {value === null ? null : <>
-        <Column padding={16} background="#ffffff" radius="lg" accessibilityLabel="Your Stage contact QR code">
-          <QrCode value={value} size={224} color="#000000" background="#ffffff" />
-        </Column>
-        <Text size="xs" textAlign="center" selectable style={{ alignSelf: 'stretch' }}>{address}</Text>
-        <Button dark={dark} label="Copy contact link" variant="soft" color="secondary" onPress={() => { capabilities.copy('Contact link', value); }} />
-      </>}
-      <Text size="xs" color="secondary" textAlign="center">This shares only your public address, not access to your account.</Text>
+      <Text size="md" textAlign="center">
+        Let someone scan this code to open your Stage profile.
+      </Text>
+      {value === null ? null : (
+        <>
+          <Column padding={16} background="#ffffff" radius="lg" accessibilityLabel="Your Stage contact QR code">
+            <QrCode value={value} size={224} color="#000000" background="#ffffff" />
+          </Column>
+          <Text size="xs" textAlign="center" selectable style={{ alignSelf: 'stretch' }}>
+            {address}
+          </Text>
+          <Button
+            dark={dark}
+            label="Copy contact link"
+            variant="soft"
+            color="secondary"
+            onPress={() => {
+              capabilities.copy('Contact link', value);
+            }}
+          />
+        </>
+      )}
+      <Text size="xs" color="secondary" textAlign="center">
+        This shares only your public address, not access to your account.
+      </Text>
     </Column>
   );
 }
@@ -42,14 +58,26 @@ function useContactScan(address: string, selection: number) {
   const [error, setError] = useState<string | null>(null);
   const focused = useRef(false);
   const accepting = useRef(false);
-  const stop = useCallback(() => { accepting.current = false; setScanning(false); }, []);
-  useFocusEffect(useCallback(() => {
-    focused.current = true;
-    return () => { focused.current = false; stop(); };
-  }, [stop]));
+  const stop = useCallback(() => {
+    accepting.current = false;
+    setScanning(false);
+  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      focused.current = true;
+      return () => {
+        focused.current = false;
+        stop();
+      };
+    }, [stop]),
+  );
   useEffect(() => {
-    const listener = AppState.addEventListener('change', state => { if (state === 'background') stop(); });
-    return () => { listener.remove(); };
+    const listener = AppState.addEventListener('change', (state) => {
+      if (state === 'background') stop();
+    });
+    return () => {
+      listener.remove();
+    };
   }, [stop]);
   const open = (value: string): void => {
     if (!focused.current || AppState.currentState !== 'active') return;
@@ -60,12 +88,19 @@ function useContactScan(address: string, selection: number) {
     else capabilities.navigate(result.path);
   };
   return {
-    scanning, error, stop, open,
+    scanning,
+    error,
+    stop,
+    open,
     start: () => {
       if (!focused.current || AppState.currentState !== 'active' || selection !== getAccountSelection()) return;
-      setError(null); accepting.current = true; setScanning(true);
+      setError(null);
+      accepting.current = true;
+      setScanning(true);
     },
-    scanned: (value: string) => { if (accepting.current) open(value); },
+    scanned: (value: string) => {
+      if (accepting.current) open(value);
+    },
   };
 }
 
@@ -76,19 +111,54 @@ function ContactQr({ address, selection }: { address: string; selection: number 
   const scan = useContactScan(address, selection);
   return (
     <Column gap={24}>
-      <Tabs tabs={MODE_TABS} selectedIndex={sharing ? 1 : 0} onChange={index => { scan.stop(); setSharing(index === 1); }} />
-      {sharing ? <MyQr address={address} /> : <Column gap={18}>
-        <Text size="md">Scan someone’s Stage QR code to open their profile. You choose whether to start a chat.</Text>
-        {scan.scanning ? <>
-          <QrScanner dark={dark} onScan={scan.scanned} />
-          <Button dark={dark} label="Stop camera" variant="soft" color="secondary" onPress={scan.stop} />
-        </> : <Button variant="primary" dark={dark} label="Start camera" onPress={scan.start} />}
-        <FormField label="Contact link or address" value={input} onChangeText={setInput}
-          placeholder="stage://profile/0x…" onSubmit={() => { scan.open(input); }}
-          inputProps={{ autoCapitalize: 'none', autoCorrect: false, autoComplete: 'off', accessibilityLabel: 'Contact link or address' }} />
-        {scan.error === null ? null : <Text size="xs" color="danger" accessibilityRole="alert">{scan.error}</Text>}
-        <Button dark={dark} label="Open profile" variant="soft" color="secondary" disabled={input.trim() === ''} onPress={() => { scan.open(input); }} />
-      </Column>}
+      <Tabs
+        tabs={MODE_TABS}
+        selectedIndex={sharing ? 1 : 0}
+        onChange={(index) => {
+          scan.stop();
+          setSharing(index === 1);
+        }}
+      />
+      {sharing ? (
+        <MyQr address={address} />
+      ) : (
+        <Column gap={18}>
+          <Text size="md">Scan someone’s Stage QR code to open their profile. You choose whether to start a chat.</Text>
+          {scan.scanning ? (
+            <>
+              <QrScanner dark={dark} onScan={scan.scanned} />
+              <Button dark={dark} label="Stop camera" variant="soft" color="secondary" onPress={scan.stop} />
+            </>
+          ) : (
+            <Button variant="primary" dark={dark} label="Start camera" onPress={scan.start} />
+          )}
+          <FormField
+            label="Contact link or address"
+            value={input}
+            onChangeText={setInput}
+            placeholder="stage://profile/0x…"
+            onSubmit={() => {
+              scan.open(input);
+            }}
+            inputProps={{ autoCapitalize: 'none', autoCorrect: false, autoComplete: 'off', accessibilityLabel: 'Contact link or address' }}
+          />
+          {scan.error === null ? null : (
+            <Text size="xs" color="danger" accessibilityRole="alert">
+              {scan.error}
+            </Text>
+          )}
+          <Button
+            dark={dark}
+            label="Open profile"
+            variant="soft"
+            color="secondary"
+            disabled={input.trim() === ''}
+            onPress={() => {
+              scan.open(input);
+            }}
+          />
+        </Column>
+      )}
     </Column>
   );
 }
@@ -96,19 +166,32 @@ function ContactQr({ address, selection }: { address: string; selection: number 
 export function ContactQrScreen(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const selection = useAccountSelection();
-  const { data: address, isPending, refetch } = useQuery({
-    queryKey: ['contactQr', selection],
-    queryFn: async () => (await getSelectedAccount())?.address ?? null,
-  });
+  const {
+    data: address,
+    isPending,
+    refetch,
+  } = useQuery({ queryKey: ['contactQr', selection], queryFn: async () => (await getSelectedAccount())?.address ?? null });
   const valid = contactQrValue(address) !== null;
   return (
     <Column surface="surface" weight={1}>
       <StackHeader title="Connect on Stage" backTo="/" />
       <ScreenScroll keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: PAGE_GUTTER }}>
-        {isPending ? <Spinner /> : valid && address ? <ContactQr key={selection} address={address} selection={selection} /> : (
+        {isPending ? (
+          <Spinner />
+        ) : valid && address ? (
+          <ContactQr key={selection} address={address} selection={selection} />
+        ) : (
           <Column gap={18}>
             <Text size="md">No active account is available. Select an account to scan or share a contact code.</Text>
-            <Button dark={dark} label="Try again" variant="soft" color="secondary" onPress={() => { void refetch(); }} />
+            <Button
+              dark={dark}
+              label="Try again"
+              variant="soft"
+              color="secondary"
+              onPress={() => {
+                void refetch();
+              }}
+            />
           </Column>
         )}
       </ScreenScroll>

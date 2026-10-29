@@ -36,6 +36,8 @@ export function useNewChatFocusNonce(): number {
   }, [pathname]);
   const nonce = useStoreValue(listeners.subscribe, () => requested);
   const [handledBefore] = useState(() => handled);
-  useEffect(() => { handled = Math.max(handled, nonce); }, [nonce]);
+  useEffect(() => {
+    handled = Math.max(handled, nonce);
+  }, [nonce]);
   return nonce > handledBefore ? nonce : 0;
 }

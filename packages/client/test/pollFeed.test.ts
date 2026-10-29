@@ -1,26 +1,38 @@
-
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '../src/types';
 import {
-  voteEventsOf, pollQuestionsInFeed, pollOptionCountsInFeed,
-  votesByMessage, ownVotesByMessage, openAnswersByMessage,
+  voteEventsOf,
+  pollQuestionsInFeed,
+  pollOptionCountsInFeed,
+  votesByMessage,
+  ownVotesByMessage,
+  openAnswersByMessage,
 } from '../src/xmtp/poll-feed';
 import { voteKey, openVoteKey } from '../src/xmtp/poll-tally';
 
 const LINE = 'stage://xmtp/tony/conv1';
 let seq = 0;
-function ts(): string { return new Date(2026, 0, 1, 0, 0, ++seq).toISOString(); }
+function ts(): string {
+  return new Date(2026, 0, 1, 0, 0, ++seq).toISOString();
+}
 
 function pollEntry(id: string, question: string, options: string[], extra?: { multiSelect?: boolean; open?: boolean }): HistoryEntry {
   return {
-    id, ts: ts(), station: 'xmtp', line: LINE, from: 'stage:user/alice', to: LINE,
+    id,
+    ts: ts(),
+    station: 'xmtp',
+    line: LINE,
+    from: 'stage:user/alice',
+    to: LINE,
     text: `Poll: ${question}`,
     payload: {
       contentType: 'poll',
       poll: {
-        pollId: id, question, options: options.map(label => ({ label })),
+        pollId: id,
+        question,
+        options: options.map((label) => ({ label })),
         ...(extra?.multiSelect ? { multiSelect: true } : {}),
-        ...(extra?.open ? { questions: [{ question, options: options.map(label => ({ label })), open: true }] } : {}),
+        ...(extra?.open ? { questions: [{ question, options: options.map((label) => ({ label })), open: true }] } : {}),
       },
     },
   };
@@ -28,8 +40,13 @@ function pollEntry(id: string, question: string, options: string[], extra?: { mu
 
 function voteEntry(from: string, pollId: string, content: string, removed = false): HistoryEntry {
   return {
-    id: `v-${from}-${content}-${++seq}`, ts: ts(), station: 'xmtp', line: LINE,
-    from, to: LINE, text: `[vote ${content}]`,
+    id: `v-${from}-${content}-${++seq}`,
+    ts: ts(),
+    station: 'xmtp',
+    line: LINE,
+    from,
+    to: LINE,
+    text: `[vote ${content}]`,
     payload: { contentType: 'reaction', reactTo: pollId, emoji: content, schema: 'custom', removed },
   };
 }
@@ -45,8 +62,16 @@ describe('poll-feed shared tally helpers', () => {
   test('voteEventsOf only picks custom-schema reactions', () => {
     const feed = [
       voteEntry('stage:user/a', 'p1', voteKey(0, 0)),
-      { id: 'r1', ts: ts(), station: 'xmtp', line: LINE, from: 'stage:user/b', to: LINE,
-        text: '[react 👍]', payload: { contentType: 'reaction', reactTo: 'p1', emoji: '👍' } } as HistoryEntry,
+      {
+        id: 'r1',
+        ts: ts(),
+        station: 'xmtp',
+        line: LINE,
+        from: 'stage:user/b',
+        to: LINE,
+        text: '[react 👍]',
+        payload: { contentType: 'reaction', reactTo: 'p1', emoji: '👍' },
+      } as HistoryEntry,
     ];
     expect(voteEventsOf(feed)).toHaveLength(1);
   });
@@ -110,11 +135,19 @@ describe('poll-feed shared tally helpers', () => {
     const isCustom = sdkReaction.schema === 'custom';
     const removed = sdkReaction.action === 'removed';
     const mapped: HistoryEntry = {
-      id: `v-web-${++seq}`, ts: ts(), station: 'xmtp', line: LINE, from: 'stage:user/me', to: LINE,
+      id: `v-web-${++seq}`,
+      ts: ts(),
+      station: 'xmtp',
+      line: LINE,
+      from: 'stage:user/me',
+      to: LINE,
       text: `[vote ${sdkReaction.content}]`,
       payload: {
-        contentType: 'reaction', reactTo: sdkReaction.reference, emoji: sdkReaction.content,
-        ...(isCustom ? { schema: 'custom' } : {}), removed,
+        contentType: 'reaction',
+        reactTo: sdkReaction.reference,
+        emoji: sdkReaction.content,
+        ...(isCustom ? { schema: 'custom' } : {}),
+        removed,
       },
     };
     expect(isCustom).toBe(true);
@@ -125,10 +158,7 @@ describe('poll-feed shared tally helpers', () => {
   });
 
   test('open answers are decoded from open-vote custom reactions', () => {
-    const feed = [
-      pollEntry('p1', 'Favorite?', ['A', 'B'], { open: true }),
-      voteEntry('stage:user/a', 'p1', openVoteKey(0, 'Mango')),
-    ];
+    const feed = [pollEntry('p1', 'Favorite?', ['A', 'B'], { open: true }), voteEntry('stage:user/a', 'p1', openVoteKey(0, 'Mango'))];
     const answers = openAnswersByMessage(feed).get('p1')?.get(0);
     expect(answers?.get('stage:user/a')?.text).toBe('Mango');
   });

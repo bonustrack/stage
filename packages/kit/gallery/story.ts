@@ -30,7 +30,10 @@ export interface StoryModule {
 }
 
 export function slug(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 function nameOf(exportName: string): string {
@@ -44,7 +47,13 @@ export function collectStories(modules: Record<string, StoryModule>): StoryEntry
     const componentId = slug(component);
     for (const [exportName, value] of Object.entries(mod)) {
       if (exportName === 'default' || typeof value !== 'function') continue;
-      entries.push({ id: `${componentId}--${slug(exportName)}`, componentId, component, name: nameOf(exportName), render: value as AnyStory });
+      entries.push({
+        id: `${componentId}--${slug(exportName)}`,
+        componentId,
+        component,
+        name: nameOf(exportName),
+        render: value as AnyStory,
+      });
     }
   }
   return entries.sort((a, b) => a.component.localeCompare(b.component) || a.name.localeCompare(b.name));

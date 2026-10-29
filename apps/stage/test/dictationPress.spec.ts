@@ -3,11 +3,21 @@ import { makeDictationPress } from '../components/composer/dictation.press';
 
 function harness(holdMs = 350, now = Date.now) {
   const events: string[] = [];
-  const press = makeDictationPress({
-    start: () => { events.push('start'); },
-    stop: () => { events.push('stop'); },
-    toggle: () => { events.push('toggle'); },
-  }, holdMs, now);
+  const press = makeDictationPress(
+    {
+      start: () => {
+        events.push('start');
+      },
+      stop: () => {
+        events.push('stop');
+      },
+      toggle: () => {
+        events.push('toggle');
+      },
+    },
+    holdMs,
+    now,
+  );
   return { events, press };
 }
 

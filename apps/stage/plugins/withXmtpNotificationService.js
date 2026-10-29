@@ -1,12 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const {
-  withDangerousMod,
-  withEntitlementsPlist,
-  withInfoPlist,
-  withPodfile,
-  withXcodeProject,
-} = require('expo/config-plugins');
+const { withDangerousMod, withEntitlementsPlist, withInfoPlist, withPodfile, withXcodeProject } = require('expo/config-plugins');
 
 const TARGET = 'StageNotificationService';
 const SWIFT_FILE = 'NotificationService.swift';
@@ -45,30 +39,29 @@ function plistXml(body) {
 }
 
 function infoPlist(group) {
-  return plistXml([
-    '  <key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>',
-    `  <key>CFBundleDisplayName</key><string>${TARGET}</string>`,
-    '  <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>',
-    '  <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>',
-    '  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>',
-    '  <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>',
-    '  <key>CFBundlePackageType</key><string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>',
-    '  <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>',
-    '  <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>',
-    `  <key>StageAppGroup</key><string>${group}</string>`,
-    '  <key>NSExtension</key>',
-    '  <dict>',
-    '    <key>NSExtensionPointIdentifier</key><string>com.apple.usernotifications.service</string>',
-    '    <key>NSExtensionPrincipalClass</key><string>$(PRODUCT_MODULE_NAME).NotificationService</string>',
-    '  </dict>',
-  ].join('\n'));
+  return plistXml(
+    [
+      '  <key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>',
+      `  <key>CFBundleDisplayName</key><string>${TARGET}</string>`,
+      '  <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>',
+      '  <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>',
+      '  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>',
+      '  <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>',
+      '  <key>CFBundlePackageType</key><string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>',
+      '  <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>',
+      '  <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>',
+      `  <key>StageAppGroup</key><string>${group}</string>`,
+      '  <key>NSExtension</key>',
+      '  <dict>',
+      '    <key>NSExtensionPointIdentifier</key><string>com.apple.usernotifications.service</string>',
+      '    <key>NSExtensionPrincipalClass</key><string>$(PRODUCT_MODULE_NAME).NotificationService</string>',
+      '  </dict>',
+    ].join('\n'),
+  );
 }
 
 function entitlementsPlist(group) {
-  return plistXml([
-    `  <key>${APP_GROUPS_KEY}</key>`,
-    `  <array><string>${group}</string></array>`,
-  ].join('\n'));
+  return plistXml([`  <key>${APP_GROUPS_KEY}</key>`, `  <array><string>${group}</string></array>`].join('\n'));
 }
 
 function withAppGroupEntitlement(config, group) {
@@ -88,14 +81,17 @@ function withRemoteNotificationBackgroundMode(config) {
 }
 
 function withExtensionFiles(config, group) {
-  return withDangerousMod(config, ['ios', (cfg) => {
-    const dir = path.join(cfg.modRequest.platformProjectRoot, TARGET);
-    fs.mkdirSync(dir, { recursive: true });
-    fs.copyFileSync(SWIFT_SOURCE, path.join(dir, SWIFT_FILE));
-    fs.writeFileSync(path.join(dir, INFO_PLIST), infoPlist(group));
-    fs.writeFileSync(path.join(dir, ENTITLEMENTS), entitlementsPlist(group));
-    return cfg;
-  }]);
+  return withDangerousMod(config, [
+    'ios',
+    (cfg) => {
+      const dir = path.join(cfg.modRequest.platformProjectRoot, TARGET);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.copyFileSync(SWIFT_SOURCE, path.join(dir, SWIFT_FILE));
+      fs.writeFileSync(path.join(dir, INFO_PLIST), infoPlist(group));
+      fs.writeFileSync(path.join(dir, ENTITLEMENTS), entitlementsPlist(group));
+      return cfg;
+    },
+  ]);
 }
 
 function withSqlCipherAppHeaders(contents) {
@@ -197,18 +193,11 @@ function withEasExtensionCredentials(config, bundleId, group) {
   const others = (ios.appExtensions || []).filter((e) => e.targetName !== TARGET);
   const appExtensions = [
     ...others,
-    {
-      targetName: TARGET,
-      bundleIdentifier: extensionBundleIdOf(bundleId),
-      entitlements: { [APP_GROUPS_KEY]: [group] },
-    },
+    { targetName: TARGET, bundleIdentifier: extensionBundleIdOf(bundleId), entitlements: { [APP_GROUPS_KEY]: [group] } },
   ];
   return {
     ...config,
-    extra: {
-      ...extra,
-      eas: { ...eas, build: { ...build, experimental: { ...experimental, ios: { ...ios, appExtensions } } } },
-    },
+    extra: { ...extra, eas: { ...eas, build: { ...build, experimental: { ...experimental, ios: { ...ios, appExtensions } } } } },
   };
 }
 

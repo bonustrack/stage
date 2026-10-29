@@ -6,7 +6,15 @@ describe('feed start memory', () => {
     expect(withFeedStart([['a', 'm1']], 'a', 'm2')).toEqual([['a', 'm2']]);
     const full = Array.from({ length: FEED_START_LIMIT }, (_, i): FeedStart => [`l${i}`, `m${i}`]);
     expect(withFeedStart(full, 'c', 'm3')).toEqual([...full.slice(1), ['c', 'm3']]);
-    expect(feedStartOf([['a', 'm1'], ['b', 'm2']], 'b')).toBe('m2');
+    expect(
+      feedStartOf(
+        [
+          ['a', 'm1'],
+          ['b', 'm2'],
+        ],
+        'b',
+      ),
+    ).toBe('m2');
     expect(feedStartOf([['a', 'm1']], 'b')).toBeUndefined();
   });
 

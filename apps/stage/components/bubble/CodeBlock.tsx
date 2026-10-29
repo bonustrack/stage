@@ -31,55 +31,64 @@ function CopyCodeButton({ code }: { code: string }): React.ReactElement {
   const color = hovered || copied ? pal.link : pal.text;
   return (
     <HoverTooltip label={copied ? 'Copied' : 'Copy code'}>
-      <Pressable
-        onPress={copy}
-        accessibilityRole="button"
-        accessibilityLabel={copied ? 'Copied' : 'Copy code'}
-        hitSlop={8}
-        {...hoverProps}
-      >
+      <Pressable onPress={copy} accessibilityRole="button" accessibilityLabel={copied ? 'Copied' : 'Copy code'} hitSlop={8} {...hoverProps}>
         <Row align="center" gap={4} padding={{ x: 6, y: 4 }}>
-          {copied ? <Text color={color} size="3xs">Copied</Text> : null}
-          <Glyph icon={copied ? IconCheckmark1 : IconSquareBehindSquare1} size={16} color={color}/>
+          {copied ? (
+            <Text color={color} size="3xs">
+              Copied
+            </Text>
+          ) : null}
+          <Glyph icon={copied ? IconCheckmark1 : IconSquareBehindSquare1} size={16} color={color} />
         </Row>
       </Pressable>
     </HoverTooltip>
   );
 }
 
-function CodeText({ code, fg, highlight }: {
-  code: string; fg: string; highlight?: string;
-}): React.ReactElement {
+function CodeText({ code, fg, highlight }: { code: string; fg: string; highlight?: string }): React.ReactElement {
   const scheme = useEffectiveColorScheme();
   const query = highlight?.trim() ?? '';
   return (
     <Text fontFamily="mono" size="2xs" color={fg} selectable={Platform.OS === 'web'} style={CODE_TEXT}>
-      {query === '' ? code : highlightSegments(code, query).map((segment, index) => (
-        segment.match ? (
-          <Text key={`${index}-${segment.value}`} size="xs" style={{ backgroundColor: HIGHLIGHT_BG[scheme] }}>{segment.value}</Text>
-        ) : segment.value
-      ))}
+      {query === ''
+        ? code
+        : highlightSegments(code, query).map((segment, index) =>
+            segment.match ? (
+              <Text key={`${index}-${segment.value}`} size="xs" style={{ backgroundColor: HIGHLIGHT_BG[scheme] }}>
+                {segment.value}
+              </Text>
+            ) : (
+              segment.value
+            ),
+          )}
     </Text>
   );
 }
 
-export function CodeBlock({ code, lang, fg, highlight }: {
-  code: string; lang?: string; fg: string; highlight?: string;
+export function CodeBlock({
+  code,
+  lang,
+  fg,
+  highlight,
+}: {
+  code: string;
+  lang?: string;
+  fg: string;
+  highlight?: string;
 }): React.ReactElement {
   const pal = usePalette();
   const scrollGesture = useMemo(() => Gesture.Native().disallowInterruption(true), []);
   return (
-    <Column
-      surface="raised" radius="md"
-      style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}
-    >
+    <Column surface="raised" radius="md" style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.border, overflow: 'hidden' }}>
       <Row align="center" justify="spaceBetween" padding={{ left: CODE_PAD, right: 4, top: 2 }}>
-        <Text color="secondary" numberOfLines={1} size="3xs">{lang ?? ''}</Text>
-        <CopyCodeButton code={code}/>
+        <Text color="secondary" numberOfLines={1} size="3xs">
+          {lang ?? ''}
+        </Text>
+        <CopyCodeButton code={code} />
       </Row>
       <GestureDetector gesture={scrollGesture}>
         <List direction="horizontal" contentContainerStyle={{ paddingHorizontal: CODE_PAD, paddingBottom: 10 }}>
-          <CodeText code={code} fg={fg} highlight={highlight}/>
+          <CodeText code={code} fg={fg} highlight={highlight} />
         </List>
       </GestureDetector>
     </Column>

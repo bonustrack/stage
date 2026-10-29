@@ -14,7 +14,9 @@ export function useArrowKeys<A extends Arrow>(active: boolean, arrows: ReadonlyS
       handler.current(arrow);
     };
     window.addEventListener('keydown', onKeyDown, true);
-    return (): void => { window.removeEventListener('keydown', onKeyDown, true); };
+    return (): void => {
+      window.removeEventListener('keydown', onKeyDown, true);
+    };
   }, [active, arrows]);
 }
 
@@ -27,7 +29,9 @@ function scrollerOf(node: HTMLElement): HTMLElement | null {
 }
 
 export function revealMarked({ dataSet }: MarkedNode): boolean {
-  const selector = Object.entries(dataSet).map(([name, value]) => `[data-${name}="${CSS.escape(value)}"]`).join('');
+  const selector = Object.entries(dataSet)
+    .map(([name, value]) => `[data-${name}="${CSS.escape(value)}"]`)
+    .join('');
   const node = document.querySelector<HTMLElement>(selector);
   if (node === null) return false;
   const scroller = scrollerOf(node);

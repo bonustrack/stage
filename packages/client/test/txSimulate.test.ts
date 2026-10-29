@@ -1,15 +1,11 @@
-
 import { describe, expect, test } from 'bun:test';
-import {
-  parseAssetChanges, formatAmount, humanizeRevert, insufficientEthReason, decodeRevert,
-} from '../src/wallet/txSimulate';
+import { parseAssetChanges, formatAmount, humanizeRevert, insufficientEthReason, decodeRevert } from '../src/wallet/txSimulate';
 
 const BASE = 8453;
 const USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 const ME = '0x20FE51A9229EEf2cF8Ad9E89d91CAb9312cF3b7A';
 const PEER = '0x0000000000000000000000000000000000000abc';
-const TRANSFER =
-  '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+const TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
 const topic = (a: string) => '0x' + a.toLowerCase().replace(/^0x/, '').padStart(64, '0');
 const u256 = (n: bigint) => '0x' + n.toString(16).padStart(64, '0');
@@ -45,10 +41,7 @@ describe('decodeRevert', () => {
     const reason = 'ERC20: transfer amount exceeds balance';
     const len = reason.length;
     const hex = Buffer.from(reason, 'utf8').toString('hex').padEnd(64, '0');
-    const data = '0x08c379a0'
-      + (32).toString(16).padStart(64, '0')
-      + len.toString(16).padStart(64, '0')
-      + hex;
+    const data = '0x08c379a0' + (32).toString(16).padStart(64, '0') + len.toString(16).padStart(64, '0') + hex;
     expect(decodeRevert(data)).toBe('insufficient token balance');
   });
 });
@@ -62,14 +55,7 @@ describe('insufficientEthReason', () => {
 
 describe('parseAssetChanges', () => {
   test('ERC-20 transfer OUT -> out: N USDC', () => {
-    const calls = [{
-      status: '0x1',
-      logs: [{
-        address: USDC,
-        topics: [TRANSFER, topic(ME), topic(PEER)],
-        data: u256(1_000_000n),
-      }],
-    }];
+    const calls = [{ status: '0x1', logs: [{ address: USDC, topics: [TRANSFER, topic(ME), topic(PEER)], data: u256(1_000_000n) }] }];
     const { in: inc, out } = parseAssetChanges(calls, ME, BASE);
     expect(inc).toHaveLength(0);
     expect(out).toHaveLength(1);
@@ -77,14 +63,7 @@ describe('parseAssetChanges', () => {
   });
 
   test('ERC-20 transfer IN -> in: N USDC', () => {
-    const calls = [{
-      status: '0x1',
-      logs: [{
-        address: USDC,
-        topics: [TRANSFER, topic(PEER), topic(ME)],
-        data: u256(2_500_000n),
-      }],
-    }];
+    const calls = [{ status: '0x1', logs: [{ address: USDC, topics: [TRANSFER, topic(PEER), topic(ME)], data: u256(2_500_000n) }] }];
     const { in: inc, out } = parseAssetChanges(calls, ME, BASE);
     expect(out).toHaveLength(0);
     expect(inc[0]).toMatchObject({ symbol: 'USDC', amount: '2.5' });
@@ -106,10 +85,7 @@ describe('parseAssetChanges', () => {
 
   test('unknown token falls back to short address + 18 decimals', () => {
     const UNK = '0x1111111111111111111111111111111111111111';
-    const calls = [{
-      status: '0x1',
-      logs: [{ address: UNK, topics: [TRANSFER, topic(ME), topic(PEER)], data: u256(10n ** 18n) }],
-    }];
+    const calls = [{ status: '0x1', logs: [{ address: UNK, topics: [TRANSFER, topic(ME), topic(PEER)], data: u256(10n ** 18n) }] }];
     const { out } = parseAssetChanges(calls, ME, BASE);
     expect(out[0].symbol).toContain('…');
     expect(out[0].amount).toBe('1');

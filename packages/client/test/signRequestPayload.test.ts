@@ -1,8 +1,5 @@
-
 import { describe, expect, test } from 'bun:test';
-import {
-  typedDataForRequest, personalMessageForRequest, buildSignatureReference,
-} from '../src/xmtp/sign';
+import { typedDataForRequest, personalMessageForRequest, buildSignatureReference } from '../src/xmtp/sign';
 import type { SignatureRequestContent } from '../src/xmtp/sign';
 
 const eip712Req: SignatureRequestContent = {
@@ -10,10 +7,7 @@ const eip712Req: SignatureRequestContent = {
   kind: 'eip712',
   eip712: {
     domain: { name: 'Permit2', chainId: 1 },
-    types: {
-      EIP712Domain: [{ name: 'name', type: 'string' }],
-      PermitSingle: [{ name: 'spender', type: 'address' }],
-    },
+    types: { EIP712Domain: [{ name: 'name', type: 'string' }], PermitSingle: [{ name: 'spender', type: 'address' }] },
     primaryType: 'PermitSingle',
     message: { spender: '0xabc' },
   },
@@ -52,9 +46,7 @@ describe('personalMessageForRequest', () => {
 
 describe('buildSignatureReference', () => {
   test('builds a valid reference', () => {
-    expect(buildSignatureReference('sig_1', '0xsig', '0xsigner')).toEqual({
-      requestId: 'sig_1', signature: '0xsig', signer: '0xsigner',
-    });
+    expect(buildSignatureReference('sig_1', '0xsig', '0xsigner')).toEqual({ requestId: 'sig_1', signature: '0xsig', signer: '0xsigner' });
   });
 
   test('throws on missing fields', () => {

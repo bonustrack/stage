@@ -27,7 +27,7 @@ type OnFiles = (files: DroppedFile[], keepFocus: boolean) => void;
 function listen(id: string, onFiles: OnFiles, setActive: (active: boolean) => void): () => void {
   let targets: EventTarget[] = [];
   const track = (next: EventTarget[]): void => {
-    if ((targets.length > 0) !== (next.length > 0)) setActive(next.length > 0);
+    if (targets.length > 0 !== next.length > 0) setActive(next.length > 0);
     targets = next;
   };
   const claim = (event: DragEvent): HTMLElement | null => {
@@ -53,16 +53,26 @@ function listen(id: string, onFiles: OnFiles, setActive: (active: boolean) => vo
     const files = filesFrom(event);
     if (files.length > 0) onFiles(files, inZone(zone, document.activeElement));
   };
-  const onKey = (event: KeyboardEvent): void => { if (event.key === 'Escape') track([]); };
+  const onKey = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') track([]);
+  };
   const ac = new AbortController();
   const opts = { signal: ac.signal };
   window.addEventListener('dragenter', onEnter, opts);
   window.addEventListener('dragover', onOver, opts);
   window.addEventListener('dragleave', onLeave, opts);
   window.addEventListener('drop', onDrop, opts);
-  window.addEventListener('dragend', () => { track([]); }, opts);
+  window.addEventListener(
+    'dragend',
+    () => {
+      track([]);
+    },
+    opts,
+  );
   window.addEventListener('keydown', onKey, opts);
-  return (): void => { ac.abort(); };
+  return (): void => {
+    ac.abort();
+  };
 }
 
 export function useDroppedFiles(onFiles: OnFiles): DropZone {
@@ -70,6 +80,16 @@ export function useDroppedFiles(onFiles: OnFiles): DropZone {
   const handler = useRef(onFiles);
   handler.current = onFiles;
   const [active, setActive] = useState(false);
-  useEffect(() => listen(zoneId, (files, keepFocus) => { handler.current(files, keepFocus); }, setActive), [zoneId]);
+  useEffect(
+    () =>
+      listen(
+        zoneId,
+        (files, keepFocus) => {
+          handler.current(files, keepFocus);
+        },
+        setActive,
+      ),
+    [zoneId],
+  );
   return { zoneId, active };
 }

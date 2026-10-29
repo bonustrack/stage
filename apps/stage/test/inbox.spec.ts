@@ -2,12 +2,27 @@ import { describe, expect, test } from 'bun:test';
 import { deriveMailKey, openMailIndex, openMailPart, sealMailIndex, sealMailPart, type MailIndex } from '@stage-labs/client/mail/mailbox';
 import { parseMail } from '@stage-labs/client/mail/mime';
 import {
-  inboxRows, mailBody, mailReadKey, mailReceivedAt, parseReadKeys, safeFileName, senderLabel, subjectLabel, visibleBlocks,
-  withReadKey, type InboxEntry,
+  inboxRows,
+  mailBody,
+  mailReadKey,
+  mailReceivedAt,
+  parseReadKeys,
+  safeFileName,
+  senderLabel,
+  subjectLabel,
+  visibleBlocks,
+  withReadKey,
+  type InboxEntry,
 } from '../components/settings/Inbox.model';
 
 const index = (from: string, subject: string): MailIndex => ({
-  envelopeFrom: 'bounce@example.com', from, to: 'alice1@st.box', subject, date: '', messageId: '<1@x>', size: 10,
+  envelopeFrom: 'bounce@example.com',
+  from,
+  to: 'alice1@st.box',
+  subject,
+  date: '',
+  messageId: '<1@x>',
+  size: 10,
 });
 
 const ENTRIES: InboxEntry[] = [
@@ -95,10 +110,25 @@ describe('mail view', () => {
   });
 
   test('falls back to the text part and lists inline images when there is no html', () => {
-    const mail = parseMail(new TextEncoder().encode([
-      'Content-Type: multipart/mixed; boundary=m', '', '--m', 'Content-Type: text/plain', '', 'Hello https://example.com',
-      '--m', 'Content-Type: image/png', 'Content-ID: <pic>', 'Content-Transfer-Encoding: base64', '', 'iVBORw0KGgo=', '--m--',
-    ].join('\r\n')));
+    const mail = parseMail(
+      new TextEncoder().encode(
+        [
+          'Content-Type: multipart/mixed; boundary=m',
+          '',
+          '--m',
+          'Content-Type: text/plain',
+          '',
+          'Hello https://example.com',
+          '--m',
+          'Content-Type: image/png',
+          'Content-ID: <pic>',
+          'Content-Transfer-Encoding: base64',
+          '',
+          'iVBORw0KGgo=',
+          '--m--',
+        ].join('\r\n'),
+      ),
+    );
     const body = mailBody(mail);
     expect(body.remoteImages).toBe(false);
     expect(body.blocks).toHaveLength(1);

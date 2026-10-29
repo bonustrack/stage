@@ -11,7 +11,9 @@ interface ResetBoundaryProps {
   onError?: (error: unknown) => void;
   children: ReactNode;
 }
-interface State { failed: boolean }
+interface State {
+  failed: boolean;
+}
 
 export class ResetBoundary extends Component<ResetBoundaryProps, State> {
   override state: State = { failed: false };
@@ -33,18 +35,20 @@ export class ResetBoundary extends Component<ResetBoundaryProps, State> {
   }
 }
 
-export function BubbleErrorBoundary({ children, sub: fallbackColor, entry }: {
-  children: ReactNode; sub: string; entry: HistoryEntry;
+export function BubbleErrorBoundary({
+  children,
+  sub: fallbackColor,
+  entry,
+}: {
+  children: ReactNode;
+  sub: string;
+  entry: HistoryEntry;
 }): React.ReactElement {
   return (
     <ResetBoundary
       resetKey={entry}
       onError={(error) => {
-        console.warn(
-          'MessengerBubble render failed; rendered fallback content',
-          { id: entry.id, ...bubbleFallbackShape(entry) },
-          error,
-        );
+        console.warn('MessengerBubble render failed; rendered fallback content', { id: entry.id, ...bubbleFallbackShape(entry) }, error);
       }}
       fallback={() => (
         <Column padding={{ x: PAGE_GUTTER, y: 6 }}>

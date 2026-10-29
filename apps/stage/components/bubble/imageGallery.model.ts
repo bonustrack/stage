@@ -1,6 +1,10 @@
 import { isSvgAttachment } from './fileCard.model';
 
-export interface GalleryAttachment { kind: string; mime?: string; name?: string }
+export interface GalleryAttachment {
+  kind: string;
+  mime?: string;
+  name?: string;
+}
 
 export interface GalleryItem<A extends GalleryAttachment> {
   key: string;
@@ -40,7 +44,7 @@ export function galleryItemsOf<E extends { id: string }, A extends GalleryAttach
 }
 
 export function galleryStep<T extends { key: string }>(items: readonly T[], currentKey: string, delta: number): T | null {
-  const at = items.findIndex(item => item.key === currentKey);
+  const at = items.findIndex((item) => item.key === currentKey);
   if (at < 0) return null;
   return items[at + delta] ?? null;
 }

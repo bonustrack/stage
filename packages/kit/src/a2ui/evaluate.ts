@@ -3,8 +3,18 @@ import { A2uiExpressionError } from './expression';
 import { isTruthyOrValid, type FunctionContext, type FunctionImpl } from './functions';
 import { getAt, resolveScopedPath } from './pointer';
 import {
-  ERROR_CODES, entriesOf, isDataBinding, isFunctionCall, isJsonObject, isValidationResult,
-  type CheckRule, type DynamicValue, type FunctionCall, type JsonObject, type JsonValue, type ValidationResult,
+  ERROR_CODES,
+  entriesOf,
+  isDataBinding,
+  isFunctionCall,
+  isJsonObject,
+  isValidationResult,
+  type CheckRule,
+  type DynamicValue,
+  type FunctionCall,
+  type JsonObject,
+  type JsonValue,
+  type ValidationResult,
 } from './protocol';
 
 export interface Scope {
@@ -16,7 +26,10 @@ export const ROOT_SCOPE: Scope = { path: '/', indices: [] };
 
 export class A2uiEvaluationError extends Error {
   override readonly name = 'A2uiEvaluationError';
-  constructor(readonly code: string, message: string) {
+  constructor(
+    readonly code: string,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -63,8 +76,10 @@ function indexCall(call: FunctionCall, scope: Scope, run: (v: DynamicValue) => u
 
 function guardCaller(env: EvalEnv, catalogId: string, name: string, activation: boolean): void {
   const meta = env.registry.functionMeta(catalogId, name);
-  if (meta?.allowedCallers === 'agentOnly') throw new A2uiEvaluationError(ERROR_CODES.expression, `Function '${name}' may only be called by the agent.`);
-  if (meta?.requiresUserActivation === true && !activation) throw new A2uiEvaluationError(ERROR_CODES.expression, `Function '${name}' requires a user gesture.`);
+  if (meta?.allowedCallers === 'agentOnly')
+    throw new A2uiEvaluationError(ERROR_CODES.expression, `Function '${name}' may only be called by the agent.`);
+  if (meta?.requiresUserActivation === true && !activation)
+    throw new A2uiEvaluationError(ERROR_CODES.expression, `Function '${name}' requires a user gesture.`);
 }
 
 function runLocal(impl: FunctionImpl, args: Record<string, unknown>, context: FunctionContext): unknown {
@@ -110,7 +125,12 @@ export interface Diagnostic {
   message: string;
 }
 
-export function safeResolve(value: DynamicValue | undefined, env: EvalEnv, scope: Scope, report: (diagnostic: Diagnostic) => void): unknown {
+export function safeResolve(
+  value: DynamicValue | undefined,
+  env: EvalEnv,
+  scope: Scope,
+  report: (diagnostic: Diagnostic) => void,
+): unknown {
   try {
     return resolveDynamic(value, env, scope);
   } catch (error) {
@@ -129,7 +149,9 @@ export const toBoolean = isTruthyOrValid;
 
 function coerceCheck(value: unknown, rule: CheckRule): ValidationResult {
   const result: ValidationResult = isValidationResult(value) ? value : { valid: Boolean(value) };
-  return result.valid ? result : { ...result, message: result.message ?? rule.message ?? 'Validation failed', severity: result.severity ?? 'error' };
+  return result.valid
+    ? result
+    : { ...result, message: result.message ?? rule.message ?? 'Validation failed', severity: result.severity ?? 'error' };
 }
 
 export function evaluateChecks(checks: readonly CheckRule[] | undefined, env: EvalEnv, scope: Scope): ValidationResult[] {
@@ -144,5 +166,7 @@ export function evaluateChecks(checks: readonly CheckRule[] | undefined, env: Ev
 }
 
 export function isCheckRuleList(value: unknown): value is CheckRule[] {
-  return Array.isArray(value) && value.every((rule) => isJsonObject(rule) && (isDataBinding(rule.condition) || isFunctionCall(rule.condition)));
+  return (
+    Array.isArray(value) && value.every((rule) => isJsonObject(rule) && (isDataBinding(rule.condition) || isFunctionCall(rule.condition)))
+  );
 }

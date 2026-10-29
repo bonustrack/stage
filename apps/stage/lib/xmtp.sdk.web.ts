@@ -1,8 +1,23 @@
 import {
-  BackupElementSelectionOption, ConsentEntityType, ConsentState, ContentType, Dm, Group, IdentifierKind,
-  ReactionAction, ReactionSchema, SortDirection, encodeText,
-  type ArchiveOptions, type Consent, type Conversation, type DecodedMessage, type Identifier, type InboxState,
-  type Reaction, type Attachment as AttachmentContent,
+  BackupElementSelectionOption,
+  ConsentEntityType,
+  ConsentState,
+  ContentType,
+  Dm,
+  Group,
+  IdentifierKind,
+  ReactionAction,
+  ReactionSchema,
+  SortDirection,
+  encodeText,
+  type ArchiveOptions,
+  type Consent,
+  type Conversation,
+  type DecodedMessage,
+  type Identifier,
+  type InboxState,
+  type Reaction,
+  type Attachment as AttachmentContent,
 } from '@xmtp/browser-sdk';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -19,8 +34,15 @@ import { webGroupMetaPolicy } from './groupPolicyWeb.model';
 import { webConsentState, webListOptions } from './consentWeb.model';
 import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';
 import {
-  NO_GROUP_ADMINS, NO_GROUP_INFO, convFinder, notAGroup, sendableFinder,
-  type MessageDeletion, type MessageQuery, type MessageTarget, type XmtpSdk,
+  NO_GROUP_ADMINS,
+  NO_GROUP_INFO,
+  convFinder,
+  notAGroup,
+  sendableFinder,
+  type MessageDeletion,
+  type MessageQuery,
+  type MessageTarget,
+  type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, ignore, ignored } from './errorPolicy';
 import { prepareSenderFilters } from './pushRegister.web';
@@ -117,15 +139,22 @@ function toWasmReaction(r: ReactionPayload): Reaction {
   };
 }
 
-interface StreamHandle { end: () => Promise<unknown> }
+interface StreamHandle {
+  end: () => Promise<unknown>;
+}
 
 function endWhenCancelled(start: Promise<StreamHandle>): () => void {
   let handle: StreamHandle | null = null;
   let cancelled = false;
-  start.then((stream) => {
-    if (cancelled) { ignore(stream.end(), 'cleanup'); return; }
-    handle = stream;
-  }).catch(reported('xmtp.stream'));
+  start
+    .then((stream) => {
+      if (cancelled) {
+        ignore(stream.end(), 'cleanup');
+        return;
+      }
+      handle = stream;
+    })
+    .catch(reported('xmtp.stream'));
   return () => {
     cancelled = true;
     if (handle) ignore(handle.end(), 'cleanup');
@@ -133,7 +162,9 @@ function endWhenCancelled(start: Promise<StreamHandle>): () => void {
 }
 
 async function streamAllMessages(
-  client: WebClient, onMessage: (m: DecodedMessage | undefined) => void, onClose: () => void,
+  client: WebClient,
+  onMessage: (m: DecodedMessage | undefined) => void,
+  onClose: () => void,
 ): Promise<() => void> {
   const handle = await client.conversations.streamAllMessages({
     onValue: onMessage,
@@ -141,33 +172,50 @@ async function streamAllMessages(
     onFail: onClose,
     consentStates: VISIBLE_STATES,
   });
-  return () => { ignore(handle.end(), 'cleanup'); };
+  return () => {
+    ignore(handle.end(), 'cleanup');
+  };
 }
 
 function streamConsent(client: WebClient, onChange: (convIds: string[]) => void): () => void {
-  return endWhenCancelled(client.preferences.streamConsent({
-    onValue: (records: Consent[]) => {
-      const convIds = records.filter(c => c.entityType === ConsentEntityType.GroupId).map(c => c.entity);
-      if (convIds.length > 0) onChange(convIds);
-    },
-    onError: reported('xmtp.consentStream'),
-  }));
+  return endWhenCancelled(
+    client.preferences.streamConsent({
+      onValue: (records: Consent[]) => {
+        const convIds = records.filter((c) => c.entityType === ConsentEntityType.GroupId).map((c) => c.entity);
+        if (convIds.length > 0) onChange(convIds);
+      },
+      onError: reported('xmtp.consentStream'),
+    }),
+  );
 }
 
 async function streamPreferences(client: WebClient, onChange: () => void, onClose: () => void): Promise<() => void> {
   const handle = await client.preferences.streamPreferences({
-    disableSync: true, retryOnFail: false, onError: reported('xmtp.preferenceStream'), onFail: onClose,
+    disableSync: true,
+    retryOnFail: false,
+    onError: reported('xmtp.preferenceStream'),
+    onFail: onClose,
   });
-  const consume = async (): Promise<void> => { for await (const updates of handle) { if (updates.length > 0) onChange(); } };
+  const consume = async (): Promise<void> => {
+    for await (const updates of handle) {
+      if (updates.length > 0) onChange();
+    }
+  };
   void consume().catch(reported('xmtp.preferenceStream'));
-  return () => { ignore(handle.end(), 'cleanup'); };
+  return () => {
+    ignore(handle.end(), 'cleanup');
+  };
 }
 
 function streamDeletions(client: WebClient, onDeleted: (deletion: MessageDeletion) => void): () => void {
-  return endWhenCancelled(client.conversations.streamDeletedMessages({
-    onValue: (m: DecodedMessage) => { onDeleted({ convId: m.conversationId, messageId: m.id }); },
-    onError: reported('xmtp.deletionStream'),
-  }));
+  return endWhenCancelled(
+    client.conversations.streamDeletedMessages({
+      onValue: (m: DecodedMessage) => {
+        onDeleted({ convId: m.conversationId, messageId: m.id });
+      },
+      onError: reported('xmtp.deletionStream'),
+    }),
+  );
 }
 
 async function deletedEntryOf(client: WebClient, messageId: string, line: string): Promise<HistoryEntry | null> {
@@ -181,19 +229,17 @@ async function messageTarget(client: WebClient, messageId: string): Promise<Mess
   return message && conv ? { conv, contentTypeId: message.contentType.typeId } : null;
 }
 
-async function dmLookup(client: WebClient, address: string): Promise<{
-  find: () => Promise<Dm | undefined>; peerInboxId: () => Promise<string>;
-} | null> {
+async function dmLookup(
+  client: WebClient,
+  address: string,
+): Promise<{ find: () => Promise<Dm | undefined>; peerInboxId: () => Promise<string> } | null> {
   const inboxId = await client.fetchInboxIdByIdentifier(identifierOf(address));
   if (inboxId === undefined || inboxId === '') return null;
-  return {
-    find: () => client.conversations.getDmByInboxId(inboxId),
-    peerInboxId: () => Promise.resolve(inboxId),
-  };
+  return { find: () => client.conversations.getDmByInboxId(inboxId), peerInboxId: () => Promise.resolve(inboxId) };
 }
 
 function ethAddressOf(state: InboxState | undefined): string | undefined {
-  return state?.accountIdentifiers.find(it => it.identifierKind === IdentifierKind.Ethereum)?.identifier;
+  return state?.accountIdentifiers.find((it) => it.identifierKind === IdentifierKind.Ethereum)?.identifier;
 }
 
 async function ethAddressesOf(client: WebClient, inboxIds: string[]): Promise<(string | undefined)[]> {
@@ -201,7 +247,7 @@ async function ethAddressesOf(client: WebClient, inboxIds: string[]): Promise<(s
   const local = inboxIds.map((_, i) => ethAddressOf(states[i]));
   const missing = inboxIds.filter((_, i) => local[i] === undefined);
   if (missing.length === 0) return local;
-  const fetched = new Map((await client.preferences.fetchInboxStates(missing)).map(s => [s.inboxId, ethAddressOf(s)]));
+  const fetched = new Map((await client.preferences.fetchInboxStates(missing)).map((s) => [s.inboxId, ethAddressOf(s)]));
   return inboxIds.map((id, i) => local[i] ?? fetched.get(id));
 }
 
@@ -216,17 +262,19 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   activeDm: (client, peerInboxId) => client.conversations.createDm(peerInboxId),
   dmLookup,
   forceAddMember: null,
-  memberInstallationIds: async (conv, inboxId) =>
-    (await conv.members()).find(m => m.inboxId === inboxId)?.installationIds ?? [],
+  memberInstallationIds: async (conv, inboxId) => (await conv.members()).find((m) => m.inboxId === inboxId)?.installationIds ?? [],
   inboxIdOfAddress: (client, address) => client.fetchInboxIdByIdentifier(identifierOf(address)),
   installationIdsOf: async (client, inboxId) =>
-    ((await client.preferences.fetchInboxStates([inboxId]))[0]?.installations ?? []).map(i => i.id),
+    ((await client.preferences.fetchInboxStates([inboxId]))[0]?.installations ?? []).map((i) => i.id),
   keyPackageErrors: async (client, installationIds) =>
-    [...(await client.fetchKeyPackageStatuses(installationIds)).values()].map(s => s.validationError),
+    [...(await client.fetchKeyPackageStatuses(installationIds)).values()].map((s) => s.validationError),
   ethAddressesOf,
-  newGroup: (client, addresses, meta) => client.conversations.createGroupWithIdentifiers(
-    identifiersOf(addresses), { groupName: meta.name, groupImageUrlSquare: meta.imageUrl, appData: meta.appData },
-  ),
+  newGroup: (client, addresses, meta) =>
+    client.conversations.createGroupWithIdentifiers(identifiersOf(addresses), {
+      groupName: meta.name,
+      groupImageUrlSquare: meta.imageUrl,
+      appData: meta.appData,
+    }),
   streamAllMessages,
   streamConversations: (client, onConv) =>
     endWhenCancelled(client.conversations.stream({ onValue: onConv, onError: reported('xmtp.convStream') })),
@@ -254,12 +302,13 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   },
   dmPeerInboxId: (conv) => (conv instanceof Dm ? () => conv.peerInboxId() : null),
   groupName: (conv) => Promise.resolve(conv instanceof Group ? conv.name : undefined),
-  groupInfo: (conv) => Promise.resolve(conv instanceof Group
-    ? { name: conv.name ?? '', imageUrl: conv.imageUrl ?? '', description: conv.description ?? '' }
-    : { ...NO_GROUP_INFO }),
-  groupAdmins: (conv) => Promise.resolve(conv instanceof Group
-    ? { admins: conv.admins, superAdmins: conv.superAdmins }
-    : NO_GROUP_ADMINS),
+  groupInfo: (conv) =>
+    Promise.resolve(
+      conv instanceof Group
+        ? { name: conv.name ?? '', imageUrl: conv.imageUrl ?? '', description: conv.description ?? '' }
+        : { ...NO_GROUP_INFO },
+    ),
+  groupAdmins: (conv) => Promise.resolve(conv instanceof Group ? { admins: conv.admins, superAdmins: conv.superAdmins } : NO_GROUP_ADMINS),
   groupMetaPolicy: groupMetaPolicyOf,
   groupOps: (conv) => (conv instanceof Group ? conv : null),
   addMembers: (conv, addresses) => asGroup(conv).addMembersByIdentifiers(identifiersOf(addresses)),
@@ -269,9 +318,12 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   addedByInboxId: (conv) => conv.addedByInboxId,
   consentOf: async (conv) => consentStateToString(await conv.consentState()),
   setConsent: (conv, state) => conv.updateConsentState(webConsentState(state)),
-  messages: async (conv, query) => withNestedReactions(
-    await conv.messages(webQuery(query)), (m) => m.reactions, (m) => Number(m.sentAtNs),
-  ),
+  messages: async (conv, query) =>
+    withNestedReactions(
+      await conv.messages(webQuery(query)),
+      (m) => m.reactions,
+      (m) => Number(m.sentAtNs),
+    ),
   rowOf: (m) => ({
     id: m.id,
     content: m.content,
@@ -293,4 +345,6 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
 
 export const convOfLine = convFinder(sdk);
 
-export const sendableConvOfLine = sendableFinder(sdk, (client, conv, timing) => prepareSenderFilters(client, groupTopicOf(conv.id), timing));
+export const sendableConvOfLine = sendableFinder(sdk, (client, conv, timing) =>
+  prepareSenderFilters(client, groupTopicOf(conv.id), timing),
+);

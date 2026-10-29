@@ -83,5 +83,9 @@ export const APP_ICONS = {
 export type AppIconName = keyof typeof APP_ICONS;
 
 export interface MenuItem<Id extends string = string, Icon = AppIconName> {
-  id: Id; label: string; icon: Icon; danger?: boolean; selected?: boolean;
+  id: Id;
+  label: string;
+  icon: Icon;
+  danger?: boolean;
+  selected?: boolean;
 }

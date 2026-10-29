@@ -9,16 +9,27 @@ import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import { dismissConvNotifications, getDeviceFcmToken } from './pushNotify';
 import { convIdOfNotificationData } from './pushNotify.model';
 import {
-  directRpcUrl, makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, runSenderFilterPublication, toPermission,
+  directRpcUrl,
+  makePushClear,
+  makeTopicRefresh,
+  runPushRegistration,
+  runPushUnregistration,
+  runSenderFilterPublication,
+  toPermission,
   warmSenderFilterSync,
-  type PushPermission, type PushTopics, type PushRuntimeInput,
+  type PushPermission,
+  type PushTopics,
+  type PushRuntimeInput,
 } from './pushRegister.core';
 import { getCachedXmtpClient } from './xmtp.state';
 import { getAccountEpoch } from './accountEpoch';
 import { attempt, recover, reported } from './errorPolicy';
 import { type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 
-type PushClient = Pick<Client, 'installationId' | 'conversations' | 'preferences' | 'publicIdentity' | 'inboxId' | 'signWithInstallationKey'>;
+type PushClient = Pick<
+  Client,
+  'installationId' | 'conversations' | 'preferences' | 'publicIdentity' | 'inboxId' | 'signWithInstallationKey'
+>;
 
 const PLATFORM: PushPlatform = Platform.OS === 'android' ? 'android' : 'ios';
 
@@ -51,14 +62,14 @@ function pushInput(client: PushClient): PushRuntimeInput {
     installationId: client.installationId,
     accountAddress: client.publicIdentity.identifier,
     inboxId: client.inboxId,
-    signInstallation: text => client.signWithInstallationKey(text),
+    signInstallation: (text) => client.signWithInstallationKey(text),
     current: () => getCachedXmtpClient() === client && getAccountEpoch() === epoch,
     syncPreferences: () => client.preferences.sync(),
     platform: PLATFORM,
     rpcUrl: directRpcUrl,
     getToken: getDeviceFcmToken,
     collectTopics: () => collectTopics(client),
-    collectSenderTopics: async topic => {
+    collectSenderTopics: async (topic) => {
       if (!topic) return collectTopics(client);
       const keys = await getHmacKeys(client.installationId);
       return { topics: [topic], hmacKeys: { [topic]: keys.hmacKeys[topic]?.values } };
@@ -97,13 +108,17 @@ export function isPushSupported(): boolean {
 export async function getPushPermission(): Promise<PushPermission> {
   try {
     return toPermission((await Notifications.getPermissionsAsync()).status);
-  } catch { return 'undetermined'; }
+  } catch {
+    return 'undetermined';
+  }
 }
 
 export async function requestPushPermission(): Promise<PushPermission> {
   try {
     return toPermission((await Notifications.requestPermissionsAsync()).status);
-  } catch { return 'undetermined'; }
+  } catch {
+    return 'undetermined';
+  }
 }
 
 const markConvRead = async (convId: string): Promise<void> => {
@@ -125,11 +140,16 @@ export function usePushDeepLinks(): void {
     void Notifications.getLastNotificationResponseAsync()
       .then((resp) => {
         if (cancelled || !resp) return;
-        attempt(() => { Notifications.clearLastNotificationResponse(); }, 'cleanup');
+        attempt(() => {
+          Notifications.clearLastNotificationResponse();
+        }, 'cleanup');
         openConvFromResponse(resp);
       })
       .catch(reported('push.lastResponse'));
     const sub = Notifications.addNotificationResponseReceivedListener(openConvFromResponse);
-    return (): void => { cancelled = true; sub.remove(); };
+    return (): void => {
+      cancelled = true;
+      sub.remove();
+    };
   }, []);
 }

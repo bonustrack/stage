@@ -3,7 +3,13 @@ import { base64ToBytes, base64ToUtf8, bytesToBase64, utf8ToBase64 } from '../src
 
 describe('bytesToBase64', () => {
   test('matches the standard encoding including padding', () => {
-    const cases: [string, string][] = [['', ''], ['f', 'Zg=='], ['fo', 'Zm8='], ['foo', 'Zm9v'], ['foob', 'Zm9vYg==']];
+    const cases: [string, string][] = [
+      ['', ''],
+      ['f', 'Zg=='],
+      ['fo', 'Zm8='],
+      ['foo', 'Zm9v'],
+      ['foob', 'Zm9vYg=='],
+    ];
     for (const [input, expected] of cases) {
       expect(bytesToBase64(new TextEncoder().encode(input))).toBe(expected);
     }

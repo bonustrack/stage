@@ -1,6 +1,11 @@
 import { useMemo, useRef, useState } from 'react';
 import {
-  PanResponder, Text as RNText, View, type AccessibilityActionEvent, type GestureResponderEvent, type ViewStyle,
+  PanResponder,
+  Text as RNText,
+  View,
+  type AccessibilityActionEvent,
+  type GestureResponderEvent,
+  type ViewStyle,
 } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import { styleList } from '../control.styles';
@@ -45,10 +50,13 @@ function sliderFraction(value: number, min: number, max: number): number {
 function useSliderState(props: SliderProps): [number, (next: number) => void] {
   const [internal, setInternal] = useState(props.defaultValue ?? props.min ?? 0);
   const value = props.value ?? internal;
-  return [value, (next) => {
-    if (props.value === undefined) setInternal(next);
-    props.onChange?.(next);
-  }];
+  return [
+    value,
+    (next) => {
+      if (props.value === undefined) setInternal(next);
+      props.onChange?.(next);
+    },
+  ];
 }
 
 function useDrag(props: SliderProps, update: (next: number) => void, latest: { current: number }) {
@@ -57,20 +65,24 @@ function useDrag(props: SliderProps, update: (next: number) => void, latest: { c
   const at = (x: number): number => sliderValue(drag.current.width === 0 ? 0 : x / drag.current.width, min, props.max, props.steps);
   const handlers = useRef({ at, update, end: props.onChangeEnd });
   handlers.current = { at, update, end: props.onChangeEnd };
-  const responder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: (e: GestureResponderEvent) => {
-      drag.current.startX = e.nativeEvent.locationX;
-      handlers.current.update(handlers.current.at(drag.current.startX));
-    },
-    onPanResponderMove: (_e, gesture) => {
-      handlers.current.update(handlers.current.at(drag.current.startX + gesture.dx));
-    },
-    onPanResponderRelease: () => {
-      handlers.current.end?.(latest.current);
-    },
-  }), [latest]);
+  const responder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (e: GestureResponderEvent) => {
+          drag.current.startX = e.nativeEvent.locationX;
+          handlers.current.update(handlers.current.at(drag.current.startX));
+        },
+        onPanResponderMove: (_e, gesture) => {
+          handlers.current.update(handlers.current.at(drag.current.startX + gesture.dx));
+        },
+        onPanResponderRelease: () => {
+          handlers.current.end?.(latest.current);
+        },
+      }),
+    [latest],
+  );
   return { drag, responder };
 }
 
@@ -94,7 +106,9 @@ export function Slider(props: SliderProps): React.ReactElement {
     <WithChecks checks={checks} weight={weight}>
       {(rootStyle) => (
         <View style={[{ gap: 6, opacity: disabled ? 0.5 : 1 }, ...styleList(style), ...styleList(rootStyle)]}>
-          {label === undefined ? null : <RNText style={{ color: p.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>{label}</RNText>}
+          {label === undefined ? null : (
+            <RNText style={{ color: p.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>{label}</RNText>
+          )}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <View
               {...(disabled ? {} : responder.panHandlers)}
@@ -104,15 +118,32 @@ export function Slider(props: SliderProps): React.ReactElement {
               accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
               onAccessibilityAction={disabled ? undefined : nudge}
               {...accessibilityProps(accessibility)}
-              onLayout={(e) => { drag.current.width = e.nativeEvent.layout.width; }}
+              onLayout={(e) => {
+                drag.current.width = e.nativeEvent.layout.width;
+              }}
               style={{ flex: 1, height: TOUCH_HEIGHT, justifyContent: 'center', cursor: disabled ? undefined : 'pointer' }}
             >
               <View pointerEvents="none" style={{ height: TRACK, borderRadius: TRACK / 2, backgroundColor: p.border }}>
                 <View style={{ width: pct, height: TRACK, borderRadius: TRACK / 2, backgroundColor: p.head }} />
               </View>
-              <View pointerEvents="none" style={{ position: 'absolute', left: pct, marginLeft: -THUMB / 2, width: THUMB, height: THUMB, borderRadius: THUMB / 2, backgroundColor: p.head }} />
+              <View
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  left: pct,
+                  marginLeft: -THUMB / 2,
+                  width: THUMB,
+                  height: THUMB,
+                  borderRadius: THUMB / 2,
+                  backgroundColor: p.head,
+                }}
+              />
             </View>
-            {showValue ? <RNText style={{ minWidth: 36, textAlign: 'right', color: p.sub, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{String(Number(value.toFixed(2)))}</RNText> : null}
+            {showValue ? (
+              <RNText style={{ minWidth: 36, textAlign: 'right', color: p.sub, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>
+                {String(Number(value.toFixed(2)))}
+              </RNText>
+            ) : null}
           </View>
         </View>
       )}

@@ -17,7 +17,9 @@ export interface UsdQuote {
 async function fetchCoins(path: string, ids: readonly string[]): Promise<Record<string, unknown>> {
   const coins = [...new Set(ids)].map(encodeURIComponent).join(',');
   const controller = new AbortController();
-  const timer = setTimeout(() => { controller.abort(); }, 15_000);
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, 15_000);
   try {
     const response = await fetch(`${API}/${path}/${coins}`, { signal: controller.signal });
     if (!response.ok) throw new Error(`defillama ${response.status}`);

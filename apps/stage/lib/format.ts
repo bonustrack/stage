@@ -9,8 +9,11 @@ export function channelTimestamp(ts: number | null): string {
 }
 
 export function bubbleTimestamp(ts: string): string {
-  try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); }
-  catch { return ts.slice(11, 16); }
+  try {
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch {
+    return ts.slice(11, 16);
+  }
 }
 
 function parsed(iso: string): number | null {

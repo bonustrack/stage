@@ -15,8 +15,8 @@ describe('composer sheets model', () => {
   });
 
   test('the kind choices cover both request kinds, message first', () => {
-    expect(SIGNATURE_KINDS.map(k => k.value)).toEqual(['personal', 'eip712']);
-    expect(SIGNATURE_KINDS.map(k => k.label)).toEqual(['Message', 'Typed data']);
+    expect(SIGNATURE_KINDS.map((k) => k.value)).toEqual(['personal', 'eip712']);
+    expect(SIGNATURE_KINDS.map((k) => k.label)).toEqual(['Message', 'Typed data']);
   });
 
   test('a poll needs a question and two filled options', () => {

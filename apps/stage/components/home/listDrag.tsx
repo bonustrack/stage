@@ -1,6 +1,11 @@
 import { useMemo, type ReactNode } from 'react';
 import {
-  SortableHandle, SortableItem, SortableList, SortableScope, useSortableTarget, type SortMove,
+  SortableHandle,
+  SortableItem,
+  SortableList,
+  SortableScope,
+  useSortableTarget,
+  type SortMove,
 } from '@stage-labs/kit/react-native/sortable';
 import { setChannelCategory } from '../channel/channel.labels';
 import { moveCategory } from '../../lib/channelGroups';
@@ -24,27 +29,64 @@ export interface HomeDrag {
   onZone: (move: SortMove) => void;
 }
 
-export function useHomeDrag(items: readonly HomeListItem[], byCategory: boolean, pinned: readonly string[], visiblePinned: readonly string[]): HomeDrag {
+export function useHomeDrag(
+  items: readonly HomeListItem[],
+  byCategory: boolean,
+  pinned: readonly string[],
+  visiblePinned: readonly string[],
+): HomeDrag {
   const model = useMemo(() => homeDragModel(items, byCategory), [items, byCategory]);
-  return useMemo(() => ({
-    model,
-    pins: visiblePinned,
-    onPin: (move) => { const index = pinMove(pinned, move); if (index !== null) movePin(move.itemId, index); },
-    onSection: (move) => { const next = sectionMove(model, move); if (next !== null) moveCategory(next.key, next.target, next.visible); },
-    onZone: (move) => { const next = zoneMove(model, move); if (next !== null) setChannelCategory(next.convId, next.category); },
-  }), [model, pinned, visiblePinned]);
+  return useMemo(
+    () => ({
+      model,
+      pins: visiblePinned,
+      onPin: (move) => {
+        const index = pinMove(pinned, move);
+        if (index !== null) movePin(move.itemId, index);
+      },
+      onSection: (move) => {
+        const next = sectionMove(model, move);
+        if (next !== null) moveCategory(next.key, next.target, next.visible);
+      },
+      onZone: (move) => {
+        const next = zoneMove(model, move);
+        if (next !== null) setChannelCategory(next.convId, next.category);
+      },
+    }),
+    [model, pinned, visiblePinned],
+  );
 }
 
 export function HomeDragLists({ drag, children }: { drag: HomeDrag; children: ReactNode }): React.ReactElement {
   return (
     <SortableScope style={FILL}>
-      <SortableList listId={PIN_LIST} itemIds={drag.pins} indicator="shift" keyboard={false} touchAction="pan-y" style={FILL} onMove={drag.onPin}>
+      <SortableList
+        listId={PIN_LIST}
+        itemIds={drag.pins}
+        indicator="shift"
+        keyboard={false}
+        touchAction="pan-y"
+        style={FILL}
+        onMove={drag.onPin}
+      >
         <SortableList
-          listId={SECTION_LIST} itemIds={drag.model.sections} indicator="shift" keyboard={false} touchAction="pan-y" style={FILL} onMove={drag.onSection}
+          listId={SECTION_LIST}
+          itemIds={drag.model.sections}
+          indicator="shift"
+          keyboard={false}
+          touchAction="pan-y"
+          style={FILL}
+          onMove={drag.onSection}
         >
           <SortableList
-            listId={ROW_LIST} itemIds={drag.model.rows} indicator="follow" keyboard={false} touchAction="pan-y" style={FILL}
-            accepts={move => zoneMove(drag.model, move) !== null} onMove={drag.onZone}
+            listId={ROW_LIST}
+            itemIds={drag.model.rows}
+            indicator="follow"
+            keyboard={false}
+            touchAction="pan-y"
+            style={FILL}
+            accepts={(move) => zoneMove(drag.model, move) !== null}
+            onMove={drag.onZone}
           >
             {children}
           </SortableList>
@@ -67,8 +109,16 @@ function ZoneShade({ model, id, children }: { model: HomeDragModel; id: string; 
   return <Column background={lit ? inputBg : undefined}>{children}</Column>;
 }
 
-export function PinnedRow({ drag, convId, onHold, children }: {
-  drag: HomeDrag; convId: string; onHold: (anchor: MenuPoint) => void; children: ReactNode;
+export function PinnedRow({
+  drag,
+  convId,
+  onHold,
+  children,
+}: {
+  drag: HomeDrag;
+  convId: string;
+  onHold: (anchor: MenuPoint) => void;
+  children: ReactNode;
 }): React.ReactElement {
   if (!drag.pins.includes(convId)) return <>{children}</>;
   return (
@@ -82,16 +132,30 @@ export function SectionHandle({ children }: { children: React.ReactElement }): R
   return <SortableHandle>{children}</SortableHandle>;
 }
 
-export function DragCell({ drag, item, onHold, children }: {
-  drag: HomeDrag; item: HomeListItem; onHold?: (anchor: MenuPoint) => void; children: ReactNode;
+export function DragCell({
+  drag,
+  item,
+  onHold,
+  children,
+}: {
+  drag: HomeDrag;
+  item: HomeListItem;
+  onHold?: (anchor: MenuPoint) => void;
+  children: ReactNode;
 }): React.ReactElement {
   const { model } = drag;
   const id = item.convId;
   const header = model.sectionKeys.has(id);
   const zoned = model.zoneOf.has(id);
-  const inner = !zoned ? children : (
+  const inner = !zoned ? (
+    children
+  ) : (
     <SortableItem listId={ROW_LIST} itemId={id} disabled={id === model.zoneOf.get(id)} onHold={onHold}>
-      {({ dragging }) => <ZoneShade model={model} id={id}><Lifted dragging={dragging}>{children}</Lifted></ZoneShade>}
+      {({ dragging }) => (
+        <ZoneShade model={model} id={id}>
+          <Lifted dragging={dragging}>{children}</Lifted>
+        </ZoneShade>
+      )}
     </SortableItem>
   );
   const section = header ? id : model.sectionOf.get(id);

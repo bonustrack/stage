@@ -1,20 +1,24 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  clampOffset, clampZoom, doubleTapTarget, imageSwipeStep, isZoomed, panLimits, zoomAround,
-  ZOOM_DOUBLE_TAP, ZOOM_MAX, ZOOM_MIN, ZOOM_RESET, type ZoomGeometry, type ZoomPoint, type ZoomState,
+  clampOffset,
+  clampZoom,
+  doubleTapTarget,
+  imageSwipeStep,
+  isZoomed,
+  panLimits,
+  zoomAround,
+  ZOOM_DOUBLE_TAP,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  ZOOM_RESET,
+  type ZoomGeometry,
+  type ZoomPoint,
+  type ZoomState,
 } from '../components/ZoomableImage.model';
 
-const square: ZoomGeometry = {
-  view: { width: 400, height: 800 },
-  natural: { width: 1000, height: 1000 },
-  frame: { x: 0, y: 0 },
-};
+const square: ZoomGeometry = { view: { width: 400, height: 800 }, natural: { width: 1000, height: 1000 }, frame: { x: 0, y: 0 } };
 
-const framed: ZoomGeometry = {
-  view: { width: 390, height: 844 },
-  natural: { width: 2000, height: 1000 },
-  frame: { x: 18, y: 104 },
-};
+const framed: ZoomGeometry = { view: { width: 390, height: 844 }, natural: { width: 2000, height: 1000 }, frame: { x: 18, y: 104 } };
 
 function screenOf(state: ZoomState, point: ZoomPoint): ZoomPoint {
   return { x: state.x + state.scale * point.x, y: state.y + state.scale * point.y };
@@ -116,8 +120,7 @@ describe('zoomAround', () => {
   });
 
   test('settles back to the centre when pinched below 1x', () => {
-    expect(zoomAround({ scale: 2, x: 150, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, 0.2, square))
-      .toEqual({ scale: ZOOM_MIN, x: 0, y: 0 });
+    expect(zoomAround({ scale: 2, x: 150, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, 0.2, square)).toEqual({ scale: ZOOM_MIN, x: 0, y: 0 });
   });
 });
 

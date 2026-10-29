@@ -26,11 +26,21 @@ describe('channel assignees', () => {
 
   test('syncs before merging and preserves labels, links and unknown fields', async () => {
     const state = appDataGroup();
-    state.group.sync = () => state.group.updateAppData(JSON.stringify({ labels: ['Todo'], github: 'https://github.com/a/b', preview: 'https://example.com', custom: 7 }));
+    state.group.sync = () =>
+      state.group.updateAppData(
+        JSON.stringify({ labels: ['Todo'], github: 'https://github.com/a/b', preview: 'https://example.com', custom: 7 }),
+      );
     expect(await writeAssigned(state.group, [A, B], members)).toEqual([A, B]);
-    expect(JSON.parse(state.raw())).toEqual({ v: 1, labels: ['Todo'], github: 'https://github.com/a/b', preview: 'https://example.com', custom: 7, assigned: [A, B] });
+    expect(JSON.parse(state.raw())).toEqual({
+      v: 1,
+      labels: ['Todo'],
+      github: 'https://github.com/a/b',
+      preview: 'https://example.com',
+      custom: 7,
+      assigned: [A, B],
+    });
     delete state.group.sync;
-    expect(await writeLabels(state.group, labels => [...labels, 'Stage'])).toEqual(['Todo', 'Stage']);
+    expect(await writeLabels(state.group, (labels) => [...labels, 'Stage'])).toEqual(['Todo', 'Stage']);
     expect(JSON.parse(state.raw()).assigned).toEqual([A, B]);
     await writeAssigned(state.group, [], members);
     expect(JSON.parse(state.raw()).assigned).toEqual([]);
@@ -46,7 +56,10 @@ describe('channel assignees', () => {
   test('checks current membership after syncing, including self', async () => {
     let current: string[] = [];
     const state = appDataGroup();
-    state.group.sync = () => { current = [A, B]; return Promise.resolve(); };
+    state.group.sync = () => {
+      current = [A, B];
+      return Promise.resolve();
+    };
     await writeAssigned(state.group, [A], () => Promise.resolve(current));
     expect(await groupAssignedOf(state.group)).toEqual([A]);
   });
@@ -56,7 +69,9 @@ describe('channel assignees', () => {
     state.group.sync = () => Promise.reject(new Error('offline'));
     await expect(writeAssigned(state.group, [A], members)).rejects.toThrow('offline');
     delete state.group.sync;
-    await expect(writeAssigned(state.group, [A], () => Promise.reject(new Error('members unavailable')))).rejects.toThrow('members unavailable');
+    await expect(writeAssigned(state.group, [A], () => Promise.reject(new Error('members unavailable')))).rejects.toThrow(
+      'members unavailable',
+    );
     state.group.updateAppData = () => Promise.reject(new Error('permission denied'));
     await expect(writeAssigned(state.group, [A], members)).rejects.toThrow('permission denied');
     expect(state.writes()).toBe(0);
@@ -66,19 +81,18 @@ describe('channel assignees', () => {
     const state = appDataGroup('{"custom":1}');
     const first = { ...state.group, id: 'shared-channel' };
     const second = { ...state.group, id: 'shared-channel' };
-    await Promise.all([
-      writeAssigned(first, [A], members),
-      writeLabels(second, () => ['Stage']),
-      writeAssigned(first, [A, B], members),
-    ]);
+    await Promise.all([writeAssigned(first, [A], members), writeLabels(second, () => ['Stage']), writeAssigned(first, [A, B], members)]);
     expect(JSON.parse(state.raw())).toEqual({ v: 1, custom: 1, labels: ['Stage'], assigned: [A, B] });
   });
 
   test('validates all linked addresses by current member inbox, including secondary self addresses', async () => {
-    const resolve = (address: string): Promise<string | undefined> => Promise.resolve(address === A || address === B ? 'self-inbox' : undefined);
+    const resolve = (address: string): Promise<string | undefined> =>
+      Promise.resolve(address === A || address === B ? 'self-inbox' : undefined);
     expect(await currentMemberAddresses([A, B], ['self-inbox'], resolve)).toEqual([A, B]);
     expect(await currentMemberAddresses([A, B], ['other-inbox'], resolve)).toEqual([]);
-    await expect(currentMemberAddresses([A], ['self-inbox'], () => Promise.reject(new Error('unavailable')))).rejects.toThrow('unavailable');
+    await expect(currentMemberAddresses([A], ['self-inbox'], () => Promise.reject(new Error('unavailable')))).rejects.toThrow(
+      'unavailable',
+    );
   });
 
   test('reset releases the queue from a dead client and cancels old pending edits', async () => {
@@ -95,7 +109,7 @@ describe('channel assignees', () => {
     await writeAssigned(fresh.group, [B], members);
     expect(await groupAssignedOf(fresh.group)).toEqual([B]);
     stalled.resolve(undefined);
-    expect((await results).map(result => result.status)).toEqual(['rejected', 'rejected']);
+    expect((await results).map((result) => result.status)).toEqual(['rejected', 'rejected']);
     expect(old.writes()).toBe(0);
   });
 
@@ -113,7 +127,7 @@ describe('channel assignees', () => {
     const denied = { ...state.group, id: 'retry-channel', updateAppData: () => Promise.reject(new Error('permission')) };
     const allowed = { ...state.group, id: 'retry-channel' };
     const results = await Promise.allSettled([writeAssigned(denied, [A], members), writeAssigned(allowed, [B], members)]);
-    expect(results.map(result => result.status)).toEqual(['rejected', 'fulfilled']);
+    expect(results.map((result) => result.status)).toEqual(['rejected', 'fulfilled']);
     expect(await groupAssignedOf(allowed)).toEqual([B]);
   });
 });

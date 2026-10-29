@@ -2,10 +2,17 @@ import { appStorage } from '../platform/storage';
 import { ignore, ignored } from './errorPolicy';
 
 export const CHANNELS_SCROLL_KEY = 'scroll:channels';
-export function convScrollKey(convId: string): string { return `scroll:conv:${convId}`; }
-function convAnchorKey(convId: string): string { return `scroll:anchor:${convId}`; }
+export function convScrollKey(convId: string): string {
+  return `scroll:conv:${convId}`;
+}
+function convAnchorKey(convId: string): string {
+  return `scroll:anchor:${convId}`;
+}
 
-export interface FeedAnchor { key: string; offset: number }
+export interface FeedAnchor {
+  key: string;
+  offset: number;
+}
 
 const WRITE_DEBOUNCE_MS = 300;
 
@@ -29,11 +36,20 @@ function debouncedKv<T>(parse: (raw: string | null) => T | undefined, write: (ke
     save(key: string, value: T): void {
       values.set(key, value);
       clearTimeout(timers.get(key));
-      timers.set(key, setTimeout(() => { timers.delete(key); persist(key); }, WRITE_DEBOUNCE_MS));
+      timers.set(
+        key,
+        setTimeout(() => {
+          timers.delete(key);
+          persist(key);
+        }, WRITE_DEBOUNCE_MS),
+      );
     },
     flush(key: string, override?: T): void {
       const t = timers.get(key);
-      if (t) { clearTimeout(t); timers.delete(key); }
+      if (t) {
+        clearTimeout(t);
+        timers.delete(key);
+      }
       if (override !== undefined) values.set(key, override);
       if (override !== undefined || t) persist(key);
     },
@@ -61,9 +77,8 @@ function parseAnchor(raw: string | null): FeedAnchor | null {
 }
 
 const offsets = debouncedKv<number>(parseOffset, (key, v) => appStorage.set(key, String(v)));
-const anchors = debouncedKv<FeedAnchor | null>(
-  parseAnchor,
-  (key, v) => (v === null ? appStorage.delete(key) : appStorage.set(key, JSON.stringify(v))),
+const anchors = debouncedKv<FeedAnchor | null>(parseAnchor, (key, v) =>
+  v === null ? appStorage.delete(key) : appStorage.set(key, JSON.stringify(v)),
 );
 
 export function peekFeedAnchor(convId: string): FeedAnchor | null | undefined {
@@ -91,14 +106,21 @@ export function saveScrollOffset(key: string, offset: number): void {
 }
 
 export function planFeedRestore(args: {
-  loaded: boolean; contentHeight: number; itemCount: number;
-  savedOffset: number | undefined; now: number;
-  pinUntil: number; setPinUntil: (t: number) => void;
+  loaded: boolean;
+  contentHeight: number;
+  itemCount: number;
+  savedOffset: number | undefined;
+  now: number;
+  pinUntil: number;
+  setPinUntil: (t: number) => void;
 }): 'skip' | 'bottom' | { offset: number; done: true } {
   const { loaded, contentHeight, itemCount, savedOffset, now, pinUntil, setPinUntil } = args;
   if (!loaded || contentHeight <= 0 || itemCount === 0) return 'skip';
   if (savedOffset == null || savedOffset <= 0) {
-    if (pinUntil === 0) { setPinUntil(now + 1200); return 'bottom'; }
+    if (pinUntil === 0) {
+      setPinUntil(now + 1200);
+      return 'bottom';
+    }
     return now > pinUntil ? 'skip' : 'bottom';
   }
   return { offset: Math.min(savedOffset, Math.max(0, contentHeight)), done: true };

@@ -5,9 +5,26 @@ import type { Row } from '../components/home/model';
 
 function row(convId: string, extra: Partial<Row> = {}): Row {
   return {
-    convId, title: convId, lastTs: 1, lastBubbleTs: 1, lastPreview: '', avatarAddress: null, avatarUri: null,
-    peerAddress: null, lastSenderAddress: null, lastFromSelf: false, inboxToAddr: {}, unreadCount: 0, lastReadNs: 0,
-    markedUnread: false, selfInboxId: 'me', labels: [], category: null, assigned: [], consent: null, ...extra,
+    convId,
+    title: convId,
+    lastTs: 1,
+    lastBubbleTs: 1,
+    lastPreview: '',
+    avatarAddress: null,
+    avatarUri: null,
+    peerAddress: null,
+    lastSenderAddress: null,
+    lastFromSelf: false,
+    inboxToAddr: {},
+    unreadCount: 0,
+    lastReadNs: 0,
+    markedUnread: false,
+    selfInboxId: 'me',
+    labels: [],
+    category: null,
+    assigned: [],
+    consent: null,
+    ...extra,
   };
 }
 
@@ -18,9 +35,15 @@ const alpha = row('alpha', { category: 'Alpha', labels: ['Done'] });
 const loose = row('loose');
 const nameOf = (address: string): string => address;
 const byProject = (rows: Row[], folded: string[] = []) => homeDragModel(groupRows(rows, 'category', new Set(folded), false, nameOf), true);
-const move = (itemId: string, fromIndex: number, toIndex: number, beforeId: string | null, afterId: string | null) => (
-  { itemId, fromListId: 'l', toListId: 'l', fromIndex, toIndex, beforeId, afterId }
-);
+const move = (itemId: string, fromIndex: number, toIndex: number, beforeId: string | null, afterId: string | null) => ({
+  itemId,
+  fromListId: 'l',
+  toListId: 'l',
+  fromIndex,
+  toIndex,
+  beforeId,
+  afterId,
+});
 
 describe('dragging project sections', () => {
   test('every project section is a block, direct messages and no project included, and rows follow their header', () => {
@@ -41,7 +64,9 @@ describe('dragging project sections', () => {
   test('a section takes the place of the section it passes', () => {
     const model = byProject([dm, work, alpha, loose]);
     expect(sectionMove(model, move('group:category:work', 2, 0, null, 'group:dm'))).toEqual({
-      key: 'category:work', target: 'dm', visible: ['dm', 'category:alpha', 'category:work', 'none'],
+      key: 'category:work',
+      target: 'dm',
+      visible: ['dm', 'category:alpha', 'category:work', 'none'],
     });
     expect(sectionMove(model, move('group:dm', 0, 3, 'group:none', null))?.target).toBe('none');
     expect(sectionMove(model, move('alpha', 1, 2, 'group:category:work', null))).toBeNull();
@@ -58,13 +83,31 @@ describe('moving a chat to another project', () => {
   const model = byProject([dm, work, work2, alpha, loose]);
 
   test('every header and row has a place, tagged with the section it drops into, direct messages excluded', () => {
-    expect(model.rows).toEqual(['group:dm', 'dm', 'group:category:alpha', 'alpha', 'group:category:work', 'work', 'work2', 'group:none', 'loose']);
-    expect([...model.zoneOf]).toEqual([
-      ['group:category:alpha', 'group:category:alpha'], ['alpha', 'group:category:alpha'],
-      ['group:category:work', 'group:category:work'], ['work', 'group:category:work'], ['work2', 'group:category:work'],
-      ['group:none', 'group:none'], ['loose', 'group:none'],
+    expect(model.rows).toEqual([
+      'group:dm',
+      'dm',
+      'group:category:alpha',
+      'alpha',
+      'group:category:work',
+      'work',
+      'work2',
+      'group:none',
+      'loose',
     ]);
-    expect([...model.categories]).toEqual([['group:category:alpha', 'Alpha'], ['group:category:work', 'Work'], ['group:none', null]]);
+    expect([...model.zoneOf]).toEqual([
+      ['group:category:alpha', 'group:category:alpha'],
+      ['alpha', 'group:category:alpha'],
+      ['group:category:work', 'group:category:work'],
+      ['work', 'group:category:work'],
+      ['work2', 'group:category:work'],
+      ['group:none', 'group:none'],
+      ['loose', 'group:none'],
+    ]);
+    expect([...model.categories]).toEqual([
+      ['group:category:alpha', 'Alpha'],
+      ['group:category:work', 'Work'],
+      ['group:none', null],
+    ]);
   });
 
   test('the target is the section of the place above the drop point', () => {

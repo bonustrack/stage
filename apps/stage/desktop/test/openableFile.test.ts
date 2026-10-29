@@ -44,6 +44,19 @@ describe('opensInApp', () => {
   });
 
   test('saves pages, scripts, programs and files that apps may evaluate', () => {
-    for (const name of ['page.html', 'run.command', 'Setup.exe', 'tool.app', 'x.sh', 'invoice.pdf.exe', 'data.csv', 'notes.md', 'config.json', 'noextension', '.pdf']) expect(opensInApp(name)).toBe(false);
+    for (const name of [
+      'page.html',
+      'run.command',
+      'Setup.exe',
+      'tool.app',
+      'x.sh',
+      'invoice.pdf.exe',
+      'data.csv',
+      'notes.md',
+      'config.json',
+      'noextension',
+      '.pdf',
+    ])
+      expect(opensInApp(name)).toBe(false);
   });
 });

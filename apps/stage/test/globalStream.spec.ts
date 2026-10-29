@@ -2,12 +2,21 @@ import { describe, expect, test } from 'bun:test';
 import { AccountChangedError, NoAccountError } from '../lib/xmtp.client.core';
 import { makeGlobalStream } from '../lib/xmtp.stream.core';
 
-interface Context { id: string }
+interface Context {
+  id: string;
+}
 
 function deferred<T>() {
-  let resolve: (value: T) => void = () => { throw new Error('Not initialized'); };
-  let reject: (error: unknown) => void = () => { throw new Error('Not initialized'); };
-  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+  let resolve: (value: T) => void = () => {
+    throw new Error('Not initialized');
+  };
+  let reject: (error: unknown) => void = () => {
+    throw new Error('Not initialized');
+  };
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
   return { promise, resolve, reject };
 }
 
@@ -29,23 +38,43 @@ function harness() {
     wait: (): Promise<void> => Promise.resolve(),
   };
   const stream = makeGlobalStream({
-    prepare: assertCurrent => hooks.prepare(assertCurrent),
+    prepare: (assertCurrent) => hooks.prepare(assertCurrent),
     current: (context: Context) => context.id === state.account,
     open: async (context, current, close) => {
-      const entry = { id: context.id, emit: () => { if (current()) messages.push(context.id); }, close, stops: 0 };
+      const entry = {
+        id: context.id,
+        emit: () => {
+          if (current()) messages.push(context.id);
+        },
+        close,
+        stops: 0,
+      };
       opened.push(entry);
       await hooks.wait();
-      return () => { entry.stops += 1; close(); };
+      return () => {
+        entry.stops += 1;
+        close();
+      };
     },
     wanted: () => state.wanted,
-    live: () => { state.live += 1; },
-    closed: () => { state.closed += 1; },
-    stopped: () => { state.stopped += 1; },
-    report: error => { errors.push(error); },
+    live: () => {
+      state.live += 1;
+    },
+    closed: () => {
+      state.closed += 1;
+    },
+    stopped: () => {
+      state.stopped += 1;
+    },
+    report: (error) => {
+      errors.push(error);
+    },
     schedule: (run, delay) => {
       const id = Symbol();
       timers.set(id, { run, delay });
-      return () => { timers.delete(id); };
+      return () => {
+        timers.delete(id);
+      };
     },
   });
   const fire = async (): Promise<number> => {
@@ -56,7 +85,10 @@ function harness() {
     await settle();
     return first[1].delay;
   };
-  const restart = (): void => { stream.teardown(); void stream.ensure(); };
+  const restart = (): void => {
+    stream.teardown();
+    void stream.ensure();
+  };
   return { state, errors, messages, timers, opened, hooks, stream, fire, restart };
 }
 
@@ -72,14 +104,18 @@ describe('global message stream lifecycle', () => {
     h.restart();
     await settle();
     await h.stream.ensure();
-    expect(h.opened.map(stream => stream.id)).toEqual(['a']);
+    expect(h.opened.map((stream) => stream.id)).toEqual(['a']);
     expect(h.stream.live()).toBe(true);
   });
 
   test('cancellation during preparation restarts promptly without failure backoff', async () => {
     const h = harness();
     const pending = deferred<Context>();
-    h.hooks.prepare = async assertCurrent => { const context = await pending.promise; assertCurrent(); return context; };
+    h.hooks.prepare = async (assertCurrent) => {
+      const context = await pending.promise;
+      assertCurrent();
+      return context;
+    };
     const first = h.stream.ensure();
     h.state.account = 'b';
     h.restart();
@@ -89,7 +125,7 @@ describe('global message stream lifecycle', () => {
     expect(h.opened).toEqual([]);
     h.hooks.prepare = () => Promise.resolve({ id: 'b' });
     expect(await h.fire()).toBe(500);
-    expect(h.opened.map(stream => stream.id)).toEqual(['b']);
+    expect(h.opened.map((stream) => stream.id)).toEqual(['b']);
   });
 
   test('teardown while opening cancels the obsolete handle only once', async () => {
@@ -121,7 +157,7 @@ describe('global message stream lifecycle', () => {
     await first;
     h.hooks.wait = () => Promise.resolve();
     expect(await h.fire()).toBe(500);
-    expect(h.opened.map(stream => stream.id)).toEqual(['a', 'b']);
+    expect(h.opened.map((stream) => stream.id)).toEqual(['a', 'b']);
     expect(h.stream.live()).toBe(true);
   });
 
@@ -139,7 +175,7 @@ describe('global message stream lifecycle', () => {
     expect(h.state.closed).toBe(0);
     expect(h.timers.size).toBe(0);
     expect(h.stream.live()).toBe(true);
-    expect(h.opened.map(stream => stream.stops)).toEqual([1, 0]);
+    expect(h.opened.map((stream) => stream.stops)).toEqual([1, 0]);
   });
 
   test('real failures still report and back off, even with the former cancellation text', async () => {
@@ -156,7 +192,7 @@ describe('global message stream lifecycle', () => {
     h.opened[0]?.close();
     h.hooks.prepare = () => Promise.reject(error);
     expect(await h.fire()).toBe(500);
-    expect([...h.timers.values()].map(timer => timer.delay)).toEqual([5_000]);
+    expect([...h.timers.values()].map((timer) => timer.delay)).toEqual([5_000]);
   });
 
   test('a genuine stale failure is reported without penalizing the new account', async () => {
@@ -169,7 +205,7 @@ describe('global message stream lifecycle', () => {
     pending.reject(error);
     await first;
     expect(h.errors).toEqual([error]);
-    expect([...h.timers.values()].map(timer => timer.delay)).toEqual([500]);
+    expect([...h.timers.values()].map((timer) => timer.delay)).toEqual([500]);
   });
 
   test('typed account cancellation is not a failure and rechecks the active account', async () => {
@@ -186,7 +222,11 @@ describe('global message stream lifecycle', () => {
   test('last-demand removal cancels retries and never resurrects an obsolete start', async () => {
     const h = harness();
     const pending = deferred<Context>();
-    h.hooks.prepare = async assertCurrent => { const context = await pending.promise; assertCurrent(); return context; };
+    h.hooks.prepare = async (assertCurrent) => {
+      const context = await pending.promise;
+      assertCurrent();
+      return context;
+    };
     const first = h.stream.ensure();
     h.state.wanted = false;
     h.stream.teardown();

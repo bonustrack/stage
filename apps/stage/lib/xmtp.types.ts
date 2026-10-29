@@ -8,9 +8,16 @@ export type DmUnreachableReason = 'unregistered' | 'stale-installations' | null;
 
 export type XmtpFeedStatus = 'idle' | 'loading' | 'open' | 'error';
 
-export interface LocalAttachmentInput { fileUri: string; mimeType: string; filename: string }
+export interface LocalAttachmentInput {
+  fileUri: string;
+  mimeType: string;
+  filename: string;
+}
 
-export interface UploadedAttachment { url: string; contentDigest: string }
+export interface UploadedAttachment {
+  url: string;
+  contentDigest: string;
+}
 
 export type OnAttachmentsUploaded = (attachments: readonly UploadedAttachment[]) => void;
 

@@ -1,5 +1,10 @@
 export interface Attachment {
-  id: string; url: string; kind: string; mime: string; size: number; name?: string;
+  id: string;
+  url: string;
+  kind: string;
+  mime: string;
+  size: number;
+  name?: string;
 }
 
 export interface OptimisticEntry {

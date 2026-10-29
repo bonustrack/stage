@@ -5,7 +5,9 @@ const friendlyTxError = (err: unknown, fallback = 'Transaction failed'): string 
 
 describe('friendlyTxError', () => {
   it('maps insufficient funds', () => {
-    const e = new Error('The total cost (gas * gas fee + value) of executing this transaction exceeds the balance. insufficient funds. Version: viem@2.51.0');
+    const e = new Error(
+      'The total cost (gas * gas fee + value) of executing this transaction exceeds the balance. insufficient funds. Version: viem@2.51.0',
+    );
     expect(friendlyTxError(e)).toBe('Insufficient funds for this transaction.');
   });
 
@@ -14,18 +16,17 @@ describe('friendlyTxError', () => {
   });
 
   it('maps paymaster / AA3x', () => {
-    expect(friendlyTxError(new Error('AA31 paymaster deposit too low')))
-      .toBe('Gas sponsor declined this transaction (paymaster). It may be out of credit or this call is not allowed.');
+    expect(friendlyTxError(new Error('AA31 paymaster deposit too low'))).toBe(
+      'Gas sponsor declined this transaction (paymaster). It may be out of credit or this call is not allowed.',
+    );
   });
 
   it('maps AA21', () => {
-    expect(friendlyTxError(new Error('AA21 didnt pay prefund')))
-      .toBe('Gas sponsorship failed (account could not pay). Try again.');
+    expect(friendlyTxError(new Error('AA21 didnt pay prefund'))).toBe('Gas sponsorship failed (account could not pay). Try again.');
   });
 
   it('maps signature errors', () => {
-    expect(friendlyTxError(new Error('AA23 reverted (signature error)')))
-      .toBe('Signature rejected by the account. Try again.');
+    expect(friendlyTxError(new Error('AA23 reverted (signature error)'))).toBe('Signature rejected by the account. Try again.');
   });
 
   it('maps nonce and timeout', () => {

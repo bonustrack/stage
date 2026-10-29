@@ -12,9 +12,7 @@ export function trimDecimalString(value: string): string {
   return value.replace(/0+$/, '').replace(/\.$/, '');
 }
 
-export function tokenAmountFromInput(
-  amount: string, unit: AmountUnit, priceUsd: number | null,
-): number {
+export function tokenAmountFromInput(amount: string, unit: AmountUnit, priceUsd: number | null): number {
   const n = parsePositiveAmount(amount);
   if (n == null) return 0;
   if (unit === 'primary') return n;
@@ -27,9 +25,7 @@ export interface ToggleAmountResult {
   unit: AmountUnit;
 }
 
-export function toggleAmountUnit(
-  amount: string, unit: AmountUnit, priceUsd: number | null,
-): ToggleAmountResult {
+export function toggleAmountUnit(amount: string, unit: AmountUnit, priceUsd: number | null): ToggleAmountResult {
   const flipped: AmountUnit = unit === 'primary' ? 'usd' : 'primary';
   const n = parsePositiveAmount(amount);
   if (n == null || !priceUsd) return { amount, unit: flipped };

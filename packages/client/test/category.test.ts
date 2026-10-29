@@ -14,10 +14,18 @@ describe('channel category', () => {
 
   test('reads labels, category and assignees together, with old channels having none', async () => {
     const bob = '0x1111111111111111111111111111111111111111';
-    expect(await groupTagsOf(appDataGroup(blob({ labels: ['Todo'], category: 'Work', assigned: [bob.toUpperCase().replace('0X', '0x')] })).group))
-      .toEqual({ labels: ['Todo'], category: 'Work', status: null, priority: null, assigned: [bob] });
-    expect(await groupTagsOf({ appData: blob({ category: 'Ops' }), updateAppData: () => Promise.resolve() }))
-      .toEqual({ labels: [], category: 'Ops', status: null, priority: null, assigned: [] });
+    expect(
+      await groupTagsOf(
+        appDataGroup(blob({ labels: ['Todo'], category: 'Work', assigned: [bob.toUpperCase().replace('0X', '0x')] })).group,
+      ),
+    ).toEqual({ labels: ['Todo'], category: 'Work', status: null, priority: null, assigned: [bob] });
+    expect(await groupTagsOf({ appData: blob({ category: 'Ops' }), updateAppData: () => Promise.resolve() })).toEqual({
+      labels: [],
+      category: 'Ops',
+      status: null,
+      priority: null,
+      assigned: [],
+    });
     for (const raw of ['', '{', '[]', blob({ labels: ['Todo'] }), blob({ category: ['Work'] })]) {
       expect((await groupTagsOf(appDataGroup(raw).group)).category).toBeNull();
     }
@@ -30,7 +38,7 @@ describe('channel category', () => {
     expect(JSON.parse(state.raw())).toEqual({ v: 1, labels: ['Todo'], assigned: [], custom: 7, category: 'Work' });
     expect(await writeChannelField(state.group, 'category', 'Ops')).toBe('Ops');
     expect(JSON.parse(state.raw()).category).toBe('Ops');
-    await writeLabels(state.group, labels => [...labels, 'Stage']);
+    await writeLabels(state.group, (labels) => [...labels, 'Stage']);
     expect(JSON.parse(state.raw()).category).toBe('Ops');
     expect(await writeChannelField(state.group, 'category', null)).toBeNull();
     expect(JSON.parse(state.raw())).toEqual({ v: 1, labels: ['Todo', 'Stage'], assigned: [], custom: 7 });
@@ -49,6 +57,8 @@ describe('channel category', () => {
     expect(describeAppDataChange(blob({ category: 'Work' }), blob({ category: 'Ops' }))).toBe('changed project to "Ops"');
     expect(describeAppDataChange(blob({ category: 'Ops' }), blob({ category: null }))).toBe('removed project "Ops"');
     expect(describeAppDataChange(blob({ category: 'Ops' }), blob({}))).toBe('removed project "Ops"');
-    expect(describeAppDataChange(blob({ category: 'Ops', labels: [] }), blob({ category: 'Ops', labels: ['Todo'] }))).toBe('added label "Todo"');
+    expect(describeAppDataChange(blob({ category: 'Ops', labels: [] }), blob({ category: 'Ops', labels: ['Todo'] }))).toBe(
+      'added label "Todo"',
+    );
   });
 });

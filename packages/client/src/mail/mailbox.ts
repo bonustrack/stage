@@ -13,8 +13,20 @@ const MAIL_ID = /^\d{13}-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 const PUBLIC_KEY = /^0x[0-9a-f]{64}$/;
 
 const ROLE_LABELS: ReadonlySet<string> = new Set([
-  'abuse', 'admin', 'administrator', 'hostmaster', 'mailer-daemon', 'no-reply', 'noreply', 'postmaster',
-  'root', 'security', 'ssl-admin', 'ssladmin', 'support', 'webmaster',
+  'abuse',
+  'admin',
+  'administrator',
+  'hostmaster',
+  'mailer-daemon',
+  'no-reply',
+  'noreply',
+  'postmaster',
+  'root',
+  'security',
+  'ssl-admin',
+  'ssladmin',
+  'support',
+  'webmaster',
 ]);
 
 export type MailPart = 'index' | 'body';

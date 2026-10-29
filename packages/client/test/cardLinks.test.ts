@@ -2,9 +2,12 @@ import { describe, expect, test } from 'bun:test';
 import { cardLinksOf, previewLinkOf } from '../src/embed/cardLinks';
 import type { LinkFinder } from '../src/xmtp/messageBody';
 
-const findLinks: LinkFinder = text => [...text.matchAll(/(?:https?:\/\/|stage:\/\/|metro:\/\/)\S+/gi)].map(m => (
-  { index: m.index, lastIndex: m.index + m[0].length, url: m[0] }
-));
+const findLinks: LinkFinder = (text) =>
+  [...text.matchAll(/(?:https?:\/\/|stage:\/\/|metro:\/\/)\S+/gi)].map((m) => ({
+    index: m.index,
+    lastIndex: m.index + m[0].length,
+    url: m[0],
+  }));
 const cardsOf = (text?: string | null) => cardLinksOf(text, findLinks);
 const CONV = '47bf58a8f56cad829b2263797a7e25e4';
 const ADDRESS = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
@@ -45,19 +48,42 @@ describe('cardLinksOf', () => {
 
   test('rejects prose and multiple links before deduplication or classification', () => {
     for (const [url] of SPECIAL_LINKS) {
-      for (const text of [`read ${url}`, `${url} please`, `${url}\nhello`, `hello\n${url}`,
-        `${url} ${url}`, `${url}\n${url}`, `${url}\t${url}`, `${url} https://example.org`,
-        `${url}\nhttps://example.org`]) {
+      for (const text of [
+        `read ${url}`,
+        `${url} please`,
+        `${url}\nhello`,
+        `hello\n${url}`,
+        `${url} ${url}`,
+        `${url}\n${url}`,
+        `${url}\t${url}`,
+        `${url} https://example.org`,
+        `${url}\nhttps://example.org`,
+      ]) {
         expect(cardsOf(text)).toEqual([]);
       }
     }
   });
 
   test('rejects wrappers, code, nonlinks and unsupported schemes', () => {
-    for (const text of [undefined, null, '', ' \n\t', 'just text', 'example.com', 'https://',
-      'ftp://example.com', 'mailto:a@example.com', 'javascript:alert(1)', 'stage://unknown',
-      '<https://example.com>', '[docs](https://example.com)', '**https://example.com**',
-      '`https://example.com`', '```\nhttps://example.com\n```', `[#Ops](stage://channel/${CONV})`]) {
+    for (const text of [
+      undefined,
+      null,
+      '',
+      ' \n\t',
+      'just text',
+      'example.com',
+      'https://',
+      'ftp://example.com',
+      'mailto:a@example.com',
+      'javascript:alert(1)',
+      'stage://unknown',
+      '<https://example.com>',
+      '[docs](https://example.com)',
+      '**https://example.com**',
+      '`https://example.com`',
+      '```\nhttps://example.com\n```',
+      `[#Ops](stage://channel/${CONV})`,
+    ]) {
       expect(cardsOf(text)).toEqual([]);
     }
   });
@@ -67,9 +93,12 @@ describe('cardLinksOf', () => {
     expect(cardLinksOf(url, () => null)).toEqual([]);
     expect(cardLinksOf(`${url}.`, () => [{ index: 0, lastIndex: url.length, url }])).toEqual([]);
     expect(cardLinksOf(url, () => [{ index: 1, lastIndex: url.length, url }])).toEqual([]);
-    expect(cardLinksOf(url, () => [
-      { index: 0, lastIndex: url.length, url }, { index: 0, lastIndex: url.length, url },
-    ])).toEqual([]);
+    expect(
+      cardLinksOf(url, () => [
+        { index: 0, lastIndex: url.length, url },
+        { index: 0, lastIndex: url.length, url },
+      ]),
+    ).toEqual([]);
   });
 
   test('preserves classifier URLs even when they differ from the complete input', () => {

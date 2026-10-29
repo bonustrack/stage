@@ -19,11 +19,7 @@ export interface TabLock {
   takeOver: () => void;
 }
 
-export const ACTIVE_TAB: TabLock = {
-  role: () => 'active',
-  subscribe: () => () => undefined,
-  takeOver: () => undefined,
-};
+export const ACTIVE_TAB: TabLock = { role: () => 'active', subscribe: () => () => undefined, takeOver: () => undefined };
 
 export function createTabLock(locks: LockRequester, name: string, onLost: () => void): TabLock {
   let current: TabRole = 'pending';

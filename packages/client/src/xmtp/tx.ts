@@ -13,15 +13,22 @@ export function transactionReferenceFallbackText(c: TransactionReferenceContent)
   return c?.reference ? `[Transaction] ${c.reference}` : '[Transaction]';
 }
 
-export interface TxAmount { value: string; unit: string }
+export interface TxAmount {
+  value: string;
+  unit: string;
+}
 
-interface AmountMeta { amount?: number; decimals?: number; currency?: string }
+interface AmountMeta {
+  amount?: number;
+  decimals?: number;
+  currency?: string;
+}
 
 const MAX_DECIMALS = 77;
 
 function scaledAmount(amount: number, decimals: number | undefined): string {
-  const atomic = decimals !== undefined && Number.isInteger(amount) && Number.isInteger(decimals)
-    && decimals > 0 && decimals <= MAX_DECIMALS;
+  const atomic =
+    decimals !== undefined && Number.isInteger(amount) && Number.isInteger(decimals) && decimals > 0 && decimals <= MAX_DECIMALS;
   return atomic ? formatUnits(BigInt(amount), decimals) : String(amount);
 }
 

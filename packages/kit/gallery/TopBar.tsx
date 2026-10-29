@@ -20,10 +20,18 @@ export function TopBar({ story, open, onToggle }: { story: StoryEntry | null; op
             <Glyph icon={open ? IconCrossMedium : IconBarsTwo} size={20} color={pal.text} />
             {story ? (
               <Row weight={1} align="baseline" gap={6}>
-                <Text fontWeight="semibold" size="md" truncate>{story.component}</Text>
-                <Text size="xs" color="secondary" truncate style={{ flexShrink: 1 }}>{story.name}</Text>
+                <Text fontWeight="semibold" size="md" truncate>
+                  {story.component}
+                </Text>
+                <Text size="xs" color="secondary" truncate style={{ flexShrink: 1 }}>
+                  {story.name}
+                </Text>
               </Row>
-            ) : <Text fontWeight="semibold" size="md" truncate>Home</Text>}
+            ) : (
+              <Text fontWeight="semibold" size="md" truncate>
+                Home
+              </Text>
+            )}
           </Row>
         </Pressable>
       </Column>

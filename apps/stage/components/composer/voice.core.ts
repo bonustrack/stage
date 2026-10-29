@@ -57,7 +57,7 @@ export function makeVoiceRecorder(device: VoiceDevice, callbacks: VoiceCallbacks
       await device.prepare();
       phase = 'recording';
       device.record();
-      if (pending !== null || disposed) await complete(disposed ? 'cancel' : pending ?? 'cancel');
+      if (pending !== null || disposed) await complete(disposed ? 'cancel' : (pending ?? 'cancel'));
       else callbacks.started();
     } catch (error) {
       if (phase === 'preparing') {

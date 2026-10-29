@@ -1,14 +1,24 @@
 import { sha256 } from 'viem';
 import {
-  PUSH_RPC, isWelcomeTopic, registerInstallationBody, subscribeWithMetadataBody, deleteInstallationBody,
-  type HmacKeysByTopic, type PushPlatform, type PushRpc, type PushSubscriptionJson,
+  PUSH_RPC,
+  isWelcomeTopic,
+  registerInstallationBody,
+  subscribeWithMetadataBody,
+  deleteInstallationBody,
+  type HmacKeysByTopic,
+  type PushPlatform,
+  type PushRpc,
+  type PushSubscriptionJson,
 } from './pushServer';
 
 import { abortable } from '../abortable';
 
 const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
 
-export interface PushTopics { topics: string[]; hmacKeys: HmacKeysByTopic }
+export interface PushTopics {
+  topics: string[];
+  hmacKeys: HmacKeysByTopic;
+}
 
 export interface PushRegistrationInput {
   installationId: string;
@@ -21,13 +31,19 @@ export interface PushRegistrationInput {
   collectTopics: () => Promise<PushTopics>;
 }
 
-interface RegisterState { token: string; at: number; subscriptions: string }
+interface RegisterState {
+  token: string;
+  at: number;
+  subscriptions: string;
+}
 
 function pushSubscriptionSignature(subscriptions: readonly PushSubscriptionJson[]): string {
-  const sorted = subscriptions.map(sub => ({
-    ...sub,
-    hmacKeys: [...sub.hmacKeys].sort((a, b) => a.thirtyDayPeriodsSinceEpoch - b.thirtyDayPeriodsSinceEpoch || a.key.localeCompare(b.key)),
-  })).sort((a, b) => a.topic.localeCompare(b.topic));
+  const sorted = subscriptions
+    .map((sub) => ({
+      ...sub,
+      hmacKeys: [...sub.hmacKeys].sort((a, b) => a.thirtyDayPeriodsSinceEpoch - b.thirtyDayPeriodsSinceEpoch || a.key.localeCompare(b.key)),
+    }))
+    .sort((a, b) => a.topic.localeCompare(b.topic));
   return sha256(new TextEncoder().encode(JSON.stringify(sorted)));
 }
 
@@ -37,7 +53,9 @@ function readPushRegistration(raw: string | null): RegisterState | null {
     const parsed = JSON.parse(raw) as Partial<RegisterState>;
     if (typeof parsed.token !== 'string' || typeof parsed.at !== 'number') return null;
     return { token: parsed.token, at: parsed.at, subscriptions: typeof parsed.subscriptions === 'string' ? parsed.subscriptions : '' };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 interface RegistrationDeps {
@@ -55,7 +73,10 @@ async function register(input: PushRegistrationInput, deps: RegistrationDeps): P
   if (!input.current()) return false;
   const token = await input.getToken();
   if (!input.current()) return false;
-  if (!token) { deps.status('no-token'); return false; }
+  if (!token) {
+    deps.status('no-token');
+    return false;
+  }
   deps.status('registering');
   await input.syncPreferences();
   if (!input.current()) return false;
@@ -93,14 +114,22 @@ async function registerTopics(input: PushRegistrationInput, deps: RegistrationDe
 
 async function boundedRegistration(input: PushRegistrationInput, deps: RegistrationDeps): Promise<boolean> {
   const controller = new AbortController();
-  const abort = (): void => { controller.abort(new Error('Push registration cancelled')); };
+  const abort = (): void => {
+    controller.abort(new Error('Push registration cancelled'));
+  };
   if (input.signal?.aborted) return false;
   input.signal?.addEventListener('abort', abort, { once: true });
-  const timer = setTimeout(() => { controller.abort(new Error('Push registration timed out')); }, deps.timeoutMs ?? 30_000);
+  const timer = setTimeout(() => {
+    controller.abort(new Error('Push registration timed out'));
+  }, deps.timeoutMs ?? 30_000);
   const guarded = { ...input, current: () => !controller.signal.aborted && input.current() };
   const cancellable = { ...deps, post: (url: string, body: unknown) => deps.post(url, body, controller.signal) };
-  try { return await abortable(register(guarded, cancellable), controller.signal); }
-  finally { clearTimeout(timer); input.signal?.removeEventListener('abort', abort); }
+  try {
+    return await abortable(register(guarded, cancellable), controller.signal);
+  } finally {
+    clearTimeout(timer);
+    input.signal?.removeEventListener('abort', abort);
+  }
 }
 
 export function makePushRegistrar(deps: RegistrationDeps) {
@@ -109,15 +138,18 @@ export function makePushRegistrar(deps: RegistrationDeps) {
     const previous = pending.get(id);
     const next = previous ? previous.then(run, run) : run();
     pending.set(id, next);
-    try { return await next; } finally {
+    try {
+      return await next;
+    } finally {
       if (pending.get(id) === next) pending.delete(id);
     }
   }
   return {
     register: (input: PushRegistrationInput) => enqueue(input.installationId, () => boundedRegistration(input, deps)),
-    unregister: (id: string, rpcUrl: (method: PushRpc) => string) => enqueue(id, async () => {
-      await deps.post(rpcUrl(PUSH_RPC.remove), deleteInstallationBody(id));
-      await deps.remove(id);
-    }),
+    unregister: (id: string, rpcUrl: (method: PushRpc) => string) =>
+      enqueue(id, async () => {
+        await deps.post(rpcUrl(PUSH_RPC.remove), deleteInstallationBody(id));
+        await deps.remove(id);
+      }),
   };
 }

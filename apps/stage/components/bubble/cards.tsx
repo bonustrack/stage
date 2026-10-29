@@ -13,9 +13,7 @@ import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { PaymentCard } from '../PaymentCard';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { tokenLogoUrl, useDecodedCall, useTxTime, useUsdValue } from '../../lib/txDisplay';
-import {
-  chainIdToNumber, explorerTxUrl, receiptTitle, requestAmountOf, txAmountLabel, type TxAmount,
-} from '@stage-labs/client/xmtp/tx';
+import { chainIdToNumber, explorerTxUrl, receiptTitle, requestAmountOf, txAmountLabel, type TxAmount } from '@stage-labs/client/xmtp/tx';
 import { spoofWarning, type DecodedCall } from '@stage-labs/client/wallet/txDecode';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { bubbleLinkProps } from './linkProps';
@@ -43,18 +41,31 @@ type TxCardModel = TxCallFields & {
   isTransfer: boolean;
   warning?: string;
 };
-export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
-  req: WalletSendCallsContent; dark: boolean; paying?: boolean;
+export function TxRequestCard({
+  req,
+  dark,
+  paying,
+  onPay,
+  consentAllowed,
+}: {
+  req: WalletSendCallsContent;
+  dark: boolean;
+  paying?: boolean;
   onPay?: () => void;
   consentAllowed?: boolean;
 }): React.ReactElement {
   const pal = usePalette();
   const gated = consentAllowed === false;
   const m = useTxCardModel(req);
-  const action = (onPay && !gated) ? {
-    label: m.actionLabel, onPress: onPay, loading: paying,
-    icon: <Glyph icon={m.isTransfer ? IconPaperPlane : IconCheckmark1} size={18} color={pal.bg}/>,
-  } : undefined;
+  const action =
+    onPay && !gated
+      ? {
+          label: m.actionLabel,
+          onPress: onPay,
+          loading: paying,
+          icon: <Glyph icon={m.isTransfer ? IconPaperPlane : IconCheckmark1} size={18} color={pal.bg} />,
+        }
+      : undefined;
   return (
     <PaymentCard
       dark={dark}
@@ -63,22 +74,34 @@ export function TxRequestCard({ req, dark, paying, onPay, consentAllowed }: {
       description={m.desc}
       amountLabel={m.showDecodedBlock ? undefined : m.amountLabel}
       detail={<TxRequestDetail m={m} sub={pal.text} />}
-      balance={{
-        show: m.showBalance, chainId: req.chainId, token: m.tokenAddr,
-        symbol: m.balanceSymbol, needed: m.needed,
-      }}
+      balance={{ show: m.showBalance, chainId: req.chainId, token: m.tokenAddr, symbol: m.balanceSymbol, needed: m.needed }}
       action={action}
-      footer={onPay && gated ? (
-        <Text size="3xs" color="secondary">Accept this conversation to enable paying.</Text>
-      ) : undefined}
+      footer={
+        onPay && gated ? (
+          <Text size="3xs" color="secondary">
+            Accept this conversation to enable paying.
+          </Text>
+        ) : undefined
+      }
     />
   );
 }
 interface TxCallFields {
-  target?: string; data?: string; value?: string; eth?: string;
-  amount?: TxAmount; balanceSymbol?: string; needed?: number; desc: string; rawDesc?: string;
-  recipient?: string; tokenAddr?: string; chainNum: number;
-  isErc20Transfer: boolean; showDecodedBlock: boolean; showBalance: boolean;
+  target?: string;
+  data?: string;
+  value?: string;
+  eth?: string;
+  amount?: TxAmount;
+  balanceSymbol?: string;
+  needed?: number;
+  desc: string;
+  rawDesc?: string;
+  recipient?: string;
+  tokenAddr?: string;
+  chainNum: number;
+  isErc20Transfer: boolean;
+  showDecodedBlock: boolean;
+  showBalance: boolean;
 }
 
 function balanceNeed(amount: TxAmount | undefined, eth: string | undefined): { balanceSymbol?: string; needed?: number } {
@@ -87,7 +110,9 @@ function balanceNeed(amount: TxAmount | undefined, eth: string | undefined): { b
 }
 
 function txCallFlags(args: { data?: string; tokenAddr?: string; amount?: TxAmount; eth?: string }): {
-  isErc20Transfer: boolean; showDecodedBlock: boolean; showBalance: boolean;
+  isErc20Transfer: boolean;
+  showDecodedBlock: boolean;
+  showBalance: boolean;
 } {
   const isErc20Transfer = !!args.tokenAddr;
   const hasCalldata = !!args.data && args.data !== '0x';
@@ -99,7 +124,9 @@ function txCallFlags(args: { data?: string; tokenAddr?: string; amount?: TxAmoun
 }
 
 function rawCall(req: WalletSendCallsContent): {
-  target?: string; data?: string; value?: string;
+  target?: string;
+  data?: string;
+  value?: string;
   meta: NonNullable<WalletSendCallsContent['calls'][number]['metadata']>;
 } {
   const call = req.calls[0];
@@ -116,8 +143,16 @@ function txCallFields(req: WalletSendCallsContent): TxCallFields {
   const recipient = toAddress ?? target;
   const chainNum = chainIdToNumber(req.chainId ?? '0x1');
   return {
-    target, data, value, eth, amount,
-    desc, rawDesc: description, recipient, tokenAddr, chainNum,
+    target,
+    data,
+    value,
+    eth,
+    amount,
+    desc,
+    rawDesc: description,
+    recipient,
+    tokenAddr,
+    chainNum,
     ...balanceNeed(amount, eth),
     ...txCallFlags({ data, tokenAddr, amount, eth }),
   };
@@ -154,7 +189,13 @@ function useTxCardModel(req: WalletSendCallsContent): TxCardModel {
   const { call: decoded, pending: decoding } = useDecodedCall(f.target, f.data, f.chainNum);
   const { result: sim, pending: simulating } = useTxSimulation(f.target, f.data, f.value, f.chainNum);
   return {
-    ...f, amountLabel, logoUrl, decoded, decoding, sim, simulating,
+    ...f,
+    amountLabel,
+    logoUrl,
+    decoded,
+    decoding,
+    sim,
+    simulating,
     sendsNativeWithCall: f.showDecodedBlock && !!f.eth && f.eth !== '0',
     actionLabel: txActionLabel(decoded, f.isErc20Transfer),
     isTransfer: isTransferRequest(decoded, f.isErc20Transfer),
@@ -166,12 +207,12 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
     <Column gap={8} style={{ alignSelf: 'stretch' }}>
       {m.warning ? <TxWarning text={m.warning} /> : null}
       <SimulationBlock sim={m.sim} pending={m.simulating} sub={sub} chainId={m.chainNum} />
-      {m.showDecodedBlock ? (
-        <DecodedCallBlock decoded={m.decoded} pending={m.decoding} target={m.target} sub={sub}/>
-      ) : null}
+      {m.showDecodedBlock ? <DecodedCallBlock decoded={m.decoded} pending={m.decoding} target={m.target} sub={sub} /> : null}
       {m.sendsNativeWithCall && m.eth ? <TxNativeValueRow eth={m.eth} chainId={m.chainNum} /> : null}
       {m.recipient ? <TxToRow address={m.recipient} /> : null}
-      <Text size="3xs" color="secondary">On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}</Text>
+      <Text size="3xs" color="secondary">
+        On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}
+      </Text>
     </Column>
   );
 }
@@ -181,9 +222,14 @@ function TxToRow({ address }: { address: string }): React.ReactElement {
   const display = peerLabel(address);
   return (
     <Pressable
-      onPress={() => { router.push(profileLinkOf(address)); }}>
+      onPress={() => {
+        router.push(profileLinkOf(address));
+      }}
+    >
       <Row align="center" gap={6}>
-        <Text color="secondary" size="3xs">To</Text>
+        <Text color="secondary" size="3xs">
+          To
+        </Text>
         <Avatar address={address} size={16} />
         <Text color="link" fontWeight="semibold" size="xs" suppressHighlighting>
           {display}
@@ -197,8 +243,10 @@ function TxNativeValueRow({ eth, chainId }: { eth: string; chainId: number }): R
   const usd = useUsdValue(chainId, null, eth);
   return (
     <Row align="center" gap={6}>
-      <Glyph icon={IconPaperPlane} size={14} color={pal.link}/>
-      <Text size="2xs" fontWeight="semibold">Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call</Text>
+      <Glyph icon={IconPaperPlane} size={14} color={pal.link} />
+      <Text size="2xs" fontWeight="semibold">
+        Also sends {eth} ETH{usd ? ` (${usd})` : ''} with this call
+      </Text>
     </Row>
   );
 }
@@ -211,16 +259,26 @@ function decodedFnLabel(decoded: DecodedCall | null): string {
   if (decoded.source === 'mismatch') return decoded.selector ?? 'unknown function';
   return decoded.signature ?? decoded.functionName ?? decoded.selector ?? 'call';
 }
-function DecodedCallBlock({ decoded, pending, target, sub }: {
-  decoded: DecodedCall | null; pending: boolean; target?: string; sub: string;
+function DecodedCallBlock({
+  decoded,
+  pending,
+  target,
+  sub,
+}: {
+  decoded: DecodedCall | null;
+  pending: boolean;
+  target?: string;
+  sub: string;
 }): React.ReactElement {
   const pal = usePalette();
   const fnLabel = decodedFnLabel(decoded);
   return (
     <Column radius="md" background={pal.border} padding={10} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={6}>
-        <Glyph icon={IconCodeBrackets} size={14} color={sub}/>
-        <Text size="3xs" color="secondary">This transaction calls</Text>
+        <Glyph icon={IconCodeBrackets} size={14} color={sub} />
+        <Text size="3xs" color="secondary">
+          This transaction calls
+        </Text>
       </Row>
       <Text fontFamily="mono" fontWeight="semibold" size="2xs" numberOfLines={2}>
         {pending ? 'Decoding…' : fnLabel}
@@ -228,16 +286,23 @@ function DecodedCallBlock({ decoded, pending, target, sub }: {
       {decoded?.args.map((a, i) => (
         <Row key={`${a.name}-${i}`} align="start" gap={8}>
           <Text size="3xs" color="secondary" style={{ minWidth: 80, flexShrink: 0 }} numberOfLines={2}>
-            {a.name}{a.type ? ` (${a.type})` : ''}
+            {a.name}
+            {a.type ? ` (${a.type})` : ''}
           </Text>
-          <Text fontFamily="mono" size="3xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>{fmtArgValue(a.value)}</Text>
+          <Text fontFamily="mono" size="3xs" numberOfLines={4} style={{ flexShrink: 1, flex: 1 }}>
+            {fmtArgValue(a.value)}
+          </Text>
         </Row>
       ))}
       {!pending && decoded?.note && decoded.source !== 'mismatch' ? (
-        <Text size="3xs" color="secondary">{decoded.note}</Text>
+        <Text size="3xs" color="secondary">
+          {decoded.note}
+        </Text>
       ) : null}
       {target ? (
-        <Text size="3xs" color="secondary" numberOfLines={1}>Contract: {shortAddress(target)}</Text>
+        <Text size="3xs" color="secondary" numberOfLines={1}>
+          Contract: {shortAddress(target)}
+        </Text>
       ) : null}
     </Column>
   );
@@ -245,20 +310,36 @@ function DecodedCallBlock({ decoded, pending, target, sub }: {
 function TxWarning({ text }: { text: string }): React.ReactElement {
   const pal = usePalette();
   return (
-    <Column radius="md" background={withAlpha(pal.danger, 0.1)} padding={8} gap={4}
-      style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.danger }}>
+    <Column
+      radius="md"
+      background={withAlpha(pal.danger, 0.1)}
+      padding={8}
+      gap={4}
+      style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: pal.danger }}
+    >
       <Row align="center" gap={6}>
-        <Glyph icon={IconShieldBreak} size={14} color={pal.danger}/>
-        <Text size="3xs" fontWeight="semibold" color={pal.danger}>Check before signing</Text>
+        <Glyph icon={IconShieldBreak} size={14} color={pal.danger} />
+        <Text size="3xs" fontWeight="semibold" color={pal.danger}>
+          Check before signing
+        </Text>
       </Row>
-      <Text size="3xs" color={pal.danger} numberOfLines={4}>{text}</Text>
+      <Text size="3xs" color={pal.danger} numberOfLines={4}>
+        {text}
+      </Text>
     </Column>
   );
 }
-export function TxReceiptCard({ receipt, ts, dark }: {
-  receipt: TransactionReferenceContent; ts: string; dark: boolean;
+export function TxReceiptCard({
+  receipt,
+  ts,
+  dark,
+}: {
+  receipt: TransactionReferenceContent;
+  ts: string;
+  dark: boolean;
 }): React.ReactElement {
-  const url = explorerTxUrl(receipt.networkId, receipt.reference); const pal = usePalette();
+  const url = explorerTxUrl(receipt.networkId, receipt.reference);
+  const pal = usePalette();
   const minedAt = useTxTime(receipt.networkId, receipt.reference, ts);
   return (
     <ReceiptBox dark={dark} title={receiptTitle(receipt)}>

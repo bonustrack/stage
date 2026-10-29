@@ -18,8 +18,9 @@ describe('previewOfXmtpContent for reactions', () => {
   });
 
   test('reads the web SDK shape, where schema and action are numbers', () => {
-    expect(previewOfXmtpContent({ reference: 'p1', referenceInboxId: '', action: 1, content: '0', schema: 3 }, REACTION))
-      .toBe('Voted in a poll');
+    expect(previewOfXmtpContent({ reference: 'p1', referenceInboxId: '', action: 1, content: '0', schema: 3 }, REACTION)).toBe(
+      'Voted in a poll',
+    );
   });
 
   test('shows a free-text poll answer as an answer', () => {

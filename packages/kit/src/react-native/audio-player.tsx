@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FONT_SIZE, fontName } from '../tokens';
 import { Pressable, Text as RNText, View } from 'react-native';
@@ -136,7 +135,9 @@ function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
       <Pressable
         accessibilityRole="button"
-        onPress={() => { void toggle(); }}
+        onPress={() => {
+          void toggle();
+        }}
         hitSlop={8}
         style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: onAccent, alignItems: 'center', justifyContent: 'center' }}
       >
@@ -144,14 +145,24 @@ function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
       </Pressable>
       <Pressable
         style={{ flex: 1, height: WAVE_TRACK_H, justifyContent: 'center' }}
-        onLayout={(ev) => { setBarWidth(ev.nativeEvent.layout.width); }}
-        onPress={(ev) => { if (barWidth > 0) seek(ev.nativeEvent.locationX / barWidth); }}
+        onLayout={(ev) => {
+          setBarWidth(ev.nativeEvent.layout.width);
+        }}
+        onPress={(ev) => {
+          if (barWidth > 0) seek(ev.nativeEvent.locationX / barWidth);
+        }}
       >
         <View style={{ height: WAVE_TRACK_H, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
           {bars.map((h, i) => (
             <View
               key={i}
-              style={{ flex: 1, height: Math.max(3, h * WAVE_TRACK_H), borderRadius: 1, backgroundColor: onAccent, opacity: i / bars.length <= progress ? 1 : 0.45 }}
+              style={{
+                flex: 1,
+                height: Math.max(3, h * WAVE_TRACK_H),
+                borderRadius: 1,
+                backgroundColor: onAccent,
+                opacity: i / bars.length <= progress ? 1 : 0.45,
+              }}
             />
           ))}
         </View>
@@ -163,22 +174,44 @@ function WaveformPlayer(props: AudioPlayerProps): React.ReactElement {
   );
 }
 
-function BasicPlayer({ url, duration, onPlay, dark }: { url: string; duration?: number; onPlay?: () => void; dark: boolean }): React.ReactElement {
+function BasicPlayer({
+  url,
+  duration,
+  onPlay,
+  dark,
+}: {
+  url: string;
+  duration?: number;
+  onPlay?: () => void;
+  dark: boolean;
+}): React.ReactElement {
   const { playing, position, duration: liveDuration, toggle } = useAudioPlayback(url, { onPlay });
   const lengthMs = liveDuration > 0 ? liveDuration : (duration ?? 0) * 1000;
   const progress = lengthMs > 0 ? Math.min(position / lengthMs, 1) : 0;
   const fg = dark ? '#ffffff' : '#000000';
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, borderRadius: 12, backgroundColor: dark ? '#1c1c1e' : '#f0f0f2' }}>
-      <Pressable accessibilityRole="button" onPress={() => { void toggle(); }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: 10,
+        borderRadius: 12,
+        backgroundColor: dark ? '#1c1c1e' : '#f0f0f2',
+      }}
+    >
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          void toggle();
+        }}
+      >
         <Glyph icon={playing ? IconPause : IconPlay} size={22} color={fg} />
       </Pressable>
       <View style={{ flex: 1, height: 4, borderRadius: 2, backgroundColor: dark ? '#3a3c40' : '#d8d8da' }}>
         <View style={{ width: `${Math.round(progress * 100)}%`, height: 4, borderRadius: 2, backgroundColor: fg }} />
       </View>
-      <RNText style={{ color: fg, fontSize: FONT_SIZE['3xs'], fontFamily: fontName.sans }}>
-        {fmt(lengthMs)}
-      </RNText>
+      <RNText style={{ color: fg, fontSize: FONT_SIZE['3xs'], fontFamily: fontName.sans }}>{fmt(lengthMs)}</RNText>
     </View>
   );
 }
@@ -186,9 +219,11 @@ function BasicPlayer({ url, duration, onPlay, dark }: { url: string; duration?: 
 export function AudioPlayer(props: AudioPlayerProps): React.ReactElement {
   const scheme = useKitScheme();
   const { description, weight, accessibility, dark = scheme === 'dark' } = props;
-  const body = props.waveform
-    ? <WaveformPlayer {...props} />
-    : <BasicPlayer url={props.url} duration={props.duration} onPlay={props.onPlay} dark={dark} />;
+  const body = props.waveform ? (
+    <WaveformPlayer {...props} />
+  ) : (
+    <BasicPlayer url={props.url} duration={props.duration} onPlay={props.onPlay} dark={dark} />
+  );
   if (description === undefined && weight === undefined && accessibility === undefined) return body;
   const label = description === undefined ? {} : { accessibilityLabel: description };
   return (

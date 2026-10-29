@@ -18,15 +18,19 @@ declare class SpeechModule extends NativeModule<SpeechEvents> {
 
 const native = requireOptionalNativeModule<SpeechModule>('StageSpeech');
 
-export const speech: SpeechBridge = native ? {
-  availability: () => native.availability(),
-  requestPermission: () => native.requestPermission(),
-  downloadModel: () => native.downloadModel(),
-  start: id => native.start(id),
-  stop: id => native.stop(id),
-  cancel: id => native.cancel(id),
-  subscribe: listener => {
-    const subscription = native.addListener('onSpeech', listener);
-    return () => { subscription.remove(); };
-  },
-} : unavailableSpeech;
+export const speech: SpeechBridge = native
+  ? {
+      availability: () => native.availability(),
+      requestPermission: () => native.requestPermission(),
+      downloadModel: () => native.downloadModel(),
+      start: (id) => native.start(id),
+      stop: (id) => native.stop(id),
+      cancel: (id) => native.cancel(id),
+      subscribe: (listener) => {
+        const subscription = native.addListener('onSpeech', listener);
+        return () => {
+          subscription.remove();
+        };
+      },
+    }
+  : unavailableSpeech;

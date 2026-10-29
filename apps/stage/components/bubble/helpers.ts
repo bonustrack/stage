@@ -16,16 +16,21 @@ import { keepIndent, literalStars, taskLists } from './markdown.model';
 
 export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
-export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true })
-  .use(literalStars).use(taskLists).use(keepIndent);
+export const mdParser = MarkdownIt({ typographer: false, linkify: true, breaks: true }).use(literalStars).use(taskLists).use(keepIndent);
 
 registerDeepLinkSchemas(mdParser.linkify);
 
-export const findLinks: LinkFinder = text => mdParser.linkify.match(text);
+export const findLinks: LinkFinder = (text) => mdParser.linkify.match(text);
 
 export interface Attachment {
-  id?: string; url?: string; dataB64?: string; remote?: RemoteAttachmentInfo;
-  kind: string; mime?: string; size?: number; name?: string;
+  id?: string;
+  url?: string;
+  dataB64?: string;
+  remote?: RemoteAttachmentInfo;
+  kind: string;
+  mime?: string;
+  size?: number;
+  name?: string;
 }
 
 export function attachmentsOf(entry: HistoryEntry): Attachment[] {
@@ -47,11 +52,7 @@ export interface BubbleLinkProps {
 
 export const BLOCK_GAP = 8;
 
-export const MONO_FONT = Platform.select({
-  ios: fontFamily.mono[0],
-  android: 'monospace',
-  default: fontFamily.mono.join(', '),
-});
+export const MONO_FONT = Platform.select({ ios: fontFamily.mono[0], android: 'monospace', default: fontFamily.mono.join(', ') });
 
 export function markdownStyles(fg: string, dark: boolean, size: FontSizeName): Record<string, object> {
   const link = MESSAGE_LINK_COLOR[dark ? 'dark' : 'light'];
@@ -71,7 +72,10 @@ export function markdownStyles(fg: string, dark: boolean, size: FontSizeName): R
   };
 }
 
-interface QuestionOption { label: string; description?: string }
+interface QuestionOption {
+  label: string;
+  description?: string;
+}
 export interface Question {
   header?: string;
   options: QuestionOption[];
@@ -85,7 +89,11 @@ export function questionOf(entry: HistoryEntry): Question | undefined {
   return p.question;
 }
 
-export interface Poll { pollId?: string; question?: string; questions: PollQuestion[] }
+export interface Poll {
+  pollId?: string;
+  question?: string;
+  questions: PollQuestion[];
+}
 
 export function pollOf(entry: HistoryEntry): Poll | undefined {
   const raw = (entry.payload as { poll?: PollContent })?.poll;
@@ -117,7 +125,9 @@ export function fmtSigValue(v: unknown): string {
   try {
     const s = JSON.stringify(v);
     return s.length > 200 ? `${s.slice(0, 197)}…` : s;
-  } catch { return '[unserializable]'; }
+  } catch {
+    return '[unserializable]';
+  }
 }
 
 export function txRequestOf(entry: HistoryEntry): WalletSendCallsContent | undefined {
@@ -136,5 +146,7 @@ export function ethFromWeiHex(valueHex?: string): string | undefined {
   try {
     const out = formatEther(BigInt(valueHex));
     return out.includes('.') ? out.replace(/\.?0+$/, '') : out;
-  } catch { return undefined; }
+  } catch {
+    return undefined;
+  }
 }

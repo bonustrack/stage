@@ -32,7 +32,9 @@ function usePayload(rec: AccountRecord | null, onClose: () => void): string | nu
       }
       setPayload(next);
     });
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [rec]);
   return payload;
 }
@@ -51,8 +53,14 @@ function QrPanel({ payload }: { payload: string | null }): React.ReactElement {
   );
 }
 
-export function TransferAccountSheet({ rec, dark, onClose }: {
-  rec: AccountRecord | null; dark: boolean; onClose: () => void;
+export function TransferAccountSheet({
+  rec,
+  dark,
+  onClose,
+}: {
+  rec: AccountRecord | null;
+  dark: boolean;
+  onClose: () => void;
 }): React.ReactElement {
   const kind = rec === null ? null : transferKindFor(rec);
   const payload = usePayload(rec, onClose);
@@ -63,12 +71,24 @@ export function TransferAccountSheet({ rec, dark, onClose }: {
   return (
     <AppModal visible={rec !== null} onClose={onClose} title="Link a device">
       <Column gap={14} align="center">
-        {kind !== null ? <Text size="3xs" color={DANGER} textAlign="center">{transferWarning(kind)}</Text> : null}
+        {kind !== null ? (
+          <Text size="3xs" color={DANGER} textAlign="center">
+            {transferWarning(kind)}
+          </Text>
+        ) : null}
         <QrPanel payload={payload} />
-        <Text size="2xs" color="secondary" textAlign="center">{TRANSFER_HOW_TO}</Text>
+        <Text size="2xs" color="secondary" textAlign="center">
+          {TRANSFER_HOW_TO}
+        </Text>
         <Button
-          dark={dark} variant="soft" color="primary" size="lg" fullWidth label="Copy code"
-          disabled={payload === null} onPress={copy}
+          dark={dark}
+          variant="soft"
+          color="primary"
+          size="lg"
+          fullWidth
+          label="Copy code"
+          disabled={payload === null}
+          onPress={copy}
         />
         <Button dark={dark} variant="ghost" color="primary" size="lg" fullWidth label="Done" onPress={onClose} />
       </Column>

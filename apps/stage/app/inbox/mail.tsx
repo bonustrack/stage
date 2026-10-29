@@ -5,7 +5,9 @@ import { DeveloperModeGate } from '../../components/settings/DeveloperModeGate';
 
 export default function MailRoute(): React.ReactElement {
   const { label, id } = useLocalSearchParams<{ label?: string; id?: string }>();
-  return <DeveloperModeGate>{!label || !id
-    ? <EmptyState title="This mail is not available." />
-    : <MailView label={label} id={id} />}</DeveloperModeGate>;
+  return (
+    <DeveloperModeGate>
+      {!label || !id ? <EmptyState title="This mail is not available." /> : <MailView label={label} id={id} />}
+    </DeveloperModeGate>
+  );
 }

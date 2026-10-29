@@ -11,7 +11,11 @@ export function appDataGroup(initial = '{}'): { group: Group; raw: () => string;
   return {
     group: {
       appData: () => Promise.resolve(raw),
-      updateAppData: value => { raw = value; writes += 1; return Promise.resolve(); },
+      updateAppData: (value) => {
+        raw = value;
+        writes += 1;
+        return Promise.resolve();
+      },
     },
     raw: () => raw,
     writes: () => writes,

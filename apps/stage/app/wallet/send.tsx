@@ -20,8 +20,11 @@ import { Column, Row, ScreenScroll } from '../../components/layout';
 const RESOLVING_SPINNER = 24;
 
 function toggleAmount(
-  amount: string, mode: 'eth' | 'usd', priceUsd: number | null,
-  setAmount: (v: string) => void, setMode: (fn: (m: 'eth' | 'usd') => 'eth' | 'usd') => void,
+  amount: string,
+  mode: 'eth' | 'usd',
+  priceUsd: number | null,
+  setAmount: (v: string) => void,
+  setMode: (fn: (m: 'eth' | 'usd') => 'eth' | 'usd') => void,
 ): void {
   const next = toggleAmountUnit(amount, mode === 'eth' ? 'primary' : 'usd', priceUsd);
   const nextMode: 'eth' | 'usd' = next.unit === 'primary' ? 'eth' : 'usd';
@@ -29,37 +32,78 @@ function toggleAmount(
   setMode(() => nextMode);
 }
 
-function RecipientField({ value, recipient, onChange }: {
-  value: string; recipient: RecipientState; onChange: (v: string) => void;
+function RecipientField({
+  value,
+  recipient,
+  onChange,
+}: {
+  value: string;
+  recipient: RecipientState;
+  onChange: (v: string) => void;
 }): React.ReactElement {
   const { sub } = usePalette();
   const hint = recipientHint(recipient);
   return (
-    <FormField label="Recipient" placeholder={RECIPIENT_PLACEHOLDER} value={value} onChangeText={onChange}
+    <FormField
+      label="Recipient"
+      placeholder={RECIPIENT_PLACEHOLDER}
+      value={value}
+      onChangeText={onChange}
       inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
       trailing={recipient.kind === 'resolving' ? <Spinner size={RESOLVING_SPINNER} color={sub} /> : undefined}
-      hint={hint?.text} hintTone={hint?.tone} />
+      hint={hint?.text}
+      hintTone={hint?.tone}
+    />
   );
 }
 
-function AmountField({ value, unitLabel, secondaryLabel, balanceLabel, maxDisabled, onChange, onMax, onToggleUnit }: {
-  value: string; unitLabel: string;
-  secondaryLabel?: string; balanceLabel?: string; maxDisabled: boolean;
-  onChange: (v: string) => void; onMax: () => void; onToggleUnit: () => void;
+function AmountField({
+  value,
+  unitLabel,
+  secondaryLabel,
+  balanceLabel,
+  maxDisabled,
+  onChange,
+  onMax,
+  onToggleUnit,
+}: {
+  value: string;
+  unitLabel: string;
+  secondaryLabel?: string;
+  balanceLabel?: string;
+  maxDisabled: boolean;
+  onChange: (v: string) => void;
+  onMax: () => void;
+  onToggleUnit: () => void;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const dark = scheme === 'dark';
   const controls = (
     <Row align="center" gap={8}>
-      <Button label={unitLabel} color="primary" variant="soft" size="sm" pill dark={dark}
-        iconEnd={<Glyph icon={IconArrowDown} size={18} dark={dark} />} onPress={onToggleUnit} />
+      <Button
+        label={unitLabel}
+        color="primary"
+        variant="soft"
+        size="sm"
+        pill
+        dark={dark}
+        iconEnd={<Glyph icon={IconArrowDown} size={18} dark={dark} />}
+        onPress={onToggleUnit}
+      />
       <Button label="MAX" color="primary" variant="ghost" size="sm" disabled={maxDisabled} dark={dark} onPress={onMax} />
     </Row>
   );
   return (
-    <FormField label="Amount" placeholder="0.0" value={value} onChangeText={onChange} variant="number"
-      inputProps={{ keyboardType: 'decimal-pad' }} trailing={controls}
-      hint={[secondaryLabel, balanceLabel].filter((s) => s !== undefined).join(' · ') || undefined} />
+    <FormField
+      label="Amount"
+      placeholder="0.0"
+      value={value}
+      onChangeText={onChange}
+      variant="number"
+      inputProps={{ keyboardType: 'decimal-pad' }}
+      trailing={controls}
+      hint={[secondaryLabel, balanceLabel].filter((s) => s !== undefined).join(' · ') || undefined}
+    />
   );
 }
 
@@ -70,8 +114,16 @@ function submitLabelFor(txState: string, reviewing: boolean): string {
   return reviewing ? 'Send' : 'Review';
 }
 
-function SendForm({ token, initialTo, selector, onCancel }: {
-  token: TokenChoice; initialTo: string; selector: React.ReactNode; onCancel: () => void;
+function SendForm({
+  token,
+  initialTo,
+  selector,
+  onCancel,
+}: {
+  token: TokenChoice;
+  initialTo: string;
+  selector: React.ReactNode;
+  onCancel: () => void;
 }): React.ReactElement {
   const { border } = usePalette();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -84,31 +136,73 @@ function SendForm({ token, initialTo, selector, onCancel }: {
     : undefined;
 
   const reviewable = reviewing && p.resolved !== null;
-  const onSubmit = (): void => { if (reviewable) p.onSubmit(); else if (p.canSubmit) setReviewing(true); };
-  const onBack = (): void => { if (reviewable && !p.busy && p.txState !== 'confirmed') setReviewing(false); else onCancel(); };
+  const onSubmit = (): void => {
+    if (reviewable) p.onSubmit();
+    else if (p.canSubmit) setReviewing(true);
+  };
+  const onBack = (): void => {
+    if (reviewable && !p.busy && p.txState !== 'confirmed') setReviewing(false);
+    else onCancel();
+  };
 
   return (
     <>
       <ScreenScroll keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 16, gap: 16 }}>
         {reviewable ? (
-          <SendReview recipient={p.recipient} amount={p.tokenAmountText} symbol={token.symbol}
-            secondaryLabel={p.secondaryLabel || undefined} chainId={token.chainId} />
+          <SendReview
+            recipient={p.recipient}
+            amount={p.tokenAmountText}
+            symbol={token.symbol}
+            secondaryLabel={p.secondaryLabel || undefined}
+            chainId={token.chainId}
+          />
         ) : (
-          <SendFields p={p} token={token} selector={selector} balanceLabel={balanceLabel}
-            onPickContact={() => { setPicking(true); }} />
+          <SendFields
+            p={p}
+            token={token}
+            selector={selector}
+            balanceLabel={balanceLabel}
+            onPickContact={() => {
+              setPicking(true);
+            }}
+          />
         )}
         <TxStatus txState={p.txState} txHash={p.txHash} txChainId={p.txChainId} txErr={p.txErr} />
-        <ContactsModal visible={picking} onClose={() => { setPicking(false); }} onPick={(addr) => { p.setTo(addr); }} />
+        <ContactsModal
+          visible={picking}
+          onClose={() => {
+            setPicking(false);
+          }}
+          onPick={(addr) => {
+            p.setTo(addr);
+          }}
+        />
       </ScreenScroll>
-      <WalletFooter border={border} dark={dark} onCancel={onBack} cancelLabel={reviewable ? 'Back' : 'Cancel'}
-        submitLabel={submitLabelFor(p.txState, reviewable)} onSubmit={onSubmit}
-        submitDisabled={!p.canSubmit || p.txState === 'confirmed'} submitLoading={p.busy} />
+      <WalletFooter
+        border={border}
+        dark={dark}
+        onCancel={onBack}
+        cancelLabel={reviewable ? 'Back' : 'Cancel'}
+        submitLabel={submitLabelFor(p.txState, reviewable)}
+        onSubmit={onSubmit}
+        submitDisabled={!p.canSubmit || p.txState === 'confirmed'}
+        submitLoading={p.busy}
+      />
     </>
   );
 }
 
-function SendFields({ p, token, selector, balanceLabel, onPickContact }: {
-  p: ReturnType<typeof usePublicSend>; token: TokenChoice; selector: React.ReactNode; balanceLabel?: string;
+function SendFields({
+  p,
+  token,
+  selector,
+  balanceLabel,
+  onPickContact,
+}: {
+  p: ReturnType<typeof usePublicSend>;
+  token: TokenChoice;
+  selector: React.ReactNode;
+  balanceLabel?: string;
   onPickContact: () => void;
 }): React.ReactElement {
   const { text: fg, border } = usePalette();
@@ -128,7 +222,9 @@ function SendFields({ p, token, selector, balanceLabel, onPickContact }: {
           maxDisabled={!p.ethBalance}
           onChange={p.setAmount}
           onMax={p.onMax}
-          onToggleUnit={() => { toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode); }}
+          onToggleUnit={() => {
+            toggleAmount(p.amount, p.mode, p.ethPriceUsd, p.setAmount, p.setMode);
+          }}
         />
       </Column>
       <ContactsButton color={fg} border={border} onPress={onPickContact} />
@@ -146,8 +242,15 @@ export default function WalletSend(): React.ReactElement {
   return (
     <Column surface="surface" weight={1}>
       <StackHeader title="Send token" wallet />
-      <SendForm key={`${token.chainId}:${token.symbol}`} token={token} initialTo={initialTo} onCancel={() => { router.back(); }}
-        selector={<TokenSelector value={token} onChange={setToken}/>} />
+      <SendForm
+        key={`${token.chainId}:${token.symbol}`}
+        token={token}
+        initialTo={initialTo}
+        onCancel={() => {
+          router.back();
+        }}
+        selector={<TokenSelector value={token} onChange={setToken} />}
+      />
     </Column>
   );
 }

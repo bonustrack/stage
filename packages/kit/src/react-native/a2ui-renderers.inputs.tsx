@@ -8,8 +8,15 @@ import { DateTimeInput } from './date-time-input';
 import { Slider } from './slider';
 import { TextField } from './text-field';
 import {
-  asBoolean, asEnum, asNumber, asOptionalString, asString, asStringList,
-  commonProps, type A2uiRenderers, type RenderContext,
+  asBoolean,
+  asEnum,
+  asNumber,
+  asOptionalString,
+  asString,
+  asStringList,
+  commonProps,
+  type A2uiRenderers,
+  type RenderContext,
 } from './a2ui-context';
 
 function fieldProps(ctx: RenderContext) {
@@ -43,7 +50,10 @@ function A2uiTextField({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const act = useA2uiAction(ctx);
   const binding = ctx.binding<string>('value');
   const field = fieldProps(ctx);
-  const hidden = asBoolean(p.hideLabel) === true ? { label: undefined, accessibility: { ...field.accessibility, label: field.accessibility?.label ?? field.label } } : {};
+  const hidden =
+    asBoolean(p.hideLabel) === true
+      ? { label: undefined, accessibility: { ...field.accessibility, label: field.accessibility?.label ?? field.label } }
+      : {};
   return (
     <TextField
       {...field}
@@ -55,12 +65,14 @@ function A2uiTextField({ ctx }: { ctx: RenderContext }): React.ReactElement {
       pill={asBoolean(p.pill)}
       hint={asOptionalString(p.hint)}
       onChangeText={binding.set}
-      onSubmit={() => { if (!failingChecks(ctx.checks)) act(); }}
+      onSubmit={() => {
+        if (!failingChecks(ctx.checks)) act();
+      }}
     />
   );
 }
 
-const textFieldRenderer = (ctx: RenderContext): ReactNode => <A2uiTextField ctx={ctx}/>;
+const textFieldRenderer = (ctx: RenderContext): ReactNode => <A2uiTextField ctx={ctx} />;
 
 function A2uiCheckBox({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const binding = ctx.binding<boolean>('value');
@@ -78,7 +90,7 @@ function A2uiCheckBox({ ctx }: { ctx: RenderContext }): React.ReactElement {
   );
 }
 
-const checkBoxRenderer = (ctx: RenderContext): ReactNode => <A2uiCheckBox ctx={ctx}/>;
+const checkBoxRenderer = (ctx: RenderContext): ReactNode => <A2uiCheckBox ctx={ctx} />;
 
 function choicePickerRenderer(ctx: RenderContext): ReactNode {
   const p = ctx.props;

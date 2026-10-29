@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex,
-} from 'viem';
+import { erc20Abi, encodeFunctionData, parseUnits, createPublicClient, type Hex } from 'viem';
 import { base } from 'viem/chains';
 import { fetchUsdPrice } from '@stage-labs/client/wallet/prices';
 import { sendNativeOrToken } from '../../lib/tx';
@@ -12,15 +10,16 @@ import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
 import { ASSETS, ETH_PRICE_ID } from '@stage-labs/client/wallet/assets';
 import type { TokenChoice } from './screen/model';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
-import {
-  recipientAddress, recipientFor, settleRecipient, startRecipient, type RecipientState,
-} from './recipient.model';
+import { recipientAddress, recipientFor, settleRecipient, startRecipient, type RecipientState } from './recipient.model';
 
 const RESOLVE_DEBOUNCE_MS = 300;
 
 export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
-interface SendAsset { address: Hex | null; decimals: number; }
+interface SendAsset {
+  address: Hex | null;
+  decimals: number;
+}
 type ActiveAccount = NonNullable<Awaited<ReturnType<typeof getActiveAccount>>>;
 
 async function sendSmart(active: ActiveAccount, asset: SendAsset, resolved: string, tokStr: string, chainId: number): Promise<Hex> {
@@ -48,14 +47,26 @@ function secondaryLabelOf(amount: string, mode: 'eth' | 'usd', tokenPriceUsd: nu
 }
 
 interface PublicSend {
-  to: string; setTo: (v: string) => void;
-  amount: string; setAmount: (v: string) => void;
-  mode: 'eth' | 'usd'; setMode: (fn: (m: 'eth' | 'usd') => 'eth' | 'usd') => void;
-  recipient: RecipientState; resolved: string | null; tokenAmountText: string;
-  ethBalance: string | null; ethPriceUsd: number | null;
-  secondaryLabel: string; canSubmit: boolean; busy: boolean;
-  txState: SendTxState; txHash: Hex | null; txChainId: number; txErr: string | null;
-  onMax: () => void; onSubmit: () => void;
+  to: string;
+  setTo: (v: string) => void;
+  amount: string;
+  setAmount: (v: string) => void;
+  mode: 'eth' | 'usd';
+  setMode: (fn: (m: 'eth' | 'usd') => 'eth' | 'usd') => void;
+  recipient: RecipientState;
+  resolved: string | null;
+  tokenAmountText: string;
+  ethBalance: string | null;
+  ethPriceUsd: number | null;
+  secondaryLabel: string;
+  canSubmit: boolean;
+  busy: boolean;
+  txState: SendTxState;
+  txHash: Hex | null;
+  txChainId: number;
+  txErr: string | null;
+  onMax: () => void;
+  onSubmit: () => void;
 }
 
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
@@ -71,21 +82,19 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const [txChainId, setTxChainId] = useState<number>(token.chainId);
   const [txErr, setTxErr] = useState<string | null>(null);
 
-  const asset = useMemo(
-    () => ASSETS.find(a => a.symbol === token.symbol && a.chainId === token.chainId),
-    [token.symbol, token.chainId],
-  );
+  const asset = useMemo(() => ASSETS.find((a) => a.symbol === token.symbol && a.chainId === token.chainId), [token.symbol, token.chainId]);
 
   useEffect(() => {
     let cancelled = false;
     void fetchUsdPrice(ETH_PRICE_ID).then((p) => {
       if (!cancelled && p !== null) setEthPriceUsd(p);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const tokenPriceUsd = token.symbol === 'ETH' ? ethPriceUsd
-    : token.symbol === 'USDC' ? 1 : null;
+  const tokenPriceUsd = token.symbol === 'ETH' ? ethPriceUsd : token.symbol === 'USDC' ? 1 : null;
 
   useEffect(() => {
     const start = startRecipient(to);
@@ -97,7 +106,10 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
         if (!cancelled) setStored(settleRecipient(start, address));
       });
     }, RESOLVE_DEBOUNCE_MS);
-    return () => { cancelled = true; clearTimeout(t); };
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [to]);
 
   const tokenAmount = useMemo(
@@ -123,29 +135,55 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const onSubmit = (): void => {
     if (!resolved || tokenAmount <= 0 || busy || !asset) return;
     void (async (): Promise<void> => {
-      setTxErr(null); setTxHash(null); setTxState('submitting');
+      setTxErr(null);
+      setTxHash(null);
+      setTxState('submitting');
       try {
         const active = await getActiveAccount();
-        if (!active) { setTxState('idle'); setTxErr('No active wallet'); return; }
+        if (!active) {
+          setTxState('idle');
+          setTxErr('No active wallet');
+          return;
+        }
 
         const isSmart = active.type === 'smart';
         const receiptChainId = isSmart ? base.id : token.chainId;
         const hash = isSmart
           ? await sendSmart(active, asset, resolved, tokenAmountText, token.chainId)
           : await sendNativeOrToken({ to: resolved, amount: tokenAmountText, asset, chainId: token.chainId });
-        setTxHash(hash); setTxChainId(receiptChainId); setTxState('pending');
+        setTxHash(hash);
+        setTxChainId(receiptChainId);
+        setTxState('pending');
         const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
         await pub.waitForTransactionReceipt({ hash });
         setTxState('confirmed');
       } catch (e) {
-        setTxState('idle'); setTxErr((e as Error).message ?? 'Transaction failed');
+        setTxState('idle');
+        setTxErr((e as Error).message ?? 'Transaction failed');
       }
     })();
   };
 
   return {
-    to, setTo, amount, setAmount, mode, setMode, recipient, resolved, tokenAmountText,
-    ethBalance: balance, ethPriceUsd: tokenPriceUsd, secondaryLabel, canSubmit, busy, txState, txHash, txChainId, txErr,
-    onMax, onSubmit,
+    to,
+    setTo,
+    amount,
+    setAmount,
+    mode,
+    setMode,
+    recipient,
+    resolved,
+    tokenAmountText,
+    ethBalance: balance,
+    ethPriceUsd: tokenPriceUsd,
+    secondaryLabel,
+    canSubmit,
+    busy,
+    txState,
+    txHash,
+    txChainId,
+    txErr,
+    onMax,
+    onSubmit,
   };
 }

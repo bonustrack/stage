@@ -48,17 +48,31 @@ function usePendingComposer(
     onSubmit(trimmed);
   }, [text, onSubmit]);
   return {
-    recording: false, levels: [], recordSecs: 0,
-    text, setText, selection, setSelection,
-    focusNonce: 0, blurNonce: 0,
-    attachMenuOpen: false, setAttachMenuOpen: unavailable,
+    recording: false,
+    levels: [],
+    recordSecs: 0,
+    text,
+    setText,
+    selection,
+    setSelection,
+    focusNonce: 0,
+    blurNonce: 0,
+    attachMenuOpen: false,
+    setAttachMenuOpen: unavailable,
     hasContent: text.trim().length > 0,
-    onStartRec: unavailable, onCancelRec: unavailable, onStopRec: unavailable,
+    onStartRec: unavailable,
+    onCancelRec: unavailable,
+    onStopRec: unavailable,
     onSend,
   };
 }
 
-export function PendingConversation({ address, reason, onDelivered, dark }: {
+export function PendingConversation({
+  address,
+  reason,
+  onDelivered,
+  dark,
+}: {
   address: string;
   reason: PendingReason;
   onDelivered: () => void;
@@ -72,31 +86,42 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
   const myName = getPeerName(myAddress ?? '') ?? null;
 
   useEffect(() => {
-    const sync = (): void => { setQueued(queuedDmsFor(address)); };
+    const sync = (): void => {
+      setQueued(queuedDmsFor(address));
+    };
     sync();
     return subscribeDmOutbox(sync);
   }, [address]);
 
   useEffect(() => {
     let alive = true;
-    void flushDmOutboxFor(address).then(convId => { if (alive && convId) onDelivered(); });
-    return () => { alive = false; };
+    void flushDmOutboxFor(address).then((convId) => {
+      if (alive && convId) onDelivered();
+    });
+    return () => {
+      alive = false;
+    };
   }, [address, onDelivered]);
 
-  const onSubmit = useCallback((text: string) => {
-    void enqueueDm(address, text).then(() =>
-      flushDmOutboxFor(address).then(convId => { if (convId) onDelivered(); }),
-    );
-  }, [address, onDelivered]);
+  const onSubmit = useCallback(
+    (text: string) => {
+      void enqueueDm(address, text).then(() =>
+        flushDmOutboxFor(address).then((convId) => {
+          if (convId) onDelivered();
+        }),
+      );
+    },
+    [address, onDelivered],
+  );
 
   const editor = usePendingComposer(onSubmit);
 
   return (
     <Column surface="surface" weight={1}>
-      <PeerTopnav peer={address}/>
+      <PeerTopnav peer={address} />
       <ChatColumn>
         <Column weight={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
-          {queued.map(item => (
+          {queued.map((item) => (
             <MessengerBubble
               key={item.id}
               entry={entryOf(item, myAddress, myName)}
@@ -112,10 +137,7 @@ export function PendingConversation({ address, reason, onDelivered, dark }: {
         </Column>
       </ChatColumn>
       <ComposerDock>
-        <ComposerEditor
-          dark={dark} fg={pal.text} head={pal.link} bg={pal.bg} sub={pal.text} chipBg={pal.border}
-          {...editor}
-        />
+        <ComposerEditor dark={dark} fg={pal.text} head={pal.link} bg={pal.bg} sub={pal.text} chipBg={pal.border} {...editor} />
       </ComposerDock>
     </Column>
   );

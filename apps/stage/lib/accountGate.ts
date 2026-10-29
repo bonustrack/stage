@@ -20,20 +20,25 @@ export function useAccountGate(): AccountGate {
     let alive = true;
     const refresh = (): void => {
       const current = ++generation;
-      void Promise.all([loadAccountsForWrite(), readPendingSetup()]).then(([list, pending]) => {
-        if (!alive || current !== generation) return;
-        setHasAccount(list.length > 0 && pending === null);
-        setReady(true);
-      }).catch((e: unknown) => {
-        if (!alive || current !== generation) return;
-        report('onboarding.gate', e);
-        setHasAccount(false);
-        setReady(true);
-      });
+      void Promise.all([loadAccountsForWrite(), readPendingSetup()])
+        .then(([list, pending]) => {
+          if (!alive || current !== generation) return;
+          setHasAccount(list.length > 0 && pending === null);
+          setReady(true);
+        })
+        .catch((e: unknown) => {
+          if (!alive || current !== generation) return;
+          report('onboarding.gate', e);
+          setHasAccount(false);
+          setReady(true);
+        });
     };
     refresh();
     const stop = subscribePendingSetup(refresh);
-    return () => { alive = false; stop(); };
+    return () => {
+      alive = false;
+      stop();
+    };
   }, [epoch]);
 
   return { ready, hasAccount };

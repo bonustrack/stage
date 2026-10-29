@@ -12,7 +12,10 @@ const GRANT_READ_URI_PERMISSION = 1;
 
 function freshOpenDirectory(): Directory {
   const root = new Directory(Paths.cache, 'open');
-  if (root.exists) attempt(() => { root.delete(); }, 'cleanup');
+  if (root.exists)
+    attempt(() => {
+      root.delete();
+    }, 'cleanup');
   const dir = new Directory(root, String(Date.now()));
   dir.create({ intermediates: true });
   return dir;
@@ -40,7 +43,7 @@ async function openNative(file: OpenableFile): Promise<void> {
   const name = nativeFileName(file.name, file.mime);
   const local = localCopy(file, name);
   const mime = normalizedMime(file.mime, name);
-  if (Platform.OS === 'android' && await viewOnAndroid(local.uri, mime)) return;
+  if (Platform.OS === 'android' && (await viewOnAndroid(local.uri, mime))) return;
   await shareAsync(local.uri, { mimeType: mime, dialogTitle: name });
 }
 

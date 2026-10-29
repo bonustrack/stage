@@ -7,8 +7,10 @@ export function RetryNotice({ message, onRetry }: { message: string; onRetry: ()
   const dark = useEffectiveColorScheme() === 'dark';
   return (
     <Column align="center" gap={16} padding={24}>
-      <Text size="xs" color="secondary" textAlign="center">{message}</Text>
-      <Button dark={dark} variant="soft" label="Try again" style={{ alignSelf: 'center' }} onPress={onRetry}/>
+      <Text size="xs" color="secondary" textAlign="center">
+        {message}
+      </Text>
+      <Button dark={dark} variant="soft" label="Try again" style={{ alignSelf: 'center' }} onPress={onRetry} />
     </Column>
   );
 }

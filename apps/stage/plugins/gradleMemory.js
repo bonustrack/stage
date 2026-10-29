@@ -1,5 +1,4 @@
-const GRADLE_JVMARGS =
-  '-Xmx6144m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8';
+const GRADLE_JVMARGS = '-Xmx6144m -XX:MaxMetaspaceSize=2048m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8';
 
 function setGradleMemory(props) {
   const existing = props.find((p) => p.type === 'property' && p.key === 'org.gradle.jvmargs');

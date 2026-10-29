@@ -40,7 +40,7 @@ export function rowsOf(items: readonly HomeListItem[]): Row[] {
   return items.filter((item): item is Row => !isGroupHeader(item));
 }
 
-export const listKeyOf = (item: HomeListItem): string => (isGroupHeader(item) ? item.convId : item.listKey ?? item.convId);
+export const listKeyOf = (item: HomeListItem): string => (isGroupHeader(item) ? item.convId : (item.listKey ?? item.convId));
 
 const sectionKeyOf = (by: GroupKey, value: string): string => `${by}:${value.toLowerCase()}`;
 
@@ -54,37 +54,58 @@ export function groupKeysOf(items: readonly HomeListItem[]): ReadonlyMap<string,
   return keys;
 }
 
-function orderedBuckets<R extends GroupRow>(
-  rows: readonly R[], by: GroupKey, nameOf: NameOf, order: readonly string[],
-): Bucket<R>[] {
-  const dm = rows.filter(row => row.peerAddress !== null);
-  const { buckets, none } = bucketRows(rows.filter(row => row.peerAddress === null), by, nameOf, value => sectionKeyOf(by, value));
+function orderedBuckets<R extends GroupRow>(rows: readonly R[], by: GroupKey, nameOf: NameOf, order: readonly string[]): Bucket<R>[] {
+  const dm = rows.filter((row) => row.peerAddress !== null);
+  const { buckets, none } = bucketRows(
+    rows.filter((row) => row.peerAddress === null),
+    by,
+    nameOf,
+    (value) => sectionKeyOf(by, value),
+  );
   const sections = [
     ...(dm.length === 0 ? [] : [{ ...DM_GROUP, rows: dm }]),
     ...buckets.sort((a, b) => compareNames(a.title, b.title)),
     ...(none.length === 0 ? [] : [{ key: NO_GROUP_KEY, title: NO_GROUP_TITLES[by], rows: none }]),
   ];
   return by === 'category'
-    ? savedFirst(sections, categorySectionOrderWith(order, buckets.map(b => b.key)).map(key => key.toLowerCase()), b => b.key)
+    ? savedFirst(
+        sections,
+        categorySectionOrderWith(
+          order,
+          buckets.map((b) => b.key),
+        ).map((key) => key.toLowerCase()),
+        (b) => b.key,
+      )
     : sections;
 }
 
 function uniqueListItems(bucket: Bucket<Row>, seen: Set<string>): HomeListItem[] {
   return bucket.rows.map((row) => {
-    if (!seen.has(row.convId)) { seen.add(row.convId); return row; }
+    if (!seen.has(row.convId)) {
+      seen.add(row.convId);
+      return row;
+    }
     return { ...row, listKey: `${bucket.key}/${row.convId}` };
   });
 }
 
 export function groupRows(
-  rows: readonly Row[], by: GroupKey, collapsed: ReadonlySet<string>, expandAll: boolean, nameOf: NameOf,
+  rows: readonly Row[],
+  by: GroupKey,
+  collapsed: ReadonlySet<string>,
+  expandAll: boolean,
+  nameOf: NameOf,
   order: readonly string[] = [],
 ): HomeListItem[] {
   const seen = new Set<string>();
   return orderedBuckets(rows, by, nameOf, order).flatMap((bucket): HomeListItem[] => {
     const folded = collapsed.has(bucket.key) && !expandAll;
     const header: ChannelGroupHeader = {
-      key: bucket.key, title: bucket.title, count: bucket.rows.length, unread: unreadRowCount(bucket.rows), collapsed: folded,
+      key: bucket.key,
+      title: bucket.title,
+      count: bucket.rows.length,
+      unread: unreadRowCount(bucket.rows),
+      collapsed: folded,
     };
     return [{ convId: HEADER_ID_PREFIX + bucket.key, header }, ...(folded ? [] : uniqueListItems(bucket, seen))];
   });

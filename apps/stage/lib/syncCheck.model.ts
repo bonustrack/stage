@@ -25,9 +25,16 @@ const MAX_DETAIL = 300;
 const RESTORED_COPY = 'This device only has a restored copy of this channel from the history import, so it is not a member yet.';
 
 function restoredVerdict(input: SyncCheckInput): Omit<SyncCheckResult, 'message'> & { summary: string } {
-  if (input.active) return { ok: true, title: 'Joined now', summary: 'This device just took in its invite to this channel. Open the channel again.' };
-  if (input.inviteError === undefined) return { ok: false, title: 'Not in the channel yet', summary: `${RESTORED_COPY} It is added when a member next sends a message.` };
-  if (input.inviteError === '') return { ok: false, title: 'Not in the channel yet', summary: `${RESTORED_COPY} The invite sync ran, but no invite for this channel reached this device.` };
+  if (input.active)
+    return { ok: true, title: 'Joined now', summary: 'This device just took in its invite to this channel. Open the channel again.' };
+  if (input.inviteError === undefined)
+    return { ok: false, title: 'Not in the channel yet', summary: `${RESTORED_COPY} It is added when a member next sends a message.` };
+  if (input.inviteError === '')
+    return {
+      ok: false,
+      title: 'Not in the channel yet',
+      summary: `${RESTORED_COPY} The invite sync ran, but no invite for this channel reached this device.`,
+    };
   return { ok: false, title: 'Not in the channel yet', summary: `${RESTORED_COPY} This device could not take in its channel invites.` };
 }
 
@@ -36,13 +43,25 @@ function verdict(input: SyncCheckInput): Omit<SyncCheckResult, 'message'> & { su
   if (input.restored === true) return restoredVerdict(input);
   const paused = input.state?.pausedForVersion ?? '';
   if (paused !== '') {
-    return { ok: false, title: 'Update needed', summary: `This channel needs messaging version ${paused} or newer. This device skips new messages until it is updated.` };
+    return {
+      ok: false,
+      title: 'Update needed',
+      summary: `This channel needs messaging version ${paused} or newer. This device skips new messages until it is updated.`,
+    };
   }
   if (!input.active) {
-    return { ok: false, title: 'Not in the channel yet', summary: 'This device is not a member of this channel yet. It is added when a member next sends a message.' };
+    return {
+      ok: false,
+      title: 'Not in the channel yet',
+      summary: 'This device is not a member of this channel yet. It is added when a member next sends a message.',
+    };
   }
   if (input.state?.forked === true) {
-    return { ok: false, title: 'Out of sync', summary: 'This device lost track of this channel, so it cannot read new messages here. Your other devices are not affected.' };
+    return {
+      ok: false,
+      title: 'Out of sync',
+      summary: 'This device lost track of this channel, so it cannot read new messages here. Your other devices are not affected.',
+    };
   }
   if (input.syncError !== '') return { ok: false, title: 'Sync failed', summary: 'This device could not sync this channel.' };
   return { ok: true, title: 'In sync', summary: 'This device is up to date with this channel.' };
@@ -75,7 +94,7 @@ function details(input: SyncCheckInput): string[] {
     nativeDetail(input.nativeError),
     input.state && input.state.forkDetails !== '' ? `Details: ${clip(input.state.forkDetails)}` : '',
     input.device === undefined || input.device === '' ? '' : `Device: ${input.device}`,
-  ].filter(line => line !== '');
+  ].filter((line) => line !== '');
 }
 
 export function syncCheckResult(input: SyncCheckInput): SyncCheckResult {
@@ -97,7 +116,13 @@ type Step = <T>(label: string, work: () => Promise<T>) => Promise<T>;
 
 async function checkRestoredCopy<C>(ops: SyncCheckOps<C>, step: Step, lookupError: string): Promise<SyncCheckResult> {
   const restored: SyncCheckInput = {
-    found: true, restored: true, active: false, syncError: lookupError, state: null, newest: '', device: ops.device,
+    found: true,
+    restored: true,
+    active: false,
+    syncError: lookupError,
+    state: null,
+    newest: '',
+    device: ops.device,
   };
   const { syncInvites, nativeError } = ops;
   if (!syncInvites) return syncCheckResult(restored);

@@ -1,21 +1,14 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "react"
-  ],
+  "plugins": ["typescript", "react"],
   "jsPlugins": [
     "@stage-labs/config/oxlint/comments",
     "@stage-labs/config/oxlint/text",
     "@stage-labs/config/oxlint/core",
     "./apps/stage/oxlint-plugin.mjs"
   ],
-  "categories": {
-    "correctness": "off"
-  },
-  "options": {
-    "typeAware": true
-  },
+  "categories": { "correctness": "off" },
+  "options": { "typeAware": true },
   "ignorePatterns": [
     "**/.vite/**",
     "packages/kit/src/heroicons.data.ts",
@@ -26,22 +19,11 @@
   ],
   "overrides": [
     {
-      "files": [
-        "apps/stage/**",
-        "apps/proxy/**",
-        "apps/dispatch/**",
-        "packages/client/**",
-        "packages/kit/**"
-      ],
+      "files": ["apps/stage/**", "apps/proxy/**", "apps/dispatch/**", "packages/client/**", "packages/kit/**"],
       "rules": {
         "typescript/adjacent-overload-signatures": "error",
         "typescript/array-type": "error",
-        "typescript/ban-ts-comment": [
-          "error",
-          {
-            "minimumDescriptionLength": 10
-          }
-        ],
+        "typescript/ban-ts-comment": ["error", { "minimumDescriptionLength": 10 }],
         "typescript/ban-tslint-comment": "error",
         "typescript/class-literal-property-style": "error",
         "typescript/consistent-generic-constructors": "error",
@@ -70,12 +52,7 @@
         "typescript/no-unsafe-declaration-merging": "error",
         "typescript/no-unsafe-function-type": "error",
         "no-unused-expressions": "error",
-        "no-unused-vars": [
-          "error",
-          {
-            "reportVarsOnlyUsedAsTypes": true
-          }
-        ],
+        "no-unused-vars": ["error", { "reportVarsOnlyUsedAsTypes": true }],
         "no-useless-constructor": "error",
         "typescript/no-wrapper-object-types": "error",
         "typescript/prefer-as-const": "error",
@@ -85,13 +62,7 @@
         "typescript/prefer-namespace-keyword": "error",
         "typescript/triple-slash-reference": "error",
         "typescript/unified-signatures": "error",
-        "core/quotes": [
-          "error",
-          "single",
-          {
-            "avoidEscape": true
-          }
-        ]
+        "core/quotes": ["error", "single", { "avoidEscape": true }]
       }
     },
     {
@@ -102,12 +73,7 @@
         "packages/client/**/*.{ts,tsx,mts,cts}",
         "packages/kit/**/*.{ts,tsx,mts,cts}"
       ],
-      "rules": {
-        "no-var": "error",
-        "prefer-const": "error",
-        "prefer-rest-params": "error",
-        "prefer-spread": "error"
-      }
+      "rules": { "no-var": "error", "prefer-const": "error", "prefer-rest-params": "error", "prefer-spread": "error" }
     },
     {
       "files": [
@@ -117,12 +83,7 @@
         "packages/client/**/*.{ts,tsx,mts,cts}",
         "packages/kit/**/*.{ts,tsx,mts,cts}"
       ],
-      "excludeFiles": [
-        "**/test/**",
-        "**/*.{test,spec}.{ts,tsx}",
-        "**/*.test.*",
-        "**/*.config.{ts,mts,cts}"
-      ],
+      "excludeFiles": ["**/test/**", "**/*.{test,spec}.{ts,tsx}", "**/*.test.*", "**/*.config.{ts,mts,cts}"],
       "rules": {
         "typescript/await-thenable": "error",
         "typescript/dot-notation": "error",
@@ -166,18 +127,9 @@
         "typescript/require-await": "error",
         "typescript/restrict-plus-operands": [
           "error",
-          {
-            "allowAny": false,
-            "allowBoolean": false,
-            "allowNullish": false,
-            "allowNumberAndString": false,
-            "allowRegExp": false
-          }
+          { "allowAny": false, "allowBoolean": false, "allowNullish": false, "allowNumberAndString": false, "allowRegExp": false }
         ],
-        "typescript/return-await": [
-          "error",
-          "error-handling-correctness-only"
-        ],
+        "typescript/return-await": ["error", "error-handling-correctness-only"],
         "typescript/unbound-method": "error",
         "typescript/use-unknown-in-catch-callback-variable": "error"
       }
@@ -197,49 +149,23 @@
           {
             "ts-ignore": true,
             "ts-nocheck": true,
-            "ts-expect-error": {
-              "descriptionFormat": "^: .{10,}$"
-            },
+            "ts-expect-error": { "descriptionFormat": "^: .{10,}$" },
             "minimumDescriptionLength": 10
           }
         ],
-        "max-lines": [
-          "error",
-          {
-            "max": 400,
-            "skipBlankLines": false,
-            "skipComments": false
-          }
-        ],
-        "max-lines-per-function": [
-          "error",
-          {
-            "max": 100,
-            "skipBlankLines": true,
-            "skipComments": true,
-            "IIFEs": true
-          }
-        ],
-        "complexity": [
-          "error",
-          10
-        ],
+        "max-lines": ["error", { "max": 400, "skipBlankLines": false, "skipComments": false }],
+        "max-lines-per-function": ["error", { "max": 100, "skipBlankLines": true, "skipComments": true, "IIFEs": true }],
+        "complexity": ["error", 10],
         "comments/no-comments": "error",
         "text/no-em-dash": "error"
       }
     },
     {
-      "files": [
-        "apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx,js,jsx,mjs}"
-      ],
-      "rules": {
-        "stage/no-custom-font-size": "error"
-      }
+      "files": ["apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx,js,jsx,mjs}"],
+      "rules": { "stage/no-custom-font-size": "error" }
     },
     {
-      "files": [
-        "apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx}"
-      ],
+      "files": ["apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx}"],
       "rules": {
         "stage/prefer-role-variant": "warn",
         "stage/no-keyring-bypass": "error",
@@ -278,58 +204,42 @@
             "paths": [
               {
                 "name": "react-native-safe-area-context",
-                "importNames": [
-                  "useSafeAreaInsets"
-                ],
+                "importNames": ["useSafeAreaInsets"],
                 "message": "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset."
               },
               {
                 "name": "react-native",
-                "importNames": [
-                  "View"
-                ],
+                "importNames": ["View"],
                 "message": "Use Row/Column from '@/components/layout' instead of View for layout containers."
               },
               {
                 "name": "react-native",
-                "importNames": [
-                  "Image"
-                ],
+                "importNames": ["Image"],
                 "message": "Import Image from '@stage-labs/kit/react-native/image' instead of react-native."
               },
               {
                 "name": "react-native",
-                "importNames": [
-                  "TextInput"
-                ],
+                "importNames": ["TextInput"],
                 "message": "Use TextField from '@stage-labs/kit/react-native/text-field' instead of react-native TextInput."
               },
               {
                 "name": "react-native",
-                "importNames": [
-                  "ScrollView"
-                ],
+                "importNames": ["ScrollView"],
                 "message": "Use List from '@stage-labs/kit/react-native/list' instead of react-native ScrollView."
               },
               {
                 "name": "react-native",
-                "importNames": [
-                  "Pressable"
-                ],
+                "importNames": ["Pressable"],
                 "message": "Use Pressable from '@stage-labs/kit/react-native/pressable' (or Kit Button) instead of react-native Pressable."
               },
               {
                 "name": "react-native",
-                "importNames": [
-                  "FlatList"
-                ],
+                "importNames": ["FlatList"],
                 "message": "Use VirtualList from '@/components/layout' instead of react-native FlatList."
               },
               {
                 "name": "react-native",
-                "importNames": [
-                  "Text"
-                ],
+                "importNames": ["Text"],
                 "message": "Prefer Text from '@stage-labs/kit/react-native/text' instead of react-native (Kit-only rollout)."
               }
             ]
@@ -352,23 +262,14 @@
         "apps/stage/components/frame/FrameScreen.tsx",
         "apps/stage/components/landing/AsciiField.web.tsx"
       ],
-      "rules": {
-        "no-restricted-imports": "off"
-      }
+      "rules": { "no-restricted-imports": "off" }
     },
     {
-      "files": [
-        "apps/stage/components/landing/**",
-        "apps/stage/components/smallText.ts"
-      ],
-      "rules": {
-        "core/no-restricted-syntax": "off"
-      }
+      "files": ["apps/stage/components/landing/**", "apps/stage/components/smallText.ts"],
+      "rules": { "core/no-restricted-syntax": "off" }
     },
     {
-      "files": [
-        "apps/stage/lib/safeArea.ts"
-      ],
+      "files": ["apps/stage/lib/safeArea.ts"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -376,9 +277,7 @@
             "paths": [
               {
                 "name": "react-native",
-                "importNames": [
-                  "Text"
-                ],
+                "importNames": ["Text"],
                 "message": "Prefer Text from '@stage-labs/kit/react-native/text' instead of react-native (Kit-only rollout)."
               }
             ]
@@ -387,10 +286,7 @@
       }
     },
     {
-      "files": [
-        "apps/stage/lib/zerodev/keyring.ts",
-        "apps/stage/lib/xmtp.dbkey.ts"
-      ],
+      "files": ["apps/stage/lib/zerodev/keyring.ts", "apps/stage/lib/xmtp.dbkey.ts"],
       "rules": {
         "core/no-restricted-syntax": [
           "error",
@@ -406,9 +302,7 @@
       }
     },
     {
-      "files": [
-        "apps/stage/lib/cryptoShim.ts"
-      ],
+      "files": ["apps/stage/lib/cryptoShim.ts"],
       "rules": {
         "core/no-restricted-syntax": [
           "error",
@@ -419,14 +313,7 @@
         ]
       }
     },
-    {
-      "files": [
-        "apps/stage/**/*.js"
-      ],
-      "rules": {
-        "typescript/no-require-imports": "off"
-      }
-    },
+    { "files": ["apps/stage/**/*.js"], "rules": { "typescript/no-require-imports": "off" } },
     {
       "files": [
         "apps/stage/components/bubble/AudioCard.tsx",
@@ -458,9 +345,7 @@
       }
     },
     {
-      "files": [
-        "packages/kit/src/**/*.{ts,tsx}"
-      ],
+      "files": ["packages/kit/src/**/*.{ts,tsx}"],
       "rules": {
         "core/no-restricted-syntax": [
           "error",
@@ -476,11 +361,7 @@
       }
     },
     {
-      "files": [
-        "packages/kit/src/button.styles.ts",
-        "packages/kit/src/control.styles.ts",
-        "packages/kit/src/react-native/select.tsx"
-      ],
+      "files": ["packages/kit/src/button.styles.ts", "packages/kit/src/control.styles.ts", "packages/kit/src/react-native/select.tsx"],
       "rules": {
         "core/no-restricted-syntax": [
           "error",
@@ -500,10 +381,7 @@
       }
     },
     {
-      "files": [
-        "packages/kit/src/react-native/card.tsx",
-        "packages/kit/src/react-native/list-view.tsx"
-      ],
+      "files": ["packages/kit/src/react-native/card.tsx", "packages/kit/src/react-native/list-view.tsx"],
       "rules": {
         "core/no-restricted-syntax": [
           "error",
@@ -527,10 +405,7 @@
       }
     },
     {
-      "files": [
-        "packages/kit/src/a2ui/**",
-        "packages/kit/src/*.ts"
-      ],
+      "files": ["packages/kit/src/a2ui/**", "packages/kit/src/*.ts"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -556,48 +431,14 @@
         ]
       }
     },
+    { "files": ["packages/kit/src/control.styles.ts", "packages/kit/src/glyph.ts"], "rules": { "no-restricted-imports": "off" } },
     {
-      "files": [
-        "packages/kit/src/control.styles.ts",
-        "packages/kit/src/glyph.ts"
-      ],
-      "rules": {
-        "no-restricted-imports": "off"
-      }
+      "files": ["**/*.{js,jsx,cjs,mjs}"],
+      "rules": { "comments/no-comments": "error", "text/no-em-dash": "error", "core/quotes": ["error", "single", { "avoidEscape": true }] }
     },
     {
-      "files": [
-        "**/*.{js,jsx,cjs,mjs}"
-      ],
-      "rules": {
-        "comments/no-comments": "error",
-        "text/no-em-dash": "error",
-        "core/quotes": [
-          "error",
-          "single",
-          {
-            "avoidEscape": true
-          }
-        ]
-      }
-    },
-    {
-      "files": [
-        "**/test/**",
-        "**/*.{test,spec}.{ts,tsx}",
-        "**/*.test.*"
-      ],
-      "rules": {
-        "comments/no-comments": "error",
-        "text/no-em-dash": "error",
-        "core/quotes": [
-          "error",
-          "single",
-          {
-            "avoidEscape": true
-          }
-        ]
-      }
+      "files": ["**/test/**", "**/*.{test,spec}.{ts,tsx}", "**/*.test.*"],
+      "rules": { "comments/no-comments": "error", "text/no-em-dash": "error", "core/quotes": ["error", "single", { "avoidEscape": true }] }
     }
   ]
 }

@@ -12,13 +12,17 @@ import { menuPointBelow } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePushEnabled } from '../../lib/pushPref';
-import { retryDeveloperMode, setDeveloperMode, useDeveloperMode, useDeveloperModeLoaded, useDeveloperModeLoadFailed } from '../../lib/developerMode';
+import {
+  retryDeveloperMode,
+  setDeveloperMode,
+  useDeveloperMode,
+  useDeveloperModeLoaded,
+  useDeveloperModeLoadFailed,
+} from '../../lib/developerMode';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { reported } from '../../lib/errorPolicy';
 import { isPushSupported } from '../../lib/pushRegister';
-import {
-  setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference,
-} from '../../lib/theme';
+import { setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { listXmtpInstallations } from '../../lib/xmtp.client';
 import { prefetchInbox, useMailboxes } from '../../lib/mail';
@@ -50,7 +54,10 @@ function IdentityHero(): React.ReactElement | null {
   const short = shortAddress(address);
   const handle = getPeerHandle(address);
   const sub = [handle ? displayHandle(handle) : null, short].filter((p) => p !== null).join(' · ');
-  const edit = (): void => { if (handle) setEditing(true); else capabilities.navigate(settingsSection('profile').href); };
+  const edit = (): void => {
+    if (handle) setEditing(true);
+    else capabilities.navigate(settingsSection('profile').href);
+  };
   return (
     <Column gap={16} padding={{ x: PAGE_GUTTER, top: 24 }}>
       <Row align="center" gap={16}>
@@ -62,10 +69,34 @@ function IdentityHero(): React.ReactElement | null {
       </Row>
       <Row gap={8}>
         <Button label="Edit profile" size="md" color="secondary" variant="solid" dark={dark} onPress={edit} />
-        <Button label="Switch account" size="md" color="secondary" variant="solid" dark={dark} onPress={(e) => { setAnchor(menuPointBelow(e)); }} />
+        <Button
+          label="Switch account"
+          size="md"
+          color="secondary"
+          variant="solid"
+          dark={dark}
+          onPress={(e) => {
+            setAnchor(menuPointBelow(e));
+          }}
+        />
       </Row>
-      <MenuSheet visible={anchor !== null} anchor={anchor} onClose={() => { setAnchor(null); }} />
-      {handle ? <EditProfileModal visible={editing} onClose={() => { setEditing(false); }} address={address} handle={handle} /> : null}
+      <MenuSheet
+        visible={anchor !== null}
+        anchor={anchor}
+        onClose={() => {
+          setAnchor(null);
+        }}
+      />
+      {handle ? (
+        <EditProfileModal
+          visible={editing}
+          onClose={() => {
+            setEditing(false);
+          }}
+          address={address}
+          handle={handle}
+        />
+      ) : null}
     </Column>
   );
 }
@@ -97,17 +128,46 @@ function PreferencesGroup(): React.ReactElement {
       <ListViewItem align="center" gap={14} dark={dark} padding={{ paddingTop: 10, paddingBottom: 10, paddingLeft: 16, paddingRight: 14 }}>
         <Text text="Theme" size="xs" color="link" style={{ flex: 1 }} />
         <Column width={260}>
-          <Tabs tabs={THEME_TABS} selectedIndex={custom ? -1 : THEME_OPTIONS.findIndex((o) => o.value === pref)} dark={dark}
-            onChange={(index) => { const v = THEME_OPTIONS[index]?.value; if (v === undefined) return; setCustomTheme(false); void setThemePreference(v); }} />
+          <Tabs
+            tabs={THEME_TABS}
+            selectedIndex={custom ? -1 : THEME_OPTIONS.findIndex((o) => o.value === pref)}
+            dark={dark}
+            onChange={(index) => {
+              const v = THEME_OPTIONS[index]?.value;
+              if (v === undefined) return;
+              setCustomTheme(false);
+              void setThemePreference(v);
+            }}
+          />
         </Column>
       </ListViewItem>
-      <SettingsToggleRow label="Push notifications" name="push" checked={push && pushSupported} disabled={!pushSupported}
+      <SettingsToggleRow
+        label="Push notifications"
+        name="push"
+        checked={push && pushSupported}
+        disabled={!pushSupported}
         description={pushSupported ? undefined : 'Push notifications are unavailable in this browser.'}
-        onChange={(next) => { void applyPush(next); }} />
-      <SettingsNavRow label="Appearance" value={custom ? 'Custom colors' : undefined} onPress={() => { capabilities.navigate(settingsSection('appearance').href); }} />
-      <SettingsToggleRow label="Developer mode" name="developer-mode" checked={developerMode} disabled={!developerModeLoaded}
+        onChange={(next) => {
+          void applyPush(next);
+        }}
+      />
+      <SettingsNavRow
+        label="Appearance"
+        value={custom ? 'Custom colors' : undefined}
+        onPress={() => {
+          capabilities.navigate(settingsSection('appearance').href);
+        }}
+      />
+      <SettingsToggleRow
+        label="Developer mode"
+        name="developer-mode"
+        checked={developerMode}
+        disabled={!developerModeLoaded}
         description="Show Check sync, Storage, Inbox and Dashboard on all your devices."
-        onChange={(enabled) => { void setDeveloperMode(enabled).catch(reported('developerMode.save')); }} />
+        onChange={(enabled) => {
+          void setDeveloperMode(enabled).catch(reported('developerMode.save'));
+        }}
+      />
       {developerModeFailed ? <RetryNotice message="Developer mode could not be loaded." onRetry={retryDeveloperMode} /> : null}
     </SettingsGroup>
   );
@@ -119,15 +179,33 @@ function MoreGroup(): React.ReactElement {
   const boxes = useMailboxes().data;
   const developerMode = useDeveloperMode();
   const pages = useWebTabRail() ? [] : menuPagesFor((boxes?.length ?? 0) > 0, developerMode);
-  useEffect(() => { if (developerMode && boxes !== undefined) prefetchInbox(boxes); }, [boxes, developerMode]);
+  useEffect(() => {
+    if (developerMode && boxes !== undefined) prefetchInbox(boxes);
+  }, [boxes, developerMode]);
   const row = (id: 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
     const section = settingsSection(id);
-    return <SettingsNavRow label={label} iconStart={section.icon} value={value} onPress={() => { capabilities.navigate(section.href); }} />;
+    return (
+      <SettingsNavRow
+        label={label}
+        iconStart={section.icon}
+        value={value}
+        onPress={() => {
+          capabilities.navigate(section.href);
+        }}
+      />
+    );
   };
   return (
     <SettingsGroup title="More">
       {pages.map((page) => (
-        <SettingsNavRow key={page.href} label={page.label} iconStart={page.icon} onPress={() => { capabilities.navigate(page.href); }} />
+        <SettingsNavRow
+          key={page.href}
+          label={page.label}
+          iconStart={page.icon}
+          onPress={() => {
+            capabilities.navigate(page.href);
+          }}
+        />
       ))}
       {row('security', 'Recovery phrase and private key')}
       {row('devices', 'Devices and history', count === null ? undefined : `${count} signed in`)}

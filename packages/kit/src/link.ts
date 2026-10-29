@@ -12,6 +12,12 @@ export interface LinkClickEvent {
 
 export function isPlainClick(event?: LinkClickEvent): boolean {
   if (!event) return true;
-  return !event.defaultPrevented && !event.metaKey && !event.altKey && !event.ctrlKey && !event.shiftKey
-    && (event.button === undefined || event.button === 0);
+  return (
+    !event.defaultPrevented &&
+    !event.metaKey &&
+    !event.altKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    (event.button === undefined || event.button === 0)
+  );
 }

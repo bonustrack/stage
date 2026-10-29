@@ -13,7 +13,14 @@ const CHIP_BOX: Record<LabelChipSize, ViewStyle> = {
   md: { height: 23, paddingLeft: 8, paddingRight: 8, gap: 4 },
 };
 
-export function LabelChip({ label, selected = false, leading, trailing, background, size = 'lg' }: {
+export function LabelChip({
+  label,
+  selected = false,
+  leading,
+  trailing,
+  background,
+  size = 'lg',
+}: {
   label: string;
   selected?: boolean;
   leading?: ReactNode;
@@ -28,7 +35,7 @@ export function LabelChip({ label, selected = false, leading, trailing, backgrou
       size={size}
       fontWeight="normal"
       color={selected ? bg : fg}
-      background={selected ? link : background ?? border}
+      background={selected ? link : (background ?? border)}
       style={CHIP_BOX[size]}
     >
       {(text) => (

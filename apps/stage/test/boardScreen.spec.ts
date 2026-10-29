@@ -1,9 +1,29 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  BOARD_COLUMN_WIDTH, BOARD_GAP, activeColumnIndex, boardCardPress, cardLanding, cardsRightPadding, revealScrollX,
-  addColumnProblem, addedColumnOrder, boardColumns, deleteColumnConfirm, deletedColumnOrder, draftEdit, draftNote,
-  keptColumnOrder, columnCarriers, movedColumnOrder, orderedColumns, renameEdit, renameNote,
-  renameProblem, renameTarget, renamedColumnOrder, searchedColumns,
+  BOARD_COLUMN_WIDTH,
+  BOARD_GAP,
+  activeColumnIndex,
+  boardCardPress,
+  cardLanding,
+  cardsRightPadding,
+  revealScrollX,
+  addColumnProblem,
+  addedColumnOrder,
+  boardColumns,
+  deleteColumnConfirm,
+  deletedColumnOrder,
+  draftEdit,
+  draftNote,
+  keptColumnOrder,
+  columnCarriers,
+  movedColumnOrder,
+  orderedColumns,
+  renameEdit,
+  renameNote,
+  renameProblem,
+  renameTarget,
+  renamedColumnOrder,
+  searchedColumns,
 } from '../components/board/BoardScreen.model';
 
 interface TestRow {
@@ -27,17 +47,12 @@ function dm(convId: string, lastTs: number, labels?: string[]): TestRow {
 }
 
 function shape(rows: TestRow[], pinned: string[] = [], order: string[] = []): [string, string[]][] {
-  return boardColumns(rows, pinned, order, 'label').map(c => [c.label, c.rows.map(r => r.convId)]);
+  return boardColumns(rows, pinned, order, 'label').map((c) => [c.label, c.rows.map((r) => r.convId)]);
 }
 
 describe('boardColumns', () => {
   test('one column per label in label bar order, and channels with no label stay off the board', () => {
-    const rows = [
-      row('plain', 5),
-      row('a', 4, ['Todo']),
-      row('b', 3, ['Done']),
-      row('c', 2, ['Todo']),
-    ];
+    const rows = [row('plain', 5), row('a', 4, ['Todo']), row('b', 3, ['Done']), row('c', 2, ['Todo'])];
     expect(shape(rows)).toEqual([
       ['Done', ['b']],
       ['Todo', ['a', 'c']],
@@ -71,17 +86,15 @@ describe('boardColumns', () => {
 
   test('every label gets a column, even one whose channels are all hidden', () => {
     const rows = [row('a', 2, ['Todo']), row('b', 1, ['Done'])];
-    const columns = boardColumns(rows, [], [], 'label', undefined, r => r.convId === 'a');
-    expect(columns.map(c => [c.label, c.rows.map(r => r.convId)])).toEqual([
+    const columns = boardColumns(rows, [], [], 'label', undefined, (r) => r.convId === 'a');
+    expect(columns.map((c) => [c.label, c.rows.map((r) => r.convId)])).toEqual([
       ['Done', ['b']],
       ['Todo', []],
     ]);
   });
 
   test('direct messages stay off the board', () => {
-    expect(shape([dm('d', 3), dm('e', 2, ['Todo']), row('g', 1, ['Todo'])])).toEqual([
-      ['Todo', ['g']],
-    ]);
+    expect(shape([dm('d', 3), dm('e', 2, ['Todo']), row('g', 1, ['Todo'])])).toEqual([['Todo', ['g']]]);
   });
 
   test('labels no channel carries any more come back from the saved order', () => {
@@ -104,7 +117,7 @@ describe('boardColumns by category and assignee', () => {
     dm('e', 5),
   ];
   const by = (key: 'category' | 'assignee'): [string, string, string[]][] =>
-    boardColumns(rows, [], [], key, nameOf).map(c => [c.key, c.label, c.rows.map(r => r.convId)]);
+    boardColumns(rows, [], [], key, nameOf).map((c) => [c.key, c.label, c.rows.map((r) => r.convId)]);
 
   test('one column per category A to Z, merged case-insensitively, channels without one last', () => {
     expect(by('category')).toEqual([
@@ -123,18 +136,21 @@ describe('boardColumns by category and assignee', () => {
   });
 
   test('saved label columns and the empty catch-all stay out', () => {
-    expect(boardColumns([row('a', 1, ['Todo'])], [], ['label:Done'], 'category', nameOf).map(c => c.label)).toEqual(['No project']);
-    expect(boardColumns([{ ...row('a', 1), category: 'Ops' }], [], [], 'category', nameOf).map(c => c.label)).toEqual(['Ops']);
+    expect(boardColumns([row('a', 1, ['Todo'])], [], ['label:Done'], 'category', nameOf).map((c) => c.label)).toEqual(['No project']);
+    expect(boardColumns([{ ...row('a', 1), category: 'Ops' }], [], [], 'category', nameOf).map((c) => c.label)).toEqual(['Ops']);
   });
 });
 
 describe('searching the board', () => {
   const rows = [row('alpha', 3, ['Todo']), row('beta', 2, ['Todo']), row('gamma', 1, ['Done'])];
   const searched = (query: string): [string, string[]][] =>
-    searchedColumns(boardColumns(rows, [], [], 'label'), query).map(c => [c.label, c.rows.map(r => r.convId)]);
+    searchedColumns(boardColumns(rows, [], [], 'label'), query).map((c) => [c.label, c.rows.map((r) => r.convId)]);
 
   test('keeps every column and only the cards that match, whatever the case', () => {
-    expect(searched('  BET ')).toEqual([['Done', []], ['Todo', ['beta']]]);
+    expect(searched('  BET ')).toEqual([
+      ['Done', []],
+      ['Todo', ['beta']],
+    ]);
   });
 
   test('an empty search shows every card', () => {
@@ -144,7 +160,10 @@ describe('searching the board', () => {
 
 describe('saved column order', () => {
   const keys = (order: string[]): string[] =>
-    orderedColumns(['label:a', 'label:b', 'label:c', 'unlabeled'].map(key => ({ key })), order).map(c => c.key);
+    orderedColumns(
+      ['label:a', 'label:b', 'label:c', 'unlabeled'].map((key) => ({ key })),
+      order,
+    ).map((c) => c.key);
 
   test('saved columns come first in saved order, new ones follow in their usual order', () => {
     expect(keys([])).toEqual(['label:a', 'label:b', 'label:c', 'unlabeled']);
@@ -159,17 +178,26 @@ describe('saved column order', () => {
   });
 
   test('saved columns that are not on screen keep their place', () => {
-    expect(movedColumnOrder(['label:a', 'label:b'], ['label:x', 'label:a', 'label:b'], 'label:b', 'label:a'))
-      .toEqual(['label:x', 'label:b', 'label:a']);
-    expect(movedColumnOrder(['label:a', 'label:b', 'label:c'], ['label:a', 'label:x', 'label:b'], 'label:a', 'label:b'))
-      .toEqual(['label:x', 'label:b', 'label:a', 'label:c']);
+    expect(movedColumnOrder(['label:a', 'label:b'], ['label:x', 'label:a', 'label:b'], 'label:b', 'label:a')).toEqual([
+      'label:x',
+      'label:b',
+      'label:a',
+    ]);
+    expect(movedColumnOrder(['label:a', 'label:b', 'label:c'], ['label:a', 'label:x', 'label:b'], 'label:a', 'label:b')).toEqual([
+      'label:x',
+      'label:b',
+      'label:a',
+      'label:c',
+    ]);
   });
 
   test('saved keys match columns whatever their case, and a move keeps the shown spelling', () => {
     expect(keys(['label:C', 'label:B'])).toEqual(['label:c', 'label:b', 'label:a', 'unlabeled']);
     expect(keys(['label:C', 'label:A', 'label:c'])).toEqual(['label:c', 'label:a', 'label:b', 'unlabeled']);
-    expect(movedColumnOrder(['label:Todo', 'label:Done'], ['label:todo', 'label:done'], 'label:Done', 'label:Todo'))
-      .toEqual(['label:Done', 'label:Todo']);
+    expect(movedColumnOrder(['label:Todo', 'label:Done'], ['label:todo', 'label:done'], 'label:Done', 'label:Todo')).toEqual([
+      'label:Done',
+      'label:Todo',
+    ]);
   });
 
   test('ignores drops that change nothing or involve a column that is not on screen', () => {
@@ -197,7 +225,7 @@ describe('columns left empty', () => {
 
 describe('renaming a column', () => {
   const columns = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], [], 'label');
-  const keys = columns.map(c => c.key);
+  const keys = columns.map((c) => c.key);
 
   test('a rename reaches every group carrying the name whatever its case, direct messages aside', () => {
     const rows = [row('a', 4, ['Urgent', 'todo']), row('b', 3, ['TODO']), row('c', 2, ['Done']), dm('d', 1, ['Todo'])];
@@ -219,8 +247,7 @@ describe('renaming a column', () => {
 
   test('the renamed column keeps its place in the saved order', () => {
     expect(renamedColumnOrder(keys, [], 'Todo', 'Doing')).toEqual(['label:Done', 'label:Doing']);
-    expect(renamedColumnOrder(keys, ['label:Later', 'label:todo'], 'Todo', 'Doing'))
-      .toEqual(['label:Later', 'label:Doing', 'label:Done']);
+    expect(renamedColumnOrder(keys, ['label:Later', 'label:todo'], 'Todo', 'Doing')).toEqual(['label:Later', 'label:Doing', 'label:Done']);
   });
 
   test('a rename that only changes the case keeps the column in place', () => {
@@ -228,30 +255,29 @@ describe('renaming a column', () => {
   });
 
   test('a merged column leaves the saved order where the other column already is', () => {
-    expect(renamedColumnOrder(keys, ['label:todo', 'label:Later', 'label:done'], 'Todo', 'Done'))
-      .toEqual(['label:Later', 'label:Done']);
+    expect(renamedColumnOrder(keys, ['label:todo', 'label:Later', 'label:done'], 'Todo', 'Done')).toEqual(['label:Later', 'label:Done']);
   });
 });
 
 describe('deleting a column', () => {
-  const keys = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], [], 'label').map(c => c.key);
+  const keys = boardColumns([row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)], [], [], 'label').map((c) => c.key);
 
   test('the deleted column leaves the saved order and the others keep their place', () => {
     expect(deletedColumnOrder(keys, [], 'Todo')).toEqual(['label:Done']);
-    expect(deletedColumnOrder(keys, ['label:Later', 'label:todo', 'label:Done'], 'Todo'))
-      .toEqual(['label:Later', 'label:Done']);
+    expect(deletedColumnOrder(keys, ['label:Later', 'label:todo', 'label:Done'], 'Todo')).toEqual(['label:Later', 'label:Done']);
   });
 
   test('a remembered column with no channel leaves the saved order whatever its case', () => {
     const saved = ['label:Done', 'label:Later', 'label:Todo'];
-    const shown = boardColumns([row('b', 2, ['Done'])], [], saved, 'label').map(c => c.key);
+    const shown = boardColumns([row('b', 2, ['Done'])], [], saved, 'label').map((c) => c.key);
     expect(deletedColumnOrder(shown, saved, 'later')).toEqual(['label:Done', 'label:Todo']);
   });
 
   test('the confirmation names how many channels lose the label', () => {
     const moved = 'Channels with no other label leave the board.';
     expect(deleteColumnConfirm('Todo', 3)).toEqual({
-      title: 'Delete column', message: `This removes the Todo label from 3 channels. ${moved}`,
+      title: 'Delete column',
+      message: `This removes the Todo label from 3 channels. ${moved}`,
     });
     expect(deleteColumnConfirm('Todo', 1).message).toBe(`This removes the Todo label from 1 channel. ${moved}`);
     expect(deleteColumnConfirm('Todo', 0).message).toBe('No channel has the Todo label.');
@@ -261,7 +287,7 @@ describe('deleting a column', () => {
 describe('adding a column', () => {
   const rows = [row('a', 3, ['Todo']), row('b', 2, ['Done']), row('c', 1)];
   const columns = boardColumns(rows, [], [], 'label');
-  const keys = columns.map(c => c.key);
+  const keys = columns.map((c) => c.key);
 
   test('a new name must be set, short enough and not taken by any column whatever its case', () => {
     expect(addColumnProblem(columns, '  ')).toBe('Enter a name.');
@@ -273,14 +299,21 @@ describe('adding a column', () => {
 
   test('the new column goes last in the saved order with the typed spelling', () => {
     expect(addedColumnOrder(keys, [], ' Blocked  now ')).toEqual(['label:Done', 'label:Todo', 'label:Blocked now']);
-    expect(addedColumnOrder(keys, ['label:Later', 'label:todo'], 'Blocked'))
-      .toEqual(['label:Later', 'label:Todo', 'label:Done', 'label:Blocked']);
+    expect(addedColumnOrder(keys, ['label:Later', 'label:todo'], 'Blocked')).toEqual([
+      'label:Later',
+      'label:Todo',
+      'label:Done',
+      'label:Blocked',
+    ]);
   });
 
   test('the added column shows empty at the far right of the board', () => {
     const order = addedColumnOrder(keys, [], 'Blocked');
-    expect(orderedColumns(boardColumns(rows, [], order, 'label'), order).map(c => [c.label, c.rows.length]))
-      .toEqual([['Done', 1], ['Todo', 1], ['Blocked', 0]]);
+    expect(orderedColumns(boardColumns(rows, [], order, 'label'), order).map((c) => [c.label, c.rows.length])).toEqual([
+      ['Done', 1],
+      ['Todo', 1],
+      ['Blocked', 0],
+    ]);
   });
 });
 
@@ -420,8 +453,17 @@ describe('cardLanding', () => {
     { key: 'label:a', label: 'a', rows: [card('x', 30), card('y', 10)] },
     { key: 'label:b', label: 'b', rows: [card('z', 50), card('w', 5)] },
   ];
-  const byRecent = (rows: { convId: string; lastTs: number }[]): { convId: string; lastTs: number }[] => [...rows].sort((p, q) => q.lastTs - p.lastTs);
-  const move = (itemId: string, from: string, to: string, toIndex: number) => ({ itemId, fromListId: from, toListId: to, fromIndex: 0, toIndex, beforeId: null, afterId: null });
+  const byRecent = (rows: { convId: string; lastTs: number }[]): { convId: string; lastTs: number }[] =>
+    [...rows].sort((p, q) => q.lastTs - p.lastTs);
+  const move = (itemId: string, from: string, to: string, toIndex: number) => ({
+    itemId,
+    fromListId: from,
+    toListId: to,
+    fromIndex: 0,
+    toIndex,
+    beforeId: null,
+    afterId: null,
+  });
 
   test('a card lands where the column sort puts it, wherever it was dropped', () => {
     expect(cardLanding(columns, move('x', 'label:a', 'label:b', 0), byRecent)).toBe(1);

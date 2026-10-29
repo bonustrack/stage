@@ -13,7 +13,9 @@ const behavior = (animated: boolean): ScrollBehavior => (animated ? 'smooth' : '
 const rendered = (el: HTMLElement | null): boolean => el !== null && el.getClientRects().length > 0;
 
 export function whenShown<A extends unknown[]>(host: ScrollHost, scroll: (...args: A) => void): (...args: A) => void {
-  return (...args) => { if (host.shown()) scroll(...args); };
+  return (...args) => {
+    if (host.shown()) scroll(...args);
+  };
 }
 
 export function windowHost(content: () => HTMLElement | null): ScrollHost {
@@ -51,11 +53,7 @@ export function elementHost(element: () => HTMLElement | null): ScrollHost {
   return {
     metrics: () => {
       const el = element();
-      return {
-        offset: el?.scrollTop ?? 0,
-        contentHeight: el?.scrollHeight ?? 0,
-        viewportHeight: el?.clientHeight ?? 0,
-      };
+      return { offset: el?.scrollTop ?? 0, contentHeight: el?.scrollHeight ?? 0, viewportHeight: el?.clientHeight ?? 0 };
     },
     shown: () => rendered(element()),
     scrollTo: (offset, animated) => {
@@ -66,7 +64,9 @@ export function elementHost(element: () => HTMLElement | null): ScrollHost {
       const el = element();
       if (el === null) return () => undefined;
       el.addEventListener('scroll', onScroll, { passive: true });
-      return () => { el.removeEventListener('scroll', onScroll); };
+      return () => {
+        el.removeEventListener('scroll', onScroll);
+      };
     },
     itemsOffset: (items) => {
       const el = element();

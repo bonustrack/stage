@@ -29,21 +29,37 @@ function CopyableAddress({ address }: { address: string }): React.ReactElement {
   );
 }
 
-function ProfileHeader({ address, name, handle, children }: {
-  address: string | null; name: string | undefined; handle: string | undefined; children: React.ReactNode;
+function ProfileHeader({
+  address,
+  name,
+  handle,
+  children,
+}: {
+  address: string | null;
+  name: string | undefined;
+  handle: string | undefined;
+  children: React.ReactNode;
 }): React.ReactElement {
   return (
     <Column align="center" gap={12} padding={{ y: 24 }}>
       {children}
       <Text text={name ?? (address ? shortAddress(address) : '')} size="md" fontWeight="semibold" />
-      {handle && displayHandle(handle) !== name ? <Text size="md" variant="caption" text={displayHandle(handle)} color="secondary" /> : null}
+      {handle && displayHandle(handle) !== name ? (
+        <Text size="md" variant="caption" text={displayHandle(handle)} color="secondary" />
+      ) : null}
       {address ? <CopyableAddress address={address} /> : null}
     </Column>
   );
 }
 
-function EditPane({ address, handle, view }: {
-  address: string | null; handle: string | undefined; view: ProfileView;
+function EditPane({
+  address,
+  handle,
+  view,
+}: {
+  address: string | null;
+  handle: string | undefined;
+  view: ProfileView;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const [editing, setEditing] = useState(false);
@@ -61,8 +77,25 @@ function EditPane({ address, handle, view }: {
       )}
       {editable ? (
         <Column padding={{ x: PAGE_GUTTER, bottom: 16 }}>
-          <Button label="Edit profile" block size="lg" color="secondary" variant="solid" dark={dark} onPress={() => { setEditing(true); }} />
-          <EditProfileModal visible={editing} onClose={() => { setEditing(false); }} address={address} handle={handle} />
+          <Button
+            label="Edit profile"
+            block
+            size="lg"
+            color="secondary"
+            variant="solid"
+            dark={dark}
+            onPress={() => {
+              setEditing(true);
+            }}
+          />
+          <EditProfileModal
+            visible={editing}
+            onClose={() => {
+              setEditing(false);
+            }}
+            address={address}
+            handle={handle}
+          />
         </Column>
       ) : null}
     </>
@@ -80,7 +113,12 @@ export function ProfileSettings(): React.ReactElement {
     <SettingsPage title="Profile">
       {address && view.claimVisible ? (
         <Column align="center" padding={{ top: 24, bottom: 16 }}>
-          <ClaimStageName address={address} onClaimed={() => { invalidatePeerProfile(address); }} />
+          <ClaimStageName
+            address={address}
+            onClaimed={() => {
+              invalidatePeerProfile(address);
+            }}
+          />
         </Column>
       ) : (
         <EditPane address={address} handle={handle} view={view} />

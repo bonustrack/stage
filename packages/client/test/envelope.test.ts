@@ -1,12 +1,7 @@
-
 import { describe, expect, mock, test } from 'bun:test';
-import {
-  mapDecodedToEnvelope, envelopeFromContent, type EnvelopeOptions,
-} from '../src/xmtp/envelope';
+import { mapDecodedToEnvelope, envelopeFromContent, type EnvelopeOptions } from '../src/xmtp/envelope';
 import type { HistoryEntry } from '../src/types';
-import {
-  textMessage, reactionMessage, voteReaction, throwingCodec,
-} from './fixtures/decoded-messages';
+import { textMessage, reactionMessage, voteReaction, throwingCodec } from './fixtures/decoded-messages';
 
 const LINE = 'stage://xmtp/tony/conv1';
 
@@ -38,7 +33,9 @@ describe('mapDecodedToEnvelope', () => {
 
   test('unavailable codec degrades to fallback - does NOT throw', () => {
     let e: ReturnType<typeof mapDecodedToEnvelope> | undefined;
-    expect(() => { e = mapDecodedToEnvelope(throwingCodec, LINE); }).not.toThrow();
+    expect(() => {
+      e = mapDecodedToEnvelope(throwingCodec, LINE);
+    }).not.toThrow();
     expect(e?.text).toContain('somethingNew');
     expect(e?.payload?.contentType).toBe('somethingNew');
   });
@@ -52,15 +49,16 @@ describe('mapDecodedToEnvelope', () => {
 });
 
 describe('envelopeFromContent ui-parity options', () => {
-  const base: HistoryEntry = {
-    id: 'i', ts: '2024-01-01T00:00:00.000Z', station: 'xmtp', line: 'l', from: 'f', to: 'l', messageId: 'i',
-  };
+  const base: HistoryEntry = { id: 'i', ts: '2024-01-01T00:00:00.000Z', station: 'xmtp', line: 'l', from: 'f', to: 'l', messageId: 'i' };
   const uiOptions: EnvelopeOptions = {
     reactionRemoved: (a) => a === 2 || a === 'removed',
     reactionCustom: (s) => s === 3 || s === 'custom',
     reactionCustomPayloadExtras: false,
     replyReferenceOf: (d) => (d as { referenceId: string }).referenceId,
-    replyTextOf: (d) => { const c = (d as { content: unknown }).content; return typeof c === 'string' ? c : undefined; },
+    replyTextOf: (d) => {
+      const c = (d as { content: unknown }).content;
+      return typeof c === 'string' ? c : undefined;
+    },
     attachmentNameOf: (d) => (d as { filename?: string }).filename,
     attachmentLabelOf: (d) => (d as { filename?: string }).filename ?? 'attachment',
     attachmentDataB64Of: () => 'B64',
@@ -75,24 +73,44 @@ describe('envelopeFromContent ui-parity options', () => {
   });
 
   const nativeRemote = {
-    url: 'https://store.example/encrypted', filename: 'message.txt', contentDigest: 'digest',
-    secret: 'secret', salt: 'salt', nonce: 'nonce', contentLength: '4097', scheme: 'https://',
+    url: 'https://store.example/encrypted',
+    filename: 'message.txt',
+    contentDigest: 'digest',
+    secret: 'secret',
+    salt: 'salt',
+    nonce: 'nonce',
+    contentLength: '4097',
+    scheme: 'https://',
   };
 
   test('legacy native single-remote replies keep both the file and reference', () => {
     const e = envelopeFromContent(base, 'reply', { reference: 'original', content: { remoteAttachment: nativeRemote } }, 'fallback');
     expect(e.text).toBe('[file: message.txt]');
     expect(e.replyTo).toBe('original');
-    expect(e.payload).toEqual({ contentType: 'reply', replyTo: 'original', attachments: [{ kind: 'file', name: 'message.txt', remote: nativeRemote }] });
+    expect(e.payload).toEqual({
+      contentType: 'reply',
+      replyTo: 'original',
+      attachments: [{ kind: 'file', name: 'message.txt', remote: nativeRemote }],
+    });
   });
 
   test('browser single-remote replies preserve typed metadata without calling the asynchronous type resolver', () => {
-    const info = { ...nativeRemote, secret: new Uint8Array([1]), salt: new Uint8Array([2]), nonce: new Uint8Array([3]), contentLength: 4097 };
+    const info = {
+      ...nativeRemote,
+      secret: new Uint8Array([1]),
+      salt: new Uint8Array([2]),
+      nonce: new Uint8Array([3]),
+      contentLength: 4097,
+    };
     const contentType = mock(async () => ({ typeId: 'remoteStaticAttachment' }));
     const e = envelopeFromContent(base, 'reply', { referenceId: 'original', content: info, contentType }, 'fallback', uiOptions);
     expect(e.text).toBe('[file: message.txt]');
     expect(e.replyTo).toBe('original');
-    expect(e.payload).toEqual({ contentType: 'reply', replyTo: 'original', attachments: [{ kind: 'file', name: 'message.txt', remote: info }] });
+    expect(e.payload).toEqual({
+      contentType: 'reply',
+      replyTo: 'original',
+      attachments: [{ kind: 'file', name: 'message.txt', remote: info }],
+    });
     expect(contentType).not.toHaveBeenCalled();
   });
 
@@ -102,7 +120,7 @@ describe('envelopeFromContent ui-parity options', () => {
     { ...nativeRemote, filename: 42 },
     { filename: 'message.txt', content: new Uint8Array([1]) },
     { attachments: [nativeRemote] },
-  ])('an incomplete or undecodable file reply keeps its reference and fallback', content => {
+  ])('an incomplete or undecodable file reply keeps its reference and fallback', (content) => {
     const e = envelopeFromContent(base, 'reply', { referenceId: 'original', content }, 'fallback', uiOptions);
     expect(e.replyTo).toBe('original');
     expect(e.text).toBe('fallback');
@@ -134,14 +152,20 @@ describe('envelopeFromContent ui-parity options', () => {
 
   test('description notices preserve the original sender and complete event envelope for both SDK shapes', () => {
     const change = {
-      fieldName: 'app_data', oldValue: JSON.stringify({ description: 'Before' }), newValue: JSON.stringify({ description: 'Private after' }),
+      fieldName: 'app_data',
+      oldValue: JSON.stringify({ description: 'Before' }),
+      newValue: JSON.stringify({ description: 'Private after' }),
     };
     for (const groupUpdate of [
       { initiatedByInboxId: 'initiator', metadataFieldsChanged: [change] },
       { initiatedByInboxId: 'initiator', metadataFieldChanges: [change] },
     ]) {
       const e = envelopeFromContent(base, 'group_updated', groupUpdate, undefined, uiOptions);
-      expect(e).toEqual({ ...base, text: 'updated the channel description', payload: { contentType: 'group_updated', system: true, groupUpdate } });
+      expect(e).toEqual({
+        ...base,
+        text: 'updated the channel description',
+        payload: { contentType: 'group_updated', system: true, groupUpdate },
+      });
       expect(e.payload?.groupUpdate).toBe(groupUpdate);
     }
   });
@@ -149,8 +173,14 @@ describe('envelopeFromContent ui-parity options', () => {
   test('call invites and signals keep their parsed content for the call card', () => {
     const invite = { callId: 'call-0001', from: 'peer-aaaa', video: false };
     const signal = { kind: 'join', callId: 'call-0001', from: 'peer-bbbb' };
-    expect(envelopeFromContent(base, 'callInvite', invite, 'fb', uiOptions)).toMatchObject({ text: 'fb', payload: { contentType: 'callInvite', callInvite: invite } });
-    expect(envelopeFromContent(base, 'callSignal', signal, 'fb', uiOptions).payload).toEqual({ contentType: 'callSignal', callSignal: signal });
+    expect(envelopeFromContent(base, 'callInvite', invite, 'fb', uiOptions)).toMatchObject({
+      text: 'fb',
+      payload: { contentType: 'callInvite', callInvite: invite },
+    });
+    expect(envelopeFromContent(base, 'callSignal', signal, 'fb', uiOptions).payload).toEqual({
+      contentType: 'callSignal',
+      callSignal: signal,
+    });
     expect(envelopeFromContent(base, 'callInvite', { callId: 'x' }, 'fb', uiOptions).payload).toEqual({ contentType: 'callInvite' });
   });
 
@@ -163,10 +193,14 @@ describe('envelopeFromContent ui-parity options', () => {
   test('reply whose inner content fails to decode falls back instead of throwing', () => {
     const throwing: EnvelopeOptions = {
       ...uiOptions,
-      replyTextOf: () => { throw new Error('undecodable inner content'); },
+      replyTextOf: () => {
+        throw new Error('undecodable inner content');
+      },
     };
     let e: HistoryEntry | undefined;
-    expect(() => { e = envelopeFromContent(base, 'reply', { referenceId: 'r9' }, 'inner fallback', throwing); }).not.toThrow();
+    expect(() => {
+      e = envelopeFromContent(base, 'reply', { referenceId: 'r9' }, 'inner fallback', throwing);
+    }).not.toThrow();
     expect(e?.text).toBe('inner fallback');
     expect(e?.replyTo).toBe('r9');
   });
@@ -174,7 +208,9 @@ describe('envelopeFromContent ui-parity options', () => {
   test('reply with a throwing reference resolver still yields an entry', () => {
     const throwing: EnvelopeOptions = {
       ...uiOptions,
-      replyReferenceOf: () => { throw new Error('bad reference'); },
+      replyReferenceOf: () => {
+        throw new Error('bad reference');
+      },
     };
     const e = envelopeFromContent(base, 'reply', { content: 'kept text' }, undefined, throwing);
     expect(e.text).toBe('kept text');
@@ -184,11 +220,17 @@ describe('envelopeFromContent ui-parity options', () => {
   test('a handler that throws mid-build degrades to fallback text, not a crash', () => {
     const throwing: EnvelopeOptions = {
       ...uiOptions,
-      replyReferenceOf: () => { throw new Error('boom'); },
-      replyTextOf: () => { throw new Error('boom'); },
+      replyReferenceOf: () => {
+        throw new Error('boom');
+      },
+      replyTextOf: () => {
+        throw new Error('boom');
+      },
     };
     let e: HistoryEntry | undefined;
-    expect(() => { e = envelopeFromContent(base, 'reply', { anything: true }, 'xmtp fallback', throwing); }).not.toThrow();
+    expect(() => {
+      e = envelopeFromContent(base, 'reply', { anything: true }, 'xmtp fallback', throwing);
+    }).not.toThrow();
     expect(e?.text).toBe('xmtp fallback');
   });
 });

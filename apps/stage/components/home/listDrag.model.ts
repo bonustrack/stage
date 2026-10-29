@@ -12,7 +12,12 @@ export interface HomeDragModel {
 }
 
 export const NO_HOME_DRAG: HomeDragModel = {
-  sections: [], sectionKeys: new Map(), sectionOf: new Map(), rows: [], zoneOf: new Map(), categories: new Map(),
+  sections: [],
+  sectionKeys: new Map(),
+  sectionOf: new Map(),
+  rows: [],
+  zoneOf: new Map(),
+  categories: new Map(),
 };
 
 function categoryOfHeader(header: ChannelGroupHeader): string | null | undefined {
@@ -33,7 +38,10 @@ export function homeDragModel(items: readonly HomeListItem[], byCategory: boolea
     const id = item.convId;
     if (isGroupHeader(item)) {
       section = isCategorySectionKey(item.header.key) ? id : undefined;
-      if (section !== undefined) { sections.push(id); sectionKeys.set(id, item.header.key); }
+      if (section !== undefined) {
+        sections.push(id);
+        sectionKeys.set(id, item.header.key);
+      }
       const category = categoryOfHeader(item.header);
       zone = category === undefined ? undefined : id;
       if (category !== undefined) categories.set(id, category);
@@ -42,7 +50,7 @@ export function homeDragModel(items: readonly HomeListItem[], byCategory: boolea
     }
     if (zone !== undefined) zoneOf.set(id, zone);
   }
-  return { sections, sectionKeys, sectionOf, rows: items.map(item => item.convId), zoneOf, categories };
+  return { sections, sectionKeys, sectionOf, rows: items.map((item) => item.convId), zoneOf, categories };
 }
 
 export function sectionMove(model: HomeDragModel, move: SortMove): { key: string; target: string; visible: string[] } | null {
@@ -50,7 +58,7 @@ export function sectionMove(model: HomeDragModel, move: SortMove): { key: string
   const anchor = moveAnchor(move);
   const target = anchor === null ? undefined : model.sectionKeys.get(anchor);
   if (key === undefined || target === undefined) return null;
-  return { key, target, visible: model.sections.flatMap(id => model.sectionKeys.get(id) ?? []) };
+  return { key, target, visible: model.sections.flatMap((id) => model.sectionKeys.get(id) ?? []) };
 }
 
 export function pinMove(order: readonly string[], move: SortMove): number | null {
@@ -60,7 +68,7 @@ export function pinMove(order: readonly string[], move: SortMove): number | null
 }
 
 export function zoneAt(model: HomeDragModel, itemId: string, index: number): string | undefined {
-  const others = model.rows.filter(id => id !== itemId);
+  const others = model.rows.filter((id) => id !== itemId);
   const anchor = others[index - 1] ?? others[index];
   const zone = anchor === undefined ? undefined : model.zoneOf.get(anchor);
   return zone === model.zoneOf.get(itemId) ? undefined : zone;

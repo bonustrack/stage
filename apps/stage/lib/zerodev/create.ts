@@ -8,19 +8,23 @@ import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
 import { makePublicClient, zerodevConfigured } from './client';
 import { samePreparedAccount } from '@stage-labs/client/profile/setup';
 
-export interface RestoredSmartAccount { record: AccountRecord; alreadyImported: boolean }
+export interface RestoredSmartAccount {
+  record: AccountRecord;
+  alreadyImported: boolean;
+}
 
 const FRESH_SEARCH_LIMIT = 32;
 
 async function identityInUse(publicClient: PublicClient, address: `0x${string}`): Promise<boolean> {
-  const [code, registered] = await Promise.all([
-    publicClient.getCode({ address }),
-    isXmtpRegistered(address),
-  ]);
+  const [code, registered] = await Promise.all([publicClient.getCode({ address }), isXmtpRegistered(address)]);
   return (code !== undefined && code !== '0x') || registered;
 }
 
-interface Candidate { hdIndex: number; owner: Awaited<ReturnType<typeof smartOwnerSigner>>; address: `0x${string}` }
+interface Candidate {
+  hdIndex: number;
+  owner: Awaited<ReturnType<typeof smartOwnerSigner>>;
+  address: `0x${string}`;
+}
 
 async function candidateAt(publicClient: PublicClient, phraseId: string, hdIndex: number): Promise<Candidate> {
   const owner = await smartOwnerSigner({ phraseId, hdIndex });
@@ -42,7 +46,9 @@ function requireConfigured(): void {
 }
 
 async function storeSmartAccount(
-  phraseId: string, candidate: Candidate, onPrepared?: (account: AccountRecord) => Promise<void>,
+  phraseId: string,
+  candidate: Candidate,
+  onPrepared?: (account: AccountRecord) => Promise<void>,
 ): Promise<AccountRecord> {
   const { hdIndex, owner, address } = candidate;
   const rec: AccountRecord = {
@@ -68,18 +74,23 @@ export async function createSmartAccount(onPrepared?: (account: AccountRecord) =
 }
 
 function matchesCandidate(rec: AccountRecord, candidate: Candidate): boolean {
-  return candidate.address.toLowerCase() === rec.id && candidate.address.toLowerCase() === rec.address.toLowerCase()
-    && candidate.owner.address.toLowerCase() === rec.ownerAddress?.toLowerCase() && rec.dbDir === `xmtp-${rec.id}`;
+  return (
+    candidate.address.toLowerCase() === rec.id &&
+    candidate.address.toLowerCase() === rec.address.toLowerCase() &&
+    candidate.owner.address.toLowerCase() === rec.ownerAddress?.toLowerCase() &&
+    rec.dbDir === `xmtp-${rec.id}`
+  );
 }
 
 export async function resumeSmartAccount(rec: AccountRecord): Promise<AccountRecord> {
   requireConfigured();
-  if (rec.type !== 'smart' || rec.phraseId === undefined || rec.hdIndex === undefined) throw new Error('The prepared wallet is incomplete.');
+  if (rec.type !== 'smart' || rec.phraseId === undefined || rec.hdIndex === undefined)
+    throw new Error('The prepared wallet is incomplete.');
   const candidate = await candidateAt(makePublicClient(), rec.phraseId, rec.hdIndex);
   if (!matchesCandidate(rec, candidate)) {
     throw new Error('The prepared wallet does not match its recovery phrase. Nothing was changed.');
   }
-  const existing = (await loadAccountsForWrite()).find(account => account.id === rec.id);
+  const existing = (await loadAccountsForWrite()).find((account) => account.id === rec.id);
   if (existing !== undefined && !samePreparedAccount(existing, rec)) {
     throw new Error('The saved wallet does not match the prepared account. Nothing was changed.');
   }
@@ -99,7 +110,10 @@ async function findRestorable(publicClient: PublicClient, phraseId: string): Pro
   for (let hdIndex = 0; hdIndex < FRESH_SEARCH_LIMIT; hdIndex++) {
     const candidate = await candidateAt(publicClient, phraseId, hdIndex);
     const existing = local.get(candidate.address.toLowerCase());
-    if (existing) { alreadyHere ??= existing; continue; }
+    if (existing) {
+      alreadyHere ??= existing;
+      continue;
+    }
     if (await identityInUse(publicClient, candidate.address)) return { kind: 'candidate', candidate };
     if (alreadyHere) break;
     return { kind: 'candidate', candidate };

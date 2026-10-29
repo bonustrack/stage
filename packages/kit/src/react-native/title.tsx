@@ -1,4 +1,3 @@
-
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
 import { fontName, resolveColorToken, type ColorToken } from '../tokens';
 import { HERO_TITLE_STYLE } from '../title.styles';
@@ -31,9 +30,7 @@ export function Title(props: TitleProps): React.ReactElement {
 
   const base: TextStyle = {
     color: color != null ? resolveColorToken(color, scheme) : palette.link,
-    ...(hero === undefined
-      ? { fontSize: LEVEL_SIZE[lvl], fontFamily: fontName.head }
-      : HERO_TITLE_STYLE[hero]),
+    ...(hero === undefined ? { fontSize: LEVEL_SIZE[lvl], fontFamily: fontName.head } : HERO_TITLE_STYLE[hero]),
     ...weightStyle(weight),
   };
 

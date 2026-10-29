@@ -10,8 +10,20 @@ export default { title: 'Pressable' };
 export const Controls: Story<Pick<KitPressableProps, 'pressedOpacity' | 'disabled' | 'hitSlop' | 'delayLongPress'>> = (args) => {
   const [log, setLog] = useState('Press or long-press me');
   return (
-    <Pressable {...args} onPress={() => { setLog(`pressed at ${new Date().toLocaleTimeString()}`); }} onLongPress={() => { setLog('long pressed'); }}>
-      <Column padding={16} background="#5b8def" radius="md"><Text size="xs" color="#fff">{log}</Text></Column>
+    <Pressable
+      {...args}
+      onPress={() => {
+        setLog(`pressed at ${new Date().toLocaleTimeString()}`);
+      }}
+      onLongPress={() => {
+        setLog('long pressed');
+      }}
+    >
+      <Column padding={16} background="#5b8def" radius="md">
+        <Text size="xs" color="#fff">
+          {log}
+        </Text>
+      </Column>
     </Pressable>
   );
 };

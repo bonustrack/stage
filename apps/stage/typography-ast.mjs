@@ -8,7 +8,8 @@ function definition(node, context) {
 }
 
 function unwrap(node) {
-  while (node && ['TSAsExpression', 'TSSatisfiesExpression', 'TSNonNullExpression', 'ChainExpression'].includes(node.type)) node = node.expression;
+  while (node && ['TSAsExpression', 'TSSatisfiesExpression', 'TSNonNullExpression', 'ChainExpression'].includes(node.type))
+    node = node.expression;
   return node;
 }
 
@@ -86,7 +87,7 @@ function project(node, name, state) {
 function projectValue(node, name, state) {
   const alternatives = branches(node);
   if (alternatives) {
-    const [left, right] = alternatives.map(value => project(value, name, state));
+    const [left, right] = alternatives.map((value) => project(value, name, state));
     return { type: 'ConditionalExpression', consequent: left, alternate: right };
   }
   if (node.type === 'ObjectExpression') return objectProperty(node, name, state);
@@ -139,7 +140,7 @@ function resolveValue(node, state) {
 export function createTypographyAst(context) {
   const state = { context, resolved: new WeakMap(), resolving: new WeakSet(), projected: new WeakMap() };
   return {
-    resolve: node => resolve(node, state),
+    resolve: (node) => resolve(node, state),
     key: (node, computed = false) => key(node, computed, state),
     imported: (node, source, name) => imported(node, source, name, state),
     branches,

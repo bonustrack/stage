@@ -9,11 +9,7 @@ function decodeHeaderChallenge(headerVal: string): unknown {
   }
 }
 
-export function challengeFrom402(
-  endpoint: string,
-  headers: { get(name: string): string | null },
-  body: unknown,
-): X402Challenge | null {
+export function challengeFrom402(endpoint: string, headers: { get(name: string): string | null }, body: unknown): X402Challenge | null {
   const header = headers.get('payment-required');
   return parseX402Challenge(body, endpoint) ?? (header ? parseX402Challenge(decodeHeaderChallenge(header), endpoint) : null);
 }

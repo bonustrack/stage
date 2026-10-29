@@ -5,11 +5,9 @@ const remote = (filename: string) => ({ url: 'https://example.com/blob', content
 
 describe('previewOfXmtpContent for attachments', () => {
   test('names a single image for every attachment content type', () => {
-    expect(previewOfXmtpContent({ filename: 'a.bin', mimeType: 'image/png', data: '' }, 'xmtp.org/attachment:1.0'))
-      .toBe('Sent an image');
+    expect(previewOfXmtpContent({ filename: 'a.bin', mimeType: 'image/png', data: '' }, 'xmtp.org/attachment:1.0')).toBe('Sent an image');
     expect(previewOfXmtpContent(remote('a.jpg'), 'xmtp.org/remoteStaticAttachment:1.0')).toBe('Sent an image');
-    expect(previewOfXmtpContent({ attachments: [remote('a.png')] }, 'xmtp.org/multiRemoteStaticAttachment:1.0'))
-      .toBe('Sent an image');
+    expect(previewOfXmtpContent({ attachments: [remote('a.png')] }, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent an image');
     expect(previewOfXmtpContent({ attachments: [remote('a.webp')] }, 'multiRemoteAttachment')).toBe('Sent an image');
   });
 
@@ -30,8 +28,7 @@ describe('previewOfXmtpContent for attachments', () => {
       expect(previewOfXmtpContent(undefined, `xmtp.org/${typeId}:1.0`)).toBe('Sent an attachment');
       expect(previewOfXmtpContent(null, `xmtp.org/${typeId}:1.0`)).toBe('Sent an attachment');
     }
-    expect(previewOfXmtpContent({ attachments: [] }, 'xmtp.org/multiRemoteStaticAttachment:1.0'))
-      .toBe('Sent an attachment');
+    expect(previewOfXmtpContent({ attachments: [] }, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent an attachment');
   });
 });
 

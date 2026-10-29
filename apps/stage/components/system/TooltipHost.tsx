@@ -6,21 +6,35 @@ import { bubbleShift, useRailTooltip, type RailTooltipState } from '../../lib/ra
 import { TOOLTIP } from '../menuStyle';
 import { Column, viewportFill } from '../layout';
 
-interface Band { arrow: TooltipArrow; align: 'start' | 'center'; justify: 'start' | 'center' | 'end'; style: ViewStyle }
+interface Band {
+  arrow: TooltipArrow;
+  align: 'start' | 'center';
+  justify: 'start' | 'center' | 'end';
+  style: ViewStyle;
+}
 
 const VIEWPORT_MARGIN = 8;
 
 function bandOf(tip: RailTooltipState, viewport: { width: number; height: number }): Band {
   if (tip.placement === 'beside') {
     return {
-      arrow: 'left', align: 'start', justify: 'center',
-      style: { position: 'absolute', left: tip.anchorRight + TOOLTIP.offset - TOOLTIP.arrow, top: tip.centerY - viewport.height, height: viewport.height * 2 },
+      arrow: 'left',
+      align: 'start',
+      justify: 'center',
+      style: {
+        position: 'absolute',
+        left: tip.anchorRight + TOOLTIP.offset - TOOLTIP.arrow,
+        top: tip.centerY - viewport.height,
+        height: viewport.height * 2,
+      },
     };
   }
   const across: ViewStyle = { position: 'absolute', left: tip.centerX - viewport.width, width: viewport.width * 2 };
   if (tip.placement === 'above') {
     return {
-      arrow: 'down', align: 'center', justify: 'end',
+      arrow: 'down',
+      align: 'center',
+      justify: 'end',
       style: { ...across, top: 0, height: Math.max(0, tip.anchorTop - TOOLTIP.offset + TOOLTIP.arrow) },
     };
   }
@@ -34,7 +48,13 @@ function Tip({ tip }: { tip: RailTooltipState }): React.ReactElement {
   const shift = tip.placement === 'beside' || width === 0 ? 0 : bubbleShift(tip.centerX, width, viewport.width, VIEWPORT_MARGIN);
   return (
     <Column align={band.align} justify={band.justify} style={band.style}>
-      <Tooltip label={tip.label} trailing={tip.shortcut === undefined ? undefined : <Kbd label={tip.shortcut} />} arrow={band.arrow} bubbleOffset={shift} onBubbleWidth={setWidth} />
+      <Tooltip
+        label={tip.label}
+        trailing={tip.shortcut === undefined ? undefined : <Kbd label={tip.shortcut} />}
+        arrow={band.arrow}
+        bubbleOffset={shift}
+        onBubbleWidth={setWidth}
+      />
     </Column>
   );
 }

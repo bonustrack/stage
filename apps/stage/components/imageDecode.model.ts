@@ -1,6 +1,10 @@
 import { base64ToBytes } from '@stage-labs/client/text/base64';
 
-interface DecodeSize { width: number; height: number; bytesPerPixel?: number }
+interface DecodeSize {
+  width: number;
+  height: number;
+  bytesPerPixel?: number;
+}
 
 const DRAW_LIMIT_BYTES = 100_000_000;
 const WORST_BYTES_PER_PIXEL = 8;

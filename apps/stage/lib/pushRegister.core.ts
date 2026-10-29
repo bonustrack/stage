@@ -1,6 +1,12 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import {
-  PUSH_RPC, clearConversationBody, derivePushGroupKey, deriveSenderFilterGroupKey, joinDeviceGroupBody, pushRpcPath, type PushRpc,
+  PUSH_RPC,
+  clearConversationBody,
+  derivePushGroupKey,
+  deriveSenderFilterGroupKey,
+  joinDeviceGroupBody,
+  pushRpcPath,
+  type PushRpc,
 } from '@stage-labs/client/xmtp/pushServer';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount, type AccountRecord } from './accounts';
@@ -39,7 +45,9 @@ export function toPermission(status: string): PushPermission {
 }
 
 export function makeTopicRefresh<C>(
-  getClient: () => C | null | undefined, register: (client: C) => Promise<void>, now = Date.now,
+  getClient: () => C | null | undefined,
+  register: (client: C) => Promise<void>,
+  now = Date.now,
 ): (delayMs?: number) => void {
   let timer: ReturnType<typeof setTimeout> | null = null;
   let dueAt = 0;
@@ -66,23 +74,32 @@ export function directRpcUrl(method: PushRpc): string {
 
 async function postJson(url: string, body: unknown, accepted?: number, signal?: AbortSignal): Promise<void> {
   const controller = new AbortController();
-  const abort = (): void => { controller.abort(); };
+  const abort = (): void => {
+    controller.abort();
+  };
   if (signal?.aborted) abort();
   else signal?.addEventListener('abort', abort, { once: true });
   const timer = setTimeout(abort, 15_000);
   try {
     const res = await fetch(url, {
-      method: 'POST', signal: controller.signal,
-      headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
     });
     if (!res.ok && res.status !== accepted) throw new Error(`push server responded ${res.status}`);
-  } finally { clearTimeout(timer); signal?.removeEventListener('abort', abort); }
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', abort);
+  }
 }
 
 const groupKeys = new Map<string, Promise<string>>();
 
 async function pushGroupKey(rec: AccountRecord): Promise<string> {
-  return memoized(groupKeys, rec.address, () => signingKeyForRecord(rec).then(({ signMessage }) => derivePushGroupKey(rec.address, signMessage)));
+  return memoized(groupKeys, rec.address, () =>
+    signingKeyForRecord(rec).then(({ signMessage }) => derivePushGroupKey(rec.address, signMessage)),
+  );
 }
 
 async function joinDeviceGroup(input: PushRegistrationInput, account: AccountRecord): Promise<void> {
@@ -95,9 +112,9 @@ async function joinDeviceGroup(input: PushRegistrationInput, account: AccountRec
 }
 
 const registrar = makePushRegistrar({
-  read: installationId => appStorage.get(stateKey(installationId)),
+  read: (installationId) => appStorage.get(stateKey(installationId)),
   write: (installationId, value) => appStorage.set(stateKey(installationId), value),
-  remove: installationId => appStorage.delete(stateKey(installationId)),
+  remove: (installationId) => appStorage.delete(stateKey(installationId)),
   cacheError: reported('push.cache'),
   post: (url, body, signal) => postJson(url, body, undefined, signal),
   now: Date.now,
@@ -106,7 +123,9 @@ const registrar = makePushRegistrar({
 
 const retry = makePushRetry((run, delay) => {
   const timer = setTimeout(run, delay);
-  return () => { clearTimeout(timer); };
+  return () => {
+    clearTimeout(timer);
+  };
 });
 subscribeAccountEpoch(retry.clear);
 subscribeAccountSelection(retry.clear);
@@ -127,7 +146,10 @@ export interface PushRuntimeInput extends PushRegistrationInput {
 
 const senderPublisher = makeSenderFilterPublisher();
 const senderGroupKeys = new Map<string, Promise<string>>();
-function clearSenderState(): void { senderPublisher.clear(); senderGroupKeys.clear(); }
+function clearSenderState(): void {
+  senderPublisher.clear();
+  senderGroupKeys.clear();
+}
 subscribeAccountEpoch(clearSenderState);
 subscribeAccountSelection(clearSenderState);
 
@@ -137,26 +159,40 @@ async function senderGroupKey(account: AccountRecord, inboxId: string): Promise<
   if (known) return known;
   const pending = signingKeyForRecord(account).then(({ signMessage }) => deriveSenderFilterGroupKey(account.address, inboxId, signMessage));
   senderGroupKeys.set(id, pending);
-  pending.catch(() => { senderGroupKeys.delete(id); });
+  pending.catch(() => {
+    senderGroupKeys.delete(id);
+  });
   return pending;
 }
 
 export async function runSenderFilterPublication(input: PushRuntimeInput, topic?: string, timing?: SendTiming): Promise<void> {
   const controller = new AbortController();
-  const abort = (): void => { controller.abort(); };
+  const abort = (): void => {
+    controller.abort();
+  };
   const stopEpoch = subscribeAccountEpoch(abort);
   const stopSelection = subscribeAccountSelection(abort);
   const current = (): boolean => !controller.signal.aborted && input.current();
   try {
     const account = await timeSendPhase(timing, 'filter.account', getActiveAccount);
-    if (!account || account.address.toLowerCase() !== input.accountAddress.toLowerCase() || !current()) throw new Error('Sender filter account changed');
+    if (!account || account.address.toLowerCase() !== input.accountAddress.toLowerCase() || !current())
+      throw new Error('Sender filter account changed');
     await senderPublisher.publish({
-      installationId: input.installationId, current, signal: controller.signal, topic, timing,
-      groupKey: () => senderGroupKey(account, input.inboxId), sign: input.signInstallation,
-      syncPreferences: input.syncPreferences, collectTopics: input.collectSenderTopics,
+      installationId: input.installationId,
+      current,
+      signal: controller.signal,
+      topic,
+      timing,
+      groupKey: () => senderGroupKey(account, input.inboxId),
+      sign: input.signInstallation,
+      syncPreferences: input.syncPreferences,
+      collectTopics: input.collectSenderTopics,
       post: (body, signal) => postJson(input.rpcUrl(PUSH_RPC.senderFilters), body, undefined, signal),
     });
-  } finally { stopEpoch(); stopSelection(); }
+  } finally {
+    stopEpoch();
+    stopSelection();
+  }
 }
 
 export async function warmSenderFilterSync(input: PushRuntimeInput): Promise<void> {
@@ -165,7 +201,9 @@ export async function warmSenderFilterSync(input: PushRuntimeInput): Promise<voi
 
 export async function runPushRegistration(input: PushRuntimeInput): Promise<void> {
   const controller = new AbortController();
-  const abort = (): void => { controller.abort(); };
+  const abort = (): void => {
+    controller.abort();
+  };
   const stopEpoch = subscribeAccountEpoch(abort);
   const stopSelection = subscribeAccountSelection(abort);
   const accountCurrent = (): boolean => !controller.signal.aborted && input.current();
@@ -180,9 +218,14 @@ export async function runPushRegistration(input: PushRuntimeInput): Promise<void
   } catch (err) {
     if (accountCurrent()) {
       reportPushFailure('push.register', err);
-      retry.failed(input.installationId, () => { if (input.current()) void runPushRegistration(input); });
+      retry.failed(input.installationId, () => {
+        if (input.current()) void runPushRegistration(input);
+      });
     }
-  } finally { stopEpoch(); stopSelection(); }
+  } finally {
+    stopEpoch();
+    stopSelection();
+  }
 }
 
 async function registerDelivery(input: PushRuntimeInput, current: () => boolean, signal: AbortSignal): Promise<void> {
@@ -230,10 +273,13 @@ export function makePushClear(input: PushClearInput): () => void {
       if (markedUnread) return;
       void input.dismissLocal(convId).catch(ignored(undefined, 'ui'));
       clearTimeout(pending.get(convId));
-      pending.set(convId, setTimeout(() => {
-        pending.delete(convId);
-        void requestPushClear(input, convId).catch(reported('push.clear'));
-      }, CLEAR_DEBOUNCE_MS));
+      pending.set(
+        convId,
+        setTimeout(() => {
+          pending.delete(convId);
+          void requestPushClear(input, convId).catch(reported('push.clear'));
+        }, CLEAR_DEBOUNCE_MS),
+      );
     });
   };
 }

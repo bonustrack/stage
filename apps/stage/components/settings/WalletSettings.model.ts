@@ -23,10 +23,7 @@ export interface WalletValueRow {
 export function walletAccountRows(model: WalletAccountModel): WalletValueRow[] {
   const rows: WalletValueRow[] = [{ label: 'Name', value: model.label }];
   if (model.hdIndex != null) rows.push({ label: 'HD index', value: `#${model.hdIndex}` });
-  rows.push({
-    label: 'Type',
-    value: model.isSmart ? 'Smart account (ZeroDev Kernel)' : `Legacy (${model.rec.type})`,
-  });
+  rows.push({ label: 'Type', value: model.isSmart ? 'Smart account (ZeroDev Kernel)' : `Legacy (${model.rec.type})` });
   if (model.isSmart) rows.push({ label: 'Active signer', value: model.activeSigner });
   return rows;
 }

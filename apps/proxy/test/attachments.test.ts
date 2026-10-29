@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  ATTACHMENTS_PATH, MAX_ATTACHMENT_BYTES, handleAttachments, newAttachmentId, parseAttachmentRoute, r2AttachmentStore,
+  ATTACHMENTS_PATH,
+  MAX_ATTACHMENT_BYTES,
+  handleAttachments,
+  newAttachmentId,
+  parseAttachmentRoute,
+  r2AttachmentStore,
   type AttachmentStore,
 } from '../src/attachments.ts';
 
@@ -75,9 +80,18 @@ describe('r2AttachmentStore', () => {
     const calls: string[] = [];
     const object = { body: new Blob([new Uint8Array([1, 2, 3])]).stream(), size: 3, httpEtag: '"etag"' };
     const bucket = {
-      put: (key: string) => { calls.push(`put ${key}`); return Promise.resolve(null); },
-      head: (key: string) => { calls.push(`head ${key}`); return Promise.resolve(object); },
-      get: (key: string) => { calls.push(`get ${key}`); return Promise.resolve(object); },
+      put: (key: string) => {
+        calls.push(`put ${key}`);
+        return Promise.resolve(null);
+      },
+      head: (key: string) => {
+        calls.push(`head ${key}`);
+        return Promise.resolve(object);
+      },
+      get: (key: string) => {
+        calls.push(`get ${key}`);
+        return Promise.resolve(object);
+      },
     } as unknown as Bucket;
     const store = r2AttachmentStore(bucket);
     await store.put(ID, new Blob([new Uint8Array([1, 2, 3])]).stream());
@@ -108,7 +122,7 @@ describe('handleAttachments', () => {
     const uploaded = await handleAttachments(upload(bytes), store);
     expect(uploaded.status).toBe(200);
     expect(uploaded.headers.get('access-control-allow-origin')).toBe('*');
-    const { id } = await uploaded.json() as { id: string };
+    const { id } = (await uploaded.json()) as { id: string };
     const url = `${ORIGIN}${ATTACHMENTS_PATH}/${id}`;
     expect(parseAttachmentRoute(`${ATTACHMENTS_PATH}/${id}`, 'GET')).toEqual({ kind: 'file', id });
     expect(store.objects.get(id)).toEqual(bytes);

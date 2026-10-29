@@ -1,7 +1,5 @@
 import { isAddress, type Hex } from 'viem';
-import {
-  claimIsFresh, claimMessage, describeLabelProblem, stageNameOf, validateStageLabel,
-} from '@stage-labs/client/identity/stageNames';
+import { claimIsFresh, claimMessage, describeLabelProblem, stageNameOf, validateStageLabel } from '@stage-labs/client/identity/stageNames';
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { isMailPublicKey, isMailboxLabel } from '@stage-labs/client/mail/mailbox';
 import { mailboxStub, saveMailKey } from './mailBox.ts';
@@ -56,7 +54,13 @@ async function check(url: URL, deps: NamesDeps): Promise<Response> {
   return reply({ valid: true, available: !taken });
 }
 
-interface ClaimBody { label: string; address: Hex; issuedAt: number; signature: Hex; mailKey?: Hex }
+interface ClaimBody {
+  label: string;
+  address: Hex;
+  issuedAt: number;
+  signature: Hex;
+  mailKey?: Hex;
+}
 
 function claimFields({ label, address, issuedAt, signature }: Record<string, unknown>): ClaimBody | null {
   if (typeof label !== 'string' || typeof address !== 'string' || typeof signature !== 'string') return null;
@@ -83,7 +87,8 @@ async function rejectClaim(claim: ClaimBody, deps: NamesDeps): Promise<Response 
   if (!claimIsFresh(claim.issuedAt, now)) return reply({ error: 'claim expired, sign it again' }, 400);
   const heldName = await deps.store.get(addressKey(claim.address));
   if (heldName !== null && heldName !== claim.label) return reply({ error: 'this address already has a name' }, 409);
-  if (!(await deps.chain.verifyClaim(claim.address, claimMessage(claim), claim.signature))) return reply({ error: 'invalid signature' }, 401);
+  if (!(await deps.chain.verifyClaim(claim.address, claimMessage(claim), claim.signature)))
+    return reply({ error: 'invalid signature' }, 401);
   return unavailableReply(claim, deps);
 }
 
@@ -107,9 +112,10 @@ async function issueName(body: ClaimBody, deps: NamesDeps): Promise<Hex | Respon
     const pending = await deps.store.get(transactionKey(body.label));
     if (pending !== null && !/^0x[0-9a-fA-F]{64}$/.test(pending)) throw new Error('The pending name transaction cannot be confirmed yet.');
     if (pending === null) await deps.store.put(transactionKey(body.label), 'unknown');
-    const txHash = pending === null
-      ? await deps.chain.issue(body.label, body.address, (hash) => deps.store.put(transactionKey(body.label), hash))
-      : await deps.chain.confirm(pending as Hex);
+    const txHash =
+      pending === null
+        ? await deps.chain.issue(body.label, body.address, (hash) => deps.store.put(transactionKey(body.label), hash))
+        : await deps.chain.confirm(pending as Hex);
     await deps.store.put(transactionKey(body.label), '');
     await deps.store.put(pendingKey(body.label), '');
     return txHash;
@@ -180,7 +186,7 @@ export async function handleNames(request: Request, deps: NamesDeps): Promise<Re
   try {
     return await route(request, deps);
   } catch (err) {
-    const detail = err instanceof Error ? err.message.split('\n')[0] ?? 'unknown error' : String(err);
+    const detail = err instanceof Error ? (err.message.split('\n')[0] ?? 'unknown error') : String(err);
     return reply({ error: `name service error: ${detail}` }, 502);
   }
 }

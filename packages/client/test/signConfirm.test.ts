@@ -1,4 +1,3 @@
-
 import { describe, expect, test } from 'bun:test';
 import { deriveSignSummary, signConfirmMessage } from '../src/wallet/txConfirm';
 import type { SignatureRequestContent } from '../src/xmtp/sign';
@@ -38,7 +37,8 @@ describe('deriveSignSummary - high-risk typed data', () => {
 
   test('EIP-3009 TransferWithAuthorization is high-risk, decodes `to`', () => {
     const req: SignatureRequestContent = {
-      id: 's', kind: 'eip712',
+      id: 's',
+      kind: 'eip712',
       eip712: {
         domain: { name: 'USD Coin' },
         types: { TransferWithAuthorization: [{ name: 'to', type: 'address' }] },
@@ -53,7 +53,8 @@ describe('deriveSignSummary - high-risk typed data', () => {
 
   test('Seaport OrderComponents is high-risk', () => {
     const req: SignatureRequestContent = {
-      id: 's', kind: 'eip712',
+      id: 's',
+      kind: 'eip712',
       eip712: { domain: {}, types: { OrderComponents: [] }, primaryType: 'OrderComponents', message: {} },
     };
     expect(deriveSignSummary(req).highRisk).toBe(true);
@@ -68,7 +69,8 @@ describe('deriveSignSummary - low-risk', () => {
   });
   test('an unknown benign typed-data primaryType is not high-risk', () => {
     const req: SignatureRequestContent = {
-      id: 's', kind: 'eip712',
+      id: 's',
+      kind: 'eip712',
       eip712: { domain: {}, types: { Login: [] }, primaryType: 'Login', message: {} },
     };
     expect(deriveSignSummary(req).highRisk).toBe(false);

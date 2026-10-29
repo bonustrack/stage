@@ -4,8 +4,13 @@ import { chartExtents, chartNumber, chartValueScale, type ChartExtent, type Char
 import { FONT_SIZE } from './tokens';
 
 export {
-  CHART_COLORS, chartPrimitiveColor, chartSeriesColors, isChartColorName, isChartColorToken,
-  type ChartColor, type ChartColorName,
+  CHART_COLORS,
+  chartPrimitiveColor,
+  chartSeriesColors,
+  isChartColorName,
+  isChartColorToken,
+  type ChartColor,
+  type ChartColorName,
 } from './chart.colors';
 export { CHART_CURVE_TYPES, type ChartCurveType, type ChartPoint } from './chart.curves';
 export { chartNumber, chartTicks, type ChartDomain, type ChartDomainBound, type ChartYAxisConfig } from './chart.scale';
@@ -149,7 +154,7 @@ export function chartXLabel(xAxis: ChartXAxis, row: ChartDatum | undefined): str
   const raw = row?.[chartXKey(xAxis)];
   const key = raw === undefined ? '' : String(raw);
   const labels = typeof xAxis === 'string' ? undefined : xAxis.labels;
-  return labels !== undefined && Object.hasOwn(labels, key) ? labels[key] ?? key : key;
+  return labels !== undefined && Object.hasOwn(labels, key) ? (labels[key] ?? key) : key;
 }
 
 export function chartAspectRatio(value: number | string | undefined): number {
@@ -190,12 +195,7 @@ function categoriesOf(input: ChartGeometryInput, plot: ChartPlot, banded: boolea
   const step = banded ? width / Math.max(1, n) : width / Math.max(1, n - 1);
   return input.data.map((row, i) => {
     const x = banded ? plot.left + (i + 0.5) * step : n > 1 ? plot.left + i * step : plot.left + width / 2;
-    return {
-      label: chartXLabel(input.xAxis, row),
-      x,
-      start: Math.max(plot.left, x - step / 2),
-      end: Math.min(plot.right, x + step / 2),
-    };
+    return { label: chartXLabel(input.xAxis, row), x, start: Math.max(plot.left, x - step / 2), end: Math.min(plot.right, x + step / 2) };
   });
 }
 
@@ -226,10 +226,15 @@ function rectPath(x: number, y: number, w: number, h: number, radius: Radius): s
   }
   const arc = (r: number, px: number, py: number): string => (r > 0 ? `A${num(r)},${num(r)},0,0,${cw},${num(px)},${num(py)}` : '');
   return [
-    `M${num(x)},${num(y + ys * tl)}`, arc(tl, x + tl, y),
-    `L${num(x + w - tr)},${num(y)}`, arc(tr, x + w, y + ys * tr),
-    `L${num(x + w)},${num(y + h - ys * br)}`, arc(br, x + w - br, y + h),
-    `L${num(x + bl)},${num(y + h)}`, arc(bl, x, y + h - ys * bl), 'Z',
+    `M${num(x)},${num(y + ys * tl)}`,
+    arc(tl, x + tl, y),
+    `L${num(x + w - tr)},${num(y)}`,
+    arc(tr, x + w, y + ys * tr),
+    `L${num(x + w)},${num(y + h - ys * br)}`,
+    arc(br, x + w - br, y + h),
+    `L${num(x + bl)},${num(y + h)}`,
+    arc(bl, x, y + h - ys * bl),
+    'Z',
   ].join('');
 }
 
@@ -271,7 +276,12 @@ interface Scale {
   band: number;
 }
 
-function barsOf(input: ChartGeometryInput, extents: readonly ChartExtent[][], categories: readonly ChartCategory[], scale: Scale): ChartBar[] {
+function barsOf(
+  input: ChartGeometryInput,
+  extents: readonly ChartExtent[][],
+  categories: readonly ChartCategory[],
+  scale: Scale,
+): ChartBar[] {
   const layout = barLayout(input, scale.band);
   if (!(layout.size > 0)) return [];
   return input.series.flatMap((s, si) => {
@@ -299,15 +309,45 @@ function segments(pairs: readonly (Pair | undefined)[]): Pair[][] {
   return out.filter((part) => part.length > 0);
 }
 
-function shapeOf(s: ChartSeries, si: number, extents: readonly ChartExtent[], categories: readonly ChartCategory[], y: (v: number) => number): ChartShape {
-  const curve = s.type === 'bar' ? 'linear' : s.curveType ?? CHART_DEFAULTS.curveType;
+function shapeOf(
+  s: ChartSeries,
+  si: number,
+  extents: readonly ChartExtent[],
+  categories: readonly ChartCategory[],
+  y: (v: number) => number,
+): ChartShape {
+  const curve = s.type === 'bar' ? 'linear' : (s.curveType ?? CHART_DEFAULTS.curveType);
   const pairs = extents.map((e, i): Pair | undefined => {
     const cat = categories[i];
-    return e === undefined || cat === undefined ? undefined : [[cat.x, y(e[1])], [cat.x, y(e[0])]];
+    return e === undefined || cat === undefined
+      ? undefined
+      : [
+          [cat.x, y(e[1])],
+          [cat.x, y(e[0])],
+        ];
   });
   const parts = segments(pairs);
-  const line = parts.map((part) => chartCurvePath(part.map((p) => p[0]), curve, 'line')).join('');
-  const area = s.type === 'area' ? parts.map((part) => chartAreaPath(part.map((p) => p[0]), part.map((p) => p[1]), curve)).join('') : undefined;
+  const line = parts
+    .map((part) =>
+      chartCurvePath(
+        part.map((p) => p[0]),
+        curve,
+        'line',
+      ),
+    )
+    .join('');
+  const area =
+    s.type === 'area'
+      ? parts
+          .map((part) =>
+            chartAreaPath(
+              part.map((p) => p[0]),
+              part.map((p) => p[1]),
+              curve,
+            ),
+          )
+          .join('')
+      : undefined;
   const dots = parts.flatMap((part) => (part.length === 1 && part[0] !== undefined ? [part[0][0]] : []));
   return { series: si, line, area, points: pairs.map((p) => p?.[0]), dots };
 }

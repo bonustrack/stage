@@ -34,7 +34,7 @@ function byNewest(a: Keyed, b: Keyed): number {
 }
 
 function keyed(entries: readonly HistoryEntry[]): Keyed[] {
-  const msById = new Map(entries.map(e => [e.id, sentMs(e)]));
+  const msById = new Map(entries.map((e) => [e.id, sentMs(e)]));
   return entries.map((entry, index) => {
     const targetId = reactionTarget(entry);
     const targetMs = targetId === undefined ? undefined : msById.get(targetId);
@@ -44,41 +44,44 @@ function keyed(entries: readonly HistoryEntry[]): Keyed[] {
 }
 
 function newestFirst(entries: readonly HistoryEntry[]): HistoryEntry[] {
-  return keyed(entries).sort(byNewest).map(({ entry }) => entry);
+  return keyed(entries)
+    .sort(byNewest)
+    .map(({ entry }) => entry);
 }
 
 function withDeletedPlaceholders(
-  prev: readonly HistoryEntry[], incoming: readonly HistoryEntry[],
+  prev: readonly HistoryEntry[],
+  incoming: readonly HistoryEntry[],
 ): { entries: readonly HistoryEntry[]; replaced: number } {
-  const placeholders = new Map(incoming.filter(isDeletedPlaceholder).map(e => [e.id, e]));
+  const placeholders = new Map(incoming.filter(isDeletedPlaceholder).map((e) => [e.id, e]));
   let replaced = 0;
-  const entries = placeholders.size === 0 ? prev : prev.map((e) => {
-    const placeholder = placeholders.get(e.id);
-    if (placeholder === undefined || isDeletedPlaceholder(e)) return e;
-    replaced += 1;
-    return placeholder;
-  });
+  const entries =
+    placeholders.size === 0
+      ? prev
+      : prev.map((e) => {
+          const placeholder = placeholders.get(e.id);
+          if (placeholder === undefined || isDeletedPlaceholder(e)) return e;
+          replaced += 1;
+          return placeholder;
+        });
   return { entries, replaced };
 }
 
 export function mergeFeedEntries(prev: readonly HistoryEntry[], incoming: readonly HistoryEntry[]): FeedMerge {
   const { entries: base, replaced } = withDeletedPlaceholders(prev, incoming);
-  const fresh = uniqueBy(incoming, e => e.id, new Set(base.map(e => e.id)));
+  const fresh = uniqueBy(incoming, (e) => e.id, new Set(base.map((e) => e.id)));
   if (fresh.length === 0) return { entries: [...base], added: 0, replaced, channelUpdated: false };
   return { entries: newestFirst([...fresh, ...base]), added: fresh.length, replaced, channelUpdated: fresh.some(isSystemEntry) };
 }
 
-export function settleCachedFeed(
-  slice: readonly HistoryEntry[], cachedIds: ReadonlySet<string>, page: readonly HistoryEntry[],
-): FeedMerge {
-  return mergeFeedEntries(slice.filter(e => !cachedIds.has(e.id)), page);
+export function settleCachedFeed(slice: readonly HistoryEntry[], cachedIds: ReadonlySet<string>, page: readonly HistoryEntry[]): FeedMerge {
+  return mergeFeedEntries(
+    slice.filter((e) => !cachedIds.has(e.id)),
+    page,
+  );
 }
 
-export function withNestedReactions<M>(
-  newestFirst: readonly M[],
-  reactionsOf: (m: M) => readonly M[],
-  sentNsOf: (m: M) => number,
-): M[] {
+export function withNestedReactions<M>(newestFirst: readonly M[], reactionsOf: (m: M) => readonly M[], sentNsOf: (m: M) => number): M[] {
   const pending = newestFirst
     .flatMap((m) => reactionsOf(m).map((r) => ({ r, ns: Math.max(sentNsOf(r), sentNsOf(m)) })))
     .sort((a, b) => b.ns - a.ns);

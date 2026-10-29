@@ -12,7 +12,10 @@ type ChatImage = GalleryItem<Attachment>;
 
 const ChatGalleryContext = createContext<(() => readonly ChatImage[]) | null>(null);
 
-export function ChatGalleryProvider({ entries, children }: {
+export function ChatGalleryProvider({
+  entries,
+  children,
+}: {
   entries: readonly HistoryEntry[];
   children: React.ReactNode;
 }): React.ReactElement {
@@ -25,10 +28,15 @@ function useChatImageUri(image: ChatImage | null): string | null {
   const remote = useRemoteAttachment(image?.att.remote);
   if (!image) return null;
   if (local) return local.uri;
-  return image.att.remote ? remote.uri ?? '' : inlineAttachmentUrl(image.att);
+  return image.att.remote ? (remote.uri ?? '') : inlineAttachmentUrl(image.att);
 }
 
-export function ChatImageViewer({ uri, galleryKey, visible, onClose }: {
+export function ChatImageViewer({
+  uri,
+  galleryKey,
+  visible,
+  onClose,
+}: {
   uri: string;
   galleryKey?: string;
   visible: boolean;
@@ -48,5 +56,7 @@ export function ChatImageViewer({ uri, galleryKey, visible, onClose }: {
     if (next) setShown(next);
   });
   useGalleryKeys(visible && images !== null && galleryKey !== undefined, step);
-  return <ImageViewer uri={shownUri ?? uri} visible={visible} onClose={onClose} onStep={images && galleryKey !== undefined ? step : undefined} />;
+  return (
+    <ImageViewer uri={shownUri ?? uri} visible={visible} onClose={onClose} onStep={images && galleryKey !== undefined ? step : undefined} />
+  );
 }

@@ -19,9 +19,7 @@ export function nativeCardIdentifier(convId: string): string {
   return `expo-notifications://foreign_notifications?id=${javaStringHash(convId.toLowerCase())}`;
 }
 
-export function notificationIdsForConv(
-  presented: readonly PresentedNotification[], convId: string, withNativeCard: boolean,
-): string[] {
+export function notificationIdsForConv(presented: readonly PresentedNotification[], convId: string, withNativeCard: boolean): string[] {
   const ids = presented.filter((n) => convIdOfNotificationData(n.data) === convId).map((n) => n.identifier);
   if (withNativeCard) ids.push(nativeCardIdentifier(convId));
   return [...new Set(ids)];

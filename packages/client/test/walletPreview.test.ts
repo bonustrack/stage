@@ -26,7 +26,8 @@ describe('previewOfXmtpContent for payment requests', () => {
 
   test('known token: the amount comes from the transfer calldata with the token decimals', () => {
     const req = request({
-      to: USDC_BASE, data: transfer(USDC_BASE, 10000n),
+      to: USDC_BASE,
+      data: transfer(USDC_BASE, 10000n),
       metadata: { currency: 'USDC', amount: 10000, decimals: 6, toAddress: PAYEE },
     });
     expect(previewOfXmtpContent(req, REQUEST)).toBe('Payment request: 0.01 USDC');
@@ -34,7 +35,8 @@ describe('previewOfXmtpContent for payment requests', () => {
 
   test('unknown token: metadata amount scaled by its decimals', () => {
     const req = request({
-      to: UNKNOWN_TOKEN, data: transfer(UNKNOWN_TOKEN, 10000n),
+      to: UNKNOWN_TOKEN,
+      data: transfer(UNKNOWN_TOKEN, 10000n),
       metadata: { currency: 'FOO', amount: 10000, decimals: 6, toAddress: PAYEE },
     });
     expect(previewOfXmtpContent(req, REQUEST)).toBe('Payment request: 0.01 FOO');
@@ -52,8 +54,9 @@ describe('previewOfXmtpContent for payment requests', () => {
 
   test('a bare call with no value shows the metadata amount or nothing, never 0 ETH', () => {
     expect(previewOfXmtpContent(request({ to: PAYEE }), REQUEST)).toBe('Payment request');
-    expect(previewOfXmtpContent(request({ to: PAYEE, metadata: { currency: 'ETH', amount: 0.5 } }), REQUEST))
-      .toBe('Payment request: 0.5 ETH');
+    expect(previewOfXmtpContent(request({ to: PAYEE, metadata: { currency: 'ETH', amount: 0.5 } }), REQUEST)).toBe(
+      'Payment request: 0.5 ETH',
+    );
   });
 
   test('no amount at all', () => {
@@ -64,10 +67,12 @@ describe('previewOfXmtpContent for payment requests', () => {
 
 describe('previewOfXmtpContent for receipts and signatures', () => {
   test('receipt with an amount reads like the bubble', () => {
-    expect(previewOfXmtpContent({ networkId: 8453, reference: '0xabc', metadata: { currency: 'USDC', amount: 5 } }, RECEIPT))
-      .toBe('Payment sent · 5 USDC');
-    expect(previewOfXmtpContent({ networkId: 8453, reference: '0xabc', metadata: { currency: 'USDC', amount: 5000000, decimals: 6 } }, RECEIPT))
-      .toBe('Payment sent · 5 USDC');
+    expect(previewOfXmtpContent({ networkId: 8453, reference: '0xabc', metadata: { currency: 'USDC', amount: 5 } }, RECEIPT)).toBe(
+      'Payment sent · 5 USDC',
+    );
+    expect(
+      previewOfXmtpContent({ networkId: 8453, reference: '0xabc', metadata: { currency: 'USDC', amount: 5000000, decimals: 6 } }, RECEIPT),
+    ).toBe('Payment sent · 5 USDC');
   });
 
   test('receipt without an amount', () => {

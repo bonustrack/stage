@@ -17,13 +17,26 @@ import { Column } from '../layout';
 const PROFILE_TITLE = 'Set up your profile';
 const PROFILE_ABOUT = 'Add a picture, your name and a few words about you.';
 
-function PicturePicker({ image, busy, onPick }: {
-  image: ProfileImage | null; busy: boolean; onPick: (file: ProfileImage) => void;
+function PicturePicker({
+  image,
+  busy,
+  onPick,
+}: {
+  image: ProfileImage | null;
+  busy: boolean;
+  onPick: (file: ProfileImage) => void;
 }): React.ReactElement {
   const pal = usePalette();
   const [pickNonce, setPickNonce] = useState(0);
   return (
-    <Pressable onPress={() => { if (!busy) setPickNonce((n) => n + 1); }} hitSlop={8} accessibilityLabel="Choose a profile picture" style={{ alignSelf: 'center' }}>
+    <Pressable
+      onPress={() => {
+        if (!busy) setPickNonce((n) => n + 1);
+      }}
+      hitSlop={8}
+      accessibilityLabel="Choose a profile picture"
+      style={{ alignSelf: 'center' }}
+    >
       {image === null ? (
         <Column size={PROFILE_AVATAR_SIZE} radius="full" background={pal.border} align="center" justify="center">
           <Glyph icon={IconCamera1} size={28} color={pal.sub} />
@@ -36,25 +49,74 @@ function PicturePicker({ image, busy, onPick }: {
   );
 }
 
-export function ProfileStep({ dark, busy, onContinue, initial = EMPTY_DETAILS, before, continueDisabled = false }: {
-  dark: boolean; busy: boolean; initial?: ProfileDetails; before?: React.ReactNode; continueDisabled?: boolean;
+export function ProfileStep({
+  dark,
+  busy,
+  onContinue,
+  initial = EMPTY_DETAILS,
+  before,
+  continueDisabled = false,
+}: {
+  dark: boolean;
+  busy: boolean;
+  initial?: ProfileDetails;
+  before?: React.ReactNode;
+  continueDisabled?: boolean;
   onContinue: (details: ProfileDetails) => void;
 }): React.ReactElement {
   const pal = usePalette();
   const [details, setDetails] = useState<ProfileDetails>(initial);
   const problem = profileDetailsProblem(details);
   const footer = (
-    <Button variant="primary" dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
-      label="Continue" disabled={busy || continueDisabled || problem !== null}
-      onPress={() => { onContinue(details); }} />
+    <Button
+      variant="primary"
+      dark={dark}
+      size="lg"
+      fullWidth
+      pill
+      tintBg={pal.primary}
+      tintFg={pal.bg}
+      label="Continue"
+      disabled={busy || continueDisabled || problem !== null}
+      onPress={() => {
+        onContinue(details);
+      }}
+    />
   );
   return (
     <OnboardingCard title={PROFILE_TITLE} about={PROFILE_ABOUT} footer={footer}>
       {before}
-      <PicturePicker image={details.image} busy={busy} onPick={(image) => { setDetails({ ...details, image }); }} />
-      <FormField label="Name" placeholder="e.g. Alice" value={details.displayName} onChangeText={(displayName) => { setDetails({ ...details, displayName }); }} disabled={busy} />
-      <FormField label="About" placeholder="A few words about you" multiline value={details.description} onChangeText={(description) => { setDetails({ ...details, description }); }} disabled={busy} />
-      {problem === null ? null : <Text size="3xs" color={pal.sub}>{problem}</Text>}
+      <PicturePicker
+        image={details.image}
+        busy={busy}
+        onPick={(image) => {
+          setDetails({ ...details, image });
+        }}
+      />
+      <FormField
+        label="Name"
+        placeholder="e.g. Alice"
+        value={details.displayName}
+        onChangeText={(displayName) => {
+          setDetails({ ...details, displayName });
+        }}
+        disabled={busy}
+      />
+      <FormField
+        label="About"
+        placeholder="A few words about you"
+        multiline
+        value={details.description}
+        onChangeText={(description) => {
+          setDetails({ ...details, description });
+        }}
+        disabled={busy}
+      />
+      {problem === null ? null : (
+        <Text size="3xs" color={pal.sub}>
+          {problem}
+        </Text>
+      )}
     </OnboardingCard>
   );
 }

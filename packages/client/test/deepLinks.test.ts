@@ -26,7 +26,8 @@ describe('routeForUrl', () => {
 
   test('opens an inbox mail link with its mailbox and message id', () => {
     expect(routeForUrl('https://stage.box/#/inbox/mail?label=alice&id=a%2Fb')).toEqual({
-      pathname: '/inbox/mail', params: { label: 'alice', id: 'a/b' },
+      pathname: '/inbox/mail',
+      params: { label: 'alice', id: 'a/b' },
     });
     expect(routeForUrl('stage://inbox/mail?label=alice')).toBeNull();
   });

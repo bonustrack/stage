@@ -2,9 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
 import { useBoardHome } from './tabs/boardHome';
 import { PAGES, TAB_HREF, TAB_ORDER, homeTabIndex } from './SwipeTabs.config';
@@ -74,9 +72,7 @@ export function TabsPager(): React.ReactElement {
         else if (e.translationX > 0 && index.value > 0) target = index.value - 1;
       }
       index.value = target;
-      tx.value = withSpring(-target * width, {
-        damping: 22, stiffness: 240, velocity: e.velocityX,
-      });
+      tx.value = withSpring(-target * width, { damping: 22, stiffness: 240, velocity: e.velocityX });
       if (target !== routeIndex) {
         gestureDrivenTo.value = target;
         runOnJS(navigate)(target);
@@ -98,7 +94,7 @@ export function TabsPager(): React.ReactElement {
             const Body = PAGES[name];
             return (
               <Column width={width} key={name} style={{ height: '100%' }}>
-                <Body panRef={panRef}/>
+                <Body panRef={panRef} />
               </Column>
             );
           })}

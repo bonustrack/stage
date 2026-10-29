@@ -3,11 +3,17 @@ import type { XmtpEnv } from './xmtp.types';
 import { report, reported } from './errorPolicy';
 
 export class NoAccountError extends Error {
-  constructor() { super('No account: onboarding not completed yet.'); this.name = 'NoAccountError'; }
+  constructor() {
+    super('No account: onboarding not completed yet.');
+    this.name = 'NoAccountError';
+  }
 }
 
 export class AccountChangedError extends Error {
-  constructor() { super('Messaging account changed'); this.name = 'AccountChangedError'; }
+  constructor() {
+    super('Messaging account changed');
+    this.name = 'AccountChangedError';
+  }
 }
 
 export interface XmtpInstallation {
@@ -16,11 +22,9 @@ export interface XmtpInstallation {
   current: boolean;
 }
 
-export function installationsOf(
-  list: { id: string; createdAt: number | undefined }[], currentId: string | undefined,
-): XmtpInstallation[] {
+export function installationsOf(list: { id: string; createdAt: number | undefined }[], currentId: string | undefined): XmtpInstallation[] {
   return list
-    .map(i => ({ id: i.id, createdAt: i.createdAt, current: i.id === currentId }))
+    .map((i) => ({ id: i.id, createdAt: i.createdAt, current: i.id === currentId }))
     .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
 }
 
@@ -66,7 +70,7 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
   const { accounts, store, client } = deps;
   return {
     async switchToAccount(id, env = 'production') {
-      const rec = (await accounts.list()).find(a => a.id === id);
+      const rec = (await accounts.list()).find((a) => a.id === id);
       if (!rec) throw new Error('Account not found.');
       client.dispose();
       await accounts.setActive(id);
@@ -81,7 +85,7 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
       }
     },
     async deleteAccount(id) {
-      const rec = (await accounts.list()).find(a => a.id === id);
+      const rec = (await accounts.list()).find((a) => a.id === id);
       await accounts.remove(id);
       if (rec) await store.deleteFiles(rec.dbDir);
       await store.deleteKey(id);
@@ -99,7 +103,9 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
   };
 }
 
-export function makeClientLifecycle<C>(deps: LifecycleDeps<C>): ReturnType<typeof accountSwitching<C>> & {
+export function makeClientLifecycle<C>(
+  deps: LifecycleDeps<C>,
+): ReturnType<typeof accountSwitching<C>> & {
   getOrCreateXmtpClient: (env?: XmtpEnv) => Promise<C>;
   xmtpClient: () => Promise<C>;
   cachedSelfEthAddress: () => string | null;
@@ -121,7 +127,7 @@ export function makeClientLifecycle<C>(deps: LifecycleDeps<C>): ReturnType<typeo
     if (created && client.ready) void client.ready(built).catch(reported('xmtp.push'));
     return built;
   };
-  const xmtpClient = async (): Promise<C> => client.get() ?? await getOrCreateXmtpClient('production');
+  const xmtpClient = async (): Promise<C> => client.get() ?? (await getOrCreateXmtpClient('production'));
   return {
     ...accountSwitching(deps),
     getOrCreateXmtpClient,
@@ -130,7 +136,9 @@ export function makeClientLifecycle<C>(deps: LifecycleDeps<C>): ReturnType<typeo
       const cached = client.get();
       return cached ? client.selfAddressOf(cached) : null;
     },
-    async selfEthAddress() { return client.selfAddressOf(await xmtpClient()); },
+    async selfEthAddress() {
+      return client.selfAddressOf(await xmtpClient());
+    },
     async syncPreferences() {
       try {
         const cached = client.get();

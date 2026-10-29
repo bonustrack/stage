@@ -5,17 +5,10 @@ import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { xmtpSendText } from './xmtp.messages';
 import { getActiveAccount } from './accounts';
 import { knownActiveAccountId } from './channelsCache';
-import {
-  addressesWithQueued, deserializeOutbox, itemsForAddress, withoutItem, type OutboxItem,
-} from './dmOutbox.model';
+import { addressesWithQueued, deserializeOutbox, itemsForAddress, withoutItem, type OutboxItem } from './dmOutbox.model';
 import { report, reported, recover } from './errorPolicy';
 
-const store = createValueStore<OutboxItem[]>({
-  key: 'dm.outbox',
-  default: [],
-  serialize: JSON.stringify,
-  deserialize: deserializeOutbox,
-});
+const store = createValueStore<OutboxItem[]>({ key: 'dm.outbox', default: [], serialize: JSON.stringify, deserialize: deserializeOutbox });
 
 function newId(): string {
   return bytesToHex(crypto.getRandomValues(new Uint8Array(8))).slice(2);
@@ -76,7 +69,9 @@ export async function flushDmOutboxFor(address: string): Promise<string | null> 
   const key = `${accountId ?? ''}:${address.toLowerCase()}`;
   const running = flushing.get(key);
   if (running) return running;
-  const flush = flushFor(address, accountId).finally(() => { flushing.delete(key); });
+  const flush = flushFor(address, accountId).finally(() => {
+    flushing.delete(key);
+  });
   flushing.set(key, flush);
   return flush;
 }

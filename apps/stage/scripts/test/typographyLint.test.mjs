@@ -108,15 +108,19 @@ function writeFixture(root, path, code) {
 function lintFixtures(root) {
   const require = createRequire(join(ROOT, 'package.json'));
   const config = JSON.parse(readFileSync(join(ROOT, '.oxlintrc.json'), 'utf8'));
-  config.jsPlugins = config.jsPlugins.map(plugin => require.resolve(plugin));
+  config.jsPlugins = config.jsPlugins.map((plugin) => require.resolve(plugin));
   config.options.typeAware = false;
   writeFileSync(join(root, '.oxlintrc.json'), JSON.stringify(config));
-  const result = spawnSync(join(ROOT, 'node_modules/.bin/oxlint'), ['--format', 'json', '.'], { cwd: root, encoding: 'utf8', timeout: 10000 });
+  const result = spawnSync(join(ROOT, 'node_modules/.bin/oxlint'), ['--format', 'json', '.'], {
+    cwd: root,
+    encoding: 'utf8',
+    timeout: 10000,
+  });
   expect(result.error).toBeUndefined();
   expect(result.status).toBe(1);
   expect(result.stdout.trim().startsWith('{'), result.stdout || result.stderr).toBe(true);
   const output = JSON.parse(result.stdout);
-  return output.diagnostics.filter(d => d.code === RULE);
+  return output.diagnostics.filter((d) => d.code === RULE);
 }
 
 function fixtures() {
@@ -135,7 +139,7 @@ test('typography lint rejects app overrides, follows Kit Text aliases and local 
   try {
     const { invalid, valid } = fixtures();
     for (const [path, code] of [...invalid, ...valid]) writeFixture(root, path, code);
-    const files = new Set(lintFixtures(root).map(d => d.filename));
+    const files = new Set(lintFixtures(root).map((d) => d.filename));
     for (const [path, code] of invalid) expect(files.has(path), code).toBe(true);
     expect([...files].sort()).toEqual([...invalid.keys()].sort());
   } finally {

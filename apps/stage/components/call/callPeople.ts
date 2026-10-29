@@ -4,7 +4,10 @@ import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
 import { type ConvTitle } from '../conversation/convTitle';
 import { peerLabel } from '../../lib/peerProfiles';
 
-interface CallPerson { address: string | null; name: string }
+interface CallPerson {
+  address: string | null;
+  name: string;
+}
 
 function nameOf(address: string | null): string {
   return address ? peerLabel(address) : 'Someone';

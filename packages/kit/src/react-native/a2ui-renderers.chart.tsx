@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react';
-import { CHART_CURVE_TYPES, CHART_LIMITS, isChartColorToken, type ChartDatum, type ChartSeries, type ChartXAxis, type ChartYAxisConfig } from '../chart';
+import {
+  CHART_CURVE_TYPES,
+  CHART_LIMITS,
+  isChartColorToken,
+  type ChartDatum,
+  type ChartSeries,
+  type ChartXAxis,
+  type ChartYAxisConfig,
+} from '../chart';
 import { Chart } from './chart';
 import { asBoolean, asEnum, asNumber, asOptionalString, colorValueOf, lengthOf, type RenderContext } from './a2ui-context';
 
@@ -12,7 +20,12 @@ function recordOf(value: unknown): Record<string, unknown> | undefined {
 function datumOf(value: unknown): ChartDatum | undefined {
   const row = recordOf(value);
   if (row === undefined) return undefined;
-  return Object.fromEntries(Object.entries(row).filter((entry): entry is [string, string | number] => typeof entry[1] === 'string' || (typeof entry[1] === 'number' && Number.isFinite(entry[1]))));
+  return Object.fromEntries(
+    Object.entries(row).filter(
+      (entry): entry is [string, string | number] =>
+        typeof entry[1] === 'string' || (typeof entry[1] === 'number' && Number.isFinite(entry[1])),
+    ),
+  );
 }
 
 function seriesColorOf(value: unknown): string | undefined {
@@ -40,7 +53,10 @@ function xAxisOf(value: unknown): ChartXAxis | undefined {
   return {
     dataKey,
     hide: asBoolean(raw.hide),
-    labels: labels === undefined ? undefined : Object.fromEntries(Object.entries(labels).filter((entry): entry is [string, string] => typeof entry[1] === 'string')),
+    labels:
+      labels === undefined
+        ? undefined
+        : Object.fromEntries(Object.entries(labels).filter((entry): entry is [string, string] => typeof entry[1] === 'string')),
   };
 }
 
@@ -56,7 +72,9 @@ export function chartRenderer(ctx: RenderContext): ReactNode {
   const p = ctx.props;
   const rows = Array.isArray(p.data) ? p.data.slice(0, CHART_LIMITS.rows) : [];
   const data = rows.map(datumOf).filter((row): row is ChartDatum => row !== undefined);
-  const series = (Array.isArray(p.series) ? p.series.slice(0, CHART_LIMITS.series) : []).map(seriesOf).filter((item): item is ChartSeries => item !== undefined);
+  const series = (Array.isArray(p.series) ? p.series.slice(0, CHART_LIMITS.series) : [])
+    .map(seriesOf)
+    .filter((item): item is ChartSeries => item !== undefined);
   const xAxis = xAxisOf(p.xAxis);
   if (series.length === 0 || xAxis === undefined) return null;
   return (

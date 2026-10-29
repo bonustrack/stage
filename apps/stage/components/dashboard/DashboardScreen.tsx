@@ -13,7 +13,9 @@ function EmptyDashboard(): React.ReactElement {
       <Text text="No widgets yet" size="xs" fontWeight="semibold" color="link" textAlign="center" />
       <Text
         text="Add a widget from a link, or in any chat open the three-dot menu of a frame and pick Add to dashboard."
-        size="2xs" color="secondary" textAlign="center"
+        size="2xs"
+        color="secondary"
+        textAlign="center"
       />
     </Column>
   );
@@ -25,7 +27,10 @@ export function DashboardScreen(): React.ReactElement {
   const rail = useWebTabRail();
   return (
     <SettingsPage
-      title="Dashboard" back={!rail} keyboardShouldPersistTaps="handled" trailing={<AddLiveWidgetButton disabled={!loaded || !canAddWidget(widgets)} />}
+      title="Dashboard"
+      back={!rail}
+      keyboardShouldPersistTaps="handled"
+      trailing={<AddLiveWidgetButton disabled={!loaded || !canAddWidget(widgets)} />}
     >
       {!loaded ? null : widgets.length === 0 ? <EmptyDashboard /> : <DashboardGrid widgets={widgets} />}
     </SettingsPage>

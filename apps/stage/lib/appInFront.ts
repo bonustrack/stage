@@ -6,5 +6,7 @@ export function isAppInFront(): boolean {
 
 export function subscribeAppInFront(onChange: () => void): () => void {
   const sub = AppState.addEventListener('change', onChange);
-  return () => { sub.remove(); };
+  return () => {
+    sub.remove();
+  };
 }

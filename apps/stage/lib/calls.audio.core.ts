@@ -19,18 +19,26 @@ export function callOwnsAudio(): boolean {
 
 export function registerCallRecorder(stop: () => Promise<void>): () => void {
   recorders.add(stop);
-  return () => { recorders.delete(stop); };
+  return () => {
+    recorders.delete(stop);
+  };
 }
 
 export function registerDictationRecorder(stop: () => Promise<void>): () => Promise<void> {
   let retiring = false;
   const cleanup = async (): Promise<void> => {
     await stop();
-    if (retiring) { unregister(); dictations.delete(cleanup); }
+    if (retiring) {
+      unregister();
+      dictations.delete(cleanup);
+    }
   };
   const unregister = registerCallRecorder(cleanup);
   dictations.add(cleanup);
-  return () => { retiring = true; return cleanup(); };
+  return () => {
+    retiring = true;
+    return cleanup();
+  };
 }
 
 export function voiceOwnsAudio(): boolean {
@@ -42,7 +50,7 @@ export async function acquireVoiceAudio(owner: object): Promise<void> {
   if (voiceOwner !== null && voiceOwner !== owner) throw new Error('Stop the other voice recording first.');
   voiceOwner = owner;
   try {
-    await Promise.all([...dictations].map(stop => stop()));
+    await Promise.all([...dictations].map((stop) => stop()));
     if (owned) throw new Error('Leave the call before recording a voice message.');
   } catch (error) {
     releaseVoiceAudio(owner);
@@ -56,7 +64,7 @@ export function releaseVoiceAudio(owner: object): void {
 
 export async function acquireCallAudio(): Promise<void> {
   setOwned(true);
-  await Promise.all([...recorders].map(stop => stop()));
+  await Promise.all([...recorders].map((stop) => stop()));
 }
 
 export function releaseCallAudio(): void {

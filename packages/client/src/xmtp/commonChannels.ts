@@ -62,8 +62,7 @@ export function commonChannelFromRow(
 }
 
 export interface MemberSetCache {
-  resolver(epoch: number, fetchMembers: (convId: string) => Promise<string[]>):
-    (convId: string) => Promise<string[]>;
+  resolver(epoch: number, fetchMembers: (convId: string) => Promise<string[]>): (convId: string) => Promise<string[]>;
 }
 
 export function createMemberSetCache(): MemberSetCache {
@@ -89,12 +88,12 @@ export async function resolveCommonChannels(
   avatarSeedOf: ChannelAvatarSeed = defaultAvatarSeed,
 ): Promise<CommonChannel[]> {
   const peer = peerAddress.toLowerCase();
-  const groups = rows.filter(r => r.peerAddress == null);
+  const groups = rows.filter((r) => r.peerAddress == null);
   const resolved = await Promise.all(
     groups.map(async (row): Promise<CommonChannel | null> => {
       try {
         const members = await memberSetOf(row.convId);
-        if (!members.some(a => a.toLowerCase() === peer)) return null;
+        if (!members.some((a) => a.toLowerCase() === peer)) return null;
         return commonChannelFromRow(row, members, avatarSeedOf);
       } catch {
         return null;

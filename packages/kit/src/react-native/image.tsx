@@ -1,6 +1,14 @@
 import {
-  Image as RNImage, StyleSheet, View,
-  type DimensionValue, type ImageLoadEventData, type ImageProps as RNImageProps, type ImageStyle, type NativeSyntheticEvent, type StyleProp, type ViewStyle,
+  Image as RNImage,
+  StyleSheet,
+  View,
+  type DimensionValue,
+  type ImageLoadEventData,
+  type ImageProps as RNImageProps,
+  type ImageStyle,
+  type NativeSyntheticEvent,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { flushBleed } from '../layout';
 import { BLOCK_RADIUS_DEFAULT, type RadiusValue } from '../tokens';
@@ -8,9 +16,7 @@ import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 
 export type ImageFit = 'contain' | 'cover' | 'fill' | 'none' | 'scaleDown';
 export type ImageVariant = 'icon' | 'avatar' | 'smallFeature' | 'mediumFeature' | 'largeFeature' | 'header';
-export type ImagePosition =
-  | 'center' | 'top' | 'bottom' | 'left' | 'right'
-  | 'top left' | 'top right' | 'bottom left' | 'bottom right';
+export type ImagePosition = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top left' | 'top right' | 'bottom left' | 'bottom right';
 export type ImageRadius = RadiusValue;
 
 declare module 'react-native' {
@@ -30,8 +36,18 @@ const FIT: Record<ImageFit, ImageStyle['resizeMode']> = {
 };
 
 const RADIUS: Record<ImageRadius, number> = {
-  none: 0, '2xs': 2, xs: 4, sm: 6, md: 8, lg: 12,
-  xl: 16, '2xl': 20, '3xl': 24, '4xl': 28, full: 999, '100%': 999,
+  none: 0,
+  '2xs': 2,
+  xs: 4,
+  sm: 6,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  '2xl': 20,
+  '3xl': 24,
+  '4xl': 28,
+  full: 999,
+  '100%': 999,
 };
 
 const FULL_ROUND = 999;
@@ -138,7 +154,13 @@ export function Image(props: ImageProps): React.ReactElement {
 
 export function getImageSize(url: string): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
-    RNImage.getSize(url, (width, height) => { resolve({ width, height }); }, reject);
+    RNImage.getSize(
+      url,
+      (width, height) => {
+        resolve({ width, height });
+      },
+      reject,
+    );
   });
 }
 

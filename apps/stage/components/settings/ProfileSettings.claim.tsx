@@ -16,7 +16,9 @@ function useOwnedLabel(address: string): string | null {
     void ownedStageName(address).then((name) => {
       if (!cancelled) setOwned(name ? normalizeLabel(name) : null);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [address]);
   return owned;
 }
@@ -33,8 +35,12 @@ function SetPrimaryCard({ address, label, onDone }: { address: string; label: st
     setError(null);
     setUpStageName(address, label)
       .then(onDone)
-      .catch((err: unknown) => { setError(errorMessage(err)); })
-      .finally(() => { setBusy(false); });
+      .catch((err: unknown) => {
+        setError(errorMessage(err));
+      })
+      .finally(() => {
+        setBusy(false);
+      });
   };
   const footer = (
     <Button label={`Use @${label}`} block size="lg" color="primary" variant="solid" dark={dark} loading={busy} onPress={run} />
@@ -74,8 +80,17 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
   };
 
   const footer = (
-    <Button label="Claim username" block size="lg" color="primary" variant="solid" dark={dark}
-      loading={busy} disabled={!usernameReady(state, label)} onPress={claim} />
+    <Button
+      label="Claim username"
+      block
+      size="lg"
+      color="primary"
+      variant="solid"
+      dark={dark}
+      loading={busy}
+      disabled={!usernameReady(state, label)}
+      onPress={claim}
+    />
   );
   return (
     <OnboardingCard title={USERNAME_COPY.title} about={USERNAME_COPY.about} footer={footer}>

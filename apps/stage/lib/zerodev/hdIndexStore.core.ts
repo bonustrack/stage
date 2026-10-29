@@ -7,7 +7,8 @@ interface IndexStorage {
 
 export function parseHdIndex(raw: string): number {
   const value = Number(raw);
-  if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) || value < 0) throw new Error('The saved wallet index is invalid. Nothing was changed.');
+  if (!/^\d+$/.test(raw) || !Number.isSafeInteger(value) || value < 0)
+    throw new Error('The saved wallet index is invalid. Nothing was changed.');
   return value;
 }
 
@@ -24,7 +25,8 @@ export function makeHdIndexStore(storage: IndexStorage): {
     read,
     reserve: (key, hdIndex) => {
       const pending = tail.then(async () => {
-        if (!Number.isSafeInteger(hdIndex) || hdIndex < 0 || !Number.isSafeInteger(hdIndex + 1)) throw new Error('The wallet index is invalid.');
+        if (!Number.isSafeInteger(hdIndex) || hdIndex < 0 || !Number.isSafeInteger(hdIndex + 1))
+          throw new Error('The wallet index is invalid.');
         const current = await read(key);
         await storage.set(key, String(Math.max(current ?? 0, hdIndex + 1)));
       });

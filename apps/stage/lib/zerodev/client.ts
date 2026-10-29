@@ -1,10 +1,7 @@
 import '../cryptoShim';
 import { http, createPublicClient, type Chain, type Hex, type PublicClient } from 'viem';
 import { base } from 'viem/chains';
-import {
-  createKernelAccountClient, createZeroDevPaymasterClient, getUserOperationGasPrice,
-  type KernelAccountClient,
-} from '@zerodev/sdk';
+import { createKernelAccountClient, createZeroDevPaymasterClient, getUserOperationGasPrice, type KernelAccountClient } from '@zerodev/sdk';
 import type { KernelSmartAccountImplementation } from '@zerodev/sdk';
 import type { SmartAccount } from 'viem/account-abstraction';
 import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
@@ -37,10 +34,7 @@ export function makePublicClient(): PublicClient {
   return createPublicClient({ chain, transport: http(rpc) });
 }
 
-function makeKernelClient(
-  account: SmartAccount<KernelSmartAccountImplementation>,
-  publicClient: PublicClient,
-): KernelAccountClient {
+function makeKernelClient(account: SmartAccount<KernelSmartAccountImplementation>, publicClient: PublicClient): KernelAccountClient {
   const rpc = configuredRpcUrl();
   const paymasterClient = createZeroDevPaymasterClient({ chain: base, transport: http(rpc) });
   return createKernelAccountClient({
@@ -48,13 +42,8 @@ function makeKernelClient(
     chain: base,
     bundlerTransport: http(rpc),
     client: publicClient,
-    paymaster: {
-      getPaymasterData: (userOperation) =>
-        paymasterClient.sponsorUserOperation({ userOperation }),
-    },
-    userOperation: {
-      estimateFeesPerGas: async ({ bundlerClient }) => getUserOperationGasPrice(bundlerClient),
-    },
+    paymaster: { getPaymasterData: (userOperation) => paymasterClient.sponsorUserOperation({ userOperation }) },
+    userOperation: { estimateFeesPerGas: async ({ bundlerClient }) => getUserOperationGasPrice(bundlerClient) },
   });
 }
 

@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  compatibleMainUrl, freshUrl, isDevClientLauncher, loadedCommit, mainUpdateMessage, parsePreviewManifest, previewFromStatus,
+  compatibleMainUrl,
+  freshUrl,
+  isDevClientLauncher,
+  loadedCommit,
+  mainUpdateMessage,
+  parsePreviewManifest,
+  previewFromStatus,
 } from '../components/settings/DevClientUpdate.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from '../lib/devClientUpdates.core';
 
@@ -17,10 +23,18 @@ function manifest(gitHash = OLD_SHA, runtimeVersion = 'old-runtime', id = OLD_ID
 }
 
 function status(gitHash: string, url: string): string {
-  return JSON.stringify({ sha: gitHash, statuses: [{ context: 'Preview', state: 'success', target_url: `https://bundler.stage.box/preview-launcher.html?u=${encodeURIComponent(url)}` }] });
+  return JSON.stringify({
+    sha: gitHash,
+    statuses: [
+      { context: 'Preview', state: 'success', target_url: `https://bundler.stage.box/preview-launcher.html?u=${encodeURIComponent(url)}` },
+    ],
+  });
 }
 
-function fixture(newRuntime = 'new-runtime', compatible = manifest()): { request: UpdateRequest; calls: { url: string; headers: Record<string, string> }[] } {
+function fixture(
+  newRuntime = 'new-runtime',
+  compatible = manifest(),
+): { request: UpdateRequest; calls: { url: string; headers: Record<string, string> }[] } {
   const calls: { url: string; headers: Record<string, string> }[] = [];
   const request: UpdateRequest = (url, headers) => {
     calls.push({ url, headers });
@@ -63,7 +77,12 @@ describe('main dev-client manifests', () => {
 
   test('accepts only successful immutable previews for this project', () => {
     expect(previewFromStatus(JSON.parse(status(OLD_SHA, OLD_GROUP)))).toEqual({ gitHash: OLD_SHA, url: OLD_GROUP });
-    for (const target of [`${PROJECT}?channel-name=main`, `${OLD_GROUP}?runtime-version=other`, OLD_GROUP.replace('u.expo.dev', 'other.example'), OLD_GROUP.replace('1707f2db', '9999f2db')]) {
+    for (const target of [
+      `${PROJECT}?channel-name=main`,
+      `${OLD_GROUP}?runtime-version=other`,
+      OLD_GROUP.replace('u.expo.dev', 'other.example'),
+      OLD_GROUP.replace('1707f2db', '9999f2db'),
+    ]) {
       expect(() => previewFromStatus(JSON.parse(status(OLD_SHA, target)))).toThrow();
     }
     expect(() => previewFromStatus({ sha: OLD_SHA, statuses: [{ context: 'Preview', state: 'pending' }] })).toThrow('not published');
@@ -72,7 +91,12 @@ describe('main dev-client manifests', () => {
   test('cache bust reaches EAS and retains runtime and channel', () => {
     const url = new URL(freshUrl(compatibleMainUrl('native-runtime', 'android'), 123));
     expect(url.origin).toBe('https://u.expo.dev');
-    expect(Object.fromEntries(url.searchParams)).toEqual({ 'channel-name': 'main', 'runtime-version': 'native-runtime', platform: 'android', refresh: '123' });
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      'channel-name': 'main',
+      'runtime-version': 'native-runtime',
+      platform: 'android',
+      refresh: '123',
+    });
   });
 });
 
@@ -80,10 +104,18 @@ describe('compatible main selection', () => {
   test('pins a compatible older update and identifies the newer runtime', async () => {
     const { request, calls } = fixture();
     const update = await findCompatibleMainUpdate(request, 'old-runtime', 'android', 123);
-    expect(update).toEqual({ id: OLD_ID, runtime: 'old-runtime', gitHash: OLD_SHA, url: OLD_GROUP, latest: { id: NEW_ID, runtime: 'new-runtime', gitHash: NEW_SHA } });
+    expect(update).toEqual({
+      id: OLD_ID,
+      runtime: 'old-runtime',
+      gitHash: OLD_SHA,
+      url: OLD_GROUP,
+      latest: { id: NEW_ID, runtime: 'new-runtime', gitHash: NEW_SHA },
+    });
     expect(calls).toHaveLength(5);
     expect(calls.every((call) => new URL(call.url).searchParams.get('refresh') === '123')).toBe(true);
-    expect(calls.filter((call) => call.url.includes('u.expo.dev')).every((call) => call.headers['Expo-Runtime-Version'] === 'old-runtime')).toBe(true);
+    expect(
+      calls.filter((call) => call.url.includes('u.expo.dev')).every((call) => call.headers['Expo-Runtime-Version'] === 'old-runtime'),
+    ).toBe(true);
     expect(mainUpdateMessage(update, OLD_SHA)).toContain('needs a new dev-client APK');
     expect(mainUpdateMessage(update, OLD_SHA)).toContain('only load compatible main aaaaaaa');
   });
@@ -108,13 +140,16 @@ describe('compatible main selection', () => {
     const { request } = fixture('old-runtime');
     await expect(findCompatibleMainUpdate(request, 'old-runtime', 'android', 123)).rejects.toThrow('changed during');
     const older = fixture();
-    const wrongPinned: UpdateRequest = (url, headers) => url.startsWith(OLD_GROUP)
-      ? Promise.resolve({ body: manifest(OLD_SHA, 'new-runtime'), contentType: 'application/json' }) : older.request(url, headers);
+    const wrongPinned: UpdateRequest = (url, headers) =>
+      url.startsWith(OLD_GROUP)
+        ? Promise.resolve({ body: manifest(OLD_SHA, 'new-runtime'), contentType: 'application/json' })
+        : older.request(url, headers);
     await expect(findCompatibleMainUpdate(wrongPinned, 'old-runtime', 'android', 123)).rejects.toThrow('immutable compatible');
   });
 
   test('does not treat pending main or network failure as latest', async () => {
-    const pending: UpdateRequest = () => Promise.resolve({ body: JSON.stringify({ sha: NEW_SHA, statuses: [] }), contentType: 'application/json' });
+    const pending: UpdateRequest = () =>
+      Promise.resolve({ body: JSON.stringify({ sha: NEW_SHA, statuses: [] }), contentType: 'application/json' });
     await expect(findCompatibleMainUpdate(pending, 'old-runtime', 'android', 123)).rejects.toThrow('not published');
     const offline: UpdateRequest = () => Promise.reject(new Error('offline'));
     await expect(findCompatibleMainUpdate(offline, 'old-runtime', 'android', 123)).rejects.toThrow('offline');

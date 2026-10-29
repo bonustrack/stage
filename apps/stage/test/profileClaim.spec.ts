@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import { claimStatusText, claimStatusTone, localLabelProblem, normalizeLabel, sanitizeLabelInput } from '../components/settings/ProfileSettings.claim.model';
+import {
+  claimStatusText,
+  claimStatusTone,
+  localLabelProblem,
+  normalizeLabel,
+  sanitizeLabelInput,
+} from '../components/settings/ProfileSettings.claim.model';
 
 describe('claim model', () => {
   test('normalises input and reports local problems before hitting the network', () => {

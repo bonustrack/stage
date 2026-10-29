@@ -3,7 +3,11 @@ import { createValueStore } from '../../lib/persistedStore';
 import { NO_NEW_CHAT_FIELDS, parseNewChatFields, renamedNewChatFields, type NewChatFields } from './newChatMetadata.model';
 
 const defaults = createValueStore<NewChatFields>({
-  key: 'new-chat.fields.', default: NO_NEW_CHAT_FIELDS, deserialize: parseNewChatFields, serialize: JSON.stringify, perAccount: true,
+  key: 'new-chat.fields.',
+  default: NO_NEW_CHAT_FIELDS,
+  deserialize: parseNewChatFields,
+  serialize: JSON.stringify,
+  perAccount: true,
 });
 
 function save(next: (current: NewChatFields) => NewChatFields): void {
@@ -17,5 +21,5 @@ export function setNewChatProject(category: string | null): void {
 }
 
 export function renameNewChatProject(from: string, to: string | null): void {
-  save(current => renamedNewChatFields(current, from, to));
+  save((current) => renamedNewChatFields(current, from, to));
 }

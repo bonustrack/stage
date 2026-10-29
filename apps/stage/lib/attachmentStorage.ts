@@ -14,9 +14,7 @@ export function attachmentDownloadUrl(url: string): string {
   return ref === undefined ? url : `${SWARM_GATEWAY}${ref.toLowerCase()}/`;
 }
 
-export function resolveUploadResponse(
-  status: number, body: { id?: string } | null, filename: string,
-): string {
+export function resolveUploadResponse(status: number, body: { id?: string } | null, filename: string): string {
   if (status === 413) {
     throw new Error(`Couldn't send "${filename}": the file is too large (413). Try a smaller file.`);
   }
@@ -40,7 +38,9 @@ export function assertUploadSize(bytes: number, filename: string): void {
 export async function uploadEncryptedAttachment(payload: Blob, filename: string): Promise<string> {
   assertUploadSize(payload.size, filename);
   const controller = new AbortController();
-  const timer = setTimeout(() => { controller.abort(); }, UPLOAD_TIMEOUT_MS);
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, UPLOAD_TIMEOUT_MS);
   let res: Response;
   try {
     res = await fetch(UPLOAD_URL, {
@@ -56,6 +56,6 @@ export async function uploadEncryptedAttachment(payload: Blob, filename: string)
   } finally {
     clearTimeout(timer);
   }
-  const body = await res.json().catch(ignored(null, 'optional')) as { id?: string } | null;
+  const body = (await res.json().catch(ignored(null, 'optional'))) as { id?: string } | null;
   return resolveUploadResponse(res.status, body, filename);
 }

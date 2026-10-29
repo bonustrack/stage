@@ -74,25 +74,32 @@ export function useRestoreGate(): RestoreGate {
       }
       if (!cancelled) setReady(true);
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     if (!ready || restoreState !== 'restoring') return;
     const saved = processSavedRoute;
-    if (!saved) { restoreState = 'done'; persistResumed = true; return; }
+    if (!saved) {
+      restoreState = 'done';
+      persistResumed = true;
+      return;
+    }
     const stackHasTabs = (s?: { routes?: { name: string; state?: unknown }[] }): boolean =>
       Array.isArray(s?.routes) && s.routes.some((r) => r.name === '(tabs)');
     const rootHasTabs =
       stackHasTabs(navState) ||
-      (Array.isArray(navState?.routes) &&
-        navState.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
+      (Array.isArray(navState?.routes) && navState.routes.some((r: { state?: { routes?: { name: string }[] } }) => stackHasTabs(r.state)));
     if (!rootHasTabs) return;
     restoreState = 'done';
     const raf = requestAnimationFrame(() => {
       router.push(saved);
     });
-    return () => { cancelAnimationFrame(raf); };
+    return () => {
+      cancelAnimationFrame(raf);
+    };
   }, [ready, navState]);
 
   useEffect(() => {

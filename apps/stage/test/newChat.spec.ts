@@ -2,8 +2,22 @@ import { describe, expect, test } from 'bun:test';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import {
-  MAX_SHOWN_RECIPIENTS, NO_MEMBER_HISTORY, askPlaceholder, firstMessageChannelName, membersDraftKey, newChatDraftKey, newChatNav, parseMemberHistory, pickedRecipients,
-  rankedCandidates, recentDmPeers, recipientCandidates, rememberedMembers, savedPicks, shownRecipients, startedChatWith,
+  MAX_SHOWN_RECIPIENTS,
+  NO_MEMBER_HISTORY,
+  askPlaceholder,
+  firstMessageChannelName,
+  membersDraftKey,
+  newChatDraftKey,
+  newChatNav,
+  parseMemberHistory,
+  pickedRecipients,
+  rankedCandidates,
+  recentDmPeers,
+  recipientCandidates,
+  rememberedMembers,
+  savedPicks,
+  shownRecipients,
+  startedChatWith,
 } from '../components/home/newChat.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
@@ -26,7 +40,10 @@ function candidates(rows: ReturnType<typeof dm>[], requests: ReadonlySet<string>
 describe('new chat recipients', () => {
   test('direct message peers come most recent first, once each, never the account itself', () => {
     const rows = [dm('0xb0b', 10), { convId: 'group', peerAddress: null, lastTs: 50 }, dm('0xC4E', 30), dm('0xb0b', 5), dm(SELF, 40)];
-    expect(recentDmPeers(rows, SELF.toUpperCase())).toEqual([{ convId: 'c-0xC4E-30', peer: '0xc4e' }, { convId: 'c-0xb0b-10', peer: '0xb0b' }]);
+    expect(recentDmPeers(rows, SELF.toUpperCase())).toEqual([
+      { convId: 'c-0xC4E-30', peer: '0xc4e' },
+      { convId: 'c-0xb0b-10', peer: '0xb0b' },
+    ]);
   });
 
   test('a new account gets Alice, and she is the one picked by default', () => {

@@ -1,14 +1,8 @@
-const base = {
-  $schema: 'https://unpkg.com/knip@6/schema.json',
-  ignoreExportsUsedInFile: true,
-  ignoreBinaries: ['check'],
-};
+const base = { $schema: 'https://unpkg.com/knip@6/schema.json', ignoreExportsUsedInFile: true, ignoreBinaries: ['check', 'fmt'] };
 
-const preset = (defaultEntry, defaultProject) => ({ entry = [...defaultEntry], project = [...defaultProject], ...rest } = {}) => ({
-  entry,
-  project,
-  ...rest,
-});
+const preset =
+  (defaultEntry, defaultProject) =>
+  ({ entry = [...defaultEntry], project = [...defaultProject], ...rest } = {}) => ({ entry, project, ...rest });
 
 const library = preset(['src/**/*.ts'], ['src/**']);
 const rnApp = preset(['app/**/*.{ts,tsx}'], ['app/**', 'components/**', 'lib/**', 'modules/**']);
@@ -19,12 +13,7 @@ const workspaces = (map) => ({ ...base, workspaces: map });
 
 const single = (opts) => ({ ...base, ...library(opts) });
 
-const KNIP_HELPERS = {
-  library,
-  'react-native': rnApp,
-  worker: cloudflareWorker,
-  scripts: scriptsWorkspace,
-};
+const KNIP_HELPERS = { library, 'react-native': rnApp, worker: cloudflareWorker, scripts: scriptsWorkspace };
 
 const buildKnipConfig = (stageConfig) => {
   const map = {};

@@ -12,10 +12,15 @@ import { useLastActivityCutoff } from '../../lib/lastActivity';
 
 function subscribeSources(onChange: () => void): () => void {
   const offs = [
-    subscribeCachedRows(onChange), subscribeSearchState(onChange),
-    subscribeClearedChats(onChange), subscribeDrafts(onChange), subscribePeerProfiles(onChange),
+    subscribeCachedRows(onChange),
+    subscribeSearchState(onChange),
+    subscribeClearedChats(onChange),
+    subscribeDrafts(onChange),
+    subscribePeerProfiles(onChange),
   ];
-  return () => { for (const off of offs) off(); };
+  return () => {
+    for (const off of offs) off();
+  };
 }
 
 function primeSources(): void {
@@ -27,7 +32,9 @@ function primeSources(): void {
 function chatsUnreadCount(activityCutoff: number | null): number {
   const search = getSearchState();
   return visibleUnreadCount({
-    rows: homeRows(), enabledLabels: new Set(search.labels), unreadOnly: search.unreadOnly,
+    rows: homeRows(),
+    enabledLabels: new Set(search.labels),
+    unreadOnly: search.unreadOnly,
     matches: searchRowMatcher(parseSearchFilter(search.query), memberNamesOf, getDraft, activityCutoff),
     cleared: getClearedChats(),
   });

@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 import Animated, {
-  Easing, ReduceMotion, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming, type SharedValue,
+  Easing,
+  ReduceMotion,
+  cancelAnimation,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -12,7 +20,13 @@ function BannerCopy({ onWidth }: { onWidth?: (width: number) => void }): React.R
   return (
     <Column
       padding={{ y: BANNER.padY, right: BANNER.padRight }}
-      onLayout={onWidth ? (e) => { onWidth(e.nativeEvent.layout.width); } : undefined}
+      onLayout={
+        onWidth
+          ? (e) => {
+              onWidth(e.nativeEvent.layout.width);
+            }
+          : undefined
+      }
     >
       <Text size="lg" color={HERO_WHITE} numberOfLines={1} style={{ lineHeight: BANNER.lineHeight }}>
         {BANNER.lead}
@@ -33,7 +47,13 @@ function runMarquee(x: SharedValue<number>, copyWidth: number, from: number): vo
     always,
     withTiming(-copyWidth, { duration: BANNER.durationMs * remaining, easing: Easing.linear, reduceMotion: always }),
     withTiming(0, { duration: 0, reduceMotion: always }),
-    withRepeat(withTiming(-copyWidth, { duration: BANNER.durationMs, easing: Easing.linear, reduceMotion: always }), -1, false, undefined, always),
+    withRepeat(
+      withTiming(-copyWidth, { duration: BANNER.durationMs, easing: Easing.linear, reduceMotion: always }),
+      -1,
+      false,
+      undefined,
+      always,
+    ),
   );
 }
 
@@ -42,13 +62,19 @@ function useMarquee(copyWidth: number): { style: ReturnType<typeof useAnimatedSt
   useEffect(() => {
     x.value = 0;
     runMarquee(x, copyWidth, 0);
-    return (): void => { cancelAnimation(x); };
+    return (): void => {
+      cancelAnimation(x);
+    };
   }, [x, copyWidth]);
   const style = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
   return {
     style,
-    pause: () => { cancelAnimation(x); },
-    resume: () => { runMarquee(x, copyWidth, x.value); },
+    pause: () => {
+      cancelAnimation(x);
+    },
+    resume: () => {
+      runMarquee(x, copyWidth, x.value);
+    },
   };
 }
 

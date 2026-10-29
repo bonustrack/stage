@@ -10,10 +10,11 @@ describe('attachment types', () => {
 
 describe('outgoingFileMeta', () => {
   test('a camera photo with no name gets an extension from its type', () => {
-    expect(outgoingFileMeta({ id: 'local_1_ab', url: 'file:///c/x.jpg', mime: 'image/jpeg' }))
-      .toEqual({ mimeType: 'image/jpeg', filename: 'local_1_ab.jpg' });
-    expect(outgoingFileMeta({ id: 'local_2_cd', url: 'file:///c/y.mp4' }))
-      .toEqual({ mimeType: 'video/mp4', filename: 'local_2_cd.mp4' });
+    expect(outgoingFileMeta({ id: 'local_1_ab', url: 'file:///c/x.jpg', mime: 'image/jpeg' })).toEqual({
+      mimeType: 'image/jpeg',
+      filename: 'local_1_ab.jpg',
+    });
+    expect(outgoingFileMeta({ id: 'local_2_cd', url: 'file:///c/y.mp4' })).toEqual({ mimeType: 'video/mp4', filename: 'local_2_cd.mp4' });
   });
 
   test('keeps a name that already has an extension, or a type with none to add', () => {

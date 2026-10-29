@@ -21,7 +21,8 @@ function appPath(path: string): string {
   const params: Record<string, string | undefined> = target.params ?? {};
   const entity = params.convId ?? params.id;
   if (entity ? decodeURIComponent(segments.at(-1) ?? '') !== entity : segments.length > 1) return path;
-  const canonical = target.pathname.replace(/\/\([^)]*\)/g, '')
+  const canonical = target.pathname
+    .replace(/\/\([^)]*\)/g, '')
     .replace(/\[([^\]]+)\]/g, (_, key: string) => encodeURIComponent(params[key] ?? ''));
   return (canonical || '/') + (queryAt === -1 ? '' : path.slice(queryAt));
 }

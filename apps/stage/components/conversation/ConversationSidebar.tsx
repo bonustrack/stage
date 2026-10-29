@@ -42,7 +42,7 @@ export function ChatColumnSpinner({ bottomInset }: { bottomInset: number }): Rea
   const dark = useEffectiveColorScheme() === 'dark';
   return (
     <Column surface="surface" weight={1} align="center" justify="center" style={useChatColumnFill(bottomInset)}>
-      <Spinner size={24} color={dark ? '#ffffff' : '#000000'}/>
+      <Spinner size={24} color={dark ? '#ffffff' : '#000000'} />
     </Column>
   );
 }
@@ -68,16 +68,22 @@ function PeerProfileSidebar({ address }: { address: string }): React.ReactElemen
     >
       <Column padding={{ x: PAGE_GUTTER, bottom: PAGE_GUTTER }}>
         <Column gap={6} margin={{ top: 14 }}>
-          <Text text={name} fontWeight="semibold" size="2xl" textAlign="center" numberOfLines={2}/>
-          {identity !== name ? <Text text={identity} size="xs" color={text} textAlign="center" numberOfLines={1}/> : null}
+          <Text text={name} fontWeight="semibold" size="2xl" textAlign="center" numberOfLines={2} />
+          {identity !== name ? <Text text={identity} size="xs" color={text} textAlign="center" numberOfLines={1} /> : null}
         </Column>
       </Column>
     </ProfileCover>
   );
 }
 
-export function ConversationSidebar({ convId, isGroup = false, peerAddress = null }: {
-  convId?: string; isGroup?: boolean; peerAddress?: string | null;
+export function ConversationSidebar({
+  convId,
+  isGroup = false,
+  peerAddress = null,
+}: {
+  convId?: string;
+  isGroup?: boolean;
+  peerAddress?: string | null;
 }): React.ReactElement {
   const { border } = usePalette();
   const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
@@ -87,9 +93,13 @@ export function ConversationSidebar({ convId, isGroup = false, peerAddress = nul
       surface="surface"
       width={width}
       style={[pinnedEdges({ top, bottom: 0, right: 0 }, 2), { borderLeftWidth: 1, borderLeftColor: border }]}
->
-      {isGroup && convId ? <MemberListSidebar convId={convId}/> : peerAddress ? <PeerProfileSidebar key={peerAddress} address={peerAddress}/> : null}
-      <PaneResizeHandle pane={sidebarWidth} edge="left"/>
+    >
+      {isGroup && convId ? (
+        <MemberListSidebar convId={convId} />
+      ) : peerAddress ? (
+        <PeerProfileSidebar key={peerAddress} address={peerAddress} />
+      ) : null}
+      <PaneResizeHandle pane={sidebarWidth} edge="left" />
     </Column>
   );
 }

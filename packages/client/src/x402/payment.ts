@@ -114,10 +114,7 @@ interface X402PaymentPayload {
   x402Version: number;
   scheme: string;
   network: string;
-  payload: {
-    signature: string;
-    authorization: X402Authorization;
-  };
+  payload: { signature: string; authorization: X402Authorization };
 }
 
 const TRANSFER_WITH_AUTHORIZATION_TYPES = {
@@ -152,21 +149,13 @@ export function buildAuthorization(p: BuildAuthorizationParams): X402Authorizati
   };
 }
 
-export function buildTypedData(
-  accept: X402Accept,
-  authorization: X402Authorization,
-): TypedDataDefinition {
+export function buildTypedData(accept: X402Accept, authorization: X402Authorization): TypedDataDefinition {
   const extra = accept.extra ?? {};
   const name = typeof extra.name === 'string' ? extra.name : 'USD Coin';
   const version = typeof extra.version === 'string' ? extra.version : '2';
   const chainId = x402ChainNumber(accept.network);
   return {
-    domain: {
-      name,
-      version,
-      chainId,
-      verifyingContract: (accept.asset ?? zeroAddress) as Hex,
-    },
+    domain: { name, version, chainId, verifyingContract: (accept.asset ?? zeroAddress) as Hex },
     types: TRANSFER_WITH_AUTHORIZATION_TYPES,
     primaryType: 'TransferWithAuthorization',
     message: {
@@ -190,10 +179,7 @@ export function buildPaymentHeader(args: {
     x402Version: args.x402Version ?? 1,
     scheme: args.accept.scheme,
     network: args.accept.network,
-    payload: {
-      signature: args.signature,
-      authorization: args.authorization,
-    },
+    payload: { signature: args.signature, authorization: args.authorization },
   };
   return utf8ToBase64(JSON.stringify(payload));
 }

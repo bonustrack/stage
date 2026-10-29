@@ -9,36 +9,32 @@ import { ChannelRow } from '../ChannelRow';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { Column, Row } from '../layout';
 
-function SuggestionCheck({ selected, checkBackground, dark }: {
-  selected: boolean; checkBackground: string; dark: boolean;
+function SuggestionCheck({
+  selected,
+  checkBackground,
+  dark,
+}: {
+  selected: boolean;
+  checkBackground: string;
+  dark: boolean;
 }): React.ReactElement {
   if (selected) {
     return (
       <Row width={24} height={24} radius="lg" background={checkBackground} align="center" justify="center">
-        <Glyph
-          icon={IconCheckmark1}
-          size={14}
-          color={dark ? ON_PRIMARY_COLOR.dark : ON_PRIMARY_COLOR.light}
-          dark={dark}
-        />
+        <Glyph icon={IconCheckmark1} size={14} color={dark ? ON_PRIMARY_COLOR.dark : ON_PRIMARY_COLOR.light} dark={dark} />
       </Row>
     );
   }
   const side = { width: 2, color: checkBackground };
   return (
-    <Row
-      width={24}
-      height={24}
-      radius="lg"
-      align="center"
-      justify="center"
-      border={{ top: side, right: side, bottom: side, left: side }}
-    />
+    <Row width={24} height={24} radius="lg" align="center" justify="center" border={{ top: side, right: side, bottom: side, left: side }} />
   );
 }
 
 export function ContactSuggestions({
-  contacts, selected, onToggle,
+  contacts,
+  selected,
+  onToggle,
 }: {
   contacts: Contact[];
   selected: Set<string>;
@@ -58,7 +54,9 @@ export function ContactSuggestions({
             avatarAddress={c.address}
             square={false}
             subtitle={c.name !== short ? short : null}
-            onPress={() => { onToggle(c); }}
+            onPress={() => {
+              onToggle(c);
+            }}
             accessory={<SuggestionCheck selected={selected.has(c.address.toLowerCase())} checkBackground={head} dark={dark} />}
           />
         );

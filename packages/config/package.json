@@ -1,7 +1,7 @@
 {
   "name": "@stage-labs/config",
   "version": "0.1.0-beta.6",
-  "description": "Shared oxlint plugins, TypeScript, knip and madge presets, and the stage CLI.",
+  "description": "Shared oxlint plugins, Prettier (bun fmt), TypeScript, knip and madge presets, and the stage CLI.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -14,6 +14,7 @@
     "knip",
     "madge",
     "oxlint",
+    "prettier",
     "tsconfig",
     "define.js",
     "README.md"
@@ -33,6 +34,7 @@
     "./oxlint/comments": "./oxlint/comments.js",
     "./oxlint/core": "./oxlint/core.js",
     "./oxlint/text": "./oxlint/text.js",
+    "./prettier": "./prettier/index.json",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json"
   },

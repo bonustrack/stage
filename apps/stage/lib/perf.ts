@@ -6,7 +6,11 @@ const SLOW_CALL_MS = 20;
 
 function traceFlagSet(): boolean {
   const read = (): boolean => typeof localStorage !== 'undefined' && localStorage.getItem(TRACE_FLAG) === '1';
-  try { return read(); } catch (e) { return recover('perf.flag', false)(e); }
+  try {
+    return read();
+  } catch (e) {
+    return recover('perf.flag', false)(e);
+  }
 }
 
 const flagged = traceFlagSet();
@@ -30,7 +34,10 @@ export async function perfTime<T>(label: string, fn: () => Promise<T>): Promise<
   }
 }
 
-interface WorkerCall { id: string; action: string }
+interface WorkerCall {
+  id: string;
+  action: string;
+}
 
 function workerCallOf(message: unknown): WorkerCall | null {
   if (typeof message !== 'object' || message === null) return null;

@@ -1,14 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  channelRowTitle,
-  countUnreadEntries,
-  initialMarkedUnread,
-  isUnnamedChannelRow,
-} from '../src/xmtp/summarizeRow';
+import { channelRowTitle, countUnreadEntries, initialMarkedUnread, isUnnamedChannelRow } from '../src/xmtp/summarizeRow';
 
 describe('countUnreadEntries', () => {
-  const e = (sentNs: number | undefined, sender: string): { sentNs?: number; senderInboxId: string } =>
-    ({ sentNs, senderInboxId: sender });
+  const e = (sentNs: number | undefined, sender: string): { sentNs?: number; senderInboxId: string } => ({ sentNs, senderInboxId: sender });
 
   test('counts newest-first entries above lastReadNs, skipping self', () => {
     const entries = [e(300, 'other'), e(250, 'me'), e(200, 'other'), e(100, 'other')];
@@ -31,10 +25,7 @@ describe('countUnreadEntries', () => {
 
 describe('channelRowTitle', () => {
   test('peer address short form wins', () => {
-    const title = channelRowTitle({
-      peerAddress: '0x1234567890abcdef1234567890abcdef12345678',
-      groupName: 'Team', memberCount: 3,
-    });
+    const title = channelRowTitle({ peerAddress: '0x1234567890abcdef1234567890abcdef12345678', groupName: 'Team', memberCount: 3 });
     expect(title).toContain('0x1234');
   });
 

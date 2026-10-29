@@ -1,4 +1,3 @@
-
 import { generateMnemonic, mnemonicToAccount, english, type HDAccount } from 'viem/accounts';
 
 export function ownerDerivationPath(index: number): `m/44'/60'/0'/0/${string}` {

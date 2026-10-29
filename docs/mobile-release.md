@@ -20,12 +20,12 @@ The compiler generates memoization during the build, not a persistent message or
 
 ## What runs
 
-| Job | What it does |
-|---|---|
-| `android-store` | EAS cloud build (`production-prod`, AAB) then `eas submit` to the Play `internal` and `closed` tracks. `production` is attempted but allowed to fail while the Play account gate is in place. |
-| `android-apk` | EAS cloud build (`preview-prod`, APK), checked with `scripts/verify-apk.mjs`, then attached to the GitHub Release `v<version>` as the direct download `releases/download/v<version>/stage.apk`. |
-| `testers` | Pushes that APK to the Firebase App Distribution `testers` group. |
-| `ios` | EAS cloud build (`production-prod`) then `eas submit` to TestFlight. Skips with a warning until the Apple secrets exist. |
+| Job             | What it does                                                                                                                                                                                    |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `android-store` | EAS cloud build (`production-prod`, AAB) then `eas submit` to the Play `internal` and `closed` tracks. `production` is attempted but allowed to fail while the Play account gate is in place.   |
+| `android-apk`   | EAS cloud build (`preview-prod`, APK), checked with `scripts/verify-apk.mjs`, then attached to the GitHub Release `v<version>` as the direct download `releases/download/v<version>/stage.apk`. |
+| `testers`       | Pushes that APK to the Firebase App Distribution `testers` group.                                                                                                                               |
+| `ios`           | EAS cloud build (`production-prod`) then `eas submit` to TestFlight. Skips with a warning until the Apple secrets exist.                                                                        |
 
 ## Android APKs
 
@@ -45,14 +45,14 @@ The public client id the JavaScript bundle needs (`EXPO_PUBLIC_ZERODEV_PROJECT_I
 
 Repo `Settings -> Secrets and variables -> Actions`.
 
-| Name | Used by | Where to get it |
-|---|---|---|
-| `EXPO_TOKEN` | all | expo.dev -> Account settings -> Access tokens. Already set. |
-| `PLAY_SERVICE_ACCOUNT_JSON` | android-store | Google Cloud service account JSON with release rights in Play Console -> Users and permissions. Already set. |
-| `FIREBASE_APP_DISTRIBUTION_SA_JSON` | testers | Firebase service account with the App Distribution Admin role. Optional. |
-| `ASC_API_KEY_ID`, `ASC_API_KEY_ISSUER_ID`, `ASC_API_KEY_P8` | ios | App Store Connect API team key, see step 7 of the iOS checklist below. Paste the full `.p8` contents into `ASC_API_KEY_P8`. |
-| `APPLE_TEAM_ID` | ios | developer.apple.com -> Account -> Membership details -> Team ID. |
-| `ASC_APP_ID` | ios | App Store Connect -> the app -> App Information -> Apple ID (numeric). |
+| Name                                                        | Used by       | Where to get it                                                                                                             |
+| ----------------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `EXPO_TOKEN`                                                | all           | expo.dev -> Account settings -> Access tokens. Already set.                                                                 |
+| `PLAY_SERVICE_ACCOUNT_JSON`                                 | android-store | Google Cloud service account JSON with release rights in Play Console -> Users and permissions. Already set.                |
+| `FIREBASE_APP_DISTRIBUTION_SA_JSON`                         | testers       | Firebase service account with the App Distribution Admin role. Optional.                                                    |
+| `ASC_API_KEY_ID`, `ASC_API_KEY_ISSUER_ID`, `ASC_API_KEY_P8` | ios           | App Store Connect API team key, see step 7 of the iOS checklist below. Paste the full `.p8` contents into `ASC_API_KEY_P8`. |
+| `APPLE_TEAM_ID`                                             | ios           | developer.apple.com -> Account -> Membership details -> Team ID.                                                            |
+| `ASC_APP_ID`                                                | ios           | App Store Connect -> the app -> App Information -> Apple ID (numeric).                                                      |
 
 Variables (not secrets): `APPLE_TEAM_TYPE` = `COMPANY_OR_ORGANIZATION` (default, the account is enrolled as an organisation) or `INDIVIDUAL`.
 
@@ -62,17 +62,17 @@ None of these identifiers are committed. The `ios` job writes them into the `sub
 
 ### What the repo already configures
 
-| Piece | Where | Value |
-|---|---|---|
-| Bundle id | `app.config.js` `variant.bundleId` | `box.stage` (prod, `APP_VARIANT=prod`), `box.metro.monitor` (dev) |
-| Notification Service Extension | `plugins/withXmtpNotificationService.js` | target `StageNotificationService`, bundle id `<bundle id>.StageNotificationService` |
-| App group | same plugin | `group.<bundle id>`, i.e. `group.box.stage` / `group.box.metro.monitor`, on the app and on the extension |
-| `aps-environment` | `app.config.js` `ios.entitlements` | `production` for prod, `development` for dev. Xcode rewrites it to match the provisioning profile at export, so store, TestFlight and EAS internal builds all end up on production APNs |
-| Associated domains | `app.config.js` | `applinks:` for `stage.box` / `dev.stage.box` |
-| Background modes | same plugin | `remote-notification`, so the silent welcome-topic pushes can wake the app |
-| `ITSAppUsesNonExemptEncryption` | `app.config.js` `ios.config.usesNonExemptEncryption: false` | see below |
-| Usage descriptions | plugins + `ios.infoPlist` | camera, photo library (read + add), microphone, location when in use, Face ID (the secure-store sentinel that gates revealing a recovery phrase or key) |
-| EAS credentials for the extension | same plugin, written into `extra.eas.build.experimental.ios.appExtensions` | EAS creates and stores a second provisioning profile for the extension |
+| Piece                             | Where                                                                      | Value                                                                                                                                                                                   |
+| --------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundle id                         | `app.config.js` `variant.bundleId`                                         | `box.stage` (prod, `APP_VARIANT=prod`), `box.metro.monitor` (dev)                                                                                                                       |
+| Notification Service Extension    | `plugins/withXmtpNotificationService.js`                                   | target `StageNotificationService`, bundle id `<bundle id>.StageNotificationService`                                                                                                     |
+| App group                         | same plugin                                                                | `group.<bundle id>`, i.e. `group.box.stage` / `group.box.metro.monitor`, on the app and on the extension                                                                                |
+| `aps-environment`                 | `app.config.js` `ios.entitlements`                                         | `production` for prod, `development` for dev. Xcode rewrites it to match the provisioning profile at export, so store, TestFlight and EAS internal builds all end up on production APNs |
+| Associated domains                | `app.config.js`                                                            | `applinks:` for `stage.box` / `dev.stage.box`                                                                                                                                           |
+| Background modes                  | same plugin                                                                | `remote-notification`, so the silent welcome-topic pushes can wake the app                                                                                                              |
+| `ITSAppUsesNonExemptEncryption`   | `app.config.js` `ios.config.usesNonExemptEncryption: false`                | see below                                                                                                                                                                               |
+| Usage descriptions                | plugins + `ios.infoPlist`                                                  | camera, photo library (read + add), microphone, location when in use, Face ID (the secure-store sentinel that gates revealing a recovery phrase or key)                                 |
+| EAS credentials for the extension | same plugin, written into `extra.eas.build.experimental.ios.appExtensions` | EAS creates and stores a second provisioning profile for the extension                                                                                                                  |
 
 **Export compliance.** Stage uses encryption beyond HTTPS: MLS end-to-end encryption through XMTP, SQLCipher for the local store, secp256k1 signatures for the wallet. All of it is standard, published cryptography in a mass-market consumer app, which falls under the EAR Category 5 Part 2 mass-market exemption (5D992.c; since the March 2021 BIS rule no annual self-classification report is required for it). That is the case Apple's questionnaire answers with "exempt", so the key is `false` and TestFlight builds do not stop on the export compliance question. Confirm this reading before the first public App Store release. Distribution in France is the one place that also expects an ANSSI encryption declaration for end-to-end messaging; App Store Connect asks for it under App Information -> Encryption only if you declare non-exempt encryption, so check with counsel whether to file it anyway.
 
@@ -96,12 +96,12 @@ Migration impact: none for users, iOS has never shipped. A pre-release iOS dev b
 
 The reference server takes one `APNS_TOPIC` (bundle id) and one `APNS_MODE` per process (upstream `pkg/options/options.go`), so one instance serves exactly one bundle on one APNs environment. The `.p8` key itself works for every bundle id of the team and for both environments.
 
-| Build | Bundle | APNs | Served by `stage-push` (`box.stage`, production) |
-|---|---|---|---|
-| App Store, TestFlight (`production-prod`) | `box.stage` | production | yes |
-| EAS internal builds of the prod variant (`development-prod`, `preview-prod`, ad hoc) | `box.stage` | production | yes |
-| EAS internal builds of the dev variant (`development`, `preview`) | `box.metro.monitor` | production | no, wrong topic |
-| Local `expo run:ios` debug builds | either | sandbox | no |
+| Build                                                                                | Bundle              | APNs       | Served by `stage-push` (`box.stage`, production) |
+| ------------------------------------------------------------------------------------ | ------------------- | ---------- | ------------------------------------------------ |
+| App Store, TestFlight (`production-prod`)                                            | `box.stage`         | production | yes                                              |
+| EAS internal builds of the prod variant (`development-prod`, `preview-prod`, ad hoc) | `box.stage`         | production | yes                                              |
+| EAS internal builds of the dev variant (`development`, `preview`)                    | `box.metro.monitor` | production | no, wrong topic                                  |
+| Local `expo run:ios` debug builds                                                    | either              | sandbox    | no                                               |
 
 The simplest way to test iOS push is a `development-prod` dev client: it is signed ad hoc, uses `box.stage`, and the existing instance serves it. For `box.metro.monitor` builds, run a second instance; nothing is deployed for it today:
 

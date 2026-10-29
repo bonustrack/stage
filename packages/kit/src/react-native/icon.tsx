@@ -2,8 +2,13 @@ import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1
 import { View } from 'react-native';
 import { Path, Svg } from 'react-native-svg';
 import {
-  iconStroke, HERO_ICON_DEFAULTS,
-  type CentralIcon, type HeroIconName, type HeroSolidIconName, type IconName as KitIconName, type IconStyle,
+  iconStroke,
+  HERO_ICON_DEFAULTS,
+  type CentralIcon,
+  type HeroIconName,
+  type HeroSolidIconName,
+  type IconName as KitIconName,
+  type IconStyle,
 } from '../icons';
 import { IconBackward } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBackward';
 import { IconBellOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBellOff';
@@ -67,7 +72,7 @@ function isKitIconName(name: string): name is HeroIconName {
 function namedCentralIcon(name: string, style: IconStyle): CentralIcon | undefined {
   if (!Object.hasOwn(CENTRAL_ICONS, name)) return undefined;
   const entry = CENTRAL_ICONS[name as CentralIconName];
-  return style === 'solid' ? entry.solid ?? entry.line : entry.line;
+  return style === 'solid' ? (entry.solid ?? entry.line) : entry.line;
 }
 
 function resolveIcon(name: KitIconName | A2uiIconName | CentralIconName, style: IconStyle): CentralIcon | undefined {

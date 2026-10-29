@@ -19,7 +19,9 @@ import { schedulePushTopicRefresh } from './pushRegister';
 
 type StreamMessage = Parameters<Parameters<typeof sdk.streamAllMessages>[1]>[0];
 
-interface SubscribeOptions { includeHidden?: boolean }
+interface SubscribeOptions {
+  includeHidden?: boolean;
+}
 
 const streamSubscribers = new Map<(m: StreamMsg) => void, boolean>();
 
@@ -30,7 +32,9 @@ const status: StreamStatus = {
   live: () => globalStream.live(),
   lastMessageAt: () => lastMessageAt,
   lastCloseAt: () => lastCloseAt,
-  ensure: () => { void ensureGlobalStream(); },
+  ensure: () => {
+    void ensureGlobalStream();
+  },
 };
 
 export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: SubscribeOptions = {}): () => void {
@@ -96,7 +100,7 @@ async function applyDeletion(context: AccountClient, line: string, messageId: st
 
 function onMessageDeleted(context: AccountClient, { convId, messageId }: MessageDeletion): void {
   const line = lineOfConv(routeConvId(convId));
-  if (!feedCache.get(line)?.some(e => e.id === messageId)) return;
+  if (!feedCache.get(line)?.some((e) => e.id === messageId)) return;
   void applyDeletion(context, line, messageId).catch(reported('xmtp.deletion'));
 }
 
@@ -114,11 +118,22 @@ async function prepareStream(assertCurrent: () => void): Promise<AccountClient> 
 
 function openStream(context: AccountClient, current: () => boolean, closed: () => void, signal: AbortSignal): Promise<() => void> {
   return openAccountStreams({
-    messages: () => sdk.streamAllMessages(context.client, msg => { if (current()) handleStreamMessage(msg); }, closed),
-    preferences: refresh => sdk.streamPreferences(context.client, refresh, closed),
-    deletions: () => sdk.streamDeletions(context.client, deletion => { if (current()) onMessageDeleted(context, deletion); }),
+    messages: () =>
+      sdk.streamAllMessages(
+        context.client,
+        (msg) => {
+          if (current()) handleStreamMessage(msg);
+        },
+        closed,
+      ),
+    preferences: (refresh) => sdk.streamPreferences(context.client, refresh, closed),
+    deletions: () =>
+      sdk.streamDeletions(context.client, (deletion) => {
+        if (current()) onMessageDeleted(context, deletion);
+      }),
     refreshPush: schedulePushTopicRefresh,
-    current, signal,
+    current,
+    signal,
   });
 }
 
@@ -127,16 +142,36 @@ const globalStream = makeGlobalStream({
   current: (context: AccountClient) => context.current(),
   open: openStream,
   wanted: () => streamSubscribers.size > 0 || activeFeedLines.size > 0,
-  live: () => { foregroundWatch.attach(status); },
-  closed: () => { lastCloseAt = Date.now(); void resyncActiveFeeds(); },
-  stopped: () => { lastMessageAt = 0; lastCloseAt = 0; foregroundWatch.detach(); },
+  live: () => {
+    foregroundWatch.attach(status);
+  },
+  closed: () => {
+    lastCloseAt = Date.now();
+    void resyncActiveFeeds();
+  },
+  stopped: () => {
+    lastMessageAt = 0;
+    lastCloseAt = 0;
+    foregroundWatch.detach();
+  },
   report: reported('xmtp.globalStream'),
-  schedule: (run, delay) => { const timer = setTimeout(run, delay); return () => { clearTimeout(timer); }; },
+  schedule: (run, delay) => {
+    const timer = setTimeout(run, delay);
+    return () => {
+      clearTimeout(timer);
+    };
+  },
 });
 
 export const ensureGlobalStream = globalStream.ensure;
 registerGlobalStreamTeardown(globalStream.teardown);
-subscribeHiddenChannels(() => { globalStream.teardown(); globalStream.rearm(); });
-function restartForAccount(): void { globalStream.teardown(); void globalStream.ensure(); }
+subscribeHiddenChannels(() => {
+  globalStream.teardown();
+  globalStream.rearm();
+});
+function restartForAccount(): void {
+  globalStream.teardown();
+  void globalStream.ensure();
+}
 subscribeAccountEpoch(restartForAccount);
 subscribeAccountSelection(globalStream.teardown);

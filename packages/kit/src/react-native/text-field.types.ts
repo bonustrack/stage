@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react';
 import type {
-  NativeSyntheticEvent, ReturnKeyTypeOptions, StyleProp, TextInputKeyPressEventData, TextInputProps, TextStyle,
+  NativeSyntheticEvent,
+  ReturnKeyTypeOptions,
+  StyleProp,
+  TextInputKeyPressEventData,
+  TextInputProps,
+  TextStyle,
 } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import type { ControlSize } from '../control.styles';
@@ -14,10 +19,7 @@ export type TextFieldInputType = 'text' | 'email' | 'tel' | 'url';
 
 export type TextFieldHintTone = 'secondary' | 'success' | 'danger';
 
-export type TextFieldNativeProps = Omit<
-  TextInputProps,
-  'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable'
->;
+export type TextFieldNativeProps = Omit<TextInputProps, 'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable'>;
 
 export interface TextFieldProps extends A2uiCommonProps {
   label?: string;

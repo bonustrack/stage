@@ -4,7 +4,9 @@ import type { FrameOut } from '../components/frame/frame.model';
 export const KIT_CATALOG = 'https://kit.stage.box/a2ui/v1_0/catalog.json';
 
 export function titleMessages(text: string, surfaceId = 'main'): FrameMessage[] {
-  return [{ version: 'v1.0', createSurface: { surfaceId, catalogId: KIT_CATALOG, components: [{ id: 'root', component: 'Title', text }] } }];
+  return [
+    { version: 'v1.0', createSurface: { surfaceId, catalogId: KIT_CATALOG, components: [{ id: 'root', component: 'Title', text }] } },
+  ];
 }
 
 export const REFUSED_MESSAGES: FrameMessage[] = [

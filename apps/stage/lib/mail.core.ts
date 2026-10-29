@@ -1,6 +1,22 @@
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
-import { ensureMailKey, fetchMail, listMail, openMailSession, type MailListItem, type MailSession, type SignMessage } from '@stage-labs/client/mail/api';
-import { deriveMailKey, isMailboxLabel, mailAddressOf, openMailIndex, openMailPart, type MailIndex, type MailKeyPair } from '@stage-labs/client/mail/mailbox';
+import {
+  ensureMailKey,
+  fetchMail,
+  listMail,
+  openMailSession,
+  type MailListItem,
+  type MailSession,
+  type SignMessage,
+} from '@stage-labs/client/mail/api';
+import {
+  deriveMailKey,
+  isMailboxLabel,
+  mailAddressOf,
+  openMailIndex,
+  openMailPart,
+  type MailIndex,
+  type MailKeyPair,
+} from '@stage-labs/client/mail/mailbox';
 import { parseMail, type ParsedMail } from '@stage-labs/client/mail/mime';
 import type { InboxEntry } from '../components/settings/Inbox.model';
 import { report, reported } from './errorPolicy';
@@ -58,16 +74,16 @@ function mailCredentials(deps: MailDeps) {
   }
   const forBox = <T>(box: Mailbox, cache: Map<string, Promise<T>>, make: () => Promise<T>): Promise<T> =>
     current(box.selection, () => memoized(cache, mailboxKey(box), make));
-  const signerFor = (box: Mailbox): Promise<SignMessage> => forBox(box, signers, async () => {
-    const rec = await current(box.selection, deps.activeAccount);
-    if (rec?.id !== box.accountId || rec.address.toLowerCase() !== box.address.toLowerCase()) {
-      throw new Error('This mailbox is not in the active account.');
-    }
-    const sign = await current(box.selection, () => deps.signer(rec));
-    return (message) => current(box.selection, () => sign(message));
-  });
-  const keyFor = (box: Mailbox): Promise<MailKeyPair> =>
-    forBox(box, keys, async () => deriveMailKey(box.label, await signerFor(box)));
+  const signerFor = (box: Mailbox): Promise<SignMessage> =>
+    forBox(box, signers, async () => {
+      const rec = await current(box.selection, deps.activeAccount);
+      if (rec?.id !== box.accountId || rec.address.toLowerCase() !== box.address.toLowerCase()) {
+        throw new Error('This mailbox is not in the active account.');
+      }
+      const sign = await current(box.selection, () => deps.signer(rec));
+      return (message) => current(box.selection, () => sign(message));
+    });
+  const keyFor = (box: Mailbox): Promise<MailKeyPair> => forBox(box, keys, async () => deriveMailKey(box.label, await signerFor(box)));
   async function sessionFor(box: Mailbox): Promise<MailSession> {
     const open = async (): Promise<MailSession> => openMailSession(deps.baseUrl(), box.label, await signerFor(box));
     const session = await forBox(box, sessions, open);
@@ -97,8 +113,16 @@ function mailCredentials(deps: MailDeps) {
     activated.add(mailboxKey(box));
   }
   return {
-    current, keyFor, withSession, activate,
-    clear: () => { signers.clear(); keys.clear(); sessions.clear(); activated.clear(); },
+    current,
+    keyFor,
+    withSession,
+    activate,
+    clear: () => {
+      signers.clear();
+      keys.clear();
+      sessions.clear();
+      activated.clear();
+    },
   };
 }
 
@@ -112,27 +136,32 @@ export function makeMailAccess(deps: MailDeps) {
   }
   return {
     clear: credentials.clear,
-    mailboxes: (selection: number): Promise<Mailbox[]> => current(selection, async () => {
-      const rec = await current(selection, deps.activeAccount);
-      if (rec === null) return [];
-      const label = await current(selection, () => deps.ownedLabel(rec.address));
-      if (label === null || !isMailboxLabel(label)) return [];
-      return [{ accountId: rec.id, address: rec.address, label, mailAddress: mailAddressOf(label), selection }];
-    }),
-    inbox: (boxes: readonly Mailbox[], selection: number): Promise<InboxState> => current(selection, async () => {
-      const results = await Promise.allSettled(boxes.map(listBox));
-      const state: InboxState = { entries: [], failed: [] };
-      results.forEach((result, i) => {
-        if (result.status === 'fulfilled') state.entries.push(...result.value);
-        else state.failed.push(boxes[i]?.mailAddress ?? '');
-      });
-      const rejected = results.find((result) => result.status === 'rejected');
-      if (rejected !== undefined && state.failed.length === boxes.length) throw rejected.reason;
-      return state;
-    }),
-    mail: (box: Mailbox, id: string): Promise<ParsedMail> => current(box.selection, async () => {
-      const [keys, sealed] = await current(box.selection, () => Promise.all([keyFor(box), withSession(box, (session) => fetchMail(session, id))]));
-      return parseMail(openMailPart(keys.secretKey, box.label, id, 'body', sealed));
-    }),
+    mailboxes: (selection: number): Promise<Mailbox[]> =>
+      current(selection, async () => {
+        const rec = await current(selection, deps.activeAccount);
+        if (rec === null) return [];
+        const label = await current(selection, () => deps.ownedLabel(rec.address));
+        if (label === null || !isMailboxLabel(label)) return [];
+        return [{ accountId: rec.id, address: rec.address, label, mailAddress: mailAddressOf(label), selection }];
+      }),
+    inbox: (boxes: readonly Mailbox[], selection: number): Promise<InboxState> =>
+      current(selection, async () => {
+        const results = await Promise.allSettled(boxes.map(listBox));
+        const state: InboxState = { entries: [], failed: [] };
+        results.forEach((result, i) => {
+          if (result.status === 'fulfilled') state.entries.push(...result.value);
+          else state.failed.push(boxes[i]?.mailAddress ?? '');
+        });
+        const rejected = results.find((result) => result.status === 'rejected');
+        if (rejected !== undefined && state.failed.length === boxes.length) throw rejected.reason;
+        return state;
+      }),
+    mail: (box: Mailbox, id: string): Promise<ParsedMail> =>
+      current(box.selection, async () => {
+        const [keys, sealed] = await current(box.selection, () =>
+          Promise.all([keyFor(box), withSession(box, (session) => fetchMail(session, id))]),
+        );
+        return parseMail(openMailPart(keys.secretKey, box.label, id, 'body', sealed));
+      }),
   };
 }

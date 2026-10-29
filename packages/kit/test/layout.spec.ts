@@ -1,17 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  boxStyleEntries,
-  surfaceColor,
-  type BoxBaseProps,
-  type Surface,
-  type SurfacePalette,
-} from '../src/layout';
+import { boxStyleEntries, surfaceColor, type BoxBaseProps, type Surface, type SurfacePalette } from '../src/layout';
 
-const PALETTE: SurfacePalette = {
-  bg: '#bg0000',
-  inputBg: '#input0',
-  toolbarBg: '#toolbr',
-};
+const PALETTE: SurfacePalette = { bg: '#bg0000', inputBg: '#input0', toolbarBg: '#toolbr' };
 
 describe('surfaceColor', () => {
   const cases: [Surface, string | undefined][] = [
@@ -54,10 +44,7 @@ describe('boxStyleEntries', () => {
       maxWidth: 300,
       maxHeight: '80%',
       aspectRatio: 1.5,
-      border: {
-        top: { width: 1, color: '#111111', style: 'dashed' },
-        bottom: { width: 2, color: '#222222' },
-      },
+      border: { top: { width: 1, color: '#111111', style: 'dashed' }, bottom: { width: 2, color: '#222222' } },
     };
     expect(boxStyleEntries(props)).toMatchSnapshot();
   });

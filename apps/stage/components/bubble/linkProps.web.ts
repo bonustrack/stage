@@ -11,14 +11,19 @@ function keepBrowserContextMenu(node: unknown): void {
 }
 
 export function bubbleLinkProps(url: string, onLinkPress: LinkPress): BubbleLinkProps {
-  if (!isAllowedLinkScheme(url)) return { onPress: () => { onLinkPress?.(url); } };
+  if (!isAllowedLinkScheme(url))
+    return {
+      onPress: () => {
+        onLinkPress?.(url);
+      },
+    };
   const path = internalLinkPath(url);
   if (!path) return { href: url, hrefAttrs: NEW_TAB, accessibilityRole: 'link', onPress: undefined, ref: keepBrowserContextMenu };
   return {
     href: /^(?:metro|stage):\/\//i.test(url.trim()) ? `https://stage.box/#${path}` : url,
     hrefAttrs: undefined,
     accessibilityRole: 'link',
-    onPress: event => {
+    onPress: (event) => {
       if (!isPlainClick(event)) return;
       event?.preventDefault();
       (onLinkPress ?? openInBubbleLink)(url);

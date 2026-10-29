@@ -15,9 +15,15 @@ export default {
           if (typeof value === 'string' && value.includes(EM_DASH)) context.report({ node, messageId: 'banned' });
         };
         return {
-          Literal(node) { check(node, node.value); },
-          TemplateElement(node) { check(node, node.value.cooked ?? node.value.raw); },
-          JSXText(node) { check(node, node.value); },
+          Literal(node) {
+            check(node, node.value);
+          },
+          TemplateElement(node) {
+            check(node, node.value.cooked ?? node.value.raw);
+          },
+          JSXText(node) {
+            check(node, node.value);
+          },
         };
       },
     },

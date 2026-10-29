@@ -17,8 +17,8 @@ export interface MemberListEntry {
 }
 
 export function assignedEntries(entries: MemberListEntry[], assigned: readonly string[]): MemberListEntry[] {
-  const selected = new Set(assigned.map(address => address.toLowerCase()));
-  return entries.filter(entry => selected.has(entry.address.toLowerCase()));
+  const selected = new Set(assigned.map((address) => address.toLowerCase()));
+  return entries.filter((entry) => selected.has(entry.address.toLowerCase()));
 }
 
 export function memberAdminMark(role: ChannelMemberRole): MemberAdminMark | undefined {
@@ -56,8 +56,8 @@ export function memberListEntries(
 
 export function memberChanges(members: readonly string[], wanted: ListEdits): ListEdits {
   return {
-    added: wanted.added.filter(address => !includesKey(members, address)),
-    removed: wanted.removed.filter(address => includesKey(members, address)),
+    added: wanted.added.filter((address) => !includesKey(members, address)),
+    removed: wanted.removed.filter((address) => includesKey(members, address)),
   };
 }
 

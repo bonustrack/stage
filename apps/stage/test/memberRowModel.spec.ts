@@ -31,8 +31,14 @@ describe('memberRowModel', () => {
   });
 
   test('owner and admin roles map to badges, member maps to none', () => {
-    expect(memberRowModel({ shortAddress: SHORT, name: 'A', isSelf: false, role: 'owner' }).badge).toEqual({ role: 'owner', label: 'Owner' });
-    expect(memberRowModel({ shortAddress: SHORT, name: 'A', isSelf: false, role: 'admin' }).badge).toEqual({ role: 'admin', label: 'Admin' });
+    expect(memberRowModel({ shortAddress: SHORT, name: 'A', isSelf: false, role: 'owner' }).badge).toEqual({
+      role: 'owner',
+      label: 'Owner',
+    });
+    expect(memberRowModel({ shortAddress: SHORT, name: 'A', isSelf: false, role: 'admin' }).badge).toEqual({
+      role: 'admin',
+      label: 'Admin',
+    });
     expect(memberRowModel({ shortAddress: SHORT, name: 'A', isSelf: false, role: 'member' }).badge).toBeUndefined();
   });
 });

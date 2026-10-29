@@ -17,7 +17,7 @@ export function useDeepLinks(): void {
 
     let cancelled = false;
 
-    void Linking.getInitialURL().then(url => {
+    void Linking.getInitialURL().then((url) => {
       if (!cancelled && url && shouldHandleDeepLink(url)) navigateToUrl(url);
     });
 

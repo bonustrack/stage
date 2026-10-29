@@ -9,7 +9,10 @@ export interface PhraseToken {
 
 export function currentToken(text: string): PhraseToken {
   const complete = /\s$/.test(text) || text.length === 0;
-  const parts = text.trim().split(/\s+/).filter((part) => part.length > 0);
+  const parts = text
+    .trim()
+    .split(/\s+/)
+    .filter((part) => part.length > 0);
   const last = parts[parts.length - 1];
   return { word: complete || last === undefined ? '' : last.toLowerCase(), complete };
 }
@@ -50,7 +53,9 @@ export function replaceWordAt(text: string, span: WordSpan, word: string): { tex
 }
 
 export function visibleSuggestions(word: string, wordlist: readonly string[] = english, limit = SUGGESTION_LIMIT): string[] {
-  return suggestWords(word, wordlist, limit + 1).filter((candidate) => candidate !== word).slice(0, limit);
+  return suggestWords(word, wordlist, limit + 1)
+    .filter((candidate) => candidate !== word)
+    .slice(0, limit);
 }
 
 export function applyCompletion(text: string, word: string): string {
@@ -92,7 +97,7 @@ export interface PhraseTyping {
 
 function uniqueWord(prefix: string, wordlist: readonly string[]): string | null {
   const matches = suggestWords(prefix, wordlist, 2);
-  return matches.length === 1 ? matches[0] ?? null : null;
+  return matches.length === 1 ? (matches[0] ?? null) : null;
 }
 
 function absorbsPending(state: PhraseTyping, next: string): boolean {
@@ -107,7 +112,10 @@ function looksLikeKeyOrCode(text: string): boolean {
 export function normalizePastedPhrase(pasted: string): string {
   const trimmed = pasted.trim();
   if (looksLikeKeyOrCode(trimmed)) return trimmed;
-  return trimmed.replace(/[^A-Za-z]+/g, ' ').trim().toLowerCase();
+  return trimmed
+    .replace(/[^A-Za-z]+/g, ' ')
+    .trim()
+    .toLowerCase();
 }
 
 function isSingleTypedChar(previous: string, next: string): boolean {
@@ -147,7 +155,11 @@ export function typePhrase(state: PhraseTyping, next: string, wordlist: readonly
 export function invalidWords(text: string, wordlist: readonly string[] = english): string[] {
   const set = new Set(wordlist);
   const token = currentToken(text);
-  const words = text.trim().toLowerCase().split(/\s+/).filter((word) => word.length > 0);
+  const words = text
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word.length > 0);
   const finished = token.complete ? words : words.slice(0, -1);
   return finished.filter((word) => !set.has(word));
 }

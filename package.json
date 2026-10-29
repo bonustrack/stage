@@ -25,7 +25,7 @@
     "lint:changed": "stage lint --changed",
     "madge": "stage madge",
     "knip": "stage knip",
-    "check": "bun run lint && bun run typecheck"
+    "check": "bun fmt --check && bun run lint && bun run typecheck"
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
@@ -37,8 +37,11 @@
     "turbo": "^2.3.3",
     "typescript": "~5.9.2"
   },
-  "trustedDependencies": ["electron"],
+  "trustedDependencies": [
+    "electron"
+  ],
   "packageManager": "bun@1.4.4",
+  "prettier": "@stage-labs/config/prettier",
   "engines": {
     "node": ">=22"
   },

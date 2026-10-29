@@ -24,7 +24,5 @@ export async function firebasePushToken(): Promise<string> {
   const registration = await navigator.serviceWorker.register(PUSH_SERVICE_WORKER_PATH);
   await navigator.serviceWorker.ready;
   const app = getApps().length > 0 ? getApp() : initializeApp(FIREBASE_WEB_CONFIG);
-  return getToken(getMessaging(app), {
-    vapidKey: FIREBASE_WEB_CONFIG.vapidPublicKey, serviceWorkerRegistration: registration,
-  });
+  return getToken(getMessaging(app), { vapidKey: FIREBASE_WEB_CONFIG.vapidPublicKey, serviceWorkerRegistration: registration });
 }

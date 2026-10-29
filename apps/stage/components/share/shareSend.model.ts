@@ -1,8 +1,8 @@
-export function currentShareDraft<T>(draft: { text: string; pending: T[] }, started: { text: string; pending: T[] }): { text: string; pending: T[] } {
-  return {
-    text: draft.text === started.text ? '' : draft.text,
-    pending: draft.pending === started.pending ? [] : draft.pending,
-  };
+export function currentShareDraft<T>(
+  draft: { text: string; pending: T[] },
+  started: { text: string; pending: T[] },
+): { text: string; pending: T[] } {
+  return { text: draft.text === started.text ? '' : draft.text, pending: draft.pending === started.pending ? [] : draft.pending };
 }
 
 export interface ShareSendEffects<T> {
@@ -14,12 +14,20 @@ export interface ShareSendEffects<T> {
   error: () => void;
 }
 
-export function makeShareSender<T>(effects: ShareSendEffects<T>): { send: () => Promise<void>; isBusy: () => boolean; close: () => boolean } {
+export function makeShareSender<T>(effects: ShareSendEffects<T>): {
+  send: () => Promise<void>;
+  isBusy: () => boolean;
+  close: () => boolean;
+} {
   let busy = false;
   let closed = false;
   return {
     isBusy: () => busy,
-    close: () => { if (busy) return false; closed = true; return true; },
+    close: () => {
+      if (busy) return false;
+      closed = true;
+      return true;
+    },
     send: async () => {
       if (busy || closed) return;
       busy = true;

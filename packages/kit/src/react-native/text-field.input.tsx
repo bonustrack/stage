@@ -1,8 +1,13 @@
 import { forwardRef, useState } from 'react';
 import { TextInput, type KeyboardTypeOptions, type TextInputProps, type TextStyle, type ViewStyle } from 'react-native';
 import {
-  CONTROL_SIZES, controlBoxStyle, controlColors, controlTextStyle, fieldIds,
-  type ControlSize, type ControlVariant,
+  CONTROL_SIZES,
+  controlBoxStyle,
+  controlColors,
+  controlTextStyle,
+  fieldIds,
+  type ControlSize,
+  type ControlVariant,
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT } from '../tokens';
 import { accessibilityProps, weightStyle } from './a2ui-props';
@@ -14,12 +19,7 @@ loadKitFonts();
 
 type ContentSizeEvent = Parameters<NonNullable<TextInputProps['onContentSizeChange']>>[0];
 
-const KEYBOARD: Record<TextFieldInputType, KeyboardTypeOptions> = {
-  text: 'default',
-  email: 'email-address',
-  tel: 'phone-pad',
-  url: 'url',
-};
+const KEYBOARD: Record<TextFieldInputType, KeyboardTypeOptions> = { text: 'default', email: 'email-address', tel: 'phone-pad', url: 'url' };
 
 function keyboardFor(props: TextFieldProps): KeyboardTypeOptions {
   return props.variant === 'number' ? 'numeric' : KEYBOARD[props.inputType ?? 'text'];

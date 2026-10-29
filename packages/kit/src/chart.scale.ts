@@ -92,13 +92,10 @@ export function chartNumber(raw: unknown): number | undefined {
   return typeof raw === 'string' && raw.trim() !== '' ? bounded(Number(raw)) : undefined;
 }
 
-export function chartExtents(
-  data: readonly Readonly<Record<string, unknown>>[],
-  series: readonly ChartStackable[],
-): ChartExtent[][] {
+export function chartExtents(data: readonly Readonly<Record<string, unknown>>[], series: readonly ChartStackable[]): ChartExtent[][] {
   const sums = new Map<string, number[]>();
   return series.map((s) => {
-    const running = s.stack === undefined ? undefined : sums.get(s.stack) ?? [];
+    const running = s.stack === undefined ? undefined : (sums.get(s.stack) ?? []);
     if (s.stack !== undefined && running !== undefined) sums.set(s.stack, running);
     return data.map((row, i): ChartExtent => {
       const value = chartNumber(row[s.dataKey]);

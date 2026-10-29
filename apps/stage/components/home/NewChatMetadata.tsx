@@ -17,20 +17,44 @@ import { Column, PAGE_GUTTER, Row } from '../layout';
 
 const METADATA_CHIP_STYLE = { maxWidth: '100%', paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 } as const;
 
-function MetadataChip({ label, field, icon, onRemove, onEdit }: {
-  label: string; field: string; icon: CentralIcon; onRemove: () => void; onEdit?: (point: MenuPoint) => void;
+function MetadataChip({
+  label,
+  field,
+  icon,
+  onRemove,
+  onEdit,
+}: {
+  label: string;
+  field: string;
+  icon: CentralIcon;
+  onRemove: () => void;
+  onEdit?: (point: MenuPoint) => void;
 }): React.ReactElement {
   const { border, text } = usePalette();
-  const chip = <LabelChip label={label} leading={<Glyph icon={icon} size={LABEL_CHIP_ICON_SIZE} color={text}/>}/>;
+  const chip = <LabelChip label={label} leading={<Glyph icon={icon} size={LABEL_CHIP_ICON_SIZE} color={text} />} />;
   return (
     <Badge label={label} background={border} style={METADATA_CHIP_STYLE}>
       {onEdit ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${field}: ${label}`} onPress={e => { onEdit(menuPointAbove(e)); }}
-          style={{ flexShrink: 1 }}>{chip}</Pressable>
-      ) : chip}
-      <Pressable accessibilityRole="button" accessibilityLabel={`Clear ${field}: ${label}`} onPress={onRemove}
-        style={{ paddingRight: 9, paddingVertical: 6 }}>
-        <Glyph icon={IconCrossSmall} size={LABEL_CHIP_ICON_SIZE} color={text}/>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Edit ${field}: ${label}`}
+          onPress={(e) => {
+            onEdit(menuPointAbove(e));
+          }}
+          style={{ flexShrink: 1 }}
+        >
+          {chip}
+        </Pressable>
+      ) : (
+        chip
+      )}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Clear ${field}: ${label}`}
+        onPress={onRemove}
+        style={{ paddingRight: 9, paddingVertical: 6 }}
+      >
+        <Glyph icon={IconCrossSmall} size={LABEL_CHIP_ICON_SIZE} color={text} />
       </Pressable>
     </Badge>
   );
@@ -51,20 +75,50 @@ export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange
     <>
       <Row wrap gap={8} padding={{ x: PAGE_GUTTER, top: 12, bottom: 4 }}>
         {value.status === null ? null : (
-          <MetadataChip field="status" label={value.status} icon={FIELD_SECTIONS.status.icon} onRemove={() => { onChange({ ...value, status: null }); }}/>
+          <MetadataChip
+            field="status"
+            label={value.status}
+            icon={FIELD_SECTIONS.status.icon}
+            onRemove={() => {
+              onChange({ ...value, status: null });
+            }}
+          />
         )}
-        {value.labels.map(label => (
-          <MetadataChip key={label} field="label" label={label} icon={IconTag} onEdit={setAnchor}
-            onRemove={() => { onChange({ ...value, labels: value.labels.filter(item => item !== label) }); }}/>
+        {value.labels.map((label) => (
+          <MetadataChip
+            key={label}
+            field="label"
+            label={label}
+            icon={IconTag}
+            onEdit={setAnchor}
+            onRemove={() => {
+              onChange({ ...value, labels: value.labels.filter((item) => item !== label) });
+            }}
+          />
         ))}
-        {value.assigned.map(address => (
-          <MetadataChip key={address} field="assignee" label={peerLabel(address)} icon={IconPeopleCircle}
-            onRemove={() => { onChange({ ...value, assigned: value.assigned.filter(item => item !== address) }); }}/>
+        {value.assigned.map((address) => (
+          <MetadataChip
+            key={address}
+            field="assignee"
+            label={peerLabel(address)}
+            icon={IconPeopleCircle}
+            onRemove={() => {
+              onChange({ ...value, assigned: value.assigned.filter((item) => item !== address) });
+            }}
+          />
         ))}
       </Row>
       {anchor === null ? null : (
-        <AnchoredMenu visible anchor={anchor} onClose={() => { setAnchor(null); }}>
-          <Column width={anchored ? 300 : undefined}><LabelPicker draft={value.labels} current={value.labels} toggle={toggle}/></Column>
+        <AnchoredMenu
+          visible
+          anchor={anchor}
+          onClose={() => {
+            setAnchor(null);
+          }}
+        >
+          <Column width={anchored ? 300 : undefined}>
+            <LabelPicker draft={value.labels} current={value.labels} toggle={toggle} />
+          </Column>
         </AnchoredMenu>
       )}
     </>

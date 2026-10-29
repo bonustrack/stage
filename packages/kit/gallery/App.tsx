@@ -31,31 +31,57 @@ function applyDocumentScheme(scheme: Scheme, palette: KitPalette): void {
 }
 
 function readScheme(): Scheme {
-  try { return localStorage.getItem(SCHEME_KEY) === 'dark' ? 'dark' : 'light'; } catch { return 'light'; }
+  try {
+    return localStorage.getItem(SCHEME_KEY) === 'dark' ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
 }
 
 function useHashRoute(): [ReturnType<typeof parseHash>, (hash: string) => void] {
   const [route, setRoute] = useState(() => parseHash(window.location.hash));
   useEffect(() => {
-    const onChange = (): void => { setRoute(parseHash(window.location.hash)); };
+    const onChange = (): void => {
+      setRoute(parseHash(window.location.hash));
+    };
     window.addEventListener('hashchange', onChange);
-    return (): void => { window.removeEventListener('hashchange', onChange); };
+    return (): void => {
+      window.removeEventListener('hashchange', onChange);
+    };
   }, []);
-  const navigate = useCallback((hash: string) => { if (window.location.hash !== hash) window.location.hash = hash; }, []);
+  const navigate = useCallback((hash: string) => {
+    if (window.location.hash !== hash) window.location.hash = hash;
+  }, []);
   return [route, navigate];
 }
 
-function StoryStage({ story, args, scroll, compact }: { story: StoryEntry; args: Record<string, unknown>; scroll: boolean; compact: boolean }): React.ReactElement {
+function StoryStage({
+  story,
+  args,
+  scroll,
+  compact,
+}: {
+  story: StoryEntry;
+  args: Record<string, unknown>;
+  scroll: boolean;
+  compact: boolean;
+}): React.ReactElement {
   const Render = story.render;
   return (
     <Column weight={scroll ? 1 : undefined} gap={16} padding={compact ? 16 : 24} style={scroll ? SCROLL_Y : undefined}>
       {compact ? null : (
         <Row align="baseline" gap={8}>
-          <Text fontWeight="semibold" size="2xl">{story.component}</Text>
-          <Text size="lg" color="secondary">{story.name}</Text>
+          <Text fontWeight="semibold" size="2xl">
+            {story.component}
+          </Text>
+          <Text size="lg" color="secondary">
+            {story.name}
+          </Text>
         </Row>
       )}
-      <Column><Render {...args} /></Column>
+      <Column>
+        <Render {...args} />
+      </Column>
     </Column>
   );
 }
@@ -64,19 +90,23 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
   const [scheme, setSchemeState] = useState<Scheme>(readScheme);
   const setScheme = useCallback((next: Scheme) => {
     setSchemeState(next);
-    try { localStorage.setItem(SCHEME_KEY, next); } catch { }
+    try {
+      localStorage.setItem(SCHEME_KEY, next);
+    } catch {}
   }, []);
   const [route, navigate] = useHashRoute();
   const { width } = useWindowDimensions();
   const menu = width < MENU_BELOW;
   const stacked = width < STACK_BELOW;
   const [menuOpen, setMenuOpen] = useState(false);
-  const story = route.storyId === null ? null : stories.find((s) => s.id === route.storyId) ?? stories[0] ?? null;
+  const story = route.storyId === null ? null : (stories.find((s) => s.id === route.storyId) ?? stories[0] ?? null);
   const argTypes = useMemo(() => (story?.render.argTypes ?? {}) as Record<string, ArgType>, [story]);
   const defaults = useMemo(() => story?.render.args ?? {}, [story]);
   const args = useMemo(() => ({ ...defaults, ...coerceArgs(route.args, argTypes) }), [defaults, route.args, argTypes]);
   const palette = PALETTES[scheme];
-  useEffect(() => { applyDocumentScheme(scheme, palette); }, [scheme, palette]);
+  useEffect(() => {
+    applyDocumentScheme(scheme, palette);
+  }, [scheme, palette]);
 
   const setArg = (name: string, next: unknown): void => {
     if (!story) return;
@@ -93,13 +123,28 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
     window.scrollTo(0, 0);
   };
   const activeId = story?.id ?? null;
-  const stage = story
-    ? <StoryStage key={story.id} story={story} args={args} scroll={!stacked} compact={menu} />
-    : <Home stories={stories} onOpen={select} scroll={!stacked} compact={menu} />;
-  const controls = story && Object.keys(argTypes).length > 0
-    ? <ControlsPanel argTypes={argTypes} values={args} onChange={setArg} onReset={() => { navigate(serializeRoute(story.id, {})); }} touch={menu} />
-    : null;
-  const controlsBelow = controls ? <Column surface="toolbar" border={{ top: { width: 1, color: palette.border } }}>{controls}</Column> : null;
+  const stage = story ? (
+    <StoryStage key={story.id} story={story} args={args} scroll={!stacked} compact={menu} />
+  ) : (
+    <Home stories={stories} onOpen={select} scroll={!stacked} compact={menu} />
+  );
+  const controls =
+    story && Object.keys(argTypes).length > 0 ? (
+      <ControlsPanel
+        argTypes={argTypes}
+        values={args}
+        onChange={setArg}
+        onReset={() => {
+          navigate(serializeRoute(story.id, {}));
+        }}
+        touch={menu}
+      />
+    ) : null;
+  const controlsBelow = controls ? (
+    <Column surface="toolbar" border={{ top: { width: 1, color: palette.border } }}>
+      {controls}
+    </Column>
+  ) : null;
 
   return (
     <SchemeContext.Provider value={{ scheme, setScheme }}>
@@ -107,17 +152,40 @@ export function App({ stories }: { stories: StoryEntry[] }): React.ReactElement 
         <KitThemeProvider value={palette} scheme={scheme}>
           {menu ? (
             <Column surface="surface" minHeight="100%">
-              <TopBar story={story} open={menuOpen} onToggle={() => { setMenuOpen(!menuOpen); window.scrollTo(0, 0); }} />
-              {menuOpen ? <Sidebar stories={stories} activeId={activeId} onSelect={select} touch /> : <>{stage}{controlsBelow}</>}
+              <TopBar
+                story={story}
+                open={menuOpen}
+                onToggle={() => {
+                  setMenuOpen(!menuOpen);
+                  window.scrollTo(0, 0);
+                }}
+              />
+              {menuOpen ? (
+                <Sidebar stories={stories} activeId={activeId} onSelect={select} touch />
+              ) : (
+                <>
+                  {stage}
+                  {controlsBelow}
+                </>
+              )}
             </Column>
           ) : (
             <Row surface="surface" height="100vh">
               <Column width={SIDEBAR_WIDTH} surface="toolbar" border={{ right: { width: 1, color: palette.border } }}>
                 <Sidebar stories={stories} activeId={activeId} onSelect={select} />
               </Column>
-              {stacked ? <Column weight={1} style={SCROLL_Y}>{stage}{controlsBelow}</Column> : stage}
+              {stacked ? (
+                <Column weight={1} style={SCROLL_Y}>
+                  {stage}
+                  {controlsBelow}
+                </Column>
+              ) : (
+                stage
+              )}
               {!stacked && controls ? (
-                <Column width={CONTROLS_WIDTH} surface="toolbar" border={{ left: { width: 1, color: palette.border } }} style={SCROLL_Y}>{controls}</Column>
+                <Column width={CONTROLS_WIDTH} surface="toolbar" border={{ left: { width: 1, color: palette.border } }} style={SCROLL_Y}>
+                  {controls}
+                </Column>
               ) : null}
             </Row>
           )}

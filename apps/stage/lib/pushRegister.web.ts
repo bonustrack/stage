@@ -2,8 +2,16 @@ import type { Client } from '@xmtp/browser-sdk';
 import { groupIdOfTopic, groupTopicOf, type HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
 import {
-  makePushClear, makeTopicRefresh, runPushRegistration, runPushUnregistration, runSenderFilterPublication, toPermission, warmSenderFilterSync,
-  type PushPermission, type PushTopics, type PushRuntimeInput,
+  makePushClear,
+  makeTopicRefresh,
+  runPushRegistration,
+  runPushUnregistration,
+  runSenderFilterPublication,
+  toPermission,
+  warmSenderFilterSync,
+  type PushPermission,
+  type PushTopics,
+  type PushRuntimeInput,
 } from './pushRegister.core';
 import { dismissConvNotifications } from './pushNotify.web';
 import { linkProxyBase } from './linkProxy';
@@ -17,7 +25,10 @@ function proxiedRpcUrl(method: string): string {
   return `${linkProxyBase()}/xmtp-push/${method}`;
 }
 
-type PushClient = Pick<Client<unknown>, 'installationId' | 'conversations' | 'preferences' | 'accountIdentifier' | 'inboxId' | 'signWithInstallationKey'>;
+type PushClient = Pick<
+  Client<unknown>,
+  'installationId' | 'conversations' | 'preferences' | 'accountIdentifier' | 'inboxId' | 'signWithInstallationKey'
+>;
 
 export function usePushDeepLinks(): void {
   return undefined;
@@ -35,7 +46,9 @@ export async function requestPushPermission(): Promise<PushPermission> {
   if (!isPushSupported()) return 'denied';
   try {
     return toPermission(await Notification.requestPermission());
-  } catch { return 'undetermined'; }
+  } catch {
+    return 'undetermined';
+  }
 }
 
 async function webPushToken(): Promise<string | null> {
@@ -87,14 +100,14 @@ function pushInput(client: PushClient): PushRuntimeInput | null {
     installationId,
     accountAddress,
     inboxId,
-    signInstallation: text => client.signWithInstallationKey(text),
+    signInstallation: (text) => client.signWithInstallationKey(text),
     current: () => getCachedXmtpClient() === client && getAccountEpoch() === epoch,
     syncPreferences: () => client.preferences.sync(),
     platform: 'web',
     rpcUrl: proxiedRpcUrl,
     getToken: webPushToken,
     collectTopics: () => collectTopics(client, installationId),
-    collectSenderTopics: topic => topic ? collectSenderTopic(client, topic) : collectTopics(client, installationId),
+    collectSenderTopics: (topic) => (topic ? collectSenderTopic(client, topic) : collectTopics(client, installationId)),
   };
 }
 

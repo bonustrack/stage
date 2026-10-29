@@ -40,12 +40,7 @@ export default defineConfig({
   plugins: [jsxInPlainJs(), publishKitCatalog()],
   build: { outDir: '../build', emptyOutDir: true },
   define: { __DEV__: 'true', global: 'globalThis', 'process.env.NODE_ENV': '"development"', 'process.env.EXPO_OS': '"web"' },
-  resolve: {
-    alias: { 'react-native': 'react-native-web' },
-    extensions: WEB_FIRST,
-  },
+  resolve: { alias: { 'react-native': 'react-native-web' }, extensions: WEB_FIRST },
   server: { fs: { allow: ['../../..'] }, port: 6006 },
-  optimizeDeps: {
-    esbuildOptions: { loader: { '.js': 'jsx' }, resolveExtensions: WEB_FIRST },
-  },
+  optimizeDeps: { esbuildOptions: { loader: { '.js': 'jsx' }, resolveExtensions: WEB_FIRST } },
 });

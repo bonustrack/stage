@@ -10,7 +10,13 @@ const TAB_ROUTES = new Set(['/', BOARD_ROUTE, '/contacts', '/wallet', '/settings
 const CHANNEL_PREFIX = '/channel/';
 
 const SPLIT_PREFIXES = [
-  CHANNEL_PREFIX, '/profile/', '/settings', '/wallet', '/add-members', '/frame', ...MENU_PAGES.map((page) => page.href),
+  CHANNEL_PREFIX,
+  '/profile/',
+  '/settings',
+  '/wallet',
+  '/add-members',
+  '/frame',
+  ...MENU_PAGES.map((page) => page.href),
 ];
 
 type HomeView = HomeViewContent['view'];

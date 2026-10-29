@@ -15,13 +15,17 @@ function respond(body: unknown, status = 200): void {
   };
 }
 
-afterEach(() => { globalThis.fetch = realFetch; requests = []; });
+afterEach(() => {
+  globalThis.fetch = realFetch;
+  requests = [];
+});
 
 describe('DefiLlama current quotes', () => {
   test('fetches only requested identifiers from the free API without a key', async () => {
     respond({ coins: { [eth]: quote, [btc]: { ...quote, price: 80000 }, unrelated: quote } });
     expect(await getCurrentPrices([eth, btc, eth])).toEqual({
-      [eth]: { usd: 4000, timestamp: now }, [btc]: { usd: 80000, timestamp: now },
+      [eth]: { usd: 4000, timestamp: now },
+      [btc]: { usd: 80000, timestamp: now },
     });
     expect(requests).toEqual(['https://coins.llama.fi/prices/current/ethereum%3A0x0000000000000000000000000000000000000000,bitcoin%3Abtc']);
   });

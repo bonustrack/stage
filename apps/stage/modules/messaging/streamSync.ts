@@ -21,5 +21,7 @@ export function ensureMessagingStreamSync(): void {
   startReadSync();
   startPushClear();
   void flushDmOutbox();
-  setInterval(() => { void flushDmOutbox(); }, OUTBOX_FLUSH_INTERVAL_MS);
+  setInterval(() => {
+    void flushDmOutbox();
+  }, OUTBOX_FLUSH_INTERVAL_MS);
 }

@@ -2,12 +2,22 @@ import { searchStateSchema, type SearchStateContent } from '@stage-labs/client/x
 import { createValueStore } from './persistedStore';
 import { jsonWith, makeListeners } from './storeCore';
 import {
-  EMPTY_SEARCH, editFilters, receiveSearch, restoreSearch, syncedSearch, toggledLabel, type FilterEdit,
+  EMPTY_SEARCH,
+  editFilters,
+  receiveSearch,
+  restoreSearch,
+  syncedSearch,
+  toggledLabel,
+  type FilterEdit,
 } from './syncedSettings.model';
 
 const prefs = createValueStore<SearchStateContent>({
-  key: 'channels.search.', default: EMPTY_SEARCH, deserialize: jsonWith(searchStateSchema), serialize: JSON.stringify,
-  perAccount: true, restore: restoreSearch,
+  key: 'channels.search.',
+  default: EMPTY_SEARCH,
+  deserialize: jsonWith(searchStateSchema),
+  serialize: JSON.stringify,
+  perAccount: true,
+  restore: restoreSearch,
 });
 
 export const useSearchState = prefs.use;
@@ -51,7 +61,7 @@ export function clearSearchFilters(): void {
 }
 
 export function applyRemoteSearchState(forAccount: string, incoming: SearchStateContent): Promise<void> {
-  return prefs.updateFor(forAccount, current => receiveSearch(current, incoming));
+  return prefs.updateFor(forAccount, (current) => receiveSearch(current, incoming));
 }
 
 export async function loadSearchState(forAccount: string): Promise<SearchStateContent | null> {

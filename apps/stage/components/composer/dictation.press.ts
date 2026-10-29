@@ -33,7 +33,11 @@ export function makeDictationPress(actions: DictationPressActions, holdMs = 350,
   return {
     pressIn: (physical = true) => {
       if (!physical || (pressed && aborted)) return;
-      if (!pressed) { began = now(); consumed = false; aborted = false; }
+      if (!pressed) {
+        began = now();
+        consumed = false;
+        aborted = false;
+      }
       pressed = true;
       inside = true;
       clearTimeout(timer);
@@ -41,14 +45,28 @@ export function makeDictationPress(actions: DictationPressActions, holdMs = 350,
       else timer = setTimeout(hold, holdMs - (now() - began));
     },
     hold,
-    pressOut: () => { inside = false; if (holding) aborted = true; stop(); },
+    pressOut: () => {
+      inside = false;
+      if (holding) aborted = true;
+      stop();
+    },
     release,
-    cancel: () => { consumed = true; release(); },
+    cancel: () => {
+      consumed = true;
+      release();
+    },
     press: (physical: boolean) => {
       const gesture = physical || pressed;
       if (gesture) release();
       if (!gesture || !consumed) actions.toggle();
     },
-    reset: () => { clearTimeout(timer); pressed = false; inside = false; holding = false; consumed = false; aborted = false; },
+    reset: () => {
+      clearTimeout(timer);
+      pressed = false;
+      inside = false;
+      holding = false;
+      consumed = false;
+      aborted = false;
+    },
   };
 }

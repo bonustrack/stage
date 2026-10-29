@@ -39,7 +39,7 @@ const IconBubbleSparkle = memo((props: CentralIconBaseProps) => (
 ));
 
 function copyActiveAddress(): void {
-  void getActiveAccount().then(acct => {
+  void getActiveAccount().then((acct) => {
     if (!acct?.address) return;
     capabilities.copy('Address', acct.address);
   });
@@ -57,19 +57,36 @@ interface HomeFilterProps {
   onFilterMenu: (open: boolean) => void;
 }
 
-function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
+function HomeViewMenu({
+  anchor,
+  onClose,
+  ...filter
+}: HomeFilterProps & { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
   const router = useRouter();
   const current = useHomeViewOf(filter.scope);
   const fields = useChannelFields(filter.scope);
   const activity = useLastActivity(filter.scope);
   const [page, setPage] = useState('view');
-  const close = (): void => { setPage('view'); onClose(); };
-  const back = (): void => { setPage(page === 'activity' ? 'filter' : 'view'); };
+  const close = (): void => {
+    setPage('view');
+    onClose();
+  };
+  const back = (): void => {
+    setPage(page === 'activity' ? 'filter' : 'view');
+  };
   const open = anchor !== null;
   const { onFilterMenu } = filter;
-  useEffect(() => { onFilterMenu(open); return () => { onFilterMenu(false); }; }, [open, onFilterMenu]);
+  useEffect(() => {
+    onFilterMenu(open);
+    return () => {
+      onFilterMenu(false);
+    };
+  }, [open, onFilterMenu]);
   const pick = (id: string): void => {
-    if (['layout', 'grouping', 'sorting', 'filter', 'fields', 'activity'].includes(id)) { setPage(id); return; }
+    if (['layout', 'grouping', 'sorting', 'filter', 'fields', 'activity'].includes(id)) {
+      setPage(id);
+      return;
+    }
     if (id.startsWith('activity:')) {
       const window = id.slice('activity:'.length);
       if (isLastActivity(window)) setLastActivity(filter.scope, window);
@@ -87,68 +104,126 @@ function HomeViewMenu({ anchor, onClose, ...filter }: HomeFilterProps & { anchor
     fields: visibleChannelFieldCount(fields),
   };
   const picker = ['sorting', 'activity', 'layout'].includes(page);
-  const sections = page === 'activity' ? homeActivityMenu(activity)
-    : page === 'layout' ? homeLayoutMenu(current)
-    : page === 'sorting' ? homeSortMenu(current) : homeViewMenu(current, page === 'grouping');
+  const sections =
+    page === 'activity'
+      ? homeActivityMenu(activity)
+      : page === 'layout'
+        ? homeLayoutMenu(current)
+        : page === 'sorting'
+          ? homeSortMenu(current)
+          : homeViewMenu(current, page === 'grouping');
   return (
     <AnchoredMenu visible={open} onClose={close} anchor={anchor} avoidKeyboard>
-      {page === 'filter' ? <SearchFilterMenu {...filter} onBack={back}>
-        <MenuRow icon="IconClock" label="Last activity" value={lastActivityLabel(activity)} onPress={() => { setPage('activity'); }}/>
-      </SearchFilterMenu> : <>
-        {page === 'view' ? null : <>
-          <MenuRow icon="IconArrowLeft" label={page === 'activity' ? 'Filter' : 'View'} onPress={back}/>
-          <DropdownMenuSeparator/>
-        </>}
-        {page === 'fields' ? <>
-          <MenuHeading text="Fields"/>
-          {CHANNEL_FIELDS.map(field => (
-            <PickerRow key={field.id} label={field.label} selected={fields[field.id]}
-              leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link"/>}
-              onPress={() => { toggleChannelField(filter.scope, field.id); }}/>
-          ))}
-        </> : sections.map((section, index) => (
-          <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
-            {section.rows.map(row => picker ? (
-              <PickerRow key={row.id} label={row.label} selected={row.selected}
-                role={page === 'sorting' ? 'checkbox' : 'radio'} autoFocus={page !== 'sorting' && row.selected}
-                leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link"/>}
-                onPress={() => { pick(row.id); }}/>
-            ) : <MenuRow key={row.id} icon={row.icon}
-              label={row.label} value={row.value} count={counts[row.id]}
-              selected={row.selected} onPress={() => { pick(row.id); }}/>) }
-          </Section>
-        ))}
-      </>}
+      {page === 'filter' ? (
+        <SearchFilterMenu {...filter} onBack={back}>
+          <MenuRow
+            icon="IconClock"
+            label="Last activity"
+            value={lastActivityLabel(activity)}
+            onPress={() => {
+              setPage('activity');
+            }}
+          />
+        </SearchFilterMenu>
+      ) : (
+        <>
+          {page === 'view' ? null : (
+            <>
+              <MenuRow icon="IconArrowLeft" label={page === 'activity' ? 'Filter' : 'View'} onPress={back} />
+              <DropdownMenuSeparator />
+            </>
+          )}
+          {page === 'fields' ? (
+            <>
+              <MenuHeading text="Fields" />
+              {CHANNEL_FIELDS.map((field) => (
+                <PickerRow
+                  key={field.id}
+                  label={field.label}
+                  selected={fields[field.id]}
+                  leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link" />}
+                  onPress={() => {
+                    toggleChannelField(filter.scope, field.id);
+                  }}
+                />
+              ))}
+            </>
+          ) : (
+            sections.map((section, index) => (
+              <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
+                {section.rows.map((row) =>
+                  picker ? (
+                    <PickerRow
+                      key={row.id}
+                      label={row.label}
+                      selected={row.selected}
+                      role={page === 'sorting' ? 'checkbox' : 'radio'}
+                      autoFocus={page !== 'sorting' && row.selected}
+                      leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link" />}
+                      onPress={() => {
+                        pick(row.id);
+                      }}
+                    />
+                  ) : (
+                    <MenuRow
+                      key={row.id}
+                      icon={row.icon}
+                      label={row.label}
+                      value={row.value}
+                      count={counts[row.id]}
+                      selected={row.selected}
+                      onPress={() => {
+                        pick(row.id);
+                      }}
+                    />
+                  ),
+                )}
+              </Section>
+            ))
+          )}
+        </>
+      )}
     </AnchoredMenu>
   );
 }
 
-function Section({ divider, heading, children }: {
-  divider: boolean; heading?: string; children: React.ReactNode;
-}): React.ReactElement {
+function Section({ divider, heading, children }: { divider: boolean; heading?: string; children: React.ReactNode }): React.ReactElement {
   return (
     <>
-      {divider ? <DropdownMenuSeparator/> : null}
-      {heading === undefined ? null : <MenuHeading text={heading}/>}
+      {divider ? <DropdownMenuSeparator /> : null}
+      {heading === undefined ? null : <MenuHeading text={heading} />}
       {children}
     </>
   );
 }
 
-function HomeViewOptions({ color, menu, ...filter }: HomeFilterProps & {
-  color: string; menu: HomeMenuState;
-}): React.ReactElement {
+function HomeViewOptions({ color, menu, ...filter }: HomeFilterProps & { color: string; menu: HomeMenuState }): React.ReactElement {
   const { anchor, setAnchor } = menu;
   const reanchor = (event: LayoutChangeEvent): void => {
     const point = menuPointOnLayout(event);
-    if (point !== null) setAnchor(current => current === null ? null : point);
+    if (point !== null) setAnchor((current) => (current === null ? null : point));
   };
   return (
     <>
-      <HoverIconButton icon={IconSettingsSliderVer} label="View options" color={color} placement="below"
-        role="button" expanded={anchor !== null} onLayout={reanchor}
-        onPress={(event) => { setAnchor(menuPointBelow(event)); }}/>
-      <HomeViewMenu {...filter} anchor={anchor} onClose={() => { setAnchor(null); }}/>
+      <HoverIconButton
+        icon={IconSettingsSliderVer}
+        label="View options"
+        color={color}
+        placement="below"
+        role="button"
+        expanded={anchor !== null}
+        onLayout={reanchor}
+        onPress={(event) => {
+          setAnchor(menuPointBelow(event));
+        }}
+      />
+      <HomeViewMenu
+        {...filter}
+        anchor={anchor}
+        onClose={() => {
+          setAnchor(null);
+        }}
+      />
     </>
   );
 }
@@ -159,17 +234,34 @@ export function HomeTopnavRight({ head, ...filter }: HomeFilterProps & { head: s
   const handlers: Record<string, (() => void) | undefined> = {
     'copy-address': copyActiveAddress,
     profile: () => {
-      void getActiveAccount().then(acct => {
+      void getActiveAccount().then((acct) => {
         if (acct?.address) router.push(profileLinkOf(acct.address));
       });
     },
-    settings: () => { router.push('/settings'); },
+    settings: () => {
+      router.push('/settings');
+    },
   };
   return (
     <>
-      <HoverIconButton icon={IconBubbleSparkle} label="New chat" color={head} placement="below" shortcut="c" onShortcut={openCompose} onPress={openCompose} />
-      <HomeViewOptions {...filter} color={head}/>
-      <OverflowMenu color={head} label="More" items={CHANNELS_OVERFLOW_ITEMS} onSelect={(id) => { handlers[id]?.(); }}/>
+      <HoverIconButton
+        icon={IconBubbleSparkle}
+        label="New chat"
+        color={head}
+        placement="below"
+        shortcut="c"
+        onShortcut={openCompose}
+        onPress={openCompose}
+      />
+      <HomeViewOptions {...filter} color={head} />
+      <OverflowMenu
+        color={head}
+        label="More"
+        items={CHANNELS_OVERFLOW_ITEMS}
+        onSelect={(id) => {
+          handlers[id]?.();
+        }}
+      />
     </>
   );
 }

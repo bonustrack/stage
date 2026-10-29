@@ -44,10 +44,7 @@ export function mergeHiddenChannels(local: HiddenChannels, incoming: HiddenChann
 
 export const boardOrderSchema = z.array(z.string().min(1));
 
-const boardStateSchema = z.object({
-  order: boardOrderSchema,
-  at: z.number().positive(),
-});
+const boardStateSchema = z.object({ order: boardOrderSchema, at: z.number().positive() });
 
 export type BoardStateContent = z.infer<typeof boardStateSchema>;
 export const searchStateSchema = z.object({
@@ -63,10 +60,7 @@ export const GROUP_KEYS = ['assignee', 'category', 'label', 'status'] as const;
 
 export type GroupKey = (typeof GROUP_KEYS)[number];
 
-export const homeSortSchema = z.object({
-  by: z.enum(['status', 'created', 'updated', 'priority']),
-  direction: z.enum(['asc', 'desc']),
-});
+export const homeSortSchema = z.object({ by: z.enum(['status', 'created', 'updated', 'priority']), direction: z.enum(['asc', 'desc']) });
 
 export type HomeSort = z.infer<typeof homeSortSchema>;
 
@@ -96,13 +90,10 @@ export type DashboardHeight = (typeof DASHBOARD_HEIGHTS)[number];
 export const DASHBOARD_MAX_WIDGETS = 48;
 
 function isDashboardHeight(h: number): h is DashboardHeight {
-  return DASHBOARD_HEIGHTS.some(height => height === h);
+  return DASHBOARD_HEIGHTS.some((height) => height === h);
 }
 
-const dashboardSourceSchema = z.object({
-  conversationId: z.string().min(1).max(128),
-  messageId: z.string().min(1).max(128),
-});
+const dashboardSourceSchema = z.object({ conversationId: z.string().min(1).max(128), messageId: z.string().min(1).max(128) });
 
 export type DashboardSource = z.infer<typeof dashboardSourceSchema>;
 
@@ -110,11 +101,7 @@ export const DASHBOARD_FRAME_KIND = 'frame';
 
 export const DASHBOARD_LIVE_KIND = 'live';
 
-const widgetFields = {
-  id: z.string().min(1).max(64),
-  w: z.enum(DASHBOARD_WIDTHS),
-  h: z.number().refine(isDashboardHeight),
-};
+const widgetFields = { id: z.string().min(1).max(64), w: z.enum(DASHBOARD_WIDTHS), h: z.number().refine(isDashboardHeight) };
 
 const frameWidgetSchema = z.object({ ...widgetFields, kind: z.literal(DASHBOARD_FRAME_KIND), source: dashboardSourceSchema });
 
@@ -132,7 +119,11 @@ export type DashboardWidget = z.infer<typeof dashboardWidgetSchema>;
 
 type LiveDashboardWidget = z.infer<typeof liveWidgetSchema>;
 
-export interface LiveSource { url: string; key: string; origin?: DashboardSource }
+export interface LiveSource {
+  url: string;
+  key: string;
+  origin?: DashboardSource;
+}
 
 export function liveSourceOf(widget: LiveDashboardWidget): LiveSource {
   const { source, key, origin } = widget;
@@ -151,10 +142,7 @@ function validWidgets(items: readonly unknown[]): DashboardWidget[] {
   return widgets;
 }
 
-export const dashboardSchema = z.object({
-  widgets: z.array(z.unknown()).transform(validWidgets),
-  at: z.number().nonnegative(),
-});
+export const dashboardSchema = z.object({ widgets: z.array(z.unknown()).transform(validWidgets), at: z.number().nonnegative() });
 
 export type DashboardContent = z.infer<typeof dashboardSchema>;
 export const EMPTY_DASHBOARD: DashboardContent = { widgets: [], at: 0 };
@@ -199,7 +187,7 @@ export const SYNC_TYPES: { [K in SyncKind]: SyncType<SyncContents[K]> } = {
 export function isSyncType(contentTypeId: string | undefined, kind?: SyncKind): boolean {
   if (typeof contentTypeId !== 'string') return false;
   const types = kind === undefined ? Object.values(SYNC_TYPES) : [SYNC_TYPES[kind]];
-  return types.some(type => contentTypeId.includes(type.contentType.typeId));
+  return types.some((type) => contentTypeId.includes(type.contentType.typeId));
 }
 
 export function parseSyncState<K extends SyncKind>(kind: K, content: unknown): SyncContents[K] | null {
@@ -360,8 +348,11 @@ function mergedHidden(messages: readonly SyncMessage[], maxAt: number): HiddenCh
   return merged;
 }
 
-function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kind: K, maxAt: number,
-  merge = (current: SyncContents[K], incoming: SyncContents[K]): SyncContents[K] => incoming.at > current.at ? incoming : current,
+function latestState<K extends LatestKind>(
+  messages: readonly SyncMessage[],
+  kind: K,
+  maxAt: number,
+  merge = (current: SyncContents[K], incoming: SyncContents[K]): SyncContents[K] => (incoming.at > current.at ? incoming : current),
 ): SyncContents[K] | null {
   let latest: SyncContents[K] | null = null;
   for (const m of messages) {
@@ -372,7 +363,8 @@ function latestState<K extends LatestKind>(messages: readonly SyncMessage[], kin
 }
 
 function latestHomeView(messages: readonly SyncMessage[], maxAt: number): HomeViewContent | null {
-  const states = messages.map(m => inTime(stateOf('homeView', m), maxAt))
+  const states = messages
+    .map((m) => inTime(stateOf('homeView', m), maxAt))
     .filter((state): state is HomeViewContent => state !== null)
     .sort((a, b) => b.at - a.at);
   return states.reduce<HomeViewContent | null>((latest, state) => ({ ...state, ...latest }), null);

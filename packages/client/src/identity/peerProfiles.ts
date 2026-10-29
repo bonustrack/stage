@@ -36,7 +36,9 @@ export function setOnchainProfileResolver(resolver: OnchainProfileResolver | nul
 }
 
 function notify(): void {
-  listeners.forEach(l => { l(); });
+  listeners.forEach((l) => {
+    l();
+  });
 }
 
 const STAMP_LOOKUP_CHUNK = 50;
@@ -57,8 +59,7 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
 }
 
 function namesFromResult(json: unknown): Record<string, string> {
-  const result =
-    typeof json === 'object' && json !== null && 'result' in json ? json.result : undefined;
+  const result = typeof json === 'object' && json !== null && 'result' in json ? json.result : undefined;
   const out: Record<string, string> = {};
   if (typeof result !== 'object' || result === null) return out;
   for (const [addr, name] of Object.entries(result)) {
@@ -81,7 +82,11 @@ function applyOnchain(address: string, profile: OnchainProfile | null): boolean 
   if (!profile) return false;
   const before = store.get(address);
   const next: PeerProfile = {
-    name: profile.name, displayName: profile.displayName, description: profile.description, avatar: profile.avatar, source: profile.source,
+    name: profile.name,
+    displayName: profile.displayName,
+    description: profile.description,
+    avatar: profile.avatar,
+    source: profile.source,
   };
   if (before && (Object.keys(next) as (keyof PeerProfile)[]).every((k) => before[k] === next[k])) return false;
   store.set(address, next);
@@ -108,10 +113,10 @@ async function fetchBatch(addrs: string[]): Promise<void> {
       const chunk = addrs.slice(i, i + STAMP_LOOKUP_CHUNK);
       const names = await lookupNamesChunk(chunk);
       if (names && applyNames(chunk, names)) changed = true;
-      chunk.forEach(a => pending.delete(a));
+      chunk.forEach((a) => pending.delete(a));
     }
   } finally {
-    addrs.forEach(a => pending.delete(a));
+    addrs.forEach((a) => pending.delete(a));
     if (changed) notify();
   }
   void resolveOnchainBatch(addrs);
@@ -123,15 +128,11 @@ function needsLookup(address: string): boolean {
 }
 
 export function ensurePeerProfiles(addresses: (string | null | undefined)[]): void {
-  const todo = [
-    ...new Set(
-      addresses
-        .filter((a): a is string => typeof a === 'string' && a.length > 0)
-        .map(a => a.toLowerCase()),
-    ),
-  ].filter(needsLookup);
+  const todo = [...new Set(addresses.filter((a): a is string => typeof a === 'string' && a.length > 0).map((a) => a.toLowerCase()))].filter(
+    needsLookup,
+  );
   if (!todo.length) return;
-  todo.forEach(a => pending.add(a));
+  todo.forEach((a) => pending.add(a));
   void fetchBatch(todo);
 }
 
@@ -142,8 +143,12 @@ export function seedPeerProfiles(entries: PeerProfileEntries): void {
     if (store.has(key)) continue;
     const persisted = typeof entry === 'object' && entry !== null ? entry : { name: entry };
     store.set(key, {
-      name: persisted.name ?? undefined, displayName: persisted.displayName, description: persisted.description,
-      avatar: persisted.avatar, source: persisted.source, stale: true,
+      name: persisted.name ?? undefined,
+      displayName: persisted.displayName,
+      description: persisted.description,
+      avatar: persisted.avatar,
+      source: persisted.source,
+      stale: true,
     });
     added = true;
   }
@@ -153,12 +158,16 @@ export function seedPeerProfiles(entries: PeerProfileEntries): void {
 export function peerProfileEntries(): PeerProfileEntries {
   const out: PeerProfileEntries = {};
   for (const [address, profile] of store) {
-    out[address] = profile.avatar === undefined && profile.source === undefined
-      ? profile.name ?? null
-      : {
-          name: profile.name ?? null, displayName: profile.displayName, description: profile.description,
-          avatar: profile.avatar, source: profile.source,
-        };
+    out[address] =
+      profile.avatar === undefined && profile.source === undefined
+        ? (profile.name ?? null)
+        : {
+            name: profile.name ?? null,
+            displayName: profile.displayName,
+            description: profile.description,
+            avatar: profile.avatar,
+            source: profile.source,
+          };
   }
   return out;
 }

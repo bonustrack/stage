@@ -12,7 +12,7 @@ function shown(zoneId: string | undefined): boolean {
 }
 
 function pasteOwner(): symbol | undefined {
-  return imageTargets.findLast(target => shown(target.zoneId))?.owner;
+  return imageTargets.findLast((target) => shown(target.zoneId))?.owner;
 }
 
 function clipboardItems(event: ClipboardEvent): DataTransferItem[] {
@@ -20,11 +20,13 @@ function clipboardItems(event: ClipboardEvent): DataTransferItem[] {
 }
 
 function imagesFrom(items: DataTransferItem[], limit: number): ComposerImageFile[] {
-  return imageItemIndexes(items).slice(0, limit).flatMap((i, n) => {
-    const file = items[i]?.getAsFile();
-    if (!file) return [];
-    return [{ uri: URL.createObjectURL(file), mime: file.type, name: file.name || pastedImageName(file.type, n) }];
-  });
+  return imageItemIndexes(items)
+    .slice(0, limit)
+    .flatMap((i, n) => {
+      const file = items[i]?.getAsFile();
+      if (!file) return [];
+      return [{ uri: URL.createObjectURL(file), mime: file.type, name: file.name || pastedImageName(file.type, n) }];
+    });
 }
 
 function pasteTarget(event: ClipboardEvent): { tag: string | null; editable: boolean } {
@@ -50,7 +52,10 @@ export function usePastedImages(onImages: (files: ComposerImageFile[], keepFocus
     };
     document.addEventListener('paste', onPaste);
     return (): void => {
-      imageTargets.splice(imageTargets.findIndex(target => target.owner === owner), 1);
+      imageTargets.splice(
+        imageTargets.findIndex((target) => target.owner === owner),
+        1,
+      );
       document.removeEventListener('paste', onPaste);
     };
   }, [zoneId]);

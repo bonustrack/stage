@@ -27,9 +27,9 @@ export {
   invalidatePeerProfile,
 } from '@stage-labs/client/identity/peerProfiles';
 
-setOnchainProfileResolver((address) => resolveOnchainProfile(
-  baseProfileClient(), address, (peer) => fetchIssuedName(linkProxyBase(), peer),
-));
+setOnchainProfileResolver((address) =>
+  resolveOnchainProfile(baseProfileClient(), address, (peer) => fetchIssuedName(linkProxyBase(), peer)),
+);
 
 export function peerAvatarUrl(address: string, displayPx: number): string {
   return stampAvatarUrl(address, displayPx, avatarCacheKey(getPeerAvatar(address)));
@@ -41,7 +41,9 @@ let hydration: Promise<void> | null = null;
 async function hydrateAndMirror(): Promise<void> {
   const saved = await persisted.hydrate().catch(recover('peerProfiles.hydrate', null));
   if (saved) seedPeerProfiles(saved);
-  subscribePeerProfiles(() => { persisted.set(peerProfileEntries()); });
+  subscribePeerProfiles(() => {
+    persisted.set(peerProfileEntries());
+  });
 }
 
 export function hydratePeerProfiles(): Promise<void> {
@@ -54,7 +56,9 @@ export function usePeerProfiles(addresses: (string | null | undefined)[]): numbe
   const key = addresses.filter(Boolean).join(',');
   useEffect(() => {
     ensurePeerProfiles(addresses);
-    return subscribePeerProfiles(() => { bump(); });
+    return subscribePeerProfiles(() => {
+      bump();
+    });
   }, [key]);
   return version;
 }

@@ -17,5 +17,9 @@ export function CallScreenPicker(): React.ReactElement | null {
     });
   }, []);
   if (Platform.OS !== 'ios') return null;
-  return <Column pointerEvents="none" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}><ScreenCapturePickerView ref={ref}/></Column>;
+  return (
+    <Column pointerEvents="none" style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}>
+      <ScreenCapturePickerView ref={ref} />
+    </Column>
+  );
 }

@@ -52,7 +52,10 @@ export async function openDmWithAddress(address: string): Promise<string> {
   return shownDmId(client, dm.id);
 }
 
-interface ExistingDm { convId: string; peerJoined: boolean }
+interface ExistingDm {
+  convId: string;
+  peerJoined: boolean;
+}
 
 export async function findExistingDmWithAddress(address: string): Promise<ExistingDm | null> {
   const client = await sdk.client();
@@ -83,7 +86,7 @@ export async function repairDmMembership(convId: string, address: string): Promi
     return false;
   }
   const dm = await (await sdk.dmLookup(client, address))?.find();
-  const members = await dm?.members().catch(recover('xmtp.dmMembers', [])) ?? [];
+  const members = (await dm?.members().catch(recover('xmtp.dmMembers', []))) ?? [];
   return members.length >= 2;
 }
 
@@ -98,10 +101,15 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
 }
 
 async function withoutDepartedGroups(context: AccountClient, convs: Conv[]): Promise<Conv[]> {
-  const shown = await Promise.all(convs.map(async (conv) => {
-    if (await conversationIsSyncGroup(conv)) { registerHiddenConv(conv.id); return false; }
-    return await channelAccess(context, conv) !== 'outside';
-  }));
+  const shown = await Promise.all(
+    convs.map(async (conv) => {
+      if (await conversationIsSyncGroup(conv)) {
+        registerHiddenConv(conv.id);
+        return false;
+      }
+      return (await channelAccess(context, conv)) !== 'outside';
+    }),
+  );
   context.assertCurrent();
   return convs.filter((_, i) => shown[i]);
 }
@@ -111,7 +119,10 @@ export async function listVisibleConversations(): Promise<Conv[]> {
   await reconcileHiddenConsent(context);
   const hidden = await loadHiddenChannels(context.account.id);
   const visible = await sdk.listConvs(context.client, VISIBLE_CONSENT);
-  return withoutDepartedGroups(context, visible.filter(c => !sdk.isGroup(c) || !hidden[c.id]?.hidden));
+  return withoutDepartedGroups(
+    context,
+    visible.filter((c) => !sdk.isGroup(c) || !hidden[c.id]?.hidden),
+  );
 }
 
 export async function syncConversationsFromNetwork(): Promise<void> {
@@ -133,9 +144,7 @@ export async function checkConvSync(convId: string): Promise<SyncCheckResult> {
     nativeError: sdk.nativeErrorLog,
     device: client.installationId.slice(0, 8),
     details: async (conv) => {
-      const [state, latest] = await Promise.all([
-        sdk.syncState(conv), sdk.messages(conv, { limit: 1, order: 'desc' }),
-      ]);
+      const [state, latest] = await Promise.all([sdk.syncState(conv), sdk.messages(conv, { limit: 1, order: 'desc' })]);
       const newestMs = latest[0] ? sdk.sentNsOf(latest[0]) / 1_000_000 : 0;
       return { state, newest: newestMs > 0 ? new Date(newestMs).toLocaleString() : '' };
     },
@@ -160,7 +169,7 @@ async function setConvConsent(convId: string, state: XmtpConsent): Promise<void>
   if (!conv) throw new Error('Conversation not found');
   context.assertCurrent();
   if (sdk.isGroup(conv)) {
-    if (state === 'allowed' && await channelAccess(context, conv) !== 'member') throw new Error('Channel membership is not ready');
+    if (state === 'allowed' && (await channelAccess(context, conv)) !== 'member') throw new Error('Channel membership is not ready');
     await setChannelHidden(context.account.id, convId, state === 'denied');
     await reconcileHiddenConsent(context);
   } else {
@@ -170,11 +179,17 @@ async function setConvConsent(convId: string, state: XmtpConsent): Promise<void>
   patchRowConsent(convId, state);
 }
 
-export function acceptRequestConv(convId: string): Promise<void> { return setConvConsent(convId, 'allowed'); }
+export function acceptRequestConv(convId: string): Promise<void> {
+  return setConvConsent(convId, 'allowed');
+}
 
-export function blockRequestConv(convId: string): Promise<void> { return setConvConsent(convId, 'denied'); }
+export function blockRequestConv(convId: string): Promise<void> {
+  return setConvConsent(convId, 'denied');
+}
 
-export function unacceptConv(convId: string): Promise<void> { return setConvConsent(convId, 'unknown'); }
+export function unacceptConv(convId: string): Promise<void> {
+  return setConvConsent(convId, 'unknown');
+}
 
 const sharedConversations = makeSharedSource<ConvClient, Conv>(sdk.streamConversations);
 
@@ -183,7 +198,11 @@ export function streamNewConversations(cb: (conv: Conv) => void): () => void {
   return client ? sharedConversations(client, cb) : () => undefined;
 }
 
-const sharedConsent = makeSharedSource<ConvClient, string[]>((client, emit) => sdk.streamConsent(client, (convIds) => { emit(convIds); }));
+const sharedConsent = makeSharedSource<ConvClient, string[]>((client, emit) =>
+  sdk.streamConsent(client, (convIds) => {
+    emit(convIds);
+  }),
+);
 
 export function streamConvConsent(cb: (convIds: string[]) => void): () => void {
   const client = sdk.cachedClient();

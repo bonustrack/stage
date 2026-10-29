@@ -15,7 +15,13 @@ const MAX_PEOPLE = 3;
 const CHIP_HEIGHT = 20;
 const CHIP_PADDING_X = 7;
 const CHIP_STYLE: ViewStyle = {
-  height: CHIP_HEIGHT, paddingLeft: CHIP_PADDING_X, paddingRight: CHIP_PADDING_X, paddingTop: 0, paddingBottom: 0, flexShrink: 1, minWidth: 0,
+  height: CHIP_HEIGHT,
+  paddingLeft: CHIP_PADDING_X,
+  paddingRight: CHIP_PADDING_X,
+  paddingTop: 0,
+  paddingBottom: 0,
+  flexShrink: 1,
+  minWidth: 0,
 };
 const CHIP_TEXT_STYLE: TextStyle = { lineHeight: CHIP_HEIGHT, flexShrink: 1, userSelect: 'none' };
 
@@ -25,8 +31,15 @@ function FieldLabels({ labels }: { labels: string[] }): React.ReactElement {
     <Row wrap align="center" gap={3} minWidth={0} style={{ flexShrink: 1 }}>
       {labels.map((label, i) => (
         <Badge
-          key={`${label}-${i}`} label={label} textSize="2xs" fontWeight="normal" truncate
-          color={text} background={inputBg} style={CHIP_STYLE} textStyle={CHIP_TEXT_STYLE}
+          key={`${label}-${i}`}
+          label={label}
+          textSize="2xs"
+          fontWeight="normal"
+          truncate
+          color={text}
+          background={inputBg}
+          style={CHIP_STYLE}
+          textStyle={CHIP_TEXT_STYLE}
         />
       ))}
     </Row>
@@ -39,28 +52,40 @@ function FieldPeople({ addresses, label }: { addresses: string[]; label: string 
   const shown = entries.slice(0, MAX_PEOPLE);
   const overflow = entries.length - shown.length;
   return (
-    <Row align="center" gap={3} accessible accessibilityLabel={`${label}: ${entries.map(entry => entry.name).join(', ')}`}>
-      {shown.map(entry => <Avatar key={entry.address} address={entry.address} size={20}/>)}
-      {overflow > 0 ? <Text size="2xs" color="secondary">+{overflow}</Text> : null}
+    <Row align="center" gap={3} accessible accessibilityLabel={`${label}: ${entries.map((entry) => entry.name).join(', ')}`}>
+      {shown.map((entry) => (
+        <Avatar key={entry.address} address={entry.address} size={20} />
+      ))}
+      {overflow > 0 ? (
+        <Text size="2xs" color="secondary">
+          +{overflow}
+        </Text>
+      ) : null}
     </Row>
   );
 }
 
-export function ChannelRowFields({ data, fields }: {
-  data: ChannelRowFieldData; fields: ChannelFields;
-}): React.ReactElement | null {
+export function ChannelRowFields({ data, fields }: { data: ChannelRowFieldData; fields: ChannelFields }): React.ReactElement | null {
   const visible = visibleChannelFields(data, fields);
   if (visible.length === 0) return null;
   return (
     <Row wrap align="center" gap={8} padding={{ top: 6 }}>
-      {visible.map(field => field.labels ? <FieldLabels key={field.id} labels={field.labels}/> : (
-        <Row key={field.id} align="center" gap={4} minWidth={0} style={{ flexShrink: 1 }}>
-          {field.icon === undefined ? null : <AppIcon name={field.icon} size={14} color="secondary"/>}
-          {field.addresses.length > 0 ? <FieldPeople addresses={field.addresses} label={field.label}/> : (
-            <Text size="2xs" color="secondary" truncate style={{ flexShrink: 1 }} accessibilityLabel={`${field.label}: ${field.value}`}>{field.value}</Text>
-          )}
-        </Row>
-      ))}
+      {visible.map((field) =>
+        field.labels ? (
+          <FieldLabels key={field.id} labels={field.labels} />
+        ) : (
+          <Row key={field.id} align="center" gap={4} minWidth={0} style={{ flexShrink: 1 }}>
+            {field.icon === undefined ? null : <AppIcon name={field.icon} size={14} color="secondary" />}
+            {field.addresses.length > 0 ? (
+              <FieldPeople addresses={field.addresses} label={field.label} />
+            ) : (
+              <Text size="2xs" color="secondary" truncate style={{ flexShrink: 1 }} accessibilityLabel={`${field.label}: ${field.value}`}>
+                {field.value}
+              </Text>
+            )}
+          </Row>
+        ),
+      )}
     </Row>
   );
 }

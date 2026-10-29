@@ -1,4 +1,3 @@
-
 export type AccountType = 'smart' | 'generated' | 'privateKey';
 
 export const ACCOUNT_TYPES: readonly AccountType[] = ['smart', 'generated', 'privateKey'];

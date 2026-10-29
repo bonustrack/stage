@@ -4,12 +4,12 @@
 
 ## What runs
 
-| Job | What it does |
-|---|---|
-| `build` (macOS) | Universal `.dmg` and `.zip` (Apple Silicon + Intel). Signed and notarized when the Apple secrets exist, ad-hoc signed otherwise. |
-| `build` (Linux) | `.AppImage` and `.deb`. |
-| `build` (Windows) | NSIS `.exe` installer. |
-| `publish` | Attaches the installers, the `.blockmap` files and the `latest*.yml` update manifests to the GitHub Release `v<version>`, appending to the release the mobile workflow creates. |
+| Job               | What it does                                                                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build` (macOS)   | Universal `.dmg` and `.zip` (Apple Silicon + Intel). Signed and notarized when the Apple secrets exist, ad-hoc signed otherwise.                                                |
+| `build` (Linux)   | `.AppImage` and `.deb`.                                                                                                                                                         |
+| `build` (Windows) | NSIS `.exe` installer.                                                                                                                                                          |
+| `publish`         | Attaches the installers, the `.blockmap` files and the `latest*.yml` update manifests to the GitHub Release `v<version>`, appending to the release the mobile workflow creates. |
 
 The version in `apps/stage/desktop/package.json` is stamped from `app.config.js` at build time; keep it in sync when bumping so local builds report the same number.
 
@@ -26,11 +26,11 @@ electron-updater picks the newest `v<version>` release, so a mobile-only release
 
 Repo `Settings -> Secrets and variables -> Actions`. All optional; without them the macOS build is ad-hoc signed and Gatekeeper asks the user to allow it in System Settings.
 
-| Name | What |
-|---|---|
-| `DESKTOP_MAC_CERT_P12` | Developer ID Application certificate, exported from Keychain Access as `.p12` and base64-encoded (`base64 -i cert.p12 \| pbcopy`). Needs the Apple Developer Program. |
-| `DESKTOP_MAC_CERT_PASSWORD` | The password chosen when exporting the `.p12`. |
-| `ASC_API_KEY_ID`, `ASC_API_KEY_ISSUER_ID`, `ASC_API_KEY_P8` | Shared with the iOS release (see `docs/mobile-release.md`). Used for notarization; only applied when the certificate is present. |
+| Name                                                        | What                                                                                                                                                                  |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DESKTOP_MAC_CERT_P12`                                      | Developer ID Application certificate, exported from Keychain Access as `.p12` and base64-encoded (`base64 -i cert.p12 \| pbcopy`). Needs the Apple Developer Program. |
+| `DESKTOP_MAC_CERT_PASSWORD`                                 | The password chosen when exporting the `.p12`.                                                                                                                        |
+| `ASC_API_KEY_ID`, `ASC_API_KEY_ISSUER_ID`, `ASC_API_KEY_P8` | Shared with the iOS release (see `docs/mobile-release.md`). Used for notarization; only applied when the certificate is present.                                      |
 
 `EXPO_PUBLIC_ZERODEV_PROJECT_ID` is the public value inlined into the web bundle.
 

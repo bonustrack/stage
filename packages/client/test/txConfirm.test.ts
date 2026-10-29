@@ -1,4 +1,3 @@
-
 import { describe, expect, test } from 'bun:test';
 import { encodeFunctionData } from 'viem';
 import { deriveConfirmSummary, confirmMessage } from '../src/wallet/txConfirm';
@@ -75,9 +74,20 @@ describe('deriveConfirmSummary - unverified', () => {
   });
   test('approve() (not transfer) is NOT shown as a friendly send', () => {
     const approveData = encodeFunctionData({
-      abi: [{ type: 'function', name: 'approve', stateMutability: 'nonpayable', inputs: [{ name: 's', type: 'address' }, { name: 'a', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] }] as const,
+      abi: [
+        {
+          type: 'function',
+          name: 'approve',
+          stateMutability: 'nonpayable',
+          inputs: [
+            { name: 's', type: 'address' },
+            { name: 'a', type: 'uint256' },
+          ],
+          outputs: [{ name: '', type: 'bool' }],
+        },
+      ] as const,
       functionName: 'approve',
-      args: [ATTACKER as `0x${string}`, (2n ** 256n) - 1n],
+      args: [ATTACKER as `0x${string}`, 2n ** 256n - 1n],
     });
     const s = deriveConfirmSummary({ to: USDC_BASE, value: '0x0', data: approveData });
     expect(s.verified).toBe(false);

@@ -1,15 +1,27 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  ALL_ARROWS, VERTICAL_ARROWS, arrowKeyOf, revealScrollDelta, stepRow, type ArrowKeyEvent, type ArrowKeyTarget,
+  ALL_ARROWS,
+  VERTICAL_ARROWS,
+  arrowKeyOf,
+  revealScrollDelta,
+  stepRow,
+  type ArrowKeyEvent,
+  type ArrowKeyTarget,
 } from '../components/arrowKeys.model';
 
 const press = (key: string, extra: Partial<ArrowKeyEvent> = {}): ArrowKeyEvent => ({
-  key, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, defaultPrevented: false, ...extra,
+  key,
+  altKey: false,
+  ctrlKey: false,
+  metaKey: false,
+  shiftKey: false,
+  defaultPrevented: false,
+  ...extra,
 });
 
 const field = (tagName: string, text: string, contentEditable = false): ArrowKeyTarget => ({ tagName, contentEditable, text });
 
-const rows = ['a', 'b', 'c'].map(convId => ({ convId }));
+const rows = ['a', 'b', 'c'].map((convId) => ({ convId }));
 
 describe('arrowKeyOf', () => {
   test('reads the four arrow keys', () => {

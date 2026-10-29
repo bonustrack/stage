@@ -42,24 +42,40 @@ interface TileData {
 
 const MINIMIZE = 'Minimize';
 
-const STATUS_TEXT: Record<CallLinkStatus, string | null> = {
-  connecting: 'Connecting…',
-  connected: null,
-  failed: 'Could not connect',
-};
+const STATUS_TEXT: Record<CallLinkStatus, string | null> = { connecting: 'Connecting…', connected: null, failed: 'Could not connect' };
 
 function tilesOf(view: CallView, session: CallSession): TileData[] {
   const self: TileData = {
-    key: 'self', inboxId: view.selfInboxId ?? '', stream: view.preview, media: view.media, status: 'connected', self: true,
+    key: 'self',
+    inboxId: view.selfInboxId ?? '',
+    stream: view.preview,
+    media: view.media,
+    status: 'connected',
+    self: true,
   };
   const others = view.peers.map((p): TileData => ({
-    key: p.peerId, inboxId: p.inboxId, stream: p.stream, media: p.media, status: p.status, self: false,
+    key: p.peerId,
+    inboxId: p.inboxId,
+    stream: p.stream,
+    media: p.media,
+    status: p.status,
+    self: false,
   }));
   return session.phase === 'joined' ? [self, ...others] : others;
 }
 
-function Tile({ tile, convId, selfInboxId, width, height }: {
-  tile: TileData; convId: string; selfInboxId: string | null; width: string; height: string;
+function Tile({
+  tile,
+  convId,
+  selfInboxId,
+  width,
+  height,
+}: {
+  tile: TileData;
+  convId: string;
+  selfInboxId: string | null;
+  width: string;
+  height: string;
 }): React.ReactElement {
   const { border } = usePalette();
   const person = callPerson(convId, tile.inboxId, selfInboxId);
@@ -68,12 +84,21 @@ function Tile({ tile, convId, selfInboxId, width, height }: {
   return (
     <Column style={{ width: width as `${number}%`, height: height as `${number}%` }} padding={4}>
       <Column weight={1} radius={12} background={border} align="center" justify="center" style={{ overflow: 'hidden' }}>
-        {showVideo
-          ? <CallMediaView stream={tile.stream} kind="video" mirrored={tile.self && !tile.media.screen} contain={tile.media.screen}/>
-          : <Avatar address={person.address} size={72}/>}
-        <Row align="center" gap={6} padding={{ x: 10, y: 6 }} style={{ position: 'absolute', left: 8, bottom: 8 }} background="#00000099" radius={8}>
-          {tile.media.audio ? null : <Glyph icon={IconMicrophoneOff} size={14} color="#ffffff"/>}
-          <Text size="2xs" color="#ffffff" text={status ? `${person.name} · ${status}` : person.name} maxLines={1}/>
+        {showVideo ? (
+          <CallMediaView stream={tile.stream} kind="video" mirrored={tile.self && !tile.media.screen} contain={tile.media.screen} />
+        ) : (
+          <Avatar address={person.address} size={72} />
+        )}
+        <Row
+          align="center"
+          gap={6}
+          padding={{ x: 10, y: 6 }}
+          style={{ position: 'absolute', left: 8, bottom: 8 }}
+          background="#00000099"
+          radius={8}
+        >
+          {tile.media.audio ? null : <Glyph icon={IconMicrophoneOff} size={14} color="#ffffff" />}
+          <Text size="2xs" color="#ffffff" text={status ? `${person.name} · ${status}` : person.name} maxLines={1} />
         </Row>
       </Column>
     </Column>
@@ -83,7 +108,16 @@ function Tile({ tile, convId, selfInboxId, width, height }: {
 function MinimizeButton(): React.ReactElement {
   const { text } = usePalette();
   return (
-    <HoverIconButton icon={IconMinimize} label={MINIMIZE} color={text} placement="below" role="button" onPress={() => { setCallMinimized(true); }} />
+    <HoverIconButton
+      icon={IconMinimize}
+      label={MINIMIZE}
+      color={text}
+      placement="below"
+      role="button"
+      onPress={() => {
+        setCallMinimized(true);
+      }}
+    />
   );
 }
 
@@ -91,41 +125,65 @@ function SpeakerControl(): React.ReactElement | null {
   const routes = useAudioRoutes();
   if (!canToggleSpeaker(routes)) return null;
   const on = speakerOn(routes);
-  return <CallControl icon={IconVolumeFull} label={on ? 'Turn speaker off' : 'Turn speaker on'} active={on} onPress={toggleSpeaker}/>;
+  return <CallControl icon={IconVolumeFull} label={on ? 'Turn speaker off' : 'Turn speaker on'} active={on} onPress={toggleSpeaker} />;
 }
 
 function Controls({ media, people, onPeople }: { media: CallMedia; people: boolean; onPeople: () => void }): React.ReactElement {
   const bottom = useSafeAreaInsets().bottom;
   return (
     <Row align="center" justify="center" gap={DENSITY_SCALE.normal.gap} padding={{ top: 12, bottom: 16 + bottom, x: PAGE_GUTTER }} wrap>
-      <CallControl icon={media.audio ? IconMicrophone : IconMicrophoneOff} label={media.audio ? 'Mute' : 'Unmute'} active={!media.audio} onPress={toggleMic}/>
-      <SpeakerControl/>
       <CallControl
-        icon={media.video && !media.screen ? IconVideo : IconVideoOff} label={media.video && !media.screen ? 'Turn camera off' : 'Turn camera on'}
-        active={media.video && !media.screen} onPress={() => { ignore(toggleCamera(), 'ui'); }}
+        icon={media.audio ? IconMicrophone : IconMicrophoneOff}
+        label={media.audio ? 'Mute' : 'Unmute'}
+        active={!media.audio}
+        onPress={toggleMic}
+      />
+      <SpeakerControl />
+      <CallControl
+        icon={media.video && !media.screen ? IconVideo : IconVideoOff}
+        label={media.video && !media.screen ? 'Turn camera off' : 'Turn camera on'}
+        active={media.video && !media.screen}
+        onPress={() => {
+          ignore(toggleCamera(), 'ui');
+        }}
       />
       {screenShareSupported ? (
-        <CallControl icon={IconShareScreen} label={media.screen ? 'Stop sharing' : 'Share screen'} active={media.screen} onPress={() => { ignore(toggleScreen(), 'ui'); }}/>
+        <CallControl
+          icon={IconShareScreen}
+          label={media.screen ? 'Stop sharing' : 'Share screen'}
+          active={media.screen}
+          onPress={() => {
+            ignore(toggleScreen(), 'ui');
+          }}
+        />
       ) : null}
-      <CallControl icon={IconPeople} label="Participants" active={people} onPress={onPeople}/>
-      <CallControl icon={IconCallCancel} label="Leave call" active={false} danger onPress={leaveCall}/>
+      <CallControl icon={IconPeople} label="Participants" active={people} onPress={onPeople} />
+      <CallControl icon={IconCallCancel} label="Leave call" active={false} danger onPress={leaveCall} />
     </Row>
   );
 }
 
-function Participants({ tiles, convId, selfInboxId }: { tiles: TileData[]; convId: string; selfInboxId: string | null }): React.ReactElement {
+function Participants({
+  tiles,
+  convId,
+  selfInboxId,
+}: {
+  tiles: TileData[];
+  convId: string;
+  selfInboxId: string | null;
+}): React.ReactElement {
   const { border } = usePalette();
   return (
     <Column width={260} gap={12} padding={16} style={{ borderLeftWidth: 1, borderLeftColor: border }}>
-      <Text size="xs" fontWeight="semibold" text={`In this call (${tiles.length})`}/>
+      <Text size="xs" fontWeight="semibold" text={`In this call (${tiles.length})`} />
       {tiles.map((t) => {
         const person = callPerson(convId, t.inboxId, selfInboxId);
         return (
           <Row key={t.key} align="center" gap={10}>
-            <Avatar address={person.address} size={28}/>
-            <Text size="2xs" text={person.name} maxLines={1} style={{ flex: 1 }}/>
-            {t.media.audio ? null : <Glyph icon={IconMicrophoneOff} size={16}/>}
-            {t.media.screen ? <Glyph icon={IconShareScreen} size={16}/> : null}
+            <Avatar address={person.address} size={28} />
+            <Text size="2xs" text={person.name} maxLines={1} style={{ flex: 1 }} />
+            {t.media.audio ? null : <Glyph icon={IconMicrophoneOff} size={16} />}
+            {t.media.screen ? <Glyph icon={IconShareScreen} size={16} /> : null}
           </Row>
         );
       })}
@@ -142,23 +200,36 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
   const top = useSafeAreaInsets().top;
   return (
     <Column surface="surface" style={viewportFill(60)}>
-      <CallScreenPicker/>
+      <CallScreenPicker />
       <Row align="center" gap={14} padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
-        <MinimizeButton/>
+        <MinimizeButton />
         <Column weight={1}>
-          <TitleText fontWeight="semibold" size="xs" title={callTitle(session.convId)} maxLines={1}/>
-          <Text size="2xs" color="secondary" text={callSubtitle(connected, Date.now() - session.startedMs)}/>
+          <TitleText fontWeight="semibold" size="xs" title={callTitle(session.convId)} maxLines={1} />
+          <Text size="2xs" color="secondary" text={callSubtitle(connected, Date.now() - session.startedMs)} />
         </Column>
       </Row>
       <Row weight={1}>
         <Row weight={1} wrap padding={{ x: 8 }}>
           {tiles.map((t) => (
-            <Tile key={t.key} tile={t} convId={session.convId} selfInboxId={view.selfInboxId} width={`${100 / cols}%`} height={`${100 / rows}%`}/>
+            <Tile
+              key={t.key}
+              tile={t}
+              convId={session.convId}
+              selfInboxId={view.selfInboxId}
+              width={`${100 / cols}%`}
+              height={`${100 / rows}%`}
+            />
           ))}
         </Row>
-        {people ? <Participants tiles={tiles} convId={session.convId} selfInboxId={view.selfInboxId}/> : null}
+        {people ? <Participants tiles={tiles} convId={session.convId} selfInboxId={view.selfInboxId} /> : null}
       </Row>
-      <Controls media={view.media} people={people} onPeople={() => { setPeople(!people); }}/>
+      <Controls
+        media={view.media}
+        people={people}
+        onPeople={() => {
+          setPeople(!people);
+        }}
+      />
     </Column>
   );
 }

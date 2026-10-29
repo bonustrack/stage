@@ -5,12 +5,7 @@ export function webXmtpDbPath(accountId: string, env: string): string {
   return `${dbDirFor(accountId)}-${env}.db3`;
 }
 
-export function canReuseSavedClient(
-  savedAddress: string | null,
-  savedEnv: string | null,
-  address: string,
-  env: string,
-): boolean {
+export function canReuseSavedClient(savedAddress: string | null, savedEnv: string | null, address: string, env: string): boolean {
   return savedAddress?.toLowerCase() === address && savedEnv === env;
 }
 
@@ -55,26 +50,30 @@ export interface PersistedClientDeps<C> {
   onEvent?: (event: PersistedClientEvent, error?: unknown) => void;
 }
 
-export interface OpenedClient<C> { client: C; registered: boolean }
+export interface OpenedClient<C> {
+  client: C;
+  registered: boolean;
+}
 
 export const OPEN_ATTEMPTS = 5;
 const OPEN_RETRY_MS = 800;
 
 function defaultSleep(ms: number): Promise<void> {
-  return new Promise((resolve) => { setTimeout(resolve, ms); });
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function matchesSavedInstallation<C>(deps: PersistedClientDeps<C>, client: C, saved: string | null): boolean {
   return saved === null || deps.installationIdOf(client) === saved;
 }
 
-type Attempt<C> =
-  | { kind: 'ready'; client: C }
-  | { kind: 'retry'; error: unknown; mismatched?: string }
-  | { kind: 'fail'; error: unknown };
+type Attempt<C> = { kind: 'ready'; client: C } | { kind: 'retry'; error: unknown; mismatched?: string } | { kind: 'fail'; error: unknown };
 
 function closeOpenedClient<C>(deps: PersistedClientDeps<C>, client: C): void {
-  try { deps.close(client); } catch { }
+  try {
+    deps.close(client);
+  } catch {}
 }
 
 async function attemptOpen<C>(deps: PersistedClientDeps<C>, previousMismatch: string | null): Promise<Attempt<C>> {

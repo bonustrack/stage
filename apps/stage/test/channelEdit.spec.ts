@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  CHANNEL_DESCRIPTION_MAX, CHANNEL_NAME_MAX, channelChanges, channelDraftFrom, channelDraftProblem,
+  CHANNEL_DESCRIPTION_MAX,
+  CHANNEL_NAME_MAX,
+  channelChanges,
+  channelDraftFrom,
+  channelDraftProblem,
 } from '../components/channel/EditChannelModal.model';
 
 describe('channel edit model', () => {
@@ -28,10 +32,14 @@ describe('channel edit model', () => {
     expect(channelDraftProblem(named, { name: `  ${'a'.repeat(CHANNEL_NAME_MAX)}  `, description: '' })).toBeNull();
     expect(channelDraftProblem(named, { name: 'Ж'.repeat(CHANNEL_NAME_MAX / 2 + 1), description: '' })).toBe('Name is too long.');
     expect(channelDraftProblem(named, { name: 'Ж'.repeat(CHANNEL_NAME_MAX / 2), description: '' })).toBeNull();
-    expect(channelDraftProblem(named, { name: 'Crew', description: 'b'.repeat(CHANNEL_DESCRIPTION_MAX + 1) })).toBe('Description is too long.');
+    expect(channelDraftProblem(named, { name: 'Crew', description: 'b'.repeat(CHANNEL_DESCRIPTION_MAX + 1) })).toBe(
+      'Description is too long.',
+    );
     expect(channelDraftProblem(named, { name: 'Crew', description: 'b'.repeat(CHANNEL_DESCRIPTION_MAX) })).toBeNull();
     expect(channelDraftProblem(named, { name: 'Crew', description: ` ${'b'.repeat(CHANNEL_DESCRIPTION_MAX)} ` })).toBeNull();
-    expect(channelDraftProblem(named, { name: 'Crew', description: 'Ж'.repeat(CHANNEL_DESCRIPTION_MAX / 2 + 1) })).toBe('Description is too long.');
+    expect(channelDraftProblem(named, { name: 'Crew', description: 'Ж'.repeat(CHANNEL_DESCRIPTION_MAX / 2 + 1) })).toBe(
+      'Description is too long.',
+    );
     expect(channelDraftProblem(named, { name: 'two\nlines', description: '' })).toBe('Name cannot span several lines.');
     expect(channelDraftProblem(named, { name: 'two\rlines', description: '' })).toBe('Name cannot span several lines.');
     expect(channelDraftProblem(named, { name: '  ', description: '' })).toBe('A channel needs a name.');

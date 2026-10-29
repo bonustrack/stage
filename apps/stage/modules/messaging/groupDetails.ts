@@ -15,10 +15,7 @@ export async function fetchConvDetails(convId: string): Promise<ConvDetails> {
   return { description: info.description, assigned: assigned ?? [], assignedReady: assigned !== null };
 }
 
-export async function fetchGroupRoles(
-  convId: string,
-  inboxToAddr: Record<string, string>,
-): Promise<Record<string, GroupRole>> {
+export async function fetchGroupRoles(convId: string, inboxToAddr: Record<string, string>): Promise<Record<string, GroupRole>> {
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return {};
   const staff = await sdk.groupAdmins(conv);

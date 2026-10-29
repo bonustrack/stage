@@ -1,6 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  PICKER_MAX_WIDTH, applyListEdits, hasListEdits, includesKey, listEdits, matchesQuery, pickerAnchorOf, pickerWidth, selectedFirst, tagSearch, toggleKey,
+  PICKER_MAX_WIDTH,
+  applyListEdits,
+  hasListEdits,
+  includesKey,
+  listEdits,
+  matchesQuery,
+  pickerAnchorOf,
+  pickerWidth,
+  selectedFirst,
+  tagSearch,
+  toggleKey,
   uniqueKeys,
 } from '../components/conversation/SidebarSection.model';
 

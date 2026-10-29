@@ -1,4 +1,3 @@
-
 import { channelRowTitle, ROW_PREVIEW_MAX_CHARS } from './summarizeRow';
 import type { GroupTags } from './labels';
 
@@ -13,19 +12,16 @@ export interface CachedChannelRow {
 export function normalizeChannelRowTitle<R extends CachedChannelRow>(row: R): R {
   if (row.peerAddress || typeof row.groupName !== 'string') return row;
   const members = row.inboxToAddr;
-  const memberCount = members && typeof members === 'object'
-    ? Object.entries(members).filter(([id, address]) => id !== row.selfInboxId && typeof address === 'string' && address !== '').length : 0;
+  const memberCount =
+    members && typeof members === 'object'
+      ? Object.entries(members).filter(([id, address]) => id !== row.selfInboxId && typeof address === 'string' && address !== '').length
+      : 0;
   const title = channelRowTitle({ peerAddress: null, groupName: row.groupName, memberCount });
   return title === row.title ? row : { ...row, title };
 }
 
-function patchRow<R extends CachedChannelRow>(
-  rows: readonly R[],
-  convId: string,
-  patch: (cur: R) => R,
-  moveToTop = false,
-): R[] | null {
-  const idx = rows.findIndex(r => r.convId === convId);
+function patchRow<R extends CachedChannelRow>(rows: readonly R[], convId: string, patch: (cur: R) => R, moveToTop = false): R[] | null {
+  const idx = rows.findIndex((r) => r.convId === convId);
   const cur = idx === -1 ? undefined : rows[idx];
   if (cur === undefined) return null;
   const updated = patch(cur);
@@ -35,19 +31,11 @@ function patchRow<R extends CachedChannelRow>(
   return next;
 }
 
-export function applyRead<R extends CachedChannelRow>(
-  rows: readonly R[],
-  convId: string,
-  nowNs: number,
-): R[] | null {
+export function applyRead<R extends CachedChannelRow>(rows: readonly R[], convId: string, nowNs: number): R[] | null {
   return patchRow(rows, convId, (cur) => ({ ...cur, unreadCount: 0, lastReadNs: nowNs, markedUnread: false }));
 }
 
-export function applyReadUpTo<R extends CachedChannelRow>(
-  rows: readonly R[],
-  convId: string,
-  readNs: number,
-): R[] | null {
+export function applyReadUpTo<R extends CachedChannelRow>(rows: readonly R[], convId: string, readNs: number): R[] | null {
   return patchRow(rows, convId, (cur) => {
     const lastReadNs = Math.max(cur.lastReadNs, readNs);
     const lastNs = typeof cur.lastTs === 'number' ? cur.lastTs * 1_000_000 : 0;
@@ -55,27 +43,24 @@ export function applyReadUpTo<R extends CachedChannelRow>(
   });
 }
 
-export function applyUnread<R extends CachedChannelRow>(
-  rows: readonly R[],
-  convId: string,
-): R[] | null {
+export function applyUnread<R extends CachedChannelRow>(rows: readonly R[], convId: string): R[] | null {
   return patchRow(rows, convId, (cur) => ({ ...cur, markedUnread: true }));
 }
 
-export function applySentPatch<R extends CachedChannelRow>(
-  rows: readonly R[],
-  convId: string,
-  preview: string,
-  nowMs: number,
-): R[] | null {
-  return patchRow(rows, convId, (cur) => ({
-    ...cur,
-    lastTs: nowMs,
-    lastPreview: preview.slice(0, ROW_PREVIEW_MAX_CHARS),
-    lastFromSelf: true,
-    unreadCount: 0,
-    markedUnread: false,
-  }), true);
+export function applySentPatch<R extends CachedChannelRow>(rows: readonly R[], convId: string, preview: string, nowMs: number): R[] | null {
+  return patchRow(
+    rows,
+    convId,
+    (cur) => ({
+      ...cur,
+      lastTs: nowMs,
+      lastPreview: preview.slice(0, ROW_PREVIEW_MAX_CHARS),
+      lastFromSelf: true,
+      unreadCount: 0,
+      markedUnread: false,
+    }),
+    true,
+  );
 }
 
 export interface InboundRowUpdate {
@@ -98,25 +83,14 @@ export function applyInbound<R extends CachedChannelRow & { selfInboxId: string 
   update: InboundRowUpdate,
   patch?: (current: R) => Partial<R>,
 ): InboundApplyResult<R> | null {
-  const idx = update.convId === null ? -1 : rows.findIndex(r => r.convId === update.convId);
+  const idx = update.convId === null ? -1 : rows.findIndex((r) => r.convId === update.convId);
   const cur = idx === -1 ? undefined : rows[idx];
   if (cur === undefined) return null;
-  const wasUnread = update.countsAsUnread !== false
-    && update.sentNs > cur.lastReadNs && update.senderInboxId !== cur.selfInboxId;
+  const wasUnread = update.countsAsUnread !== false && update.sentNs > cur.lastReadNs && update.senderInboxId !== cur.selfInboxId;
   const unreadCount = wasUnread ? cur.unreadCount + 1 : cur.unreadCount;
-  const updated: R = {
-    ...cur,
-    lastTs: update.lastTs,
-    lastPreview: update.lastPreview,
-    unreadCount,
-    ...(patch ? patch(cur) : {}),
-  };
+  const updated: R = { ...cur, lastTs: update.lastTs, lastPreview: update.lastPreview, unreadCount, ...(patch ? patch(cur) : {}) };
   if (wasUnread) updated.markedUnread = false;
-  return {
-    next: [updated, ...rows.slice(0, idx), ...rows.slice(idx + 1)],
-    current: cur,
-    wasUnread,
-  };
+  return { next: [updated, ...rows.slice(0, idx), ...rows.slice(idx + 1)], current: cur, wasUnread };
 }
 
 export interface GroupRowMeta extends GroupTags {
@@ -139,22 +113,20 @@ function sameMembers(cur: unknown, next: Record<string, string> | undefined): bo
 }
 
 function sameGroupMeta(cur: CachedChannelRow, meta: GroupRowMeta): boolean {
-  return cur.title === meta.title
-    && cur.groupName === meta.groupName
-    && cur.avatarUri === meta.avatarUri
-    && cur.avatarAddress === meta.avatarAddress
-    && sameLabels(cur.labels, meta.labels)
-    && (['category', 'status', 'priority'] as const).every(field => (cur[field] ?? null) === meta[field])
-    && sameLabels(cur.assigned ?? [], meta.assigned)
-    && sameMembers(cur.inboxToAddr, meta.inboxToAddr);
+  return (
+    cur.title === meta.title &&
+    cur.groupName === meta.groupName &&
+    cur.avatarUri === meta.avatarUri &&
+    cur.avatarAddress === meta.avatarAddress &&
+    sameLabels(cur.labels, meta.labels) &&
+    (['category', 'status', 'priority'] as const).every((field) => (cur[field] ?? null) === meta[field]) &&
+    sameLabels(cur.assigned ?? [], meta.assigned) &&
+    sameMembers(cur.inboxToAddr, meta.inboxToAddr)
+  );
 }
 
-export function applyGroupMeta<R extends CachedChannelRow>(
-  rows: readonly R[],
-  convId: string,
-  meta: GroupRowMeta,
-): R[] | null {
-  const cur = rows.find(r => r.convId === convId);
+export function applyGroupMeta<R extends CachedChannelRow>(rows: readonly R[], convId: string, meta: GroupRowMeta): R[] | null {
+  const cur = rows.find((r) => r.convId === convId);
   if (cur === undefined || sameGroupMeta(cur, meta)) return null;
   return patchRow(rows, convId, (row) => ({ ...row, ...meta }));
 }

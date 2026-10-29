@@ -24,7 +24,12 @@ function ensureFile(project, group, name) {
   const uuid = project.generateUuid();
   const fileTypes = { swift: 'sourcecode.swift', plist: 'text.plist.xml', entitlements: 'text.plist.entitlements' };
   const suffix = name.split('.').at(-1);
-  references[uuid] = { isa: 'PBXFileReference', path: `"${name}"`, sourceTree: '"<group>"', lastKnownFileType: fileTypes[suffix] || 'text' };
+  references[uuid] = {
+    isa: 'PBXFileReference',
+    path: `"${name}"`,
+    sourceTree: '"<group>"',
+    lastKnownFileType: fileTypes[suffix] || 'text',
+  };
   references[`${uuid}_comment`] = name;
   group.pbxGroup.children.push({ value: uuid, comment: name });
   return uuid;
@@ -54,10 +59,18 @@ function ensureBuildFile(project, phase, fileRef, name, settings) {
 function frameworkReference(project, name) {
   const fileName = `${name}.framework`;
   const references = project.pbxFileReferenceSection();
-  const existing = Object.entries(references).find(([, entry]) => entry && typeof entry === 'object' && unquote(entry.path).endsWith(fileName));
+  const existing = Object.entries(references).find(
+    ([, entry]) => entry && typeof entry === 'object' && unquote(entry.path).endsWith(fileName),
+  );
   if (existing) return existing[0];
   const uuid = project.generateUuid();
-  references[uuid] = { isa: 'PBXFileReference', lastKnownFileType: 'wrapper.framework', name: `"${fileName}"`, path: `"System/Library/Frameworks/${fileName}"`, sourceTree: 'SDKROOT' };
+  references[uuid] = {
+    isa: 'PBXFileReference',
+    lastKnownFileType: 'wrapper.framework',
+    name: `"${fileName}"`,
+    path: `"System/Library/Frameworks/${fileName}"`,
+    sourceTree: 'SDKROOT',
+  };
   references[`${uuid}_comment`] = fileName;
   let group = project.findPBXGroupKey({ name: 'Frameworks' });
   if (!group) {
@@ -69,7 +82,9 @@ function frameworkReference(project, name) {
 }
 
 function findTarget(project) {
-  return Object.entries(project.pbxNativeTargetSection()).find(([, entry]) => entry && typeof entry === 'object' && unquote(entry.name) === TARGET);
+  return Object.entries(project.pbxNativeTargetSection()).find(
+    ([, entry]) => entry && typeof entry === 'object' && unquote(entry.name) === TARGET,
+  );
 }
 
 function ensureTarget(project, bundleIdentifier) {
@@ -84,7 +99,7 @@ function ensureTarget(project, bundleIdentifier) {
 function embedExtension(project, target) {
   const app = project.getFirstTarget();
   const objects = project.hash.project.objects;
-  const phases = objects.PBXCopyFilesBuildPhase ||= {};
+  const phases = (objects.PBXCopyFilesBuildPhase ||= {});
   let reference = app.firstTarget.buildPhases.find((entry) => String(phases[entry.value]?.dstSubfolderSpec) === '13');
   if (!reference) {
     const added = project.addBuildPhase([], 'PBXCopyFilesBuildPhase', 'Embed App Extensions', app.uuid, 'app_extension');
@@ -95,14 +110,18 @@ function embedExtension(project, target) {
   phases[`${reference.value}_comment`] = 'Embed App Extensions';
   phase.name = '"Embed App Extensions"';
   ensureBuildFile(project, phase, target.pbxNativeTarget.productReference, `${TARGET}.appex`, { ATTRIBUTES: ['RemoveHeadersOnCopy'] });
-  const unused = app.firstTarget.buildPhases.filter((entry) => entry.value !== reference.value && String(phases[entry.value]?.dstSubfolderSpec) === '13' && phases[entry.value].files.length === 0);
+  const unused = app.firstTarget.buildPhases.filter(
+    (entry) =>
+      entry.value !== reference.value && String(phases[entry.value]?.dstSubfolderSpec) === '13' && phases[entry.value].files.length === 0,
+  );
   for (const entry of unused) {
     app.firstTarget.buildPhases = app.firstTarget.buildPhases.filter((item) => item.value !== entry.value);
     Reflect.deleteProperty(phases, entry.value);
     Reflect.deleteProperty(phases, `${entry.value}_comment`);
   }
   const dependencies = objects.PBXTargetDependency;
-  if (!app.firstTarget.dependencies.some((entry) => dependencies[entry.value]?.target === target.uuid)) project.addTargetDependency(app.uuid, [target.uuid]);
+  if (!app.firstTarget.dependencies.some((entry) => dependencies[entry.value]?.target === target.uuid))
+    project.addTargetDependency(app.uuid, [target.uuid]);
 }
 
 function targetConfigurations(project, target) {

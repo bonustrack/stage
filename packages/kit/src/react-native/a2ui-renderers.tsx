@@ -21,8 +21,21 @@ import { Tabs } from './tabs';
 import { Text, type TextWeight } from './text';
 import { Title } from './title';
 import {
-  asBoolean, asEnum, asNumber, asOptionalString, asString, borderOf,
-  colorOf, colorValueOf, commonProps, hasMarkdown, iconNameOf, lengthOf, spacingOf, type A2uiRenderers, type RenderContext,
+  asBoolean,
+  asEnum,
+  asNumber,
+  asOptionalString,
+  asString,
+  borderOf,
+  colorOf,
+  colorValueOf,
+  commonProps,
+  hasMarkdown,
+  iconNameOf,
+  lengthOf,
+  spacingOf,
+  type A2uiRenderers,
+  type RenderContext,
 } from './a2ui-context';
 import { chartRenderer } from './a2ui-renderers.chart';
 import { isSortableList, listBoxProps, sortableListRenderer } from './a2ui-renderers.sortable';
@@ -42,7 +55,14 @@ const WEIGHTS = ['normal', 'medium', 'semibold', 'bold'] as const satisfies read
 const BUTTON_VARIANTS: readonly ButtonVariant[] = ['default', 'primary', 'borderless', ...BUTTON_FILLS];
 const BUTTON_SIZES = Object.keys(SIZES) as ButtonSize[];
 const FITS = ['contain', 'cover', 'fill', 'none', 'scaleDown'] as const satisfies readonly ImageFit[];
-const IMAGE_VARIANTS = ['icon', 'avatar', 'smallFeature', 'mediumFeature', 'largeFeature', 'header'] as const satisfies readonly ImageVariant[];
+const IMAGE_VARIANTS = [
+  'icon',
+  'avatar',
+  'smallFeature',
+  'mediumFeature',
+  'largeFeature',
+  'header',
+] as const satisfies readonly ImageVariant[];
 
 function iconNode(value: unknown): ReactNode {
   const name = iconNameOf(value);
@@ -94,11 +114,25 @@ function flexProps(ctx: RenderContext) {
 
 function A2uiFlex({ ctx, row = false, children }: { ctx: RenderContext; row?: boolean; children: ReactNode }): React.ReactElement {
   const act = useA2uiAction(ctx);
-  const press = isEventAction(ctx.instance.action) || isFunctionAction(ctx.instance.action)
-    ? { onPress: () => { act(); }, disabled: ctx.disabled, feedback: asEnum(ctx.props.feedback, ['opacity', 'highlight', 'none']), ...a2uiLinkProps(ctx, () => { act(); }) }
-    : {};
+  const press =
+    isEventAction(ctx.instance.action) || isFunctionAction(ctx.instance.action)
+      ? {
+          onPress: () => {
+            act();
+          },
+          disabled: ctx.disabled,
+          feedback: asEnum(ctx.props.feedback, ['opacity', 'highlight', 'none']),
+          ...a2uiLinkProps(ctx, () => {
+            act();
+          }),
+        }
+      : {};
   const Flex = row ? Row : Column;
-  return <Flex {...flexProps(ctx)} {...press}>{children}</Flex>;
+  return (
+    <Flex {...flexProps(ctx)} {...press}>
+      {children}
+    </Flex>
+  );
 }
 
 function withChildren(ctx: RenderContext, render: (children: ReactNode[]) => ReactNode): ReactNode {
@@ -134,7 +168,8 @@ function textRenderer(ctx: RenderContext): ReactNode {
 
 function imageRenderer(ctx: RenderContext): ReactNode {
   const p = ctx.props;
-  return withLabelTooltip(ctx, (
+  return withLabelTooltip(
+    ctx,
     <Image
       {...commonProps(ctx)}
       url={ctx.mediaUrl(p.url)}
@@ -148,15 +183,24 @@ function imageRenderer(ctx: RenderContext): ReactNode {
       aspectRatio={asNumber(p.aspectRatio)}
       background={colorOf(ctx, p.background)}
       style={opacityStyle(p.opacity)}
-    />
-  ));
+    />,
+  );
 }
 
 function iconRenderer(ctx: RenderContext): ReactNode {
   const name = iconNameOf(ctx.props.name);
   if (name === undefined) return null;
   const color = colorOf(ctx, ctx.props.color) ?? ctx.contentColor;
-  const icon = <Icon {...commonProps(ctx)} name={name} size={asNumber(ctx.props.size) ?? A2UI_ICON_SIZE} color={color} dark={ctx.dark} variant={asEnum(ctx.props.variant, ['outline', 'solid'])} />;
+  const icon = (
+    <Icon
+      {...commonProps(ctx)}
+      name={name}
+      size={asNumber(ctx.props.size) ?? A2UI_ICON_SIZE}
+      color={color}
+      dark={ctx.dark}
+      variant={asEnum(ctx.props.variant, ['outline', 'solid'])}
+    />
+  );
   const opacity = opacityStyle(ctx.props.opacity);
   return withLabelTooltip(ctx, opacity === undefined ? icon : <View style={opacity}>{icon}</View>);
 }
@@ -182,15 +226,20 @@ function A2uiButton({ ctx }: { ctx: RenderContext }): React.ReactElement {
       disabled={ctx.disabled || asBoolean(p.disabled)}
       checks={ctx.checks}
       label={label}
-      onPress={() => { press(); }}
-      {...a2uiLinkProps(ctx, () => { press(); })}
+      onPress={() => {
+        press();
+      }}
+      {...a2uiLinkProps(ctx, () => {
+        press();
+      })}
     >
       {label === undefined ? ctx.child(p.child) : undefined}
     </Button>
   );
 }
 
-const buttonRenderer = (ctx: RenderContext): ReactNode => withLabelTooltip(ctx, <A2uiButton ctx={ctx}/>, ctx.childText(ctx.props.child) === undefined);
+const buttonRenderer = (ctx: RenderContext): ReactNode =>
+  withLabelTooltip(ctx, <A2uiButton ctx={ctx} />, ctx.childText(ctx.props.child) === undefined);
 
 function titleRenderer(ctx: RenderContext): ReactNode {
   const level = asNumber(ctx.props.level);
@@ -213,7 +262,13 @@ function listViewItemRenderer(ctx: RenderContext): ReactNode {
       {...commonProps(ctx)}
       gap={asNumber(ctx.props.gap)}
       align={asEnum(ctx.props.align, ['start', 'center', 'end'])}
-      onPress={pressable ? () => { ctx.action(); } : undefined}
+      onPress={
+        pressable
+          ? () => {
+              ctx.action();
+            }
+          : undefined
+      }
     >
       {ctx.children(ctx.props.children)}
     </ListViewItem>
@@ -230,25 +285,43 @@ function tabsRenderer(ctx: RenderContext): ReactNode {
 }
 
 export const KIT_RENDERERS: A2uiRenderers = {
-  Row: (ctx) => withChildren(ctx, (children) => <A2uiFlex ctx={ctx} row>{children}</A2uiFlex>),
+  Row: (ctx) =>
+    withChildren(ctx, (children) => (
+      <A2uiFlex ctx={ctx} row>
+        {children}
+      </A2uiFlex>
+    )),
   Column: (ctx) => withChildren(ctx, (children) => <A2uiFlex ctx={ctx}>{children}</A2uiFlex>),
-  List: (ctx) => (isSortableList(ctx) ? sortableListRenderer(ctx) : withChildren(ctx, (children) => (
-    <List {...listBoxProps(ctx)} gap={asNumber(ctx.props.gap) ?? GAP}>
-      {children}
-    </List>
-  ))),
+  List: (ctx) =>
+    isSortableList(ctx)
+      ? sortableListRenderer(ctx)
+      : withChildren(ctx, (children) => (
+          <List {...listBoxProps(ctx)} gap={asNumber(ctx.props.gap) ?? GAP}>
+            {children}
+          </List>
+        )),
   Card: (ctx) => {
     const surface = asEnum(ctx.props.surface, SURFACES);
     const background = colorOf(ctx, ctx.props.background) ?? (surface === undefined ? undefined : surfaceColor(surface, ctx.palette));
     return (
-      <Card {...commonProps(ctx)} size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])} padding={asNumber(ctx.props.padding)} background={background}>
+      <Card
+        {...commonProps(ctx)}
+        size={asEnum(ctx.props.size, ['sm', 'md', 'lg'])}
+        padding={asNumber(ctx.props.padding)}
+        background={background}
+      >
         {ctx.child(ctx.props.child)}
       </Card>
     );
   },
   Tabs: tabsRenderer,
   Divider: (ctx) => (
-    <Divider {...commonProps(ctx)} axis={asEnum(ctx.props.axis, ['horizontal', 'vertical'])} spacing={asNumber(ctx.props.spacing)} color={colorOf(ctx, ctx.props.color)} />
+    <Divider
+      {...commonProps(ctx)}
+      axis={asEnum(ctx.props.axis, ['horizontal', 'vertical'])}
+      spacing={asNumber(ctx.props.spacing)}
+      color={colorOf(ctx, ctx.props.color)}
+    />
   ),
   Text: textRenderer,
   Image: imageRenderer,
@@ -276,7 +349,17 @@ export const KIT_RENDERERS: A2uiRenderers = {
     );
   },
   ListViewItem: listViewItemRenderer,
-  Spinner: (ctx) => <Spinner {...commonProps(ctx)} size={asNumber(ctx.props.size)} color={colorOf(ctx, ctx.props.color) ?? ctx.palette.sub} />,
+  Spinner: (ctx) => (
+    <Spinner {...commonProps(ctx)} size={asNumber(ctx.props.size)} color={colorOf(ctx, ctx.props.color) ?? ctx.palette.sub} />
+  ),
   Chart: chartRenderer,
-  QrCode: (ctx) => <QrCode {...commonProps(ctx)} value={asString(ctx.props.value)} size={asNumber(ctx.props.size)} color={ctx.palette.link} background={ctx.palette.bg} />,
+  QrCode: (ctx) => (
+    <QrCode
+      {...commonProps(ctx)}
+      value={asString(ctx.props.value)}
+      size={asNumber(ctx.props.size)}
+      color={ctx.palette.link}
+      background={ctx.palette.bg}
+    />
+  ),
 };

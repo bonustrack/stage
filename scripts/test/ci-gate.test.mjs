@@ -19,20 +19,25 @@ function fixture(responses, options = {}) {
   const requests = [];
   const waits = [];
   const messages = [];
-  const run = () => waitForSourceCi({
-    ...TARGET,
-    attempts: 3,
-    interval: 10,
-    request: async (url, init) => {
-      requests.push({ url: String(url), init });
-      const next = responses.shift();
-      if (next instanceof Error) throw next;
-      return next ?? Response.json({ workflow_runs: [] });
-    },
-    sleep: async (ms) => { waits.push(ms); },
-    log: (message) => { messages.push(message); },
-    ...options,
-  });
+  const run = () =>
+    waitForSourceCi({
+      ...TARGET,
+      attempts: 3,
+      interval: 10,
+      request: async (url, init) => {
+        requests.push({ url: String(url), init });
+        const next = responses.shift();
+        if (next instanceof Error) throw next;
+        return next ?? Response.json({ workflow_runs: [] });
+      },
+      sleep: async (ms) => {
+        waits.push(ms);
+      },
+      log: (message) => {
+        messages.push(message);
+      },
+      ...options,
+    });
   return { run, requests, waits, messages };
 }
 
@@ -114,7 +119,8 @@ describe('source CI gate', () => {
   });
 
   test.each(['failure', 'cancelled', 'skipped', 'timed_out', 'neutral', null])(
-    'refuses terminal conclusion %s even if an older run passed', async (conclusion) => {
+    'refuses terminal conclusion %s even if an older run passed',
+    async (conclusion) => {
       const check = fixture([runs(SUCCESS, { ...SUCCESS, id: 13, conclusion })]);
       await expect(check.run()).rejects.toThrow('refusing to publish');
       expect(check.waits).toEqual([]);
@@ -149,7 +155,8 @@ describe('source CI gate', () => {
   });
 
   test.each([{ sha: 'main' }, { sha: undefined }, { branch: '' }, { repository: '../other' }])(
-    'rejects invalid inputs before a request: %j', async (options) => {
+    'rejects invalid inputs before a request: %j',
+    async (options) => {
       const check = fixture([], options);
       await expect(check.run()).rejects.toThrow('exact commit');
       expect(check.requests).toEqual([]);

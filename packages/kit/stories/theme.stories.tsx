@@ -14,19 +14,37 @@ import { Row } from '../src/react-native/row';
 export default { title: 'Theme' };
 
 interface ThemeArgs {
-  accentPrimary?: string; accentLevel: AccentLevel; grayscaleHue?: number; grayscaleTint?: GrayscaleTint; grayscaleShade?: GrayscaleShade;
-  surfaceBackground?: string; surfaceForeground?: string; radius: RadiusName; density: Density; baseSize: BaseSize;
+  accentPrimary?: string;
+  accentLevel: AccentLevel;
+  grayscaleHue?: number;
+  grayscaleTint?: GrayscaleTint;
+  grayscaleShade?: GrayscaleShade;
+  surfaceBackground?: string;
+  surfaceForeground?: string;
+  radius: RadiusName;
+  density: Density;
+  baseSize: BaseSize;
 }
 
 export const Controls: Story<ThemeArgs> = (args) => {
   const dark = useDark();
   const scheme = dark ? 'dark' : 'light';
   const seed = DEFAULT_SEED[scheme];
-  const palette = derivePalette({
-    accent: { primary: args.accentPrimary ?? seed.accent.primary, level: args.accentLevel },
-    grayscale: { hue: args.grayscaleHue ?? seed.grayscale.hue, tint: args.grayscaleTint ?? seed.grayscale.tint, shade: args.grayscaleShade ?? seed.grayscale.shade },
-    surface: { background: args.surfaceBackground ?? seed.surface.background, foreground: args.surfaceForeground ?? seed.surface.foreground },
-  }, scheme);
+  const palette = derivePalette(
+    {
+      accent: { primary: args.accentPrimary ?? seed.accent.primary, level: args.accentLevel },
+      grayscale: {
+        hue: args.grayscaleHue ?? seed.grayscale.hue,
+        tint: args.grayscaleTint ?? seed.grayscale.tint,
+        shade: args.grayscaleShade ?? seed.grayscale.shade,
+      },
+      surface: {
+        background: args.surfaceBackground ?? seed.surface.background,
+        foreground: args.surfaceForeground ?? seed.surface.foreground,
+      },
+    },
+    scheme,
+  );
   const theme = kitTheme(scheme, { radius: args.radius, density: args.density, baseSize: args.baseSize, accentLevel: args.accentLevel });
   return (
     <KitThemeProvider value={palette} scheme={scheme}>
@@ -38,23 +56,51 @@ export const Controls: Story<ThemeArgs> = (args) => {
           <Badge dark={dark} label="Badge" color="info" />
         </Row>
         <TextField dark={dark} placeholder="Input on the derived palette" />
-        <Card dark={dark}><Text size="xs" color={palette.text}>Card on the derived surface. Sub text: <Text size="xs" color={palette.sub}>{palette.sub}</Text></Text></Card>
+        <Card dark={dark}>
+          <Text size="xs" color={palette.text}>
+            Card on the derived surface. Sub text:{' '}
+            <Text size="xs" color={palette.sub}>
+              {palette.sub}
+            </Text>
+          </Text>
+        </Card>
         <Row gap={8} wrap>
           {(Object.keys(palette) as (keyof typeof palette)[]).map((name) => (
             <Column key={name} align="center" gap={4}>
-              <Column size={40} radius="md" background={palette[name]} border={{ top: { width: 1, color: palette.border }, right: { width: 1, color: palette.border }, bottom: { width: 1, color: palette.border }, left: { width: 1, color: palette.border } }} />
-              <Text color={palette.sub} size="3xs">{name}</Text>
+              <Column
+                size={40}
+                radius="md"
+                background={palette[name]}
+                border={{
+                  top: { width: 1, color: palette.border },
+                  right: { width: 1, color: palette.border },
+                  bottom: { width: 1, color: palette.border },
+                  left: { width: 1, color: palette.border },
+                }}
+              />
+              <Text color={palette.sub} size="3xs">
+                {name}
+              </Text>
             </Column>
           ))}
         </Row>
-        <Text size="3xs" fontFamily="mono" color={palette.sub}>{JSON.stringify({ radius: theme.radius, density: theme.density, typography: theme.typography })}</Text>
+        <Text size="3xs" fontFamily="mono" color={palette.sub}>
+          {JSON.stringify({ radius: theme.radius, density: theme.density, typography: theme.typography })}
+        </Text>
       </Column>
     </KitThemeProvider>
   );
 };
 Controls.args = { accentLevel: 3, radius: 'pill', density: 'normal', baseSize: 15 };
 Controls.argTypes = {
-  accentPrimary: color, accentLevel: select([0, 1, 2, 3]), grayscaleHue: range(0, 360), grayscaleTint: select([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
-  grayscaleShade: select([-4, -3, -2, -1, 0, 1, 2, 3, 4]), surfaceBackground: color, surfaceForeground: color,
-  radius: select(['pill', 'round', 'soft', 'sharp']), density: select(['compact', 'normal', 'spacious']), baseSize: select([14, 15, 16, 17, 18]),
+  accentPrimary: color,
+  accentLevel: select([0, 1, 2, 3]),
+  grayscaleHue: range(0, 360),
+  grayscaleTint: select([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),
+  grayscaleShade: select([-4, -3, -2, -1, 0, 1, 2, 3, 4]),
+  surfaceBackground: color,
+  surfaceForeground: color,
+  radius: select(['pill', 'round', 'soft', 'sharp']),
+  density: select(['compact', 'normal', 'spacious']),
+  baseSize: select([14, 15, 16, 17, 18]),
 };

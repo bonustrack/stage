@@ -1,11 +1,5 @@
-
 export function fmtUsd(v: number, maxFrac = 2): string {
-  const s = v.toLocaleString('en', {
-    style: 'currency',
-    currency: 'USD',
-    currencyDisplay: 'narrowSymbol',
-    maximumFractionDigits: maxFrac,
-  });
+  const s = v.toLocaleString('en', { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol', maximumFractionDigits: maxFrac });
   return s.replace(/^US\$/, '$');
 }
 

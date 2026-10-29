@@ -22,10 +22,7 @@ const HANDLE_STYLES: Record<Edge, ViewStyle> = {
   left: atEdge('left', -HANDLE_WIDTH / 2, HANDLE_INPUT),
   right: atEdge('right', -HANDLE_WIDTH / 2, HANDLE_INPUT),
 };
-const BAR_STYLES: Record<Edge, ViewStyle> = {
-  left: atEdge('left', HANDLE_WIDTH / 2 - 1),
-  right: atEdge('right', HANDLE_WIDTH / 2 - 1),
-};
+const BAR_STYLES: Record<Edge, ViewStyle> = { left: atEdge('left', HANDLE_WIDTH / 2 - 1), right: atEdge('right', HANDLE_WIDTH / 2 - 1) };
 
 interface Drag {
   pointerId: number;
@@ -54,7 +51,12 @@ export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }
   const [hovered, setHovered] = useState(false);
   const [dragging, setDragging] = useState(false);
 
-  useEffect(() => () => { setResizing(false); }, []);
+  useEffect(
+    () => () => {
+      setResizing(false);
+    },
+    [],
+  );
 
   const active = (event: PointerEvent): Drag | null => {
     const current = drag.current;
@@ -100,12 +102,16 @@ export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={finish}
-      onPointerEnter={() => { setHovered(true); }}
-      onPointerLeave={() => { setHovered(false); }}
+      onPointerEnter={() => {
+        setHovered(true);
+      }}
+      onPointerLeave={() => {
+        setHovered(false);
+      }}
       width={HANDLE_WIDTH}
       style={HANDLE_STYLES[edge]}
     >
-      <Column pointerEvents="none" width={BAR_WIDTH} background={hovered || dragging ? border : undefined} style={BAR_STYLES[edge]}/>
+      <Column pointerEvents="none" width={BAR_WIDTH} background={hovered || dragging ? border : undefined} style={BAR_STYLES[edge]} />
     </Column>
   );
 }

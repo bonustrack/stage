@@ -18,9 +18,20 @@ export function useSelfAddress(): string {
   return data ?? '';
 }
 
-function ProfileRoundAction({ icon, label, border, fg, dark, onPress }: {
-  icon: CentralIcon; label: string;
-  border: string; fg: string; dark: boolean; onPress: () => void;
+function ProfileRoundAction({
+  icon,
+  label,
+  border,
+  fg,
+  dark,
+  onPress,
+}: {
+  icon: CentralIcon;
+  label: string;
+  border: string;
+  fg: string;
+  dark: boolean;
+  onPress: () => void;
 }): React.ReactElement {
   return (
     <Column align="center" gap={6}>
@@ -41,8 +52,16 @@ function ProfileRoundAction({ icon, label, border, fg, dark, onPress }: {
   );
 }
 
-export function ProfileActions({ dark, onMessage, onSend, c }: {
-  dark: boolean; onMessage: () => void; onSend: () => void; c: Palette;
+export function ProfileActions({
+  dark,
+  onMessage,
+  onSend,
+  c,
+}: {
+  dark: boolean;
+  onMessage: () => void;
+  onSend: () => void;
+  c: Palette;
 }): React.ReactElement {
   const actions = [
     { icon: IconBubbleAnnotation3, label: 'Message', onPress: onMessage },
@@ -50,7 +69,9 @@ export function ProfileActions({ dark, onMessage, onSend, c }: {
   ];
   return (
     <Row gap={12} justify="start" padding={{ top: 18 }}>
-      {actions.map(action => <ProfileRoundAction key={action.label} {...action} border={c.border} fg={c.link} dark={dark} />)}
+      {actions.map((action) => (
+        <ProfileRoundAction key={action.label} {...action} border={c.border} fg={c.link} dark={dark} />
+      ))}
     </Row>
   );
 }

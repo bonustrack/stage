@@ -3,9 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { notificationIdsForConv } from './pushNotify.model';
 
 Notifications.setNotificationHandler({
-  handleNotification: () => Promise.resolve({
-    shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true,
-  }),
+  handleNotification: () => Promise.resolve({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true }),
 });
 
 async function ensureChannel(): Promise<void> {
@@ -35,7 +33,9 @@ export async function getDeviceFcmToken(): Promise<string | null> {
   try {
     const resp = await Notifications.getDevicePushTokenAsync();
     return typeof resp.data === 'string' ? resp.data : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 const bgDeliveredMsgIds = new Set<string>();
@@ -54,12 +54,7 @@ function consumeBackgroundDelivered(messageId: string | undefined): boolean {
   return messageId !== undefined && messageId !== '' && bgDeliveredMsgIds.delete(messageId);
 }
 
-export async function presentInboundNotification(args: {
-  title: string;
-  body: string;
-  convId: string;
-  messageId?: string;
-}): Promise<void> {
+export async function presentInboundNotification(args: { title: string; body: string; convId: string; messageId?: string }): Promise<void> {
   try {
     if (consumeBackgroundDelivered(args.messageId) || !(await ensureNotificationReady())) return;
     await Notifications.scheduleNotificationAsync({

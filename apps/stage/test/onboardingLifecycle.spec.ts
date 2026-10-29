@@ -3,24 +3,56 @@ import type { PendingSetup, ProfileSetup } from '@stage-labs/client/profile/setu
 import { AccountSetupError, makeOnboarding, type OnboardingDeps } from '../lib/onboarding.core';
 
 const record: NonNullable<PendingSetup['account']> = {
-  id: '0x00000000000000000000000000000000000000a1', address: '0x00000000000000000000000000000000000000a1',
-  type: 'smart', dbDir: 'xmtp-0x00000000000000000000000000000000000000a1', registered: false, createdAt: 1, hdIndex: 0,
-  phraseId: 'synthetic-phrase-reference', ownerAddress: '0x00000000000000000000000000000000000000a2',
+  id: '0x00000000000000000000000000000000000000a1',
+  address: '0x00000000000000000000000000000000000000a1',
+  type: 'smart',
+  dbDir: 'xmtp-0x00000000000000000000000000000000000000a1',
+  registered: false,
+  createdAt: 1,
+  hdIndex: 0,
+  phraseId: 'synthetic-phrase-reference',
+  ownerAddress: '0x00000000000000000000000000000000000000a2',
 };
-const profile: ProfileSetup = { label: 'synthetic123', image: { uri: 'data:image/png;base64,c3ludGhldGlj', mime: 'image/png' }, displayName: 'Synthetic' };
+const profile: ProfileSetup = {
+  label: 'synthetic123',
+  image: { uri: 'data:image/png;base64,c3ludGhldGlj', mime: 'image/png' },
+  displayName: 'Synthetic',
+};
 
 function harness(overrides: Partial<OnboardingDeps> = {}) {
   let pending: PendingSetup | null = null;
   const log: string[] = [];
   const deps: OnboardingDeps = {
     read: () => Promise.resolve(pending),
-    write: (value) => { pending = structuredClone(value); log.push(`save:${value.stage}:${value.account?.id ?? 'none'}`); return Promise.resolve(undefined); },
-    clear: () => { pending = null; log.push('finish'); return Promise.resolve(undefined); },
+    write: (value) => {
+      pending = structuredClone(value);
+      log.push(`save:${value.stage}:${value.account?.id ?? 'none'}`);
+      return Promise.resolve(undefined);
+    },
+    clear: () => {
+      pending = null;
+      log.push('finish');
+      return Promise.resolve(undefined);
+    },
     preserveImage: (value) => Promise.resolve(value),
-    create: async (prepared) => { log.push('prepare'); await prepared(record); log.push('persist-wallet'); return record; },
-    resume: (value) => { log.push(`resume:${value.id}`); return Promise.resolve(value); },
-    messaging: (id) => { log.push(`messaging:${id}`); return Promise.resolve(undefined); },
-    profile: (_account, value) => { log.push(`profile:${value.label}:${value.image?.uri ?? 'none'}`); return Promise.resolve(undefined); },
+    create: async (prepared) => {
+      log.push('prepare');
+      await prepared(record);
+      log.push('persist-wallet');
+      return record;
+    },
+    resume: (value) => {
+      log.push(`resume:${value.id}`);
+      return Promise.resolve(value);
+    },
+    messaging: (id) => {
+      log.push(`messaging:${id}`);
+      return Promise.resolve(undefined);
+    },
+    profile: (_account, value) => {
+      log.push(`profile:${value.label}:${value.image?.uri ?? 'none'}`);
+      return Promise.resolve(undefined);
+    },
     ...overrides,
   };
   return { deps, setup: makeOnboarding(deps), log, pending: () => pending };
@@ -43,11 +75,15 @@ describe('durable account onboarding', () => {
       expect(h.pending()?.account?.id).toBe(record.id);
       expect(h.pending()?.profile).toEqual(profile);
       expect(h.log).not.toContain('finish');
-      h.deps[boundary] = boundary === 'messaging'
-        ? () => Promise.resolve()
-        : (_account, value) => { h.log.push(`profile:${value.label}:${value.image?.uri ?? 'none'}`); return Promise.resolve(undefined); };
+      h.deps[boundary] =
+        boundary === 'messaging'
+          ? () => Promise.resolve()
+          : (_account, value) => {
+              h.log.push(`profile:${value.label}:${value.image?.uri ?? 'none'}`);
+              return Promise.resolve(undefined);
+            };
       await makeOnboarding(h.deps).resume();
-      expect(h.log.filter(value => value === 'prepare')).toHaveLength(1);
+      expect(h.log.filter((value) => value === 'prepare')).toHaveLength(1);
       expect(h.log).toContain(`resume:${record.id}`);
       expect(h.log).toContain(`profile:${profile.label}:${profile.image?.uri ?? 'none'}`);
       expect(h.log.at(-1)).toBe('finish');
@@ -55,7 +91,12 @@ describe('durable account onboarding', () => {
   }
 
   test('late account-list or selection persistence failure resumes the prepared wallet without deriving another', async () => {
-    const h = harness({ create: async (prepared) => { await prepared(record); throw new Error('active selection unavailable'); } });
+    const h = harness({
+      create: async (prepared) => {
+        await prepared(record);
+        throw new Error('active selection unavailable');
+      },
+    });
     await expect(h.setup.run(profile)).rejects.toThrow('active selection unavailable');
     expect(h.pending()?.account?.id).toBe(record.id);
     await makeOnboarding(h.deps).resume();
@@ -74,7 +115,7 @@ describe('durable account onboarding', () => {
       const h = harness();
       const write = h.deps.write;
       let writes = 0;
-      h.deps.write = async value => {
+      h.deps.write = async (value) => {
         if (++writes === 2) {
           if (committed) await write(value);
           throw new Error('prepared checkpoint unavailable');
@@ -83,7 +124,7 @@ describe('durable account onboarding', () => {
       };
       await expect(h.setup.run(profile)).rejects.toThrow('prepared checkpoint unavailable');
       await h.setup.resume();
-      expect(h.log.filter(value => value === 'prepare')).toHaveLength(1);
+      expect(h.log.filter((value) => value === 'prepare')).toHaveLength(1);
       expect(h.log).toContain(`resume:${record.id}`);
       expect(h.log.at(-1)).toBe('finish');
     });
@@ -91,28 +132,37 @@ describe('durable account onboarding', () => {
 
   test('a failed progress write retains its known transaction rather than reverting to the predecessor', async () => {
     const hash = `0x${'1'.repeat(64)}` as const;
-    const h = harness({ profile: async (_account, _profile, _progress, checkpoint) => { await checkpoint({ submitting: true, transactions: [hash] }); } });
+    const h = harness({
+      profile: async (_account, _profile, _progress, checkpoint) => {
+        await checkpoint({ submitting: true, transactions: [hash] });
+      },
+    });
     const write = h.deps.write;
     let fail = true;
-    h.deps.write = async value => {
-      if (fail && value.progress?.transactions?.length) { fail = false; throw new Error('hash checkpoint unavailable'); }
+    h.deps.write = async (value) => {
+      if (fail && value.progress?.transactions?.length) {
+        fail = false;
+        throw new Error('hash checkpoint unavailable');
+      }
       await write(value);
     };
     await expect(h.setup.run(profile)).rejects.toThrow('hash checkpoint unavailable');
-    h.deps.profile = async (_account, _profile, progress) => { expect(progress.transactions).toEqual([hash]); };
+    h.deps.profile = async (_account, _profile, progress) => {
+      expect(progress.transactions).toEqual([hash]);
+    };
     await h.setup.resume();
-    expect(h.log.filter(value => value === 'prepare')).toHaveLength(1);
+    expect(h.log.filter((value) => value === 'prepare')).toHaveLength(1);
   });
 
   test('a different durable setup cannot replace an unconfirmed prepared account', async () => {
     const h = harness();
     const write = h.deps.write;
-    h.deps.write = value => value.account === undefined ? write(value) : Promise.reject(new Error('prepared checkpoint unavailable'));
+    h.deps.write = (value) => (value.account === undefined ? write(value) : Promise.reject(new Error('prepared checkpoint unavailable')));
     await expect(h.setup.run(profile)).rejects.toThrow('prepared checkpoint unavailable');
     await write({ version: 1, stage: 'wallet', profile: { label: 'different123' } });
     h.deps.write = write;
     await expect(h.setup.resume()).rejects.toThrow('saved setup changed');
-    expect(h.log.filter(value => value === 'prepare')).toHaveLength(1);
+    expect(h.log.filter((value) => value === 'prepare')).toHaveLength(1);
     expect(h.log).not.toContain(`resume:${record.id}`);
   });
 
@@ -124,7 +174,9 @@ describe('durable account onboarding', () => {
 
   test('retry before the first checkpoint retains the requested image and label in memory', async () => {
     let attempts = 0;
-    const h = harness({ preserveImage: (value) => ++attempts === 1 ? Promise.reject(new Error('image unavailable')) : Promise.resolve(value) });
+    const h = harness({
+      preserveImage: (value) => (++attempts === 1 ? Promise.reject(new Error('image unavailable')) : Promise.resolve(value)),
+    });
     await expect(h.setup.run(profile)).rejects.toThrow('image unavailable');
     expect(h.log).toEqual([]);
     await h.setup.resume();
@@ -134,7 +186,7 @@ describe('durable account onboarding', () => {
   test('an intentional profile skip stays a skip', async () => {
     const h = harness();
     await h.setup.run();
-    expect(h.log.some(value => value.startsWith('profile:'))).toBe(false);
+    expect(h.log.some((value) => value.startsWith('profile:'))).toBe(false);
     expect(h.log.at(-1)).toBe('finish');
   });
 
@@ -146,18 +198,21 @@ describe('durable account onboarding', () => {
     expect(first).toBe(second);
     gate.resolve(undefined);
     await Promise.all([first, second]);
-    expect(h.log.filter(value => value === 'prepare')).toHaveLength(1);
+    expect(h.log.filter((value) => value === 'prepare')).toHaveLength(1);
   });
 
   test('a post-delete checkpoint failure resumes the same prepared identity in memory', async () => {
     const h = harness();
     const clear = h.deps.clear;
-    h.deps.clear = async () => { await clear(); throw new Error('late delete error'); };
+    h.deps.clear = async () => {
+      await clear();
+      throw new Error('late delete error');
+    };
     await expect(h.setup.run(profile)).rejects.toThrow('late delete error');
     expect(h.pending()).toBeNull();
     h.deps.clear = clear;
     await h.setup.resume();
-    expect(h.log.filter(value => value === 'prepare')).toHaveLength(1);
+    expect(h.log.filter((value) => value === 'prepare')).toHaveLength(1);
     expect(h.log).toContain(`resume:${record.id}`);
   });
 
@@ -171,11 +226,16 @@ describe('durable account onboarding', () => {
     expect(h.pending()?.profile?.label).toBe('synthetic456');
     h.deps.profile = () => Promise.resolve(undefined);
     await reloaded.resume();
-    expect(h.log.filter(value => value === 'prepare')).toHaveLength(1);
+    expect(h.log.filter((value) => value === 'prepare')).toHaveLength(1);
   });
 
   test('a claimed name stays locked and an uncertain profile transaction cannot be edited', async () => {
-    const h = harness({ profile: async (_account, _profile, _progress, checkpoint) => { await checkpoint({ claimed: true }); throw new Error('offline'); } });
+    const h = harness({
+      profile: async (_account, _profile, _progress, checkpoint) => {
+        await checkpoint({ claimed: true });
+        throw new Error('offline');
+      },
+    });
     await expect(h.setup.run(profile)).rejects.toThrow('offline');
     expect((await h.setup.editableProfile()).labelLocked).toBe(true);
     await expect(h.setup.editProfile({ ...profile, label: 'different123' })).rejects.toThrow('already being registered');

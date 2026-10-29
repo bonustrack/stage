@@ -1,10 +1,21 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  galleryItemsOf, galleryKeyOf, galleryKeyStep, galleryStep, isEditableTarget, type GalleryKeyEvent,
+  galleryItemsOf,
+  galleryKeyOf,
+  galleryKeyStep,
+  galleryStep,
+  isEditableTarget,
+  type GalleryKeyEvent,
 } from '../components/bubble/imageGallery.model';
 
-interface Att { kind: string; url: string }
-interface Entry { id: string; atts: Att[] }
+interface Att {
+  kind: string;
+  url: string;
+}
+interface Entry {
+  id: string;
+  atts: Att[];
+}
 
 const img = (url: string): Att => ({ kind: 'image', url });
 const file = (url: string): Att => ({ kind: 'file', url });
@@ -16,17 +27,23 @@ const newestFirst: Entry[] = [
   { id: 'm1', atts: [img('a')] },
 ];
 
-const items = galleryItemsOf(newestFirst, e => e.atts);
-const urls = (list: readonly { att: Att }[]): string[] => list.map(i => i.att.url);
+const items = galleryItemsOf(newestFirst, (e) => e.atts);
+const urls = (list: readonly { att: Att }[]): string[] => list.map((i) => i.att.url);
 
 const press = (key: string, extra: Partial<GalleryKeyEvent> = {}): GalleryKeyEvent => ({
-  key, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false, defaultPrevented: false, ...extra,
+  key,
+  altKey: false,
+  ctrlKey: false,
+  metaKey: false,
+  shiftKey: false,
+  defaultPrevented: false,
+  ...extra,
 });
 
 describe('chat image gallery', () => {
   test('lists the images of the chat oldest first, in attachment order within a message', () => {
     expect(urls(items)).toEqual(['a', 'b', 'c', 'd']);
-    expect(items.map(i => i.key)).toEqual(['m1#0', 'm2#0', 'm2#2', 'm4#0']);
+    expect(items.map((i) => i.key)).toEqual(['m1#0', 'm2#0', 'm2#2', 'm4#0']);
   });
 
   test('keys an item by its message and attachment index', () => {

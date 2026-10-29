@@ -1,8 +1,14 @@
 import { createRequire } from 'node:module';
 import { describe, expect, test } from 'bun:test';
 
-interface GradleProperty { type: string; key: string; value: string }
-interface GradleMemory { setGradleMemory(p: GradleProperty[]): unknown }
+interface GradleProperty {
+  type: string;
+  key: string;
+  value: string;
+}
+interface GradleMemory {
+  setGradleMemory(p: GradleProperty[]): unknown;
+}
 
 const requireCjs = createRequire(import.meta.url);
 const { setGradleMemory } = requireCjs('../plugins/gradleMemory.js') as GradleMemory;

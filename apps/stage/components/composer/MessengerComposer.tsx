@@ -37,14 +37,16 @@ function DropOverlay({ head }: { head: string }): React.ReactElement {
       border={{ top: edge, right: edge, bottom: edge, left: edge }}
       style={{ position: 'absolute', top: 6, right: 6, bottom: 6, left: 6 }}
     >
-      <Glyph icon={IconPaperclip3} size={20} color={head}/>
-      <Text fontWeight="semibold" size="xs" color={head}>Drop files to attach</Text>
+      <Glyph icon={IconPaperclip3} size={20} color={head} />
+      <Text fontWeight="semibold" size="xs" color={head}>
+        Drop files to attach
+      </Text>
     </Row>
   );
 }
 
 const DRAFT_ATTACH_LABELS = new Set(['Image', 'Camera', 'File', 'Voice message']);
-const nativeDictation = <T,>(value: T): T | undefined => Platform.OS === 'web' ? undefined : value;
+const nativeDictation = <T,>(value: T): T | undefined => (Platform.OS === 'web' ? undefined : value);
 
 interface Props {
   dark: boolean;
@@ -72,16 +74,22 @@ function loneCandidate(candidates: Props['mentionCandidates']): string | undefin
   return candidates?.length === 1 ? candidates[0]?.address : undefined;
 }
 
-function composerTarget(xmtpLine: string | undefined, draftKey: string | null | undefined): {
-  convId: string | null; draftKey: string | null; openLine: () => Promise<string | null>;
-} {
+function composerTarget(
+  xmtpLine: string | undefined,
+  draftKey: string | null | undefined,
+): { convId: string | null; draftKey: string | null; openLine: () => Promise<string | null> } {
   const line = xmtpLine ?? null;
-  const convId = line === null ? null : convIdOfLine(line) ?? line;
+  const convId = line === null ? null : (convIdOfLine(line) ?? line);
   return { convId, draftKey: draftKey ?? convId, openLine: () => Promise.resolve(line) };
 }
 
 function sendHandler(onSubmit: (() => void) | undefined, send: () => Promise<void>): () => void {
-  return onSubmit ?? (() => { void send(); });
+  return (
+    onSubmit ??
+    (() => {
+      void send();
+    })
+  );
 }
 
 function useDraftState(shared: ComposerState | undefined): ComposerState {
@@ -90,48 +98,84 @@ function useDraftState(shared: ComposerState | undefined): ComposerState {
 }
 
 function composerAttachActions(
-  actions: ReturnType<typeof useComposerActions>, s: ComposerState, draftOnly: boolean, recordVoice: () => Promise<void>,
+  actions: ReturnType<typeof useComposerActions>,
+  s: ComposerState,
+  draftOnly: boolean,
+  recordVoice: () => Promise<void>,
 ): ReturnType<typeof buildAttachActions> {
   const all = buildAttachActions({
-    pickImage: actions.pickImage, takePhoto: actions.takePhoto,
-    pickFile: actions.pickFile, pickLocation: actions.pickLocation,
+    pickImage: actions.pickImage,
+    takePhoto: actions.takePhoto,
+    pickFile: actions.pickFile,
+    pickLocation: actions.pickLocation,
     recordVoice: Platform.OS === 'web' ? undefined : recordVoice,
-    openPoll: () => { s.setPollOpen(true); }, openSig: () => { s.setSigOpen(true); }, openTx: () => { s.setTxOpen(true); },
+    openPoll: () => {
+      s.setPollOpen(true);
+    },
+    openSig: () => {
+      s.setSigOpen(true);
+    },
+    openTx: () => {
+      s.setTxOpen(true);
+    },
   });
   return draftOnly ? all.filter(([, label]) => DRAFT_ATTACH_LABELS.has(label)) : all;
 }
 
 function quickAttachAction(
-  actions: ReturnType<typeof buildAttachActions>, lastLabel: string | undefined, shown: boolean,
+  actions: ReturnType<typeof buildAttachActions>,
+  lastLabel: string | undefined,
+  shown: boolean,
 ): ReturnType<typeof buildAttachActions>[number] | undefined {
   return shown ? actions.find(([, label]) => label === lastLabel) : undefined;
 }
 
 function useDroppedAndPasted(actions: ReturnType<typeof useComposerActions>, focus: () => void): DropZone {
-  const focusUnlessKept = (keepFocus: boolean): void => { if (!keepFocus) focus(); };
-  const drop = useDroppedFiles((files, keepFocus) => { void actions.onDroppedFiles(files); focusUnlessKept(keepFocus); });
-  usePastedImages((files, keepFocus) => { void actions.onPickedImages(files); focusUnlessKept(keepFocus); }, drop.zoneId);
+  const focusUnlessKept = (keepFocus: boolean): void => {
+    if (!keepFocus) focus();
+  };
+  const drop = useDroppedFiles((files, keepFocus) => {
+    void actions.onDroppedFiles(files);
+    focusUnlessKept(keepFocus);
+  });
+  usePastedImages((files, keepFocus) => {
+    void actions.onPickedImages(files);
+    focusUnlessKept(keepFocus);
+  }, drop.zoneId);
   return drop;
 }
 
 function ComposerHeader(p: {
-  dark: boolean; fg: string; sub: string;
-  replyingTo?: Props['replyingTo']; onClearReply?: () => void; onJumpToReply?: (id: string) => void;
-  pending: Attachment[]; onRemovePending: (i: number) => void;
-  uploading: boolean; err: string | null;
+  dark: boolean;
+  fg: string;
+  sub: string;
+  replyingTo?: Props['replyingTo'];
+  onClearReply?: () => void;
+  onJumpToReply?: (id: string) => void;
+  pending: Attachment[];
+  onRemovePending: (i: number) => void;
+  uploading: boolean;
+  err: string | null;
 }): React.ReactElement {
   const { replyingTo, onJumpToReply } = p;
   return (
     <>
       {replyingTo ? (
         <ReplyBanner
-          dark={p.dark} sub={p.sub} sender={replyingTo.sender} onClear={p.onClearReply}
-          onPress={onJumpToReply ? () => { onJumpToReply(replyingTo.id); } : undefined}
+          dark={p.dark}
+          sub={p.sub}
+          sender={replyingTo.sender}
+          onClear={p.onClearReply}
+          onPress={
+            onJumpToReply
+              ? () => {
+                  onJumpToReply(replyingTo.id);
+                }
+              : undefined
+          }
         />
       ) : null}
-      {p.pending.length > 0 ? (
-        <PendingRow fg={p.fg} pending={p.pending} onRemove={p.onRemovePending} />
-      ) : null}
+      {p.pending.length > 0 ? <PendingRow fg={p.fg} pending={p.pending} onRemove={p.onRemovePending} /> : null}
       {p.uploading || p.err ? (
         <Text size="3xs" color={p.err ? DANGER : p.sub} style={{ paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }}>
           {p.err ?? 'Uploading…'}
@@ -144,7 +188,10 @@ function ComposerHeader(p: {
 export function MessengerComposer(props: Props): React.ReactElement {
   const { dark, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
   const pal = usePalette();
-  const fg = pal.text, head = pal.link, chipBg = pal.border, bg = pal.bg;
+  const fg = pal.text,
+    head = pal.link,
+    chipBg = pal.border,
+    bg = pal.bg;
   const sub = pal.text;
 
   const s = useDraftState(props.state);
@@ -154,47 +201,77 @@ export function MessengerComposer(props: Props): React.ReactElement {
 
   const mention = useMentionEditor(s, mentionCandidates, props.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
-  const drop = useDroppedAndPasted(actions, () => { caretToEnd(); s.bumpFocus(); });
+  const drop = useDroppedAndPasted(actions, () => {
+    caretToEnd();
+    s.bumpFocus();
+  });
   useComposerDrafts(draftKey, s, mention.restore);
   useWarmSendPath(props.xmtpLine, s);
-  useHandedSend(convId, (started) => { void actions.adoptSend(started); });
+  useHandedSend(convId, (started) => {
+    void actions.adoptSend(started);
+  });
   useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);
   const channels = useChannelSuggest(s, convId ?? '');
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
   const dictation = useDictation({
-    key: draftKey, text: mention.display, selection: s.selection, setText: mention.setDisplay,
-    setSelection: s.setSelection, setErr: s.setErr, recording: s.recording, busy: props.busy === true,
+    key: draftKey,
+    text: mention.display,
+    selection: s.selection,
+    setText: mention.setDisplay,
+    setSelection: s.setSelection,
+    setErr: s.setErr,
+    recording: s.recording,
+    busy: props.busy === true,
   });
-  const startRecording = (): Promise<void> => dictation.recordVoice(async () => {
-    s.bumpBlur();
-    await actions.startRec();
-  });
+  const startRecording = (): Promise<void> =>
+    dictation.recordVoice(async () => {
+      s.bumpBlur();
+      await actions.startRec();
+    });
   const attachActions = composerAttachActions(actions, s, draftOnly, startRecording);
   const lastLabel = useLastAttachment();
   const quick = quickAttachAction(attachActions, lastLabel, props.quickAttach !== false);
 
   return (
     <Column nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(props.rounded)}>
-      <SuggestMenu suggest={mention}/>
-      <SuggestMenu suggest={channels}/>
+      <SuggestMenu suggest={mention} />
+      <SuggestMenu suggest={channels} />
       {props.metadata}
       <ComposerHeader
-        dark={dark} fg={fg} sub={sub}
-        replyingTo={replyingTo} onClearReply={onClearReply} onJumpToReply={onJumpToReply}
-        pending={s.pending} onRemovePending={(i) => {
+        dark={dark}
+        fg={fg}
+        sub={sub}
+        replyingTo={replyingTo}
+        onClearReply={onClearReply}
+        onJumpToReply={onJumpToReply}
+        pending={s.pending}
+        onRemovePending={(i) => {
           forgetAttachments(fileInputs(s.pending.filter((_, j) => j === i)));
-          s.setPending(prev => prev.filter((_, j) => j !== i));
+          s.setPending((prev) => prev.filter((_, j) => j !== i));
         }}
-        uploading={s.uploading} err={s.err}
+        uploading={s.uploading}
+        err={s.err}
       />
       <ComposerEditor
-        dark={dark} fg={fg} head={head} bg={bg} sub={sub} chipBg={chipBg}
-        recording={s.recording} levels={s.levels} recordSecs={s.recordSecs}
-        text={mention.display} setText={dictation.setText}
-        selection={s.selection} setSelection={s.setSelection}
-        focusNonce={s.focusNonce} blurNonce={s.blurNonce}
-        attachMenuOpen={s.attachMenuOpen} setAttachMenuOpen={s.setAttachMenuOpen} attachActions={attachActions}
+        dark={dark}
+        fg={fg}
+        head={head}
+        bg={bg}
+        sub={sub}
+        chipBg={chipBg}
+        recording={s.recording}
+        levels={s.levels}
+        recordSecs={s.recordSecs}
+        text={mention.display}
+        setText={dictation.setText}
+        selection={s.selection}
+        setSelection={s.setSelection}
+        focusNonce={s.focusNonce}
+        blurNonce={s.blurNonce}
+        attachMenuOpen={s.attachMenuOpen}
+        setAttachMenuOpen={s.setAttachMenuOpen}
+        attachActions={attachActions}
         quickIcon={quick?.[0]}
         quickLabel={quick?.[1]}
         onQuick={quick ? () => void quick[2]() : undefined}
@@ -211,7 +288,9 @@ export function MessengerComposer(props: Props): React.ReactElement {
       />
       {draftOnly ? null : (
         <ComposerSheets
-          s={s} dark={dark} hooks={{ openLine, setErr: s.setErr, onOptimistic: props.onOptimistic, onSent: props.onSent }}
+          s={s}
+          dark={dark}
+          hooks={{ openLine, setErr: s.setErr, onOptimistic: props.onOptimistic, onSent: props.onSent }}
           initialTo={loneCandidate(mentionCandidates)}
         />
       )}
@@ -222,21 +301,27 @@ export function MessengerComposer(props: Props): React.ReactElement {
         quality={0.5}
         multiple
         selectionLimit={10}
-        onPick={(files) => { void actions.onPickedImages(files); }}
+        onPick={(files) => {
+          void actions.onPickedImages(files);
+        }}
       />
       <FilePicker
         openNonce={actions.cameraNonce}
         source="camera"
         mediaTypes={['images']}
         quality={0.5}
-        onPick={(files) => { void actions.onPickedCamera(files); }}
+        onPick={(files) => {
+          void actions.onPickedCamera(files);
+        }}
       />
       <FilePicker
         openNonce={actions.fileNonce}
         source="document"
-        onPick={(files) => { void actions.onPickedFile(files); }}
+        onPick={(files) => {
+          void actions.onPickedFile(files);
+        }}
       />
-      {drop.active ? <DropOverlay head={head}/> : null}
+      {drop.active ? <DropOverlay head={head} /> : null}
     </Column>
   );
 }

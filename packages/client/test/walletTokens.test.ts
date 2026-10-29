@@ -22,7 +22,7 @@ function row(p: Partial<AssetRow> & { symbol: string; balance: string }): AssetR
 
 describe('wallet assets', () => {
   test('the wallet holds ETH then USDC, both on Base, nothing else', () => {
-    expect(WALLET_ASSETS.map(a => `${a.chainId}:${a.symbol}`)).toEqual(['8453:ETH', '8453:USDC']);
+    expect(WALLET_ASSETS.map((a) => `${a.chainId}:${a.symbol}`)).toEqual(['8453:ETH', '8453:USDC']);
   });
 });
 

@@ -14,9 +14,11 @@ function UserProfile({ handle }: { handle: string }): React.ReactElement {
   if (resolved.address) return <ProfileScreen address={resolved.address} />;
   return (
     <Column surface="surface" weight={1} align="center" justify="center" padding={24}>
-      {resolved.resolving
-        ? <Spinner size={24} color={dark ? '#ffffff' : '#000000'} />
-        : <Text size="xs" color="secondary" textAlign="center">{`No account found for ${handle}.`}</Text>}
+      {resolved.resolving ? (
+        <Spinner size={24} color={dark ? '#ffffff' : '#000000'} />
+      ) : (
+        <Text size="xs" color="secondary" textAlign="center">{`No account found for ${handle}.`}</Text>
+      )}
     </Column>
   );
 }

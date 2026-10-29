@@ -26,34 +26,58 @@ export function useGroupHover(items: readonly HomeListItem[]): {
 } {
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
   const keys = useMemo(() => groupKeysOf(items), [items]);
-  const wrapItem = useCallback((item: HomeListItem, node: React.ReactElement): React.ReactElement => {
-    const key = keys.get(listKeyOf(item));
-    if (Platform.OS !== 'web' || key === undefined) return node;
-    return (
-      <Column
-        onPointerEnter={({ nativeEvent }) => { if (nativeEvent.pointerType !== 'touch') setHoveredGroup(key); }}
-        onPointerLeave={() => { setHoveredGroup(current => (current === key ? null : current)); }}
-      >
-        {node}
-      </Column>
-    );
-  }, [keys]);
+  const wrapItem = useCallback(
+    (item: HomeListItem, node: React.ReactElement): React.ReactElement => {
+      const key = keys.get(listKeyOf(item));
+      if (Platform.OS !== 'web' || key === undefined) return node;
+      return (
+        <Column
+          onPointerEnter={({ nativeEvent }) => {
+            if (nativeEvent.pointerType !== 'touch') setHoveredGroup(key);
+          }}
+          onPointerLeave={() => {
+            setHoveredGroup((current) => (current === key ? null : current));
+          }}
+        >
+          {node}
+        </Column>
+      );
+    },
+    [keys],
+  );
   return { hoveredGroup, wrapItem };
 }
 
-function GroupArrow({ collapsed, sectionHovered, hovered, focused, color }: {
-  collapsed: boolean; sectionHovered?: boolean; hovered: boolean; focused: boolean; color: string;
+function GroupArrow({
+  collapsed,
+  sectionHovered,
+  hovered,
+  focused,
+  color,
+}: {
+  collapsed: boolean;
+  sectionHovered?: boolean;
+  hovered: boolean;
+  focused: boolean;
+  color: string;
 }): React.ReactElement {
   const shown = Platform.OS !== 'web' || collapsed || sectionHovered === true || hovered || focused;
   return (
     <Column style={{ opacity: shown ? 1 : 0 }}>
-      <Glyph icon={collapsed ? IconChevronRight : IconChevronBottom} size={CHEVRON_SIZE} color={color}/>
+      <Glyph icon={collapsed ? IconChevronRight : IconChevronBottom} size={CHEVRON_SIZE} color={color} />
     </Column>
   );
 }
 
-export function GroupHeader({ header, onToggle, sectionHovered, wrapToggle }: {
-  header: ChannelGroupHeader; onToggle: (key: string) => void; sectionHovered?: boolean;
+export function GroupHeader({
+  header,
+  onToggle,
+  sectionHovered,
+  wrapToggle,
+}: {
+  header: ChannelGroupHeader;
+  onToggle: (key: string) => void;
+  sectionHovered?: boolean;
   wrapToggle: (node: React.ReactElement) => React.ReactElement;
 }): React.ReactElement {
   const { sub, link } = usePalette();
@@ -63,22 +87,37 @@ export function GroupHeader({ header, onToggle, sectionHovered, wrapToggle }: {
   const tint = hovered ? link : undefined;
   const toggle = (
     <Pressable
-      onPress={() => { onToggle(header.key); }}
+      onPress={() => {
+        onToggle(header.key);
+      }}
       accessibilityRole="button"
       aria-expanded={!header.collapsed}
       accessibilityLabel={`${header.title}, ${header.count} chats`}
-      onFocus={() => { setFocused(true); }}
-      onBlur={() => { setFocused(false); }}
+      onFocus={() => {
+        setFocused(true);
+      }}
+      onBlur={() => {
+        setFocused(false);
+      }}
       {...hoverProps}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 6, height: GROUP_HEADER_HEIGHT,
-        paddingLeft: PAGE_GUTTER, paddingRight: 12, paddingTop: LIST_TOP_GAP, paddingBottom: BOTTOM_GAP, opacity: pressed ? 0.7 : 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        height: GROUP_HEADER_HEIGHT,
+        paddingLeft: PAGE_GUTTER,
+        paddingRight: 12,
+        paddingTop: LIST_TOP_GAP,
+        paddingBottom: BOTTOM_GAP,
+        opacity: pressed ? 0.7 : 1,
       })}
     >
-      <Eyebrow size={TITLE_SIZE} color={tint} truncate style={TITLE_STYLE}>{header.title.toUpperCase()}</Eyebrow>
-      <GroupArrow collapsed={header.collapsed} sectionHovered={sectionHovered} hovered={hovered} focused={focused} color={tint ?? sub}/>
-      <Column weight={1}/>
-      {header.collapsed && header.unread > 0 ? <UnreadBadge count={header.unread}/> : null}
+      <Eyebrow size={TITLE_SIZE} color={tint} truncate style={TITLE_STYLE}>
+        {header.title.toUpperCase()}
+      </Eyebrow>
+      <GroupArrow collapsed={header.collapsed} sectionHovered={sectionHovered} hovered={hovered} focused={focused} color={tint ?? sub} />
+      <Column weight={1} />
+      {header.collapsed && header.unread > 0 ? <UnreadBadge count={header.unread} /> : null}
     </Pressable>
   );
   return (
@@ -86,7 +125,7 @@ export function GroupHeader({ header, onToggle, sectionHovered, wrapToggle }: {
       <Column weight={1}>{wrapToggle(toggle)}</Column>
       {groupBy !== 'none' && header.key !== 'dm' ? (
         <Column padding={{ top: LIST_TOP_GAP, bottom: BOTTOM_GAP }}>
-          <NewChatAction by={groupBy} groupKey={header.key} title={header.title}/>
+          <NewChatAction by={groupBy} groupKey={header.key} title={header.title} />
         </Column>
       ) : null}
     </Row>

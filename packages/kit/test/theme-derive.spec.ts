@@ -37,10 +37,7 @@ describe('derivePalette', () => {
   });
 
   test('omitted shade is treated as 0 by the default short-circuit', () => {
-    const noShade: ThemeSeed = {
-      ...DEFAULT_SEED.dark,
-      grayscale: { hue: 216, tint: 6 },
-    };
+    const noShade: ThemeSeed = { ...DEFAULT_SEED.dark, grayscale: { hue: 216, tint: 6 } };
     expect(derivePalette(noShade, 'dark')).toEqual(derivePalette(DEFAULT_SEED.dark, 'dark'));
   });
 

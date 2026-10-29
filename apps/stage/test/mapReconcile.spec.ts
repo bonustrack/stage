@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from 'bun:test';
 import { deepValueEquals, reconcileMapValues } from '../lib/mapReconcile';
 
@@ -45,8 +44,14 @@ describe('reconcileMapValues', () => {
 
   it('keeps prev value references for untouched keys', () => {
     const untouched = new Map([['👍', 2]]);
-    const prev = new Map([['m1', untouched], ['m2', new Map([['🔥', 1]])]]);
-    const next = new Map([['m1', new Map([['👍', 2]])], ['m2', new Map([['🔥', 3]])]]);
+    const prev = new Map([
+      ['m1', untouched],
+      ['m2', new Map([['🔥', 1]])],
+    ]);
+    const next = new Map([
+      ['m1', new Map([['👍', 2]])],
+      ['m2', new Map([['🔥', 3]])],
+    ]);
     const out = reconcileMapValues(prev, next);
     expect(out).not.toBe(prev);
     expect(out.get('m1')).toBe(untouched);
@@ -55,8 +60,14 @@ describe('reconcileMapValues', () => {
 
   it('handles added and removed keys', () => {
     const kept = new Set(['a']);
-    const prev = new Map([['m1', kept], ['m2', new Set(['b'])]]);
-    const next = new Map([['m1', new Set(['a'])], ['m3', new Set(['c'])]]);
+    const prev = new Map([
+      ['m1', kept],
+      ['m2', new Set(['b'])],
+    ]);
+    const next = new Map([
+      ['m1', new Set(['a'])],
+      ['m3', new Set(['c'])],
+    ]);
     const out = reconcileMapValues(prev, next);
     expect(out.get('m1')).toBe(kept);
     expect(out.has('m2')).toBe(false);

@@ -29,9 +29,7 @@ import { ChannelLink, useChannelLinkNames } from './ChannelLink';
 import { channelFallbackLabel, channelLinkText, markdownLabelText } from '@stage-labs/client/xmtp/channelLinks';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
-import {
-  bodySegments, bodyView, mentionAddresses, namedPlainText, type BodySegment,
-} from '@stage-labs/client/xmtp/messageBody';
+import { bodySegments, bodyView, mentionAddresses, namedPlainText, type BodySegment } from '@stage-labs/client/xmtp/messageBody';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconSquareCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareCheck';
 import { IconSquarePlaceholder } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquarePlaceholder';
@@ -45,10 +43,13 @@ function TaskMark({ task }: { task: TaskState }): React.ReactElement {
   const done = task === 'done';
   return (
     <Column
-      justify="center" height={LINE_HEIGHT} margin={{ left: 2, right: 8 }}
-      accessibilityRole="checkbox" accessibilityState={{ checked: done }}
+      justify="center"
+      height={LINE_HEIGHT}
+      margin={{ left: 2, right: 8 }}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked: done }}
     >
-      <Glyph icon={done ? IconSquareCheck : IconSquarePlaceholder} size={18} color={done ? pal.text : pal.sub}/>
+      <Glyph icon={done ? IconSquareCheck : IconSquarePlaceholder} size={18} color={done ? pal.text : pal.sub} />
     </Column>
   );
 }
@@ -57,9 +58,17 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
   const router = useRouter();
   usePeerProfiles([address]);
   return (
-    <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
-      onPress={() => { router.push(profileLinkOf(address)); }}
-      suppressHighlighting>
+    <Text
+      size="lg"
+      selectable={Platform.OS === 'web'}
+      color={fg}
+      style={MESSAGE_LINK_STYLE}
+      accessibilityRole="link"
+      onPress={() => {
+        router.push(profileLinkOf(address));
+      }}
+      suppressHighlighting
+    >
       {mentionLabelOf(address)}
     </Text>
   );
@@ -79,8 +88,17 @@ export const markdownRules: RenderRules = {
     const convId = stageChannelIdOf(href);
     if (convId) {
       const label = markdownLabelText(node);
-      return <ChannelLink key={node.key} convId={convId} url={href} text={label} element={link}
-        label={channelFallbackLabel(label)} onLinkPress={onLinkPress} />;
+      return (
+        <ChannelLink
+          key={node.key}
+          convId={convId}
+          url={href}
+          text={label}
+          element={link}
+          label={channelFallbackLabel(label)}
+          onLinkPress={onLinkPress}
+        />
+      );
     }
     return cloneElement(link, bubbleLinkProps(href, onLinkPress));
   },
@@ -89,7 +107,7 @@ export const markdownRules: RenderRules = {
     if (!task) return renderRules.list_item?.(node, children, parents, styles, inheritedStyles);
     return (
       <Column key={node.key} style={styles._VIEW_SAFE_list_item}>
-        <TaskMark task={task}/>
+        <TaskMark task={task} />
         <Column style={styles._VIEW_SAFE_bullet_list_content}>{children}</Column>
       </Column>
     );
@@ -97,16 +115,25 @@ export const markdownRules: RenderRules = {
   tr: (node, children, parents, styles: MarkdownViewStyles) => {
     const body = parents[0];
     const last = body?.type === 'tbody' && node.index === body.children.length - 1;
-    return <Column key={node.key} style={[styles._VIEW_SAFE_tr, last && LAST_ROW]}>{children}</Column>;
+    return (
+      <Column key={node.key} style={[styles._VIEW_SAFE_tr, last && LAST_ROW]}>
+        {children}
+      </Column>
+    );
   },
 };
 
-function WebLink({ url, text, fg, onLinkPress }: {
-  url: string; text: string; fg: string; onLinkPress: LinkPress;
-}): React.ReactElement {
+function WebLink({ url, text, fg, onLinkPress }: { url: string; text: string; fg: string; onLinkPress: LinkPress }): React.ReactElement {
   return (
-    <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
-      {...bubbleLinkProps(url, onLinkPress)} suppressHighlighting>
+    <Text
+      size="lg"
+      selectable={Platform.OS === 'web'}
+      color={fg}
+      style={MESSAGE_LINK_STYLE}
+      accessibilityRole="link"
+      {...bubbleLinkProps(url, onLinkPress)}
+      suppressHighlighting
+    >
       {text}
     </Text>
   );
@@ -128,8 +155,16 @@ function MentionBody({ text, fg, onLinkPress }: { text: string; fg: string; onLi
   );
 }
 
-function BubbleAttachment({ att, index, entryId, fg }: {
-  att: Attachment; index: number; entryId: string; fg: string;
+function BubbleAttachment({
+  att,
+  index,
+  entryId,
+  fg,
+}: {
+  att: Attachment;
+  index: number;
+  entryId: string;
+  fg: string;
 }): React.ReactElement {
   const galleryKey = galleryKeyOf(entryId, index);
   if (att.remote) {
@@ -138,9 +173,7 @@ function BubbleAttachment({ att, index, entryId, fg }: {
   return <AttachmentView att={att} fg={fg} fullUrl={inlineAttachmentUrl(att)} galleryKey={galleryKey} />;
 }
 
-export function BubbleAttachments({ atts, entryId, fg }: {
-  atts: Attachment[]; entryId: string; fg: string;
-}): React.ReactElement | null {
+export function BubbleAttachments({ atts, entryId, fg }: { atts: Attachment[]; entryId: string; fg: string }): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
     <Column margin={{ top: 4, bottom: 6 }} gap={ATTACHMENT_GAP} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
@@ -161,71 +194,105 @@ function SafeMarkdown({ body, fg, markdownProps }: { body: string; fg: string; m
   );
 }
 
-interface PlainBodyProps { body: string; fg: string; query?: string }
+interface PlainBodyProps {
+  body: string;
+  fg: string;
+  query?: string;
+}
 
 function PlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
   if (query) return <HighlightText text={body} query={query} fg={fg} />;
-  return <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={{ lineHeight: 23 }}>{body}</Text>;
+  return (
+    <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={{ lineHeight: 23 }}>
+      {body}
+    </Text>
+  );
 }
 
 function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
   usePeerProfiles(mentionAddresses(body));
   const segments = bodySegments(body, findLinks, true);
-  const convIds = [...new Set(segments.flatMap(seg => seg.type === 'channel' ? [seg.convId] : []))];
+  const convIds = [...new Set(segments.flatMap((seg) => (seg.type === 'channel' ? [seg.convId] : [])))];
   const names = useChannelLinkNames(convIds);
-  const text = namedPlainText(segments, mentionLabelOf, seg => {
+  const text = namedPlainText(segments, mentionLabelOf, (seg) => {
     const meta = names.get(seg.convId);
-    return channelLinkText(meta ?? {}, seg.label, seg.url, meta?.peerAddress ? seg.raw ?? seg.text : seg.text);
+    return channelLinkText(meta ?? {}, seg.label, seg.url, meta?.peerAddress ? (seg.raw ?? seg.text) : seg.text);
   });
   return <PlainBody body={text} fg={fg} query={query} />;
 }
 
-function BubbleBodyText({ body, fg, highlight, markdownProps }: {
-  body: string; fg: string; highlight?: string; markdownProps: MarkdownProps;
+function BubbleBodyText({
+  body,
+  fg,
+  highlight,
+  markdownProps,
+}: {
+  body: string;
+  fg: string;
+  highlight?: string;
+  markdownProps: MarkdownProps;
 }): React.ReactElement {
   const query = highlight?.trim() ? highlight : undefined;
   switch (bodyView(body, query !== undefined, findLinks)) {
-    case 'namedPlain': return <NamedPlainBody body={body} fg={fg} query={query} />;
-    case 'plain': return <PlainBody body={body} fg={fg} query={query} />;
-    case 'mention': return <MentionBody text={body} fg={fg} onLinkPress={markdownProps.onLinkPress} />;
-    case 'markdown': return <SafeMarkdown body={body} fg={fg} markdownProps={markdownProps} />;
+    case 'namedPlain':
+      return <NamedPlainBody body={body} fg={fg} query={query} />;
+    case 'plain':
+      return <PlainBody body={body} fg={fg} query={query} />;
+    case 'mention':
+      return <MentionBody text={body} fg={fg} onLinkPress={markdownProps.onLinkPress} />;
+    case 'markdown':
+      return <SafeMarkdown body={body} fg={fg} markdownProps={markdownProps} />;
   }
 }
 
-export function BubbleBody({ text, fg, highlight, markdownProps }: {
-  text: string; fg: string; highlight?: string; markdownProps: MarkdownProps;
+export function BubbleBody({
+  text,
+  fg,
+  highlight,
+  markdownProps,
+}: {
+  text: string;
+  fg: string;
+  highlight?: string;
+  markdownProps: MarkdownProps;
 }): React.ReactElement {
   const parts = useMemo(() => splitCodeBlocks(unescapeBody(text)), [text]);
   return (
     <Column gap={BLOCK_GAP} style={{ alignSelf: 'stretch' }}>
-      {parts.map((part, index) => (part.type === 'code' ? (
-        <CodeBlock key={`code-${index}`} code={part.code} lang={part.lang} fg={fg} highlight={highlight} />
-      ) : (
-        <BubbleBodyText
-          key={`text-${index}`} body={part.text} fg={fg}
-          highlight={highlight} markdownProps={markdownProps}
-        />
-      )))}
+      {parts.map((part, index) =>
+        part.type === 'code' ? (
+          <CodeBlock key={`code-${index}`} code={part.code} lang={part.lang} fg={fg} highlight={highlight} />
+        ) : (
+          <BubbleBodyText key={`text-${index}`} body={part.text} fg={fg} highlight={highlight} markdownProps={markdownProps} />
+        ),
+      )}
     </Column>
   );
 }
 
 function embedNode(card: CardLink, dark: boolean): React.ReactElement {
   switch (card.kind) {
-    case 'dm': return <ChannelCard peerAddress={card.peerAddress} url={card.url} />;
-    case 'channel': return <ChannelCard convId={card.convId} url={card.url} />;
-    case 'youtube': return <YouTubeEmbed videoId={card.videoId} />;
-    case 'map': return <LocationEmbed lat={card.lat} lng={card.lng} dark={dark} />;
-    case 'github': return <GitHubLinkCard url={card.url} />;
-    case 'preview': return <PreviewLinkCard url={card.url} />;
-    default: return <LinkPreviewCard url={card.url} dark={dark} />;
+    case 'dm':
+      return <ChannelCard peerAddress={card.peerAddress} url={card.url} />;
+    case 'channel':
+      return <ChannelCard convId={card.convId} url={card.url} />;
+    case 'youtube':
+      return <YouTubeEmbed videoId={card.videoId} />;
+    case 'map':
+      return <LocationEmbed lat={card.lat} lng={card.lng} dark={dark} />;
+    case 'github':
+      return <GitHubLinkCard url={card.url} />;
+    case 'preview':
+      return <PreviewLinkCard url={card.url} />;
+    default:
+      return <LinkPreviewCard url={card.url} dark={dark} />;
   }
 }
 
 export function BubbleEmbeds({ cardLinks, dark }: { cardLinks: CardLink[]; dark: boolean }): React.ReactElement {
   return (
     <>
-      {cardLinks.map(card => (
+      {cardLinks.map((card) => (
         <Column key={`${card.kind}:${card.url}`} margin={{ top: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
           {embedNode(card, dark)}
         </Column>
@@ -237,14 +304,24 @@ export function BubbleEmbeds({ cardLinks, dark }: { cardLinks: CardLink[]; dark:
 export function FrameActionLine({ text, fg }: { text: string; fg: string }): React.ReactElement {
   return (
     <Row align="center" gap={6} style={{ alignSelf: 'stretch' }}>
-      <Glyph icon={IconPointer} size={16} color={fg}/>
-      <Text size="sm" color={fg} selectable={Platform.OS === 'web'} style={{ flexShrink: 1 }}>{text}</Text>
+      <Glyph icon={IconPointer} size={16} color={fg} />
+      <Text size="sm" color={fg} selectable={Platform.OS === 'web'} style={{ flexShrink: 1 }}>
+        {text}
+      </Text>
     </Row>
   );
 }
 
-export function ReplyPreview({ preview, fg, sub, onPress }: {
-  preview?: string; fg: string; sub: string; onPress?: () => void;
+export function ReplyPreview({
+  preview,
+  fg,
+  sub,
+  onPress,
+}: {
+  preview?: string;
+  fg: string;
+  sub: string;
+  onPress?: () => void;
 }): React.ReactElement | null {
   if (!preview) return null;
   return (
@@ -252,11 +329,18 @@ export function ReplyPreview({ preview, fg, sub, onPress }: {
       onPress={onPress}
       disabled={!onPress}
       style={({ pressed }) => ({
-        alignSelf: 'stretch', maxWidth: ATTACHMENT_MAX_WIDTH, borderLeftWidth: 2, borderLeftColor: sub,
-        paddingLeft: 6, marginBottom: 4, opacity: pressed ? 0.45 : 0.7,
+        alignSelf: 'stretch',
+        maxWidth: ATTACHMENT_MAX_WIDTH,
+        borderLeftWidth: 2,
+        borderLeftColor: sub,
+        paddingLeft: 6,
+        marginBottom: 4,
+        opacity: pressed ? 0.45 : 0.7,
       })}
     >
-      <Text size="sm" color={fg} numberOfLines={2}>{preview}</Text>
+      <Text size="sm" color={fg} numberOfLines={2}>
+        {preview}
+      </Text>
     </Pressable>
   );
 }

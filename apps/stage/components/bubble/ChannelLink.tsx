@@ -9,7 +9,10 @@ import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
 import { MESSAGE_LINK_STYLE, type LinkPress } from './helpers';
 import { bubbleLinkProps } from './linkProps';
 
-interface LinkNames { groupName?: string; peerAddress?: string | null }
+interface LinkNames {
+  groupName?: string;
+  peerAddress?: string | null;
+}
 
 const NO_NAMES: LinkNames = {};
 
@@ -20,25 +23,40 @@ export function useChannelLinkNames(convIds: readonly string[]): Map<string, Lin
 
 function namedChildren(children: ReactNode, name: string): ReactNode {
   const [first] = Children.toArray(children);
-  return isValidElement<{ children?: ReactNode }>(first)
-    ? cloneElement(first, {}, namedChildren(first.props.children, name)) : name;
+  return isValidElement<{ children?: ReactNode }>(first) ? cloneElement(first, {}, namedChildren(first.props.children, name)) : name;
 }
 
-export function ChannelLink({ convId, label, url, text, fg, onLinkPress, element }: {
-  convId: string; label?: string; url?: string; text?: string; fg?: string;
-  onLinkPress?: LinkPress; element?: React.ReactElement<ComponentProps<typeof Text>>;
+export function ChannelLink({
+  convId,
+  label,
+  url,
+  text,
+  fg,
+  onLinkPress,
+  element,
+}: {
+  convId: string;
+  label?: string;
+  url?: string;
+  text?: string;
+  fg?: string;
+  onLinkPress?: LinkPress;
+  element?: React.ReactElement<ComponentProps<typeof Text>>;
 }): React.ReactElement {
   const router = useRouter();
   const link = MESSAGE_LINK_COLOR[useEffectiveColorScheme()];
   const meta = useChannelLinkNames([convId]).get(convId) ?? NO_NAMES;
   const name = channelLinkText(meta, label, url, text);
-  const props = url ? bubbleLinkProps(url, onLinkPress) : {
-    onPress: () => { router.push(conversationLinkOf(convId)); },
-  };
+  const props = url
+    ? bubbleLinkProps(url, onLinkPress)
+    : {
+        onPress: () => {
+          router.push(conversationLinkOf(convId));
+        },
+      };
   if (element) return cloneElement(element, props, namedChildren(element.props.children, name));
   return (
-    <Text size="lg" color={fg ?? link} style={MESSAGE_LINK_STYLE} accessibilityRole="link"
-      {...props} suppressHighlighting>
+    <Text size="lg" color={fg ?? link} style={MESSAGE_LINK_STYLE} accessibilityRole="link" {...props} suppressHighlighting>
       {name}
     </Text>
   );

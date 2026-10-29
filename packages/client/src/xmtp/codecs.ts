@@ -1,4 +1,3 @@
-
 import { parseOrThrow, type OutputSchema } from '../validate';
 
 export interface XmtpContentTypeId {
@@ -8,20 +7,30 @@ export interface XmtpContentTypeId {
   versionMinor: number;
 }
 
-export const POLL_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'metro.box', typeId: 'poll', versionMajor: 1, versionMinor: 0,
-};
+export const POLL_CONTENT_TYPE: XmtpContentTypeId = { authorityId: 'metro.box', typeId: 'poll', versionMajor: 1, versionMinor: 0 };
 export const SIGNATURE_REQUEST_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'metro.box', typeId: 'signatureRequest', versionMajor: 1, versionMinor: 0,
+  authorityId: 'metro.box',
+  typeId: 'signatureRequest',
+  versionMajor: 1,
+  versionMinor: 0,
 };
 export const SIGNATURE_REFERENCE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'metro.box', typeId: 'signatureReference', versionMajor: 1, versionMinor: 0,
+  authorityId: 'metro.box',
+  typeId: 'signatureReference',
+  versionMajor: 1,
+  versionMinor: 0,
 };
 export const WALLET_SEND_CALLS_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'xmtp.org', typeId: 'walletSendCalls', versionMajor: 1, versionMinor: 0,
+  authorityId: 'xmtp.org',
+  typeId: 'walletSendCalls',
+  versionMajor: 1,
+  versionMinor: 0,
 };
 export const TRANSACTION_REFERENCE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'xmtp.org', typeId: 'transactionReference', versionMajor: 1, versionMinor: 0,
+  authorityId: 'xmtp.org',
+  typeId: 'transactionReference',
+  versionMajor: 1,
+  versionMinor: 0,
 };
 
 export interface EncodedJsonContent {
@@ -31,17 +40,8 @@ export interface EncodedJsonContent {
   content: Uint8Array;
 }
 
-export function encodeJsonContent(
-  type: XmtpContentTypeId,
-  content: unknown,
-  fallback?: string,
-): EncodedJsonContent {
-  return {
-    type,
-    parameters: {},
-    fallback,
-    content: new TextEncoder().encode(JSON.stringify(content)),
-  };
+export function encodeJsonContent(type: XmtpContentTypeId, content: unknown, fallback?: string): EncodedJsonContent {
+  return { type, parameters: {}, fallback, content: new TextEncoder().encode(JSON.stringify(content)) };
 }
 
 export function decodeJsonContent<T>(bytes: Uint8Array, schema: OutputSchema<T>, where = 'xmtp.codec'): T {

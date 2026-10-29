@@ -6,7 +6,10 @@ import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-pr
 
 export type VideoFit = 'contain' | 'cover';
 
-export interface VideoSize { width: number; height: number }
+export interface VideoSize {
+  width: number;
+  height: number;
+}
 
 export interface VideoProps extends A2uiCommonProps {
   url: string;
@@ -25,10 +28,14 @@ function webVideoOf(frame: View | null): HTMLVideoElement | null {
 }
 
 function watchWebVideo(video: HTMLVideoElement, report: (width: number, height: number) => void): () => void {
-  const read = (): void => { report(video.videoWidth, video.videoHeight); };
+  const read = (): void => {
+    report(video.videoWidth, video.videoHeight);
+  };
   if (video.readyState >= HTMLMediaElement.HAVE_METADATA) read();
   video.addEventListener('loadedmetadata', read);
-  return () => { video.removeEventListener('loadedmetadata', read); };
+  return () => {
+    video.removeEventListener('loadedmetadata', read);
+  };
 }
 
 function watchNativeVideo(player: ExpoVideoPlayer, report: (width: number, height: number) => void): () => void {
@@ -43,17 +50,28 @@ function watchNativeVideo(player: ExpoVideoPlayer, report: (width: number, heigh
     probed = true;
     try {
       const [frame] = await player.generateThumbnailsAsync(0, SIZE_PROBE);
-      if (!frame) { fromTrack(); return; }
+      if (!frame) {
+        fromTrack();
+        return;
+      }
       if (!stopped) report(frame.width, frame.height);
       frame.release();
     } catch {
       fromTrack();
     }
   };
-  const loaded = player.addListener('sourceLoad', () => { void probe(); });
-  const ready = player.addListener('statusChange', ({ status }) => { if (status === 'readyToPlay') void probe(); });
+  const loaded = player.addListener('sourceLoad', () => {
+    void probe();
+  });
+  const ready = player.addListener('statusChange', ({ status }) => {
+    if (status === 'readyToPlay') void probe();
+  });
   if (player.status === 'readyToPlay') void probe();
-  return () => { stopped = true; loaded.remove(); ready.remove(); };
+  return () => {
+    stopped = true;
+    loaded.remove();
+    ready.remove();
+  };
 }
 
 function useVideoSize(player: ExpoVideoPlayer, frame: React.RefObject<View | null>, onVideoSize?: (size: VideoSize) => void): void {
@@ -82,14 +100,24 @@ function usePosterVisible(player: ReturnType<typeof useVideoPlayer>, posterUrl: 
     const sub = player.addListener('playingChange', ({ isPlaying }) => {
       if (isPlaying) setShowPoster(false);
     });
-    return () => { sub.remove(); };
+    return () => {
+      sub.remove();
+    };
   }, [player]);
   return Platform.OS !== 'web' && posterUrl !== undefined && showPoster;
 }
 
 export function Video(props: VideoProps): React.ReactElement {
   const {
-    url, posterUrl, controls = true, background = '#000000', aspectRatio = 16 / 9, fit = 'contain', onVideoSize, weight, accessibility,
+    url,
+    posterUrl,
+    controls = true,
+    background = '#000000',
+    aspectRatio = 16 / 9,
+    fit = 'contain',
+    onVideoSize,
+    weight,
+    accessibility,
   } = props;
   const player = useVideoPlayer({ uri: url });
   const frame = useRef<View>(null);
@@ -110,8 +138,12 @@ export function Video(props: VideoProps): React.ReactElement {
         nativeControls={controls}
         contentFit={fullscreen ? 'contain' : fit}
         fullscreenOptions={{ enable: true }}
-        onFullscreenEnter={() => { setFullscreen(true); }}
-        onFullscreenExit={() => { setFullscreen(false); }}
+        onFullscreenEnter={() => {
+          setFullscreen(true);
+        }}
+        onFullscreenExit={() => {
+          setFullscreen(false);
+        }}
         playsInline
       />
       {showPoster ? (

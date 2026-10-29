@@ -18,13 +18,25 @@ describe('labelParts', () => {
   });
 
   test('splits emoji from the dingbat and misc symbol blocks', () => {
-    expect(labelParts('✅ Done')).toEqual([{ text: '✅', emoji: true }, { text: 'Done', emoji: false }]);
-    expect(labelParts('⭐ Star')).toEqual([{ text: '⭐', emoji: true }, { text: 'Star', emoji: false }]);
-    expect(labelParts('⌛ Waiting')).toEqual([{ text: '⌛', emoji: true }, { text: 'Waiting', emoji: false }]);
+    expect(labelParts('✅ Done')).toEqual([
+      { text: '✅', emoji: true },
+      { text: 'Done', emoji: false },
+    ]);
+    expect(labelParts('⭐ Star')).toEqual([
+      { text: '⭐', emoji: true },
+      { text: 'Star', emoji: false },
+    ]);
+    expect(labelParts('⌛ Waiting')).toEqual([
+      { text: '⌛', emoji: true },
+      { text: 'Waiting', emoji: false },
+    ]);
   });
 
   test('splits a trailing emoji and one in the middle', () => {
-    expect(labelParts('Ship 🚀')).toEqual([{ text: 'Ship', emoji: false }, { text: '🚀', emoji: true }]);
+    expect(labelParts('Ship 🚀')).toEqual([
+      { text: 'Ship', emoji: false },
+      { text: '🚀', emoji: true },
+    ]);
     expect(labelParts('Hot 🔥 fix')).toEqual([
       { text: 'Hot', emoji: false },
       { text: '🔥', emoji: true },
@@ -33,16 +45,34 @@ describe('labelParts', () => {
   });
 
   test('keeps joined emoji sequences whole', () => {
-    expect(labelParts('👩‍💻 Dev')).toEqual([{ text: '👩‍💻', emoji: true }, { text: 'Dev', emoji: false }]);
-    expect(labelParts('❤️ Love')).toEqual([{ text: '❤️', emoji: true }, { text: 'Love', emoji: false }]);
-    expect(labelParts('👍🏽 Ok')).toEqual([{ text: '👍🏽', emoji: true }, { text: 'Ok', emoji: false }]);
-    expect(labelParts('🇫🇷 France')).toEqual([{ text: '🇫🇷', emoji: true }, { text: 'France', emoji: false }]);
+    expect(labelParts('👩‍💻 Dev')).toEqual([
+      { text: '👩‍💻', emoji: true },
+      { text: 'Dev', emoji: false },
+    ]);
+    expect(labelParts('❤️ Love')).toEqual([
+      { text: '❤️', emoji: true },
+      { text: 'Love', emoji: false },
+    ]);
+    expect(labelParts('👍🏽 Ok')).toEqual([
+      { text: '👍🏽', emoji: true },
+      { text: 'Ok', emoji: false },
+    ]);
+    expect(labelParts('🇫🇷 France')).toEqual([
+      { text: '🇫🇷', emoji: true },
+      { text: 'France', emoji: false },
+    ]);
     const england = '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}';
-    expect(labelParts(`${england} England`)).toEqual([{ text: england, emoji: true }, { text: 'England', emoji: false }]);
+    expect(labelParts(`${england} England`)).toEqual([
+      { text: england, emoji: true },
+      { text: 'England', emoji: false },
+    ]);
   });
 
   test('groups adjacent emoji into one part', () => {
-    expect(labelParts('🔥🔥 Urgent')).toEqual([{ text: '🔥🔥', emoji: true }, { text: 'Urgent', emoji: false }]);
+    expect(labelParts('🔥🔥 Urgent')).toEqual([
+      { text: '🔥🔥', emoji: true },
+      { text: 'Urgent', emoji: false },
+    ]);
   });
 
   test('drops the blank between two spaced emoji', () => {

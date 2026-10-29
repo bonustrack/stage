@@ -21,7 +21,8 @@ export function getDraft(convId: string): string {
 
 export function setDraftValue(key: string, value: unknown): void {
   const next = { ...store.get() };
-  if (value === undefined) Reflect.deleteProperty(next, key); else next[key] = value;
+  if (value === undefined) Reflect.deleteProperty(next, key);
+  else next[key] = value;
   store.set(Object.keys(next).length ? next : null);
 }
 
@@ -37,7 +38,9 @@ export function useDraftsVersion(): number {
   const [version, bump] = useReducer((x: number) => x + 1, 0);
   useEffect(() => {
     void loadDrafts();
-    return subscribeDrafts(() => { bump(); });
+    return subscribeDrafts(() => {
+      bump();
+    });
   }, []);
   return version;
 }
@@ -51,6 +54,8 @@ const lastAttachment = createValueStore<string | undefined>({
   deserialize: (raw) => raw,
 });
 
-export const setLastAttachment = (label: string): void => { lastAttachment.set(label); };
+export const setLastAttachment = (label: string): void => {
+  lastAttachment.set(label);
+};
 
 export const useLastAttachment = (): string | undefined => lastAttachment.use();

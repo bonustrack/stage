@@ -3,12 +3,22 @@ import { isSystemEntry } from './envelope';
 import { LEAVE_REQUEST_TYPE_ID, isGroupUpdateTypeId } from './humanize';
 import { XMTP_USER_PREFIX } from './line';
 import {
-  DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, deletedByOfContent, isDeleteRequestType,
-  isDeletedPlaceholderType, shortTypeId, type DeletedBy,
+  DELETED_MESSAGE_TYPE_ID,
+  DELETE_MESSAGE_TYPE_ID,
+  deleteTargetOfContent,
+  deletedByOfContent,
+  isDeleteRequestType,
+  isDeletedPlaceholderType,
+  shortTypeId,
+  type DeletedBy,
 } from './deleteMessage';
 import type { StreamedMessage } from './summarizeRow';
 
-interface DeletionPayload { contentType?: string; deletes?: string; deletedBy?: DeletedBy }
+interface DeletionPayload {
+  contentType?: string;
+  deletes?: string;
+  deletedBy?: DeletedBy;
+}
 
 export interface DeleteRights {
   ownDeletes?: ReadonlySet<string>;
@@ -44,9 +54,7 @@ function inboxIdOf(from: string): string {
   return from.startsWith(XMTP_USER_PREFIX) ? from.slice(XMTP_USER_PREFIX.length) : '';
 }
 
-function deleteAuthority(
-  sameSender: boolean, deleterInboxId: string, superAdmins: ReadonlySet<string>,
-): DeletedBy | null {
+function deleteAuthority(sameSender: boolean, deleterInboxId: string, superAdmins: ReadonlySet<string>): DeletedBy | null {
   if (sameSender) return 'sender';
   return deleterInboxId !== '' && superAdmins.has(deleterInboxId.toLowerCase()) ? 'admin' : null;
 }
@@ -56,7 +64,9 @@ function ownDeleteBy(senderInboxId: string, selfInboxId: string | null | undefin
 }
 
 function requestDeletion(
-  request: HistoryEntry, byId: ReadonlyMap<string, HistoryEntry>, superAdmins: ReadonlySet<string>,
+  request: HistoryEntry,
+  byId: ReadonlyMap<string, HistoryEntry>,
+  superAdmins: ReadonlySet<string>,
 ): [string, DeletedBy] | null {
   const target = deletionPayloadOf(request)?.deletes;
   const original = target === undefined ? undefined : byId.get(target);
@@ -72,7 +82,7 @@ function entryDeletion(entry: HistoryEntry, rights: DeleteRights): DeletedBy | n
 }
 
 export function deletedMessages(entries: readonly HistoryEntry[], rights: DeleteRights = {}): Map<string, DeletedBy> {
-  const byId = new Map(entries.map(e => [e.id, e]));
+  const byId = new Map(entries.map((e) => [e.id, e]));
   const out = new Map<string, DeletedBy>();
   const mark = (id: string, by: DeletedBy | null): void => {
     if (by === 'sender' || (by === 'admin' && !out.has(id))) out.set(id, by);
@@ -87,22 +97,25 @@ export function deletedMessages(entries: readonly HistoryEntry[], rights: Delete
 
 export function deletedEntryView(entry: HistoryEntry, by: DeletedBy = deletedByOf(entry)): HistoryEntry {
   return {
-    id: entry.id, ts: entry.ts, station: entry.station, line: entry.line, from: entry.from, to: entry.to,
+    id: entry.id,
+    ts: entry.ts,
+    station: entry.station,
+    line: entry.line,
+    from: entry.from,
+    to: entry.to,
     messageId: entry.messageId,
     payload: { contentType: DELETED_MESSAGE_TYPE_ID, deletedBy: by },
   };
 }
 
-export function deletedRowBy(
-  last: StreamedMessage, recent: readonly StreamedMessage[], rights: DeleteRights = {},
-): DeletedBy | null {
+export function deletedRowBy(last: StreamedMessage, recent: readonly StreamedMessage[], rights: DeleteRights = {}): DeletedBy | null {
   if (isDeletedPlaceholderType(last.contentTypeId)) return deletedByOfContent(last.content);
   if (rights.ownDeletes?.has(last.id)) return ownDeleteBy(last.senderInboxId, rights.selfInboxId);
   const typeId = shortTypeId(last.contentTypeId);
   if (isGroupUpdateTypeId(typeId) || typeId === LEAVE_REQUEST_TYPE_ID) return null;
   const found = recent
-    .filter(m => isDeleteRequestType(m.contentTypeId) && deleteTargetOfContent(m.content) === last.id)
-    .map(m => deleteAuthority(m.senderInboxId === last.senderInboxId, m.senderInboxId, rights.superAdmins ?? NO_IDS));
+    .filter((m) => isDeleteRequestType(m.contentTypeId) && deleteTargetOfContent(m.content) === last.id)
+    .map((m) => deleteAuthority(m.senderInboxId === last.senderInboxId, m.senderInboxId, rights.superAdmins ?? NO_IDS));
   if (found.includes('sender')) return 'sender';
   return found.includes('admin') ? 'admin' : null;
 }

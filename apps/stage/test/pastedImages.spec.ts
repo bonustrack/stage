@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  carriesPlainText, imageItemIndexes, pastedImageName, takesImagePaste, takesPicturePaste,
+  carriesPlainText,
+  imageItemIndexes,
+  pastedImageName,
+  takesImagePaste,
+  takesPicturePaste,
 } from '../components/composer/pastedImages.model';
 
 describe('pasting images into the composer', () => {
@@ -12,12 +16,14 @@ describe('pasting images into the composer', () => {
   });
 
   test('keeps only image files from the clipboard', () => {
-    expect(imageItemIndexes([
-      { kind: 'string', type: 'text/plain' },
-      { kind: 'file', type: 'image/png' },
-      { kind: 'file', type: 'application/pdf' },
-      { kind: 'file', type: 'image/jpeg' },
-    ])).toEqual([1, 3]);
+    expect(
+      imageItemIndexes([
+        { kind: 'string', type: 'text/plain' },
+        { kind: 'file', type: 'image/png' },
+        { kind: 'file', type: 'application/pdf' },
+        { kind: 'file', type: 'image/jpeg' },
+      ]),
+    ).toEqual([1, 3]);
   });
 
   test('names unnamed pasted images by their type', () => {
@@ -36,8 +42,18 @@ describe('pasting an image as a profile or group picture', () => {
 
   test('sees plain text only in string items', () => {
     expect(carriesPlainText([{ kind: 'file', type: 'image/png' }])).toBe(false);
-    expect(carriesPlainText([{ kind: 'string', type: 'text/html' }, { kind: 'file', type: 'image/png' }])).toBe(false);
+    expect(
+      carriesPlainText([
+        { kind: 'string', type: 'text/html' },
+        { kind: 'file', type: 'image/png' },
+      ]),
+    ).toBe(false);
     expect(carriesPlainText([{ kind: 'file', type: 'text/plain' }])).toBe(false);
-    expect(carriesPlainText([{ kind: 'file', type: 'image/png' }, { kind: 'string', type: 'text/plain' }])).toBe(true);
+    expect(
+      carriesPlainText([
+        { kind: 'file', type: 'image/png' },
+        { kind: 'string', type: 'text/plain' },
+      ]),
+    ).toBe(true);
   });
 });

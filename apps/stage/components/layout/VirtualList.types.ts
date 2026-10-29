@@ -3,14 +3,36 @@ import type { SimultaneousRefs } from '../SwipeTabs.types';
 
 type SharedFlatListProps<T> = Pick<
   FlatListProps<T>,
-  | 'data' | 'renderItem' | 'keyExtractor' | 'extraData'
-  | 'ListHeaderComponent' | 'ListHeaderComponentStyle' | 'ListFooterComponent' | 'ListEmptyComponent'
-  | 'style' | 'contentContainerStyle'
-  | 'onEndReached' | 'onEndReachedThreshold' | 'onStartReached' | 'onStartReachedThreshold'
-  | 'onScroll' | 'scrollEventThrottle' | 'onScrollBeginDrag' | 'onContentSizeChange' | 'onLayout'
-  | 'inverted' | 'initialScrollIndex' | 'initialNumToRender' | 'windowSize' | 'maxToRenderPerBatch'
-  | 'removeClippedSubviews' | 'maintainVisibleContentPosition' | 'onScrollToIndexFailed'
-  | 'showsVerticalScrollIndicator' | 'keyboardShouldPersistTaps' | 'keyboardDismissMode'
+  | 'data'
+  | 'renderItem'
+  | 'keyExtractor'
+  | 'extraData'
+  | 'ListHeaderComponent'
+  | 'ListHeaderComponentStyle'
+  | 'ListFooterComponent'
+  | 'ListEmptyComponent'
+  | 'style'
+  | 'contentContainerStyle'
+  | 'onEndReached'
+  | 'onEndReachedThreshold'
+  | 'onStartReached'
+  | 'onStartReachedThreshold'
+  | 'onScroll'
+  | 'scrollEventThrottle'
+  | 'onScrollBeginDrag'
+  | 'onContentSizeChange'
+  | 'onLayout'
+  | 'inverted'
+  | 'initialScrollIndex'
+  | 'initialNumToRender'
+  | 'windowSize'
+  | 'maxToRenderPerBatch'
+  | 'removeClippedSubviews'
+  | 'maintainVisibleContentPosition'
+  | 'onScrollToIndexFailed'
+  | 'showsVerticalScrollIndicator'
+  | 'keyboardShouldPersistTaps'
+  | 'keyboardDismissMode'
 >;
 
 export type ListScrollMode = 'window' | 'self';
@@ -23,7 +45,10 @@ export interface VirtualListProps<T> extends SharedFlatListProps<T> {
   stickToEnd?: () => boolean;
 }
 
-export interface ListAnchor { key: string; offset: number }
+export interface ListAnchor {
+  key: string;
+  offset: number;
+}
 
 export interface VirtualListHandle {
   scrollToOffset(params: { offset: number; animated?: boolean }): void;

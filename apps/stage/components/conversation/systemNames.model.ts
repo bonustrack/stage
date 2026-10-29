@@ -1,7 +1,11 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
 import {
-  groupUpdateInboxIds, humanizeGroupUpdated, onlyMembersLeft, type GroupUpdatedContent, type InboxNamer,
+  groupUpdateInboxIds,
+  humanizeGroupUpdated,
+  onlyMembersLeft,
+  type GroupUpdatedContent,
+  type InboxNamer,
 } from '@stage-labs/client/xmtp/humanize';
 import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';
 import { mentionToken } from '@stage-labs/client/xmtp/mentions';
@@ -25,7 +29,7 @@ function systemLineInboxIds(entry: HistoryEntry): string[] {
 
 export function unknownSystemLineInboxIds(entries: readonly HistoryEntry[], known: Record<string, string>): string[] {
   const ids = new Set(entries.flatMap(systemLineInboxIds));
-  return [...ids].filter(id => id !== '' && !Object.hasOwn(known, id)).sort();
+  return [...ids].filter((id) => id !== '' && !Object.hasOwn(known, id)).sort();
 }
 
 export function withMemberNames<E extends HistoryEntry>(entry: E, nameOf: InboxNamer): E {
@@ -35,10 +39,7 @@ export function withMemberNames<E extends HistoryEntry>(entry: E, nameOf: InboxN
   return text === entry.text ? entry : { ...entry, text };
 }
 
-export function memberNamer(
-  selfInboxId: string | null,
-  addressOf: (inboxId: string) => string | null,
-): InboxNamer {
+export function memberNamer(selfInboxId: string | null, addressOf: (inboxId: string) => string | null): InboxNamer {
   return (inboxId) => {
     if (inboxId === selfInboxId) return 'you';
     const address = addressOf(inboxId);

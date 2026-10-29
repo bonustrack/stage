@@ -18,12 +18,17 @@ export function useWarmSendPath(line: string | undefined, draft: Pick<ComposerSt
     const current = (): boolean => live && isAppInFront() && getAccountEpoch() === epoch && getAccountSelection() === selection;
     const warm = (): void => {
       if (!current()) return;
-      void xmtpClient().then(async client => {
-        if (current()) await warmSenderFilters(client);
-      }).catch(ignored(undefined, 'optional'));
+      void xmtpClient()
+        .then(async (client) => {
+          if (current()) await warmSenderFilters(client);
+        })
+        .catch(ignored(undefined, 'optional'));
     };
     warm();
     const stop = subscribeAppInFront(warm);
-    return () => { live = false; stop(); };
+    return () => {
+      live = false;
+      stop();
+    };
   }, [line, focused, epoch, selection, draft.text, draft.pending.length]);
 }

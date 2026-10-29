@@ -1,4 +1,1 @@
-{
-  "extends": "@stage-labs/config/tsconfig/base.json",
-  "include": ["src/**/*"]
-}
+{ "extends": "@stage-labs/config/tsconfig/base.json", "include": ["src/**/*"] }

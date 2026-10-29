@@ -4,10 +4,22 @@ export const ZOOM_DOUBLE_TAP = 2.5;
 
 const ZOOMED_EPSILON = 0.01;
 
-export interface ZoomSize { width: number; height: number }
-export interface ZoomPoint { x: number; y: number }
-export interface ZoomState extends ZoomPoint { scale: number }
-export interface ZoomGeometry { view: ZoomSize; natural: ZoomSize; frame: ZoomPoint }
+export interface ZoomSize {
+  width: number;
+  height: number;
+}
+export interface ZoomPoint {
+  x: number;
+  y: number;
+}
+export interface ZoomState extends ZoomPoint {
+  scale: number;
+}
+export interface ZoomGeometry {
+  view: ZoomSize;
+  natural: ZoomSize;
+  frame: ZoomPoint;
+}
 
 export const ZOOM_RESET: ZoomState = { scale: ZOOM_MIN, x: 0, y: 0 };
 
@@ -67,15 +79,16 @@ export function clampOffset(offset: ZoomPoint, geometry: ZoomGeometry, scale: nu
 }
 
 export function zoomAround(
-  start: ZoomState, startFocal: ZoomPoint, focal: ZoomPoint, pinchScale: number, geometry: ZoomGeometry,
+  start: ZoomState,
+  startFocal: ZoomPoint,
+  focal: ZoomPoint,
+  pinchScale: number,
+  geometry: ZoomGeometry,
 ): ZoomState {
   'worklet';
   const scale = clampZoom(start.scale * pinchScale);
   const ratio = scale / start.scale;
-  const offset = {
-    x: focal.x - ratio * (startFocal.x - start.x),
-    y: focal.y - ratio * (startFocal.y - start.y),
-  };
+  const offset = { x: focal.x - ratio * (startFocal.x - start.x), y: focal.y - ratio * (startFocal.y - start.y) };
   return { scale, ...clampOffset(offset, geometry, scale) };
 }
 

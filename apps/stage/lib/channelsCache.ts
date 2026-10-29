@@ -2,7 +2,10 @@ import { secureStorage } from '../platform/storage';
 import { PersistentStore, getSecure, setSecure } from './cache.shared';
 import { makeListeners } from './storeCore';
 import {
-  applyRead, applyUnread, applySentPatch, normalizeChannelRowTitle,
+  applyRead,
+  applyUnread,
+  applySentPatch,
+  normalizeChannelRowTitle,
   type CachedChannelRow,
 } from '@stage-labs/client/xmtp/channelsCache';
 import { attempt, ignored } from './errorPolicy';
@@ -46,21 +49,34 @@ function fileNameFor(id: string): string {
 function storeFor(id: string): PersistentStore<CachedRow[]> {
   let s = stores.get(id);
   if (!s) {
-    s = new PersistentStore<CachedRow[]>(fileNameFor(id), undefined, async rows => (await visibleCachedRows(id, rows)).map(normalizeChannelRowTitle));
+    s = new PersistentStore<CachedRow[]>(fileNameFor(id), undefined, async (rows) =>
+      (await visibleCachedRows(id, rows)).map(normalizeChannelRowTitle),
+    );
     stores.set(id, s);
   }
   return s;
 }
 
-function activeStore(): PersistentStore<CachedRow[]> { return storeFor(activeId); }
+function activeStore(): PersistentStore<CachedRow[]> {
+  return storeFor(activeId);
+}
 
-export function getActiveAccountIdSync(): string { return activeId; }
+export function getActiveAccountIdSync(): string {
+  return activeId;
+}
 
-export function knownActiveAccountId(): string | null { return activeId === DEFAULT_KEY ? null : activeId; }
+export function knownActiveAccountId(): string | null {
+  return activeId === DEFAULT_KEY ? null : activeId;
+}
 
 function bindActiveStore(): void {
-  if (activeStoreUnsub) { attempt(activeStoreUnsub, 'cleanup'); activeStoreUnsub = null; }
-  activeStoreUnsub = activeStore().subscribe(() => { notifyActive(); });
+  if (activeStoreUnsub) {
+    attempt(activeStoreUnsub, 'cleanup');
+    activeStoreUnsub = null;
+  }
+  activeStoreUnsub = activeStore().subscribe(() => {
+    notifyActive();
+  });
 }
 bindActiveStore();
 
@@ -79,8 +95,12 @@ export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
   return Array.isArray(v) ? v : null;
 }
 
-export function getCachedRows(): CachedRow[] | null { return activeStore().get(); }
-export function setCachedRows(next: CachedRow[] | null): void { activeStore().set(next?.map(normalizeChannelRowTitle) ?? null); }
+export function getCachedRows(): CachedRow[] | null {
+  return activeStore().get();
+}
+export function setCachedRows(next: CachedRow[] | null): void {
+  activeStore().set(next?.map(normalizeChannelRowTitle) ?? null);
+}
 export const subscribeCachedRows = activeListeners.subscribe;
 
 const LAST_READ_PREFIX = 'unread.lastRead.';

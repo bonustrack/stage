@@ -1,5 +1,11 @@
 import {
-  DEFAULT_HOME_VIEW, type DashboardContent, type DashboardWidget, type DeveloperModeContent, type HomeViewContent, type HomeViewEdit, type SearchStateContent,
+  DEFAULT_HOME_VIEW,
+  type DashboardContent,
+  type DashboardWidget,
+  type DeveloperModeContent,
+  type HomeViewContent,
+  type HomeViewEdit,
+  type SearchStateContent,
 } from '@stage-labs/client/xmtp/readState';
 
 function stamped<T extends { at: number }>(current: T, change: Partial<NoInfer<T>>, now: number): T {
@@ -30,7 +36,7 @@ export function syncedSearch(state: SearchStateContent): SearchStateContent {
 
 export function toggledLabel(labels: readonly string[], label: string): string[] {
   const key = label.toLowerCase();
-  return labels.includes(key) ? labels.filter(l => l !== key) : [...labels, key].sort();
+  return labels.includes(key) ? labels.filter((l) => l !== key) : [...labels, key].sort();
 }
 
 export function syncsHomeView(edit: HomeViewEdit): boolean {

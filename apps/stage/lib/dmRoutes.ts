@@ -1,6 +1,4 @@
-import {
-  NO_ROUTES, dmRowId, isImportReplay, routeOf, withRoute, type ConvRoutes,
-} from '@stage-labs/client/xmtp/dmRoutes';
+import { NO_ROUTES, dmRowId, isImportReplay, routeOf, withRoute, type ConvRoutes } from '@stage-labs/client/xmtp/dmRoutes';
 import { createValueStore } from './persistedStore';
 import { reported } from './errorPolicy';
 
@@ -20,7 +18,11 @@ function parseNs(raw: string): number {
 }
 
 const routes = createValueStore<ConvRoutes>({
-  key: 'xmtp.dmRoutes.', default: NO_ROUTES, deserialize: parseRoutes, serialize: (v) => JSON.stringify(v), perAccount: true,
+  key: 'xmtp.dmRoutes.',
+  default: NO_ROUTES,
+  deserialize: parseRoutes,
+  serialize: (v) => JSON.stringify(v),
+  perAccount: true,
 });
 const importedUntil = createValueStore<number>({ key: 'xmtp.importedUntilNs.', default: 0, deserialize: parseNs, perAccount: true });
 

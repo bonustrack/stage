@@ -10,20 +10,27 @@ export function KeyboardResync(): null {
   const [lifted, setLifted] = useState(false);
   useAnimatedReaction(
     () => height.value !== 0 || progress.value !== 0,
-    (now, before) => { if (now !== before) runOnJS(setLifted)(now); },
+    (now, before) => {
+      if (now !== before) runOnJS(setLifted)(now);
+    },
   );
   useEffect(() => {
     if (Platform.OS !== 'android' || !lifted) return;
     let misses = 0;
     let appPaused = AppState.currentState !== 'active';
-    const app = AppState.addEventListener('change', (state) => { if (state !== 'active') appPaused = true; });
+    const app = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') appPaused = true;
+    });
     const timer = setInterval(() => {
       misses = keyboardMisses(misses, Keyboard.isVisible(), input.get() !== null, appPaused);
       if (misses < KEYBOARD_MISSES_TO_DROP) return;
       height.set(withTiming(0));
       progress.set(withTiming(0));
     }, KEYBOARD_CHECK_MS);
-    return () => { clearInterval(timer); app.remove(); };
+    return () => {
+      clearInterval(timer);
+      app.remove();
+    };
   }, [lifted, height, progress, input]);
   return null;
 }

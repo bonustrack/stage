@@ -18,7 +18,11 @@ const BOX_TAGS = new Set(['Row', 'Column']);
 const stageThemeNative = {
   rules: {
     'prefer-role-variant': {
-      meta: { type: 'suggestion', docs: { description: 'prefer theme-native role/surface variants over per-call color/background palette idents' }, schema: [] },
+      meta: {
+        type: 'suggestion',
+        docs: { description: 'prefer theme-native role/surface variants over per-call color/background palette idents' },
+        schema: [],
+      },
       create(context) {
         return {
           JSXAttribute(node) {
@@ -33,9 +37,15 @@ const stageThemeNative = {
             if (!expr || expr.type !== 'Identifier') return;
             const name = expr.name;
             if (attr === 'color' && TEXT_TAGS.has(tag) && TEXT_ROLE_HINT[name]) {
-              context.report({ node, message: `theme-native: prefer ${TEXT_ROLE_HINT[name]} over color={${name}} on <${tag}> (color is an override escape hatch).` });
+              context.report({
+                node,
+                message: `theme-native: prefer ${TEXT_ROLE_HINT[name]} over color={${name}} on <${tag}> (color is an override escape hatch).`,
+              });
             } else if (attr === 'background' && BOX_TAGS.has(tag) && BOX_SURFACE_HINT[name]) {
-              context.report({ node, message: `theme-native: prefer ${BOX_SURFACE_HINT[name]} over background={${name}} on <${tag}> (background is an override escape hatch).` });
+              context.report({
+                node,
+                message: `theme-native: prefer ${BOX_SURFACE_HINT[name]} over background={${name}} on <${tag}> (background is an override escape hatch).`,
+              });
             }
           },
         };
@@ -45,53 +55,47 @@ const stageThemeNative = {
 };
 
 const SECRET_KEY_CONSTANTS = new Set(['PK_PREFIX', 'LEGACY_PK_KEY']);
-const SECRET_VIEM_NAMES = new Set([
-  'privateKeyToAccount', 'generatePrivateKey', 'mnemonicToAccount', 'hdKeyToAccount',
-]);
+const SECRET_VIEM_NAMES = new Set(['privateKeyToAccount', 'generatePrivateKey', 'mnemonicToAccount', 'hdKeyToAccount']);
 const keyringGuardRule = {
   'no-keyring-bypass': {
-      meta: {
-        type: 'problem',
-        docs: { description: 'only lib/zerodev/keyring may import private-key/mnemonic primitives' },
-        schema: [],
-      },
-      create(context) {
-        const file = (context.filename ?? context.getFilename?.() ?? '').replace(/\\/g, '/');
-        if (file.endsWith('/lib/zerodev/keyring.ts')) return {};
-        const fail = (node, what) =>
-          context.report({
-            node,
-            message:
-              `Keyring guard: ${what} must only be imported by lib/zerodev/keyring (the single ` +
-              'private-key/mnemonic chokepoint). Use the keyring\'s public API instead.',
-          });
-        return {
-          ImportDeclaration(node) {
-            const src = node.source.value;
-            if (src === '@stage-labs/client/zerodev/derive') {
-              for (const s of node.specifiers) {
-                const name = s.imported?.name;
-                if (name === 'deriveOwner' || name === 'generateWalletMnemonic') {
-                  fail(node, `'${name}' from @stage-labs/client/zerodev/derive`);
-                }
-              }
-            } else if (src === '@stage-labs/client/accounts/keys') {
-              for (const s of node.specifiers) {
-                if (s.imported && SECRET_KEY_CONSTANTS.has(s.imported.name)) {
-                  fail(node, `the private-key storage-key constant '${s.imported.name}'`);
-                }
-              }
-            } else if (src === 'viem/accounts') {
-              for (const s of node.specifiers) {
-                if (s.imported && SECRET_VIEM_NAMES.has(s.imported.name)) {
-                  fail(node, `'${s.imported.name}' from viem/accounts`);
-                }
+    meta: { type: 'problem', docs: { description: 'only lib/zerodev/keyring may import private-key/mnemonic primitives' }, schema: [] },
+    create(context) {
+      const file = (context.filename ?? context.getFilename?.() ?? '').replace(/\\/g, '/');
+      if (file.endsWith('/lib/zerodev/keyring.ts')) return {};
+      const fail = (node, what) =>
+        context.report({
+          node,
+          message:
+            `Keyring guard: ${what} must only be imported by lib/zerodev/keyring (the single ` +
+            "private-key/mnemonic chokepoint). Use the keyring's public API instead.",
+        });
+      return {
+        ImportDeclaration(node) {
+          const src = node.source.value;
+          if (src === '@stage-labs/client/zerodev/derive') {
+            for (const s of node.specifiers) {
+              const name = s.imported?.name;
+              if (name === 'deriveOwner' || name === 'generateWalletMnemonic') {
+                fail(node, `'${name}' from @stage-labs/client/zerodev/derive`);
               }
             }
-          },
-        };
-      },
+          } else if (src === '@stage-labs/client/accounts/keys') {
+            for (const s of node.specifiers) {
+              if (s.imported && SECRET_KEY_CONSTANTS.has(s.imported.name)) {
+                fail(node, `the private-key storage-key constant '${s.imported.name}'`);
+              }
+            }
+          } else if (src === 'viem/accounts') {
+            for (const s of node.specifiers) {
+              if (s.imported && SECRET_VIEM_NAMES.has(s.imported.name)) {
+                fail(node, `'${s.imported.name}' from viem/accounts`);
+              }
+            }
+          }
+        },
+      };
     },
+  },
 };
 
 const NATIVE_ONLY_PACKAGES = new Set(['@xmtp/react-native-sdk']);
@@ -128,7 +132,10 @@ const nativeSeamRule = {
         ImportDeclaration(node) {
           if (isTypeOnlyImport(node)) {
             if (node.importKind !== 'type' && NATIVE_ONLY_PACKAGES.has(node.source.value)) {
-              context.report({ node, message: `Write \`import type\` for '${node.source.value}': an inline-type-only import can survive as a side-effect import on web.` });
+              context.report({
+                node,
+                message: `Write \`import type\` for '${node.source.value}': an inline-type-only import can survive as a side-effect import on web.`,
+              });
             }
             return;
           }
@@ -169,7 +176,10 @@ const errorPolicyRule = {
   'no-silent-catch': {
     meta: {
       type: 'problem',
-      docs: { description: 'every swallowed error goes through lib/errorPolicy (ignore/ignored/attempt for best-effort, report/reported/recover to log)' },
+      docs: {
+        description:
+          'every swallowed error goes through lib/errorPolicy (ignore/ignored/attempt for best-effort, report/reported/recover to log)',
+      },
       schema: [],
     },
     create(context) {
@@ -178,7 +188,8 @@ const errorPolicyRule = {
           if (node.body.body.length > 0) return;
           context.report({
             node,
-            message: 'Empty catch: use attempt()/ignore()/ignored() from lib/errorPolicy for intentional best-effort work (with a BestEffort reason), or report() to log and continue.',
+            message:
+              'Empty catch: use attempt()/ignore()/ignored() from lib/errorPolicy for intentional best-effort work (with a BestEffort reason), or report() to log and continue.',
           });
         },
         CallExpression(node) {
@@ -187,7 +198,8 @@ const errorPolicyRule = {
           if (!isSilentHandler(node.arguments[0])) return;
           context.report({
             node,
-            message: 'Silent .catch: use .catch(ignored(value, reason)) or ignore(promise, reason) for best-effort work, or .catch(reported(scope)) / .catch(recover(scope, value)) to log, from lib/errorPolicy.',
+            message:
+              'Silent .catch: use .catch(ignored(value, reason)) or ignore(promise, reason) for best-effort work, or .catch(reported(scope)) / .catch(recover(scope, value)) to log, from lib/errorPolicy.',
           });
         },
       };

@@ -25,14 +25,27 @@ function SelectControl({ argType, value, size, onChange }: ControlProps): React.
   return (
     <select
       value={argToText(value)}
-      onChange={(event) => { onChange(event.target.value === '' ? undefined : argType.options?.find((o) => String(o) === event.target.value)); }}
+      onChange={(event) => {
+        onChange(event.target.value === '' ? undefined : argType.options?.find((o) => String(o) === event.target.value));
+      }}
       style={{
-        minHeight: box.minHeight, padding: `0 ${box.paddingHorizontal}px`, borderRadius: CONTROL_RADIUS_DEFAULT, border: 'none', outline: 'none',
-        background: pal.inputBg, color: pal.link, fontFamily: fontFamily.sans.join(', '), fontSize: box.fontSize,
+        minHeight: box.minHeight,
+        padding: `0 ${box.paddingHorizontal}px`,
+        borderRadius: CONTROL_RADIUS_DEFAULT,
+        border: 'none',
+        outline: 'none',
+        background: pal.inputBg,
+        color: pal.link,
+        fontFamily: fontFamily.sans.join(', '),
+        fontSize: box.fontSize,
       }}
     >
       <option value="">-</option>
-      {(argType.options ?? []).map((o) => <option key={String(o)} value={String(o)}>{String(o)}</option>)}
+      {(argType.options ?? []).map((o) => (
+        <option key={String(o)} value={String(o)}>
+          {String(o)}
+        </option>
+      ))}
     </select>
   );
 }
@@ -45,11 +58,21 @@ function NumberControl({ argType, value, size, onChange }: ControlProps): React.
     <Row gap={8} align="center">
       <Column weight={1}>
         <TextField
-          dark={dark} size={size} variant="number" value={argToText(value)} placeholder={hint || 'number'}
-          onChangeText={(text) => { onChange(text === '' ? undefined : Number(text)); }}
+          dark={dark}
+          size={size}
+          variant="number"
+          value={argToText(value)}
+          placeholder={hint || 'number'}
+          onChangeText={(text) => {
+            onChange(text === '' ? undefined : Number(text));
+          }}
         />
       </Column>
-      {hint ? <Text size="3xs" color="secondary">{hint}</Text> : null}
+      {hint ? (
+        <Text size="3xs" color="secondary">
+          {hint}
+        </Text>
+      ) : null}
     </Row>
   );
 }
@@ -63,7 +86,15 @@ function ColorControl({ value, size, onChange }: ControlProps): React.ReactEleme
     <Row gap={8} align="center">
       <Column size={32} radius="sm" background={swatch} border={{ top: edge, right: edge, bottom: edge, left: edge }} />
       <Column weight={1}>
-        <TextField dark={dark} size={size} value={argToText(value)} placeholder="#rrggbb" onChangeText={(text) => { onChange(text === '' ? undefined : text); }} />
+        <TextField
+          dark={dark}
+          size={size}
+          value={argToText(value)}
+          placeholder="#rrggbb"
+          onChangeText={(text) => {
+            onChange(text === '' ? undefined : text);
+          }}
+        />
       </Column>
     </Row>
   );
@@ -76,10 +107,25 @@ function Control(props: ControlProps): React.ReactElement {
   if (type === 'select') return <SelectControl {...props} />;
   if (type === 'number' || type === 'range') return <NumberControl {...props} />;
   if (type === 'color') return <ColorControl {...props} />;
-  return <TextField dark={dark} size={props.size} value={argToText(props.value)} onChangeText={(text) => { props.onChange(text); }} />;
+  return (
+    <TextField
+      dark={dark}
+      size={props.size}
+      value={argToText(props.value)}
+      onChangeText={(text) => {
+        props.onChange(text);
+      }}
+    />
+  );
 }
 
-export function ControlsPanel({ argTypes, values, onChange, onReset, touch = false }: {
+export function ControlsPanel({
+  argTypes,
+  values,
+  onChange,
+  onReset,
+  touch = false,
+}: {
   argTypes: Record<string, ArgType>;
   values: Record<string, unknown>;
   onChange: (name: string, next: unknown) => void;
@@ -90,13 +136,25 @@ export function ControlsPanel({ argTypes, values, onChange, onReset, touch = fal
   return (
     <Column gap={14} padding={16}>
       <Row align="center" justify="spaceBetween">
-        <Text fontWeight="semibold" size="xl">Controls</Text>
+        <Text fontWeight="semibold" size="xl">
+          Controls
+        </Text>
         <Button dark={dark} size={touch ? 'md' : 'sm'} variant="ghost" color="secondary" label="Reset" onPress={onReset} />
       </Row>
       {Object.entries(argTypes).map(([name, argType]) => (
         <Column key={name} gap={4}>
-          <Text size="2xs" color="secondary">{name}</Text>
-          <Control name={name} argType={argType} value={values[name]} size={touch ? 'lg' : 'md'} onChange={(next) => { onChange(name, next); }} />
+          <Text size="2xs" color="secondary">
+            {name}
+          </Text>
+          <Control
+            name={name}
+            argType={argType}
+            value={values[name]}
+            size={touch ? 'lg' : 'md'}
+            onChange={(next) => {
+              onChange(name, next);
+            }}
+          />
         </Column>
       ))}
     </Column>

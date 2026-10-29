@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { makeSenderFilterPublisher, maintainPushPaths, prepareNotifyingSend, type SenderFilterInput } from '@stage-labs/client/xmtp/pushSenderFilter';
+import {
+  makeSenderFilterPublisher,
+  maintainPushPaths,
+  prepareNotifyingSend,
+  type SenderFilterInput,
+} from '@stage-labs/client/xmtp/pushSenderFilter';
 import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';
 import type { PushTopics } from '@stage-labs/client/xmtp/pushRegistration';
 import { makeSendTimingDiagnostic } from '../lib/sendTiming.core';
@@ -21,24 +26,46 @@ function fixture(timeoutMs = 1_000) {
     hmacKeys: { [TOPIC]: [{ thirtyDayPeriodsSinceEpoch: PERIOD, hmacKey: key }] },
   });
   const input: SenderFilterInput = {
-    installationId: 'a'.repeat(64), current: () => current, signal: controller.signal,
-    groupKey: async () => 'b'.repeat(64), sign: async () => new Uint8Array(64),
-    syncPreferences: () => sync(), collectTopics: collect,
-    post: async body => { if (fail) throw new Error('offline'); bodies.push(body.payload); },
+    installationId: 'a'.repeat(64),
+    current: () => current,
+    signal: controller.signal,
+    groupKey: async () => 'b'.repeat(64),
+    sign: async () => new Uint8Array(64),
+    syncPreferences: () => sync(),
+    collectTopics: collect,
+    post: async (body) => {
+      if (fail) throw new Error('offline');
+      bodies.push(body.payload);
+    },
   };
   return {
-    publisher, input, bodies, controller,
-    setCurrent: (value: boolean) => { current = value; },
-    setKey: (value: number) => { key = new Uint8Array(42).fill(value); },
-    setFailure: (value: boolean) => { fail = value; },
-    setSync: (value: typeof sync) => { sync = value; },
-    advance: (ms: number) => { now += ms; },
+    publisher,
+    input,
+    bodies,
+    controller,
+    setCurrent: (value: boolean) => {
+      current = value;
+    },
+    setKey: (value: number) => {
+      key = new Uint8Array(42).fill(value);
+    },
+    setFailure: (value: boolean) => {
+      fail = value;
+    },
+    setSync: (value: typeof sync) => {
+      sync = value;
+    },
+    advance: (ms: number) => {
+      now += ms;
+    },
   };
 }
 
 function deferred() {
   let release = (): void => undefined;
-  const promise = new Promise<void>(resolve => { release = resolve; });
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   return { promise, release };
 }
 
@@ -46,7 +73,15 @@ describe('account-wide sender publication without a push token', () => {
   test('receiving registration starts independently and remains maintained when publication fails', async () => {
     const gate = deferred();
     let received = false;
-    const work = maintainPushPaths(async () => { await gate.promise; throw new Error('filter offline'); }, async () => { received = true; });
+    const work = maintainPushPaths(
+      async () => {
+        await gate.promise;
+        throw new Error('filter offline');
+      },
+      async () => {
+        received = true;
+      },
+    );
     expect(received).toBe(true);
     gate.release();
     await expect(work).rejects.toThrow('filter offline');
@@ -54,18 +89,29 @@ describe('account-wide sender publication without a push token', () => {
 
   test('call control bypasses publication while notifying messages fail closed and account checks remain', async () => {
     let checks = 0;
-    const check = (): void => { checks += 1; };
-    const publish = async (): Promise<void> => { throw new Error('offline'); };
+    const check = (): void => {
+      checks += 1;
+    };
+    const publish = async (): Promise<void> => {
+      throw new Error('offline');
+    };
     await prepareNotifyingSend(CALL_SIGNAL_CODEC.shouldPush(), publish, check);
     expect(checks).toBe(2);
     await expect(prepareNotifyingSend(CALL_INVITE_CODEC.shouldPush(), publish, check)).rejects.toThrow('offline');
-    await expect(prepareNotifyingSend(false, publish, () => { throw new Error('account changed'); })).rejects.toThrow('account changed');
+    await expect(
+      prepareNotifyingSend(false, publish, () => {
+        throw new Error('account changed');
+      }),
+    ).rejects.toThrow('account changed');
   });
 
   test('selected conversation collection never requests an account-wide scan', async () => {
     const f = fixture();
     const original = f.input.collectTopics;
-    f.input.collectTopics = async topic => { expect(topic).toBe(TOPIC); return original(topic); };
+    f.input.collectTopics = async (topic) => {
+      expect(topic).toBe(TOPIC);
+      return original(topic);
+    };
     await f.publisher.publish({ ...f.input, topic: TOPIC });
     expect(f.bodies).toHaveLength(1);
   });
@@ -75,7 +121,7 @@ describe('account-wide sender publication without a push token', () => {
     f.setSync(() => new Promise(() => undefined));
     const started = performance.now();
     const outcomes = await Promise.allSettled(Array.from({ length: 5 }, () => f.publisher.publish(f.input)));
-    expect(outcomes.every(result => result.status === 'rejected')).toBe(true);
+    expect(outcomes.every((result) => result.status === 'rejected')).toBe(true);
     expect(performance.now() - started).toBeLessThan(200);
     expect(f.bodies).toHaveLength(0);
     f.setSync(async () => undefined);
@@ -85,7 +131,9 @@ describe('account-wide sender publication without a push token', () => {
 
   test('publishes keys after sync, without tokens, subscriptions or plaintext', async () => {
     const f = fixture();
-    f.setSync(async () => { f.setKey(2); });
+    f.setSync(async () => {
+      f.setKey(2);
+    });
     await f.publisher.publish(f.input);
     const body = JSON.parse(f.bodies[0] ?? '{}') as { topics: { topic: string; hmacKeys: { key: string }[] }[] };
     expect(body.topics).toHaveLength(1);
@@ -113,7 +161,9 @@ describe('account-wide sender publication without a push token', () => {
   test('a preference sync from the last thirty seconds is reused by the next notifying send', async () => {
     const f = fixture();
     let syncs = 0;
-    f.setSync(async () => { syncs += 1; });
+    f.setSync(async () => {
+      syncs += 1;
+    });
     await f.publisher.publish({ ...f.input, topic: TOPIC });
     await f.publisher.publish({ ...f.input, topic: TOPIC });
     expect(syncs).toBe(1);
@@ -129,7 +179,9 @@ describe('account-wide sender publication without a push token', () => {
   test('a warm-up sync while the user types lets the next notifying send skip its own sync', async () => {
     const f = fixture();
     let syncs = 0;
-    f.setSync(async () => { syncs += 1; });
+    f.setSync(async () => {
+      syncs += 1;
+    });
     await f.publisher.warm(f.input);
     await f.publisher.publish({ ...f.input, topic: TOPIC });
     expect(syncs).toBe(1);
@@ -143,7 +195,10 @@ describe('account-wide sender publication without a push token', () => {
     const f = fixture();
     const gate = deferred();
     let syncs = 0;
-    f.setSync(async () => { syncs += 1; await gate.promise; });
+    f.setSync(async () => {
+      syncs += 1;
+      await gate.promise;
+    });
     const warming = f.publisher.warm(f.input);
     const sending = f.publisher.publish({ ...f.input, topic: TOPIC });
     gate.release();
@@ -155,7 +210,9 @@ describe('account-wide sender publication without a push token', () => {
   test('expired warming is refreshed before a notifying send publishes', async () => {
     const f = fixture();
     let syncs = 0;
-    f.setSync(async () => { syncs += 1; });
+    f.setSync(async () => {
+      syncs += 1;
+    });
     await f.publisher.warm(f.input);
     f.advance(30_000);
     await f.publisher.publish({ ...f.input, topic: TOPIC });
@@ -166,15 +223,24 @@ describe('account-wide sender publication without a push token', () => {
   test('failed warming is not cached and cannot let a notifying send bypass preparation', async () => {
     const f = fixture();
     let syncs = 0;
-    f.setSync(async () => { syncs += 1; throw new Error('offline'); });
+    f.setSync(async () => {
+      syncs += 1;
+      throw new Error('offline');
+    });
     await expect(f.publisher.warm(f.input)).rejects.toThrow('offline');
     let sent = false;
     const prepare = (): Promise<void> => f.publisher.publish({ ...f.input, topic: TOPIC });
-    await expect(prepareNotifyingSend(true, prepare, () => undefined).then(() => { sent = true; })).rejects.toThrow('offline');
+    await expect(
+      prepareNotifyingSend(true, prepare, () => undefined).then(() => {
+        sent = true;
+      }),
+    ).rejects.toThrow('offline');
     expect(sent).toBe(false);
     expect(syncs).toBe(2);
     expect(f.bodies).toHaveLength(0);
-    f.setSync(async () => { syncs += 1; });
+    f.setSync(async () => {
+      syncs += 1;
+    });
     await prepareNotifyingSend(true, prepare, () => undefined);
     expect(syncs).toBe(3);
     expect(f.bodies).toHaveLength(1);
@@ -194,7 +260,11 @@ describe('account-wide sender publication without a push token', () => {
     const f = fixture();
     f.setFailure(true);
     let sent = false;
-    await expect(f.publisher.publish(f.input).then(() => { sent = true; })).rejects.toThrow('offline');
+    await expect(
+      f.publisher.publish(f.input).then(() => {
+        sent = true;
+      }),
+    ).rejects.toThrow('offline');
     expect(sent).toBe(false);
     f.setFailure(false);
     await f.publisher.publish(f.input);
@@ -213,8 +283,15 @@ describe('account-wide sender publication without a push token', () => {
   test('an account switch during sync or signing never publishes the obsolete account', async () => {
     for (const phase of ['sync', 'sign']) {
       const f = fixture();
-      if (phase === 'sync') f.setSync(async () => { f.setCurrent(false); });
-      else f.input.sign = async () => { f.setCurrent(false); return new Uint8Array(64); };
+      if (phase === 'sync')
+        f.setSync(async () => {
+          f.setCurrent(false);
+        });
+      else
+        f.input.sign = async () => {
+          f.setCurrent(false);
+          return new Uint8Array(64);
+        };
       await expect(f.publisher.publish(f.input)).rejects.toThrow('account changed');
       expect(f.bodies).toHaveLength(0);
     }
@@ -224,7 +301,10 @@ describe('account-wide sender publication without a push token', () => {
     const f = fixture();
     const gate = deferred();
     const entered = deferred();
-    f.setSync(async () => { entered.release(); await gate.promise; });
+    f.setSync(async () => {
+      entered.release();
+      await gate.promise;
+    });
     const first = f.publisher.publish(f.input);
     await entered.promise;
     f.setKey(2);
@@ -239,7 +319,10 @@ describe('account-wide sender publication without a push token', () => {
     for (const abort of [false, true]) {
       const f = fixture(10);
       const entered = deferred();
-      f.setSync(() => { entered.release(); return new Promise(() => undefined); });
+      f.setSync(() => {
+        entered.release();
+        return new Promise(() => undefined);
+      });
       const old = f.publisher.publish(f.input);
       await entered.promise;
       if (abort) f.controller.abort();
@@ -255,30 +338,52 @@ describe('account-wide sender publication without a push token', () => {
     let now = 0;
     const diagnostic = makeSendTimingDiagnostic(() => now);
     const collect = f.input.collectTopics;
-    f.setSync(async () => { now += 11; });
-    f.input.collectTopics = async topic => { now += 13; return collect(topic); };
-    f.input.groupKey = async () => { now += 17; return 'b'.repeat(64); };
-    f.input.sign = async () => { now += 19; return new Uint8Array(64); };
-    f.input.post = async () => { now += 23; };
+    f.setSync(async () => {
+      now += 11;
+    });
+    f.input.collectTopics = async (topic) => {
+      now += 13;
+      return collect(topic);
+    };
+    f.input.groupKey = async () => {
+      now += 17;
+      return 'b'.repeat(64);
+    };
+    f.input.sign = async () => {
+      now += 19;
+      return new Uint8Array(64);
+    };
+    f.input.post = async () => {
+      now += 23;
+    };
     diagnostic.start();
     const cold = diagnostic.begin();
     await f.publisher.publish({ ...f.input, topic: TOPIC, timing: cold });
     cold?.finish();
-    expect(diagnostic.read()).toEqual([[
-      { phase: 'filter.preferences', durationMs: 11 }, { phase: 'filter.keys', durationMs: 13 },
-      { phase: 'filter.group_key', durationMs: 17 }, { phase: 'filter.queue', durationMs: 0 },
-      { phase: 'filter.sign', durationMs: 19 }, { phase: 'filter.http', durationMs: 23 },
-      { phase: 'xmtp.total', durationMs: 83 },
-    ]]);
+    expect(diagnostic.read()).toEqual([
+      [
+        { phase: 'filter.preferences', durationMs: 11 },
+        { phase: 'filter.keys', durationMs: 13 },
+        { phase: 'filter.group_key', durationMs: 17 },
+        { phase: 'filter.queue', durationMs: 0 },
+        { phase: 'filter.sign', durationMs: 19 },
+        { phase: 'filter.http', durationMs: 23 },
+        { phase: 'xmtp.total', durationMs: 83 },
+      ],
+    ]);
     diagnostic.clear();
     const warm = diagnostic.begin();
     await f.publisher.publish({ ...f.input, topic: TOPIC, timing: warm });
     warm?.finish();
-    expect(diagnostic.read()).toEqual([[
-      { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 13 },
-      { phase: 'filter.group_key', durationMs: 17 }, { phase: 'filter.queue', durationMs: 0 },
-      { phase: 'xmtp.total', durationMs: 30 },
-    ]]);
+    expect(diagnostic.read()).toEqual([
+      [
+        { phase: 'filter.preferences', durationMs: 0 },
+        { phase: 'filter.keys', durationMs: 13 },
+        { phase: 'filter.group_key', durationMs: 17 },
+        { phase: 'filter.queue', durationMs: 0 },
+        { phase: 'xmtp.total', durationMs: 30 },
+      ],
+    ]);
   });
 
   test('a fresh send records its queue wait, not the unrelated publication phases', async () => {
@@ -287,7 +392,10 @@ describe('account-wide sender publication without a push token', () => {
     f.setKey(2);
     const entered = deferred();
     const gate = deferred();
-    f.input.post = async () => { entered.release(); await gate.promise; };
+    f.input.post = async () => {
+      entered.release();
+      await gate.promise;
+    };
     const background = f.publisher.publish(f.input);
     await entered.promise;
     let now = 0;
@@ -301,20 +409,29 @@ describe('account-wide sender publication without a push token', () => {
     gate.release();
     await Promise.all([background, send]);
     timing?.finish();
-    expect(diagnostic.read()).toEqual([[
-      { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 0 },
-      { phase: 'filter.group_key', durationMs: 0 }, { phase: 'filter.queue', durationMs: 77 },
-      { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 0 },
-      { phase: 'filter.group_key', durationMs: 0 }, { phase: 'filter.queue', durationMs: 0 },
-      { phase: 'xmtp.total', durationMs: 77 },
-    ]]);
+    expect(diagnostic.read()).toEqual([
+      [
+        { phase: 'filter.preferences', durationMs: 0 },
+        { phase: 'filter.keys', durationMs: 0 },
+        { phase: 'filter.group_key', durationMs: 0 },
+        { phase: 'filter.queue', durationMs: 77 },
+        { phase: 'filter.preferences', durationMs: 0 },
+        { phase: 'filter.keys', durationMs: 0 },
+        { phase: 'filter.group_key', durationMs: 0 },
+        { phase: 'filter.queue', durationMs: 0 },
+        { phase: 'xmtp.total', durationMs: 77 },
+      ],
+    ]);
   });
 
   test('a cancelled queued preparation records only its elapsed queue wait and still fails closed', async () => {
     const f = fixture();
     const entered = deferred();
     const gate = deferred();
-    f.input.post = async () => { entered.release(); await gate.promise; };
+    f.input.post = async () => {
+      entered.release();
+      await gate.promise;
+    };
     const background = f.publisher.publish(f.input);
     await entered.promise;
     let now = 0;
@@ -328,11 +445,15 @@ describe('account-wide sender publication without a push token', () => {
     controller.abort();
     await expect(send).rejects.toThrow('cancelled');
     timing?.finish();
-    const expected = [[
-      { phase: 'filter.preferences', durationMs: 0 }, { phase: 'filter.keys', durationMs: 0 },
-      { phase: 'filter.group_key', durationMs: 0 }, { phase: 'filter.queue', durationMs: 55 },
-      { phase: 'xmtp.total', durationMs: 55 },
-    ]];
+    const expected = [
+      [
+        { phase: 'filter.preferences', durationMs: 0 },
+        { phase: 'filter.keys', durationMs: 0 },
+        { phase: 'filter.group_key', durationMs: 0 },
+        { phase: 'filter.queue', durationMs: 55 },
+        { phase: 'xmtp.total', durationMs: 55 },
+      ],
+    ];
     expect(diagnostic.read()).toEqual(expected);
     gate.release();
     await background;
@@ -345,10 +466,25 @@ describe('account-wide sender publication without a push token', () => {
       const f = fixture(10);
       const gate = deferred();
       const entered = deferred();
-      const hold = async (): Promise<void> => { entered.release(); await gate.promise; };
-      if (phase === 'keys') f.input.collectTopics = async () => { await hold(); return { topics: [], hmacKeys: {} }; };
-      if (phase === 'group_key') f.input.groupKey = async () => { await hold(); return 'b'.repeat(64); };
-      if (phase === 'sign') f.input.sign = async () => { await hold(); return new Uint8Array(64); };
+      const hold = async (): Promise<void> => {
+        entered.release();
+        await gate.promise;
+      };
+      if (phase === 'keys')
+        f.input.collectTopics = async () => {
+          await hold();
+          return { topics: [], hmacKeys: {} };
+        };
+      if (phase === 'group_key')
+        f.input.groupKey = async () => {
+          await hold();
+          return 'b'.repeat(64);
+        };
+      if (phase === 'sign')
+        f.input.sign = async () => {
+          await hold();
+          return new Uint8Array(64);
+        };
       let now = 0;
       const diagnostic = makeSendTimingDiagnostic(() => now);
       diagnostic.start();
@@ -373,17 +509,21 @@ describe('account-wide sender publication without a push token', () => {
   test('large accounts split bounded batches and preserve partial-success retryability', async () => {
     const f = fixture();
     const topics = Array.from({ length: 300 }, (_, i) => `/xmtp/mls/1/g-${i.toString(16)}/proto`);
-    f.input.collectTopics = async () => ({ topics, hmacKeys: Object.fromEntries(topics.map(topic => [topic, [
-      { thirtyDayPeriodsSinceEpoch: PERIOD, hmacKey: new Uint8Array(42) },
-    ]])) });
+    f.input.collectTopics = async () => ({
+      topics,
+      hmacKeys: Object.fromEntries(topics.map((topic) => [topic, [{ thirtyDayPeriodsSinceEpoch: PERIOD, hmacKey: new Uint8Array(42) }]])),
+    });
     const originalPost = f.input.post;
-    f.input.post = async (body, signal) => { if (f.bodies.length === 1) throw new Error('offline'); await originalPost(body, signal); };
+    f.input.post = async (body, signal) => {
+      if (f.bodies.length === 1) throw new Error('offline');
+      await originalPost(body, signal);
+    };
     await expect(f.publisher.publish(f.input)).rejects.toThrow('offline');
     expect(f.bodies).toHaveLength(1);
     f.input.post = originalPost;
     await f.publisher.publish(f.input);
     expect(f.bodies).toHaveLength(2);
-    const counts = f.bodies.map(body => (JSON.parse(body) as { topics: unknown[] }).topics.length);
+    const counts = f.bodies.map((body) => (JSON.parse(body) as { topics: unknown[] }).topics.length);
     expect(counts).toEqual([256, 44]);
   });
 });

@@ -7,7 +7,11 @@ type BoardOrder = readonly string[];
 const EMPTY: BoardOrder = [];
 
 const prefs = createValueStore<BoardOrder>({
-  key: 'board.columnOrder.', default: EMPTY, deserialize: jsonWith(boardOrderSchema), serialize: JSON.stringify, perAccount: true,
+  key: 'board.columnOrder.',
+  default: EMPTY,
+  deserialize: jsonWith(boardOrderSchema),
+  serialize: JSON.stringify,
+  perAccount: true,
 });
 
 export const useBoardOrder = prefs.use;

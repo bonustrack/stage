@@ -56,9 +56,7 @@ const LINE_GAP = 2;
 const PIN_ICON_SIZE = 16;
 const PIN_GAP = 4;
 
-function TrailingBadge({ unreadCount, markedUnread }: {
-  unreadCount: number; markedUnread?: boolean;
-}): React.ReactElement | null {
+function TrailingBadge({ unreadCount, markedUnread }: { unreadCount: number; markedUnread?: boolean }): React.ReactElement | null {
   const shown = unreadCount > 0 ? unreadCount : markedUnread === true ? 1 : 0;
   if (shown <= 0) return null;
   return (
@@ -76,9 +74,7 @@ function PinGlyph({ scheme }: { scheme: Scheme }): React.ReactElement {
   return <Glyph icon={IconThumbtack} size={PIN_ICON_SIZE} color={resolveColorToken('secondary', scheme)} dark={scheme === 'dark'} />;
 }
 
-function WrappedTitle({ texts, pinned, scheme }: {
-  texts: React.ReactNode; pinned: boolean; scheme: Scheme;
-}): React.ReactElement {
+function WrappedTitle({ texts, pinned, scheme }: { texts: React.ReactNode; pinned: boolean; scheme: Scheme }): React.ReactElement {
   return (
     <Column weight={1} minWidth={0}>
       <Text size="md" fontWeight="medium" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}>
@@ -94,12 +90,9 @@ function WrappedTitle({ texts, pinned, scheme }: {
   );
 }
 
-function TitleLine({ params, scheme, wrap }: {
-  params: ChannelRowParams; scheme: Scheme; wrap: boolean;
-}): React.ReactElement {
-  const segments = params.titleSegments && params.titleSegments.length > 0
-    ? params.titleSegments
-    : [{ text: params.title, emphasized: false }];
+function TitleLine({ params, scheme, wrap }: { params: ChannelRowParams; scheme: Scheme; wrap: boolean }): React.ReactElement {
+  const segments =
+    params.titleSegments && params.titleSegments.length > 0 ? params.titleSegments : [{ text: params.title, emphasized: false }];
   const texts = segments.map((seg, i) => (
     <Text
       key={`${seg.text}-${i}`}
@@ -124,8 +117,16 @@ function TitleLine({ params, scheme, wrap }: {
   );
 }
 
-function TitleRow({ params, scheme, wrap, trailing }: {
-  params: ChannelRowParams; scheme: Scheme; wrap: boolean; trailing: React.ReactNode;
+function TitleRow({
+  params,
+  scheme,
+  wrap,
+  trailing,
+}: {
+  params: ChannelRowParams;
+  scheme: Scheme;
+  wrap: boolean;
+  trailing: React.ReactNode;
 }): React.ReactElement {
   return (
     <Row align={wrap ? 'start' : 'center'} gap={12} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
@@ -140,8 +141,14 @@ function TitleRow({ params, scheme, wrap, trailing }: {
   );
 }
 
-function PreviewParagraph({ params, hasPrefix, lines = 2 }: {
-  params: ChannelRowParams; hasPrefix: boolean; lines?: number;
+function PreviewParagraph({
+  params,
+  hasPrefix,
+  lines = 2,
+}: {
+  params: ChannelRowParams;
+  hasPrefix: boolean;
+  lines?: number;
 }): React.ReactElement {
   return (
     <Column weight={1} minWidth={0}>
@@ -153,8 +160,16 @@ function PreviewParagraph({ params, hasPrefix, lines = 2 }: {
   );
 }
 
-function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
-  params: ChannelRowParams; trailing: React.ReactNode; wrapTitle: boolean; previewLines?: number;
+function ChannelRowBody({
+  params,
+  trailing,
+  wrapTitle,
+  previewLines,
+}: {
+  params: ChannelRowParams;
+  trailing: React.ReactNode;
+  wrapTitle: boolean;
+  previewLines?: number;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
@@ -172,10 +187,32 @@ function ChannelRowBody({ params, trailing, wrapTitle, previewLines }: {
 }
 
 function ChannelRowBase({
-  title, placeholderTitle, avatarAddress, avatarUri, square, hideAvatar, wrapTitle = false,
-  lastPreview, timestamp, subtitle, previewLines, showPreview, unreadCount = 0, markedUnread,
-  pinned, draftText, active,
-  onPress, linkProps, onPressIn, onLongPress, onContextMenu, highlightQuery, accessory, fields, mark,
+  title,
+  placeholderTitle,
+  avatarAddress,
+  avatarUri,
+  square,
+  hideAvatar,
+  wrapTitle = false,
+  lastPreview,
+  timestamp,
+  subtitle,
+  previewLines,
+  showPreview,
+  unreadCount = 0,
+  markedUnread,
+  pinned,
+  draftText,
+  active,
+  onPress,
+  linkProps,
+  onPressIn,
+  onLongPress,
+  onContextMenu,
+  highlightQuery,
+  accessory,
+  fields,
+  mark,
 }: ChannelRowProps): React.ReactElement {
   const { border } = usePalette();
   const params = channelRowModel({
@@ -194,21 +231,24 @@ function ChannelRowBase({
     <Pressable
       onPress={onPress}
       onPressIn={onPressIn}
-      onLongPress={onLongPress === undefined ? undefined : (e) => { onLongPress(menuPointOf(e)); }}
+      onLongPress={
+        onLongPress === undefined
+          ? undefined
+          : (e) => {
+              onLongPress(menuPointOf(e));
+            }
+      }
       delayLongPress={onLongPress ? 300 : undefined}
-      style={({ pressed }) => ({
-        backgroundColor: pressed || active === true ? border : 'transparent',
-        paddingHorizontal: PAGE_GUTTER,
-      })}
+      style={({ pressed }) => ({ backgroundColor: pressed || active === true ? border : 'transparent', paddingHorizontal: PAGE_GUTTER })}
       {...linkProps}
       {...contextMenuProps(onContextMenu ?? onLongPress)}
       {...mark}
->
+    >
       <Row minHeight={rowMinHeight(params.showPreview)} padding={{ y: 9 }} align="center" gap={12}>
         {hideAvatar === true ? null : (
           <Avatar
             imageUri={avatarUri}
-            address={avatarUri ? null : avatarAddress ?? null}
+            address={avatarUri ? null : (avatarAddress ?? null)}
             size={44}
             square={square}
             style={{ backgroundColor: border }}
@@ -219,9 +259,7 @@ function ChannelRowBase({
             params={params}
             wrapTitle={wrapTitle}
             previewLines={previewLines}
-            trailing={(
-              <TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} />
-            )}
+            trailing={<TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} />}
           />
           {fields}
         </Column>

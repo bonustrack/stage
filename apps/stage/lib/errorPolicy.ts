@@ -21,7 +21,9 @@ export function report(scope: string, err: unknown): void {
 }
 
 export function reported(scope: string): (err: unknown) => void {
-  return (err) => { report(scope, err); };
+  return (err) => {
+    report(scope, err);
+  };
 }
 
 export function recover<T>(scope: string, value: T): (err: unknown) => T {

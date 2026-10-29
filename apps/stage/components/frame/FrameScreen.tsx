@@ -31,7 +31,9 @@ function useFillViewport(): { ref: RefObject<View | null>; onLayout: () => void;
   const [top, setTop] = useState<number | null>(null);
   const onLayout = useCallback(() => {
     if (Platform.OS !== 'web') return;
-    ref.current?.measureInWindow((_x, y) => { setTop(y + documentScroll().y); });
+    ref.current?.measureInWindow((_x, y) => {
+      setTop(y + documentScroll().y);
+    });
   }, []);
   return { ref, onLayout, minHeight: top === null ? undefined : Math.max(0, height - top) };
 }
@@ -43,41 +45,74 @@ function useFrameScreens(frame: FrameContent | null, messageId: string, leave: (
     step({ kind: 'close' });
     return true;
   }, [depth, step]);
-  const navigate = useCallback((next: FrameNav): void => {
-    if (next.kind === 'close' && depth === 0) leave();
-    else step(next);
-  }, [depth, step, leave]);
-  useFocusEffect(useCallback(() => {
-    if (Platform.OS !== 'android') return undefined;
-    const sub = BackHandler.addEventListener('hardwareBackPress', back);
-    return () => { sub.remove(); };
-  }, [back]));
+  const navigate = useCallback(
+    (next: FrameNav): void => {
+      if (next.kind === 'close' && depth === 0) leave();
+      else step(next);
+    },
+    [depth, step, leave],
+  );
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== 'android') return undefined;
+      const sub = BackHandler.addEventListener('hardwareBackPress', back);
+      return () => {
+        sub.remove();
+      };
+    }, [back]),
+  );
   const scrollRef = useRef<ScreenScrollHandle>(null);
-  useTopOnScreenChange(screen, () => { scrollRef.current?.scrollToOffset({ offset: 0, animated: false }); });
+  useTopOnScreenChange(screen, () => {
+    scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
+  });
   const title = useMemo(() => (frame === null ? 'Frame' : frameScreenTitle(frame, screen)), [frame, screen]);
   return {
     title,
     navigation: { screen, depth, navigate },
-    onBack: depth > 0 ? () => { back(); } : undefined,
+    onBack:
+      depth > 0
+        ? () => {
+            back();
+          }
+        : undefined,
     scrollRef,
   };
 }
 
 const FILL_STYLE = { flexGrow: 1 } as const;
 
-function FramePageMenu({ frame, convId, messageId, consent, onRefresh }: {
-  frame: FrameContent | null; convId: string; messageId: string; consent: XmtpConsent | null | undefined; onRefresh: () => void;
+function FramePageMenu({
+  frame,
+  convId,
+  messageId,
+  consent,
+  onRefresh,
+}: {
+  frame: FrameContent | null;
+  convId: string;
+  messageId: string;
+  consent: XmtpConsent | null | undefined;
+  onRefresh: () => void;
 }): React.ReactElement | null {
   const { text } = usePalette();
   if (frame === null) return null;
   return (
     <ChatFrameMenu
-      frame={frame} convId={convId} messageId={messageId} onRefresh={consent === 'allowed' ? onRefresh : undefined}
+      frame={frame}
+      convId={convId}
+      messageId={messageId}
+      onRefresh={consent === 'allowed' ? onRefresh : undefined}
       trigger={(open) => (
         <Column margin={{ left: 'auto' }}>
           <HoverIconButton
-            icon={IconDotGrid1x3Vertical} label="More" color={text} placement="below" role="button"
-            onPress={(e) => { open(menuPointBelowEnd(e)); }}
+            icon={IconDotGrid1x3Vertical}
+            label="More"
+            color={text}
+            placement="below"
+            role="button"
+            onPress={(e) => {
+              open(menuPointBelowEnd(e));
+            }}
           />
         </Column>
       )}
@@ -85,20 +120,38 @@ function FramePageMenu({ frame, convId, messageId, consent, onRefresh }: {
   );
 }
 
-function FrameBody({ chat, frame, consent, insetBottom, navigation }: {
-  chat: ChatFrame; frame: FrameContent; consent: XmtpConsent | null | undefined; insetBottom: number; navigation: FrameNavigation;
+function FrameBody({
+  chat,
+  frame,
+  consent,
+  insetBottom,
+  navigation,
+}: {
+  chat: ChatFrame;
+  frame: FrameContent;
+  consent: XmtpConsent | null | undefined;
+  insetBottom: number;
+  navigation: FrameNavigation;
 }): React.ReactElement {
   const gated = consent !== 'allowed';
   const notice = consent === 'unknown' || consent === 'denied';
   const viewport = useFillViewport();
   return (
     <View ref={viewport.ref} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
-      <FrameView frame={frame} sessionKey={chat.sessionKey} disabled={gated} onMessage={chat.onMessage}
-        untilTap={chat.node !== null} navigation={navigation}
-        padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: PAGE_GUTTER + (notice ? 0 : insetBottom) }} />
+      <FrameView
+        frame={frame}
+        sessionKey={chat.sessionKey}
+        disabled={gated}
+        onMessage={chat.onMessage}
+        untilTap={chat.node !== null}
+        navigation={navigation}
+        padding={{ x: PAGE_GUTTER, top: PAGE_GUTTER, bottom: PAGE_GUTTER + (notice ? 0 : insetBottom) }}
+      />
       {notice ? (
         <Column padding={{ top: 12, x: PAGE_GUTTER, bottom: PAGE_GUTTER + insetBottom }}>
-          <Text size="2xs" color="secondary">Accept this conversation to use this frame.</Text>
+          <Text size="2xs" color="secondary">
+            Accept this conversation to use this frame.
+          </Text>
         </Column>
       ) : null}
     </View>
@@ -133,7 +186,11 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
           <FrameBody chat={chatFrame} frame={frame} consent={consent} insetBottom={insets.bottom} navigation={screens.navigation} />
         ) : (
           <Column padding={PAGE_GUTTER}>
-            {feed.status === 'loading' || (lookup && stored === undefined) ? <Column padding={24} align="center"><Spinner /></Column> : (
+            {feed.status === 'loading' || (lookup && stored === undefined) ? (
+              <Column padding={24} align="center">
+                <Spinner />
+              </Column>
+            ) : (
               <EmptyState title="This frame is not available." />
             )}
           </Column>

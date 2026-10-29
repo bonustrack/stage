@@ -31,27 +31,42 @@ export function MessengerImageAttachment({ uri, galleryKey }: { uri: string; gal
   useEffect(() => {
     if (loadedUri.current && loadedUri.current !== uri) setPrevUri(loadedUri.current);
   }, [uri]);
-  const onLoad = useCallback((event: NativeSyntheticEvent<ImageLoadEventData>) => {
-    onSizeLoad(event);
-    loadedUri.current = uri;
-    setPrevUri(null);
+  const onLoad = useCallback(
+    (event: NativeSyntheticEvent<ImageLoadEventData>) => {
+      onSizeLoad(event);
+      loadedUri.current = uri;
+      setPrevUri(null);
+      setShown(true);
+    },
+    [uri, onSizeLoad],
+  );
+  const onError = useCallback(() => {
     setShown(true);
-  }, [uri, onSizeLoad]);
-  const onError = useCallback(() => { setShown(true); }, []);
+  }, []);
   return (
     <>
       <Column style={shown ? undefined : LOADING_CLIP}>
         {shown ? null : <ImageLoading />}
         <Column style={shown ? undefined : LOADING_TILE}>
-          <MediaCard aspectRatio={aspectRatio} onPress={() => { setOpen(true); }}>
-            {prevUri && prevUri !== uri ? (
-              <Image url={prevUri} style={ABSOLUTE_FILL} fit="cover" {...TILE_DECODE} />
-            ) : null}
+          <MediaCard
+            aspectRatio={aspectRatio}
+            onPress={() => {
+              setOpen(true);
+            }}
+          >
+            {prevUri && prevUri !== uri ? <Image url={prevUri} style={ABSOLUTE_FILL} fit="cover" {...TILE_DECODE} /> : null}
             <Image url={uri} width="100%" height="100%" fit="cover" onLoad={onLoad} onError={onError} {...TILE_DECODE} />
           </MediaCard>
         </Column>
       </Column>
-      <ChatImageViewer uri={uri} galleryKey={galleryKey} visible={open} onClose={() => { setOpen(false); }} />
+      <ChatImageViewer
+        uri={uri}
+        galleryKey={galleryKey}
+        visible={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      />
     </>
   );
 }

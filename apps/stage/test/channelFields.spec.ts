@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import {
-  CHANNEL_FIELDS, DEFAULT_CHANNEL_FIELDS, parseChannelFields, toggleChannelFieldIn, visibleChannelFieldCount,
+  CHANNEL_FIELDS,
+  DEFAULT_CHANNEL_FIELDS,
+  parseChannelFields,
+  toggleChannelFieldIn,
+  visibleChannelFieldCount,
 } from '../components/home/fields.model';
 
 const values = new Map<string, string>();
@@ -15,7 +19,10 @@ mock.module('../platform/storage', () => ({
       if (key === failedKey) throw new Error('storage unavailable');
       return values.get(key) ?? null;
     },
-    set: async (key: string, value: string): Promise<void> => { writes.push(key); values.set(key, value); },
+    set: async (key: string, value: string): Promise<void> => {
+      writes.push(key);
+      values.set(key, value);
+    },
   },
 }));
 mock.module('../lib/accounts', () => ({
@@ -23,10 +30,22 @@ mock.module('../lib/accounts', () => ({
   getActiveAccountStrict: async () => ({ id: activeId }),
 }));
 const { toggleChannelField } = await import('../lib/channelFields');
-const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
+const settle = (): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 const stored = (id: string): unknown => JSON.parse(values.get(`home.fields.${id}`) ?? 'null');
 
-const hidden = { members: false, assignees: false, category: false, status: false, labels: false, priority: false, avatar: false, lastMessage: true };
+const hidden = {
+  members: false,
+  assignees: false,
+  category: false,
+  status: false,
+  labels: false,
+  priority: false,
+  avatar: false,
+  lastMessage: true,
+};
 
 beforeEach(() => {
   values.clear();
@@ -38,8 +57,14 @@ beforeEach(() => {
 describe('channel field preferences', () => {
   test('lists all eight fields in display order and preserves existing view defaults', () => {
     expect(CHANNEL_FIELDS.map(({ id, label }) => [id, label])).toEqual([
-      ['members', 'Members'], ['assignees', 'Assignees'], ['category', 'Project'],
-      ['status', 'Status'], ['labels', 'Labels'], ['priority', 'Priority'], ['avatar', 'Avatar'], ['lastMessage', 'Last message'],
+      ['members', 'Members'],
+      ['assignees', 'Assignees'],
+      ['category', 'Project'],
+      ['status', 'Status'],
+      ['labels', 'Labels'],
+      ['priority', 'Priority'],
+      ['avatar', 'Avatar'],
+      ['lastMessage', 'Last message'],
     ]);
     expect(DEFAULT_CHANNEL_FIELDS).toEqual({ chats: { ...hidden, labels: true, avatar: true }, board: hidden });
   });
@@ -73,22 +98,34 @@ describe('channel field preferences', () => {
 
   test('partial saved preferences gain missing fields and the missing view defaults', () => {
     expect(parseChannelFields('{"chats":{"labels":false,"members":true}}')).toEqual({
-      chats: { ...hidden, members: true, avatar: true }, board: hidden,
+      chats: { ...hidden, members: true, avatar: true },
+      board: hidden,
     });
     expect(parseChannelFields('{"board":{"status":true}}')).toEqual({
-      chats: DEFAULT_CHANNEL_FIELDS.chats, board: { ...hidden, status: true },
+      chats: DEFAULT_CHANNEL_FIELDS.chats,
+      board: { ...hidden, status: true },
     });
   });
 
   test('invalid booleans fall back individually and unknown fields or views are ignored', () => {
-    expect(parseChannelFields(JSON.stringify({
-      chats: { members: true, assignees: 1, category: 'true', status: false, labels: null, priority: [], avatar: null },
-      board: { members: false, assignees: true, category: {}, status: 'false', labels: true, priority: null, avatar: 'true', extra: true },
-      future: { members: true },
-    }))).toEqual({
-      chats: { ...hidden, members: true, labels: true, avatar: true },
-      board: { ...hidden, assignees: true, labels: true },
-    });
+    expect(
+      parseChannelFields(
+        JSON.stringify({
+          chats: { members: true, assignees: 1, category: 'true', status: false, labels: null, priority: [], avatar: null },
+          board: {
+            members: false,
+            assignees: true,
+            category: {},
+            status: 'false',
+            labels: true,
+            priority: null,
+            avatar: 'true',
+            extra: true,
+          },
+          future: { members: true },
+        }),
+      ),
+    ).toEqual({ chats: { ...hidden, members: true, labels: true, avatar: true }, board: { ...hidden, assignees: true, labels: true } });
     expect(parseChannelFields('{"chats":{"avatar":"true"}}', false).chats.avatar).toBe(false);
   });
 
@@ -104,8 +141,26 @@ describe('channel field preferences', () => {
 
   test('saved preferences round trip all fields in both views', () => {
     const prefs = {
-      chats: { members: true, assignees: false, category: true, status: false, labels: false, priority: true, avatar: false, lastMessage: false },
-      board: { members: false, assignees: true, category: false, status: true, labels: true, priority: false, avatar: true, lastMessage: true },
+      chats: {
+        members: true,
+        assignees: false,
+        category: true,
+        status: false,
+        labels: false,
+        priority: true,
+        avatar: false,
+        lastMessage: false,
+      },
+      board: {
+        members: false,
+        assignees: true,
+        category: false,
+        status: true,
+        labels: true,
+        priority: false,
+        avatar: true,
+        lastMessage: true,
+      },
     };
     expect(parseChannelFields(JSON.stringify(prefs))).toEqual(prefs);
   });
@@ -193,7 +248,7 @@ describe('channel field storage', () => {
         expect(values.get('channels.avatars')).toBe(avatars ?? undefined);
       }
     }
-    expect(writes.every(key => key.startsWith('home.fields.'))).toBe(true);
+    expect(writes.every((key) => key.startsWith('home.fields.'))).toBe(true);
   });
 
   test('explicit avatar choices win over legacy values in either direction', async () => {
@@ -204,7 +259,8 @@ describe('channel field storage', () => {
       toggleChannelField('chats', 'status');
       await settle();
       expect(stored(activeId)).toEqual({
-        chats: { ...DEFAULT_CHANNEL_FIELDS.chats, status: true, avatar }, board: { ...hidden, avatar: !avatar },
+        chats: { ...DEFAULT_CHANNEL_FIELDS.chats, status: true, avatar },
+        board: { ...hidden, avatar: !avatar },
       });
     }
     expect(writes).toEqual(['home.fields.explicit-false', 'home.fields.explicit-true']);
@@ -231,11 +287,14 @@ describe('channel field storage', () => {
         toggleChannelField('chats', 'avatar');
         await settle();
         expect(stored(activeId)).toEqual({
-          chats: { ...DEFAULT_CHANNEL_FIELDS.chats, priority: true }, board: { ...hidden, members: true },
+          chats: { ...DEFAULT_CHANNEL_FIELDS.chats, priority: true },
+          board: { ...hidden, members: true },
         });
         expect(writes).toEqual([key]);
       }
       expect(warnings).toHaveBeenCalledWith('[stage:channelFields.save] storage unavailable');
-    } finally { warnings.mockRestore(); }
+    } finally {
+      warnings.mockRestore();
+    }
   });
 });

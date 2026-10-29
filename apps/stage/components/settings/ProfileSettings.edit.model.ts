@@ -1,9 +1,15 @@
 export const DISPLAY_NAME_MAX = 64;
 export const DESCRIPTION_MAX = 280;
 
-export interface ProfileDraft { displayName: string; description: string }
+export interface ProfileDraft {
+  displayName: string;
+  description: string;
+}
 
-export interface ProfileCurrent { displayName?: string; description?: string }
+export interface ProfileCurrent {
+  displayName?: string;
+  description?: string;
+}
 
 export function draftFrom(current: ProfileCurrent): ProfileDraft {
   return { displayName: current.displayName ?? '', description: current.description ?? '' };

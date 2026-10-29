@@ -16,16 +16,18 @@ export async function openFinalizedClient<C>(deps: {
   finalize: (client: C) => Promise<C>;
 }): Promise<C> {
   let client: C;
-  try { client = await deps.open(); } catch (e) {
+  try {
+    client = await deps.open();
+  } catch (e) {
     if (!deps.canFallback(e)) throw e;
     client = await deps.fallback();
   }
   return deps.finalize(client);
 }
 
-export function makeClientFinalizer<C>(deps: FinalizeDeps<C>): (
-  client: C, rec: AccountRecord, env: XmtpEnv, opts: { markRegistered: boolean },
-) => Promise<C> {
+export function makeClientFinalizer<C>(
+  deps: FinalizeDeps<C>,
+): (client: C, rec: AccountRecord, env: XmtpEnv, opts: { markRegistered: boolean }) => Promise<C> {
   return async (client, rec, env, opts) => {
     const assertCurrent = async (): Promise<void> => {
       if ((await deps.active())?.id !== rec.id) throw new Error('The account changed while messaging was starting.');
@@ -38,7 +40,9 @@ export function makeClientFinalizer<C>(deps: FinalizeDeps<C>): (
       await assertCurrent();
       return client;
     } catch (e) {
-      attempt(() => { deps.discard(client); }, 'cleanup');
+      attempt(() => {
+        deps.discard(client);
+      }, 'cleanup');
       throw e;
     }
   };

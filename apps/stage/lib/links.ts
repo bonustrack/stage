@@ -2,10 +2,12 @@ import { getPeerHandle } from '@stage-labs/client/identity/peerProfiles';
 import { conversationPathFor, profileSlugFor, stageLabelOf } from '@stage-labs/client/routing/handles';
 
 export type ConversationLink =
-  | { pathname: '/[convId]'; params: { convId: string } }
-  | { pathname: '/channel/[convId]'; params: { convId: string } };
+  { pathname: '/[convId]'; params: { convId: string } } | { pathname: '/channel/[convId]'; params: { convId: string } };
 
-export interface ProfileLink { pathname: '/profile/[id]'; params: { id: string } }
+export interface ProfileLink {
+  pathname: '/profile/[id]';
+  params: { id: string };
+}
 
 type ProfileKind = 'channel' | 'user';
 
@@ -16,7 +18,9 @@ export function profileKindOf(id: string | null | undefined): ProfileKind {
 }
 
 export function conversationLinkOf(
-  convId: string, peerAddress?: string | null, handle: string | null | undefined = getPeerHandle(peerAddress),
+  convId: string,
+  peerAddress?: string | null,
+  handle: string | null | undefined = getPeerHandle(peerAddress),
 ): ConversationLink {
   if (peerAddress) return { pathname: '/[convId]', params: { convId: profileSlugFor(peerAddress, handle) } };
   return { pathname: '/channel/[convId]', params: { convId } };
@@ -31,7 +35,9 @@ export function channelProfileLinkOf(convId: string): ProfileLink {
 }
 
 export function conversationSharePath(
-  convId: string, peerAddress?: string | null, handle: string | null | undefined = getPeerHandle(peerAddress),
+  convId: string,
+  peerAddress?: string | null,
+  handle: string | null | undefined = getPeerHandle(peerAddress),
 ): string {
   if (peerAddress) return conversationPathFor(peerAddress, handle);
   return `/channel/${convId}`;

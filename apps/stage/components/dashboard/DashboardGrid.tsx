@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LayoutChangeEvent, ViewStyle } from 'react-native';
 import { Gesture, GestureDetector, type PanGesture } from 'react-native-gesture-handler';
 import Animated, {
-  runOnJS, useAnimatedStyle, useSharedValue, withTiming, type AnimatedStyle, type SharedValue,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  type AnimatedStyle,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import type { DashboardWidget } from '@stage-labs/client/xmtp/readState';
@@ -12,7 +17,14 @@ import { changeDashboard } from '../../lib/dashboard';
 import { usePalette } from '../../lib/theme';
 import { isCoarsePointer } from '../../lib/webLayout';
 import {
-  DASHBOARD_GAP, DASHBOARD_ROW, cellRects, dropTarget, gridColumns, moveWidget, packWidgets, type WidgetRect,
+  DASHBOARD_GAP,
+  DASHBOARD_ROW,
+  cellRects,
+  dropTarget,
+  gridColumns,
+  moveWidget,
+  packWidgets,
+  type WidgetRect,
 } from './dashboard.model';
 import { WidgetCard, WidgetMenu } from './WidgetCard';
 import type { WidgetGrip } from './widgetParts';
@@ -22,7 +34,14 @@ const SHIFT_MS = 160;
 const INSET = DASHBOARD_GAP / 2;
 const LIFTED_OPACITY = 0.9;
 const RING: ViewStyle = {
-  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', borderRadius: BLOCK_RADIUS_DEFAULT, borderWidth: 2,
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  pointerEvents: 'none',
+  borderRadius: BLOCK_RADIUS_DEFAULT,
+  borderWidth: 2,
 };
 
 interface GridDrag {
@@ -44,7 +63,10 @@ function useGridDrag(): GridDrag {
   return useMemo(() => ({ from, to, dx, dy, grabX, grabY }), [from, to, dx, dy, grabX, grabY]);
 }
 
-interface CellPosition { x: SharedValue<number>; y: SharedValue<number> }
+interface CellPosition {
+  x: SharedValue<number>;
+  y: SharedValue<number>;
+}
 
 function useCellPosition(rect: WidgetRect, drops: number): CellPosition {
   const x = useSharedValue(rect.x);
@@ -66,12 +88,26 @@ interface CellGestureArgs {
   onHold: (anchor: MenuPoint) => void;
 }
 
-function cellPan({ index, rect, rects, position, drag, onDrop, onHold }: CellGestureArgs, node: { current: unknown }, touch: boolean): PanGesture {
-  const onLift = (): void => { lift(node.current); };
-  const dropped = (from: number, to: number): void => { suppressNextClick(); onDrop(from, to); };
-  const held = (anchor: MenuPoint): void => { suppressNextClick(); onHold(anchor); };
+function cellPan(
+  { index, rect, rects, position, drag, onDrop, onHold }: CellGestureArgs,
+  node: { current: unknown },
+  touch: boolean,
+): PanGesture {
+  const onLift = (): void => {
+    lift(node.current);
+  };
+  const dropped = (from: number, to: number): void => {
+    suppressNextClick();
+    onDrop(from, to);
+  };
+  const held = (anchor: MenuPoint): void => {
+    suppressNextClick();
+    onHold(anchor);
+  };
   const pan = Gesture.Pan()
-    .onBegin(() => { runOnJS(setDragging)(true); })
+    .onBegin(() => {
+      runOnJS(setDragging)(true);
+    })
     .onStart((e) => {
       drag.grabX.value = e.x - e.translationX;
       drag.grabY.value = e.y - e.translationY;
@@ -112,7 +148,10 @@ function cellPan({ index, rect, rects, position, drag, onDrop, onHold }: CellGes
 function useCellGesture(args: CellGestureArgs): { gesture: PanGesture; holdNode: (el: unknown) => void } {
   const touch = isCoarsePointer();
   const node = useRef<unknown>(null);
-  const holdNode = useCallback((el: unknown) => { node.current = el; lockScrollOnLift(el); }, []);
+  const holdNode = useCallback((el: unknown) => {
+    node.current = el;
+    lockScrollOnLift(el);
+  }, []);
   const { index, rect, rects, position, drag, onDrop, onHold } = args;
   const gesture = useMemo(
     () => cellPan({ index, rect, rects, position, drag, onDrop, onHold }, node, touch),
@@ -121,9 +160,12 @@ function useCellGesture(args: CellGestureArgs): { gesture: PanGesture; holdNode:
   return { gesture, holdNode };
 }
 
-function useCellStyles(index: number, drag: GridDrag, position: CellPosition, backdrop: string): {
-  cell: AnimatedStyle<ViewStyle>; ring: AnimatedStyle<ViewStyle>;
-} {
+function useCellStyles(
+  index: number,
+  drag: GridDrag,
+  position: CellPosition,
+  backdrop: string,
+): { cell: AnimatedStyle<ViewStyle>; ring: AnimatedStyle<ViewStyle> } {
   const cell = useAnimatedStyle(() => {
     const lifted = drag.from.value === index;
     return {
@@ -142,22 +184,56 @@ function useCellStyles(index: number, drag: GridDrag, position: CellPosition, ba
   return { cell, ring };
 }
 
-interface OpenMenu { id: string; anchor: MenuPoint }
+interface OpenMenu {
+  id: string;
+  anchor: MenuPoint;
+}
 
-function DashboardCell({ widget, index, rect, rects, drag, drops, onDrop, onMenu }: {
-  widget: DashboardWidget; index: number; rect: WidgetRect; rects: readonly WidgetRect[]; drag: GridDrag; drops: number;
-  onDrop: (from: number, to: number) => void; onMenu: (menu: OpenMenu) => void;
+function DashboardCell({
+  widget,
+  index,
+  rect,
+  rects,
+  drag,
+  drops,
+  onDrop,
+  onMenu,
+}: {
+  widget: DashboardWidget;
+  index: number;
+  rect: WidgetRect;
+  rects: readonly WidgetRect[];
+  drag: GridDrag;
+  drops: number;
+  onDrop: (from: number, to: number) => void;
+  onMenu: (menu: OpenMenu) => void;
 }): React.ReactElement {
   const { link, bg } = usePalette();
-  const openMenu = useCallback((anchor: MenuPoint) => { onMenu({ id: widget.id, anchor }); }, [onMenu, widget.id]);
+  const openMenu = useCallback(
+    (anchor: MenuPoint) => {
+      onMenu({ id: widget.id, anchor });
+    },
+    [onMenu, widget.id],
+  );
   const position = useCellPosition(rect, drops);
   const { gesture, holdNode } = useCellGesture({ index, rect, rects, position, drag, onDrop, onHold: openMenu });
   const styles = useCellStyles(index, drag, position, bg);
-  const grip = useCallback<WidgetGrip>((handle) => (
-    <GestureDetector gesture={gesture}><Column>{handle}</Column></GestureDetector>
-  ), [gesture]);
+  const grip = useCallback<WidgetGrip>(
+    (handle) => (
+      <GestureDetector gesture={gesture}>
+        <Column>{handle}</Column>
+      </GestureDetector>
+    ),
+    [gesture],
+  );
   return (
-    <Animated.View ref={holdNode} style={[{ position: 'absolute', width: rect.width, height: rect.height, padding: INSET, borderRadius: BLOCK_RADIUS_DEFAULT }, styles.cell]}>
+    <Animated.View
+      ref={holdNode}
+      style={[
+        { position: 'absolute', width: rect.width, height: rect.height, padding: INSET, borderRadius: BLOCK_RADIUS_DEFAULT },
+        styles.cell,
+      ]}
+    >
       <Column weight={1}>
         <WidgetCard widget={widget} onMenu={openMenu} grip={grip} />
         <Animated.View style={[RING, { borderColor: link }, styles.ring]} />
@@ -174,25 +250,47 @@ export function DashboardGrid({ widgets }: { widgets: DashboardWidget[] }): Reac
   const columns = gridColumns(width);
   const layout = useMemo(() => packWidgets(widgets, columns), [widgets, columns]);
   const rects = useMemo(() => cellRects(layout, width), [layout, width]);
-  const onDrop = useCallback((from: number, to: number) => {
-    const moved = widgets[from];
-    const target = widgets[to];
-    if (moved !== undefined && target !== undefined) changeDashboard(list => moveWidget(list, moved.id, target.id));
-    setDrops(count => count + 1);
-  }, [widgets]);
-  const measure = (event: LayoutChangeEvent): void => { setWidth(event.nativeEvent.layout.width); };
-  const menuWidget = menu === null ? undefined : widgets.find(widget => widget.id === menu.id);
+  const onDrop = useCallback(
+    (from: number, to: number) => {
+      const moved = widgets[from];
+      const target = widgets[to];
+      if (moved !== undefined && target !== undefined) changeDashboard((list) => moveWidget(list, moved.id, target.id));
+      setDrops((count) => count + 1);
+    },
+    [widgets],
+  );
+  const measure = (event: LayoutChangeEvent): void => {
+    setWidth(event.nativeEvent.layout.width);
+  };
+  const menuWidget = menu === null ? undefined : widgets.find((widget) => widget.id === menu.id);
   return (
     <Column margin={{ x: PAGE_GUTTER - INSET, top: PAGE_GUTTER - INSET }} height={layout.rows * DASHBOARD_ROW} onLayout={measure}>
-      {width === 0 ? null : widgets.map((widget, index) => {
-        const rect = rects[index];
-        return rect === undefined ? null : (
-          <DashboardCell key={widget.id} widget={widget} index={index} rect={rect} rects={rects} drag={drag} drops={drops}
-            onDrop={onDrop} onMenu={setMenu} />
-        );
-      })}
+      {width === 0
+        ? null
+        : widgets.map((widget, index) => {
+            const rect = rects[index];
+            return rect === undefined ? null : (
+              <DashboardCell
+                key={widget.id}
+                widget={widget}
+                index={index}
+                rect={rect}
+                rects={rects}
+                drag={drag}
+                drops={drops}
+                onDrop={onDrop}
+                onMenu={setMenu}
+              />
+            );
+          })}
       {menu === null || menuWidget === undefined ? null : (
-        <WidgetMenu widget={menuWidget} anchor={menu.anchor} onClose={() => { setMenu(null); }} />
+        <WidgetMenu
+          widget={menuWidget}
+          anchor={menu.anchor}
+          onClose={() => {
+            setMenu(null);
+          }}
+        />
       )}
     </Column>
   );

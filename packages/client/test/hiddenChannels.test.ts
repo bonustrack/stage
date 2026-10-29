@@ -43,10 +43,11 @@ describe('hidden channel sync', () => {
   });
 
   test('other senders and far future state are ignored', () => {
-    const replay = collectSyncReplay([
-      message(state(true, 20), 1, 'other-owner'),
-      message(state(true, trust.nowMs + 86_400_001), 2),
-    ], 0, trust);
+    const replay = collectSyncReplay(
+      [message(state(true, 20), 1, 'other-owner'), message(state(true, trust.nowMs + 86_400_001), 2)],
+      0,
+      trust,
+    );
     expect(replay.hidden).toEqual({});
     expect(collectSyncReplay([message(state(true, 20), 1)], 0, { ...trust, inboxId: '' }).hidden).toBeNull();
   });

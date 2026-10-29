@@ -4,11 +4,7 @@ export default defineConfig({
   workspaces: {
     '.': {
       type: 'library',
-      knip: {
-        kind: 'scripts',
-        entry: ['stage.config.js', 'scripts/**/*.{mjs,js,sh}'],
-        project: ['scripts/**/*.{mjs,js}'],
-      },
+      knip: { kind: 'scripts', entry: ['stage.config.js', 'scripts/**/*.{mjs,js,sh}'], project: ['scripts/**/*.{mjs,js}'] },
     },
     'apps/stage': {
       type: 'react-native',
@@ -29,45 +25,20 @@ export default defineConfig({
           'extension/package.mjs',
         ],
         project: ['app/**', 'components/**', 'lib/**', 'modules/**', 'platform/**'],
-        ignoreDependencies: [
-          'buffer',
-          'events',
-          'babel-preset-expo',
-          'expo-system-ui',
-          '@types/markdown-it',
-        ],
+        ignoreDependencies: ['buffer', 'events', 'babel-preset-expo', 'expo-system-ui', '@types/markdown-it'],
       },
     },
-    'apps/proxy': {
-      type: 'worker',
-      knip: { entry: [] },
-    },
-    'apps/dispatch': {
-      type: 'worker',
-      knip: { entry: [] },
-    },
-    'apps/stage/desktop': {
-      type: 'library',
-      knip: { entry: ['src/preload.ts', 'scripts/*.mjs'], ignoreBinaries: ['codesign'] },
-    },
-    'packages/client': {
-      type: 'library',
-      knip: { entry: [], includeEntryExports: true },
-    },
+    'apps/proxy': { type: 'worker', knip: { entry: [] } },
+    'apps/dispatch': { type: 'worker', knip: { entry: [] } },
+    'apps/stage/desktop': { type: 'library', knip: { entry: ['src/preload.ts', 'scripts/*.mjs'], ignoreBinaries: ['codesign'] } },
+    'packages/client': { type: 'library', knip: { entry: [], includeEntryExports: true } },
     'packages/kit': {
       type: 'library',
-      knip: {
-        entry: ['stories/*.stories.tsx', 'src/**/*.native.ts'],
-        project: ['src/**', 'stories/**', 'gallery/**'],
-      },
+      knip: { entry: ['stories/*.stories.tsx', 'src/**/*.native.ts'], project: ['src/**', 'stories/**', 'gallery/**'] },
     },
     'packages/config': {
       type: 'library',
-      knip: {
-        entry: ['knip/*.js', 'oxlint/*.js', 'bin/*.js'],
-        project: ['**/*.js'],
-        ignoreDependencies: ['madge'],
-      },
+      knip: { entry: ['knip/*.js', 'oxlint/*.js', 'bin/*.js'], project: ['**/*.js'], ignoreDependencies: ['madge'] },
     },
   },
   madge: {

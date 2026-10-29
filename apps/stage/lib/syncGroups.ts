@@ -7,10 +7,7 @@ type SyncConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 async function ownSyncGroupOf(conv: SyncConv, owner: SyncOwner): Promise<SyncGroupState | null> {
   const name = await sdk.groupName(conv);
   if (name !== syncGroupName(owner.address)) return null;
-  const [active, members] = await Promise.all([
-    sdk.isActive(conv).catch(recover('readSync.isActive', false)),
-    conv.members(),
-  ]);
+  const [active, members] = await Promise.all([sdk.isActive(conv).catch(recover('readSync.isActive', false)), conv.members()]);
   const group: SyncGroupState = { id: conv.id, createdAtNs: sdk.createdAtNs(conv), active };
   const memberInboxIds = members.map((m) => m.inboxId);
   return isOwnSyncGroup({ ...group, name, addedByInboxId: sdk.addedByInboxId(conv), memberInboxIds }, owner) ? group : null;
@@ -18,19 +15,23 @@ async function ownSyncGroupOf(conv: SyncConv, owner: SyncOwner): Promise<SyncGro
 
 export async function listOwnSyncGroups(owner: SyncOwner, client?: Awaited<ReturnType<typeof sdk.client>>): Promise<SyncGroupState[]> {
   const out: SyncGroupState[] = [];
-  for (const conv of await sdk.listConvs(client ?? await sdk.client())) {
+  for (const conv of await sdk.listConvs(client ?? (await sdk.client()))) {
     const group = await ownSyncGroupOf(conv, owner).catch(recover<SyncGroupState | null>('readSync.syncGroup', null));
     if (group !== null) out.push(group);
   }
   return out;
 }
 
-export async function isOwnSyncGroupId(convId: string, owner: SyncOwner, client?: Awaited<ReturnType<typeof sdk.client>>): Promise<boolean> {
-  const conv = await sdk.findConv(client ?? await sdk.client(), convId);
+export async function isOwnSyncGroupId(
+  convId: string,
+  owner: SyncOwner,
+  client?: Awaited<ReturnType<typeof sdk.client>>,
+): Promise<boolean> {
+  const conv = await sdk.findConv(client ?? (await sdk.client()), convId);
   return conv?.id === convId && (await ownSyncGroupOf(conv, owner)) !== null;
 }
 
 export async function createSyncGroup(owner: SyncOwner, client?: Awaited<ReturnType<typeof sdk.client>>): Promise<string> {
-  const group = await sdk.newGroup(client ?? await sdk.client(), [], { name: syncGroupName(owner.address) });
+  const group = await sdk.newGroup(client ?? (await sdk.client()), [], { name: syncGroupName(owner.address) });
   return group.id;
 }

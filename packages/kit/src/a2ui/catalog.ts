@@ -104,7 +104,8 @@ function collectProperties(located: Located, schemas: SchemaRegistry, out: Compo
 function ownMeta(schema: JsonObject): FunctionMeta | undefined {
   if (typeof schema.returnType !== 'string') return undefined;
   const callers = schema.allowedCallers;
-  const allowedCallers = typeof callers === 'string' && CALLERS.has(callers as AllowedCallers) ? (callers as AllowedCallers) : 'rendererOnly';
+  const allowedCallers =
+    typeof callers === 'string' && CALLERS.has(callers as AllowedCallers) ? (callers as AllowedCallers) : 'rendererOnly';
   return { returnType: schema.returnType, allowedCallers, requiresUserActivation: schema.requiresUserActivation === true };
 }
 
@@ -148,7 +149,9 @@ function issueAt(path: readonly string[], message: string): SchemaIssue[] {
 }
 
 export function createCatalogRegistry(catalogs: readonly JsonObject[]): CatalogRegistry {
-  const byId = new Map(catalogs.flatMap((catalog): [string, JsonObject][] => (typeof catalog.catalogId === 'string' ? [[catalog.catalogId, catalog]] : [])));
+  const byId = new Map(
+    catalogs.flatMap((catalog): [string, JsonObject][] => (typeof catalog.catalogId === 'string' ? [[catalog.catalogId, catalog]] : [])),
+  );
   const schemas = createSchemaRegistry([...PROTOCOL_DOCUMENTS, ...catalogs]);
   const envelopeSchemas = createSchemaRegistry([...PROTOCOL_DOCUMENTS, ...catalogs, ENVELOPE_CATALOG]);
   const components = new Map<string, ComponentInfo | undefined>();

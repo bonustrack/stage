@@ -8,7 +8,11 @@ import type { ValidationResult } from '../a2ui/protocol';
 import { firstCheckMessage, weightStyle } from './a2ui-props';
 import { Text } from './text';
 
-export function WithChecks({ checks, weight, children }: {
+export function WithChecks({
+  checks,
+  weight,
+  children,
+}: {
   checks?: readonly ValidationResult[];
   weight?: number;
   children: (rootStyle: ViewStyle | undefined) => ReactNode;
@@ -42,7 +46,12 @@ export interface ControlTriggerProps {
   triggerRef?: Ref<View>;
 }
 
-export function ControlSheet({ open, onClose, panelStyle, children }: {
+export function ControlSheet({
+  open,
+  onClose,
+  panelStyle,
+  children,
+}: {
   open: boolean;
   onClose: () => void;
   panelStyle: ViewStyle;
@@ -50,10 +59,7 @@ export function ControlSheet({ open, onClose, panelStyle, children }: {
 }): React.ReactElement {
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
-        style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }}
-        onPress={onClose}
-      >
+      <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 24 }} onPress={onClose}>
         <Pressable style={panelStyle} onPress={() => undefined}>
           {children}
         </Pressable>
@@ -63,7 +69,24 @@ export function ControlSheet({ open, onClose, panelStyle, children }: {
 }
 
 export function ControlTrigger(props: ControlTriggerProps): React.ReactElement {
-  const { name, disabled, block, clearable, open, hasValue, label, icon, box, rootStyle, headColor, placeholderColor, style, onOpen, onClear, triggerRef } = props;
+  const {
+    name,
+    disabled,
+    block,
+    clearable,
+    open,
+    hasValue,
+    label,
+    icon,
+    box,
+    rootStyle,
+    headColor,
+    placeholderColor,
+    style,
+    onOpen,
+    onClear,
+    triggerRef,
+  } = props;
   return (
     <Pressable
       ref={triggerRef}

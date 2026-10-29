@@ -1,5 +1,9 @@
 import {
-  DEFAULT_LAST_ACTIVITY, lastActivityCutoff, parseLastActivity, type ActivityView, type LastActivity,
+  DEFAULT_LAST_ACTIVITY,
+  lastActivityCutoff,
+  parseLastActivity,
+  type ActivityView,
+  type LastActivity,
 } from '../components/home/activity.model';
 import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
@@ -8,13 +12,20 @@ import { createValueStore } from './persistedStore';
 import { makeSharedSource, useStoreValue } from './storeCore';
 
 const prefs = createValueStore({
-  key: 'home.activity.', default: DEFAULT_LAST_ACTIVITY, deserialize: parseLastActivity, serialize: JSON.stringify, perAccount: true,
+  key: 'home.activity.',
+  default: DEFAULT_LAST_ACTIVITY,
+  deserialize: parseLastActivity,
+  serialize: JSON.stringify,
+  perAccount: true,
 });
 
 function subscribePreferences(onChange: () => void): () => void {
   const offPrefs = prefs.subscribe(onChange);
   const offAccount = subscribeAccountEpoch(onChange);
-  return () => { offPrefs(); offAccount(); };
+  return () => {
+    offPrefs();
+    offAccount();
+  };
 }
 
 export function getLastActivity(view: ActivityView): LastActivity {
@@ -27,17 +38,26 @@ export function useLastActivity(view: ActivityView): LastActivity {
 
 export function setLastActivity(view: ActivityView, window: LastActivity): void {
   const epoch = getAccountEpoch();
-  void prefs.update(current => epoch === getAccountEpoch() ? { ...current, [view]: window } : current)
+  void prefs
+    .update((current) => (epoch === getAccountEpoch() ? { ...current, [view]: window } : current))
     .catch(reported('lastActivity.save'));
 }
 
 let now = Date.now();
 const clock = makeSharedSource<undefined>((_source, emit) => {
-  const refresh = (): void => { now = Date.now(); emit(); };
+  const refresh = (): void => {
+    now = Date.now();
+    emit();
+  };
   refresh();
   const timer = setInterval(refresh, 60_000);
-  const off = subscribeAppInFront(() => { if (isAppInFront()) refresh(); });
-  return () => { clearInterval(timer); off(); };
+  const off = subscribeAppInFront(() => {
+    if (isAppInFront()) refresh();
+  });
+  return () => {
+    clearInterval(timer);
+    off();
+  };
 });
 const subscribeClock = (onChange: () => void): (() => void) => clock(undefined, onChange);
 const noClock = (): (() => void) => () => undefined;

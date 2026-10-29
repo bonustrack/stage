@@ -31,8 +31,14 @@ describe('attachment routes', () => {
   });
 
   test('an upload refused by the edge rate limit is 429 before touching storage', async () => {
-    const limited = { ATTACHMENT_UPLOADS: { limit: () => Promise.resolve({ success: false }) } } as unknown as Parameters<typeof worker.fetch>[1];
-    const res = await worker.fetch(new Request('https://proxy.stage.box/attachments', { method: 'POST', body: 'x', headers: { 'content-length': '1' } }), limited, ctx);
+    const limited = { ATTACHMENT_UPLOADS: { limit: () => Promise.resolve({ success: false }) } } as unknown as Parameters<
+      typeof worker.fetch
+    >[1];
+    const res = await worker.fetch(
+      new Request('https://proxy.stage.box/attachments', { method: 'POST', body: 'x', headers: { 'content-length': '1' } }),
+      limited,
+      ctx,
+    );
     expect(res.status).toBe(429);
   });
 });

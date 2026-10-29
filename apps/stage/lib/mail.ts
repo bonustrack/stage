@@ -30,17 +30,16 @@ subscribeAccountSelection(() => {
 });
 
 const readStore = createValueStore<readonly string[]>({
-  key: 'mail.read', default: NO_KEYS, deserialize: parseReadKeys, serialize: (keys) => JSON.stringify(keys),
+  key: 'mail.read',
+  default: NO_KEYS,
+  deserialize: parseReadKeys,
+  serialize: (keys) => JSON.stringify(keys),
 });
 
 export function useMailboxes(): UseQueryResult<Mailbox[]> {
   const epoch = useAccountEpoch();
   const selection = useAccountSelection();
-  return useQuery({
-    queryKey: ['mail', selection, 'boxes', epoch],
-    queryFn: () => access.mailboxes(selection),
-    staleTime: 5 * 60_000,
-  });
+  return useQuery({ queryKey: ['mail', selection, 'boxes', epoch], queryFn: () => access.mailboxes(selection), staleTime: 5 * 60_000 });
 }
 
 const INBOX_STALE_MS = 30_000;
@@ -64,7 +63,8 @@ export function useInbox(boxes: readonly Mailbox[] | undefined): UseQueryResult<
 export function prefetchInbox(boxes: readonly Mailbox[]): void {
   const selection = getAccountSelection();
   if (boxes.length === 0 || boxes.some((box) => box.selection !== selection)) return;
-  void getQueryClient().prefetchQuery({ queryKey: inboxKey(boxes, selection), queryFn: () => access.inbox(boxes, selection), staleTime: INBOX_STALE_MS })
+  void getQueryClient()
+    .prefetchQuery({ queryKey: inboxKey(boxes, selection), queryFn: () => access.inbox(boxes, selection), staleTime: INBOX_STALE_MS })
     .catch(reported('mail.prefetch'));
 }
 

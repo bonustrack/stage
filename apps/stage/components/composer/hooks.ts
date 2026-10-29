@@ -13,10 +13,7 @@ export function clearComposerDraft(key: string): void {
   keptAttachments.delete(key);
 }
 
-export function useCaretToEnd(
-  text: string,
-  setSelection: (range: { start: number; end: number }) => void,
-): () => void {
+export function useCaretToEnd(text: string, setSelection: (range: { start: number; end: number }) => void): () => void {
   const textRef = useRef(text);
   textRef.current = text;
   return useCallback(() => {
@@ -25,9 +22,7 @@ export function useCaretToEnd(
   }, [setSelection]);
 }
 
-export function useSavedDraft(
-  key: string | null, value: unknown, restore: (saved: unknown) => void, delayMs = 0,
-): void {
+export function useSavedDraft(key: string | null, value: unknown, restore: (saved: unknown) => void, delayMs = 0): void {
   const restored = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -41,8 +36,12 @@ export function useSavedDraft(
   useEffect(() => {
     if (key === null || !restored.current) return;
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => { setDraftValue(key, value); }, delayMs);
-    return () => { if (timer.current) clearTimeout(timer.current); };
+    timer.current = setTimeout(() => {
+      setDraftValue(key, value);
+    }, delayMs);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
   }, [value, key]);
 }
 
@@ -60,12 +59,21 @@ export function useComposerDrafts(
   }, [key]);
   useEffect(() => {
     if (key === null) return;
-    if (restoring.current) { restoring.current = false; return; }
-    if (s.pending.length === 0) keptAttachments.delete(key); else keptAttachments.set(key, s.pending);
+    if (restoring.current) {
+      restoring.current = false;
+      return;
+    }
+    if (s.pending.length === 0) keptAttachments.delete(key);
+    else keptAttachments.set(key, s.pending);
   }, [key, s.pending]);
-  useSavedDraft(key, s.text.trim() ? s.text : undefined, (saved) => {
-    if (typeof saved === 'string' && saved) restore(saved);
-  }, TEXT_SAVE_DELAY_MS);
+  useSavedDraft(
+    key,
+    s.text.trim() ? s.text : undefined,
+    (saved) => {
+      if (typeof saved === 'string' && saved) restore(saved);
+    },
+    TEXT_SAVE_DELAY_MS,
+  );
 }
 
 export function useComposerFocus(
@@ -84,7 +92,9 @@ export function useComposerFocus(
       refocusAfterBlur.current = true;
       bumpBlur();
     });
-    return () => { cancelAnimationFrame(raf); };
+    return () => {
+      cancelAnimationFrame(raf);
+    };
   }, [replyTargetId, replyNonce]);
   useEffect(() => {
     if (!refocusAfterBlur.current) return;
@@ -93,16 +103,29 @@ export function useComposerFocus(
   }, [blurNonce]);
   useEffect(() => {
     if (!autoFocusNonce) return;
-    const t = setTimeout(() => { caretToEnd(); bumpFocus(); }, 0);
-    return () => { clearTimeout(t); };
+    const t = setTimeout(() => {
+      caretToEnd();
+      bumpFocus();
+    }, 0);
+    return () => {
+      clearTimeout(t);
+    };
   }, [autoFocusNonce]);
   useEffect(() => {
     let keyboardVisible = false;
-    const showSub = Keyboard.addListener('keyboardDidShow', () => { keyboardVisible = true; });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => { keyboardVisible = false; });
+    const showSub = Keyboard.addListener('keyboardDidShow', () => {
+      keyboardVisible = true;
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardVisible = false;
+    });
     const appSub = AppState.addEventListener('change', (s) => {
       if (s !== 'active' && !keyboardVisible) bumpBlur();
     });
-    return () => { showSub.remove(); hideSub.remove(); appSub.remove(); };
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+      appSub.remove();
+    };
   }, []);
 }

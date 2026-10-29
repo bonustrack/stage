@@ -5,11 +5,10 @@ const KEY_SIZE = 20;
 
 export function Kbd({ label }: { label: string }): React.ReactElement {
   return (
-    <Column
-      surface="surface" radius="xs" align="center" justify="center"
-      minWidth={KEY_SIZE} height={KEY_SIZE} padding={{ x: 4 }}
-    >
-      <Text size="3xs" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{label}</Text>
+    <Column surface="surface" radius="xs" align="center" justify="center" minWidth={KEY_SIZE} height={KEY_SIZE} padding={{ x: 4 }}>
+      <Text size="3xs" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>
+        {label}
+      </Text>
     </Column>
   );
 }

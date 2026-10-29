@@ -164,7 +164,13 @@ describe('continuous dictation', () => {
     const started = Promise.withResolvers<undefined>();
     const entered = Promise.withResolvers<string>();
     let calls = 0;
-    const h = harness({ start: async id => { calls += 1; entered.resolve(id); if (calls === 1) await started.promise; } });
+    const h = harness({
+      start: async (id) => {
+        calls += 1;
+        entered.resolve(id);
+        if (calls === 1) await started.promise;
+      },
+    });
     const start = h.control.start();
     const id = await entered.promise;
     h.event({ text: 'Alice', state: 'ended', reason: 'segment' }, id);
@@ -175,13 +181,17 @@ describe('continuous dictation', () => {
     await start;
     await tick();
     expect(calls).toBe(2);
-    expect(h.cancels.filter(value => value === id)).toHaveLength(2);
+    expect(h.cancels.filter((value) => value === id)).toHaveLength(2);
     expect(h.draft().text).toBe('Hello Alice tomorrow');
   });
 
   it('blocks automatic restart after failed cleanup until an explicit successful retry', async () => {
     let fail = true;
-    const h = harness({ cancel: async () => { if (fail) throw new Error('release failed'); } });
+    const h = harness({
+      cancel: async () => {
+        if (fail) throw new Error('release failed');
+      },
+    });
     await h.control.start();
     h.event({ text: 'Alice', state: 'ended', reason: 'segment' });
     await tick();
@@ -195,8 +205,27 @@ describe('continuous dictation', () => {
   it('release before permission completes cannot start the microphone later', async () => {
     const permitted = Promise.withResolvers<boolean>();
     const entered = Promise.withResolvers<undefined>();
-    const h = harness({}, { microphoneGranted: async () => false, permission: () => { entered.resolve(undefined); return permitted.promise; } });
-    const press = makeDictationPress({ start: () => { void h.control.start(); }, stop: () => { void h.control.stop(); }, toggle: () => { void h.control.toggle(); } });
+    const h = harness(
+      {},
+      {
+        microphoneGranted: async () => false,
+        permission: () => {
+          entered.resolve(undefined);
+          return permitted.promise;
+        },
+      },
+    );
+    const press = makeDictationPress({
+      start: () => {
+        void h.control.start();
+      },
+      stop: () => {
+        void h.control.stop();
+      },
+      toggle: () => {
+        void h.control.toggle();
+      },
+    });
     press.pressIn();
     press.hold();
     await entered.promise;
@@ -211,7 +240,12 @@ describe('continuous dictation', () => {
   it('release during native startup drains and cancels the late start without revival', async () => {
     const started = Promise.withResolvers<undefined>();
     const entered = Promise.withResolvers<string>();
-    const h = harness({ start: id => { entered.resolve(id); return started.promise; } });
+    const h = harness({
+      start: (id) => {
+        entered.resolve(id);
+        return started.promise;
+      },
+    });
     const starting = h.control.start();
     const id = await entered.promise;
     const stopped = h.control.stop();

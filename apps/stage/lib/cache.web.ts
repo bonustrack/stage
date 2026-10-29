@@ -10,15 +10,26 @@ function openDb(): Promise<IDBDatabase | null> {
   dbPromise = new Promise<IDBDatabase | null>((resolve) => {
     try {
       const scope = globalThis as { indexedDB?: IDBFactory };
-      if (!scope.indexedDB) { resolve(null); return; }
+      if (!scope.indexedDB) {
+        resolve(null);
+        return;
+      }
       const req = scope.indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
         if (!req.result.objectStoreNames.contains(STORE)) req.result.createObjectStore(STORE);
       };
-      req.onsuccess = () => { resolve(req.result); };
-      req.onerror = () => { resolve(null); };
-      req.onblocked = () => { resolve(null); };
-    } catch { resolve(null); }
+      req.onsuccess = () => {
+        resolve(req.result);
+      };
+      req.onerror = () => {
+        resolve(null);
+      };
+      req.onblocked = () => {
+        resolve(null);
+      };
+    } catch {
+      resolve(null);
+    }
   });
   return dbPromise;
 }
@@ -29,9 +40,15 @@ async function idbRead<T>(key: string): Promise<T | null> {
   return new Promise<T | null>((resolve) => {
     try {
       const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key);
-      req.onsuccess = () => { resolve((req.result as T | undefined) ?? null); };
-      req.onerror = () => { resolve(null); };
-    } catch { resolve(null); }
+      req.onsuccess = () => {
+        resolve((req.result as T | undefined) ?? null);
+      };
+      req.onerror = () => {
+        resolve(null);
+      };
+    } catch {
+      resolve(null);
+    }
   });
 }
 
@@ -40,13 +57,16 @@ async function idbWrite(key: string, value: unknown): Promise<void> {
   if (!db) return;
   attempt(() => {
     const store = db.transaction(STORE, 'readwrite').objectStore(STORE);
-    if (value === null) store.delete(key); else store.put(value, key);
+    if (value === null) store.delete(key);
+    else store.put(value, key);
   }, 'cache');
 }
 
 export const persistenceBackend = {
   read: idbRead,
-  write(name: string, value: unknown): void { void idbWrite(name, value); },
+  write(name: string, value: unknown): void {
+    void idbWrite(name, value);
+  },
   onFlushSignal(flushAll: () => void): void {
     if (typeof window !== 'undefined') window.addEventListener('pagehide', flushAll);
   },
@@ -77,8 +97,12 @@ async function loadSealKey(): Promise<CryptoKey | null> {
       if (req.result) key = req.result as CryptoKey;
       else store.put(fresh, SEAL_KEY_NAME);
     };
-    tx.oncomplete = () => { resolve(key); };
-    tx.onabort = () => { reject(tx.error ?? new Error('Could not save cache key')); };
+    tx.oncomplete = () => {
+      resolve(key);
+    };
+    tx.onabort = () => {
+      reject(tx.error ?? new Error('Could not save cache key'));
+    };
   });
 }
 
@@ -105,7 +129,10 @@ async function sealedRead(name: string): Promise<string | null> {
 }
 
 async function sealedWrite(name: string, text: string | null): Promise<void> {
-  if (text === null) { await idbWrite(name, null); return; }
+  if (text === null) {
+    await idbWrite(name, null);
+    return;
+  }
   const key = await currentSealKey();
   if (!key) return;
   const iv = crypto.getRandomValues(new Uint8Array(SEAL_IV_BYTES));

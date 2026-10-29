@@ -13,20 +13,40 @@ import { Column } from '../layout';
 const BLOCKED = 'This link is blocked';
 const NOT_LOADED = 'Could not load this widget';
 
-interface WidgetChrome { onMenu: (anchor: MenuPoint) => void; grip: WidgetGrip }
+interface WidgetChrome {
+  onMenu: (anchor: MenuPoint) => void;
+  grip: WidgetGrip;
+}
 
-function LiveBody({ widgetId, state, act }: { widgetId: string; state: LiveState | undefined; act: FrameMessageHandler }): React.ReactElement {
+function LiveBody({
+  widgetId,
+  state,
+  act,
+}: {
+  widgetId: string;
+  state: LiveState | undefined;
+  act: FrameMessageHandler;
+}): React.ReactElement {
   if (state?.frame === null || state?.frame === undefined) {
     const problem = state === undefined ? null : liveProblemText(state);
-    if (problem === null) return <Column weight={1} align="center" justify="center"><Spinner /></Column>;
+    if (problem === null)
+      return (
+        <Column weight={1} align="center" justify="center">
+          <Spinner />
+        </Column>
+      );
     return <Unavailable title={NOT_LOADED} detail={problem} />;
   }
   return <FrameSurface frame={state.frame} stackId={liveWidgetKey(widgetId)} onMessage={act} fill />;
 }
 
-function NodeWidget({ widgetId, source, host, onMenu, grip }: WidgetChrome & {
-  widgetId: string; source: LiveSource; host: string;
-}): React.ReactElement {
+function NodeWidget({
+  widgetId,
+  source,
+  host,
+  onMenu,
+  grip,
+}: WidgetChrome & { widgetId: string; source: LiveSource; host: string }): React.ReactElement {
   const { state, act } = useLiveWidget(widgetId, source);
   return (
     <Column weight={1} gap={6}>
@@ -36,7 +56,12 @@ function NodeWidget({ widgetId, source, host, onMenu, grip }: WidgetChrome & {
   );
 }
 
-export function LiveWidget({ widgetId, source, onMenu, grip }: WidgetChrome & { widgetId: string; source: LiveSource }): React.ReactElement {
+export function LiveWidget({
+  widgetId,
+  source,
+  onMenu,
+  grip,
+}: WidgetChrome & { widgetId: string; source: LiveSource }): React.ReactElement {
   const node = nodeUrlOf(source.url);
   if (node.ok) return <NodeWidget widgetId={widgetId} source={{ ...source, url: node.url }} host={node.host} onMenu={onMenu} grip={grip} />;
   return (

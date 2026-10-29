@@ -14,23 +14,29 @@ import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outl
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
 function confirmReset(): void {
-  void capabilities.confirm({
-    title: 'Reset XMTP database',
-    message: 'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone. A fresh installation is created on next launch.',
-    confirmLabel: 'Reset',
-    destructive: true,
-  }).then(async (ok) => {
-    if (!ok) return;
-    await resetActiveXmtpStore();
-    reloadApp();
-  });
+  void capabilities
+    .confirm({
+      title: 'Reset XMTP database',
+      message:
+        'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone. A fresh installation is created on next launch.',
+      confirmLabel: 'Reset',
+      destructive: true,
+    })
+    .then(async (ok) => {
+      if (!ok) return;
+      await resetActiveXmtpStore();
+      reloadApp();
+    });
 }
 
 async function removeAndMoveOn(id: string): Promise<void> {
   try {
     await deleteAccount(id);
     const next = (await getActiveAccount())?.id;
-    if (next === undefined) { reloadApp(true); return; }
+    if (next === undefined) {
+      reloadApp(true);
+      return;
+    }
     await switchToAccount(next);
     capabilities.navigate('/');
   } catch (err) {
@@ -41,15 +47,23 @@ async function removeAndMoveOn(id: string): Promise<void> {
 
 function confirmRemove(rec: AccountRecord): void {
   const name = rec.label ?? shortAddress(rec.address);
-  void capabilities.confirm({
-    title: 'Remove account',
-    message: `Remove ${name}? Without a backup of the private key this account is unrecoverable. Its local XMTP database is deleted from this device.`,
-    confirmLabel: 'Remove',
-    destructive: true,
-  }).then((ok) => { if (ok) void removeAndMoveOn(rec.id); });
+  void capabilities
+    .confirm({
+      title: 'Remove account',
+      message: `Remove ${name}? Without a backup of the private key this account is unrecoverable. Its local XMTP database is deleted from this device.`,
+      confirmLabel: 'Remove',
+      destructive: true,
+    })
+    .then((ok) => {
+      if (ok) void removeAndMoveOn(rec.id);
+    });
 }
 
-interface XmtpIdentity { addr: string; inbox: string; install: string }
+interface XmtpIdentity {
+  addr: string;
+  inbox: string;
+  install: string;
+}
 
 const NO_IDENTITY: XmtpIdentity = { addr: '', inbox: '', install: '' };
 
@@ -71,7 +85,14 @@ function IdentityGroup(): React.ReactElement | null {
   return (
     <SettingsGroup title="XMTP identity" footnote="Tap a value to copy it.">
       {rows.map((r) => (
-        <SettingsValueRow key={r.label} label={r.label} value={r.short} onPress={() => { capabilities.copy(r.label, r.value); }} />
+        <SettingsValueRow
+          key={r.label}
+          label={r.label}
+          value={r.short}
+          onPress={() => {
+            capabilities.copy(r.label, r.value);
+          }}
+        />
       ))}
     </SettingsGroup>
   );
@@ -80,9 +101,21 @@ function IdentityGroup(): React.ReactElement | null {
 function DangerGroup(): React.ReactElement {
   const rec = useActiveAccountRecord();
   return (
-    <SettingsGroup title="Danger zone" footnote="Reset clears the messages stored on this device. Remove deletes this account from this device.">
+    <SettingsGroup
+      title="Danger zone"
+      footnote="Reset clears the messages stored on this device. Remove deletes this account from this device."
+    >
       <SettingsButtonRow label="Reset XMTP database" iconStart={IconArrowRotateClockwise} danger onPress={confirmReset} />
-      {rec ? <SettingsButtonRow label="Remove account" iconStart={IconTrashCan} danger onPress={() => { confirmRemove(rec); }} /> : null}
+      {rec ? (
+        <SettingsButtonRow
+          label="Remove account"
+          iconStart={IconTrashCan}
+          danger
+          onPress={() => {
+            confirmRemove(rec);
+          }}
+        />
+      ) : null}
     </SettingsGroup>
   );
 }
@@ -90,8 +123,8 @@ function DangerGroup(): React.ReactElement {
 export function AdvancedSettings(): React.ReactElement {
   return (
     <SettingsPage title="Advanced">
-      <IdentityGroup/>
-      <DangerGroup/>
+      <IdentityGroup />
+      <DangerGroup />
     </SettingsPage>
   );
 }

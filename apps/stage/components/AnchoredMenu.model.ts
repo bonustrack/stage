@@ -1,6 +1,12 @@
-export interface MenuPoint { x: number; y: number }
+export interface MenuPoint {
+  x: number;
+  y: number;
+}
 
-interface MenuViewport { width: number; height: number }
+interface MenuViewport {
+  width: number;
+  height: number;
+}
 
 interface AnchoredMenuStyle {
   top?: number;

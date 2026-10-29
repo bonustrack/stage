@@ -1,17 +1,45 @@
 import type { ReactNode } from 'react';
 import { AccessibilityInfo, Animated, Platform } from 'react-native';
 import {
-  indicatorRect, insertionIndex, isNoMove, listAt, nearestList, rectContains, shiftOf, slotAt, sortMove, stepTarget,
-  type SortDirection, type SortListLayout, type SortMove, type SortOrigin, type SortRect, type SortSlot, type SortStep, type SortTarget,
+  indicatorRect,
+  insertionIndex,
+  isNoMove,
+  listAt,
+  nearestList,
+  rectContains,
+  shiftOf,
+  slotAt,
+  sortMove,
+  stepTarget,
+  type SortDirection,
+  type SortListLayout,
+  type SortMove,
+  type SortOrigin,
+  type SortRect,
+  type SortSlot,
+  type SortStep,
+  type SortTarget,
 } from '../sortable';
 import { NO_RECT, blockOf, layoutLater, layoutNow, layoutOf, type MeasuredList } from './sortable.measure';
 import {
-  autoScroll, ghostInViewport, liftFeedback, measureLater, measureNow, measuresSynchronously, nextFrame, raiseWithin, setPageDragging, suppressNextClick,
+  autoScroll,
+  ghostInViewport,
+  liftFeedback,
+  measureLater,
+  measureNow,
+  measuresSynchronously,
+  nextFrame,
+  raiseWithin,
+  setPageDragging,
+  suppressNextClick,
 } from './sortable.platform';
 
 export type SortIndicator = 'preview' | 'line' | 'none' | 'shift' | 'follow';
 
-export interface SortSource { listId: string; payload: unknown }
+export interface SortSource {
+  listId: string;
+  payload: unknown;
+}
 
 export type { SortItemEntry } from './sortable.measure';
 
@@ -34,7 +62,10 @@ export interface SortDrag extends SortOrigin {
   inPlace: boolean;
 }
 
-export interface SortHidden { listId: string; itemId: string }
+export interface SortHidden {
+  listId: string;
+  itemId: string;
+}
 
 export interface SortState {
   drag: SortDrag | null;
@@ -45,7 +76,10 @@ export interface SortState {
   preview: ReactNode;
 }
 
-interface Point { x: number; y: number }
+interface Point {
+  x: number;
+  y: number;
+}
 
 interface Core {
   lists: Map<string, () => SortListEntry>;
@@ -83,7 +117,7 @@ function entry(core: Core, listId: string): SortListEntry | undefined {
 }
 
 function group(core: Core, name: string): SortListEntry[] {
-  return [...core.lists.values()].map(read => read()).filter(list => list.group === name);
+  return [...core.lists.values()].map((read) => read()).filter((list) => list.group === name);
 }
 
 function announce(text: string): void {
@@ -91,7 +125,7 @@ function announce(text: string): void {
 }
 
 function bareLayouts(core: Core, name: string): SortListLayout[] {
-  return group(core, name).map(list => layoutOf(list, null, []));
+  return group(core, name).map((list) => layoutOf(list, null, []));
 }
 
 function axisOf(direction: SortDirection, point: Point): number {
@@ -131,21 +165,21 @@ function resetOffsets(core: Core): void {
 
 function measureBlock(core: Core, drag: SortDrag): void {
   const list = entry(core, drag.listId);
-  const rect = core.layouts.find(l => l.listId === drag.listId)?.items.find(item => item.id === drag.itemId)?.rect;
-  core.block = list === undefined || rect === undefined ? 0 : (list.direction === 'vertical' ? rect.height : rect.width);
+  const rect = core.layouts.find((l) => l.listId === drag.listId)?.items.find((item) => item.id === drag.itemId)?.rect;
+  core.block = list === undefined || rect === undefined ? 0 : list.direction === 'vertical' ? rect.height : rect.width;
 }
 
 function accepted(core: Core, drag: SortDrag, layout: SortListLayout, index: number): SortMove | null {
   const list = entry(core, layout.listId);
   if (list === undefined) return null;
   const asked = sortMove(drag, layout, index);
-  const last = layout.ids.filter(id => id !== drag.itemId).length;
+  const last = layout.ids.filter((id) => id !== drag.itemId).length;
   const move = list.placeAt === undefined ? asked : sortMove(drag, layout, Math.max(0, Math.min(last, list.placeAt(asked))));
   return list.accepts(move) ? move : null;
 }
 
 function lineAt(core: Core, drag: SortDrag, target: SortTarget | null): SortRect | null {
-  const layout = core.layouts.find(l => l.listId === target?.listId);
+  const layout = core.layouts.find((l) => l.listId === target?.listId);
   if (target === null || layout === undefined || entry(core, target.listId)?.indicator !== 'line') return null;
   return indicatorRect(layout, drag.itemId, target.index, INDICATOR);
 }
@@ -155,7 +189,10 @@ function viewOf(core: Core, drag: SortDrag, target: SortTarget | null): SortStat
   const into = entry(core, shown.listId);
   const ready = drag.keyboard || drag.size.width > 0 || drag.size.height > 0;
   return {
-    drag, target, preview: drag.preview, indicator: lineAt(core, drag, target),
+    drag,
+    target,
+    preview: drag.preview,
+    indicator: lineAt(core, drag, target),
     slot: ready && into?.indicator === 'preview' ? slotAt(shown.listId, into.itemIds, drag.itemId, shown.index) : null,
     hidden: ready && entry(core, drag.listId)?.indicator === 'preview' ? [{ listId: drag.listId, itemId: drag.itemId }] : [],
   };
@@ -172,7 +209,7 @@ function sameTarget(a: SortTarget | null, b: SortTarget | null): boolean {
 
 function targetLayout(core: Core, drag: SortDrag): SortListLayout | undefined {
   const { x, y } = core.pointer;
-  if (drag.inPlace) return core.layouts.find(l => l.listId === drag.listId);
+  if (drag.inPlace) return core.layouts.find((l) => l.listId === drag.listId);
   return listAt(core.layouts, x, y) ?? nearestList(core.layouts, x, y, rectContains(core.scopeRect, x, y) ? Infinity : NEAR_LIST);
 }
 
@@ -184,7 +221,10 @@ function retarget(core: Core, drag: SortDrag): void {
   if (sameTarget(target, core.state.target)) return;
   if (drag.inPlace) slideOthers(core, drag, target?.index ?? drag.index);
   set(core, viewOf(core, drag, target));
-  if (!measuresSynchronously && !drag.inPlace) nextFrame(() => { void remeasure(core, drag); });
+  if (!measuresSynchronously && !drag.inPlace)
+    nextFrame(() => {
+      void remeasure(core, drag);
+    });
 }
 
 function refresh(core: Core, drag: SortDrag): void {
@@ -194,7 +234,10 @@ function refresh(core: Core, drag: SortDrag): void {
 }
 
 function place(core: Core, drag: SortDrag): void {
-  if (drag.inPlace) { followPointer(core, drag); return; }
+  if (drag.inPlace) {
+    followPointer(core, drag);
+    return;
+  }
   const origin = ghostInViewport ? { x: 0, y: 0 } : core.scopeRect;
   core.ghost.setValue({ x: core.pointer.x - drag.grab.x - origin.x, y: core.pointer.y - drag.grab.y - origin.y });
 }
@@ -212,7 +255,7 @@ function scrollLoop(core: Core): void {
 }
 
 function commit(core: Core, drag: SortDrag, target: SortTarget | null): boolean {
-  const layout = core.layouts.find(l => l.listId === target?.listId);
+  const layout = core.layouts.find((l) => l.listId === target?.listId);
   if (target === null || layout === undefined) return false;
   const move = accepted(core, drag, layout, target.index);
   if (move === null || isNoMove(move)) return false;
@@ -231,7 +274,11 @@ function finish(core: Core, settled = false): void {
   core.restore();
   core.restore = () => undefined;
   core.layouts = [];
-  if (!settled) { resetOffsets(core); set(core, IDLE); return; }
+  if (!settled) {
+    resetOffsets(core);
+    set(core, IDLE);
+    return;
+  }
   const held = settledView(core.state);
   set(core, held);
   nextFrame(() => {
@@ -242,20 +289,32 @@ function finish(core: Core, settled = false): void {
 
 function dragOf(list: SortListEntry, itemId: string, keyboard: boolean, preview: ReactNode = null): SortDrag {
   return {
-    itemId, listId: list.listId, index: list.itemIds.indexOf(itemId), group: list.group, preview, keyboard,
-    inPlace: !keyboard && (list.indicator === 'shift' || list.indicator === 'follow'), size: NO_SIZE, grab: { x: 0, y: 0 },
+    itemId,
+    listId: list.listId,
+    index: list.itemIds.indexOf(itemId),
+    group: list.group,
+    preview,
+    keyboard,
+    inPlace: !keyboard && (list.indicator === 'shift' || list.indicator === 'follow'),
+    size: NO_SIZE,
+    grab: { x: 0, y: 0 },
   };
 }
 
 async function measureNative(core: Core, drag: SortDrag, list: SortListEntry): Promise<void> {
   const [all, rect, item] = await Promise.all([
-    Promise.all(group(core, drag.group).map(layoutLater)), measureLater(core.scope()), measureLater(list.items.get(drag.itemId)?.node()),
+    Promise.all(group(core, drag.group).map(layoutLater)),
+    measureLater(core.scope()),
+    measureLater(list.items.get(drag.itemId)?.node()),
   ]);
   if (core.state.drag !== drag) return;
   core.layouts = all;
   core.scopeRect = rect ?? NO_RECT;
   measureBlock(core, drag);
-  const next = item === null ? drag : { ...drag, size: { width: item.width, height: item.height }, grab: { x: core.pointer.x - item.x, y: core.pointer.y - item.y } };
+  const next =
+    item === null
+      ? drag
+      : { ...drag, size: { width: item.width, height: item.height }, grab: { x: core.pointer.x - item.x, y: core.pointer.y - item.y } };
   place(core, next);
   set(core, viewOf(core, next, core.state.target));
 }
@@ -268,7 +327,11 @@ function begin(core: Core, listId: string, itemId: string, preview: ReactNode): 
   core.start = at;
   core.moved = false;
   const rect = measureNow(list.items.get(itemId)?.node()) ?? NO_RECT;
-  const drag = { ...dragOf(list, itemId, false, preview), size: { width: rect.width, height: rect.height }, grab: { x: at.x - rect.x, y: at.y - rect.y } };
+  const drag = {
+    ...dragOf(list, itemId, false, preview),
+    size: { width: rect.width, height: rect.height },
+    grab: { x: at.x - rect.x, y: at.y - rect.y },
+  };
   liftFeedback();
   setPageDragging(true);
   core.layouts = [];
@@ -301,7 +364,7 @@ function drop(core: Core): boolean {
 
 function positionLabel(core: Core, target: SortTarget): string {
   const list = entry(core, target.listId);
-  const count = core.layouts.find(l => l.listId === target.listId)?.items.length ?? 0;
+  const count = core.layouts.find((l) => l.listId === target.listId)?.items.length ?? 0;
   const label = list?.label === undefined ? '' : ` in ${list.label}`;
   return `Position ${target.index + 1} of ${Math.max(count, target.index + 1)}${label}`;
 }
@@ -318,9 +381,9 @@ function keyLift(core: Core, listId: string, itemId: string, preview: ReactNode)
 function keyStep(core: Core, step: SortStep): void {
   const { drag, target: current } = core.state;
   if (drag === null || current === null) return;
-  const ordered = [...core.layouts].sort((a, b) => (a.rect.x - b.rect.x) || (a.rect.y - b.rect.y));
+  const ordered = [...core.layouts].sort((a, b) => a.rect.x - b.rect.x || a.rect.y - b.rect.y);
   const next = stepTarget(ordered, drag.itemId, current, step);
-  const layout = core.layouts.find(l => l.listId === next.listId);
+  const layout = core.layouts.find((l) => l.listId === next.listId);
   const move = layout === undefined ? null : accepted(core, drag, layout, next.index);
   if (move === null) return;
   const target = { listId: move.toListId, index: move.toIndex };
@@ -347,31 +410,71 @@ function moveBy(core: Core, listId: string, itemId: string, step: SortStep): voi
 
 export function makeSortCoordinator() {
   const core: Core = {
-    lists: new Map(), listeners: new Set(), ghost: new Animated.ValueXY(), state: IDLE, layouts: [],
-    scope: () => null, scopeRect: NO_RECT, pointer: { x: 0, y: 0 }, pressed: { x: 0, y: 0 }, start: { x: 0, y: 0 }, moved: false,
-    stopScroll: () => undefined, block: 0, shifts: new Map(), restore: () => undefined,
+    lists: new Map(),
+    listeners: new Set(),
+    ghost: new Animated.ValueXY(),
+    state: IDLE,
+    layouts: [],
+    scope: () => null,
+    scopeRect: NO_RECT,
+    pointer: { x: 0, y: 0 },
+    pressed: { x: 0, y: 0 },
+    start: { x: 0, y: 0 },
+    moved: false,
+    stopScroll: () => undefined,
+    block: 0,
+    shifts: new Map(),
+    restore: () => undefined,
   };
   return {
     ghost: core.ghost,
     state: (): SortState => core.state,
-    subscribe: (listener: () => void): (() => void) => { core.listeners.add(listener); return () => { core.listeners.delete(listener); }; },
-    setScope: (node: () => unknown): void => { core.scope = node; },
+    subscribe: (listener: () => void): (() => void) => {
+      core.listeners.add(listener);
+      return () => {
+        core.listeners.delete(listener);
+      };
+    },
+    setScope: (node: () => unknown): void => {
+      core.scope = node;
+    },
     register: (listId: string, read: () => SortListEntry): (() => void) => {
       core.lists.set(listId, read);
-      return () => { if (core.lists.get(listId) === read) core.lists.delete(listId); };
+      return () => {
+        if (core.lists.get(listId) === read) core.lists.delete(listId);
+      };
     },
     groupSize: (name: string): number => group(core, name).length,
-    press: (at: Point): void => { core.pressed = at; },
-    begin: (listId: string, itemId: string, preview: ReactNode): void => { begin(core, listId, itemId, preview); },
-    move: (at: Point): void => { move(core, at); },
+    press: (at: Point): void => {
+      core.pressed = at;
+    },
+    begin: (listId: string, itemId: string, preview: ReactNode): void => {
+      begin(core, listId, itemId, preview);
+    },
+    move: (at: Point): void => {
+      move(core, at);
+    },
     drop: (): boolean => drop(core),
-    cancel: (): void => { finish(core); },
+    cancel: (): void => {
+      finish(core);
+    },
     wasMoved: (): boolean => core.moved,
-    keyLift: (listId: string, itemId: string, preview: ReactNode): void => { keyLift(core, listId, itemId, preview); },
-    keyStep: (step: SortStep): void => { keyStep(core, step); },
-    keyDrop: (): void => { keyDrop(core); },
-    keyCancel: (): void => { finish(core); announce('Move cancelled.'); },
-    moveBy: (listId: string, itemId: string, step: SortStep): void => { moveBy(core, listId, itemId, step); },
+    keyLift: (listId: string, itemId: string, preview: ReactNode): void => {
+      keyLift(core, listId, itemId, preview);
+    },
+    keyStep: (step: SortStep): void => {
+      keyStep(core, step);
+    },
+    keyDrop: (): void => {
+      keyDrop(core);
+    },
+    keyCancel: (): void => {
+      finish(core);
+      announce('Move cancelled.');
+    },
+    moveBy: (listId: string, itemId: string, step: SortStep): void => {
+      moveBy(core, listId, itemId, step);
+    },
   };
 }
 

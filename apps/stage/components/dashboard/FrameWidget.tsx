@@ -25,7 +25,11 @@ const NOT_SYNCED = 'This frame is not on this device yet';
 const NOT_SYNCED_DETAIL = 'It shows here once its chat syncs to this device.';
 const DELETED = 'This frame was deleted';
 
-interface WidgetChat { title: string; isGroup: boolean; open?: () => void }
+interface WidgetChat {
+  title: string;
+  isGroup: boolean;
+  open?: () => void;
+}
 
 const NO_CHAT: WidgetChat = { title: FALLBACK_TITLE, isGroup: false };
 
@@ -37,8 +41,11 @@ function useWidgetChat(convId: string): WidgetChat {
   const router = useRouter();
   const epoch = useAccountEpoch();
   const { data } = useQuery({
-    queryKey: ['storageChat', epoch, convId], queryFn: () => storageChatOf(convId), staleTime: CHAT_STALE_MS, retry: false,
-    refetchInterval: query => (query.state.data ? false : CHAT_RECHECK_MS),
+    queryKey: ['storageChat', epoch, convId],
+    queryFn: () => storageChatOf(convId),
+    staleTime: CHAT_STALE_MS,
+    retry: false,
+    refetchInterval: (query) => (query.state.data ? false : CHAT_RECHECK_MS),
   });
   const peer = data?.peerAddress ?? null;
   usePeerProfiles([peer]);
@@ -47,7 +54,9 @@ function useWidgetChat(convId: string): WidgetChat {
   return {
     title: label === '' ? FALLBACK_TITLE : label,
     isGroup: peer === null,
-    open: () => { router.push(conversationLinkOf(convId, peer)); },
+    open: () => {
+      router.push(conversationLinkOf(convId, peer));
+    },
   };
 }
 
@@ -57,18 +66,34 @@ function FrameBody({ source, isGroup }: { source: DashboardSource; isGroup: bool
   const consent = useConvConsentState(conversationId);
   const access = useGroupAccess(conversationId, isGroup);
   if (access === 'outside') return <Unavailable title={OUTSIDE_CHANNEL_NOTICE} />;
-  if (message === undefined) return <Column weight={1} align="center" justify="center"><Spinner /></Column>;
+  if (message === undefined)
+    return (
+      <Column weight={1} align="center" justify="center">
+        <Spinner />
+      </Column>
+    );
   if (message.state === 'missing') return <Unavailable title={NOT_SYNCED} detail={NOT_SYNCED_DETAIL} />;
   if (message.state === 'deleted') return <Unavailable title={DELETED} />;
   return (
     <FrameTile
-      frame={message.frame} line={lineOfConv(conversationId)} messageId={messageId} disabled={consent !== 'allowed'} fill onSent={toastSent}
+      frame={message.frame}
+      line={lineOfConv(conversationId)}
+      messageId={messageId}
+      disabled={consent !== 'allowed'}
+      fill
+      onSent={toastSent}
     />
   );
 }
 
-export function FrameWidget({ source, onMenu, grip }: {
-  source: DashboardSource; onMenu: (anchor: MenuPoint) => void; grip: WidgetGrip;
+export function FrameWidget({
+  source,
+  onMenu,
+  grip,
+}: {
+  source: DashboardSource;
+  onMenu: (anchor: MenuPoint) => void;
+  grip: WidgetGrip;
 }): React.ReactElement {
   const chat = useWidgetChat(source.conversationId);
   return (

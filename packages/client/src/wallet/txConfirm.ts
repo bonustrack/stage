@@ -1,4 +1,3 @@
-
 import { decodeFunctionData, erc20Abi, formatEther, formatUnits, isAddress, type Hex } from 'viem';
 import { selectorOf } from './txDecode';
 import type { Eip712TypedData, SignatureRequestContent } from '../xmtp/sign';
@@ -26,12 +25,14 @@ interface CallLike {
 }
 
 function parseWei(value?: string): bigint | null {
-  try { return BigInt(value ?? '0x0'); } catch { return null; }
+  try {
+    return BigInt(value ?? '0x0');
+  } catch {
+    return null;
+  }
 }
 
-function deriveNativeSummary(
-  to: string | undefined, value: string | undefined, nativeSymbol: string,
-): ConfirmSummary {
+function deriveNativeSummary(to: string | undefined, value: string | undefined, nativeSymbol: string): ConfirmSummary {
   const wei = parseWei(value);
   if (to && isAddress(to) && wei !== null) {
     return { verified: true, recipient: to, amount: formatEther(wei), symbol: nativeSymbol };
@@ -39,33 +40,20 @@ function deriveNativeSummary(
   return { verified: false, recipient: to ?? '(unknown)', target: to, selector: undefined };
 }
 
-function deriveTransferSummary(
-  to: string | undefined, data: string,
-): ConfirmSummary | undefined {
+function deriveTransferSummary(to: string | undefined, data: string): ConfirmSummary | undefined {
   try {
     const decoded = decodeFunctionData({ abi: erc20Abi, data: data as Hex });
     if (decoded.functionName !== 'transfer') return undefined;
     const [recipient, rawAmount] = decoded.args;
     const known = KNOWN_TOKENS[(to ?? '').toLowerCase()];
-    const amount = known
-      ? formatUnits(rawAmount, known.decimals)
-      : rawAmount.toString();
-    return {
-      verified: true,
-      recipient,
-      amount,
-      symbol: known?.symbol,
-      target: to,
-    };
+    const amount = known ? formatUnits(rawAmount, known.decimals) : rawAmount.toString();
+    return { verified: true, recipient, amount, symbol: known?.symbol, target: to };
   } catch {
     return undefined;
   }
 }
 
-export function deriveConfirmSummary(
-  call: CallLike,
-  nativeSymbol = 'ETH',
-): ConfirmSummary {
+export function deriveConfirmSummary(call: CallLike, nativeSymbol = 'ETH'): ConfirmSummary {
   const to = call.to;
   const data = call.data;
   const hasData = !!data && data.length > 2;
@@ -80,9 +68,7 @@ export function deriveConfirmSummary(
 
 export function confirmMessage(s: ConfirmSummary, chainName: string): string {
   if (s.verified) {
-    const amountPart = s.amount != null
-      ? `${s.amount}${s.symbol ? ` ${s.symbol}` : ''}`
-      : 'tokens';
+    const amountPart = s.amount != null ? `${s.amount}${s.symbol ? ` ${s.symbol}` : ''}` : 'tokens';
     const tokenNote = s.symbol ? '' : s.target ? `\nToken contract: ${s.target}` : '';
     return `Send ${amountPart} to ${s.recipient} on ${chainName}?${tokenNote}`;
   }
@@ -121,7 +107,11 @@ export interface SignConfirmSummary {
 function toScalarString(v: unknown): string | undefined {
   if (v == null) return undefined;
   if (typeof v === 'object') {
-    try { return JSON.stringify(v); } catch { return undefined; }
+    try {
+      return JSON.stringify(v);
+    } catch {
+      return undefined;
+    }
   }
   if (typeof v === 'string') return v;
   if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') {
@@ -132,7 +122,7 @@ function toScalarString(v: unknown): string | undefined {
 
 function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): string | undefined {
   if (!message) return undefined;
-  const lower = new Map(Object.keys(message).map(k => [k.toLowerCase(), k]));
+  const lower = new Map(Object.keys(message).map((k) => [k.toLowerCase(), k]));
   for (const want of keys) {
     const actual = lower.get(want.toLowerCase());
     if (actual != null) {
@@ -150,19 +140,29 @@ function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): 
 function fmtFieldValue(v: unknown): string {
   if (v == null) return '';
   if (typeof v === 'object') {
-    try { return JSON.stringify(v).slice(0, 80); } catch { return '[object Object]'; }
+    try {
+      return JSON.stringify(v).slice(0, 80);
+    } catch {
+      return '[object Object]';
+    }
   }
   if (typeof v === 'string') return v.slice(0, 80);
   if (typeof v === 'symbol') return v.toString().slice(0, 80);
   if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') {
     return String(v).slice(0, 80);
   }
-  try { return JSON.stringify(v).slice(0, 80); } catch { return ''; }
+  try {
+    return JSON.stringify(v).slice(0, 80);
+  } catch {
+    return '';
+  }
 }
 
 function deriveMessageFields(message: Record<string, unknown> | undefined): { name: string; value: string }[] | undefined {
   if (!message) return undefined;
-  return Object.entries(message).slice(0, 6).map(([name, v]) => ({ name, value: fmtFieldValue(v) }));
+  return Object.entries(message)
+    .slice(0, 6)
+    .map(([name, v]) => ({ name, value: fmtFieldValue(v) }));
 }
 
 function deriveTypedDataSummary(td: Eip712TypedData): SignConfirmSummary {
@@ -197,27 +197,26 @@ function domLine(s: SignConfirmSummary): string {
 function highRiskMessage(s: SignConfirmSummary, senderNote: string): string {
   const who = s.counterparty ? ` to ${s.counterparty}` : '';
   const tok = s.token ? `\nToken/contract: ${s.token}` : '';
-  return `⚠️ This signature grants a ${s.kindLabel}${who}.${tok}${domLine(s)}\n`
-    + 'Signing it can let someone move your assets later. Only sign if you fully trust the sender.'
-    + senderNote;
+  return (
+    `⚠️ This signature grants a ${s.kindLabel}${who}.${tok}${domLine(s)}\n` +
+    'Signing it can let someone move your assets later. Only sign if you fully trust the sender.' +
+    senderNote
+  );
 }
 
 function plainMessageBody(s: SignConfirmSummary, senderNote: string): string {
   const body = s.message?.trim();
-  const shown = body
-    ? `\n\nMessage:\n"${body.length > 300 ? `${body.slice(0, 300)}…` : body}"`
-    : '';
+  const shown = body ? `\n\nMessage:\n"${body.length > 300 ? `${body.slice(0, 300)}…` : body}"` : '';
   return `Sign this message?${shown}\nOnly sign if you trust the sender.${senderNote}`;
 }
 
 function typedDataBody(s: SignConfirmSummary, senderNote: string): string {
   const fieldLines = (s.fields ?? [])
-    .filter(f => f.value)
-    .map(f => `\n  ${f.name}: ${f.value}`)
+    .filter((f) => f.value)
+    .map((f) => `\n  ${f.name}: ${f.value}`)
     .join('');
   const content = fieldLines ? `\nFields:${fieldLines}` : '';
-  return `Sign typed data (${s.primaryType ?? s.kindLabel})?${domLine(s)}${content}\n`
-    + `Only sign if you trust the sender.${senderNote}`;
+  return `Sign typed data (${s.primaryType ?? s.kindLabel})?${domLine(s)}${content}\n` + `Only sign if you trust the sender.${senderNote}`;
 }
 
 export function signConfirmMessage(s: SignConfirmSummary, description?: string): string {

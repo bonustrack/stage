@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
-import {
-  decodeFunctionData, encodeAbiParameters, keccak256, namehash, parseAbi, parseTransaction, stringToBytes, type Hex,
-} from 'viem';
+import { decodeFunctionData, encodeAbiParameters, keccak256, namehash, parseAbi, parseTransaction, stringToBytes, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { makeNamesChain } from '../src/namesChain.ts';
 
@@ -12,11 +10,15 @@ const RESOLVER: Hex = '0x426fA03fB86E510d0Dd9F70335Cf102a98b10875';
 const USER: Hex = '0x00000000000000000000000000000000000000A1';
 const ZERO: Hex = '0x0000000000000000000000000000000000000000';
 const ABI = parseAbi([
-  'function owner(bytes32 node) view returns (address)', 'function resolver(bytes32 node) view returns (address)',
+  'function owner(bytes32 node) view returns (address)',
+  'function resolver(bytes32 node) view returns (address)',
   'function setSubnodeRecord(bytes32 node, bytes32 label, address owner, address resolver, uint64 ttl)',
 ]);
 
-interface RpcCall { method: string; params: unknown[] }
+interface RpcCall {
+  method: string;
+  params: unknown[];
+}
 
 const owners = new Map<Hex, Hex>();
 const sent: Hex[] = [];
@@ -25,22 +27,33 @@ let receiptStatus = '0x1';
 function readRegistry(data: Hex): Hex {
   const call = decodeFunctionData({ abi: ABI, data });
   const node = call.args[0];
-  const answer = call.functionName === 'resolver' ? (node === namehash('stage.base.eth') ? RESOLVER : ZERO) : owners.get(node) ?? ZERO;
+  const answer = call.functionName === 'resolver' ? (node === namehash('stage.base.eth') ? RESOLVER : ZERO) : (owners.get(node) ?? ZERO);
   return encodeAbiParameters([{ type: 'address' }], [answer]);
 }
 
 function answer({ method, params }: RpcCall): unknown {
   switch (method) {
-    case 'eth_chainId': return '0x2105';
-    case 'eth_call': return readRegistry((params[0] as { data: Hex }).data);
-    case 'eth_getTransactionCount': return '0x0';
-    case 'eth_estimateGas': return '0x12b0d';
-    case 'eth_maxPriorityFeePerGas': return '0x1';
-    case 'eth_blockNumber': return '0x10';
-    case 'eth_getBlockByNumber': return { number: '0x10', baseFeePerGas: '0x1', hash: `0x${'1'.repeat(64)}`, transactions: [] };
-    case 'eth_sendRawTransaction': sent.push(params[0] as Hex); return keccak256(params[0] as Hex);
-    case 'eth_getTransactionReceipt': return { status: receiptStatus, blockNumber: '0x10', transactionHash: params[0], logs: [] };
-    default: throw new Error(`unexpected ${method}`);
+    case 'eth_chainId':
+      return '0x2105';
+    case 'eth_call':
+      return readRegistry((params[0] as { data: Hex }).data);
+    case 'eth_getTransactionCount':
+      return '0x0';
+    case 'eth_estimateGas':
+      return '0x12b0d';
+    case 'eth_maxPriorityFeePerGas':
+      return '0x1';
+    case 'eth_blockNumber':
+      return '0x10';
+    case 'eth_getBlockByNumber':
+      return { number: '0x10', baseFeePerGas: '0x1', hash: `0x${'1'.repeat(64)}`, transactions: [] };
+    case 'eth_sendRawTransaction':
+      sent.push(params[0] as Hex);
+      return keccak256(params[0] as Hex);
+    case 'eth_getTransactionReceipt':
+      return { status: receiptStatus, blockNumber: '0x10', transactionHash: params[0], logs: [] };
+    default:
+      throw new Error(`unexpected ${method}`);
   }
 }
 
@@ -71,11 +84,13 @@ describe('issuing a stage name on Base', () => {
     const chain = makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base');
     const hash = await chain.issue('fabien', USER);
     expect(hash).toBe(keccak256(sent[0] ?? '0x'));
-    expect(sentCalls()).toEqual([{
-      to: REGISTRY.toLowerCase() as Hex,
-      functionName: 'setSubnodeRecord',
-      args: [namehash('stage.base.eth'), keccak256(stringToBytes('fabien')), USER, RESOLVER, 0n],
-    }]);
+    expect(sentCalls()).toEqual([
+      {
+        to: REGISTRY.toLowerCase() as Hex,
+        functionName: 'setSubnodeRecord',
+        args: [namehash('stage.base.eth'), keccak256(stringToBytes('fabien')), USER, RESOLVER, 0n],
+      },
+    ]);
   });
 
   test('a name the operator still holds from an older claim goes to the claimer the same way', async () => {

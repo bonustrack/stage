@@ -21,13 +21,17 @@ export const feedCache = {
   get: (line: string): HistoryEntry[] | undefined => feedSlices.get(line),
   set: setFeedSlice,
   showCached(line: string, slice: HistoryEntry[]): void {
-    cachedFeedIds.set(line, new Set(slice.map(e => e.id)));
+    cachedFeedIds.set(line, new Set(slice.map((e) => e.id)));
     setFeedSlice(line, slice);
   },
   cachedIds: (line: string): ReadonlySet<string> | undefined => cachedFeedIds.get(line),
-  settleCached(line: string): void { cachedFeedIds.delete(line); },
+  settleCached(line: string): void {
+    cachedFeedIds.delete(line);
+  },
   subscribeAll(cb: (line: string, slice: HistoryEntry[] | undefined) => void): () => void {
-    return feedChanges.subscribe(({ line, slice }) => { cb(line, slice); });
+    return feedChanges.subscribe(({ line, slice }) => {
+      cb(line, slice);
+    });
   },
   clear(): void {
     feedGeneration += 1;
@@ -69,11 +73,17 @@ export const useXmtpBootstrapPhase = bootstrap.use;
 
 export async function whileRegistering<T>(work: () => Promise<T>): Promise<T> {
   bootstrap.set('registering');
-  try { return await work(); } finally { bootstrap.set('idle'); }
+  try {
+    return await work();
+  } finally {
+    bootstrap.set('idle');
+  }
 }
 
 let globalStreamTeardown: (() => void) | null = null;
-export function registerGlobalStreamTeardown(fn: () => void): void { globalStreamTeardown = fn; }
+export function registerGlobalStreamTeardown(fn: () => void): void {
+  globalStreamTeardown = fn;
+}
 
 export function resetSharedXmtpState(): void {
   clearAppDataWrites();
@@ -105,14 +115,21 @@ export function createClientSlot<C>(onReset: () => void, discard?: (client: C) =
       const pending = (async (): Promise<C> => {
         const client = await create();
         if (generation !== started) {
-          if (discard) attempt(() => { discard(client); }, 'cleanup');
+          if (discard)
+            attempt(() => {
+              discard(client);
+            }, 'cleanup');
           throw new Error('The account changed while messaging was starting.');
         }
         cached = client;
         return client;
       })();
       inFlight = pending;
-      try { return await pending; } finally { if (inFlight === pending) inFlight = null; }
+      try {
+        return await pending;
+      } finally {
+        if (inFlight === pending) inFlight = null;
+      }
     },
     waitForReady: async () => {
       const start = Date.now();

@@ -21,7 +21,7 @@ function lastKnownConsent(convId: string | undefined): XmtpConsent | null | unde
 
 function listedConsent(convId: string | undefined): XmtpConsent | undefined {
   const rows = getCachedRows() as ConversationView[] | null;
-  return (convId ? rows?.find(r => r.convId === convId)?.consent : null) ?? undefined;
+  return (convId ? rows?.find((r) => r.convId === convId)?.consent : null) ?? undefined;
 }
 
 export function useConvConsentState(convId: string | undefined): XmtpConsent | null | undefined {
@@ -41,7 +41,9 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
     void resolve();
     let cancelConsent: (() => void) | null = null;
     try {
-      cancelConsent = streamConvConsent(() => { void resolve(); });
+      cancelConsent = streamConvConsent(() => {
+        void resolve();
+      });
     } catch (err) {
       report('conversation.consentStream', err);
     }
@@ -50,7 +52,7 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
       if (cancelConsent) attempt(cancelConsent, 'cleanup');
     };
   }, [convId]);
-  return hidden === undefined ? checked ?? listed ?? checked : hidden.hidden ? 'denied' : 'allowed';
+  return hidden === undefined ? (checked ?? listed ?? checked) : hidden.hidden ? 'denied' : 'allowed';
 }
 
 const RECHECK_MS = 10_000;
@@ -65,7 +67,10 @@ export function useGroupAccess(convId: string | undefined, isGroup: boolean): Gr
     const check = async (): Promise<void> => {
       const next = await groupAccessOf(convId).catch(recover<GroupAccess>('conversation.groupAccess', 'checking'));
       if (cancelled) return;
-      if (next !== 'member') timer = setTimeout(() => { void check(); }, RECHECK_MS);
+      if (next !== 'member')
+        timer = setTimeout(() => {
+          void check();
+        }, RECHECK_MS);
     };
     void check();
     return () => {

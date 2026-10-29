@@ -10,10 +10,33 @@ export const Controls: Story<DateTimeInputProps> = (args) => {
   const [value, setValue] = useState(args.value ?? '');
   return <DateTimeInput {...args} dark={useDark()} value={value} onChange={setValue} />;
 };
-Controls.args = { label: 'Meeting', enableDate: true, enableTime: false, appearance: 'soft', size: 'md', pill: false, block: false, clearable: true, disabled: false, min: '2026-01-01', max: '2026-12-31' };
+Controls.args = {
+  label: 'Meeting',
+  enableDate: true,
+  enableTime: false,
+  appearance: 'soft',
+  size: 'md',
+  pill: false,
+  block: false,
+  clearable: true,
+  disabled: false,
+  min: '2026-01-01',
+  max: '2026-12-31',
+};
 Controls.argTypes = {
-  label: text, placeholder: text, enableDate: bool, enableTime: bool, appearance: select(CONTROL_VARIANTS), size: select(CONTROL_SIZES),
-  pill: bool, block: bool, clearable: bool, disabled: bool, min: text, max: text, radius: number,
+  label: text,
+  placeholder: text,
+  enableDate: bool,
+  enableTime: bool,
+  appearance: select(CONTROL_VARIANTS),
+  size: select(CONTROL_SIZES),
+  pill: bool,
+  block: bool,
+  clearable: bool,
+  disabled: bool,
+  min: text,
+  max: text,
+  radius: number,
 };
 
 export const Matrix: Story = () => {

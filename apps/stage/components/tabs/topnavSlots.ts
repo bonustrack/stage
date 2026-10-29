@@ -19,6 +19,9 @@ export function usePublishTopnavSlot(next: TopnavSlot, enabled: boolean): void {
     if (!enabled) return;
     slot = next;
     listeners.notify();
-    return () => { slot = undefined; listeners.notify(); };
+    return () => {
+      slot = undefined;
+      listeners.notify();
+    };
   }, [next.right, next.override, enabled]);
 }

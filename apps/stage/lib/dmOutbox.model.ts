@@ -34,17 +34,17 @@ function belongsTo(item: OutboxItem, accountId: string | null): boolean {
 export function itemsForAddress(items: OutboxItem[], address: string, accountId: string | null): OutboxItem[] {
   const target = address.toLowerCase();
   return items
-    .filter(i => i.address === target && belongsTo(i, accountId))
+    .filter((i) => i.address === target && belongsTo(i, accountId))
     .slice()
     .sort((a, b) => a.createdAt - b.createdAt);
 }
 
 export function addressesWithQueued(items: OutboxItem[], accountId: string | null): string[] {
-  return [...new Set(items.filter(i => belongsTo(i, accountId)).map(i => i.address))];
+  return [...new Set(items.filter((i) => belongsTo(i, accountId)).map((i) => i.address))];
 }
 
 export function withoutItem(items: OutboxItem[], id: string): OutboxItem[] {
-  return items.filter(i => i.id !== id);
+  return items.filter((i) => i.id !== id);
 }
 
 export function pendingBanner(reason: 'unregistered' | 'stale-installations' | 'failed', shortAddress: string): string {

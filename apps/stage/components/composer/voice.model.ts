@@ -21,5 +21,5 @@ export function voiceFileMeta(mime: string): Pick<VoiceFile, 'mime' | 'extension
 }
 
 export function hasAudioSignal(channels: readonly Float32Array[]): boolean {
-  return channels.some(channel => channel.some(sample => sample !== 0));
+  return channels.some((channel) => channel.some((sample) => sample !== 0));
 }

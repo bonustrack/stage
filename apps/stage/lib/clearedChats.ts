@@ -10,11 +10,17 @@ function parseCleared(raw: string): ClearedChats {
     if (parsed === null || typeof parsed !== 'object') return EMPTY;
     const entries = Object.entries(parsed).filter((e): e is [string, number] => typeof e[1] === 'number');
     return Object.fromEntries(entries);
-  } catch { return EMPTY; }
+  } catch {
+    return EMPTY;
+  }
 }
 
 const prefs = createValueStore<ClearedChats>({
-  key: 'channels.cleared.', default: EMPTY, deserialize: parseCleared, serialize: JSON.stringify, perAccount: true,
+  key: 'channels.cleared.',
+  default: EMPTY,
+  deserialize: parseCleared,
+  serialize: JSON.stringify,
+  perAccount: true,
 });
 
 const localChanges = makeListeners();
@@ -31,7 +37,7 @@ export const primeClearedChats = prefs.loadAsync;
 export const loadClearedChats = prefs.loadFor;
 
 export async function markChatCleared(peerAddress: string, atMs: number): Promise<void> {
-  await prefs.update(cleared => mergeClearedChats(cleared, { [peerAddress]: atMs }));
+  await prefs.update((cleared) => mergeClearedChats(cleared, { [peerAddress]: atMs }));
   localChanges.notify();
 }
 

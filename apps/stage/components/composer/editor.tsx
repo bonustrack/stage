@@ -33,37 +33,76 @@ const COMPOSER_ICON_INSET = 7;
 type AttachAction = [CentralIcon, string, () => void | Promise<void>];
 
 interface EditorProps {
-  dark: boolean; fg: string; head: string; bg: string; sub: string; chipBg: string;
-  recording: boolean; levels: number[]; recordSecs: number;
+  dark: boolean;
+  fg: string;
+  head: string;
+  bg: string;
+  sub: string;
+  chipBg: string;
+  recording: boolean;
+  levels: number[];
+  recordSecs: number;
   slideThresholdPx?: number;
-  text: string; setText: (v: string) => void;
+  text: string;
+  setText: (v: string) => void;
   selection: { start: number; end: number };
   setSelection: (s: { start: number; end: number }) => void;
-  focusNonce: number; blurNonce: number;
-  attachMenuOpen: boolean; setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
+  focusNonce: number;
+  blurNonce: number;
+  attachMenuOpen: boolean;
+  setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
   attachActions?: AttachAction[];
-  quickIcon?: CentralIcon; quickLabel?: string; onQuick?: () => void;
+  quickIcon?: CentralIcon;
+  quickLabel?: string;
+  onQuick?: () => void;
   hasContent: boolean;
   busy?: boolean;
   dictation?: { phase: DictationPhase; press: ReturnType<typeof makeDictationPress> };
   placeholder?: string;
   rounded?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
-  onStartRec: () => void; onCancelRec: () => void; onStopRec: () => void; onSend: () => void;
+  onStartRec: () => void;
+  onCancelRec: () => void;
+  onStopRec: () => void;
+  onSend: () => void;
 }
 
-function ComposerBtn({ icon, label, onPress, fg, hoverFg, chipBg, mr }: {
-  icon: CentralIcon; label: string; onPress: (e: GestureResponderEvent) => void; fg: string; hoverFg: string; chipBg: string; mr?: number;
+function ComposerBtn({
+  icon,
+  label,
+  onPress,
+  fg,
+  hoverFg,
+  chipBg,
+  mr,
+}: {
+  icon: CentralIcon;
+  label: string;
+  onPress: (e: GestureResponderEvent) => void;
+  fg: string;
+  hoverFg: string;
+  chipBg: string;
+  mr?: number;
 }): React.ReactElement {
   const { hovered, hoverProps } = useHover();
   return (
     <HoverTooltip label={label}>
-    <Pressable accessibilityLabel={label} onPress={onPress} {...hoverProps} style={({ pressed }) => ({
-      width: 38, height: 38, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: pressed ? chipBg : 'transparent', marginRight: mr,
-    })}>
-      <Glyph icon={icon} size={24} color={hovered ? hoverFg : fg}/>
-    </Pressable>
+      <Pressable
+        accessibilityLabel={label}
+        onPress={onPress}
+        {...hoverProps}
+        style={({ pressed }) => ({
+          width: 38,
+          height: 38,
+          borderRadius: 999,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: pressed ? chipBg : 'transparent',
+          marginRight: mr,
+        })}
+      >
+        <Glyph icon={icon} size={24} color={hovered ? hoverFg : fg} />
+      </Pressable>
     </HoverTooltip>
   );
 }
@@ -75,9 +114,7 @@ interface WebKeyEvent {
   nativeEvent: { isComposing?: boolean; keyCode?: number };
 }
 
-function makeWebEnterToSend(
-  p: EditorProps,
-): ((event: NativeSyntheticEvent<TextInputKeyPressEventData>) => void) | undefined {
+function makeWebEnterToSend(p: EditorProps): ((event: NativeSyntheticEvent<TextInputKeyPressEventData>) => void) | undefined {
   if (Platform.OS !== 'web') return undefined;
   return (event) => {
     const e = event as unknown as WebKeyEvent;
@@ -121,8 +158,12 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         dark={dark}
         disabled={p.busy}
         dataSet={SELF_SCROLLBAR.dataSet}
-        onChangeText={(text) => { p.setText(text); }}
-        onSelectionChange={(range) => { p.setSelection({ start: range.start, end: range.end }); }}
+        onChangeText={(text) => {
+          p.setText(text);
+        }}
+        onSelectionChange={(range) => {
+          p.setSelection({ start: range.start, end: range.end });
+        }}
       />
     </Column>
   );
@@ -130,27 +171,44 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
 
 function quickSlot(p: EditorProps): React.ReactElement | null {
   if (!p.quickIcon || !p.onQuick) return null;
-  return <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={p.fg} hoverFg={p.head} chipBg={p.chipBg} />;
+  return (
+    <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={p.fg} hoverFg={p.head} chipBg={p.chipBg} />
+  );
 }
 
 function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
   const { fg, chipBg } = p;
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const quick = quickSlot(p);
-  const close = (): void => { p.setAttachMenuOpen(() => false); };
+  const close = (): void => {
+    p.setAttachMenuOpen(() => false);
+  };
   return (
     <>
       <ComposerBtn
         icon={IconPlusLarge}
         label="Attach"
-        onPress={(e) => { setAnchor(menuPointAbove(e)); p.setAttachMenuOpen(() => true); }}
-        fg={fg} hoverFg={p.head} chipBg={chipBg}
+        onPress={(e) => {
+          setAnchor(menuPointAbove(e));
+          p.setAttachMenuOpen(() => true);
+        }}
+        fg={fg}
+        hoverFg={p.head}
+        chipBg={chipBg}
         mr={quick === null ? undefined : -12}
       />
       {quick}
       <AnchoredMenu visible={p.attachMenuOpen} onClose={close} anchor={anchor}>
         {(p.attachActions ?? []).map(([icon, label, action]) => (
-          <MenuRow key={label} icon={icon} label={label} onPress={() => { close(); void action(); }} />
+          <MenuRow
+            key={label}
+            icon={icon}
+            label={label}
+            onPress={() => {
+              close();
+              void action();
+            }}
+          />
         ))}
       </AnchoredMenu>
     </>
@@ -161,9 +219,18 @@ function ComposerRightAction({ p, primary }: { p: EditorProps; primary: string }
   const { dark, bg } = p;
   if (!p.hasContent) return null;
   return (
-    <Button variant="primary" size="md" uniform pill dark={dark} tintBg={primary} loading={p.busy}
+    <Button
+      variant="primary"
+      size="md"
+      uniform
+      pill
+      dark={dark}
+      tintBg={primary}
+      loading={p.busy}
       disabled={p.dictation !== undefined && p.dictation.phase !== 'idle'}
-      onPress={p.onSend} icon={<Glyph icon={IconArrowUp} size={20} color={bg} />} />
+      onPress={p.onSend}
+      icon={<Glyph icon={IconArrowUp} size={20} color={bg} />}
+    />
   );
 }
 
@@ -173,15 +240,30 @@ function ComposerMic({ p, recorder }: { p: EditorProps; recorder: React.ReactEle
   const label = active ? 'Stop dictation' : 'Dictate message';
   return (
     <HoverTooltip label={label}>
-      <Button size="md" uniform pill dark={p.dark} variant={active ? 'solid' : 'ghost'}
-        accessibilityLabel={label} accessibilityState={{ disabled: p.busy === true, selected: active }}
+      <Button
+        size="md"
+        uniform
+        pill
+        dark={p.dark}
+        variant={active ? 'solid' : 'ghost'}
+        accessibilityLabel={label}
+        accessibilityState={{ disabled: p.busy === true, selected: active }}
         accessibilityHint="Tap to start or stop. Hold on the mic to dictate. Release or slide off to stop."
-        disabled={p.busy} onPress={event => { p.dictation?.press.press(event.nativeEvent.identifier !== undefined); }}
-        onPressIn={event => { p.dictation?.press.pressIn(event.nativeEvent.identifier !== undefined); }}
-        onLongPress={p.dictation.press.hold} onPressOut={p.dictation.press.pressOut}
-        onTouchEnd={p.dictation.press.release} onTouchCancel={p.dictation.press.cancel}
-        delayLongPress={350} tintBg={active ? p.head : 'transparent'}
-        icon={<Glyph icon={IconMicrophone} size={22} color={active ? p.bg : p.fg}/>} />
+        disabled={p.busy}
+        onPress={(event) => {
+          p.dictation?.press.press(event.nativeEvent.identifier !== undefined);
+        }}
+        onPressIn={(event) => {
+          p.dictation?.press.pressIn(event.nativeEvent.identifier !== undefined);
+        }}
+        onLongPress={p.dictation.press.hold}
+        onPressOut={p.dictation.press.pressOut}
+        onTouchEnd={p.dictation.press.release}
+        onTouchCancel={p.dictation.press.cancel}
+        delayLongPress={350}
+        tintBg={active ? p.head : 'transparent'}
+        icon={<Glyph icon={IconMicrophone} size={22} color={active ? p.bg : p.fg} />}
+      />
     </HoverTooltip>
   );
 }
@@ -193,7 +275,12 @@ export function composerRadius(rounded: boolean | undefined): 'sm' | 'none' {
 export function ComposerEditor(p: EditorProps): React.ReactElement {
   const { primary, border } = usePalette();
   return (
-    <Column {...SCROLLBAR_ON_HOVER} padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }} background={border} radius={composerRadius(p.rounded)}>
+    <Column
+      {...SCROLLBAR_ON_HOVER}
+      padding={{ x: PAGE_GUTTER - COMPOSER_ICON_INSET, y: 10 }}
+      background={border}
+      radius={composerRadius(p.rounded)}
+    >
       {p.dictation && p.dictation.phase !== 'idle' ? (
         <Text size="3xs" color={p.sub} accessibilityLiveRegion="polite" style={{ paddingHorizontal: 8, paddingBottom: 4 }}>
           {dictationLabel(p.dictation.phase)}
@@ -204,12 +291,17 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         levels={p.levels}
         recordSecs={p.recordSecs}
         slideThresholdPx={p.slideThresholdPx}
-        fg={p.fg} head={p.head} sub={p.sub} bg={p.bg} chipBg={p.chipBg} primary={primary}
+        fg={p.fg}
+        head={p.head}
+        sub={p.sub}
+        bg={p.bg}
+        chipBg={p.chipBg}
+        primary={primary}
         dark={p.dark}
         inputSlot={<ComposerInputSlot p={p} />}
         leftControls={<ComposerLeftControls p={p} />}
         rightAction={<ComposerRightAction p={p} primary={primary} />}
-        wrapMic={(mic) => <ComposerMic p={p} recorder={mic}/>}
+        wrapMic={(mic) => <ComposerMic p={p} recorder={mic} />}
         onStart={p.onStartRec}
         onCancel={p.onCancelRec}
         onComplete={p.onStopRec}
@@ -219,9 +311,13 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
 }
 
 export function buildAttachActions(a: {
-  pickImage: () => void; takePhoto: () => void;
-  pickFile: () => void; pickLocation: () => Promise<void>;
-  openPoll: () => void; openSig: () => void; openTx: () => void;
+  pickImage: () => void;
+  takePhoto: () => void;
+  pickFile: () => void;
+  pickLocation: () => Promise<void>;
+  openPoll: () => void;
+  openSig: () => void;
+  openTx: () => void;
   recordVoice?: () => Promise<void>;
 }): AttachAction[] {
   const voice: AttachAction[] = a.recordVoice ? [[IconMicrophone, 'Voice message', a.recordVoice]] : [];

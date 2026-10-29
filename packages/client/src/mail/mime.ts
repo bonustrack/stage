@@ -1,7 +1,14 @@
 import { binaryString } from '../text/base64';
 import {
-  binaryBytes, decodeBase64Loose, decodeCharset, decodeQuotedPrintable, headerText, parseHeaderBlock, parseParams,
-  type HeaderParams, type MailHeaders,
+  binaryBytes,
+  decodeBase64Loose,
+  decodeCharset,
+  decodeQuotedPrintable,
+  headerText,
+  parseHeaderBlock,
+  parseParams,
+  type HeaderParams,
+  type MailHeaders,
 } from './mimeHeaders';
 
 export interface MailAttachment {
@@ -40,8 +47,15 @@ const MAX_DEPTH = 10;
 const MAX_PARTS = 500;
 const BODY_TYPES: Readonly<Record<string, 'text' | 'html'>> = { 'text/plain': 'text', 'text/html': 'html' };
 const EXTENSIONS: Readonly<Record<string, string>> = {
-  'message/rfc822': 'eml', 'text/calendar': 'ics', 'text/plain': 'txt', 'text/html': 'html', 'application/pdf': 'pdf',
-  'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp',
+  'message/rfc822': 'eml',
+  'text/calendar': 'ics',
+  'text/plain': 'txt',
+  'text/html': 'html',
+  'application/pdf': 'pdf',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
 };
 
 function splitPart(source: string): Part {
@@ -98,7 +112,10 @@ function attachmentOf(part: Part, mimeType: string, filename: string, dispositio
   const contentId = contentIdOf(part.headers);
   return {
     filename: filename === '' ? defaultName(mimeType, index) : filename,
-    mimeType, size: content.byteLength, content, contentId,
+    mimeType,
+    size: content.byteLength,
+    content,
+    contentId,
     inline: disposition === 'inline' || (disposition === '' && contentId !== null),
   };
 }

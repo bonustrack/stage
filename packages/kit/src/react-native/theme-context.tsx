@@ -1,4 +1,3 @@
-
 import { createContext, createElement, useContext, type ReactNode } from 'react';
 import { kitPalette, type KitPalette } from '../tokens';
 import { loadKitFonts } from './fonts.load';

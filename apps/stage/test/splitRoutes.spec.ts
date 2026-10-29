@@ -1,6 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  BOARD_ROUTE, channelRouteConvId, homeRouteOf, homeViewAt, isBoardHome, isRailOnlyRoute, isRailRoute, isSplitRoute, isTabRoute,
+  BOARD_ROUTE,
+  channelRouteConvId,
+  homeRouteOf,
+  homeViewAt,
+  isBoardHome,
+  isRailOnlyRoute,
+  isRailRoute,
+  isSplitRoute,
+  isTabRoute,
 } from '../components/tabs/splitRoutes';
 
 describe('isSplitRoute', () => {

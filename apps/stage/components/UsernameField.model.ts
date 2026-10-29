@@ -1,10 +1,6 @@
 import { claimStatusText, type ClaimState } from './settings/ProfileSettings.claim.model';
 
-type UsernameStatus =
-  | { kind: 'checking' }
-  | { kind: 'ok'; tip: string }
-  | { kind: 'error'; tip: string }
-  | null;
+type UsernameStatus = { kind: 'checking' } | { kind: 'ok'; tip: string } | { kind: 'error'; tip: string } | null;
 
 export const USERNAME_COPY = { title: 'Pick a username', about: 'Pick a username so people can find you on Stage.' } as const;
 

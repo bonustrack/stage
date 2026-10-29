@@ -1,11 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
-import {
-  channelCandidatesOf, channelQuery, matchChannels, type ChannelCandidate,
-} from '../components/composer/channels.model';
-import {
-  activeSuggestIndex, applyDisplayEdit, insertToken, piecesOf, toDisplay,
-} from '../components/composer/mentions.model';
+import { channelCandidatesOf, channelQuery, matchChannels, type ChannelCandidate } from '../components/composer/channels.model';
+import { activeSuggestIndex, applyDisplayEdit, insertToken, piecesOf, toDisplay } from '../components/composer/mentions.model';
 
 const ALICE = `0x${'a'.repeat(40)}`;
 const labelOf = (address: string): string => (address === ALICE ? '@alice' : '@someone');
@@ -29,7 +25,7 @@ describe('composer channel display', () => {
   test('shows a channel named after an address once, as a single ref', () => {
     const named = channelRefToken('c0ffee03', `@${ALICE} fans`);
     const pieces = piecesOf(`${named} hi`, labelOf);
-    expect(pieces.map(p => p.display)).toEqual([`#@${ALICE} fans`, ' hi']);
+    expect(pieces.map((p) => p.display)).toEqual([`#@${ALICE} fans`, ' hi']);
     expect(pieces[0]?.wire).toBe(named);
   });
 
@@ -89,8 +85,8 @@ describe('composer channel candidates', () => {
 
   test('ranks a name prefix, then a word prefix, then any match', () => {
     const list = [candidate('2', 'devops'), candidate('1', 'Shared ops'), candidate('3', 'Ops team'), candidate('4', 'Design')];
-    expect(matchChannels(list, 'OPS').map(c => c.convId)).toEqual(['3', '1', '2']);
-    expect(matchChannels(list, '').map(c => c.convId)).toEqual(['2', '1', '3', '4']);
+    expect(matchChannels(list, 'OPS').map((c) => c.convId)).toEqual(['3', '1', '2']);
+    expect(matchChannels(list, '').map((c) => c.convId)).toEqual(['2', '1', '3', '4']);
   });
 
   test('shows at most six channels', () => {

@@ -21,7 +21,9 @@ export async function userMedia(video: boolean, audio: boolean): Promise<Capture
 }
 
 export async function displayMedia(): Promise<CallTrack | null> {
-  const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }).catch(ignored<MediaStream | null>(null, 'optional'));
+  const stream = await navigator.mediaDevices
+    .getDisplayMedia({ video: true, audio: false })
+    .catch(ignored<MediaStream | null>(null, 'optional'));
   return track(stream?.getVideoTracks()[0]);
 }
 
@@ -33,20 +35,35 @@ export function previewOf(video: CallTrack): CallStream {
 export function watchScreenEnd(video: CallTrack, ended: () => void): void {
   if (video.platform !== 'web') return;
   video.value.addEventListener('ended', ended, { once: true });
-  video.cleanup = () => { video.value.removeEventListener('ended', ended); };
+  video.cleanup = () => {
+    video.value.removeEventListener('ended', ended);
+  };
   if (video.value.readyState === 'ended') ended();
 }
 
 export function watchCallLifecycle(leave: () => void): () => void {
   window.addEventListener('pagehide', leave);
-  return () => { window.removeEventListener('pagehide', leave); };
+  return () => {
+    window.removeEventListener('pagehide', leave);
+  };
 }
 
-export function prepareAudio(): Promise<void> { return Promise.resolve(); }
-export function startAudio(video: boolean): Promise<void> { void video; return Promise.resolve(); }
-export function stopAudio(): void { return; }
-export function useAudioRoutes(): AudioRoutes { return NO_ROUTES; }
-export function toggleSpeaker(): void { return; }
+export function prepareAudio(): Promise<void> {
+  return Promise.resolve();
+}
+export function startAudio(video: boolean): Promise<void> {
+  void video;
+  return Promise.resolve();
+}
+export function stopAudio(): void {
+  return;
+}
+export function useAudioRoutes(): AudioRoutes {
+  return NO_ROUTES;
+}
+export function toggleSpeaker(): void {
+  return;
+}
 
 const TONE_HZ = [480, 620] as const;
 const TONE_S = 0.35;

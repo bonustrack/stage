@@ -2,7 +2,10 @@ import { STAGE_NAMES_PARENT, isStageName } from '../identity/stageNames';
 
 export type HandleKind = 'address' | 'conversation' | 'stage' | 'basename' | 'ens' | 'invalid';
 
-export interface ParsedHandle { kind: HandleKind; value: string }
+export interface ParsedHandle {
+  kind: HandleKind;
+  value: string;
+}
 
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 const CONVERSATION_ID_RE = /^(0x)?(?:[0-9a-fA-F]{32}|[0-9a-fA-F]{64})$/;
@@ -12,8 +15,25 @@ const NAME_RE = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 const STAGE_ORIGIN = 'https://stage.box';
 
 const RESERVED_ROOT_SEGMENTS = new Set([
-  'channels', 'channel', 'group', 'profile', 'user', 'settings', 'contacts', 'wallet', 'accounts',
-  'requests', 'new', 'new-group', 'add-members', 'embed', 'xmtp', 'board', 'dashboard', 'storage', 'inbox',
+  'channels',
+  'channel',
+  'group',
+  'profile',
+  'user',
+  'settings',
+  'contacts',
+  'wallet',
+  'accounts',
+  'requests',
+  'new',
+  'new-group',
+  'add-members',
+  'embed',
+  'xmtp',
+  'board',
+  'dashboard',
+  'storage',
+  'inbox',
 ]);
 
 const PEER_KINDS = new Set<HandleKind>(['address', 'stage', 'basename', 'ens']);

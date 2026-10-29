@@ -1,9 +1,17 @@
-
 import { FONT_SIZE, colors, fontName, schemePalette } from './tokens';
 
 export type ButtonColor = 'primary' | 'secondary' | 'info' | 'discovery' | 'success' | 'caution' | 'warning' | 'danger';
 
-export const BUTTON_COLORS: readonly ButtonColor[] = ['primary', 'secondary', 'info', 'discovery', 'success', 'caution', 'warning', 'danger'];
+export const BUTTON_COLORS: readonly ButtonColor[] = [
+  'primary',
+  'secondary',
+  'info',
+  'discovery',
+  'success',
+  'caution',
+  'warning',
+  'danger',
+];
 
 export type ButtonControlVariant = 'solid' | 'soft' | 'outline' | 'ghost';
 
@@ -19,7 +27,10 @@ const HINTS: Record<ButtonHint, { fill: ButtonControlVariant; color: ButtonColor
   borderless: { fill: 'ghost', color: 'primary' },
 };
 
-export function resolveButtonVariant(variant: ButtonVariant | undefined, color: ButtonColor | undefined): { fill: ButtonControlVariant; color: ButtonColor } {
+export function resolveButtonVariant(
+  variant: ButtonVariant | undefined,
+  color: ButtonColor | undefined,
+): { fill: ButtonControlVariant; color: ButtonColor } {
   const v = variant ?? 'default';
   if (v === 'default' || v === 'primary' || v === 'borderless') return { fill: HINTS[v].fill, color: color ?? HINTS[v].color };
   return { fill: v, color: color ?? 'primary' };
@@ -56,10 +67,7 @@ export interface VariantColors {
 const DANGER = '#d6453d';
 const DANGER_PRESSED = '#bf3a33';
 
-function accent(
-  color: ButtonColor,
-  dark: boolean,
-): { bg: string; pressed: string; on: string } {
+function accent(color: ButtonColor, dark: boolean): { bg: string; pressed: string; on: string } {
   const { head, border } = schemePalette(dark);
   switch (color) {
     case 'primary':
@@ -91,12 +99,7 @@ interface ColorCtx {
 }
 
 function solidColors(ctx: ColorCtx): VariantColors {
-  return {
-    bg: ctx.a.bg,
-    pressedBg: ctx.a.pressed,
-    text: ctx.a.on,
-    borderColor: ctx.color === 'secondary' ? ctx.border : undefined,
-  };
+  return { bg: ctx.a.bg, pressedBg: ctx.a.pressed, text: ctx.a.on, borderColor: ctx.color === 'secondary' ? ctx.border : undefined };
 }
 
 function softColors(ctx: ColorCtx, dark: boolean): VariantColors {
@@ -117,11 +120,7 @@ function ghostColors(ctx: ColorCtx): VariantColors {
   return { bg: 'transparent', text: ctx.isNeutral ? ctx.neutralText : ctx.a.bg, ghostPressedBg: ctx.ghostPressedBg };
 }
 
-export function resolveColors(
-  color: ButtonColor,
-  variant: ButtonControlVariant,
-  dark: boolean,
-): VariantColors {
+export function resolveColors(color: ButtonColor, variant: ButtonControlVariant, dark: boolean): VariantColors {
   const p = schemePalette(dark);
   const ctx: ColorCtx = {
     a: accent(color, dark),
@@ -152,11 +151,5 @@ export interface ButtonLabelStyle {
 }
 
 export function textLabelStyle(spec: SizeSpec, color: string): ButtonLabelStyle {
-  return {
-    color,
-    fontSize: spec.fontSize,
-    lineHeight: spec.lineHeight,
-    fontFamily: spec.fontFamily,
-    textAlign: 'center',
-  };
+  return { color, fontSize: spec.fontSize, lineHeight: spec.lineHeight, fontFamily: spec.fontFamily, textAlign: 'center' };
 }

@@ -20,10 +20,8 @@ describe('bubbleFallbackText', () => {
   });
 
   test('falls back to content type name when text is empty', () => {
-    expect(bubbleFallbackText({ text: '', payload: { contentType: 'reaction' } }))
-      .toBe('Unsupported message (reaction)');
-    expect(bubbleFallbackText({ text: '   ', payload: { contentType: 'reply' } }))
-      .toBe('Unsupported message (reply)');
+    expect(bubbleFallbackText({ text: '', payload: { contentType: 'reaction' } })).toBe('Unsupported message (reaction)');
+    expect(bubbleFallbackText({ text: '   ', payload: { contentType: 'reply' } })).toBe('Unsupported message (reply)');
   });
 
   test('falls back to generic label when neither text nor content type exist', () => {
@@ -44,11 +42,16 @@ describe('bubbleFallbackText', () => {
 
 describe('bubbleFallbackShape', () => {
   test('reports content type and text presence for diagnostics', () => {
-    expect(bubbleFallbackShape({ text: 'hi', payload: { contentType: 'text' } }))
-      .toEqual({ contentType: 'text', hasText: true, textLength: 2 });
-    expect(bubbleFallbackShape({ text: '', payload: { contentType: 'reply' } }))
-      .toEqual({ contentType: 'reply', hasText: false, textLength: 0 });
-    expect(bubbleFallbackShape({ text: undefined, payload: undefined }))
-      .toEqual({ contentType: undefined, hasText: false, textLength: 0 });
+    expect(bubbleFallbackShape({ text: 'hi', payload: { contentType: 'text' } })).toEqual({
+      contentType: 'text',
+      hasText: true,
+      textLength: 2,
+    });
+    expect(bubbleFallbackShape({ text: '', payload: { contentType: 'reply' } })).toEqual({
+      contentType: 'reply',
+      hasText: false,
+      textLength: 0,
+    });
+    expect(bubbleFallbackShape({ text: undefined, payload: undefined })).toEqual({ contentType: undefined, hasText: false, textLength: 0 });
   });
 });

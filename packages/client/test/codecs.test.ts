@@ -1,15 +1,10 @@
-
 import { describe, expect, test } from 'bun:test';
 import { encodeJsonContent, decodeJsonContent, POLL_CONTENT_TYPE } from '../src/xmtp/codecs';
 import { pollContentSchema } from '../src/xmtp/poll.schema';
 import { normalizeQuestions, openVoteKey, type PollContent } from '../src/xmtp/poll';
 import { openAnswersByPoll, parseOpenVote, parseVoteKey, type VoteEvent } from '../src/xmtp/poll-tally';
 
-const poll: PollContent = {
-  pollId: 'poll_abc',
-  question: 'Ship it?',
-  options: [{ label: 'Yes' }, { label: 'No' }],
-};
+const poll: PollContent = { pollId: 'poll_abc', question: 'Ship it?', options: [{ label: 'Yes' }, { label: 'No' }] };
 
 describe('encode/decode JSON content round-trip', () => {
   test('content survives a UTF-8 JSON round-trip', () => {
@@ -58,7 +53,9 @@ describe('open (free-text) question type', () => {
   test('legacy plain-string options decode as labelled options', () => {
     const legacy = encodeJsonContent(POLL_CONTENT_TYPE, { pollId: 'p', question: 'Pick', options: ['a', 'b'] });
     expect(decodeJsonContent(legacy.content, pollContentSchema)).toEqual({
-      pollId: 'p', question: 'Pick', options: [{ label: 'a' }, { label: 'b' }],
+      pollId: 'p',
+      question: 'Pick',
+      options: [{ label: 'a' }, { label: 'b' }],
     });
   });
 

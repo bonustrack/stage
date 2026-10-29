@@ -76,7 +76,8 @@ function withoutDiscriminator(schema: JsonValue): JsonValue {
   const out: JsonObject = {};
   for (const [key, value] of entriesOf(schema)) {
     if (CLOSURE_KEYWORDS.has(key)) continue;
-    if (key === 'properties' && isJsonObject(value)) out[key] = Object.fromEntries(Object.entries(value).filter(([name]) => name !== 'component'));
+    if (key === 'properties' && isJsonObject(value))
+      out[key] = Object.fromEntries(Object.entries(value).filter(([name]) => name !== 'component'));
     else if (key === 'required' && Array.isArray(value)) out[key] = value.filter((name) => name !== 'component');
     else if (key === 'allOf' && Array.isArray(value)) out[key] = value.map(withoutDiscriminator);
     else out[key] = value;
@@ -201,8 +202,10 @@ function checkRequired(schema: JsonObject, keys: readonly string[], path: string
 function checkObjectShape(schema: JsonObject, value: JsonObject, path: string[], scope: Scope, out: Outcome): void {
   const keys = entriesOf(value).map(([key]) => key);
   checkRequired(schema, keys, path, out);
-  if (typeof schema.minProperties === 'number' && keys.length < schema.minProperties) out.issues.push(issue(path, `Expected at least ${schema.minProperties} properties.`));
-  if (typeof schema.maxProperties === 'number' && keys.length > schema.maxProperties) out.issues.push(issue(path, `Expected at most ${schema.maxProperties} properties.`));
+  if (typeof schema.minProperties === 'number' && keys.length < schema.minProperties)
+    out.issues.push(issue(path, `Expected at least ${schema.minProperties} properties.`));
+  if (typeof schema.maxProperties === 'number' && keys.length > schema.maxProperties)
+    out.issues.push(issue(path, `Expected at most ${schema.maxProperties} properties.`));
   const names = schema.propertyNames;
   if (names !== undefined) for (const key of keys) out.issues.push(...check(names, key, [...path, key], scope).issues);
 }
@@ -221,17 +224,20 @@ function checkItems(schema: JsonObject, value: readonly JsonValue[], path: strin
   const { items, contains } = schema;
   const at = (sub: JsonValue, item: JsonValue, index: number): Outcome => check(sub, item, [...path, String(index)], scope);
   if (items !== undefined) value.forEach((item, index) => out.issues.push(...at(items, item, index).issues));
-  if (contains !== undefined && !value.some((item, index) => passed(at(contains, item, index)))) out.issues.push(issue(path, 'Expected at least one matching item.'));
+  if (contains !== undefined && !value.some((item, index) => passed(at(contains, item, index))))
+    out.issues.push(issue(path, 'Expected at least one matching item.'));
 }
 
 function checkValueKeywords(schema: JsonObject, value: JsonValue, path: string[], scope: Scope, out: Outcome): void {
   const typeIssue = checkType(schema.type, value);
   if (typeIssue !== undefined) out.issues.push(issue(path, typeIssue));
-  if (schema.const !== undefined && !jsonEqual(schema.const, value)) out.issues.push(issue(path, `Expected the constant ${JSON.stringify(schema.const)}.`));
+  if (schema.const !== undefined && !jsonEqual(schema.const, value))
+    out.issues.push(issue(path, `Expected the constant ${JSON.stringify(schema.const)}.`));
   if (Array.isArray(schema.enum) && !schema.enum.some((option) => jsonEqual(option, value))) {
     out.issues.push(issue(path, `Expected one of ${schema.enum.map((v) => JSON.stringify(v)).join(', ')}.`));
   }
-  for (const message of [...checkString(schema, value), ...checkNumber(schema, value), ...checkArray(schema, value)]) out.issues.push(issue(path, message));
+  for (const message of [...checkString(schema, value), ...checkNumber(schema, value), ...checkArray(schema, value)])
+    out.issues.push(issue(path, message));
   if (Array.isArray(value)) checkItems(schema, value, path, scope, out);
   if (isJsonObject(value)) {
     checkObjectShape(schema, value, path, scope, out);

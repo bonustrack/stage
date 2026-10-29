@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  avatarCacheKey, baseCoinType, baseReverseNode, resolveBasenameProfile, resolveOnchainProfile, usableAvatarUri,
+  avatarCacheKey,
+  baseCoinType,
+  baseReverseNode,
+  resolveBasenameProfile,
+  resolveOnchainProfile,
+  usableAvatarUri,
 } from '../src/identity/onchainProfile';
 import type { PublicClient } from 'viem';
 
@@ -12,8 +17,9 @@ describe('basename reverse nodes', () => {
   });
 
   test('matches the reverse node OnchainKit derives for a known address', () => {
-    expect(baseReverseNode('0x8c8F1a1e1bFdb15E7ed562efc84e5A588E68aD73'))
-      .toBe('0xcd18b9f82b690bdf732816fe0b9796635191f97e59bcebbef4eba6e05a39da05');
+    expect(baseReverseNode('0x8c8F1a1e1bFdb15E7ed562efc84e5A588E68aD73')).toBe(
+      '0xcd18b9f82b690bdf732816fe0b9796635191f97e59bcebbef4eba6e05a39da05',
+    );
   });
 
   test('is deterministic and case-insensitive on the address', () => {
@@ -46,9 +52,17 @@ function fakeClient(answers: { name: string; addr: string; text?: Record<string,
 
 describe('resolveBasenameProfile', () => {
   test('returns the basename with its avatar, display name and description when forward resolution matches', async () => {
-    const client = fakeClient({ name: 'tony.base.eth', addr: ALICE, text: { avatar: 'ipfs://pic', name: ' Tony ', description: 'Builder' } });
+    const client = fakeClient({
+      name: 'tony.base.eth',
+      addr: ALICE,
+      text: { avatar: 'ipfs://pic', name: ' Tony ', description: 'Builder' },
+    });
     expect(await resolveBasenameProfile(client, ALICE)).toEqual({
-      name: 'tony.base.eth', displayName: 'Tony', description: 'Builder', avatar: 'ipfs://pic', source: 'basename',
+      name: 'tony.base.eth',
+      displayName: 'Tony',
+      description: 'Builder',
+      avatar: 'ipfs://pic',
+      source: 'basename',
     });
   });
 
@@ -66,7 +80,11 @@ describe('resolveBasenameProfile', () => {
   test('resolves through the Base client and swallows RPC failures', async () => {
     const clients = fakeClient({ name: 'tony.base.eth', addr: ALICE });
     expect(await resolveOnchainProfile(clients, ALICE)).toEqual({
-      name: 'tony.base.eth', displayName: undefined, description: undefined, avatar: undefined, source: 'basename',
+      name: 'tony.base.eth',
+      displayName: undefined,
+      description: undefined,
+      avatar: undefined,
+      source: 'basename',
     });
     expect(await resolveOnchainProfile(fakeClient({ name: '', addr: '' }, true), ALICE)).toBeNull();
   });

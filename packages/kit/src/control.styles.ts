@@ -1,11 +1,7 @@
-
 import type { DimensionValue, ViewStyle, TextStyle } from 'react-native';
 import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from './tokens';
 
-export function fieldIds(name: string | undefined): {
-  nativeID?: string;
-  accessibilityLabelledBy?: string;
-} {
+export function fieldIds(name: string | undefined): { nativeID?: string; accessibilityLabelledBy?: string } {
   if (!name) return {};
   return { nativeID: `input-${name}`, accessibilityLabelledBy: `label-${name}` };
 }
@@ -16,13 +12,7 @@ export function styleList(style: ViewStyle | ViewStyle[] | undefined): ViewStyle
 }
 
 export function triggerRowStyle(block?: boolean, disabled?: boolean): ViewStyle {
-  return {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    alignSelf: block ? 'stretch' : 'flex-start',
-    opacity: disabled ? 0.5 : 1,
-  };
+  return { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: block ? 'stretch' : 'flex-start', opacity: disabled ? 0.5 : 1 };
 }
 
 export function triggerLabelStyle(color: string, fontSize: number): TextStyle {
@@ -64,12 +54,7 @@ export function controlColors(variant: ControlVariant, dark: boolean): ControlCo
   };
 }
 
-export function controlBoxStyle(
-  size: ControlSize,
-  variant: ControlVariant,
-  colors: ControlColors,
-  radius: number,
-): ViewStyle {
+export function controlBoxStyle(size: ControlSize, variant: ControlVariant, colors: ControlColors, radius: number): ViewStyle {
   const spec = CONTROL_SIZES[size];
   return {
     minHeight: spec.minHeight,
@@ -85,13 +70,7 @@ export function controlBoxStyle(
 }
 
 export function controlTextStyle(size: ControlSize, colors: ControlColors): TextStyle {
-  return {
-    color: colors.text,
-    fontSize: FONT_SIZE[size],
-    fontFamily: fontName.sans,
-    padding: 0,
-    margin: 0,
-  };
+  return { color: colors.text, fontSize: FONT_SIZE[size], fontFamily: fontName.sans, padding: 0, margin: 0 };
 }
 
 export interface TextFieldStyleInput {

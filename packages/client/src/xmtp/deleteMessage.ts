@@ -2,20 +2,32 @@ import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
 
 export const DELETE_MESSAGE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'xmtp.org', typeId: 'deleteMessage', versionMajor: 1, versionMinor: 0,
+  authorityId: 'xmtp.org',
+  typeId: 'deleteMessage',
+  versionMajor: 1,
+  versionMinor: 0,
 };
 
 export const DELETE_MESSAGE_TYPE_ID = DELETE_MESSAGE_CONTENT_TYPE.typeId;
 
 export const STAGE_DELETE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'deleteRequest', versionMajor: 1, versionMinor: 0,
+  authorityId: 'stage.box',
+  typeId: 'deleteRequest',
+  versionMajor: 1,
+  versionMinor: 0,
 };
 
 export const STAGE_DELETE_TYPE_ID = STAGE_DELETE_CONTENT_TYPE.typeId;
 
 const XMTP_DELETABLE_TYPE_IDS: readonly string[] = [
-  'text', 'markdown', 'reply', 'attachment', 'remoteStaticAttachment', 'multiRemoteStaticAttachment',
-  'transactionReference', 'walletSendCalls',
+  'text',
+  'markdown',
+  'reply',
+  'attachment',
+  'remoteStaticAttachment',
+  'multiRemoteStaticAttachment',
+  'transactionReference',
+  'walletSendCalls',
 ];
 
 export const DELETED_MESSAGE_TYPE_ID = 'deletedMessage';
@@ -62,7 +74,10 @@ export function encodeDeleteMessageBytes(messageId: string): Uint8Array {
   return new Uint8Array([MESSAGE_ID_TAG, ...varint(id.length), ...id]);
 }
 
-interface Cursor { bytes: Uint8Array; at: number }
+interface Cursor {
+  bytes: Uint8Array;
+  at: number;
+}
 
 function readVarint(c: Cursor): number {
   let value = 0;

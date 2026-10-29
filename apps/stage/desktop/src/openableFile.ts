@@ -5,8 +5,14 @@ export const TEMP_PREFIX = 'stage-open-';
 const OPEN_IN_APP = new Set(['pdf', 'txt', 'log', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'mp3', 'm4a', 'wav', 'mp4', 'mov']);
 const RESERVED = '/\\:*?"<>|';
 const HIDDEN_RANGES: readonly (readonly [number, number])[] = [
-  [0x0, 0x1f], [0x7f, 0x9f], [0xad, 0xad], [0x61c, 0x61c],
-  [0x200b, 0x200f], [0x202a, 0x202e], [0x2066, 0x2069], [0xfeff, 0xfeff],
+  [0x0, 0x1f],
+  [0x7f, 0x9f],
+  [0xad, 0xad],
+  [0x61c, 0x61c],
+  [0x200b, 0x200f],
+  [0x202a, 0x202e],
+  [0x2066, 0x2069],
+  [0xfeff, 0xfeff],
 ];
 const WINDOWS_DEVICE = /^(con|prn|aux|nul|com\d|lpt\d)(\..*)?$/i;
 const MAX_NAME_BYTES = 200;

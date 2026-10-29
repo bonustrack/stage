@@ -14,8 +14,4 @@ export const ON_PRIMARY_COLOR: ThemeColor = { dark: '#000000', light: '#ffffff' 
 
 export const MEMBER_OWNER_FG: ThemeColor = { dark: '#2dd4bf', light: '#0d9488' };
 
-export const MEMBER_OWNER_BG: ThemeColor = {
-  dark: 'rgba(45,212,191,0.18)',
-  light: 'rgba(13,148,136,0.12)',
-};
-
+export const MEMBER_OWNER_BG: ThemeColor = { dark: 'rgba(45,212,191,0.18)', light: 'rgba(13,148,136,0.12)' };

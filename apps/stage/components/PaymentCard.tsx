@@ -49,8 +49,14 @@ interface PaymentAction {
   disabled?: boolean;
 }
 
-function PaymentBalanceLine({ show, bal, pal }: {
-  show: boolean; bal: PayerBalance | null; pal: ReturnType<typeof usePalette>;
+function PaymentBalanceLine({
+  show,
+  bal,
+  pal,
+}: {
+  show: boolean;
+  bal: PayerBalance | null;
+  pal: ReturnType<typeof usePalette>;
 }): React.ReactElement | null {
   if (!show) return null;
   if (bal) {
@@ -67,24 +73,44 @@ function PaymentBalanceLine({ show, bal, pal }: {
   );
 }
 
-function PaymentActionButton({ action, dark, pal }: {
-  action: PaymentAction; dark?: boolean; pal: ReturnType<typeof usePalette>;
+function PaymentActionButton({
+  action,
+  dark,
+  pal,
+}: {
+  action: PaymentAction;
+  dark?: boolean;
+  pal: ReturnType<typeof usePalette>;
 }): React.ReactElement {
   return (
     <Button
-      size="lg" fullWidth radius={24} dark={dark}
-      loading={action.loading} disabled={action.disabled}
+      size="lg"
+      fullWidth
+      radius={24}
+      dark={dark}
+      loading={action.loading}
+      disabled={action.disabled}
       {...(action.url === undefined ? { onPress: action.onPress } : bubbleLinkProps(action.url, openInBubbleLink))}
       label={action.label}
       iconStart={action.icon}
-      tintBg={pal.primary} tintFg={pal.bg} style={{ marginTop: 2 }}
+      tintBg={pal.primary}
+      tintFg={pal.bg}
+      style={{ marginTop: 2 }}
     />
   );
 }
 
 export function PaymentCard({
-  dark, logoUrl, chainNum, description, badge, amountLabel,
-  detail, balance, action, footer,
+  dark,
+  logoUrl,
+  chainNum,
+  description,
+  badge,
+  amountLabel,
+  detail,
+  balance,
+  action,
+  footer,
 }: {
   dark?: boolean;
   logoUrl: string;
@@ -109,10 +135,18 @@ export function PaymentCard({
   const resolvedAction = typeof action === 'function' ? action(bal) : action;
 
   return (
-    <Column radius={BLOCK_RADIUS_DEFAULT} background={withAlpha(pal.primary, 0.08)} padding={12} margin={{ top: 8 }} gap={8} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+    <Column
+      radius={BLOCK_RADIUS_DEFAULT}
+      background={withAlpha(pal.primary, 0.08)}
+      padding={12}
+      margin={{ top: 8 }}
+      gap={8}
+      maxWidth={ATTACHMENT_MAX_WIDTH}
+      style={{ alignSelf: 'stretch' }}
+    >
       <Row align="center" justify="spaceBetween" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
-          <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border}/>
+          <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border} />
           <Text fontWeight="semibold" size="xs" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
             {description}
           </Text>
@@ -126,9 +160,7 @@ export function PaymentCard({
       ) : null}
       {detail}
       <PaymentBalanceLine show={balance.show} bal={bal} pal={pal} />
-      {resolvedAction ? (
-        <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} />
-      ) : footer}
+      {resolvedAction ? <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} /> : footer}
     </Column>
   );
 }
@@ -143,26 +175,40 @@ function x402Description(challenge: X402Challenge, accept: X402Accept): string {
   return 'Payment required';
 }
 
-function X402Detail({ accept, network, endpoint, pal }: {
-  accept: X402Accept; network: string; endpoint: string; pal: ReturnType<typeof usePalette>;
+function X402Detail({
+  accept,
+  network,
+  endpoint,
+  pal,
+}: {
+  accept: X402Accept;
+  network: string;
+  endpoint: string;
+  pal: ReturnType<typeof usePalette>;
 }): React.ReactElement {
   return (
     <>
       {accept.payTo ? (
         <Row align="center" gap={6}>
-          <Text color="secondary" size="3xs">To</Text>
+          <Text color="secondary" size="3xs">
+            To
+          </Text>
           <Text size="xs" fontWeight="semibold" color={pal.text} numberOfLines={1}>
             {shortAddress(accept.payTo)}
           </Text>
         </Row>
       ) : null}
       <Row align="center" gap={6}>
-        <Text color="secondary" size="3xs">On</Text>
-        <Text size="2xs" color={pal.sub} numberOfLines={1}>{network}</Text>
+        <Text color="secondary" size="3xs">
+          On
+        </Text>
+        <Text size="2xs" color={pal.sub} numberOfLines={1}>
+          {network}
+        </Text>
       </Row>
       <Pressable {...bubbleLinkProps(endpoint, openInBubbleLink)}>
         <Row align="center" gap={6}>
-          <Glyph icon={IconChainLink3} size={13} color={pal.sub}/>
+          <Glyph icon={IconChainLink3} size={13} color={pal.sub} />
           <Text size="3xs" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}>
             {domainOf(endpoint)}
           </Text>
@@ -180,9 +226,7 @@ function payButtonLabel(phase: PayPhase, insufficient: boolean, asset: { symbol:
   return amountLabel ? `Pay ${amountLabel}` : 'Pay';
 }
 
-export function X402Card({ challenge, dark }: {
-  challenge: X402Challenge; dark?: boolean;
-}): React.ReactElement | null {
+export function X402Card({ challenge, dark }: { challenge: X402Challenge; dark?: boolean }): React.ReactElement | null {
   const pal = usePalette();
   const accept = challenge.accepts[0];
   const [phase, setPhase] = useState<PayPhase>('idle');
@@ -210,23 +254,28 @@ export function X402Card({ challenge, dark }: {
   };
 
   const confirmPay = (): void => {
-    void capabilities.confirm({
-      title: 'Confirm payment',
-      message: `Pay ${amountLabel ?? 'this amount'} to ${accept.payTo ? shortAddress(accept.payTo) : 'recipient'} `
-        + `for ${domainOf(endpoint)} on ${network}?\n\n`
-        + 'Signs a gasless USDC authorization (no gas, no on-chain tx) and settles it through the resource.',
-      confirmLabel: 'Pay',
-    }).then((ok) => { if (ok) runPay(); });
+    void capabilities
+      .confirm({
+        title: 'Confirm payment',
+        message:
+          `Pay ${amountLabel ?? 'this amount'} to ${accept.payTo ? shortAddress(accept.payTo) : 'recipient'} ` +
+          `for ${domainOf(endpoint)} on ${network}?\n\n` +
+          'Signs a gasless USDC authorization (no gas, no on-chain tx) and settles it through the resource.',
+        confirmLabel: 'Pay',
+      })
+      .then((ok) => {
+        if (ok) runPay();
+      });
   };
 
   const buildAction = (bal: { insufficient: boolean } | null): PaymentAction => {
-    if (!canPay) return { label: 'Open endpoint', url: endpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg}/> };
+    if (!canPay) return { label: 'Open endpoint', url: endpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg} /> };
     const insufficient = bal?.insufficient === true;
     return {
       label: payButtonLabel(phase, insufficient, asset, amountLabel),
       onPress: confirmPay,
       disabled: phase === 'paying' || phase === 'paid' || insufficient,
-      icon: <Glyph icon={phase === 'paid' ? IconCheckmark1 : IconWallet4} size={18} color={pal.bg}/>,
+      icon: <Glyph icon={phase === 'paid' ? IconCheckmark1 : IconWallet4} size={18} color={pal.bg} />,
     };
   };
 

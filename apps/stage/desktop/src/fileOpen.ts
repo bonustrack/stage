@@ -21,7 +21,9 @@ async function clearOldCopies(): Promise<void> {
   const temp = app.getPath('temp');
   const [listed] = await Promise.allSettled([readdir(temp)]);
   const names = listed.status === 'fulfilled' ? listed.value : [];
-  await Promise.allSettled(names.filter((entry) => entry.startsWith(TEMP_PREFIX)).map((entry) => rm(path.join(temp, entry), { recursive: true, force: true })));
+  await Promise.allSettled(
+    names.filter((entry) => entry.startsWith(TEMP_PREFIX)).map((entry) => rm(path.join(temp, entry), { recursive: true, force: true })),
+  );
 }
 
 export function serveFileOpening(site: string): void {

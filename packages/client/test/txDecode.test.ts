@@ -3,7 +3,12 @@ import { encodeFunctionData, parseAbi } from 'viem';
 import { decodeCall, spoofWarning, type DecodedCall } from '../src/wallet/txDecode';
 
 const verified = (functionName: string): DecodedCall => ({
-  decoded: true, verified: true, source: 'sourcify', functionName, signature: `${functionName}()`, args: [],
+  decoded: true,
+  verified: true,
+  source: 'sourcify',
+  functionName,
+  signature: `${functionName}()`,
+  args: [],
 });
 
 describe('spoofWarning', () => {
@@ -36,7 +41,11 @@ describe('spoofWarning', () => {
 
   test('selector mismatch (verified contract, fn not in ABI) -> prominent do-not-sign warning', () => {
     const c: DecodedCall = {
-      decoded: false, verified: true, source: 'mismatch', args: [], selector: '0x8ee93cf3',
+      decoded: false,
+      verified: true,
+      source: 'mismatch',
+      args: [],
+      selector: '0x8ee93cf3',
       note: 'This calls a function that does not exist on this verified contract (selector 0x8ee93cf3). Looks like post(string) per 4byte, but this contract has no such function. The transaction will likely fail or is malformed - do not sign unless you trust it.',
     };
     const w = spoofWarning(c, 'post a message');
@@ -46,15 +55,9 @@ describe('spoofWarning', () => {
   });
 });
 
-const POSTER_ABI = parseAbi([
-  'function post(string content, string tag)',
-]);
-const postStringStringData = encodeFunctionData({
-  abi: POSTER_ABI, functionName: 'post', args: ['hello', 'stage'],
-});
-const postStringData = encodeFunctionData({
-  abi: parseAbi(['function post(string content)']), functionName: 'post', args: ['hello'],
-});
+const POSTER_ABI = parseAbi(['function post(string content, string tag)']);
+const postStringStringData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: ['hello', 'stage'] });
+const postStringData = encodeFunctionData({ abi: parseAbi(['function post(string content)']), functionName: 'post', args: ['hello'] });
 
 type FetchMock = (url: string) => { ok: boolean; json: () => Promise<unknown> };
 function mockFetch(impl: FetchMock): void {
@@ -68,13 +71,16 @@ const realFetch = globalThis.fetch;
 
 const sourcifyHit = (url: string) => ({
   ok: true,
-  json: () => Promise.resolve(url.includes('sourcify')
-    ? { abi: POSTER_ABI, match: 'match' }
-    : { results: [{ id: 1, text_signature: 'post(string)' }] }),
+  json: () =>
+    Promise.resolve(
+      url.includes('sourcify') ? { abi: POSTER_ABI, match: 'match' } : { results: [{ id: 1, text_signature: 'post(string)' }] },
+    ),
 });
 
 describe('decodeCall selector mismatch detection', () => {
-  afterEach(() => { globalThis.fetch = realFetch; });
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
 
   test('(a) verified contract + valid selector -> decoded sourcify, no warning', async () => {
     mockFetch(sourcifyHit);
@@ -103,15 +109,18 @@ describe('decodeCall selector mismatch detection', () => {
     const proxyAbi = parseAbi(['function implementation() view returns (address)']);
     mockFetch((url) => ({
       ok: true,
-      json: () => Promise.resolve(url.includes(impl)
-        ? { abi: POSTER_ABI, match: 'exact_match' }
-        : { abi: proxyAbi, match: 'exact_match', proxyResolution: { isProxy: true, implementations: [{ address: impl }] } }),
+      json: () =>
+        Promise.resolve(
+          url.includes(impl)
+            ? { abi: POSTER_ABI, match: 'exact_match' }
+            : { abi: proxyAbi, match: 'exact_match', proxyResolution: { isProxy: true, implementations: [{ address: impl }] } },
+        ),
     }));
     const r = await decodeCall(proxy, postStringStringData, 8453);
     expect(r.source).toBe('sourcify');
     expect(r.decoded).toBe(true);
     expect(r.functionName).toBe('post');
-    expect(r.args.map(a => a.value)).toEqual(['hello', 'stage']);
+    expect(r.args.map((a) => a.value)).toEqual(['hello', 'stage']);
     expect(spoofWarning(r, 'post a message')).toBeUndefined();
   });
 
@@ -122,7 +131,15 @@ describe('decodeCall selector mismatch detection', () => {
     mockFetch((url) => {
       if (url.includes(impl)) return { ok: false, json: () => Promise.resolve({}) };
       if (url.includes('sourcify')) {
-        return { ok: true, json: () => Promise.resolve({ abi: proxyAbi, match: 'exact_match', proxyResolution: { isProxy: true, implementations: [{ address: impl }] } }) };
+        return {
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              abi: proxyAbi,
+              match: 'exact_match',
+              proxyResolution: { isProxy: true, implementations: [{ address: impl }] },
+            }),
+        };
       }
       return { ok: true, json: () => Promise.resolve({ results: [{ id: 1, text_signature: 'post(string,string)' }] }) };
     });
@@ -133,9 +150,11 @@ describe('decodeCall selector mismatch detection', () => {
   });
 
   test('(c) non-Sourcify contract + 4byte hit -> neutral note, no scary warning', async () => {
-    mockFetch((url) => (url.includes('sourcify')
-      ? { ok: false, json: () => Promise.resolve({}) }
-      : { ok: true, json: () => Promise.resolve({ results: [{ id: 1, text_signature: 'post(string)' }] }) }));
+    mockFetch((url) =>
+      url.includes('sourcify')
+        ? { ok: false, json: () => Promise.resolve({}) }
+        : { ok: true, json: () => Promise.resolve({ results: [{ id: 1, text_signature: 'post(string)' }] }) },
+    );
     const r = await decodeCall('0x000000000000000000000000000000000000aaa3', postStringData, 1);
     expect(r.source).toBe('4byte');
     expect(r.decoded).toBe(true);

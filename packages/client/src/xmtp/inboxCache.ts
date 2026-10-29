@@ -1,4 +1,3 @@
-
 export interface InboxEthStore {
   get(inboxId: string): string | undefined;
   set(inboxId: string, eth: string): void;
@@ -24,18 +23,17 @@ export async function resolveInboxEthCached(
     const fetched = await fetchMissing(missing);
     for (const id of missing) {
       const eth = fetched[id];
-      if (eth) { out[id] = eth; cache.set(id, eth); }
+      if (eth) {
+        out[id] = eth;
+        cache.set(id, eth);
+      }
     }
   }
   return out;
 }
 
-export async function primeInboxEthCache(
-  cache: InboxEthStore,
-  fetchMissing: InboxEthFetcher,
-  ids: string[],
-): Promise<void> {
-  const missing = [...new Set(ids)].filter(id => id && !cache.has(id));
+export async function primeInboxEthCache(cache: InboxEthStore, fetchMissing: InboxEthFetcher, ids: string[]): Promise<void> {
+  const missing = [...new Set(ids)].filter((id) => id && !cache.has(id));
   if (missing.length === 0) return;
   try {
     const fetched = await fetchMissing(missing);
@@ -43,5 +41,5 @@ export async function primeInboxEthCache(
       const eth = fetched[id];
       if (eth) cache.set(id, eth);
     }
-  } catch { }
+  } catch {}
 }

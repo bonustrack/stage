@@ -1,6 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  ASCII, ASCII_GLYPH, asciiFrame, asciiGrid, asciiOrigin, asciiPath, glyphRect, heroBoxes, tornadoField,
+  ASCII,
+  ASCII_GLYPH,
+  asciiFrame,
+  asciiGrid,
+  asciiOrigin,
+  asciiPath,
+  glyphRect,
+  heroBoxes,
+  tornadoField,
 } from '../components/landing/Landing.model';
 
 const HALF = (): number => 0.5;

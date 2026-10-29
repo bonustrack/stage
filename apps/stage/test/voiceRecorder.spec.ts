@@ -2,24 +2,46 @@ import { describe, expect, it } from 'bun:test';
 import { makeVoiceRecorder } from '../components/composer/voice.core';
 import { hasAudioSignal, voiceFileMeta } from '../components/composer/voice.model';
 
-function harness(overrides: Partial<Parameters<typeof makeVoiceRecorder>[0]> = {}, callbacks: Partial<Parameters<typeof makeVoiceRecorder>[1]> = {}) {
+function harness(
+  overrides: Partial<Parameters<typeof makeVoiceRecorder>[0]> = {},
+  callbacks: Partial<Parameters<typeof makeVoiceRecorder>[1]> = {},
+) {
   const events: string[] = [];
   const errors: unknown[] = [];
   const files: string[] = [];
-  const recorder = makeVoiceRecorder({
-    prepare: async () => { events.push('prepare'); },
-    record: () => { events.push('record'); },
-    stop: async () => { events.push('stop'); },
-    file: async () => ({ uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' }),
-    ...overrides,
-  }, {
-    begin: () => { events.push('begin'); },
-    started: () => { events.push('started'); },
-    stopped: () => { events.push('stopped'); },
-    error: error => { errors.push(error); },
-    upload: async file => { files.push(file.mime); },
-    ...callbacks,
-  });
+  const recorder = makeVoiceRecorder(
+    {
+      prepare: async () => {
+        events.push('prepare');
+      },
+      record: () => {
+        events.push('record');
+      },
+      stop: async () => {
+        events.push('stop');
+      },
+      file: async () => ({ uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' }),
+      ...overrides,
+    },
+    {
+      begin: () => {
+        events.push('begin');
+      },
+      started: () => {
+        events.push('started');
+      },
+      stopped: () => {
+        events.push('stopped');
+      },
+      error: (error) => {
+        errors.push(error);
+      },
+      upload: async (file) => {
+        files.push(file.mime);
+      },
+      ...callbacks,
+    },
+  );
   return { recorder, events, errors, files };
 }
 
@@ -52,7 +74,11 @@ describe('voice recorder lifecycle', () => {
   it('allows retry after microphone preparation fails', async () => {
     let attempts = 0;
     const error = new Error('No microphone');
-    const h = harness({ prepare: async () => { if (++attempts === 1) throw error; } });
+    const h = harness({
+      prepare: async () => {
+        if (++attempts === 1) throw error;
+      },
+    });
     await h.recorder.start();
     await h.recorder.start();
     await h.recorder.stop();
@@ -89,27 +115,38 @@ describe('voice recorder lifecycle', () => {
   it('waits for stop before another recording and stops only once', async () => {
     const stopping = Promise.withResolvers<undefined>();
     let stops = 0;
-    const h = harness({ stop: async () => { stops++; await stopping.promise; } });
+    const h = harness({
+      stop: async () => {
+        stops++;
+        await stopping.promise;
+      },
+    });
     await h.recorder.start();
     const first = h.recorder.stop();
     const second = h.recorder.stop();
     await h.recorder.start();
-    expect(h.events.filter(event => event === 'begin')).toHaveLength(1);
+    expect(h.events.filter((event) => event === 'begin')).toHaveLength(1);
     stopping.resolve(undefined);
     await Promise.all([first, second]);
     expect(stops).toBe(1);
     expect(h.files).toHaveLength(1);
     await h.recorder.start();
-    expect(h.events.filter(event => event === 'begin')).toHaveLength(2);
+    expect(h.events.filter((event) => event === 'begin')).toHaveLength(2);
     await h.recorder.cancel();
   });
 
   it('keeps the composer busy until validation and attachment finish', async () => {
     const validating = Promise.withResolvers<undefined>();
     const attaching = Promise.withResolvers<undefined>();
-    const h = harness({
-      file: async () => { await validating.promise; return { uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' }; },
-    }, { upload: () => attaching.promise });
+    const h = harness(
+      {
+        file: async () => {
+          await validating.promise;
+          return { uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' };
+        },
+      },
+      { upload: () => attaching.promise },
+    );
     await h.recorder.start();
     const stopping = h.recorder.stop();
     await Promise.resolve(undefined);
@@ -125,19 +162,27 @@ describe('voice recorder lifecycle', () => {
 
   it('reports a silent file instead of adding it and allows another recording', async () => {
     const error = new Error('No microphone sound was recorded');
-    const h = harness({ file: async () => { throw error; } });
+    const h = harness({
+      file: async () => {
+        throw error;
+      },
+    });
     await h.recorder.start();
     await h.recorder.stop();
     expect(h.files).toEqual([]);
     expect(h.errors).toEqual([error]);
     await h.recorder.start();
-    expect(h.events.filter(event => event === 'record')).toHaveLength(2);
+    expect(h.events.filter((event) => event === 'record')).toHaveLength(2);
     await h.recorder.cancel();
   });
 
   it('recovers after stop fails', async () => {
     let attempts = 0;
-    const h = harness({ stop: async () => { if (++attempts === 1) throw new Error('Stop failed'); } });
+    const h = harness({
+      stop: async () => {
+        if (++attempts === 1) throw new Error('Stop failed');
+      },
+    });
     await h.recorder.start();
     await h.recorder.stop();
     await h.recorder.start();
@@ -151,8 +196,8 @@ describe('voice recorder lifecycle', () => {
     await h.recorder.start();
     await h.recorder.dispose();
     await h.recorder.start();
-    expect(h.events.filter(event => event === 'record')).toHaveLength(1);
-    expect(h.events.filter(event => event === 'stop')).toHaveLength(1);
+    expect(h.events.filter((event) => event === 'record')).toHaveLength(1);
+    expect(h.events.filter((event) => event === 'stop')).toHaveLength(1);
     expect(h.files).toEqual([]);
   });
 
@@ -169,7 +214,12 @@ describe('voice recorder lifecycle', () => {
 
   it('cancels an upload if unmounted while validating the audio', async () => {
     const validating = Promise.withResolvers<undefined>();
-    const h = harness({ file: async () => { await validating.promise; return { uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' }; } });
+    const h = harness({
+      file: async () => {
+        await validating.promise;
+        return { uri: 'blob:voice', mime: 'audio/webm', extension: 'webm' };
+      },
+    });
     await h.recorder.start();
     const stopping = h.recorder.stop();
     await Promise.resolve(undefined);
@@ -180,7 +230,11 @@ describe('voice recorder lifecycle', () => {
   });
 
   it('cleans up a prepared microphone if starting fails', async () => {
-    const h = harness({ record: () => { throw new Error('Start failed'); } });
+    const h = harness({
+      record: () => {
+        throw new Error('Start failed');
+      },
+    });
     await h.recorder.start();
     expect(h.events).toEqual(['begin', 'prepare', 'stop', 'stopped']);
     expect(h.errors).toHaveLength(1);

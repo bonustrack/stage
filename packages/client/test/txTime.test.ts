@@ -17,11 +17,12 @@ function txResult(state: TxState): object | null {
 function mockRpc(state: TxState): void {
   globalThis.fetch = async (input, init) => {
     const request = new Request(input, init);
-    const body = await request.json() as { id: number; method: string };
+    const body = (await request.json()) as { id: number; method: string };
     requests.push(`${new URL(request.url).pathname} ${body.method}`);
-    const result = body.method === 'eth_getTransactionByHash'
-      ? txResult(state)
-      : { number: BLOCK, timestamp: `0x${(Date.parse(MINED_AT) / 1000).toString(16)}`, transactions: [] };
+    const result =
+      body.method === 'eth_getTransactionByHash'
+        ? txResult(state)
+        : { number: BLOCK, timestamp: `0x${(Date.parse(MINED_AT) / 1000).toString(16)}`, transactions: [] };
     return Response.json({ id: body.id, jsonrpc: '2.0', result });
   };
 }

@@ -22,7 +22,7 @@ function applyMerge(line: string, merged: FeedMerge, always: boolean): FeedMerge
 }
 
 function shown(entries: readonly HistoryEntry[]): HistoryEntry[] {
-  return entries.filter(e => !isControlBody(e.text));
+  return entries.filter((e) => !isControlBody(e.text));
 }
 
 export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): FeedMerge {

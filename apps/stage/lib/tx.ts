@@ -1,6 +1,4 @@
-import {
-  isAddress, createWalletClient, type Account, type Chain, type Hex, type Transport, type WalletClient,
-} from 'viem';
+import { isAddress, createWalletClient, type Account, type Chain, type Hex, type Transport, type WalletClient } from 'viem';
 import { getActiveViemAccount } from './accounts';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { broviderTransport } from '@stage-labs/client/wallet/client';

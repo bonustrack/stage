@@ -16,25 +16,35 @@ const AVATAR_SLOT = { marginTop: -PROFILE_AVATAR_SIZE * 0.8, zIndex: 1 } as cons
 export function ProfileCoverBar({ insetTop, trailing }: { insetTop: number; trailing?: ReactNode }): React.ReactElement {
   const { bg } = usePalette();
   return (
-      <Row
-        align="center"
-        justify="spaceBetween"
-        padding={{ x: PAGE_GUTTER, top: insetTop + PAGE_GUTTER }}
-        style={pinnedTop(2)}
-      >
-        <RoundIconButton icon={IconArrowLeft} label="Back" background={bg} onPress={() => { capabilities.back(); }} />
-        {trailing}
-      </Row>
+    <Row align="center" justify="spaceBetween" padding={{ x: PAGE_GUTTER, top: insetTop + PAGE_GUTTER }} style={pinnedTop(2)}>
+      <RoundIconButton
+        icon={IconArrowLeft}
+        label="Back"
+        background={bg}
+        onPress={() => {
+          capabilities.back();
+        }}
+      />
+      {trailing}
+    </Row>
   );
 }
 
-export function ProfileCover({ insetTop, avatar, children, centered = false }: {
-  insetTop: number; avatar: ReactNode; children: ReactNode; centered?: boolean;
+export function ProfileCover({
+  insetTop,
+  avatar,
+  children,
+  centered = false,
+}: {
+  insetTop: number;
+  avatar: ReactNode;
+  children: ReactNode;
+  centered?: boolean;
 }): React.ReactElement {
   const { border } = usePalette();
   return (
     <>
-      <Column height={COVER_HEIGHT + insetTop} background={border}/>
+      <Column height={COVER_HEIGHT + insetTop} background={border} />
       <Column surface="surface" margin={{ top: -SHEET_RADIUS }} style={SHEET}>
         <Column padding={{ x: PAGE_GUTTER }} align={centered ? 'center' : 'start'}>
           <Column style={AVATAR_SLOT}>{avatar}</Column>
@@ -45,9 +55,14 @@ export function ProfileCover({ insetTop, avatar, children, centered = false }: {
   );
 }
 
-export function ProfileCoverMenu({ items, onSelect, loading }: {
+export function ProfileCoverMenu({
+  items,
+  onSelect,
+  loading,
+}: {
   items: OverflowMenuItem[];
-  onSelect: (id: string) => void; loading?: boolean;
+  onSelect: (id: string) => void;
+  loading?: boolean;
 }): React.ReactElement {
   const { bg } = usePalette();
   return <RoundOverflowMenu items={items} onSelect={onSelect} loading={loading} background={bg} />;

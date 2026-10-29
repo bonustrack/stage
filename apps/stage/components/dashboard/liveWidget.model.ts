@@ -56,7 +56,12 @@ export function ownsHostedNode(source: LiveSource): boolean {
   return ownNodeUrl(source.key) === source.url;
 }
 
-export interface LivePreview { url: string; host: string; frame: FrameContent; state: LiveState }
+export interface LivePreview {
+  url: string;
+  host: string;
+  frame: FrameContent;
+  state: LiveState;
+}
 
 export const NODE_DELETE_FAILED = {
   title: 'Could not delete the node',
@@ -68,9 +73,10 @@ export const NODE_DELETE_FAILED = {
 const HOSTED_NODE_NOTE = 'That code does not see your account. Images it shows load from their own sites, which see your IP address.';
 
 export function liveConfirmOf(host: string): { title: string; message: string; confirmLabel: string } {
-  const message = host === NODES_HOST
-    ? `It runs code a Stage user put on ${host}, every minute while your Dashboard is open. ${HOSTED_NODE_NOTE}`
-    : `It loads from ${host} every minute while your Dashboard is open. That site sees your IP address, not your account.`;
+  const message =
+    host === NODES_HOST
+      ? `It runs code a Stage user put on ${host}, every minute while your Dashboard is open. ${HOSTED_NODE_NOTE}`
+      : `It loads from ${host} every minute while your Dashboard is open. That site sees your IP address, not your account.`;
   return { title: 'Add a live widget?', message, confirmLabel: 'Add' };
 }
 

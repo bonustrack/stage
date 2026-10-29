@@ -5,7 +5,13 @@ describe('wallet index reservation', () => {
   for (const raw of ['invalid', '', '-1', '1.5', '9007199254740992']) {
     test(`invalid stored index ${JSON.stringify(raw)} blocks writes`, async () => {
       const writes: string[] = [];
-      const store = makeHdIndexStore({ get: () => Promise.resolve(raw), set: (_key, value) => { writes.push(value); return Promise.resolve(undefined); } });
+      const store = makeHdIndexStore({
+        get: () => Promise.resolve(raw),
+        set: (_key, value) => {
+          writes.push(value);
+          return Promise.resolve(undefined);
+        },
+      });
       await expect(store.reserve('synthetic', 1)).rejects.toThrow('saved wallet index is invalid');
       expect(writes).toEqual([]);
     });
@@ -15,7 +21,10 @@ describe('wallet index reservation', () => {
     const gate = Promise.withResolvers<undefined>();
     const store = makeHdIndexStore({
       get: () => Promise.resolve(saved),
-      set: async (_key, value) => { if (value === '2') await gate.promise; saved = value; },
+      set: async (_key, value) => {
+        if (value === '2') await gate.promise;
+        saved = value;
+      },
     });
     const low = store.reserve('synthetic', 1);
     const high = store.reserve('synthetic', 8);
@@ -28,8 +37,11 @@ describe('wallet index reservation', () => {
     let failed = true;
     let saved: string | null = null;
     const store = makeHdIndexStore({
-      get: () => failed ? Promise.reject(new Error('storage unavailable')) : Promise.resolve(saved),
-      set: (_key, value) => { saved = value; return Promise.resolve(undefined); },
+      get: () => (failed ? Promise.reject(new Error('storage unavailable')) : Promise.resolve(saved)),
+      set: (_key, value) => {
+        saved = value;
+        return Promise.resolve(undefined);
+      },
     });
     await expect(store.reserve('synthetic', 0)).rejects.toThrow('storage unavailable');
     expect(saved).toBeNull();

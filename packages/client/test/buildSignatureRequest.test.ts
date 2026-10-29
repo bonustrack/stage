@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'bun:test';
 import {
-  buildPersonalSignatureRequest, buildEip712SignatureRequest,
-  personalMessageForRequest, typedDataForRequest,
+  buildPersonalSignatureRequest,
+  buildEip712SignatureRequest,
+  personalMessageForRequest,
+  typedDataForRequest,
 } from '../src/xmtp/sign';
 
 describe('buildPersonalSignatureRequest', () => {

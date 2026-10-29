@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { NO_ROUTES, canToggleSpeaker, joinedHeadset, parseAudioRoutes, speakerOn, speakerTarget, type AudioRoutes } from '../lib/calls.route.core';
+import {
+  NO_ROUTES,
+  canToggleSpeaker,
+  joinedHeadset,
+  parseAudioRoutes,
+  speakerOn,
+  speakerTarget,
+  type AudioRoutes,
+} from '../lib/calls.route.core';
 
 function routes(available: AudioRoutes['available'], selected: AudioRoutes['selected']): AudioRoutes {
   return { available, selected };
@@ -7,10 +15,13 @@ function routes(available: AudioRoutes['available'], selected: AudioRoutes['sele
 
 describe('call audio routes', () => {
   test('reads the native route status in a fixed order', () => {
-    expect(parseAudioRoutes({ availableAudioDeviceList: '["SPEAKER_PHONE","EARPIECE","BLUETOOTH"]', selectedAudioDevice: 'EARPIECE' }))
-      .toEqual(routes(['BLUETOOTH', 'EARPIECE', 'SPEAKER_PHONE'], 'EARPIECE'));
+    expect(
+      parseAudioRoutes({ availableAudioDeviceList: '["SPEAKER_PHONE","EARPIECE","BLUETOOTH"]', selectedAudioDevice: 'EARPIECE' }),
+    ).toEqual(routes(['BLUETOOTH', 'EARPIECE', 'SPEAKER_PHONE'], 'EARPIECE'));
     expect(parseAudioRoutes({ availableAudioDeviceList: '[]', selectedAudioDevice: '' })).toEqual(NO_ROUTES);
-    expect(parseAudioRoutes({ availableAudioDeviceList: '["CAR","SPEAKER_PHONE"]', selectedAudioDevice: 'CAR' })).toEqual(routes(['SPEAKER_PHONE'], null));
+    expect(parseAudioRoutes({ availableAudioDeviceList: '["CAR","SPEAKER_PHONE"]', selectedAudioDevice: 'CAR' })).toEqual(
+      routes(['SPEAKER_PHONE'], null),
+    );
     expect(parseAudioRoutes(null)).toEqual(NO_ROUTES);
   });
 

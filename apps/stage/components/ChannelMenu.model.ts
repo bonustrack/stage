@@ -34,7 +34,8 @@ function syncItem(state: ChannelMenuState, enabled: boolean): MenuItem | null {
 }
 
 export function channelMenuItems(
-  state: ChannelMenuState, { search, edit = false, developerMode = false }: { search: boolean; edit?: boolean; developerMode?: boolean },
+  state: ChannelMenuState,
+  { search, edit = false, developerMode = false }: { search: boolean; edit?: boolean; developerMode?: boolean },
 ): MenuItem[] {
   const { isGroup, isUnread } = state;
   const items: (MenuItem | null | false)[] = [

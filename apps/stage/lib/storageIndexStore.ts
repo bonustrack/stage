@@ -64,13 +64,24 @@ function writeFile(accountId: string, index: StorageIndex): void {
   store.flushNow();
 }
 
-if (sealedCache) persistenceBackend.onFlushSignal(() => { for (const accountId of [...pendingWrites.keys()]) writeSealed(accountId); });
+if (sealedCache)
+  persistenceBackend.onFlushSignal(() => {
+    for (const accountId of [...pendingWrites.keys()]) writeSealed(accountId);
+  });
 
 export function writeStorageIndex(accountId: string, index: StorageIndex): void {
   latest.set(accountId, index);
-  if (!sealedCache) { writeFile(accountId, index); return; }
+  if (!sealedCache) {
+    writeFile(accountId, index);
+    return;
+  }
   if (pendingWrites.has(accountId)) return;
-  pendingWrites.set(accountId, setTimeout(() => { writeSealed(accountId); }, WRITE_DELAY_MS));
+  pendingWrites.set(
+    accountId,
+    setTimeout(() => {
+      writeSealed(accountId);
+    }, WRITE_DELAY_MS),
+  );
 }
 
 export async function forgetStorageIndex(accountId: string): Promise<void> {

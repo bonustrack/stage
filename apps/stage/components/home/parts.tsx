@@ -59,19 +59,32 @@ export function rowMenuOpener(item: RowT, setRowMenu: (m: RowMenu) => void): (an
     setRowMenu({
       convId: item.convId,
       isUnread: item.unreadCount > 0 || item.markedUnread,
-      isGroup: !item.peerAddress, peerAddress: item.peerAddress, anchor,
+      isGroup: !item.peerAddress,
+      peerAddress: item.peerAddress,
+      anchor,
     });
   };
 }
 
-export function RowChannelMenu({ menu, isPinned, onClose }: {
-  menu: RowMenu | null; isPinned: boolean; onClose: () => void;
+export function RowChannelMenu({
+  menu,
+  isPinned,
+  onClose,
+}: {
+  menu: RowMenu | null;
+  isPinned: boolean;
+  onClose: () => void;
 }): React.ReactElement | null {
   if (!menu) return null;
   return (
     <ChannelMenu
-      visible convId={menu.convId} isGroup={menu.isGroup} peerAddress={menu.peerAddress}
-      isUnread={menu.isUnread} isPinned={isPinned} anchor={menu.anchor ?? null}
+      visible
+      convId={menu.convId}
+      isGroup={menu.isGroup}
+      peerAddress={menu.peerAddress}
+      isUnread={menu.isUnread}
+      isPinned={isPinned}
+      anchor={menu.anchor ?? null}
       onClose={onClose}
     />
   );
@@ -96,7 +109,21 @@ interface ChannelRowItemProps {
 }
 
 function ChannelRowItemBase({
-  item, router, setRowMenu, query, title, placeholderTitle, preview, avatarAddress, pinned, draftText, active, current, drag, hideAvatar, fields,
+  item,
+  router,
+  setRowMenu,
+  query,
+  title,
+  placeholderTitle,
+  preview,
+  avatarAddress,
+  pinned,
+  draftText,
+  active,
+  current,
+  drag,
+  hideAvatar,
+  fields,
 }: ChannelRowItemProps): React.ReactElement {
   const isGroup = !item.peerAddress;
   const openMenu = rowMenuOpener(item, setRowMenu);
@@ -119,13 +146,25 @@ function ChannelRowItemBase({
       markedUnread={item.markedUnread}
       pinned={pinned}
       draftText={draftText}
-      fields={<ChannelRowFields data={item} fields={fields}/>}
-      onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
-      onPress={() => { if (!current) router.push(conversationLinkOf(item.convId, item.peerAddress)); }}
-      onLongPress={(anchor) => { if (!dragActive()) openMenu(anchor); }}
+      fields={<ChannelRowFields data={item} fields={fields} />}
+      onPressIn={() => {
+        prefetchFeed(lineOfConv(item.convId));
+      }}
+      onPress={() => {
+        if (!current) router.push(conversationLinkOf(item.convId, item.peerAddress));
+      }}
+      onLongPress={(anchor) => {
+        if (!dragActive()) openMenu(anchor);
+      }}
     />
   );
-  return pinned ? <PinnedRow drag={drag} convId={item.convId} onHold={openMenu}>{row}</PinnedRow> : row;
+  return pinned ? (
+    <PinnedRow drag={drag} convId={item.convId} onHold={openMenu}>
+      {row}
+    </PinnedRow>
+  ) : (
+    row
+  );
 }
 
 const ChannelRowItem = memo(ChannelRowItemBase);
@@ -134,78 +173,123 @@ export function useChannelRowRenderer(
   router: { push: (to: { pathname: string; params: { convId: string } }) => void },
   setRowMenu: (m: RowMenu) => void,
   deps: {
-    channelProfilesVersion: number; draftsVersion: number;
-    pinned: readonly string[]; query?: string; activePath: string; menuConvId?: string; drag: HomeDrag;
-    hideAvatar: boolean; fields: ChannelFields; items: readonly HomeListItem[];
+    channelProfilesVersion: number;
+    draftsVersion: number;
+    pinned: readonly string[];
+    query?: string;
+    activePath: string;
+    menuConvId?: string;
+    drag: HomeDrag;
+    hideAvatar: boolean;
+    fields: ChannelFields;
+    items: readonly HomeListItem[];
   },
 ): ({ item }: { item: HomeListItem }) => React.ReactElement {
-  const {
-    channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, drag, hideAvatar, fields,
-  } = deps;
+  const { channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, drag, hideAvatar, fields } = deps;
   const { hoveredGroup, wrapItem } = useGroupHover(deps.items);
-  return useCallback(({ item }: { item: HomeListItem }): React.ReactElement => {
-    if (isGroupHeader(item)) {
-      const header = <GroupHeader header={item.header} onToggle={toggleGroupCollapsed} sectionHovered={hoveredGroup === item.header.key}
-        wrapToggle={node => (drag.model.sectionKeys.has(item.convId) ? <SectionHandle>{node}</SectionHandle> : node)}/>;
-      return wrapItem(item, <DragCell drag={drag} item={item}>{header}</DragCell>);
-    }
-    const title = rowTitle(item);
-    const current = isActiveConversationPath(activePath, item.convId, item.peerAddress);
-    return wrapItem(item, (
-      <DragCell drag={drag} item={item} onHold={rowMenuOpener(item, setRowMenu)}>
-        <ChannelRowItem
-          item={item}
-          router={router}
-          setRowMenu={setRowMenu}
-          query={query}
-          title={title.text}
-          placeholderTitle={title.placeholder}
-          preview={rowPreview(item)}
-          avatarAddress={rowAvatarAddress(item)}
-          pinned={pinned.includes(item.convId)}
-          draftText={getDraft(item.convId)}
-          active={menuConvId === item.convId || current}
-          current={current}
-          drag={drag}
-          hideAvatar={hideAvatar}
-          fields={fields}
-        />
-      </DragCell>
-    ));
-  }, [
-    router, setRowMenu, channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, drag,
-    hideAvatar, fields, hoveredGroup, wrapItem,
-  ]);
+  return useCallback(
+    ({ item }: { item: HomeListItem }): React.ReactElement => {
+      if (isGroupHeader(item)) {
+        const header = (
+          <GroupHeader
+            header={item.header}
+            onToggle={toggleGroupCollapsed}
+            sectionHovered={hoveredGroup === item.header.key}
+            wrapToggle={(node) => (drag.model.sectionKeys.has(item.convId) ? <SectionHandle>{node}</SectionHandle> : node)}
+          />
+        );
+        return wrapItem(
+          item,
+          <DragCell drag={drag} item={item}>
+            {header}
+          </DragCell>,
+        );
+      }
+      const title = rowTitle(item);
+      const current = isActiveConversationPath(activePath, item.convId, item.peerAddress);
+      return wrapItem(
+        item,
+        <DragCell drag={drag} item={item} onHold={rowMenuOpener(item, setRowMenu)}>
+          <ChannelRowItem
+            item={item}
+            router={router}
+            setRowMenu={setRowMenu}
+            query={query}
+            title={title.text}
+            placeholderTitle={title.placeholder}
+            preview={rowPreview(item)}
+            avatarAddress={rowAvatarAddress(item)}
+            pinned={pinned.includes(item.convId)}
+            draftText={getDraft(item.convId)}
+            active={menuConvId === item.convId || current}
+            current={current}
+            drag={drag}
+            hideAvatar={hideAvatar}
+            fields={fields}
+          />
+        </DragCell>,
+      );
+    },
+    [
+      router,
+      setRowMenu,
+      channelProfilesVersion,
+      draftsVersion,
+      pinned,
+      query,
+      activePath,
+      menuConvId,
+      drag,
+      hideAvatar,
+      fields,
+      hoveredGroup,
+      wrapItem,
+    ],
+  );
 }
 
 const RESET_TITLE = 'Reset local database';
-const RESET_MESSAGE = 'Wipes the local XMTP database of this account only. The account and its keys stay, '
-  + 'but messages stored on this device are gone and a new device slot is used. An account supports ten.';
+const RESET_MESSAGE =
+  'Wipes the local XMTP database of this account only. The account and its keys stay, ' +
+  'but messages stored on this device are gone and a new device slot is used. An account supports ten.';
 
 function confirmReset(): void {
   void (async (): Promise<void> => {
-    if (!await capabilities.confirm({ title: RESET_TITLE, message: RESET_MESSAGE, confirmLabel: 'Reset', destructive: true })) return;
+    if (!(await capabilities.confirm({ title: RESET_TITLE, message: RESET_MESSAGE, confirmLabel: 'Reset', destructive: true }))) return;
     await resetActiveXmtpStore();
     reloadApp();
   })();
 }
 
-export function HomeError({ error, dark, fg }: {
-  error: string; dark: boolean; fg: string;
-}): React.ReactElement {
+export function HomeError({ error, dark, fg }: { error: string; dark: boolean; fg: string }): React.ReactElement {
   return (
     <Column padding={24} weight={1} align="center" justify="center" surface="surface">
-      <Text size="xs" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>{error}</Text>
-      <Button label="Reload" size="lg" pill color="primary" variant="solid" dark={dark}
-        style={{ alignSelf: 'center', marginBottom: 12 }} onPress={() => { reloadApp(); }} />
+      <Text size="xs" color={fg} style={{ textAlign: 'center', marginBottom: 16 }}>
+        {error}
+      </Text>
+      <Button
+        label="Reload"
+        size="lg"
+        pill
+        color="primary"
+        variant="solid"
+        dark={dark}
+        style={{ alignSelf: 'center', marginBottom: 12 }}
+        onPress={() => {
+          reloadApp();
+        }}
+      />
       <Pressable
         onPress={confirmReset}
         style={({ pressed }) => ({
-          paddingHorizontal: 20, paddingVertical: 12, borderRadius: 999,
+          paddingHorizontal: 20,
+          paddingVertical: 12,
+          borderRadius: 999,
           backgroundColor: pressed ? '#5c2231' : 'transparent',
-          borderWidth: 1, borderColor: dark ? '#5c2231' : '#e9bbc4',
+          borderWidth: 1,
+          borderColor: dark ? '#5c2231' : '#e9bbc4',
         })}
->
+      >
         <Text size="xs" color={DANGER}>
           {RESET_TITLE}
         </Text>
@@ -219,9 +303,8 @@ export function HomeSpinner({ head }: { head: string }): React.ReactElement {
     <Column weight={1} surface="surface">
       <MessagingSetupBanner />
       <Column weight={1} align="center" justify="center">
-        <Spinner size={28} color={head}/>
+        <Spinner size={28} color={head} />
       </Column>
     </Column>
   );
 }
-

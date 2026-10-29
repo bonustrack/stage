@@ -10,10 +10,7 @@ function votesFor(...sizes: number[]): Map<number, Set<string>> {
   return m;
 }
 
-const SHIP_IT: PollQuestion = {
-  question: 'Ship it?',
-  options: [{ label: 'Yes' }, { label: 'No' }],
-};
+const SHIP_IT: PollQuestion = { question: 'Ship it?', options: [{ label: 'Yes' }, { label: 'No' }] };
 
 describe('pollQuestionBlocks', () => {
   test('computes percentages, stats and total label from vote sets', () => {
@@ -51,11 +48,7 @@ describe('pollQuestionBlocks', () => {
       multiSelect: true,
       options: [{ label: 'Cheese' }, { label: 'Olives' }],
     };
-    const blocks = pollQuestionBlocks(
-      [question],
-      new Map([[0, votesFor(1, 0)]]),
-      new Map([[0, new Set([0])]]),
-    );
+    const blocks = pollQuestionBlocks([question], new Map([[0, votesFor(1, 0)]]), new Map([[0, new Set([0])]]));
     expect(blocks[0]?.header).toBe('Lunch poll · multi-select');
     expect(blocks[0]?.options).toEqual([
       { label: '✓ Cheese', stats: '100% · 1', fillPct: 100, selected: true },
@@ -64,22 +57,13 @@ describe('pollQuestionBlocks', () => {
   });
 
   test('single-select own vote uses check prefix and others stay bare', () => {
-    const blocks = pollQuestionBlocks(
-      [SHIP_IT],
-      new Map([[0, votesFor(1, 1)]]),
-      new Map([[0, new Set([1])]]),
-    );
+    const blocks = pollQuestionBlocks([SHIP_IT], new Map([[0, votesFor(1, 1)]]), new Map([[0, new Set([1])]]));
     expect(blocks[0]?.options.map((o) => o.label)).toEqual(['Yes', '✓ No']);
     expect(blocks[0]?.options.map((o) => o.selected)).toEqual([false, true]);
   });
 
   test('open questions get an open header suffix', () => {
-    const question: PollQuestion = {
-      question: 'Anything else?',
-      header: 'Feedback',
-      open: true,
-      options: [],
-    };
+    const question: PollQuestion = { question: 'Anything else?', header: 'Feedback', open: true, options: [] };
     const blocks = pollQuestionBlocks([question], undefined, undefined);
     expect(blocks[0]?.header).toBe('Feedback · open');
   });
@@ -102,11 +86,7 @@ describe('pollQuestionBlocks', () => {
 
   test('votes are counted per question index', () => {
     const second: PollQuestion = { question: 'And also?', options: [{ label: 'Sure' }] };
-    const blocks = pollQuestionBlocks(
-      [SHIP_IT, second],
-      new Map([[1, votesFor(2)]]),
-      undefined,
-    );
+    const blocks = pollQuestionBlocks([SHIP_IT, second], new Map([[1, votesFor(2)]]), undefined);
     expect(blocks[0]?.totalLabel).toBe('0 votes');
     expect(blocks[1]?.totalLabel).toBe('2 votes');
     expect(blocks[1]?.options[0]?.stats).toBe('100% · 2');

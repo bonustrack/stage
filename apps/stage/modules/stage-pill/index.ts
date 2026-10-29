@@ -37,5 +37,9 @@ export function setAppForeground(foreground: boolean): boolean {
 
 export function subscribeXmtpPush(cb: (e: XmtpPushEvent) => void): () => void {
   const sub = native?.addListener?.('onXmtpPush', cb);
-  return () => { attempt(() => { sub?.remove?.(); }, 'cleanup'); };
+  return () => {
+    attempt(() => {
+      sub?.remove?.();
+    }, 'cleanup');
+  };
 }

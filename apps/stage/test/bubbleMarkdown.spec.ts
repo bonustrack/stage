@@ -6,8 +6,7 @@ import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
 import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
 
 const createParser = createRequire(import.meta.url)('markdown-it') as (options: object) => MarkdownIt;
-const md = createParser({ typographer: false, linkify: true, breaks: true })
-  .use(literalStars).use(taskLists).use(keepIndent);
+const md = createParser({ typographer: false, linkify: true, breaks: true }).use(literalStars).use(taskLists).use(keepIndent);
 registerDeepLinkSchemas(md.linkify);
 
 function inline(text: string): string {
@@ -19,8 +18,9 @@ describe('literalStars', () => {
     expect(inline('2 * 3 * 4 = 24')).toBe('2 * 3 * 4 = 24');
     expect(inline('2*3*4 = 24')).toBe('2*3*4 = 24');
     expect(inline('arn:aws:iam::*:role/x')).toBe('arn:aws:iam::*:role/x');
-    expect(inline('{"Resource":"*"},{"Resource":"arn:aws:iam::*:role/metro-box"}'))
-      .toBe('{&quot;Resource&quot;:&quot;*&quot;},{&quot;Resource&quot;:&quot;arn:aws:iam::*:role/metro-box&quot;}');
+    expect(inline('{"Resource":"*"},{"Resource":"arn:aws:iam::*:role/metro-box"}')).toBe(
+      '{&quot;Resource&quot;:&quot;*&quot;},{&quot;Resource&quot;:&quot;arn:aws:iam::*:role/metro-box&quot;}',
+    );
     expect(inline('src/**/*.ts and lib/**/*.js')).toBe('src/**/*.ts and lib/**/*.js');
   });
 
@@ -37,10 +37,10 @@ describe('channel URLs in the actual markdown parser', () => {
 
   test('linkifies channel forms with punctuation kept outside the link', () => {
     for (const url of urls) {
-      const tokens = md.parseInline(`join (${url}).`, {}).flatMap(t => t.children ?? []);
-      const hrefs = tokens.filter(t => t.type === 'link_open').map(t => t.attrGet('href'));
+      const tokens = md.parseInline(`join (${url}).`, {}).flatMap((t) => t.children ?? []);
+      const hrefs = tokens.filter((t) => t.type === 'link_open').map((t) => t.attrGet('href'));
       expect(hrefs).toEqual([url]);
-      expect(hrefs.map(href => stageChannelIdOf(href ?? ''))).toEqual([conv]);
+      expect(hrefs.map((href) => stageChannelIdOf(href ?? ''))).toEqual([conv]);
       expect(md.renderInline(`join (${url}).`)).toContain('</a>).');
     }
   });
@@ -121,7 +121,11 @@ describe('keepIndent', () => {
 
   test('renders the hourly summary format with its links and sub-bullets', () => {
     const conv = 'fda13c194b1bc848b43e60805a57a10b';
-    const html = render(`Follow-up 18:15\nWaiting on you\n• https://stage.box/#/channel/${conv}\n  ◦ Install the new dev APK and test\nOther open issues: no change since 17:15`);
-    expect(html).toBe(`<p>Follow-up 18:15<br>\nWaiting on you<br>\n• <a href="https://stage.box/#/channel/${conv}">https://stage.box/#/channel/${conv}</a><br>\n${pad(2)}◦ Install the new dev APK and test<br>\nOther open issues: no change since 17:15</p>\n`);
+    const html = render(
+      `Follow-up 18:15\nWaiting on you\n• https://stage.box/#/channel/${conv}\n  ◦ Install the new dev APK and test\nOther open issues: no change since 17:15`,
+    );
+    expect(html).toBe(
+      `<p>Follow-up 18:15<br>\nWaiting on you<br>\n• <a href="https://stage.box/#/channel/${conv}">https://stage.box/#/channel/${conv}</a><br>\n${pad(2)}◦ Install the new dev APK and test<br>\nOther open issues: no change since 17:15</p>\n`,
+    );
   });
 });

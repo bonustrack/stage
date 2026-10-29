@@ -1,27 +1,53 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  CALL_RING_TIMEOUT_MS, CALL_STALE_MS, MAX_CALL_PARTICIPANTS, callPreviewText, isCallInviteType, isCallSignalType,
-  parseCallInvite, parseCallSignal, type CallSignal,
+  CALL_RING_TIMEOUT_MS,
+  CALL_STALE_MS,
+  MAX_CALL_PARTICIPANTS,
+  callPreviewText,
+  isCallInviteType,
+  isCallSignalType,
+  parseCallInvite,
+  parseCallSignal,
+  type CallSignal,
 } from '../src/xmtp/call';
 import {
-  EMPTY_CALLS, activeCall, joinableCall, reduceCall, type CallEffect, type CallEvent, type CallsState,
+  EMPTY_CALLS,
+  activeCall,
+  joinableCall,
+  reduceCall,
+  type CallEffect,
+  type CallEvent,
+  type CallsState,
 } from '../src/xmtp/callMachine';
 
 const CONV = 'conv-1';
 const T0 = 1_700_000_000_000;
 
-interface Device { inboxId: string; peerId: string; state: CallsState; effects: CallEffect[] }
+interface Device {
+  inboxId: string;
+  peerId: string;
+  state: CallsState;
+  effects: CallEffect[];
+}
 
 function device(inboxId: string, peerId: string): Device {
   return { inboxId, peerId, state: EMPTY_CALLS, effects: [] };
 }
 
-interface Wire { from: Device; kind: 'invite' | 'signal'; payload: unknown }
+interface Wire {
+  from: Device;
+  kind: 'invite' | 'signal';
+  payload: unknown;
+}
 
 class Net {
   queue: Wire[] = [];
   links: string[] = [];
-  constructor(readonly devices: Device[], readonly dm: boolean, readonly allowed = true) {}
+  constructor(
+    readonly devices: Device[],
+    readonly dm: boolean,
+    readonly allowed = true,
+  ) {}
 
   apply(d: Device, e: CallEvent): void {
     const { state, effects } = reduceCall(d.state, e);
@@ -125,8 +151,15 @@ describe('1-1 call', () => {
     expect(b.state.session).toBeNull();
     expect(activeCall(b.state, CONV, T0)?.callId).toBe('call-0001');
     const old = reduceCall(EMPTY_CALLS, {
-      type: 'invite', convId: CONV, senderInboxId: 'inbox-a', selfInboxId: 'inbox-b', sentMs: T0, nowMs: T0 + 61_000,
-      dm: true, allowed: true, invite: { callId: 'call-0001', from: 'peer-aaaa', video: false },
+      type: 'invite',
+      convId: CONV,
+      senderInboxId: 'inbox-a',
+      selfInboxId: 'inbox-b',
+      sentMs: T0,
+      nowMs: T0 + 61_000,
+      dm: true,
+      allowed: true,
+      invite: { callId: 'call-0001', from: 'peer-aaaa', video: false },
     });
     expect(old.state.session).toBeNull();
   });
@@ -182,12 +215,25 @@ describe('1-1 call', () => {
 
   test('calling again after a 1-1 call died without a leave starts a new call', () => {
     const stale = reduceCall(EMPTY_CALLS, {
-      type: 'invite', convId: CONV, senderInboxId: 'inbox-b', selfInboxId: 'inbox-a', sentMs: T0, nowMs: T0,
-      dm: true, allowed: false, invite: { callId: 'call-0001', from: 'peer-bbbb', video: false },
+      type: 'invite',
+      convId: CONV,
+      senderInboxId: 'inbox-b',
+      selfInboxId: 'inbox-a',
+      sentMs: T0,
+      nowMs: T0,
+      dm: true,
+      allowed: false,
+      invite: { callId: 'call-0001', from: 'peer-bbbb', video: false },
     }).state;
     expect(activeCall(stale, CONV, T0 + CALL_RING_TIMEOUT_MS + 1)?.roster).toEqual({ 'peer-bbbb': 'inbox-b' });
     const again = reduceCall(stale, {
-      type: 'start', convId: CONV, dm: true, video: false, callId: 'call-0002', peerId: 'peer-aaaa', selfInboxId: 'inbox-a',
+      type: 'start',
+      convId: CONV,
+      dm: true,
+      video: false,
+      callId: 'call-0002',
+      peerId: 'peer-aaaa',
+      selfInboxId: 'inbox-a',
       nowMs: T0 + CALL_RING_TIMEOUT_MS + 1,
     });
     expect(again.effects.map((e) => e.type)).toEqual(['invite']);
@@ -290,7 +336,10 @@ describe('channel mesh', () => {
     if (!first) throw new Error('no people');
     net.start(first);
     net.deliver();
-    for (const p of rest) { net.join(p); net.deliver(); }
+    for (const p of rest) {
+      net.join(p);
+      net.deliver();
+    }
     const last = rest.at(-1);
     expect(last?.state.session).toBeNull();
     expect(last ? endReasons(last) : []).toEqual(['full']);
@@ -313,14 +362,27 @@ describe('channel mesh', () => {
   test('an older call replayed late never replaces the current one', () => {
     const base = { convId: CONV, senderInboxId: 'inbox-a', selfInboxId: 'inbox-b', nowMs: T0 };
     const current = reduceCall(EMPTY_CALLS, {
-      ...base, type: 'invite', sentMs: T0, dm: false, allowed: false, invite: { callId: 'call-new0', from: 'peer-aaaa', video: false },
+      ...base,
+      type: 'invite',
+      sentMs: T0,
+      dm: false,
+      allowed: false,
+      invite: { callId: 'call-new0', from: 'peer-aaaa', video: false },
     }).state;
     const replayed = reduceCall(current, {
-      ...base, type: 'invite', sentMs: T0 - 60_000, dm: false, allowed: false, invite: { callId: 'call-old0', from: 'peer-old0', video: false },
+      ...base,
+      type: 'invite',
+      sentMs: T0 - 60_000,
+      dm: false,
+      allowed: false,
+      invite: { callId: 'call-old0', from: 'peer-old0', video: false },
     }).state;
     expect(replayed.calls[CONV]?.callId).toBe('call-new0');
     const join = reduceCall(current, {
-      ...base, type: 'signal', sentMs: T0 - 60_000, signal: { kind: 'join', callId: 'call-old0', from: 'peer-old1' },
+      ...base,
+      type: 'signal',
+      sentMs: T0 - 60_000,
+      signal: { kind: 'join', callId: 'call-old0', from: 'peer-old1' },
     }).state;
     expect(join.calls[CONV]?.callId).toBe('call-new0');
   });
@@ -333,8 +395,15 @@ describe('channel mesh', () => {
     net.join(b);
     net.deliver();
     const forged = reduceCall(a.state, {
-      type: 'invite', convId: CONV, senderInboxId: 'inbox-evil', selfInboxId: 'inbox-a', sentMs: T0, nowMs: T0,
-      dm: false, allowed: true, invite: { callId: 'call-0001', from: 'peer-bbbb', video: false },
+      type: 'invite',
+      convId: CONV,
+      senderInboxId: 'inbox-evil',
+      selfInboxId: 'inbox-a',
+      sentMs: T0,
+      nowMs: T0,
+      dm: false,
+      allowed: true,
+      invite: { callId: 'call-0001', from: 'peer-bbbb', video: false },
     });
     expect(forged.state).toBe(a.state);
     expect(a.state.calls[CONV]?.callerInboxId).toBe('inbox-a');
@@ -348,7 +417,12 @@ describe('channel mesh', () => {
     net.join(b);
     net.deliver();
     const forged = reduceCall(b.state, {
-      type: 'signal', convId: CONV, senderInboxId: 'inbox-evil', selfInboxId: 'inbox-b', sentMs: T0, nowMs: T0,
+      type: 'signal',
+      convId: CONV,
+      senderInboxId: 'inbox-evil',
+      selfInboxId: 'inbox-b',
+      sentMs: T0,
+      nowMs: T0,
       signal: { kind: 'leave', callId: 'call-0001', from: 'peer-aaaa' },
     });
     expect(forged.state).toBe(b.state);

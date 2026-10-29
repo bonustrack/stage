@@ -27,7 +27,11 @@ export interface Peer extends PeerTransport {
   closed: boolean;
 }
 
-export interface PeerHooks { onChange: () => void; mine: () => CallMedia; onLost: () => void }
+export interface PeerHooks {
+  onChange: () => void;
+  mine: () => CallMedia;
+  onLost: () => void;
+}
 
 export function parseMedia(data: unknown): CallMedia | null {
   if (typeof data !== 'string') return null;
@@ -43,18 +47,26 @@ export function parseMedia(data: unknown): CallMedia | null {
 export function makePeer(transport: PeerTransport, { onChange, mine, onLost }: PeerHooks): Peer {
   const peer: Peer = { ...transport, media: NO_MEDIA, status: 'connecting', closed: false };
   let wasUp = false;
-  const lost = (): void => { if (wasUp && !peer.closed) { peer.closed = true; onLost(); } };
+  const lost = (): void => {
+    if (wasUp && !peer.closed) {
+      peer.closed = true;
+      onLost();
+    }
+  };
   transport.bind({
     track: onChange,
-    state: state => {
+    state: (state) => {
       peer.status = state === 'connected' ? 'connected' : state === 'failed' || state === 'closed' ? 'failed' : 'connecting';
       if (state === 'connected') wasUp = true;
       if (state === 'failed') lost();
       onChange();
     },
-    open: () => { wasUp = true; sendMedia(peer, mine()); },
+    open: () => {
+      wasUp = true;
+      sendMedia(peer, mine());
+    },
     close: lost,
-    message: data => {
+    message: (data) => {
       const media = parseMedia(data);
       if (!media) return;
       peer.media = media;
@@ -99,15 +111,25 @@ export async function replaceOutgoing<Track>(pc: Connection<Track>, out: { audio
 
 function gathered<Track>(pc: Connection<Track>): Promise<void> {
   if (pc.iceGatheringState === 'complete') return Promise.resolve();
-  return new Promise(resolve => {
-    const done = (): void => { clearTimeout(timer); pc.removeEventListener('icegatheringstatechange', check); resolve(); };
-    const check = (): void => { if (pc.iceGatheringState === 'complete') done(); };
+  return new Promise((resolve) => {
+    const done = (): void => {
+      clearTimeout(timer);
+      pc.removeEventListener('icegatheringstatechange', check);
+      resolve();
+    };
+    const check = (): void => {
+      if (pc.iceGatheringState === 'complete') done();
+    };
     const timer = setTimeout(done, CALL_ICE_GATHER_MS);
     pc.addEventListener('icegatheringstatechange', check);
   });
 }
 
-export async function negotiateSdp<Track>(pc: Connection<Track>, out: () => { audio: Track | null; video: Track | null }, offer?: string): Promise<string> {
+export async function negotiateSdp<Track>(
+  pc: Connection<Track>,
+  out: () => { audio: Track | null; video: Track | null },
+  offer?: string,
+): Promise<string> {
   if (offer === undefined) {
     for (const kind of ['audio', 'video'] as const) pc.addTransceiver(kind, { direction: 'sendrecv' });
   } else {

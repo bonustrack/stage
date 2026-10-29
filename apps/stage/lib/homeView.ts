@@ -6,7 +6,11 @@ import { jsonWith, makeListeners, makeValue, useStoreValue } from './storeCore';
 import { editHomeView, receiveHomeView, syncedHomeView, syncsHomeView } from './syncedSettings.model';
 
 const prefs = createValueStore<HomeViewContent>({
-  key: 'home.view.', default: DEFAULT_HOME_VIEW, deserialize: jsonWith(homeViewSchema), serialize: JSON.stringify, perAccount: true,
+  key: 'home.view.',
+  default: DEFAULT_HOME_VIEW,
+  deserialize: jsonWith(homeViewSchema),
+  serialize: JSON.stringify,
+  perAccount: true,
 });
 
 export const useHomeView = prefs.use;
@@ -21,7 +25,12 @@ export function useHomeViewOf(view: HomeViewContent['view']): HomeViewContent {
 const boardQuery = makeValue('');
 
 export function useBoardQuery(): [string, (query: string) => void] {
-  useEffect(() => () => { boardQuery.set(''); }, []);
+  useEffect(
+    () => () => {
+      boardQuery.set('');
+    },
+    [],
+  );
   return [boardQuery.use(), boardQuery.set];
 }
 
@@ -38,7 +47,8 @@ const localChanges = makeListeners<HomeViewChange>();
 export const onHomeViewChanged = localChanges.subscribe;
 
 export function setHomeView(edit: HomeViewEdit): void {
-  void prefs.update(current => editHomeView(current, edit, Date.now()))
+  void prefs
+    .update((current) => editHomeView(current, edit, Date.now()))
     .then(() => {
       const accountId = prefs.accountId();
       if (accountId !== null && syncsHomeView(edit)) localChanges.notify({ accountId, state: syncedHomeView(prefs.get()) });
@@ -52,5 +62,5 @@ export async function loadHomeView(forAccount: string): Promise<HomeViewContent 
 }
 
 export function applyRemoteHomeView(forAccount: string, incoming: HomeViewContent): Promise<void> {
-  return prefs.updateFor(forAccount, current => receiveHomeView(current, incoming));
+  return prefs.updateFor(forAccount, (current) => receiveHomeView(current, incoming));
 }

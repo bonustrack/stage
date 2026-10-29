@@ -23,7 +23,10 @@ async function harness() {
   const lookedUp: string[] = [];
   const signers: string[] = [];
   const requests: string[] = [];
-  const names = new Map([[A.address, 'alice1'], [B.address, 'bobby1']]);
+  const names = new Map([
+    [A.address, 'alice1'],
+    [B.address, 'bobby1'],
+  ]);
   const fixtures = new Map<string, { owner: string; publicKey: string; index: string; body: Uint8Array }>();
   for (const rec of [A, B]) {
     const label = names.get(rec.address);
@@ -33,26 +36,37 @@ async function harness() {
     const subject = `Only ${rec.id}`;
     const raw = `Subject: ${subject}\r\nContent-Type: multipart/mixed; boundary=m\r\n\r\n--m\r\nContent-Type: text/plain\r\n\r\nBody ${rec.id}\r\n--m\r\nContent-Type: text/plain\r\nContent-Disposition: attachment; filename="${rec.id}.txt"\r\n\r\nFile ${rec.id}\r\n--m--`;
     fixtures.set(label, {
-      owner: rec.address, publicKey: mailPublicKeyHex(keys),
-      index: Buffer.from(sealMailIndex(keys.publicKey, label, ID, {
-        envelopeFrom: 'test@example.com', from: 'test@example.com', to: `${label}@st.box`, subject, date: '', messageId: '', size: raw.length,
-      })).toString('base64'),
+      owner: rec.address,
+      publicKey: mailPublicKeyHex(keys),
+      index: Buffer.from(
+        sealMailIndex(keys.publicKey, label, ID, {
+          envelopeFrom: 'test@example.com',
+          from: 'test@example.com',
+          to: `${label}@st.box`,
+          subject,
+          date: '',
+          messageId: '',
+          size: raw.length,
+        }),
+      ).toString('base64'),
       body: sealMailPart(keys.publicKey, label, ID, 'body', new TextEncoder().encode(raw)),
     });
   }
   const pauses = new Map<string, ReturnType<typeof deferred<Response>>>();
   const started = new Map<string, ReturnType<typeof deferred<undefined>>>();
   const lookup = { run: (address: string): Promise<string | null> => Promise.resolve(names.get(address) ?? null) };
-  const signing = { run: (rec: AccountRecord): Promise<SignMessage> => {
-    signers.push(rec.id);
-    const sign = SIGN[rec.id];
-    if (sign === undefined) throw new Error('missing signer');
-    return Promise.resolve(sign);
-  } };
+  const signing = {
+    run: (rec: AccountRecord): Promise<SignMessage> => {
+      signers.push(rec.id);
+      const sign = SIGN[rec.id];
+      if (sign === undefined) throw new Error('missing signer');
+      return Promise.resolve(sign);
+    },
+  };
   fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const request = new Request(input, init);
     const url = new URL(request.url);
-    const body = request.method === 'POST' ? await request.json() as { label: string } : null;
+    const body = request.method === 'POST' ? ((await request.json()) as { label: string }) : null;
     const label = body?.label ?? url.searchParams.get('label') ?? '';
     const key = `${url.pathname}/${label}`;
     requests.push(key);
@@ -72,14 +86,28 @@ async function harness() {
   const activeLookup = { run: (): Promise<AccountRecord | null> => Promise.resolve(active) };
   const access = makeMailAccess({
     activeAccount: () => activeLookup.run(),
-    ownedLabel: (address) => { lookedUp.push(address); return lookup.run(address); },
+    ownedLabel: (address) => {
+      lookedUp.push(address);
+      return lookup.run(address);
+    },
     signer: (rec) => signing.run(rec),
     selection: () => selection,
     baseUrl: () => 'https://mail.test',
   });
   return {
-    access, lookedUp, signers, requests, names, lookup, signing, activeLookup,
-    select(rec: AccountRecord | null) { active = rec; selection += 1; access.clear(); },
+    access,
+    lookedUp,
+    signers,
+    requests,
+    names,
+    lookup,
+    signing,
+    activeLookup,
+    select(rec: AccountRecord | null) {
+      active = rec;
+      selection += 1;
+      access.clear();
+    },
     boxes: () => access.mailboxes(selection),
     inbox: (boxes: Mailbox[]) => access.inbox(boxes, selection),
     pause(path: string) {
@@ -199,7 +227,10 @@ describe('active account mail', () => {
     const h = await harness();
     const signer = deferred<SignMessage>();
     const started = deferred<undefined>();
-    h.signing.run = () => { started.resolve(undefined); return signer.promise; };
+    h.signing.run = () => {
+      started.resolve(undefined);
+      return signer.promise;
+    };
     const a = await firstBox(h);
     const rejected = h.access.mail(a, ID).catch((err: unknown) => err);
     await started.promise;

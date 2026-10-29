@@ -1,60 +1,29 @@
 {
-  "cli": {
-    "version": ">= 14.0.0",
-    "appVersionSource": "remote"
-  },
+  "cli": { "version": ">= 14.0.0", "appVersionSource": "remote" },
   "build": {
-    "base": {
-      "node": "22.14.0",
-      "bun": "1.4.4",
-      "env": {
-        "EXPO_PUBLIC_ZERODEV_PROJECT_ID": "c107f734-f7bb-48c1-a5d2-ceb3f70a42f6"
-      }
-    },
+    "base": { "node": "22.14.0", "bun": "1.4.4", "env": { "EXPO_PUBLIC_ZERODEV_PROJECT_ID": "c107f734-f7bb-48c1-a5d2-ceb3f70a42f6" } },
     "development": {
       "extends": "base",
       "autoIncrement": false,
       "developmentClient": true,
       "distribution": "internal",
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleDebug -PreactNativeArchitectures=arm64-v8a"
-      }
+      "android": { "buildType": "apk", "gradleCommand": ":app:assembleDebug -PreactNativeArchitectures=arm64-v8a" }
     },
     "preview": {
       "extends": "base",
       "autoIncrement": true,
       "distribution": "internal",
-      "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
-      }
+      "android": { "buildType": "apk", "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a" }
     },
     "production": {
       "extends": "base",
       "autoIncrement": true,
-      "env": {
-        "APP_VARIANT": "prod"
-      },
-      "android": {
-        "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64"
-      }
+      "env": { "APP_VARIANT": "prod" },
+      "android": { "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64" }
     },
-    "development-prod": {
-      "extends": "development",
-      "env": {
-        "APP_VARIANT": "prod"
-      }
-    },
-    "preview-prod": {
-      "extends": "preview",
-      "env": {
-        "APP_VARIANT": "prod"
-      }
-    },
-    "production-prod": {
-      "extends": "production"
-    }
+    "development-prod": { "extends": "development", "env": { "APP_VARIANT": "prod" } },
+    "preview-prod": { "extends": "preview", "env": { "APP_VARIANT": "prod" } },
+    "production-prod": { "extends": "production" }
   },
   "submit": {
     "internal": {
@@ -64,9 +33,7 @@
         "applicationId": "box.stage",
         "serviceAccountKeyPath": "./play-service-account.json"
       },
-      "ios": {
-        "ascApiKeyPath": "./asc-api-key.p8"
-      }
+      "ios": { "ascApiKeyPath": "./asc-api-key.p8" }
     },
     "closed": {
       "android": {
@@ -75,9 +42,7 @@
         "applicationId": "box.stage",
         "serviceAccountKeyPath": "./play-service-account.json"
       },
-      "ios": {
-        "ascApiKeyPath": "./asc-api-key.p8"
-      }
+      "ios": { "ascApiKeyPath": "./asc-api-key.p8" }
     },
     "production": {
       "android": {
@@ -86,9 +51,7 @@
         "applicationId": "box.stage",
         "serviceAccountKeyPath": "./play-service-account.json"
       },
-      "ios": {
-        "ascApiKeyPath": "./asc-api-key.p8"
-      }
+      "ios": { "ascApiKeyPath": "./asc-api-key.p8" }
     }
   }
 }

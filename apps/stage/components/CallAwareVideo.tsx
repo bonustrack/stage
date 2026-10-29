@@ -4,5 +4,5 @@ import { useStoreValue } from '../lib/storeCore';
 
 export function CallAwareVideo(props: VideoProps): React.ReactElement | null {
   const owned = useStoreValue(subscribeCallAudio, callOwnsAudio);
-  return owned ? null : <Video {...props}/>;
+  return owned ? null : <Video {...props} />;
 }

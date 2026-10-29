@@ -18,7 +18,13 @@ export function AccountAvatar({ size }: { size: number }): React.ReactElement {
 export function AccountAvatarButton({ size = 28 }: { size?: number }): React.ReactElement {
   const router = useRouter();
   return (
-    <Pressable accessibilityLabel="Settings" onPress={() => { router.navigate(SETTINGS_ROUTE); }} hitSlop={8}>
+    <Pressable
+      accessibilityLabel="Settings"
+      onPress={() => {
+        router.navigate(SETTINGS_ROUTE);
+      }}
+      hitSlop={8}
+    >
       <AccountAvatar size={size} />
     </Pressable>
   );

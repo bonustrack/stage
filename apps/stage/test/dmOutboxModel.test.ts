@@ -1,4 +1,3 @@
-
 import { describe, expect, test } from 'bun:test';
 import {
   addressesWithQueued,
@@ -9,12 +8,7 @@ import {
   type OutboxItem,
 } from '../lib/dmOutbox.model';
 
-const item = (over: Partial<OutboxItem> & { id: string }): OutboxItem => ({
-  address: '0xabc',
-  text: 'hey',
-  createdAt: 1,
-  ...over,
-});
+const item = (over: Partial<OutboxItem> & { id: string }): OutboxItem => ({ address: '0xabc', text: 'hey', createdAt: 1, ...over });
 
 describe('deserializeOutbox: storage boundary is guarded', () => {
   test('round-trips a valid queue', () => {
@@ -36,13 +30,13 @@ describe('queue operations', () => {
     item({ id: 'x', address: '0xdef', createdAt: 2 }),
   ];
   test('itemsForAddress filters by address and orders by createdAt', () => {
-    expect(itemsForAddress(items, '0xABC', null).map(i => i.id)).toEqual(['a', 'c']);
+    expect(itemsForAddress(items, '0xABC', null).map((i) => i.id)).toEqual(['a', 'c']);
   });
   test('addressesWithQueued lists unique addresses', () => {
     expect(addressesWithQueued(items, null).slice().sort()).toEqual(['0xabc', '0xdef']);
   });
   test('withoutItem removes exactly one item', () => {
-    expect(withoutItem(items, 'a').map(i => i.id)).toEqual(['c', 'x']);
+    expect(withoutItem(items, 'a').map((i) => i.id)).toEqual(['c', 'x']);
   });
 });
 
@@ -62,7 +56,12 @@ describe('pendingBanner: truthful copy per reason', () => {
       { id: 'theirs', address: '0xabc', text: 'yo', createdAt: 2, accountId: 'acct-b' },
       { id: 'legacy', address: '0xabc', text: 'old', createdAt: 3 },
     ];
-    expect(itemsForAddress(mixed, '0xabc', 'acct-a').map(i => i.id)).toEqual(['mine', 'legacy']);
-    expect(addressesWithQueued(mixed.filter(i => i.id === 'theirs'), 'acct-a')).toEqual([]);
+    expect(itemsForAddress(mixed, '0xabc', 'acct-a').map((i) => i.id)).toEqual(['mine', 'legacy']);
+    expect(
+      addressesWithQueued(
+        mixed.filter((i) => i.id === 'theirs'),
+        'acct-a',
+      ),
+    ).toEqual([]);
   });
 });

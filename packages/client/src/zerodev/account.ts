@@ -1,4 +1,3 @@
-
 import type { Hex, PublicClient } from 'viem';
 import type { HDAccount } from 'viem/accounts';
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
@@ -14,11 +13,7 @@ export async function ecdsaValidatorForOwner(
   publicClient: PublicClient,
   owner: HDAccount,
 ): Promise<Awaited<ReturnType<typeof signerToEcdsaValidator>>> {
-  return signerToEcdsaValidator(publicClient, {
-    signer: owner,
-    entryPoint: ENTRY_POINT,
-    kernelVersion: KERNEL_VERSION,
-  });
+  return signerToEcdsaValidator(publicClient, { signer: owner, entryPoint: ENTRY_POINT, kernelVersion: KERNEL_VERSION });
 }
 
 export async function createEcdsaKernel(

@@ -10,7 +10,7 @@ const inReview = entry('in-review', { ts: '2026-09-25T14:21:56.467Z' });
 const fixPosted = entry('fix-posted', { ts: '2026-09-25T14:22:04.815Z' });
 const screenshot = entry('screenshot', { ts: '2026-09-25T14:22:04.949Z' });
 
-const ids = (entries: readonly HistoryEntry[]): string[] => entries.map(e => e.id);
+const ids = (entries: readonly HistoryEntry[]): string[] => entries.map((e) => e.id);
 
 describe('feed merge order', () => {
   test('puts messages that sync late below the newer ones the stream already delivered', () => {
@@ -72,27 +72,29 @@ describe('feed merge order', () => {
   });
 });
 
-interface Msg { id: string; ns: number; reactions: Msg[] }
+interface Msg {
+  id: string;
+  ns: number;
+  reactions: Msg[];
+}
 
 const msg = (id: string, ns: number, reactions: Msg[] = []): Msg => ({ id, ns, reactions });
 const reactionIds = (list: Msg[]): string[] => list.map((m) => m.id);
-const expand = (list: Msg[]): Msg[] => withNestedReactions(list, (m) => m.reactions, (m) => m.ns);
+const expand = (list: Msg[]): Msg[] =>
+  withNestedReactions(
+    list,
+    (m) => m.reactions,
+    (m) => m.ns,
+  );
 
 describe('nested reactions in a history page', () => {
   test('lists every reaction a message carries, including removals', () => {
-    const page = [
-      msg('m2', 20, [msg('add-m2', 25)]),
-      msg('m1', 10, [msg('add-m1', 30), msg('remove-m1', 40)]),
-    ];
+    const page = [msg('m2', 20, [msg('add-m2', 25)]), msg('m1', 10, [msg('add-m1', 30), msg('remove-m1', 40)])];
     expect(reactionIds(expand(page)).sort()).toEqual(['add-m1', 'add-m2', 'm1', 'm2', 'remove-m1']);
   });
 
   test('orders reactions and messages newest first across the page', () => {
-    const page = [
-      msg('m3', 30),
-      msg('m2', 20, [msg('r25', 25), msg('r45', 45)]),
-      msg('m1', 10, [msg('r35', 35)]),
-    ];
+    const page = [msg('m3', 30), msg('m2', 20, [msg('r25', 25), msg('r45', 45)]), msg('m1', 10, [msg('r35', 35)])];
     expect(reactionIds(expand(page))).toEqual(['r45', 'r35', 'm3', 'r25', 'm2', 'm1']);
   });
 

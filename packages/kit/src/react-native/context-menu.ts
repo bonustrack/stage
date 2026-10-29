@@ -1,6 +1,9 @@
 import { Platform } from 'react-native';
 
-export interface ContextMenuPoint { x: number; y: number }
+export interface ContextMenuPoint {
+  x: number;
+  y: number;
+}
 
 interface ContextMenuEvent {
   preventDefault: () => void;
@@ -29,9 +32,7 @@ function reopenBelowOverlay(clientX: number, clientY: number): void {
   requestAnimationFrame(() => {
     const target = document.elementFromPoint(clientX, clientY);
     if (!target) return;
-    target.dispatchEvent(
-      new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX, clientY }),
-    );
+    target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX, clientY }));
   });
 }
 

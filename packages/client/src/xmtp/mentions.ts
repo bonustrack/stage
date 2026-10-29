@@ -1,12 +1,9 @@
-
 export interface MentionCandidate {
   address: string;
   name: string;
 }
 
-export type MentionSegment =
-  | { type: 'text'; text: string }
-  | { type: 'mention'; address: string };
+export type MentionSegment = { type: 'text'; text: string } | { type: 'mention'; address: string };
 
 export const MENTION_RE = /@(0x[0-9a-fA-F]{40})\b/g;
 
@@ -33,11 +30,7 @@ export interface MentionQuery {
   range: { start: number; end: number } | null;
 }
 
-export function computeMentionQuery(
-  text: string,
-  cursor: number,
-  candidates: MentionCandidate[] | undefined,
-): MentionQuery {
+export function computeMentionQuery(text: string, cursor: number, candidates: MentionCandidate[] | undefined): MentionQuery {
   if (!candidates || candidates.length === 0) return { matches: [], range: null };
   const before = text.slice(0, cursor);
   const m = /(^|\s)@(\S*)$/.exec(before);
@@ -50,16 +43,12 @@ export function computeMentionQuery(
 
 function matchTier(candidate: MentionCandidate, q: string): number {
   const name = candidate.name.toLowerCase();
-  if (name.split(/[\s._@-]+/).some(word => word.startsWith(q))) return 0;
+  if (name.split(/[\s._@-]+/).some((word) => word.startsWith(q))) return 0;
   if (name.includes(q)) return 1;
   return candidate.address.toLowerCase().includes(q) ? 2 : -1;
 }
 
-export function matchMembers<T extends MentionCandidate>(
-  candidates: T[],
-  query: string,
-  limit = 6,
-): T[] {
+export function matchMembers<T extends MentionCandidate>(candidates: T[], query: string, limit = 6): T[] {
   const q = query.toLowerCase();
   if (!q) return candidates.slice(0, limit);
   const tiers: T[][] = [[], [], []];

@@ -14,7 +14,13 @@ import { inboxEthAddresses } from '../../lib/xmtp.identity';
 import { setActiveConversation } from '../../modules/stage-pill';
 import { setActiveConvId } from '../../lib/xmtp.state.core';
 import {
-  markConvAtBottom, convScrollKey, getScrollOffset, peekScrollOffset, flushScrollOffset, getFeedAnchor, peekFeedAnchor,
+  markConvAtBottom,
+  convScrollKey,
+  getScrollOffset,
+  peekScrollOffset,
+  flushScrollOffset,
+  getFeedAnchor,
+  peekFeedAnchor,
   type FeedAnchor,
 } from '../../lib/scrollPos';
 import { isCoarsePointer } from '../../lib/webLayout';
@@ -42,48 +48,63 @@ import { reported } from '../../lib/errorPolicy';
 import { unknownSystemLineInboxIds } from './systemNames.model';
 import { uniqueBy } from '@stage-labs/client/collections';
 
-function useSystemLineAddresses(
-  events: HistoryEntry[], inboxToAddr: Record<string, string>,
-): Record<string, string> {
+function useSystemLineAddresses(events: HistoryEntry[], inboxToAddr: Record<string, string>): Record<string, string> {
   const [resolved, setResolved] = useState<Record<string, string>>({});
   const missingKey = useMemo(() => unknownSystemLineInboxIds(events, inboxToAddr).join(','), [events, inboxToAddr]);
   useEffect(() => {
     if (!missingKey) return;
     let cancelled = false;
-    void inboxEthAddresses(missingKey.split(',')).then((found) => {
-      if (!cancelled && Object.keys(found).length > 0) setResolved(prev => ({ ...prev, ...found }));
-    }).catch(reported('conversation.systemLineAddresses'));
-    return () => { cancelled = true; };
+    void inboxEthAddresses(missingKey.split(','))
+      .then((found) => {
+        if (!cancelled && Object.keys(found).length > 0) setResolved((prev) => ({ ...prev, ...found }));
+      })
+      .catch(reported('conversation.systemLineAddresses'));
+    return () => {
+      cancelled = true;
+    };
   }, [missingKey]);
   return useMemo(() => ({ ...resolved, ...inboxToAddr }), [resolved, inboxToAddr]);
 }
 
 function useActiveConvSuppression(convId: string | undefined): void {
   const activeConvId = useMemo(() => convId?.toLowerCase(), [convId]);
-  useFocusEffect(useCallback(() => {
-    if (!activeConvId) return;
-    setActiveConversation(activeConvId);
-    setActiveConvId(activeConvId);
-    const sub = AppState.addEventListener('change', (s) => {
-      const open = s === 'active' ? activeConvId : null;
-      setActiveConversation(open);
-      setActiveConvId(open);
-    });
-    return () => { sub.remove(); setActiveConversation(null); setActiveConvId(null); };
-  }, [activeConvId]));
+  useFocusEffect(
+    useCallback(() => {
+      if (!activeConvId) return;
+      setActiveConversation(activeConvId);
+      setActiveConvId(activeConvId);
+      const sub = AppState.addEventListener('change', (s) => {
+        const open = s === 'active' ? activeConvId : null;
+        setActiveConversation(open);
+        setActiveConvId(open);
+      });
+      return () => {
+        sub.remove();
+        setActiveConversation(null);
+        setActiveConvId(null);
+      };
+    }, [activeConvId]),
+  );
 }
 
 function useMarkReadWhileSeen(convId: string | undefined, fromOthers: number): void {
-  useFocusEffect(useCallback(() => {
-    if (!convId) return;
-    const check = makeSeenCheck(isAppInFront, () => { void markConvRead(convId); });
-    check();
-    return subscribeAppInFront(check);
-  }, [convId, fromOthers]));
+  useFocusEffect(
+    useCallback(() => {
+      if (!convId) return;
+      const check = makeSeenCheck(isAppInFront, () => {
+        void markConvRead(convId);
+      });
+      check();
+      return subscribeAppInFront(check);
+    }, [convId, fromOthers]),
+  );
 }
 
 function useFeedDeletions(
-  events: HistoryEntry[], groupId: string | undefined, inboxToAddr: Record<string, string>, selfInboxId: string,
+  events: HistoryEntry[],
+  groupId: string | undefined,
+  inboxToAddr: Record<string, string>,
+  selfInboxId: string,
 ): { deletedIds: DeletedMessages; isSuperAdmin: boolean } {
   const ownDeletes = useOwnDeletes();
   const roles = useChannelRoles(groupId, inboxToAddr);
@@ -100,13 +121,13 @@ function useFeedDeletions(
 function useConsentGate(convId: string | undefined) {
   const streamed = useConvConsentState(convId);
   const [allowedHere, setAllowedHere] = useState(false);
-  useEffect(() => { setAllowedHere(false); }, [convId, streamed]);
-  const markAllowed = useCallback(() => { setAllowedHere(true); }, []);
-  return {
-    consent: allowedHere ? 'allowed' : streamed ?? undefined,
-    consentKnown: allowedHere || streamed !== undefined,
-    markAllowed,
-  };
+  useEffect(() => {
+    setAllowedHere(false);
+  }, [convId, streamed]);
+  const markAllowed = useCallback(() => {
+    setAllowedHere(true);
+  }, []);
+  return { consent: allowedHere ? 'allowed' : (streamed ?? undefined), consentKnown: allowedHere || streamed !== undefined, markAllowed };
 }
 
 function useConvScrollPersistence(convId: string | undefined) {
@@ -130,10 +151,14 @@ function useConvScrollPersistence(convId: string | undefined) {
       savedScrollLoaded.current = true;
     } else {
       void Promise.all([getScrollOffset(key), getFeedAnchor(convId)]).then(([o, anchor]) => {
-        savedScrollRef.current = o; savedAnchorRef.current = anchor; savedScrollLoaded.current = true;
+        savedScrollRef.current = o;
+        savedAnchorRef.current = anchor;
+        savedScrollLoaded.current = true;
       });
     }
-    return () => { flushScrollOffset(key); };
+    return () => {
+      flushScrollOffset(key);
+    };
   }, [convId]);
   return { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef };
 }
@@ -141,7 +166,9 @@ function useConvScrollPersistence(convId: string | undefined) {
 function useFeedDerivations(events: HistoryEntry[], myUri: string, dm: boolean) {
   const pollOptionCounts = useMemo(() => pollOptionCountsInFeed(events), [events]);
   const reactions = useReconciledMap(useMemo(() => reactionsByMessage(events, pollOptionCounts), [events, pollOptionCounts]));
-  const ownReactions = useReconciledMap(useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]));
+  const ownReactions = useReconciledMap(
+    useMemo(() => ownReactionsByMessage(events, myUri, pollOptionCounts), [events, myUri, pollOptionCounts]),
+  );
   const votes = useReconciledMap(useMemo(() => votesByMessage(events), [events]));
   const ownVotes = useReconciledMap(useMemo(() => ownVotesByMessage(events, myUri), [events, myUri]));
   const openAnswers = useReconciledMap(useMemo(() => openAnswersByMessage(events), [events]));
@@ -174,30 +201,38 @@ function useConvFields(convId: string | undefined) {
   const memberAddrs = useMemo(() => memberAddressesOf(row), [row]);
   const isGroup = isGroupRow(row);
   return {
-    peerAddr: row?.peerAddress ?? null, memberAddrs, inboxToAddr: row?.inboxToAddr ?? NO_MAP, isGroup,
-    groupName: isGroup ? row?.groupName ?? null : null, groupImage: row?.avatarUri ?? '', groupDescription: description,
+    peerAddr: row?.peerAddress ?? null,
+    memberAddrs,
+    inboxToAddr: row?.inboxToAddr ?? NO_MAP,
+    isGroup,
+    groupName: isGroup ? (row?.groupName ?? null) : null,
+    groupImage: row?.avatarUri ?? '',
+    groupDescription: description,
   };
 }
 
 function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr: string | null, profilesVersion: number) {
   return useMemo(() => {
     const addrs = (isGroup ? memberAddrs : [peerAddr]).filter((a): a is string => !!a);
-    return uniqueBy(addrs, a => a.toLowerCase()).map(address => ({ address, name: peerLabel(address) }));
+    return uniqueBy(addrs, (a) => a.toLowerCase()).map((address) => ({ address, name: peerLabel(address) }));
   }, [isGroup, memberAddrs, peerAddr, profilesVersion]);
 }
 
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
-  const autoFocusNonce = useMemo(
-    () => (focus || (Platform.OS === 'web' && !isCoarsePointer()) ? Date.now() : undefined),
-    [focus, convId],
-  );
+  const autoFocusNonce = useMemo(() => (focus || (Platform.OS === 'web' && !isCoarsePointer()) ? Date.now() : undefined), [focus, convId]);
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
   const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvFields(convId);
   const clearedAt = useClearedChats()[peerAddr?.toLowerCase() ?? ''];
   const events = useMemo(
-    () => (peerAddr === null ? xmtpFeed.events : entriesAfterClear(xmtpFeed.events.filter(e => !isSystemEntry(e)), clearedAt)),
+    () =>
+      peerAddr === null
+        ? xmtpFeed.events
+        : entriesAfterClear(
+            xmtpFeed.events.filter((e) => !isSystemEntry(e)),
+            clearedAt,
+          ),
     [xmtpFeed.events, peerAddr, clearedAt],
   );
   const { loadOlder, loadingOlder, retry: retryFeed } = xmtpFeed;
@@ -210,10 +245,14 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { replyingTo, setReplyingTo, setReplyTarget } = useReplyTarget();
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   const [selectedForCopy, setSelectedForCopy] = useState<string | null>(null);
-  useFocusEffect(useCallback(() => {
-    setSelectedForCopy(null);
-    return () => { setSelectedForCopy(null); };
-  }, [convId]));
+  useFocusEffect(
+    useCallback(() => {
+      setSelectedForCopy(null);
+      return () => {
+        setSelectedForCopy(null);
+      };
+    }, [convId]),
+  );
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ y: 0, height: 0 });
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
@@ -222,11 +261,14 @@ export function useConversationState(convId: string | undefined, focus: string |
   const groupLabels = useLiveChannelLabels(convId);
 
   const knownAddrs = useSystemLineAddresses(events, inboxToAddr);
-  const senderEthOf = useCallback((from: string): string | null => {
-    if (!from.startsWith(XMTP_USER_PREFIX)) return null;
-    const inboxId = from.slice(XMTP_USER_PREFIX.length);
-    return knownAddrs[inboxId] ?? null;
-  }, [knownAddrs]);
+  const senderEthOf = useCallback(
+    (from: string): string | null => {
+      if (!from.startsWith(XMTP_USER_PREFIX)) return null;
+      const inboxId = from.slice(XMTP_USER_PREFIX.length);
+      return knownAddrs[inboxId] ?? null;
+    },
+    [knownAddrs],
+  );
 
   const selfAddr = xmtpFeed.inboxId ? (inboxToAddr[xmtpFeed.inboxId] ?? null) : null;
   const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);
@@ -239,37 +281,109 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, xmtpFeed.inboxId);
 
   const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, ownReactions);
-  const { displayVotes, displayOwnVotes, onVote, displayOpenAnswers, onOpenAnswer } =
-    useVotesLayer(activeLine, events, votes, ownVotes, openAnswers, myUri);
+  const { displayVotes, displayOwnVotes, onVote, displayOpenAnswers, onOpenAnswer } = useVotesLayer(
+    activeLine,
+    events,
+    votes,
+    ownVotes,
+    openAnswers,
+    myUri,
+  );
   const { signingIds, onSign, payingIds, onPay } = useTxSignLayer(activeLine);
 
   const {
-    showJump, setShowJump, scrollToNewest, jumpHighlightId,
-    listRef, confirmedIds, allBubbles, rowKeyOf, jumpToMessage, onOptimistic, onSent,
+    showJump,
+    setShowJump,
+    scrollToNewest,
+    jumpHighlightId,
+    listRef,
+    confirmedIds,
+    allBubbles,
+    rowKeyOf,
+    jumpToMessage,
+    onOptimistic,
+    onSent,
   } = useOutboundLayer(events, myUri, convId, activeLine, isAtBottomRef, deletedIds);
 
   const markAtBottom = useCallback(() => {
     isAtBottomRef.current = true;
     if (convId) markConvAtBottom(convId);
   }, [convId]);
-  const onAnswer = useCallback((messageId: string, label: string) => {
-    void xmtpReply(activeLine, messageId, label)
-      .catch((e: unknown) => { console.warn('xmtp answer failed', e); });
-  }, [activeLine]);
+  const onAnswer = useCallback(
+    (messageId: string, label: string) => {
+      void xmtpReply(activeLine, messageId, label).catch((e: unknown) => {
+        console.warn('xmtp answer failed', e);
+      });
+    },
+    [activeLine],
+  );
 
   return {
-    activeLine, autoFocusNonce, events, loadOlder, hasMore, loadingOlder, retryFeed, status, myUri,
-    showJump, setShowJump, scrollToNewest,
-    replyingTo, setReplyingTo, setReplyTarget, jumpHighlightId,
-    menuFor, setMenuFor, menuAnchor, setMenuAnchor, overflowOpen, setOverflowOpen,
-    overflowAnchor, setOverflowAnchor,
-    selectedForCopy, setSelectedForCopy,
-    confirmedIds, optimisticReactions, optimisticRemovals,
-    peerAddr, groupName, groupImage, groupDescription, groupLabels, isGroup, senderEthOf,
-    profilesVersion, mentionCandidates, listRef, ...scroll,
-    reactions, ownReactions, displayVotes, displayOwnVotes, displayOpenAnswers, callRecords, deletedIds, isSuperAdmin,
-    allBubbles, rowKeyOf, jumpToMessage,
-    onReact, onSign, signingIds, onVote, onOpenAnswer, onPay, payingIds, onAnswer,
-    onOptimistic, onSent, markAtBottom, consent, consentKnown, consentAllowed, markConsentAllowed,
+    activeLine,
+    autoFocusNonce,
+    events,
+    loadOlder,
+    hasMore,
+    loadingOlder,
+    retryFeed,
+    status,
+    myUri,
+    showJump,
+    setShowJump,
+    scrollToNewest,
+    replyingTo,
+    setReplyingTo,
+    setReplyTarget,
+    jumpHighlightId,
+    menuFor,
+    setMenuFor,
+    menuAnchor,
+    setMenuAnchor,
+    overflowOpen,
+    setOverflowOpen,
+    overflowAnchor,
+    setOverflowAnchor,
+    selectedForCopy,
+    setSelectedForCopy,
+    confirmedIds,
+    optimisticReactions,
+    optimisticRemovals,
+    peerAddr,
+    groupName,
+    groupImage,
+    groupDescription,
+    groupLabels,
+    isGroup,
+    senderEthOf,
+    profilesVersion,
+    mentionCandidates,
+    listRef,
+    ...scroll,
+    reactions,
+    ownReactions,
+    displayVotes,
+    displayOwnVotes,
+    displayOpenAnswers,
+    callRecords,
+    deletedIds,
+    isSuperAdmin,
+    allBubbles,
+    rowKeyOf,
+    jumpToMessage,
+    onReact,
+    onSign,
+    signingIds,
+    onVote,
+    onOpenAnswer,
+    onPay,
+    payingIds,
+    onAnswer,
+    onOptimistic,
+    onSent,
+    markAtBottom,
+    consent,
+    consentKnown,
+    consentAllowed,
+    markConsentAllowed,
   };
 }

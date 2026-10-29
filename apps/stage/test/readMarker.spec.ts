@@ -3,7 +3,12 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { countFromOthers } from '../components/conversation/feed-helpers';
 
 const msg = (id: string, from: string): HistoryEntry => ({
-  id, ts: new Date(1000).toISOString(), station: 'xmtp', line: 'l', from, to: 'l',
+  id,
+  ts: new Date(1000).toISOString(),
+  station: 'xmtp',
+  line: 'l',
+  from,
+  to: 'l',
 });
 
 describe('read marker', () => {

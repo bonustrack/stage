@@ -24,7 +24,10 @@ function metaPath(ref: GithubRef): string {
 function repoMeta(j: Record<string, unknown>, repo: string): GithubMeta {
   const name = typeof j.full_name === 'string' ? j.full_name : repo;
   return {
-    kind: 'repo', title: name, repo, state: '',
+    kind: 'repo',
+    title: name,
+    repo,
+    state: '',
     description: typeof j.description === 'string' ? j.description : undefined,
     stars: typeof j.stargazers_count === 'number' ? j.stargazers_count : undefined,
   };
@@ -57,9 +60,7 @@ function issueOrPullMeta(j: Record<string, unknown>, ref: GithubRef, repo: strin
 
 async function fetchGithubMeta(ref: GithubRef): Promise<GithubMeta | null> {
   try {
-    const res = await fetch(metaPath(ref), {
-      headers: { Accept: 'application/vnd.github+json' },
-    });
+    const res = await fetch(metaPath(ref), { headers: { Accept: 'application/vnd.github+json' } });
     if (!res.ok) return null;
     const j = (await res.json()) as Record<string, unknown>;
     const repo = `${ref.owner}/${ref.repo}`;

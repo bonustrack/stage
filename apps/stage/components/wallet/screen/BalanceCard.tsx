@@ -1,5 +1,12 @@
 import { useEffect } from 'react';
-import Animated, { cancelAnimation, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { BALANCE_TITLE_STYLE, Title } from '@stage-labs/kit/react-native/title';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
@@ -17,7 +24,12 @@ import { Column, Row, PAGE_GUTTER } from '../../layout';
 
 const BALANCE_SPINNER = 28;
 
-function WalletActionButton({ label, icon, bg, onPress }: {
+function WalletActionButton({
+  label,
+  icon,
+  bg,
+  onPress,
+}: {
   label: string;
   icon: CentralIcon;
   bg: string;
@@ -58,13 +70,20 @@ function useBalancePulse(active: boolean): ReturnType<typeof useAnimatedStyle> {
   useEffect(() => {
     opacity.value = 1;
     if (active && !reducedMotion) opacity.value = withRepeat(withTiming(0.45, { duration: 800 }), -1, true);
-    return (): void => { cancelAnimation(opacity); };
+    return (): void => {
+      cancelAnimation(opacity);
+    };
   }, [active, reducedMotion, opacity]);
   return useAnimatedStyle(() => ({ opacity: opacity.value }));
 }
 
-export function WalletBalanceCard({ balance, border, onAction }: {
-  balance: BalanceDisplayInput; border: string;
+export function WalletBalanceCard({
+  balance,
+  border,
+  onAction,
+}: {
+  balance: BalanceDisplayInput;
+  border: string;
   onAction: (action: WalletAction) => void;
 }): React.ReactElement {
   const hero = walletBalanceDisplay(balance);
@@ -72,12 +91,20 @@ export function WalletBalanceCard({ balance, border, onAction }: {
   const label = `Show balance in ${nextBalanceCurrency(balance.currency)}`;
   const pending = balance.refreshing || balance.pricesLoading || (balance.loading && !balance.error);
   const pulse = useBalancePulse(pending);
-  const amount = hero.total === '-' ? `${balance.currency} balance unavailable` : `${hero.total}${hero.decimals}${hero.unit}, ${balance.currency} balance`;
+  const amount =
+    hero.total === '-'
+      ? `${balance.currency} balance unavailable`
+      : `${hero.total}${hero.decimals}${hero.unit}, ${balance.currency} balance`;
   return (
     <Column padding={{ top: PAGE_GUTTER, bottom: 16 }} margin={{ x: PAGE_GUTTER }}>
       <Column gap={12}>
         {hero.spinner ? (
-          <Column height={BALANCE_TITLE_STYLE.lineHeight} justify="center" accessibilityRole="progressbar" accessibilityLabel="Loading balance">
+          <Column
+            height={BALANCE_TITLE_STYLE.lineHeight}
+            justify="center"
+            accessibilityRole="progressbar"
+            accessibilityLabel="Loading balance"
+          >
             <Spinner size={BALANCE_SPINNER} />
           </Column>
         ) : (
@@ -92,7 +119,11 @@ export function WalletBalanceCard({ balance, border, onAction }: {
           >
             <Animated.View style={pulse}>
               <Title size="lg" style={BALANCE_TITLE_STYLE}>
-                {hero.total}<Title style={BALANCE_TITLE_STYLE} color="secondary">{hero.decimals}</Title>{hero.unit}
+                {hero.total}
+                <Title style={BALANCE_TITLE_STYLE} color="secondary">
+                  {hero.decimals}
+                </Title>
+                {hero.unit}
               </Title>
             </Animated.View>
           </Pressable>
@@ -100,7 +131,15 @@ export function WalletBalanceCard({ balance, border, onAction }: {
         {hero.subtitle === undefined ? null : <Text size="md" variant="caption" text={hero.subtitle} color="secondary" />}
         <Row gap={12} justify="start">
           {HERO_ACTIONS.map(([label, icon, action]) => (
-            <WalletActionButton key={action} label={label} icon={icon} bg={border} onPress={() => { onAction(action); }} />
+            <WalletActionButton
+              key={action}
+              label={label}
+              icon={icon}
+              bg={border}
+              onPress={() => {
+                onAction(action);
+              }}
+            />
           ))}
         </Row>
       </Column>

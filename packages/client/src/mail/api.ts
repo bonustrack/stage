@@ -23,9 +23,7 @@ export interface MailListItem {
 const KEY_STATUS_SCHEMA = z.object({ owner: z.string(), publicKey: z.string().nullable() });
 const CHALLENGE_SCHEMA = z.object({ nonce: z.string(), expiresAt: z.number() });
 const SESSION_SCHEMA = z.object({ token: z.string(), expiresAt: z.number() });
-const LIST_SCHEMA = z.object({
-  mails: z.array(z.object({ id: z.string(), ts: z.number(), size: z.number(), index: z.string() })),
-});
+const LIST_SCHEMA = z.object({ mails: z.array(z.object({ id: z.string(), ts: z.number(), size: z.number(), index: z.string() })) });
 
 async function mailCall(proxyBase: string, path: string, init: RequestInit): Promise<Response> {
   const res = await fetch(`${proxyBase}/mail/${path}`, init);
@@ -36,7 +34,9 @@ async function mailCall(proxyBase: string, path: string, init: RequestInit): Pro
 
 async function postJson(proxyBase: string, path: string, body: unknown): Promise<unknown> {
   const res = await mailCall(proxyBase, path, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
   });
   return res.json();
 }
@@ -47,7 +47,11 @@ function sessionCall(session: MailSession, method: string, path: string, id?: st
 }
 
 export async function registerMailKey(
-  proxyBase: string, label: string, keys: MailKeyPair, signMessage: SignMessage, issuedAt = Date.now(),
+  proxyBase: string,
+  label: string,
+  keys: MailKeyPair,
+  signMessage: SignMessage,
+  issuedAt = Date.now(),
 ): Promise<void> {
   const publicKey = mailPublicKeyHex(keys);
   const signature = await signMessage(mailRegisterMessage({ label, publicKey, issuedAt }));
@@ -65,7 +69,11 @@ export async function ensureMailKey(proxyBase: string, label: string, address: s
 export async function openMailSession(proxyBase: string, label: string, signMessage: SignMessage): Promise<MailSession> {
   const challenge = parseOrThrow('mail challenge', CHALLENGE_SCHEMA, await postJson(proxyBase, 'challenge', { label }));
   const signature = await signMessage(mailSessionMessage({ label, ...challenge }));
-  const session = parseOrThrow('mail session', SESSION_SCHEMA, await postJson(proxyBase, 'session', { label, nonce: challenge.nonce, signature }));
+  const session = parseOrThrow(
+    'mail session',
+    SESSION_SCHEMA,
+    await postJson(proxyBase, 'session', { label, nonce: challenge.nonce, signature }),
+  );
   return { proxyBase, label, ...session };
 }
 

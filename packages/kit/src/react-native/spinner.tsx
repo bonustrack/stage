@@ -26,9 +26,7 @@ function useNativeRotation(): Animated.AnimatedInterpolation<string> {
   const spin = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (IS_WEB) return;
-    const anim = Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: TURN_MS, easing: Easing.linear, useNativeDriver: true }),
-    );
+    const anim = Animated.loop(Animated.timing(spin, { toValue: 1, duration: TURN_MS, easing: Easing.linear, useNativeDriver: true }));
     anim.start();
     return () => {
       anim.stop();
@@ -64,6 +62,15 @@ export function Spinner(props: SpinnerProps): React.ReactElement {
 
   const a11y = accessibilityProps(accessibility);
   const box = { width: size, height: size, ...weightStyle(weight) };
-  if (IS_WEB) return <View {...a11y} style={[box, webSpin.spin]}>{ring}</View>;
-  return <Animated.View {...a11y} style={{ ...box, transform: [{ rotate }] }}>{ring}</Animated.View>;
+  if (IS_WEB)
+    return (
+      <View {...a11y} style={[box, webSpin.spin]}>
+        {ring}
+      </View>
+    );
+  return (
+    <Animated.View {...a11y} style={{ ...box, transform: [{ rotate }] }}>
+      {ring}
+    </Animated.View>
+  );
 }

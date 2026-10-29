@@ -23,7 +23,10 @@ function pending(signal?: AbortSignal | null): Promise<Response> {
 describe('XMTP send transport', () => {
   test('does not add requests to fast sends or background traffic', async () => {
     let calls = 0;
-    const transport = createXmtpSendFetch(async () => { calls++; return reply(); }, 5);
+    const transport = createXmtpSendFetch(async () => {
+      calls++;
+      return reply();
+    }, 5);
     await transport.fetch(URL, options);
     await transport.send(() => transport.fetch(URL, options));
     await wait(15);
@@ -48,7 +51,10 @@ describe('XMTP send transport', () => {
   test('does not hedge a fast rate limit or protocol error', async () => {
     for (const response of [new Response('rate limited', { status: 429 }), reply('8')]) {
       let calls = 0;
-      const transport = createXmtpSendFetch(async () => { calls++; return response; }, 5);
+      const transport = createXmtpSendFetch(async () => {
+        calls++;
+        return response;
+      }, 5);
       const result = await transport.send(() => transport.fetch(URL, options));
       expect(result.status).toBe(response.status);
       expect((await result.text()).length).toBeGreaterThan(0);
@@ -95,7 +101,11 @@ describe('XMTP send transport', () => {
 
   test('leaves streams, other hosts, mutations and encodings untouched', async () => {
     let calls = 0;
-    const transport = createXmtpSendFetch(async () => { calls++; await wait(15); return reply(); }, 5);
+    const transport = createXmtpSendFetch(async () => {
+      calls++;
+      await wait(15);
+      return reply();
+    }, 5);
     const targets = [
       URL.replace('SendGroupMessages', 'SubscribeGroupMessages'),
       URL.replace('SendGroupMessages', 'SendWelcomeMessages'),
@@ -109,7 +119,10 @@ describe('XMTP send transport', () => {
   test('cancels both requests when the caller aborts', async () => {
     const controller = new AbortController();
     const signals: (AbortSignal | null | undefined)[] = [];
-    const transport = createXmtpSendFetch((_input, init) => { signals.push(init?.signal); return pending(init?.signal); }, 5);
+    const transport = createXmtpSendFetch((_input, init) => {
+      signals.push(init?.signal);
+      return pending(init?.signal);
+    }, 5);
     const result = transport.send(() => transport.fetch(URL, { ...options, signal: controller.signal }));
     await wait(15);
     controller.abort(new Error('cancelled'));
@@ -122,13 +135,18 @@ describe('XMTP send transport', () => {
     let calls = 0;
     let backupSignal: AbortSignal | null | undefined;
     const transport = createXmtpSendFetch(async (_input, init) => {
-      if (++calls === 2) { backupSignal = init?.signal; return pending(init?.signal); }
+      if (++calls === 2) {
+        backupSignal = init?.signal;
+        return pending(init?.signal);
+      }
       await wait(15);
       return reply('8');
     }, 5);
     const result = await Promise.race([
       transport.send(() => transport.fetch(URL, options)),
-      wait(100).then(() => { throw new Error('stalled'); }),
+      wait(100).then(() => {
+        throw new Error('stalled');
+      }),
     ]);
     expect(await result.text()).toContain('grpc-status:8');
     expect(backupSignal?.aborted).toBe(true);
@@ -140,7 +158,10 @@ describe('XMTP send transport', () => {
       new Response(new ReadableStream(), { headers: { 'grpc-status': '8', 'content-type': 'application/grpc-web+proto' } }),
     ]) {
       let calls = 0;
-      const transport = createXmtpSendFetch(async () => { calls++; return response; }, 5);
+      const transport = createXmtpSendFetch(async () => {
+        calls++;
+        return response;
+      }, 5);
       const result = await transport.send(() => transport.fetch(URL, options));
       expect(result).toBe(response);
       await wait(15);
@@ -194,7 +215,11 @@ describe('XMTP send transport', () => {
 
   test('drops send scope after rejection and caps concurrent hedges', async () => {
     let calls = 0;
-    const transport = createXmtpSendFetch(async () => { calls++; await wait(15); return reply(); }, 5);
+    const transport = createXmtpSendFetch(async () => {
+      calls++;
+      await wait(15);
+      return reply();
+    }, 5);
     await transport.send(() => Promise.all([transport.fetch(URL, options), transport.fetch(URL, options)]));
     expect(calls).toBe(3);
     await expect(transport.send(() => Promise.reject(new Error('failed')))).rejects.toThrow('failed');

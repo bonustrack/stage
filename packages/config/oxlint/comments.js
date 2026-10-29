@@ -10,7 +10,10 @@ export default {
         fixable: 'code',
         docs: { description: 'Disallow all comments; only functional tooling directives (eslint/`@ts-*`/triple-slash) may remain.' },
         schema: [],
-        messages: { banned: 'Comments are not allowed: delete this comment. Express intent in code (names, types). Only eslint/`@ts-*`/triple-slash directive comments are permitted.' },
+        messages: {
+          banned:
+            'Comments are not allowed: delete this comment. Express intent in code (names, types). Only eslint/`@ts-*`/triple-slash directive comments are permitted.',
+        },
       },
       create(context) {
         const sourceCode = context.sourceCode ?? context.getSourceCode();

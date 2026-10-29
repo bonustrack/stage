@@ -1,6 +1,11 @@
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import {
-  pollQuestionBlocks, type PollOpenAnswers, type PollOptionRow, type PollOwnVotes, type PollQuestionBlock, type PollVotes,
+  pollQuestionBlocks,
+  type PollOpenAnswers,
+  type PollOptionRow,
+  type PollOwnVotes,
+  type PollQuestionBlock,
+  type PollVotes,
 } from './poll.model';
 import type { Poll } from './helpers';
 import { usePalette, withAlpha } from '../../lib/theme';
@@ -12,39 +17,52 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, Row } from '../layout';
 
-function OpenAnswerBlock({ qi, dark, answers, mine, onSubmit }: {
-  qi: number; dark: boolean;
+function OpenAnswerBlock({
+  qi,
+  dark,
+  answers,
+  mine,
+  onSubmit,
+}: {
+  qi: number;
+  dark: boolean;
   answers?: Map<string, { text: string; ts: string }>;
-  mine?: string; onSubmit: (text: string) => void;
+  mine?: string;
+  onSubmit: (text: string) => void;
 }): React.ReactElement {
   const pal = usePalette();
   const [draft, setDraft] = useState('');
   const list = answers ? [...answers.entries()].sort((a, b) => a[1].ts.localeCompare(b[1].ts)) : [];
-  const submit = (): void => { onSubmit(draft); setDraft(''); };
+  const submit = (): void => {
+    onSubmit(draft);
+    setDraft('');
+  };
   return (
     <Column margin={{ top: 2 }} gap={6} style={{ alignSelf: 'stretch' }}>
       <Row align="center" gap={8} style={{ alignSelf: 'stretch' }}>
         <Column weight={1}>
-          <FormField label="Your answer" placeholder="Type your answer" value={draft} onChangeText={setDraft} onSubmit={submit}
-            inputProps={{ returnKeyType: 'send' }} />
+          <FormField
+            label="Your answer"
+            placeholder="Type your answer"
+            value={draft}
+            onChangeText={setDraft}
+            onSubmit={submit}
+            inputProps={{ returnKeyType: 'send' }}
+          />
         </Column>
-        <Button variant="primary"
-          size="md"
-          dark={dark}
-          disabled={draft.trim().length === 0}
-          onPress={submit}
-          label="Send"
-/>
+        <Button variant="primary" size="md" dark={dark} disabled={draft.trim().length === 0} onPress={submit} label="Send" />
       </Row>
       {list.map(([voter, a]) => (
-        <Column radius={BLOCK_RADIUS_DEFAULT} background={voter === mine
-              ? withAlpha(pal.link, dark ? 0.18 : 0.14)
-              : (dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)')} padding={{ x: 12, y: 7 }}
+        <Column
+          radius={BLOCK_RADIUS_DEFAULT}
+          background={voter === mine ? withAlpha(pal.link, dark ? 0.18 : 0.14) : dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}
+          padding={{ x: 12, y: 7 }}
           key={`${qi}-${voter}`}
           style={{ alignSelf: 'stretch' }}
->
+        >
           <Text size="md" color={pal.text}>
-            {voter === mine ? 'You: ' : ''}{a.text}
+            {voter === mine ? 'You: ' : ''}
+            {a.text}
           </Text>
         </Column>
       ))}
@@ -59,13 +77,8 @@ interface PollColors {
   borderColor: string;
 }
 
-function PollOptionView({ option, colors }: {
-  option: PollOptionRow; colors: PollColors;
-}): React.ReactElement {
-  const side = {
-    width: 1,
-    color: option.selected ? colors.selectedBorderColor : colors.borderColor,
-  };
+function PollOptionView({ option, colors }: { option: PollOptionRow; colors: PollColors }): React.ReactElement {
+  const side = { width: 1, color: option.selected ? colors.selectedBorderColor : colors.borderColor };
   return (
     <Column style={{ position: 'relative' }}>
       <Column
@@ -90,7 +103,12 @@ function PollOptionView({ option, colors }: {
   );
 }
 
-function PollQuestionView({ block, qi, colors, onVote }: {
+function PollQuestionView({
+  block,
+  qi,
+  colors,
+  onVote,
+}: {
   block: PollQuestionBlock;
   qi: number;
   colors: PollColors;
@@ -98,16 +116,14 @@ function PollQuestionView({ block, qi, colors, onVote }: {
 }): React.ReactElement {
   return (
     <Column gap={6}>
-      {block.question === undefined ? null : (
-        <Text text={block.question} fontWeight="semibold" size="md" />
-      )}
-      {block.header === undefined ? null : (
-        <Text size="md" variant="caption" text={block.header} color="secondary" fontWeight="semibold" />
-      )}
+      {block.question === undefined ? null : <Text text={block.question} fontWeight="semibold" size="md" />}
+      {block.header === undefined ? null : <Text size="md" variant="caption" text={block.header} color="secondary" fontWeight="semibold" />}
       {block.options.map((option, oi) => (
         <GesturePressable
           key={`${qi}-${oi}`}
-          onPress={() => { onVote(qi, oi, option.selected ? 'removed' : 'added'); }}
+          onPress={() => {
+            onVote(qi, oi, option.selected ? 'removed' : 'added');
+          }}
         >
           <PollOptionView option={option} colors={colors} />
         </GesturePressable>
@@ -117,8 +133,18 @@ function PollQuestionView({ block, qi, colors, onVote }: {
   );
 }
 
-export function PollView({ poll, dark, votes, ownVotes, onVote, openAnswers, onOpenAnswer, myUri }: {
-  poll: Poll; dark: boolean;
+export function PollView({
+  poll,
+  dark,
+  votes,
+  ownVotes,
+  onVote,
+  openAnswers,
+  onOpenAnswer,
+  myUri,
+}: {
+  poll: Poll;
+  dark: boolean;
   votes?: PollVotes;
   ownVotes?: PollOwnVotes;
   onVote: (questionIndex: number, optionIndex: number, action: 'added' | 'removed') => void;
@@ -141,15 +167,20 @@ export function PollView({ poll, dark, votes, ownVotes, onVote, openAnswers, onO
           <PollQuestionView key={`q-${qi}`} block={block} qi={qi} colors={colors} onVote={onVote} />
         ))}
       </Column>
-      {poll.questions.map((q, qi) => (
+      {poll.questions.map((q, qi) =>
         q.open === true && onOpenAnswer ? (
           <OpenAnswerBlock
-            key={`open-${qi}`} qi={qi} dark={dark}
-            answers={openAnswers?.get(qi)} mine={myUri}
-            onSubmit={(text) => { onOpenAnswer(qi, text); }}
+            key={`open-${qi}`}
+            qi={qi}
+            dark={dark}
+            answers={openAnswers?.get(qi)}
+            mine={myUri}
+            onSubmit={(text) => {
+              onOpenAnswer(qi, text);
+            }}
           />
-        ) : null
-      ))}
+        ) : null,
+      )}
     </Column>
   );
 }

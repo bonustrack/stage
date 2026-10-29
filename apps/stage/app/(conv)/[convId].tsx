@@ -7,58 +7,49 @@ import { RetryNotice } from '../../components/chrome/RetryNotice';
 import { ConversationFeed } from '../../components/conversation/ConversationFeed';
 import { ConversationSearch } from '../../components/conversation/ConversationSearch';
 import { useConversationState } from '../../components/conversation/useConversationState';
+import { useSearchKeyboardFocus, useResolvedConvId, resolveErrorMessage } from '../../components/conversation/conv.hooks';
 import {
-  useSearchKeyboardFocus, useResolvedConvId, resolveErrorMessage,
-} from '../../components/conversation/conv.hooks';
-import {
-  ConversationTopnav, ConversationFooter, ConversationOverlays, ConversationSearchTopnav,
+  ConversationTopnav,
+  ConversationFooter,
+  ConversationOverlays,
+  ConversationSearchTopnav,
 } from '../../components/conversation/conv.screen-parts';
 import { ChatColumn, FooterDock } from '../../components/conversation/FooterDock';
 import {
-  ChatColumnSpinner, ConversationSidebar, useChatColumnFill, useConversationSidebarShown,
+  ChatColumnSpinner,
+  ConversationSidebar,
+  useChatColumnFill,
+  useConversationSidebarShown,
 } from '../../components/conversation/ConversationSidebar';
 import { PeerTopnav } from '../../components/conversation/PeerTopnav';
 import { Column, RIGHT_PANE_PAD } from '../../components/layout';
 
-function UnresolvedConversation({ resolved, peer }: {
-  resolved: ReturnType<typeof useResolvedConvId>; peer?: string;
-}): React.ReactElement {
+function UnresolvedConversation({ resolved, peer }: { resolved: ReturnType<typeof useResolvedConvId>; peer?: string }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const fill = useChatColumnFill(0);
   const memberList = useConversationSidebarShown();
   if (!resolved.resolving && resolved.pendingAddress && resolved.error) {
-    return (
-      <PendingConversation
-        address={resolved.pendingAddress}
-        reason={resolved.error}
-        onDelivered={resolved.retry}
-        dark={dark}
-      />
-    );
+    return <PendingConversation address={resolved.pendingAddress} reason={resolved.error} onDelivered={resolved.retry} dark={dark} />;
   }
   return (
     <>
-      <PeerTopnav peer={peer}/>
-      {resolved.resolving ? <ChatColumnSpinner bottomInset={0}/> : (
+      <PeerTopnav peer={peer} />
+      {resolved.resolving ? (
+        <ChatColumnSpinner bottomInset={0} />
+      ) : (
         <Column surface="surface" weight={1} align="center" justify="center" style={fill}>
-          <RetryNotice message={resolveErrorMessage(resolved.error, resolved.detail)} onRetry={resolved.retry}/>
+          <RetryNotice message={resolveErrorMessage(resolved.error, resolved.detail)} onRetry={resolved.retry} />
         </Column>
       )}
-      {memberList ? <ConversationSidebar/> : null}
+      {memberList ? <ConversationSidebar /> : null}
     </>
   );
 }
 
 let measuredFooterHeight = 0;
 
-function ConversationShell({ bg, children }: {
-  bg: string; children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <RNAnimated.View style={{ flex: 1, backgroundColor: bg }}>
-      {children}
-    </RNAnimated.View>
-  );
+function ConversationShell({ bg, children }: { bg: string; children: React.ReactNode }): React.ReactElement {
+  return <RNAnimated.View style={{ flex: 1, backgroundColor: bg }}>{children}</RNAnimated.View>;
 }
 
 export default function XmtpConversation(): React.ReactElement {
@@ -72,16 +63,22 @@ export default function XmtpConversation(): React.ReactElement {
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const closeSearch = useCallback(() => { setSearchOpen(false); setSearchQuery(''); }, []);
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+    setSearchQuery('');
+  }, []);
   const searchInputRef = useSearchKeyboardFocus(searchOpen);
 
   const [composerH, setComposerH] = useState(measuredFooterHeight);
-  const onFooterHeight = useCallback((h: number) => { measuredFooterHeight = h; setComposerH(h); }, []);
+  const onFooterHeight = useCallback((h: number) => {
+    measuredFooterHeight = h;
+    setComposerH(h);
+  }, []);
 
   if (resolved.resolving || !convId) {
     return (
       <ConversationShell bg={bg}>
-        <UnresolvedConversation resolved={resolved} peer={pathname.startsWith('/channel/') ? undefined : routeParam}/>
+        <UnresolvedConversation resolved={resolved} peer={pathname.startsWith('/channel/') ? undefined : routeParam} />
       </ConversationShell>
     );
   }
@@ -89,31 +86,32 @@ export default function XmtpConversation(): React.ReactElement {
   return (
     <ConversationShell bg={bg}>
       <ChatColumn style={memberList ? RIGHT_PANE_PAD : null}>
-      <ConversationFeed
-        c={c}
-        convId={convId}
-        bottomInset={composerH}
-        searchSlot={searchOpen && searchQuery.trim().length >= 2 ? (
-          <ConversationSearch line={c.activeLine} query={searchQuery} c={c}/>
-        ) : undefined}
-/>
+        <ConversationFeed
+          c={c}
+          convId={convId}
+          bottomInset={composerH}
+          searchSlot={
+            searchOpen && searchQuery.trim().length >= 2 ? <ConversationSearch line={c.activeLine} query={searchQuery} c={c} /> : undefined
+          }
+        />
       </ChatColumn>
       {searchOpen ? (
-        <ConversationSearchTopnav
-          searchInputRef={searchInputRef}
-          query={searchQuery} setQuery={setSearchQuery} onClose={closeSearch}
-/>
+        <ConversationSearchTopnav searchInputRef={searchInputRef} query={searchQuery} setQuery={setSearchQuery} onClose={closeSearch} />
       ) : (
-        <ConversationTopnav c={c} convId={convId}/>
+        <ConversationTopnav c={c} convId={convId} />
       )}
       <FooterDock height={composerH} onHeight={onFooterHeight} memberList={memberList}>
-        <ConversationFooter c={c} convId={convId}/>
+        <ConversationFooter c={c} convId={convId} />
       </FooterDock>
-      {memberList ? <ConversationSidebar convId={convId} isGroup={c.isGroup} peerAddress={c.peerAddr}/> : null}
+      {memberList ? <ConversationSidebar convId={convId} isGroup={c.isGroup} peerAddress={c.peerAddr} /> : null}
       <ConversationOverlays
-        c={c} convId={convId}
-        onOpenSearch={() => { setSearchQuery(''); setSearchOpen(true); }}
-/>
+        c={c}
+        convId={convId}
+        onOpenSearch={() => {
+          setSearchQuery('');
+          setSearchOpen(true);
+        }}
+      />
     </ConversationShell>
   );
 }

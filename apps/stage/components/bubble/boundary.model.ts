@@ -18,13 +18,7 @@ export function bubbleFallbackText(entry: FallbackEntry): string {
   }
 }
 
-export function bubbleFallbackShape(entry: FallbackEntry): {
-  contentType: string | undefined; hasText: boolean; textLength: number;
-} {
+export function bubbleFallbackShape(entry: FallbackEntry): { contentType: string | undefined; hasText: boolean; textLength: number } {
   const hasText = typeof entry.text === 'string' && entry.text.trim().length > 0;
-  return {
-    contentType: contentTypeOf(entry),
-    hasText,
-    textLength: typeof entry.text === 'string' ? entry.text.length : 0,
-  };
+  return { contentType: contentTypeOf(entry), hasText, textLength: typeof entry.text === 'string' ? entry.text.length : 0 };
 }

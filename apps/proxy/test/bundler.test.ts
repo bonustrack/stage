@@ -3,23 +3,17 @@ import assert from 'node:assert/strict';
 import { handleBundler, isBrowserRequest, manifestUrl } from '../src/bundler.ts';
 
 test('isBrowserRequest is true for html accept without expo headers', () => {
-  const request = new Request('https://bundler.stage.box/main', {
-    headers: { accept: 'text/html,application/xhtml+xml' },
-  });
+  const request = new Request('https://bundler.stage.box/main', { headers: { accept: 'text/html,application/xhtml+xml' } });
   assert.equal(isBrowserRequest(request), true);
 });
 
 test('isBrowserRequest is false when expo-platform header is present', () => {
-  const request = new Request('https://bundler.stage.box/main', {
-    headers: { accept: 'text/html', 'expo-platform': 'android' },
-  });
+  const request = new Request('https://bundler.stage.box/main', { headers: { accept: 'text/html', 'expo-platform': 'android' } });
   assert.equal(isBrowserRequest(request), false);
 });
 
 test('isBrowserRequest is false for manifest accept', () => {
-  const request = new Request('https://bundler.stage.box/main', {
-    headers: { accept: 'multipart/mixed' },
-  });
+  const request = new Request('https://bundler.stage.box/main', { headers: { accept: 'multipart/mixed' } });
   assert.equal(isBrowserRequest(request), false);
 });
 
@@ -33,9 +27,7 @@ test('manifestUrl defaults runtime and platform when headers absent', () => {
 });
 
 test('manifestUrl forwards client runtime and platform headers', () => {
-  const request = new Request('https://bundler.stage.box/main', {
-    headers: { 'expo-runtime-version': '2.0.0', 'expo-platform': 'ios' },
-  });
+  const request = new Request('https://bundler.stage.box/main', { headers: { 'expo-runtime-version': '2.0.0', 'expo-platform': 'ios' } });
   const url = new URL(manifestUrl('main', request));
   assert.equal(url.searchParams.get('runtime-version'), '2.0.0');
   assert.equal(url.searchParams.get('platform'), 'ios');
@@ -48,14 +40,11 @@ function launcherTarget(response: Response): string | null {
 
 test('handleBundler redirects browsers to the launcher for the same branch', async () => {
   for (const path of ['/feat/foo', '/feat%2Ffoo', '/feat%2ffoo']) {
-    const response = await handleBundler(
-      new Request(`https://bundler.stage.box${path}`, { headers: { accept: 'text/html' } }),
-    );
+    const response = await handleBundler(new Request(`https://bundler.stage.box${path}`, { headers: { accept: 'text/html' } }));
     assert.equal(response.status, 302);
     assert.equal(
       response.headers.get('location'),
-      'https://bundler.stage.box/preview-launcher.html?u=' +
-        encodeURIComponent('https://bundler.stage.box/feat/foo'),
+      'https://bundler.stage.box/preview-launcher.html?u=' + encodeURIComponent('https://bundler.stage.box/feat/foo'),
     );
   }
 });
@@ -65,16 +54,11 @@ test('handleBundler keeps dotted and escaped branch names in the launcher link',
     new Request('https://bundler.stage.box/chore/version-0.1.0-beta.2', { headers: { accept: 'text/html' } }),
   );
   assert.equal(launcherTarget(dotted), 'https://bundler.stage.box/chore/version-0.1.0-beta.2');
-  const escaped = await handleBundler(
-    new Request('https://bundler.stage.box/fix/caf%C3%A9%20menu', { headers: { accept: 'text/html' } }),
-  );
+  const escaped = await handleBundler(new Request('https://bundler.stage.box/fix/caf%C3%A9%20menu', { headers: { accept: 'text/html' } }));
   assert.equal(launcherTarget(escaped), 'https://bundler.stage.box/fix/caf%C3%A9%20menu');
 });
 
-const EXPO_CLIENT_HEADERS = {
-  'expo-platform': 'android',
-  accept: 'application/expo+json,application/json',
-};
+const EXPO_CLIENT_HEADERS = { 'expo-platform': 'android', accept: 'application/expo+json,application/json' };
 
 async function withStubbedFetch(run: (urls: string[]) => Promise<void>): Promise<void> {
   const urls: string[] = [];
@@ -92,9 +76,7 @@ async function withStubbedFetch(run: (urls: string[]) => Promise<void>): Promise
 
 test('handleBundler loads main for expo clients on the bare domain', () =>
   withStubbedFetch(async (urls) => {
-    await handleBundler(
-      new Request('https://bundler.stage.box/', { method: 'HEAD', headers: EXPO_CLIENT_HEADERS }),
-    );
+    await handleBundler(new Request('https://bundler.stage.box/', { method: 'HEAD', headers: EXPO_CLIENT_HEADERS }));
     const [target] = urls;
     assert.ok(target);
     assert.equal(new URL(target).origin, 'https://u.expo.dev');
@@ -104,10 +86,7 @@ test('handleBundler loads main for expo clients on the bare domain', () =>
 test('handleBundler never answers expo clients with the dev hub html on file paths', () =>
   withStubbedFetch(async (urls) => {
     const response = await handleBundler(
-      new Request('https://bundler.stage.box/preview-launcher.html?u=x', {
-        method: 'HEAD',
-        headers: EXPO_CLIENT_HEADERS,
-      }),
+      new Request('https://bundler.stage.box/preview-launcher.html?u=x', { method: 'HEAD', headers: EXPO_CLIENT_HEADERS }),
     );
     assert.equal(response.status, 404);
     assert.equal(urls.length, 0);
@@ -137,18 +116,14 @@ test('handleBundler keeps slash and dash branches on different channels', () =>
 
 test('handleBundler serves dotted branch names to expo clients', () =>
   withStubbedFetch(async (urls) => {
-    await handleBundler(
-      new Request('https://bundler.stage.box/chore/config-version-0.1.0-beta.2', { headers: EXPO_CLIENT_HEADERS }),
-    );
+    await handleBundler(new Request('https://bundler.stage.box/chore/config-version-0.1.0-beta.2', { headers: EXPO_CLIENT_HEADERS }));
     assert.deepEqual(urls.map(channelOf), ['chore_2fconfig-version-0.1.0-beta.2']);
   }));
 
 test('handleBundler rejects paths that cannot be branch names', () =>
   withStubbedFetch(async (urls) => {
     for (const path of ['/feat%E0%A4%A', '/.well-known/acme-challenge/token', '/feat//foo', '/index.html']) {
-      const response = await handleBundler(
-        new Request(`https://bundler.stage.box${path}`, { headers: EXPO_CLIENT_HEADERS }),
-      );
+      const response = await handleBundler(new Request(`https://bundler.stage.box${path}`, { headers: EXPO_CLIENT_HEADERS }));
       assert.equal(response.status, 404);
     }
     assert.equal(urls.length, 0);

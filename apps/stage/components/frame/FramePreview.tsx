@@ -15,8 +15,16 @@ import { usePalette } from '../../lib/theme';
 import { isCoarsePointer } from '../../lib/webLayout';
 import { ATTACHMENT_MAX_WIDTH } from '../bubble/imageBox.model';
 import {
-  FRAME_PREVIEW_BAR, FRAME_PREVIEW_BORDER, FRAME_PREVIEW_FADE, FRAME_PREVIEW_PADDING, frameLinkOf, frameLocked,
-  frameMoreBelow, framePreviewCap, frameScreenTitle, type FrameMessageHandler,
+  FRAME_PREVIEW_BAR,
+  FRAME_PREVIEW_BORDER,
+  FRAME_PREVIEW_FADE,
+  FRAME_PREVIEW_PADDING,
+  frameLinkOf,
+  frameLocked,
+  frameMoreBelow,
+  framePreviewCap,
+  frameScreenTitle,
+  type FrameMessageHandler,
 } from './frame.model';
 import { FrameView } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';
@@ -49,13 +57,21 @@ function useScrollFade(screen: string): {
     view.current = { ...view.current, ...patch };
     setMore(frameMoreBelow(view.current));
   };
-  useTopOnScreenChange(screen, () => { ref.current?.scrollTo({ y: 0, animated: false }); });
+  useTopOnScreenChange(screen, () => {
+    ref.current?.scrollTo({ y: 0, animated: false });
+  });
   return {
     ref,
     more,
-    onLayout: (e) => { update({ viewport: e.nativeEvent.layout.height }); },
-    onContentSizeChange: (_width, height) => { update({ content: height }); },
-    onScroll: (e) => { update({ offset: e.nativeEvent.contentOffset.y }); },
+    onLayout: (e) => {
+      update({ viewport: e.nativeEvent.layout.height });
+    },
+    onContentSizeChange: (_width, height) => {
+      update({ content: height });
+    },
+    onScroll: (e) => {
+      update({ offset: e.nativeEvent.contentOffset.y });
+    },
   };
 }
 
@@ -63,12 +79,15 @@ function FrameBar({ title, onBack }: { title: string; onBack: () => void }): Rea
   const pal = usePalette();
   return (
     <Row
-      align="center" gap={6} height={FRAME_PREVIEW_BAR} background={pal.bg}
+      align="center"
+      gap={6}
+      height={FRAME_PREVIEW_BAR}
+      background={pal.bg}
       padding={{ left: 10, right: FRAME_PREVIEW_BAR + BUTTON_INSET }}
       border={{ bottom: { width: FRAME_PREVIEW_BORDER, color: pal.border } }}
     >
-      <HoverIconButton icon={IconArrowLeft} label="Back" color={pal.link} size={18} role="button" onPress={onBack}/>
-      <Text text={title} size="sm" fontWeight="semibold" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }}/>
+      <HoverIconButton icon={IconArrowLeft} label="Back" color={pal.link} size={18} role="button" onPress={onBack} />
+      <Text text={title} size="sm" fontWeight="semibold" color={pal.link} numberOfLines={1} style={{ flexShrink: 1 }} />
     </Row>
   );
 }
@@ -77,14 +96,29 @@ function FullScreenButton({ onPress }: { onPress: () => void }): React.ReactElem
   const pal = usePalette();
   return (
     <Column surface="raised" radius="full" padding={6} style={FULL_SCREEN_SPOT}>
-      <HoverIconButton icon={IconFullScreen} label="Full screen" color={pal.text} size={16} role="button" onPress={onPress}/>
+      <HoverIconButton icon={IconFullScreen} label="Full screen" color={pal.text} size={16} role="button" onPress={onPress} />
     </Column>
   );
 }
 
-export function FrameSurface({ frame, stackId, sessionKey = stackId, onMessage, untilTap, disabled, fill = false, onFullScreen }: {
-  frame: FrameContent; stackId: string; sessionKey?: string; onMessage?: FrameMessageHandler; untilTap?: boolean;
-  disabled?: boolean; fill?: boolean; onFullScreen?: () => void;
+export function FrameSurface({
+  frame,
+  stackId,
+  sessionKey = stackId,
+  onMessage,
+  untilTap,
+  disabled,
+  fill = false,
+  onFullScreen,
+}: {
+  frame: FrameContent;
+  stackId: string;
+  sessionKey?: string;
+  onMessage?: FrameMessageHandler;
+  untilTap?: boolean;
+  disabled?: boolean;
+  fill?: boolean;
+  onFullScreen?: () => void;
 }): React.ReactElement {
   const pal = usePalette();
   const navigation = useFrameStack(stackId, frame);
@@ -101,28 +135,70 @@ export function FrameSurface({ frame, stackId, sessionKey = stackId, onMessage, 
     ...layout.tile,
   };
   return (
-    <Column style={tile} onPointerEnter={() => { setHovered(true); }} onPointerLeave={() => { setHovered(false); }}>
-      {depth > 0 ? <FrameBar title={frameScreenTitle(frame, screen)} onBack={() => { navigate({ kind: 'close' }); }}/> : null}
+    <Column
+      style={tile}
+      onPointerEnter={() => {
+        setHovered(true);
+      }}
+      onPointerLeave={() => {
+        setHovered(false);
+      }}
+    >
+      {depth > 0 ? (
+        <FrameBar
+          title={frameScreenTitle(frame, screen)}
+          onBack={() => {
+            navigate({ kind: 'close' });
+          }}
+        />
+      ) : null}
       <List
-        ref={fade.ref} showsVerticalScrollIndicator={false} style={layout.scroll}
-        onLayout={fade.onLayout} onContentSizeChange={fade.onContentSizeChange} onScroll={fade.onScroll}
-        scrollEventThrottle={32} keyboardShouldPersistTaps="handled" nestedScrollEnabled={fill}
+        ref={fade.ref}
+        showsVerticalScrollIndicator={false}
+        style={layout.scroll}
+        onLayout={fade.onLayout}
+        onContentSizeChange={fade.onContentSizeChange}
+        onScroll={fade.onScroll}
+        scrollEventThrottle={32}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={fill}
       >
-        <FrameView frame={frame} sessionKey={sessionKey} disabled={disabled} onMessage={onMessage} untilTap={untilTap}
-          navigation={navigation} padding={FRAME_PREVIEW_PADDING} />
+        <FrameView
+          frame={frame}
+          sessionKey={sessionKey}
+          disabled={disabled}
+          onMessage={onMessage}
+          untilTap={untilTap}
+          navigation={navigation}
+          padding={FRAME_PREVIEW_PADDING}
+        />
       </List>
       {fade.more ? (
         <Column pointerEvents="none" style={FADE_OVERLAY}>
-          <GradientFade color={pal.bg} height={FRAME_PREVIEW_FADE} solid="bottom"/>
+          <GradientFade color={pal.bg} height={FRAME_PREVIEW_FADE} solid="bottom" />
         </Column>
       ) : null}
-      {onFullScreen !== undefined && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={onFullScreen}/> : null}
+      {onFullScreen !== undefined && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={onFullScreen} /> : null}
     </Column>
   );
 }
 
-export function FrameTile({ frame, line, messageId, disabled, fill = false, menu = false, onSent }: {
-  frame: FrameContent; line: string; messageId: string; disabled?: boolean; fill?: boolean; menu?: boolean; onSent?: () => void;
+export function FrameTile({
+  frame,
+  line,
+  messageId,
+  disabled,
+  fill = false,
+  menu = false,
+  onSent,
+}: {
+  frame: FrameContent;
+  line: string;
+  messageId: string;
+  disabled?: boolean;
+  fill?: boolean;
+  menu?: boolean;
+  onSent?: () => void;
 }): React.ReactElement {
   const router = useRouter();
   const chat = useChatFrame(frame, line, messageId, onSent);
@@ -131,21 +207,43 @@ export function FrameTile({ frame, line, messageId, disabled, fill = false, menu
     <>
       {menu && convId !== null ? (
         <ChatFrameMenu
-          frame={frame} convId={convId} messageId={messageId} onRefresh={disabled === true ? undefined : chat.refresh}
+          frame={frame}
+          convId={convId}
+          messageId={messageId}
+          onRefresh={disabled === true ? undefined : chat.refresh}
           trigger={(open) => <WidgetHeader title={chat.node?.host} onMenu={open} />}
         />
       ) : null}
       <FrameSurface
-        frame={chat.frame ?? frame} stackId={messageId} sessionKey={chat.sessionKey} onMessage={chat.onMessage}
-        untilTap={chat.node !== null} disabled={disabled} fill={fill}
-        onFullScreen={convId === null ? undefined : () => { router.push(frameLinkOf(convId, messageId)); }}
+        frame={chat.frame ?? frame}
+        stackId={messageId}
+        sessionKey={chat.sessionKey}
+        onMessage={chat.onMessage}
+        untilTap={chat.node !== null}
+        disabled={disabled}
+        fill={fill}
+        onFullScreen={
+          convId === null
+            ? undefined
+            : () => {
+                router.push(frameLinkOf(convId, messageId));
+              }
+        }
       />
     </>
   );
 }
 
-export function FramePreview({ frame, line, messageId, consentAllowed }: {
-  frame: FrameContent; line: string; messageId: string; consentAllowed?: boolean;
+export function FramePreview({
+  frame,
+  line,
+  messageId,
+  consentAllowed,
+}: {
+  frame: FrameContent;
+  line: string;
+  messageId: string;
+  consentAllowed?: boolean;
 }): React.ReactElement {
   return (
     <Column margin={{ top: 4, bottom: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>

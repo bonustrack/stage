@@ -1,4 +1,3 @@
-
 import { describe, expect, test } from 'bun:test';
 import { parseX402Challenge, normaliseAccept } from '../src/x402/challenge';
 
@@ -26,10 +25,7 @@ describe('parseX402Challenge', () => {
   });
 
   test('v2: amount field + inlined `accepted` single option', () => {
-    const c = parseX402Challenge(
-      { accepted: { scheme: 'exact', network: 'eip155:8453', amount: '5' } },
-      'https://x.com',
-    );
+    const c = parseX402Challenge({ accepted: { scheme: 'exact', network: 'eip155:8453', amount: '5' } }, 'https://x.com');
     expect(assertPresent(assertPresent(c).accepts[0]).amount).toBe('5');
   });
 
@@ -47,10 +43,7 @@ describe('parseX402Challenge', () => {
 
   test('drops options missing scheme/network; null when none remain', () => {
     expect(parseX402Challenge({ accepts: [{ amount: '5' }] }, 'x')).toBeNull();
-    const c = parseX402Challenge(
-      { accepts: [{ amount: '5' }, { scheme: 'exact', network: 'base', amount: '5' }] },
-      'x',
-    );
+    const c = parseX402Challenge({ accepts: [{ amount: '5' }, { scheme: 'exact', network: 'base', amount: '5' }] }, 'x');
     expect(assertPresent(c).accepts).toHaveLength(1);
   });
 

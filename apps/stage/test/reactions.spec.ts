@@ -2,7 +2,11 @@ import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
 import {
-  reactorNamer, reactorNames, reactorNamesByMessage, reactorsLabel, type ReactorNamer,
+  reactorNamer,
+  reactorNames,
+  reactorNamesByMessage,
+  reactorsLabel,
+  type ReactorNamer,
 } from '../components/conversation/reactors.model';
 import { ownsReaction, reactionPills } from '../components/bubble/reactions.model';
 
@@ -11,10 +15,15 @@ const EMMA = 'stage://xmtp/user/emma';
 const ALICE = 'stage://xmtp/user/alice';
 const BOB = 'stage://xmtp/user/bob';
 const NO_POLLS = new Map<string, number>();
-const nameOf: ReactorNamer = uri => uri.slice(uri.lastIndexOf('/') + 1);
+const nameOf: ReactorNamer = (uri) => uri.slice(uri.lastIndexOf('/') + 1);
 
 const react = (ms: number, from: string, emoji: string, removed = false): HistoryEntry => ({
-  id: `${from}-${ms}`, ts: new Date(ms).toISOString(), station: 'xmtp', line: 'l', from, to: 'b',
+  id: `${from}-${ms}`,
+  ts: new Date(ms).toISOString(),
+  station: 'xmtp',
+  line: 'l',
+  from,
+  to: 'b',
   payload: { reactTo: 'm1', emoji, removed },
 });
 
@@ -33,9 +42,7 @@ describe('reactions per sender', () => {
   });
 
   test('add, remove, add again by one sender counts once', () => {
-    const events = [
-      react(1000, ME, '👍'), react(2000, ME, '👍', true), react(3000, ME, '👍'), react(4000, BOB, '👍'),
-    ];
+    const events = [react(1000, ME, '👍'), react(2000, ME, '👍', true), react(3000, ME, '👍'), react(4000, BOB, '👍')];
     expect(reactionsByMessage(events, NO_POLLS).get('m1')?.get('👍')).toEqual([ME, BOB]);
     expect(ownReactionsByMessage(events, ME, NO_POLLS).get('m1')).toEqual(new Set(['👍']));
     expect(pillsOf(events)).toEqual([{ emoji: '👍', names: ['You', 'bob'], own: true, pending: false }]);
@@ -88,13 +95,20 @@ const addresses: Record<string, string> = {
   [ALICE]: '0xa11ce00000000000000000000000000000000001',
   [BOB]: '0xb0b0000000000000000000000000000000000002',
 };
-const tooltipNameOf = reactorNamer(uri => addresses[uri] ?? null, address => (address === addresses[ALICE] ? 'Alice' : undefined));
+const tooltipNameOf = reactorNamer(
+  (uri) => addresses[uri] ?? null,
+  (address) => (address === addresses[ALICE] ? 'Alice' : undefined),
+);
 
 describe('reaction tooltip', () => {
   test('lists each reactor once, by their latest reaction', () => {
     const events = [
-      react(1000, ALICE, '👍'), react(2000, BOB, '👍'), react(3000, BOB, '👍', true),
-      react(4000, ME, '👍'), react(5000, BOB, '🔥'), react(6000, ALICE, '👍'),
+      react(1000, ALICE, '👍'),
+      react(2000, BOB, '👍'),
+      react(3000, BOB, '👍', true),
+      react(4000, ME, '👍'),
+      react(5000, BOB, '🔥'),
+      react(6000, ALICE, '👍'),
     ];
     const byEmoji = reactionsByMessage(events, new Map()).get('m1');
     expect(byEmoji?.get('👍')).toEqual([ALICE, ME]);

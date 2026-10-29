@@ -55,30 +55,74 @@ export interface ModalProps extends A2uiCommonProps {
   gestureRoot?: boolean;
 }
 
-function ModalHeader({ title, onClose, pal, dark, dismissable, inset = MODAL.padding }: {
-  title: string | undefined; onClose: () => void; pal: KitPalette; dark: boolean; dismissable: boolean; inset?: number;
+function ModalHeader({
+  title,
+  onClose,
+  pal,
+  dark,
+  dismissable,
+  inset = MODAL.padding,
+}: {
+  title: string | undefined;
+  onClose: () => void;
+  pal: KitPalette;
+  dark: boolean;
+  dismissable: boolean;
+  inset?: number;
 }): React.ReactElement {
   const [hovered, setHovered] = useState(false);
   const [tooltipWidth, setTooltipWidth] = useState(0);
   const insets = useSafeAreaInsets();
   const tooltipHalfWidth = inset + SIZES.md.height / 2 - 8;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: MODAL.titleGap, marginLeft: inset + insets.left, marginRight: inset + insets.right, marginBottom: MODAL.titleGap, flexShrink: 0, zIndex: 1 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: MODAL.titleGap,
+        marginLeft: inset + insets.left,
+        marginRight: inset + insets.right,
+        marginBottom: MODAL.titleGap,
+        flexShrink: 0,
+        zIndex: 1,
+      }}
+    >
       <View style={{ flex: 1, minWidth: 0, minHeight: SIZES.md.height, justifyContent: 'center' }}>
         {title === undefined ? null : <Text accessibilityRole="header" text={title} size="2xl" fontWeight="semibold" color={pal.link} />}
       </View>
       {dismissable ? (
         <View>
           <Button
-            accessibilityRole="button" accessibilityLabel="Close modal"
-            color="secondary" variant="ghost" uniform pill dark={dark} hitSlop={4}
-            onPress={onClose} onHoverIn={() => { setHovered(true); }} onHoverOut={() => { setHovered(false); }}
+            accessibilityRole="button"
+            accessibilityLabel="Close modal"
+            color="secondary"
+            variant="ghost"
+            uniform
+            pill
+            dark={dark}
+            hitSlop={4}
+            onPress={onClose}
+            onHoverIn={() => {
+              setHovered(true);
+            }}
+            onHoverOut={() => {
+              setHovered(false);
+            }}
           >
             <Glyph icon={IconCrossMedium} size={22} color={hovered ? pal.link : pal.text} />
           </Button>
           {hovered ? (
-            <View pointerEvents="none" style={{ position: 'absolute', top: '100%', right: 0, width: SIZES.md.height, alignItems: 'center', paddingTop: 4 }}>
-              <Tooltip label="Close" arrow="up" dark={dark} onBubbleWidth={setTooltipWidth} bubbleOffset={-Math.max(0, tooltipWidth / 2 - tooltipHalfWidth)} />
+            <View
+              pointerEvents="none"
+              style={{ position: 'absolute', top: '100%', right: 0, width: SIZES.md.height, alignItems: 'center', paddingTop: 4 }}
+            >
+              <Tooltip
+                label="Close"
+                arrow="up"
+                dark={dark}
+                onBubbleWidth={setTooltipWidth}
+                bubbleOffset={-Math.max(0, tooltipWidth / 2 - tooltipHalfWidth)}
+              />
             </View>
           ) : null}
         </View>
@@ -106,12 +150,39 @@ interface PanelLayout {
 
 function panelLayout(side: DialogSide, topInset: number): PanelLayout {
   if (side === 'center') {
-    return { borderSides: 'all', width: '100%', maxWidth: MODAL.maxWidth, maxHeight: MODAL.maxHeight, top: MODAL.topPadding, bottom: MODAL.padding, inset: MODAL.padding, safeAreaBottom: false };
+    return {
+      borderSides: 'all',
+      width: '100%',
+      maxWidth: MODAL.maxWidth,
+      maxHeight: MODAL.maxHeight,
+      top: MODAL.topPadding,
+      bottom: MODAL.padding,
+      inset: MODAL.padding,
+      safeAreaBottom: false,
+    };
   }
   if (side === 'end') {
-    return { borderSides: 'start', width: '100%', maxWidth: MODAL.sideWidth, maxHeight: undefined, top: MODAL.sidePadding + topInset, bottom: MODAL.sidePadding, inset: MODAL.sidePadding, safeAreaBottom: true };
+    return {
+      borderSides: 'start',
+      width: '100%',
+      maxWidth: MODAL.sideWidth,
+      maxHeight: undefined,
+      top: MODAL.sidePadding + topInset,
+      bottom: MODAL.sidePadding,
+      inset: MODAL.sidePadding,
+      safeAreaBottom: true,
+    };
   }
-  return { borderSides: 'top', width: undefined, maxWidth: undefined, maxHeight: MODAL.maxHeight, top: MODAL.topPadding, bottom: MODAL.sheetBottomPadding, inset: MODAL.padding, safeAreaBottom: true };
+  return {
+    borderSides: 'top',
+    width: undefined,
+    maxWidth: undefined,
+    maxHeight: MODAL.maxHeight,
+    top: MODAL.topPadding,
+    bottom: MODAL.sheetBottomPadding,
+    inset: MODAL.padding,
+    safeAreaBottom: true,
+  };
 }
 
 function useModalSide(side: DialogSide): DialogSide {
@@ -131,7 +202,16 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
       onClose={close}
       side={side}
       dismissable={dismissable}
-      header={<ModalHeader title={title} onClose={close} pal={pal} dark={dark ?? scheme === 'dark'} dismissable={dismissable} inset={layout.inset} />}
+      header={
+        <ModalHeader
+          title={title}
+          onClose={close}
+          pal={pal}
+          dark={dark ?? scheme === 'dark'}
+          dismissable={dismissable}
+          inset={layout.inset}
+        />
+      }
       footer={footer}
       bottomInset={bottomInset}
       animationType="none"
@@ -182,12 +262,22 @@ export function Modal(props: ModalProps): React.ReactElement {
   };
   const content = {
     ...props,
-    children: <TriggerContext.Provider value={null}><ModalCloseContext.Provider value={close}>{props.children}</ModalCloseContext.Provider></TriggerContext.Provider>,
+    children: (
+      <TriggerContext.Provider value={null}>
+        <ModalCloseContext.Provider value={close}>{props.children}</ModalCloseContext.Provider>
+      </TriggerContext.Provider>
+    ),
   };
-  const show = (): void => { if (controlled === undefined) setInternal(true); onOpen?.(); };
-  const panel = fullBleedPanel === true
-    ? <FullBleedPanel props={content} open={open} close={close} />
-    : <StagePanel props={content} open={open} close={close} />;
+  const show = (): void => {
+    if (controlled === undefined) setInternal(true);
+    onOpen?.();
+  };
+  const panel =
+    fullBleedPanel === true ? (
+      <FullBleedPanel props={content} open={open} close={close} />
+    ) : (
+      <StagePanel props={content} open={open} close={close} />
+    );
   if (trigger === undefined) return panel;
   return (
     <View {...accessibilityProps(accessibility)} style={weightStyle(weight)}>

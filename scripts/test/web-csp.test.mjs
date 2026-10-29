@@ -22,8 +22,7 @@ function hashSource(script) {
   return `'sha256-${createHash('sha256').update(script).digest('base64')}'`;
 }
 
-const inlineSources = ['public/index.html', 'public/preview-launcher.html']
-  .flatMap(inlineScripts).map(hashSource);
+const inlineSources = ['public/index.html', 'public/preview-launcher.html'].flatMap(inlineScripts).map(hashSource);
 
 describe('web Content Security Policy', () => {
   test('is enforced without reporting private URLs to a collector', () => {
@@ -32,9 +31,20 @@ describe('web Content Security Policy', () => {
     expect(sources.has('report-to')).toBe(false);
     expect(sources.size).toBe(directives.length);
     expect([...sources.keys()]).toEqual([
-      'default-src', 'script-src', 'script-src-attr', 'style-src', 'img-src', 'media-src',
-      'font-src', 'connect-src', 'worker-src', 'frame-src', 'object-src', 'base-uri',
-      'form-action', 'frame-ancestors',
+      'default-src',
+      'script-src',
+      'script-src-attr',
+      'style-src',
+      'img-src',
+      'media-src',
+      'font-src',
+      'connect-src',
+      'worker-src',
+      'frame-src',
+      'object-src',
+      'base-uri',
+      'form-action',
+      'frame-ancestors',
     ]);
     expect(sources.get('default-src')).toEqual(["'none'"]);
   });
@@ -55,11 +65,9 @@ describe('web Content Security Policy', () => {
     expect(sources.get('connect-src')).toEqual(["'self'", 'https:', 'data:', 'blob:']);
   });
 
-  test.each(['frame-src', 'object-src', 'base-uri', 'form-action', 'frame-ancestors'])(
-    'disallows %s', (directive) => {
-      expect(sources.get(directive)).toEqual(["'none'"]);
-    },
-  );
+  test.each(['frame-src', 'object-src', 'base-uri', 'form-action', 'frame-ancestors'])('disallows %s', (directive) => {
+    expect(sources.get(directive)).toEqual(["'none'"]);
+  });
 
   test('preserves cross-origin isolation for the XMTP workers', () => {
     expect(site.values['Cross-Origin-Opener-Policy']).toBe('same-origin');

@@ -10,7 +10,8 @@ type ResolveConvError = false | DmResolveError;
 
 export function resolveErrorMessage(error: ResolveConvError, detail?: string): string {
   if (error === 'unregistered') return 'This address is not on XMTP yet. Ask them to sign in once, then retry.';
-  if (error === 'stale-installations') return 'This contact has not used XMTP in a while, so their keys expired. They need to open an XMTP app before you can message them.';
+  if (error === 'stale-installations')
+    return 'This contact has not used XMTP in a while, so their keys expired. They need to open an XMTP app before you can message them.';
   if (error === 'failed') return detail ? `Could not open this conversation. ${detail}` : 'Could not open this conversation.';
   return 'Missing conversation id.';
 }
@@ -30,9 +31,7 @@ function isQueueable(error: DmResolveError): boolean {
 
 function cachedDmConvId(address: string): string | null {
   const addr = address.toLowerCase();
-  const hit = getCachedRows()?.find(
-    r => typeof r.peerAddress === 'string' && r.peerAddress.toLowerCase() === addr,
-  );
+  const hit = getCachedRows()?.find((r) => typeof r.peerAddress === 'string' && r.peerAddress.toLowerCase() === addr);
   return hit ? hit.convId : null;
 }
 
@@ -69,16 +68,24 @@ function openingState(param: string | undefined, peerRoute: boolean): ConvState 
 
 export function useResolvedConvId(param: string | undefined, peerRoute = true): ResolvedConv {
   const [attempt, setAttempt] = useState(0);
-  const retry = useCallback(() => { setAttempt(a => a + 1); }, []);
+  const retry = useCallback(() => {
+    setAttempt((a) => a + 1);
+  }, []);
   const [state, setState] = useState<ConvState>(() => openingState(param, peerRoute));
   useEffect(() => {
     setState(openingState(param, peerRoute));
     if (!param || !peerRoute || !isPeerHandle(param)) return;
     let cancelled = false;
     resolvePeerConversation(param)
-      .then((next) => { if (!cancelled) setState(prev => (prev.convId === next.convId && !prev.resolving ? prev : next)); })
-      .catch(() => { if (!cancelled) setState(FAILED); });
-    return () => { cancelled = true; };
+      .then((next) => {
+        if (!cancelled) setState((prev) => (prev.convId === next.convId && !prev.resolving ? prev : next));
+      })
+      .catch(() => {
+        if (!cancelled) setState(FAILED);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [param, peerRoute, attempt]);
   return { ...state, retry };
 }
@@ -92,13 +99,17 @@ export function useSearchKeyboardFocus(searchOpen: boolean): InputRef {
     let shown = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let attempts = 0;
-    const sub = Keyboard.addListener('keyboardDidShow', () => { shown = true; });
+    const sub = Keyboard.addListener('keyboardDidShow', () => {
+      shown = true;
+    });
     const poke = (): void => {
       if (shown || attempts >= 8) return;
       attempts += 1;
       const input = searchInputRef.current;
       input?.blur();
-      requestAnimationFrame(() => { searchInputRef.current?.focus(); });
+      requestAnimationFrame(() => {
+        searchInputRef.current?.focus();
+      });
       timer = setTimeout(poke, 150);
     };
     const task = InteractionManager.runAfterInteractions(poke);

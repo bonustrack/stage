@@ -1,9 +1,6 @@
 const { AndroidConfig, withMainApplication } = require('expo/config-plugins');
 
-const PERMISSIONS = [
-  'android.permission.FOREGROUND_SERVICE',
-  'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
-];
+const PERMISSIONS = ['android.permission.FOREGROUND_SERVICE', 'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION'];
 const OPTIONS = 'com.oney.WebRTCModule.WebRTCModuleOptions.getInstance()';
 
 function enableProjectionService(contents, language) {

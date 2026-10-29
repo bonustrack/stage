@@ -5,7 +5,10 @@ import { TextField, type TextFieldProps } from '@stage-labs/kit/react-native/tex
 
 export { FORM_FIELD_HEIGHT, FORM_FIELD_RADIUS } from '@stage-labs/kit/react-native/text-field';
 
-type NativeInputProps = Omit<TextInputProps, 'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'>;
+type NativeInputProps = Omit<
+  TextInputProps,
+  'value' | 'defaultValue' | 'onChangeText' | 'style' | 'placeholder' | 'editable' | 'multiline'
+>;
 
 interface FormFieldProps {
   label?: string;
@@ -32,8 +35,12 @@ interface FormFieldProps {
 export function useFocusOnOpen(): RefObject<ComponentRef<typeof TextField> | null> {
   const ref = useRef<ComponentRef<typeof TextField>>(null);
   useEffect(() => {
-    const timer = setTimeout(() => { ref.current?.focus(); }, 0);
-    return () => { clearTimeout(timer); };
+    const timer = setTimeout(() => {
+      ref.current?.focus();
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
   return ref;
 }
@@ -44,15 +51,47 @@ export function useFieldColors(): { background: string; text: string; placeholde
 }
 
 export function FormField({
-  label, value, onChangeText, placeholder, multiline, rows = 3, disabled, inputType, variant, inputProps, inputRef, autoFocus, onSubmit, leading, trailing, trailingWidth, labelTrailing, hint, hintTone,
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  multiline,
+  rows = 3,
+  disabled,
+  inputType,
+  variant,
+  inputProps,
+  inputRef,
+  autoFocus,
+  onSubmit,
+  leading,
+  trailing,
+  trailingWidth,
+  labelTrailing,
+  hint,
+  hintTone,
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const line = multiline === true ? {} : { ref: inputRef, variant, inputType, autoFocus, onSubmit };
   return (
     <TextField
-      appearance="filled" label={label} value={value} onChangeText={onChangeText} placeholder={placeholder} dark={dark} disabled={disabled}
-      variant={multiline === true ? 'longText' : undefined} rows={rows} inputProps={inputProps} {...line}
-      leading={leading} trailing={trailing} trailingWidth={trailingWidth} labelTrailing={labelTrailing} hint={hint} hintTone={hintTone}
+      appearance="filled"
+      label={label}
+      value={value}
+      onChangeText={onChangeText}
+      placeholder={placeholder}
+      dark={dark}
+      disabled={disabled}
+      variant={multiline === true ? 'longText' : undefined}
+      rows={rows}
+      inputProps={inputProps}
+      {...line}
+      leading={leading}
+      trailing={trailing}
+      trailingWidth={trailingWidth}
+      labelTrailing={labelTrailing}
+      hint={hint}
+      hintTone={hintTone}
     />
   );
 }

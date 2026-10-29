@@ -15,29 +15,49 @@ import type { SendTxState } from './send.public';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 export function WalletFooter({
-  border, dark, onCancel, cancelLabel = 'Cancel', submitLabel, onSubmit, submitDisabled, submitLoading,
+  border,
+  dark,
+  onCancel,
+  cancelLabel = 'Cancel',
+  submitLabel,
+  onSubmit,
+  submitDisabled,
+  submitLoading,
 }: {
-  border: string; dark: boolean;
-  onCancel: () => void; cancelLabel?: string;
-  submitLabel: string; onSubmit: () => void;
-  submitDisabled?: boolean; submitLoading?: boolean;
+  border: string;
+  dark: boolean;
+  onCancel: () => void;
+  cancelLabel?: string;
+  submitLabel: string;
+  onSubmit: () => void;
+  submitDisabled?: boolean;
+  submitLoading?: boolean;
 }): React.ReactElement {
   const insets = useSafeAreaInsets();
   return (
-    <Row surface="surface" padding={{ x: PAGE_GUTTER, top: 12, bottom: Math.max(insets.bottom, 12) }} gap={12}
-      style={{ borderTopWidth: 1, borderTopColor: border }}>
-      <Button color="secondary" variant="solid" size="lg" pill dark={dark} style={{ flex: 1 }}
-        onPress={onCancel} label={cancelLabel}/>
-      <Button variant="primary" size="lg" pill dark={dark} style={{ flex: 1 }}
-        loading={!!submitLoading} disabled={!!submitDisabled}
-        onPress={onSubmit} label={submitLabel}/>
+    <Row
+      surface="surface"
+      padding={{ x: PAGE_GUTTER, top: 12, bottom: Math.max(insets.bottom, 12) }}
+      gap={12}
+      style={{ borderTopWidth: 1, borderTopColor: border }}
+    >
+      <Button color="secondary" variant="solid" size="lg" pill dark={dark} style={{ flex: 1 }} onPress={onCancel} label={cancelLabel} />
+      <Button
+        variant="primary"
+        size="lg"
+        pill
+        dark={dark}
+        style={{ flex: 1 }}
+        loading={!!submitLoading}
+        disabled={!!submitDisabled}
+        onPress={onSubmit}
+        label={submitLabel}
+      />
     </Row>
   );
 }
 
-export function TxStatus(props: {
-  txState: SendTxState; txHash: Hex | null; txChainId: number; txErr: string | null;
-}): React.ReactElement {
+export function TxStatus(props: { txState: SendTxState; txHash: Hex | null; txChainId: number; txErr: string | null }): React.ReactElement {
   const { txState, txHash, txChainId, txErr } = props;
   return (
     <>
@@ -74,8 +94,18 @@ function ReviewLine({ label, value, secondary }: { label: string; value: string;
   );
 }
 
-export function SendReview({ recipient, amount, symbol, secondaryLabel, chainId }: {
-  recipient: RecipientState; amount: string; symbol: string; secondaryLabel?: string; chainId: number;
+export function SendReview({
+  recipient,
+  amount,
+  symbol,
+  secondaryLabel,
+  chainId,
+}: {
+  recipient: RecipientState;
+  amount: string;
+  symbol: string;
+  secondaryLabel?: string;
+  chainId: number;
 }): React.ReactElement | null {
   const { border } = usePalette();
   const summary = recipientSummary(recipient, shortAddress);

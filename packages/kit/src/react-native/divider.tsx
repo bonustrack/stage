@@ -23,7 +23,17 @@ function lineStyle(axis: DividerAxis, size: number, spacing: number, bleed: numb
 
 export function Divider(props: DividerProps): React.ReactElement {
   const scheme = useKitScheme();
-  const { axis = 'horizontal', spacing = 0, color, size = 1, flush = false, dark = scheme === 'dark', style, weight, accessibility } = props;
+  const {
+    axis = 'horizontal',
+    spacing = 0,
+    color,
+    size = 1,
+    flush = false,
+    dark = scheme === 'dark',
+    style,
+    weight,
+    accessibility,
+  } = props;
   const base: ViewStyle = {
     ...lineStyle(axis, size, spacing, flushBleed(flush)),
     backgroundColor: color ?? schemePalette(dark).border,

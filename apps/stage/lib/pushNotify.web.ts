@@ -12,12 +12,7 @@ function openConversation(convId: string): void {
   router.push({ pathname: '/channel/[convId]', params: { convId } });
 }
 
-export async function presentInboundNotification(args: {
-  title: string;
-  body: string;
-  convId: string;
-  messageId?: string;
-}): Promise<void> {
+export async function presentInboundNotification(args: { title: string; body: string; convId: string; messageId?: string }): Promise<void> {
   if (isBrowserExtension() || typeof Notification === 'undefined' || Notification.permission !== 'granted' || isAppInFront()) return;
   const options: NotificationOptions = { body: args.body, tag: args.convId, data: { convId: args.convId } };
   try {

@@ -34,11 +34,7 @@ export function textDefaultColor(variant: TextVariant | undefined, palette: Text
   return inherited ?? palette.link;
 }
 
-export const TEXT_ALIGN_MAP: Record<TextAlign, ResolvedTextAlign> = {
-  start: 'left',
-  center: 'center',
-  end: 'right',
-};
+export const TEXT_ALIGN_MAP: Record<TextAlign, ResolvedTextAlign> = { start: 'left', center: 'center', end: 'right' };
 
 export function textFontFamily(family: TextFontFamily | undefined, weight: TextWeight): string {
   if (family === 'mono' || family === 'head') return fontName[family];

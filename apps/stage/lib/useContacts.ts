@@ -23,9 +23,7 @@ function peerAddressesOf(rows: ReturnType<typeof getCachedRows>): string[] {
 }
 
 function toSortedContacts(addresses: string[]): Contact[] {
-  return addresses
-    .map(address => ({ address, name: peerLabel(address) }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  return addresses.map((address) => ({ address, name: peerLabel(address) })).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 async function collectAddresses(): Promise<string[]> {
@@ -35,14 +33,16 @@ async function collectAddresses(): Promise<string[]> {
   const convs = await sdk.listConvs(client, ['allowed']);
   await primeConversationMembers(client, convs);
   const set = new Set<string>();
-  await Promise.all(convs.map(async (c) => {
-    const { peerAddress, otherAddresses } = await convMembers(c);
-    const addrs = peerAddress ? [peerAddress] : otherAddresses;
-    for (const a of addrs) {
-      const lower = a.toLowerCase();
-      if (lower && lower !== self) set.add(lower);
-    }
-  }));
+  await Promise.all(
+    convs.map(async (c) => {
+      const { peerAddress, otherAddresses } = await convMembers(c);
+      const addrs = peerAddress ? [peerAddress] : otherAddresses;
+      for (const a of addrs) {
+        const lower = a.toLowerCase();
+        if (lower && lower !== self) set.add(lower);
+      }
+    }),
+  );
   return [...set];
 }
 
@@ -70,7 +70,7 @@ export function useContacts(exclude: string[], query: string): Contact[] {
   const version = usePeerProfiles(peers);
 
   const excludeSet = useMemo(() => {
-    const set = new Set(exclude.map(a => a.toLowerCase()));
+    const set = new Set(exclude.map((a) => a.toLowerCase()));
     const self = getActiveAccountIdSync();
     if (self) set.add(self.toLowerCase());
     return set;
@@ -79,9 +79,7 @@ export function useContacts(exclude: string[], query: string): Contact[] {
   const q = query.trim().toLowerCase();
 
   return useMemo(() => {
-    const contacts = toSortedContacts(peers.filter(addr => !excludeSet.has(addr)));
-    return q
-      ? contacts.filter(c => c.name.toLowerCase().includes(q) || c.address.includes(q))
-      : contacts;
+    const contacts = toSortedContacts(peers.filter((addr) => !excludeSet.has(addr)));
+    return q ? contacts.filter((c) => c.name.toLowerCase().includes(q) || c.address.includes(q)) : contacts;
   }, [peers, excludeSet, q, version]);
 }

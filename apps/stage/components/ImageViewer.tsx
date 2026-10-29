@@ -19,7 +19,12 @@ const FRAME = Platform.OS === 'web' ? { x: 18, y: 104 } : { x: 0, y: 0 };
 
 const VIEWER_MENU = [{ id: 'download', label: 'Download', icon: IconArrowInbox }];
 
-export function ImageViewer({ uri, visible, onClose, onStep }: {
+export function ImageViewer({
+  uri,
+  visible,
+  onClose,
+  onStep,
+}: {
   uri: string;
   visible: boolean;
   onClose: () => void;
@@ -49,23 +54,27 @@ export function ImageViewer({ uri, visible, onClose, onStep }: {
     <Modal open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel gestureRoot>
       <Column background={'rgba(0,0,0,0.97)'} weight={1}>
         {(uri || onStep) && isCoarsePointer() ? (
-          <ZoomableImage key={uri} uri={uri} frame={FRAME} onTap={onClose} onStep={onStep}/>
+          <ZoomableImage key={uri} uri={uri} frame={FRAME} onTap={onClose} onStep={onStep} />
         ) : (
           <Pressable
             onPress={onClose}
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: FRAME.x, paddingVertical: FRAME.y }}
           >
-            {uri ? (
-              <Image url={uri} style={{ width: '100%', height: '100%' }} fit="contain"/>
-            ) : null}
+            {uri ? <Image url={uri} style={{ width: '100%', height: '100%' }} fit="contain" /> : null}
           </Pressable>
         )}
 
         <Row gap={8} style={{ position: 'absolute', top: insets.top + PAGE_GUTTER, right: PAGE_GUTTER }}>
-          <RoundOverflowMenu items={VIEWER_MENU} loading={saving} onSelect={() => { void onDownload(); }}/>
-          <RoundIconButton icon={IconCrossMedium} label="Close" onPress={onClose}/>
+          <RoundOverflowMenu
+            items={VIEWER_MENU}
+            loading={saving}
+            onSelect={() => {
+              void onDownload();
+            }}
+          />
+          <RoundIconButton icon={IconCrossMedium} label="Close" onPress={onClose} />
         </Row>
-        <TooltipHost/>
+        <TooltipHost />
       </Column>
     </Modal>
   );

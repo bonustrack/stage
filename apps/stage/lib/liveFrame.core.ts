@@ -15,7 +15,11 @@ interface LiveFrameDeps {
   toast: (message: string) => void;
 }
 
-interface LiveFrameEntry { key: string; state: LiveState; calls: number }
+interface LiveFrameEntry {
+  key: string;
+  state: LiveState;
+  calls: number;
+}
 
 interface LiveFrames {
   frameOf: (id: string) => FrameContent | null;
@@ -35,15 +39,25 @@ export function makeLiveFrames(deps: LiveFrameDeps): LiveFrames {
     entries.set(id, entry);
     return entry;
   };
-  const call = async (id: string, sent: FrameContent, load: boolean, run: (key: string, onMessage: OnMessage) => Promise<NodeResult>): Promise<void> => {
+  const call = async (
+    id: string,
+    sent: FrameContent,
+    load: boolean,
+    run: (key: string, onMessage: OnMessage) => Promise<NodeResult>,
+  ): Promise<void> => {
     const entry = entryOf(id, sent);
     entry.calls += 1;
     const ticket = entry.calls;
-    const { result, applied } = await streamInto(id, load, (frame) => {
-      if (entries.get(id) !== entry) return;
-      entry.state = { ...entry.state, frame };
-      notify();
-    }, (onMessage) => run(entry.key, onMessage));
+    const { result, applied } = await streamInto(
+      id,
+      load,
+      (frame) => {
+        if (entries.get(id) !== entry) return;
+        entry.state = { ...entry.state, frame };
+        notify();
+      },
+      (onMessage) => run(entry.key, onMessage),
+    );
     if (entries.get(id) !== entry) return;
     if (ticket !== entry.calls && (!result.ok || load)) return;
     const next = liveStateAfter(entry.state, result, deps.now(), applied);
@@ -56,7 +70,7 @@ export function makeLiveFrames(deps: LiveFrameDeps): LiveFrames {
     notify();
   };
   return {
-    frameOf: id => entries.get(id)?.state.frame ?? null,
+    frameOf: (id) => entries.get(id)?.state.frame ?? null,
     clear: () => {
       entries.clear();
       notify();

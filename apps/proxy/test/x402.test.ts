@@ -7,9 +7,7 @@ void test('parses a v1 body challenge (maxAmountRequired)', () => {
     {
       x402Version: 1,
       error: 'payment required',
-      accepts: [
-        { scheme: 'exact', network: 'base', maxAmountRequired: '10000', asset: 'USDC', payTo: '0xabc' },
-      ],
+      accepts: [{ scheme: 'exact', network: 'base', maxAmountRequired: '10000', asset: 'USDC', payTo: '0xabc' }],
     },
     'https://api.example.com/paid',
   );
@@ -21,19 +19,13 @@ void test('parses a v1 body challenge (maxAmountRequired)', () => {
 });
 
 void test('parses a v2-style amount field', () => {
-  const c = parseX402Challenge(
-    { accepts: [{ scheme: 'exact', network: 'eip155:8453', amount: '5' }] },
-    'https://x.com',
-  );
+  const c = parseX402Challenge({ accepts: [{ scheme: 'exact', network: 'eip155:8453', amount: '5' }] }, 'https://x.com');
   assert.ok(c);
   assert.equal(c.accepts[0].amount, '5');
 });
 
 void test('drops options missing scheme/network', () => {
-  const c = parseX402Challenge(
-    { accepts: [{ scheme: 'exact' }, { scheme: 'exact', network: 'base', amount: '1' }] },
-    'https://x.com',
-  );
+  const c = parseX402Challenge({ accepts: [{ scheme: 'exact' }, { scheme: 'exact', network: 'base', amount: '1' }] }, 'https://x.com');
   assert.ok(c);
   assert.equal(c.accepts.length, 1);
 });

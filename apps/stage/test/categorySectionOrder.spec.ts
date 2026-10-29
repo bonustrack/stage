@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  addedColumnOrder, boardColumns, deletedColumnOrder, keptColumnOrder, orderedColumns, renamedColumnOrder,
+  addedColumnOrder,
+  boardColumns,
+  deletedColumnOrder,
+  keptColumnOrder,
+  orderedColumns,
+  renamedColumnOrder,
 } from '../components/board/BoardScreen.model';
 import { groupRows, isGroupHeader } from '../components/home/groups.model';
 import { homeDragModel } from '../components/home/listDrag.model';
@@ -9,9 +14,26 @@ import { categoryOrderWith, categorySectionKeysOf, categorySectionOrderWith, mov
 
 function row(convId: string, extra: Partial<Row> = {}): Row {
   return {
-    convId, title: convId, lastTs: 1, lastBubbleTs: 1, lastPreview: '', avatarAddress: null, avatarUri: null,
-    peerAddress: null, lastSenderAddress: null, lastFromSelf: false, inboxToAddr: {}, unreadCount: 0, lastReadNs: 0,
-    markedUnread: false, selfInboxId: 'me', labels: [], category: null, assigned: [], consent: null, ...extra,
+    convId,
+    title: convId,
+    lastTs: 1,
+    lastBubbleTs: 1,
+    lastPreview: '',
+    avatarAddress: null,
+    avatarUri: null,
+    peerAddress: null,
+    lastSenderAddress: null,
+    lastFromSelf: false,
+    inboxToAddr: {},
+    unreadCount: 0,
+    lastReadNs: 0,
+    markedUnread: false,
+    selfInboxId: 'me',
+    labels: [],
+    category: null,
+    assigned: [],
+    consent: null,
+    ...extra,
   };
 }
 
@@ -20,9 +42,10 @@ const alpha = row('alpha', { category: 'Alpha', labels: ['Todo'] });
 const work = row('work', { category: 'Work', labels: ['Done'] });
 const loose = row('loose');
 const rows = [direct, alpha, work, loose];
-const sections = (order: readonly string[], selected = rows): string[] => (
-  groupRows(selected, 'category', new Set(), false, value => value, order).filter(isGroupHeader).map(item => item.header.key)
-);
+const sections = (order: readonly string[], selected = rows): string[] =>
+  groupRows(selected, 'category', new Set(), false, (value) => value, order)
+    .filter(isGroupHeader)
+    .map((item) => item.header.key);
 
 describe('category section ordering', () => {
   test('project grouping and reordering work without toSorted and do not mutate inputs', () => {
@@ -38,8 +61,12 @@ describe('category section ordering', () => {
       expect(sections(legacy)).toEqual(['dm', 'category:work', 'category:alpha', 'none']);
       expect(sections(reordered)).toEqual(reordered);
       expect(sections(reordered, [work, alpha])).toEqual(['category:work', 'category:alpha']);
-      expect(movedCategoryOrder(reordered, ['none', ...visible, 'dm'], 'dm', 'none'))
-        .toEqual(['dm', 'none', 'category:work', 'category:alpha']);
+      expect(movedCategoryOrder(reordered, ['none', ...visible, 'dm'], 'dm', 'none')).toEqual([
+        'dm',
+        'none',
+        'category:work',
+        'category:alpha',
+      ]);
       expect(visible).toEqual(['category:work', 'category:alpha']);
       expect(legacy).toEqual(['category:work', 'category:hidden']);
       expect(reordered).toEqual(['none', 'category:work', 'dm', 'category:alpha']);
@@ -52,8 +79,13 @@ describe('category section ordering', () => {
   test('legacy orders keep direct messages first and no project last without mutating the saved order', () => {
     const legacy = ['category:work', 'category:hidden'];
     expect(sections(legacy)).toEqual(['dm', 'category:work', 'category:alpha', 'none']);
-    expect(categorySectionOrderWith(legacy, ['category:alpha', 'category:work']))
-      .toEqual(['dm', 'category:work', 'category:hidden', 'category:alpha', 'none']);
+    expect(categorySectionOrderWith(legacy, ['category:alpha', 'category:work'])).toEqual([
+      'dm',
+      'category:work',
+      'category:hidden',
+      'category:alpha',
+      'none',
+    ]);
     expect(legacy).toEqual(['category:work', 'category:hidden']);
   });
 
@@ -73,10 +105,14 @@ describe('category section ordering', () => {
     const changed = movedCategoryOrder(order, ['category:work', 'category:alpha'], 'category:alpha', 'category:work');
     expect(changed).toEqual(['none', 'category:alpha', 'category:work', 'dm', 'category:hidden']);
     expect(sections(changed)).toEqual(['none', 'category:alpha', 'category:work', 'dm']);
-    expect(sections(changed, [...rows, row('hidden', { category: 'Hidden' })]))
-      .toEqual(['none', 'category:alpha', 'category:work', 'dm', 'category:hidden']);
-    expect(movedCategoryOrder([], ['category:work', 'none'], 'none', 'category:work'))
-      .toEqual(['dm', 'none', 'category:work']);
+    expect(sections(changed, [...rows, row('hidden', { category: 'Hidden' })])).toEqual([
+      'none',
+      'category:alpha',
+      'category:work',
+      'dm',
+      'category:hidden',
+    ]);
+    expect(movedCategoryOrder([], ['category:work', 'none'], 'none', 'category:work')).toEqual(['dm', 'none', 'category:work']);
   });
 
   test('built-in identities do not collide with project names or become project choices', () => {
@@ -84,18 +120,21 @@ describe('category section ordering', () => {
     const namedDirect = row('named-direct', { category: 'Direct messages' });
     const order = ['none', 'category:no project', 'dm', 'category:direct messages'];
     expect(sections(order, [direct, loose, named, namedDirect])).toEqual(order);
-    expect(categorySectionKeysOf(['dm', 'none', 'category:Work', 'category:work', 'label:Todo', 'category:']))
-      .toEqual(['dm', 'none', 'category:Work']);
+    expect(categorySectionKeysOf(['dm', 'none', 'category:Work', 'category:work', 'label:Todo', 'category:'])).toEqual([
+      'dm',
+      'none',
+      'category:Work',
+    ]);
     expect(movedCategoryOrder(order, order, 'label:Todo', 'dm')).toEqual(order);
   });
 
   test('other grouping modes ignore the project section order', () => {
-    const items = groupRows(rows, 'label', new Set(), false, value => value, ['none', 'dm', 'category:work']);
-    expect(items.filter(isGroupHeader).map(item => item.header.key)).toEqual(['dm', 'label:done', 'label:todo', 'none']);
+    const items = groupRows(rows, 'label', new Set(), false, (value) => value, ['none', 'dm', 'category:work']);
+    expect(items.filter(isGroupHeader).map((item) => item.header.key)).toEqual(['dm', 'label:done', 'label:todo', 'none']);
   });
 
   test('collapsed built-ins are still full-section reorder targets', () => {
-    const items = groupRows(rows, 'category', new Set(['dm', 'none']), false, value => value);
+    const items = groupRows(rows, 'category', new Set(['dm', 'none']), false, (value) => value);
     const model = homeDragModel(items, true);
     expect([...model.sectionKeys.values()]).toEqual(['dm', 'category:alpha', 'category:work', 'none']);
     expect(model.sections).toContain('group:none');
@@ -110,21 +149,22 @@ describe('shared project order with Board', () => {
 
   test('Board still excludes direct messages and fixes its catch-all after named projects', () => {
     const columns = orderedColumns(boardColumns(rows, [], saved, 'category'), saved);
-    expect(columns.map(column => column.key)).toEqual(['category:Work', 'category:Alpha', 'category:']);
-    expect(columns.flatMap(column => column.rows.map(item => item.convId))).not.toContain('direct');
+    expect(columns.map((column) => column.key)).toEqual(['category:Work', 'category:Alpha', 'category:']);
+    expect(columns.flatMap((column) => column.rows.map((item) => item.convId))).not.toContain('direct');
   });
 
   test('Board add, rename, delete and emptied-column writes retain built-in section positions', () => {
-    expect(categorySectionKeysOf(addedColumnOrder(shown, saved, 'New', 'category')))
-      .toEqual([...saved, 'category:New']);
-    expect(categorySectionKeysOf(renamedColumnOrder(shown, saved, 'Work', 'Renamed', 'category')))
-      .toEqual(['none', 'category:Renamed', 'dm', 'category:Alpha']);
-    expect(categorySectionKeysOf(deletedColumnOrder(shown, saved, 'Alpha', 'category')))
-      .toEqual(['none', 'category:Work', 'dm']);
+    expect(categorySectionKeysOf(addedColumnOrder(shown, saved, 'New', 'category'))).toEqual([...saved, 'category:New']);
+    expect(categorySectionKeysOf(renamedColumnOrder(shown, saved, 'Work', 'Renamed', 'category'))).toEqual([
+      'none',
+      'category:Renamed',
+      'dm',
+      'category:Alpha',
+    ]);
+    expect(categorySectionKeysOf(deletedColumnOrder(shown, saved, 'Alpha', 'category'))).toEqual(['none', 'category:Work', 'dm']);
     const columns = boardColumns(rows, [], saved, 'category');
     const kept = keptColumnOrder(columns, saved, 'category:Work');
     expect(kept === null ? saved : categorySectionKeysOf(kept)).toEqual(saved);
-    expect(movedCategoryOrder(saved, shown, 'category:Work', 'category:Alpha'))
-      .toEqual(['none', 'dm', 'category:Alpha', 'category:Work']);
+    expect(movedCategoryOrder(saved, shown, 'category:Work', 'category:Alpha')).toEqual(['none', 'dm', 'category:Alpha', 'category:Work']);
   });
 });

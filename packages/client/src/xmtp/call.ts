@@ -2,11 +2,17 @@ import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
 
 export const CALL_INVITE_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'callInvite', versionMajor: 1, versionMinor: 0,
+  authorityId: 'stage.box',
+  typeId: 'callInvite',
+  versionMajor: 1,
+  versionMinor: 0,
 };
 
 export const CALL_SIGNAL_CONTENT_TYPE: XmtpContentTypeId = {
-  authorityId: 'stage.box', typeId: 'callSignal', versionMajor: 1, versionMinor: 0,
+  authorityId: 'stage.box',
+  typeId: 'callSignal',
+  versionMajor: 1,
+  versionMinor: 0,
 };
 
 export const MAX_CALL_PARTICIPANTS = 8;
@@ -23,11 +29,7 @@ export const CALL_ICE_SERVERS: readonly { urls: string[] }[] = [
 const idSchema = z.string().min(8).max(64);
 const sdpSchema = z.string().min(1).max(64_000);
 
-export const callInviteSchema = z.object({
-  callId: idSchema,
-  from: idSchema,
-  video: z.boolean(),
-});
+export const callInviteSchema = z.object({ callId: idSchema, from: idSchema, video: z.boolean() });
 
 export type CallInvite = z.infer<typeof callInviteSchema>;
 

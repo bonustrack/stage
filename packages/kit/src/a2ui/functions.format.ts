@@ -18,16 +18,25 @@ export function coerceToString(value: unknown): string {
 
 export function formatNumber(value: number, decimals: number | undefined, grouping: boolean, locale: string): string {
   if (Number.isNaN(value)) return '';
-  return new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: grouping }).format(value);
+  return new Intl.NumberFormat(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: grouping }).format(
+    value,
+  );
 }
 
 function codeLayout(value: number, currency: string, decimals: number, grouping: boolean, locale: string): string {
   const formatter = new Intl.NumberFormat(locale, {
-    style: 'currency', currency: 'USD', currencyDisplay: 'code',
-    minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: grouping,
+    style: 'currency',
+    currency: 'USD',
+    currencyDisplay: 'code',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+    useGrouping: grouping,
   });
   if (typeof formatter.formatToParts !== 'function') return `${currency} ${formatNumber(value, decimals, grouping, locale)}`;
-  return formatter.formatToParts(value).map((part) => (part.type === 'currency' ? currency : part.value)).join('');
+  return formatter
+    .formatToParts(value)
+    .map((part) => (part.type === 'currency' ? currency : part.value))
+    .join('');
 }
 
 export function formatCurrency(value: number, currencyInput: unknown, decimals: number, grouping: boolean, locale: string): string {
@@ -35,7 +44,11 @@ export function formatCurrency(value: number, currencyInput: unknown, decimals: 
   const currency = coerceToString(currencyInput).toUpperCase();
   try {
     return new Intl.NumberFormat(locale, {
-      style: 'currency', currency, minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: grouping,
+      style: 'currency',
+      currency,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      useGrouping: grouping,
     }).format(value);
   } catch {
     return codeLayout(value, currency, decimals, grouping, locale);
@@ -83,12 +96,14 @@ function roundTrips(value: string, shifted: Date): boolean {
   const w = WRITTEN.exec(value);
   if (w === null) return false;
   const field = (i: number): number | undefined => (w[i] === undefined ? undefined : Number(w[i]));
-  return field(1) === shifted.getUTCFullYear()
-    && field(2) === shifted.getUTCMonth() + 1
-    && field(3) === shifted.getUTCDate()
-    && (field(4) ?? shifted.getUTCHours()) === shifted.getUTCHours()
-    && (field(5) ?? shifted.getUTCMinutes()) === shifted.getUTCMinutes()
-    && (field(6) ?? shifted.getUTCSeconds()) === shifted.getUTCSeconds();
+  return (
+    field(1) === shifted.getUTCFullYear() &&
+    field(2) === shifted.getUTCMonth() + 1 &&
+    field(3) === shifted.getUTCDate() &&
+    (field(4) ?? shifted.getUTCHours()) === shifted.getUTCHours() &&
+    (field(5) ?? shifted.getUTCMinutes()) === shifted.getUTCMinutes() &&
+    (field(6) ?? shifted.getUTCSeconds()) === shifted.getUTCSeconds()
+  );
 }
 
 function parseTimestamp(value: string): { shifted: Date; instant: Date } | null {

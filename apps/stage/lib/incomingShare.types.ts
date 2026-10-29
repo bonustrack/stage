@@ -6,9 +6,7 @@ export interface SharedFile {
 }
 
 export type IncomingShare = { id: string } & (
-  | { status: 'loading' }
-  | { status: 'error'; error: string }
-  | { status: 'ready'; files: SharedFile[] }
+  { status: 'loading' } | { status: 'error'; error: string } | { status: 'ready'; files: SharedFile[] }
 );
 
 export interface IncomingShareBridge {

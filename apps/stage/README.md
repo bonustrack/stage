@@ -56,15 +56,15 @@ oxlint-plugin.mjs # app lint rules (stage/*): keyring guard, native-only seams, 
 
 ## Scripts
 
-| Script              | Description                                        |
-| ------------------- | ------------------------------------------------- |
-| `bun run start`     | Start the Expo bundler.                           |
-| `bun run android`   | Build and run on Android.                          |
-| `bun run ios`       | Build and run on iOS.                              |
-| `bun run web`       | Run in the browser.                               |
-| `bun run build:web` | Export the web bundle to `dist/`.                 |
-| `bun run typecheck` | Type-check with `bun check`.                      |
-| `bun run test`      | Run the pure-model tests in `test/`.              |
+| Script              | Description                          |
+| ------------------- | ------------------------------------ |
+| `bun run start`     | Start the Expo bundler.              |
+| `bun run android`   | Build and run on Android.            |
+| `bun run ios`       | Build and run on iOS.                |
+| `bun run web`       | Run in the browser.                  |
+| `bun run build:web` | Export the web bundle to `dist/`.    |
+| `bun run typecheck` | Type-check with `bun check`.         |
+| `bun run test`      | Run the pure-model tests in `test/`. |
 
 Linting is centralised at the repo root (`bun run lint`).
 

@@ -1,7 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import { DEFAULT_HOME_VIEW } from '@stage-labs/client/xmtp/readState';
 import {
-  CHANNELS_OVERFLOW_ITEMS, homeActivityMenu, homeLayoutMenu, homeSortMenu, homeViewEdit, homeViewMenu, searchBarLabels, type ViewMenuSection,
+  CHANNELS_OVERFLOW_ITEMS,
+  homeActivityMenu,
+  homeLayoutMenu,
+  homeSortMenu,
+  homeViewEdit,
+  homeViewMenu,
+  searchBarLabels,
+  type ViewMenuSection,
 } from '../components/home/model';
 
 describe('filter chips follow the search', () => {
@@ -12,8 +19,7 @@ describe('filter chips follow the search', () => {
 
   test('follows the board column order, with other labels after it', () => {
     const order = ['label:todo', 'unlabeled', 'label:done'];
-    expect(searchBarLabels(['Blocked', 'Done', 'Todo', 'Alpha'], new Set(), order))
-      .toEqual(['Todo', 'Done', 'Alpha', 'Blocked']);
+    expect(searchBarLabels(['Blocked', 'Done', 'Todo', 'Alpha'], new Set(), order)).toEqual(['Todo', 'Done', 'Alpha', 'Blocked']);
     expect(searchBarLabels(['Todo'], new Set(['done']), order)).toEqual(['Todo', 'done']);
   });
 });
@@ -21,19 +27,22 @@ describe('filter chips follow the search', () => {
 describe('the View menu', () => {
   const chats = { view: 'chats', groupBy: 'none', columnBy: 'label', at: 0 } as const;
   const board = { ...chats, view: 'board', groupBy: 'category' } as const;
-  const labels = (sections: ViewMenuSection[]): string[][] => sections.map(s => s.rows.map(r => `${r.label}${r.value === undefined ? '' : `: ${r.value}`}${r.selected ? '*' : ''}`));
+  const labels = (sections: ViewMenuSection[]): string[][] =>
+    sections.map((s) => s.rows.map((r) => `${r.label}${r.value === undefined ? '' : `: ${r.value}`}${r.selected ? '*' : ''}`));
 
   test('the root starts with the Chats or Board view before the existing options', () => {
     expect(labels(homeViewMenu(chats))).toEqual([['View: Chats', 'Group by: No grouping', 'Sort by: Updated', 'Filter', 'Fields']]);
     expect(labels(homeViewMenu(board))).toEqual([['View: Board', 'Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
-    expect(homeViewMenu(chats).every(section => section.heading === undefined)).toBe(true);
+    expect(homeViewMenu(chats).every((section) => section.heading === undefined)).toBe(true);
   });
 
   test('the view picker selects the current layout and edits only the mode', () => {
     expect(labels(homeLayoutMenu(chats))).toEqual([['Chats*', 'Board']]);
     expect(labels(homeLayoutMenu(board))).toEqual([['Chats', 'Board*']]);
     const configured = {
-      ...chats, chatsSort: { by: 'created', direction: 'asc' }, boardSort: { by: 'priority', direction: 'desc' },
+      ...chats,
+      chatsSort: { by: 'created', direction: 'asc' },
+      boardSort: { by: 'priority', direction: 'desc' },
     } as const;
     const switched = { ...configured, ...homeViewEdit(configured, 'view:board') };
     expect(switched).toEqual({ ...configured, view: 'board' });
@@ -42,42 +51,60 @@ describe('the View menu', () => {
 
   test('selected values are separate from labels and follow the active mode', () => {
     const current = {
-      ...chats, groupBy: 'assignee', columnBy: 'status',
-      chatsSort: { by: 'created', direction: 'asc' }, boardSort: { by: 'priority', direction: 'desc' },
+      ...chats,
+      groupBy: 'assignee',
+      columnBy: 'status',
+      chatsSort: { by: 'created', direction: 'asc' },
+      boardSort: { by: 'priority', direction: 'desc' },
     } as const;
     for (const view of ['chats', 'board', 'chats'] as const) {
-      const rows = homeViewMenu({ ...current, view }).flatMap(section => section.rows);
-      expect(rows.find(row => row.id === 'grouping')).toMatchObject({
-        label: view === 'chats' ? 'Group by' : 'Column by', value: view === 'chats' ? 'Assignees' : 'Status',
+      const rows = homeViewMenu({ ...current, view }).flatMap((section) => section.rows);
+      expect(rows.find((row) => row.id === 'grouping')).toMatchObject({
+        label: view === 'chats' ? 'Group by' : 'Column by',
+        value: view === 'chats' ? 'Assignees' : 'Status',
       });
-      expect(rows.find(row => row.id === 'sorting')).toMatchObject({
-        label: 'Sort by', value: view === 'chats' ? 'Created' : 'Priority',
+      expect(rows.find((row) => row.id === 'sorting')).toMatchObject({
+        label: 'Sort by',
+        value: view === 'chats' ? 'Created' : 'Priority',
         icon: view === 'chats' ? 'IconArrowUp' : 'IconArrowDown',
       });
     }
-    for (const [key, value] of [['category', 'Project'], ['label', 'Label'], ['status', 'Status']] as const) {
-      expect(homeViewMenu({ ...chats, groupBy: key }).flatMap(section => section.rows)
-        .find(row => row.id === 'grouping')?.value).toBe(value);
+    for (const [key, value] of [
+      ['category', 'Project'],
+      ['label', 'Label'],
+      ['status', 'Status'],
+    ] as const) {
+      expect(
+        homeViewMenu({ ...chats, groupBy: key })
+          .flatMap((section) => section.rows)
+          .find((row) => row.id === 'grouping')?.value,
+      ).toBe(value);
     }
   });
 
   test('Last activity keeps its exact choices outside the view root', () => {
     expect(labels(homeActivityMenu('3d'))).toEqual([['1d', '3d*', '7d', '30d', 'All']]);
     for (const view of [chats, board]) {
-      expect(homeViewMenu(view).flatMap(section => section.rows).some(row => row.id === 'activity')).toBe(false);
+      expect(
+        homeViewMenu(view)
+          .flatMap((section) => section.rows)
+          .some((row) => row.id === 'activity'),
+      ).toBe(false);
     }
   });
 
   test('Group by uses a distinct grouping icon', () => {
-    const rows = homeViewMenu(chats).flatMap(section => section.rows);
-    const icon = rows.find(row => row.id === 'grouping')?.icon;
+    const rows = homeViewMenu(chats).flatMap((section) => section.rows);
+    const icon = rows.find((row) => row.id === 'grouping')?.icon;
     expect(icon).toBe('IconLayersThree');
-    expect(rows.filter(row => row.id !== 'grouping').every(row => row.icon !== icon)).toBe(true);
+    expect(rows.filter((row) => row.id !== 'grouping').every((row) => row.icon !== icon)).toBe(true);
   });
 
   test('the Chats and Board pages keep independent grouping preferences', () => {
     const grouped = { ...chats, ...homeViewEdit(chats, 'group:assignee') };
-    expect(labels(homeViewMenu({ ...grouped, view: 'board' }))).toEqual([['View: Board', 'Column by: Label', 'Sort by: Priority', 'Filter', 'Fields']]);
+    expect(labels(homeViewMenu({ ...grouped, view: 'board' }))).toEqual([
+      ['View: Board', 'Column by: Label', 'Sort by: Priority', 'Filter', 'Fields'],
+    ]);
     const columns = { ...grouped, ...homeViewEdit({ ...grouped, view: 'board' }, 'group:category') };
     expect(labels(homeViewMenu(columns))).toEqual([['View: Chats', 'Group by: Assignees', 'Sort by: Updated', 'Filter', 'Fields']]);
     expect(labels(homeViewMenu({ ...columns, view: 'board' }, true))).toEqual([['Assignees', 'Project*', 'Label', 'Status']]);
@@ -85,13 +112,13 @@ describe('the View menu', () => {
 
   test('chats keeps No grouping inside Group by and marks the current pick', () => {
     const menu = homeViewMenu(chats, true);
-    expect(menu.map(s => s.heading)).toEqual(['Group by']);
+    expect(menu.map((s) => s.heading)).toEqual(['Group by']);
     expect(labels(menu)).toEqual([['Assignees', 'Project', 'Label', 'Status', 'No grouping*']]);
   });
 
   test('the grouping submenu shows Column by for board without No grouping', () => {
     const menu = homeViewMenu(board, true);
-    expect(menu.map(s => s.heading)).toEqual(['Column by']);
+    expect(menu.map((s) => s.heading)).toEqual(['Column by']);
     expect(labels(menu)).toEqual([['Assignees', 'Project', 'Label*', 'Status']]);
   });
 
@@ -107,8 +134,14 @@ describe('the View menu', () => {
   });
 
   test('Sort by offers all four fields and both directions for each mode', () => {
-    expect(labels(homeSortMenu(chats))).toEqual([['Status', 'Created', 'Updated*', 'Priority'], ['Ascending', 'Descending*']]);
-    expect(labels(homeSortMenu(board))).toEqual([['Status', 'Created', 'Updated', 'Priority*'], ['Ascending', 'Descending*']]);
+    expect(labels(homeSortMenu(chats))).toEqual([
+      ['Status', 'Created', 'Updated*', 'Priority'],
+      ['Ascending', 'Descending*'],
+    ]);
+    expect(labels(homeSortMenu(board))).toEqual([
+      ['Status', 'Created', 'Updated', 'Priority*'],
+      ['Ascending', 'Descending*'],
+    ]);
     for (const current of [chats, board]) {
       const key = current.view === 'board' ? 'boardSort' : 'chatsSort';
       const picked = { ...current, ...homeViewEdit(current, 'sort:created') };
@@ -121,9 +154,8 @@ describe('the View menu', () => {
 
   test('the defaults are the chats list without grouping and a board by status', () => {
     expect(DEFAULT_HOME_VIEW).toEqual({ ...chats, columnBy: 'status' });
-    expect(labels(homeViewMenu({ ...DEFAULT_HOME_VIEW, view: 'board' }, true)))
-      .toEqual([['Assignees', 'Project', 'Label', 'Status*']]);
+    expect(labels(homeViewMenu({ ...DEFAULT_HOME_VIEW, view: 'board' }, true))).toEqual([['Assignees', 'Project', 'Label', 'Status*']]);
     expect(homeViewEdit(board, 'group:status')).toEqual({ columnBy: 'status' });
-    expect(CHANNELS_OVERFLOW_ITEMS.map(item => item.label)).toEqual(['Copy address', 'Profile', 'Settings']);
+    expect(CHANNELS_OVERFLOW_ITEMS.map((item) => item.label)).toEqual(['Copy address', 'Profile', 'Settings']);
   });
 });

@@ -35,12 +35,7 @@ function useTabsColors(dark: boolean | undefined): TabsColors {
   const contextScheme = useKitScheme();
   const scheme: Scheme = dark === undefined ? contextScheme : dark ? 'dark' : 'light';
   const palette = scheme === contextScheme ? context : kitPalette(scheme);
-  return {
-    track: surfaceColor('raised', palette),
-    thumb: surfaceColor('surface', palette),
-    text: palette.sub,
-    activeText: palette.link,
-  };
+  return { track: surfaceColor('raised', palette), thumb: surfaceColor('surface', palette), text: palette.sub, activeText: palette.link };
 }
 
 function trackStyle(underline: boolean, c: TabsColors): ViewStyle {
@@ -92,11 +87,15 @@ export function Tabs(props: TabsProps): React.ReactElement {
             key={`${index}:${tab.title}`}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
-            onPress={() => { select(index); }}
+            onPress={() => {
+              select(index);
+            }}
             style={segmentStyle(underline, selected, c)}
           >
             {tab.icon === undefined ? null : <Icon name={tab.icon} size={16} color={color} />}
-            <RNText numberOfLines={1} style={labelStyle(underline, color)}>{tab.title}</RNText>
+            <RNText numberOfLines={1} style={labelStyle(underline, color)}>
+              {tab.title}
+            </RNText>
           </Pressable>
         );
       })}

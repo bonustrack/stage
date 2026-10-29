@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  NO_ROUTES, dmIdsByPeer, dmRowId, isImportReplay, routeOf, uniqueByConvId, withRoute,
-} from '../src/xmtp/dmRoutes';
+import { NO_ROUTES, dmIdsByPeer, dmRowId, isImportReplay, routeOf, uniqueByConvId, withRoute } from '../src/xmtp/dmRoutes';
 
 describe('routeOf / withRoute', () => {
   test('an unrouted conversation keeps its own id', () => {
@@ -38,9 +36,7 @@ describe('dmRowId', () => {
   ]);
 
   test('a stitched DM with a new id keeps the row id already shown for that peer', () => {
-    expect(dmRowId(NO_ROUTES, 'active', '0xalice', known)).toEqual({
-      rowId: 'imported', route: { from: 'active', to: 'imported' },
-    });
+    expect(dmRowId(NO_ROUTES, 'active', '0xalice', known)).toEqual({ rowId: 'imported', route: { from: 'active', to: 'imported' } });
   });
 
   test('a stored route wins without a new route', () => {
@@ -57,8 +53,15 @@ describe('dmRowId', () => {
 
 describe('uniqueByConvId', () => {
   test('keeps the first row for each id', () => {
-    const rows = [{ convId: 'a', n: 1 }, { convId: 'b', n: 2 }, { convId: 'a', n: 3 }];
-    expect(uniqueByConvId(rows)).toEqual([{ convId: 'a', n: 1 }, { convId: 'b', n: 2 }]);
+    const rows = [
+      { convId: 'a', n: 1 },
+      { convId: 'b', n: 2 },
+      { convId: 'a', n: 3 },
+    ];
+    expect(uniqueByConvId(rows)).toEqual([
+      { convId: 'a', n: 1 },
+      { convId: 'b', n: 2 },
+    ]);
   });
 });
 

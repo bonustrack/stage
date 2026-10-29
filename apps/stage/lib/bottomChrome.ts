@@ -11,15 +11,17 @@ function publish(): void {
 }
 
 export function useReportBottomChrome(value: number): void {
-  useFocusEffect(useCallback(() => {
-    const key = Symbol('bottomChrome');
-    reports.set(key, value);
-    publish();
-    return () => {
-      reports.delete(key);
+  useFocusEffect(
+    useCallback(() => {
+      const key = Symbol('bottomChrome');
+      reports.set(key, value);
       publish();
-    };
-  }, [value]));
+      return () => {
+        reports.delete(key);
+        publish();
+      };
+    }, [value]),
+  );
 }
 
 export const useBottomChromeHeight = height.use;

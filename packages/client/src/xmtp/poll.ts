@@ -19,21 +19,26 @@ export interface PollQuestion {
 export function normalizeQuestions(poll: PollContent | undefined): PollQuestion[] {
   if (!poll) return [];
   const coerce = (o: (PollOption | string)[] | undefined): PollOption[] =>
-    Array.isArray(o) ? o.map(x => (typeof x === 'string' ? { label: x } : x)) : [];
+    Array.isArray(o) ? o.map((x) => (typeof x === 'string' ? { label: x } : x)) : [];
   const qs = poll.questions;
   if (Array.isArray(qs) && qs.length > 0) {
-    return qs.map(q => ({
-      question: q.question, ...(q.header ? { header: q.header } : {}),
+    return qs.map((q) => ({
+      question: q.question,
+      ...(q.header ? { header: q.header } : {}),
       multiSelect: q.multiSelect === true,
       ...(q.open === true ? { open: true } : {}),
       options: coerce(q.options as (PollOption | string)[] | undefined),
     }));
   }
   if (typeof poll.question === 'string' && Array.isArray(poll.options)) {
-    return [{
-      question: poll.question, ...(poll.header ? { header: poll.header } : {}),
-      multiSelect: poll.multiSelect === true, options: coerce(poll.options),
-    }];
+    return [
+      {
+        question: poll.question,
+        ...(poll.header ? { header: poll.header } : {}),
+        multiSelect: poll.multiSelect === true,
+        options: coerce(poll.options),
+      },
+    ];
   }
   return [];
 }

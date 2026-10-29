@@ -27,7 +27,11 @@ describe('Badge', () => {
   });
 
   test('renders children in place of the label text', () => {
-    const html = renderToStaticMarkup(<Badge label="Label"><ReactNativeWeb.Text>Custom</ReactNativeWeb.Text></Badge>);
+    const html = renderToStaticMarkup(
+      <Badge label="Label">
+        <ReactNativeWeb.Text>Custom</ReactNativeWeb.Text>
+      </Badge>,
+    );
     expect(html).toContain('Custom');
     expect(html).not.toContain('>Label<');
   });

@@ -14,13 +14,23 @@ export function TopnavFade({ stickyTop, top = 0 }: { stickyTop?: string; top?: n
   const { toolbarBg } = usePalette();
   const sticky = stickyTop === undefined ? null : stickyAt(stickyTop, 2);
   return (
-    <Column pointerEvents="none" height={TOPNAV_FADE} margin={sticky === null ? undefined : { bottom: -TOPNAV_FADE }} style={sticky ?? { ...FADE_OVERLAY, top }}>
-      <GradientFade color={toolbarBg} height={TOPNAV_FADE} solid="top"/>
+    <Column
+      pointerEvents="none"
+      height={TOPNAV_FADE}
+      margin={sticky === null ? undefined : { bottom: -TOPNAV_FADE }}
+      style={sticky ?? { ...FADE_OVERLAY, top }}
+    >
+      <GradientFade color={toolbarBg} height={TOPNAV_FADE} solid="top" />
     </Column>
   );
 }
 
-export function Topnav({ left, right, inline, bordered = true }: {
+export function Topnav({
+  left,
+  right,
+  inline,
+  bordered = true,
+}: {
   left?: React.ReactNode;
   right?: React.ReactNode;
   inline?: boolean;

@@ -1,20 +1,17 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
-import {
-  isLeftOnlyUpdate, memberNamer, unknownSystemLineInboxIds, withMemberNames,
-} from '../components/conversation/systemNames.model';
+import { isLeftOnlyUpdate, memberNamer, unknownSystemLineInboxIds, withMemberNames } from '../components/conversation/systemNames.model';
 
 const PEER = '0x59445094F08D01213bd6ba7215a6ab7a4bc29a4a';
 const OTHER = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';
 
-const entry = (payload: unknown, text = 'added 1 member'): HistoryEntry => ({
-  id: 'm1', ts: '2026-09-25T00:00:00Z', station: 'xmtp', line: 'l', from: 'u', to: 'l', text, payload,
-} as HistoryEntry);
+const entry = (payload: unknown, text = 'added 1 member'): HistoryEntry =>
+  ({ id: 'm1', ts: '2026-09-25T00:00:00Z', station: 'xmtp', line: 'l', from: 'u', to: 'l', text, payload }) as HistoryEntry;
 
 describe('member names in group event lines', () => {
   const addresses: Record<string, string> = { peer: PEER, other: OTHER };
-  const nameOf = memberNamer('me', id => addresses[id] ?? null);
+  const nameOf = memberNamer('me', (id) => addresses[id] ?? null);
 
   test('names added members as mentions, calling yourself "you"', () => {
     const e = entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'me' }] } });
@@ -60,31 +57,43 @@ describe('member names in group event lines', () => {
   });
 
   test('retains historical assignment names as profile mentions during re-humanization', () => {
-    const e = entry({ system: true, groupUpdate: {
-      metadataFieldChanges: [{
-        fieldName: 'app_data', oldValue: JSON.stringify({ assigned: [PEER] }), newValue: JSON.stringify({ assigned: [OTHER] }),
-      }],
-    } }, 'updated the channel settings');
+    const e = entry(
+      {
+        system: true,
+        groupUpdate: {
+          metadataFieldChanges: [
+            { fieldName: 'app_data', oldValue: JSON.stringify({ assigned: [PEER] }), newValue: JSON.stringify({ assigned: [OTHER] }) },
+          ],
+        },
+      },
+      'updated the channel settings',
+    );
     const text = withMemberNames(e, nameOf).text;
     expect(text).toBe(`assigned @${OTHER} • unassigned @${PEER.toLowerCase()}`);
-    expect(parseMentions(text).filter(part => part.type === 'mention')).toEqual([
-      { type: 'mention', address: OTHER }, { type: 'mention', address: PEER.toLowerCase() },
+    expect(parseMentions(text).filter((part) => part.type === 'mention')).toEqual([
+      { type: 'mention', address: OTHER },
+      { type: 'mention', address: PEER.toLowerCase() },
     ]);
     expect(isLeftOnlyUpdate(e)).toBe(false);
   });
 
   test('does not infer assignment history from a missing before-value', () => {
-    const e = entry({ system: true, groupUpdate: {
-      metadataFieldChanges: [{ fieldName: 'app_data', newValue: JSON.stringify({ assigned: [PEER] }) }],
-    } }, 'updated the channel settings');
+    const e = entry(
+      { system: true, groupUpdate: { metadataFieldChanges: [{ fieldName: 'app_data', newValue: JSON.stringify({ assigned: [PEER] }) }] } },
+      'updated the channel settings',
+    );
     expect(withMemberNames(e, nameOf)).toBe(e);
   });
 
   test('re-humanizes description history while preserving sender, event payload and membership semantics', () => {
     const change = { fieldName: 'app_data', oldValue: '{"description":"Before"}', newValue: '{"description":"Private after"}' };
-    const e = entry({ system: true, groupUpdate: {
-      initiatedByInboxId: 'initiator', metadataFieldChanges: [change], membersAdded: [{ inboxId: 'peer' }],
-    } }, 'updated the channel settings');
+    const e = entry(
+      {
+        system: true,
+        groupUpdate: { initiatedByInboxId: 'initiator', metadataFieldChanges: [change], membersAdded: [{ inboxId: 'peer' }] },
+      },
+      'updated the channel settings',
+    );
     const named = withMemberNames(e, nameOf);
     expect(named).toEqual({ ...e, text: `updated the channel description • added @${PEER.toLowerCase()}` });
     expect(named.payload).toBe(e.payload);

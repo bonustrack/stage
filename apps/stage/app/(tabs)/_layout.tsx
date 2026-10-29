@@ -10,7 +10,13 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import {
-  TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail, chatsTabOpensNewChat,
+  TAB_BADGE_POSITION,
+  TAB_BADGE_SIZE,
+  TAB_ICON_FRAME,
+  TAB_ICONS,
+  WebTabBar,
+  WebTabRail,
+  chatsTabOpensNewChat,
 } from '../../components/tabs/WebTabRail';
 import { useRememberHomeView } from '../../components/tabs/boardHome';
 import { BOARD_ROUTE } from '../../components/tabs/splitRoutes';
@@ -35,27 +41,34 @@ function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }):
   return <Topnav left={left} right={slot?.right} />;
 }
 
-function PagerOverlay({ insetTop, tabBarHeight, topnavHidden, rail, pathname }: {
-  insetTop: number; tabBarHeight: number; topnavHidden: boolean; rail: boolean; pathname: string;
+function PagerOverlay({
+  insetTop,
+  tabBarHeight,
+  topnavHidden,
+  rail,
+  pathname,
+}: {
+  insetTop: number;
+  tabBarHeight: number;
+  topnavHidden: boolean;
+  rail: boolean;
+  pathname: string;
 }): React.ReactElement | null {
   if (isMenuPageRoute(pathname)) return null;
   if (Platform.OS === 'web') {
     if (pathname.startsWith('/settings')) return null;
     return (
       <Column weight={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
-        {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname}/>}
-        <TabsPager/>
+        {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname} />}
+        <TabsPager />
       </Column>
     );
   }
   return (
-    <Column
-      pointerEvents="box-none"
-      style={{ position: 'absolute', top: insetTop, bottom: tabBarHeight, left: 0, right: 0 }}
->
-      <HoistedTopnav rail={rail} pathname={pathname}/>
+    <Column pointerEvents="box-none" style={{ position: 'absolute', top: insetTop, bottom: tabBarHeight, left: 0, right: 0 }}>
+      <HoistedTopnav rail={rail} pathname={pathname} />
       <Column weight={1}>
-        <TabsPager/>
+        <TabsPager />
       </Column>
     </Column>
   );
@@ -107,10 +120,12 @@ export default function TabsLayout(): React.ReactElement {
   return (
     <Column surface="surface" weight={1}>
       {web ? null : (
-        <Column height={insets.top} surface="toolbar"
+        <Column
+          height={insets.top}
+          surface="toolbar"
           pointerEvents="none"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 1 }}
-/>
+        />
       )}
       <Tabs
         screenOptions={{
@@ -122,7 +137,7 @@ export default function TabsLayout(): React.ReactElement {
           tabBarShowLabel: false,
           tabBarIconStyle: TAB_ICON_FRAME,
         }}
->
+      >
         {TAB_ICONS.map(([name, icon]) => (
           <Tabs.Screen
             key={name}
@@ -131,7 +146,7 @@ export default function TabsLayout(): React.ReactElement {
             options={{
               tabBarAccessibilityLabel: name === 'index' ? 'Chats' : name === 'contacts' ? 'Contacts' : 'Wallet',
               tabBarIcon: ({ focused }) => (
-                <Glyph icon={icon} size={24} color={focused || (name === 'index' && pathname === BOARD_ROUTE) ? active : inactive}/>
+                <Glyph icon={icon} size={24} color={focused || (name === 'index' && pathname === BOARD_ROUTE) ? active : inactive} />
               ),
               ...(name === 'index'
                 ? {
@@ -149,18 +164,27 @@ export default function TabsLayout(): React.ReactElement {
                   }
                 : {}),
             }}
-/>
+          />
         ))}
         <Tabs.Screen
           name="account"
           options={{
-            tabBarIcon: () => <Column margin={{ top: -1 }}><AccountAvatar size={26}/></Column>,
+            tabBarIcon: () => (
+              <Column margin={{ top: -1 }}>
+                <AccountAvatar size={26} />
+              </Column>
+            ),
             tabBarAccessibilityLabel: 'Account',
           }}
-          listeners={{ tabPress: (e) => { e.preventDefault(); router.navigate(SETTINGS_ROUTE); } }}
-/>
-        <Tabs.Screen name="board" options={{ href: null }}/>
-        <Tabs.Screen name="settings" options={{ href: null }}/>
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              router.navigate(SETTINGS_ROUTE);
+            },
+          }}
+        />
+        <Tabs.Screen name="board" options={{ href: null }} />
+        <Tabs.Screen name="settings" options={{ href: null }} />
       </Tabs>
       <PagerOverlay
         insetTop={insets.top}
@@ -169,9 +193,12 @@ export default function TabsLayout(): React.ReactElement {
         rail={rail}
         pathname={pathname}
       />
-      {web ? (rail
-        ? <WebTabRail pathname={pathname} unreadBadge={unreadBadge}/>
-        : <WebTabBar pathname={pathname} unreadBadge={unreadBadge}/>
+      {web ? (
+        rail ? (
+          <WebTabRail pathname={pathname} unreadBadge={unreadBadge} />
+        ) : (
+          <WebTabBar pathname={pathname} unreadBadge={unreadBadge} />
+        )
       ) : null}
     </Column>
   );

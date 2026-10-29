@@ -1,6 +1,1 @@
-{
-  "platforms": ["android"],
-  "android": {
-    "modules": ["box.stage.pill.StagePillModule"]
-  }
-}
+{ "platforms": ["android"], "android": { "modules": ["box.stage.pill.StagePillModule"] } }

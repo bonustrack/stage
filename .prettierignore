@@ -1,0 +1,5 @@
+packages/kit/src/a2ui/schemas/
+packages/kit/test/a2ui/cases/
+apps/stage/test/fixtures/
+apps/stage/google-services*.json
+apps/stage/public/*.html

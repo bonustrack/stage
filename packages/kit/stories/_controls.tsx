@@ -26,13 +26,31 @@ export const JUSTIFY = ['start', 'center', 'end', 'spaceBetween', 'spaceAround',
 export const SURFACES = ['none', 'surface', 'raised', 'sunken', 'toolbar'] as const;
 
 export const FLEX_ARG_TYPES = {
-  gap: number, padding: number, margin: number, align: select(['start', 'center', 'end', 'stretch']), justify: select(JUSTIFY),
-  weight: number, wrap: bool, surface: select(SURFACES), background: color, radius: select(RADII),
-  width: text, height: text, minWidth: text, minHeight: text, maxWidth: text, maxHeight: text, aspectRatio: number,
+  gap: number,
+  padding: number,
+  margin: number,
+  align: select(['start', 'center', 'end', 'stretch']),
+  justify: select(JUSTIFY),
+  weight: number,
+  wrap: bool,
+  surface: select(SURFACES),
+  background: color,
+  radius: select(RADII),
+  width: text,
+  height: text,
+  minWidth: text,
+  minHeight: text,
+  maxWidth: text,
+  maxHeight: text,
+  aspectRatio: number,
 };
 
 export function Cell({ label, background }: { label: string; background: string }): React.ReactElement {
-  return <Column padding={8} background={background} radius="sm"><Text color="#ffffff">{label}</Text></Column>;
+  return (
+    <Column padding={8} background={background} radius="sm">
+      <Text color="#ffffff">{label}</Text>
+    </Column>
+  );
 }
 
 export { useDark } from '../gallery/scheme';
@@ -47,13 +65,26 @@ export function silentWav(seconds = 2): string {
   const samples = rate * seconds;
   const buffer = new ArrayBuffer(44 + samples);
   const view = new DataView(buffer);
-  const ascii = (offset: number, s: string): void => { for (let i = 0; i < s.length; i += 1) view.setUint8(offset + i, s.charCodeAt(i)); };
-  ascii(0, 'RIFF'); view.setUint32(4, 36 + samples, true); ascii(8, 'WAVE'); ascii(12, 'fmt ');
-  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
-  view.setUint32(24, rate, true); view.setUint32(28, rate, true); view.setUint16(32, 1, true); view.setUint16(34, 8, true);
-  ascii(36, 'data'); view.setUint32(40, samples, true);
+  const ascii = (offset: number, s: string): void => {
+    for (let i = 0; i < s.length; i += 1) view.setUint8(offset + i, s.charCodeAt(i));
+  };
+  ascii(0, 'RIFF');
+  view.setUint32(4, 36 + samples, true);
+  ascii(8, 'WAVE');
+  ascii(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true);
+  ascii(36, 'data');
+  view.setUint32(40, samples, true);
   for (let i = 0; i < samples; i += 1) view.setUint8(44 + i, 128 + Math.round(Math.sin(i / 20) * 40));
   let binary = '';
-  new Uint8Array(buffer).forEach((b) => { binary += String.fromCharCode(b); });
+  new Uint8Array(buffer).forEach((b) => {
+    binary += String.fromCharCode(b);
+  });
   return `data:audio/wav;base64,${btoa(binary)}`;
 }

@@ -30,9 +30,15 @@ export async function userMedia(video: boolean, audio: boolean): Promise<Capture
     const stream = await mediaDevices.getUserMedia({ audio, video: video ? CAMERA : false });
     const media = { audio: track(stream.getAudioTracks()[0]), video: track(stream.getVideoTracks()[0]) };
     stream.release(false);
-    if (audio && !media.audio) { stopMedia(media); return null; }
+    if (audio && !media.audio) {
+      stopMedia(media);
+      return null;
+    }
     return media;
-  } catch (error) { report('calls.media', error); return null; }
+  } catch (error) {
+    report('calls.media', error);
+    return null;
+  }
 }
 
 export async function displayMedia(): Promise<CallTrack | null> {
@@ -41,13 +47,28 @@ export async function displayMedia(): Promise<CallTrack | null> {
   if (!stream) return null;
   const video = track(stream.getVideoTracks()[0]);
   stream.release(false);
-  if (epoch !== captureEpoch || !video) { stopTrack(video); return null; }
-  watchScreenEnd(video, () => { video.ended = true; });
+  if (epoch !== captureEpoch || !video) {
+    stopTrack(video);
+    return null;
+  }
+  watchScreenEnd(video, () => {
+    video.ended = true;
+  });
   try {
-    if (Platform.OS === 'ios' && !await startScreenPicker()) { stopTrack(video); return null; }
-    if (epoch !== captureEpoch || video.ended || video.value.readyState === 'ended') { stopTrack(video); return null; }
+    if (Platform.OS === 'ios' && !(await startScreenPicker())) {
+      stopTrack(video);
+      return null;
+    }
+    if (epoch !== captureEpoch || video.ended || video.value.readyState === 'ended') {
+      stopTrack(video);
+      return null;
+    }
     return video;
-  } catch (error) { stopTrack(video); report('calls.screen', error); return null; }
+  } catch (error) {
+    stopTrack(video);
+    report('calls.screen', error);
+    return null;
+  }
 }
 
 export function previewOf(video: CallTrack): CallStream {
@@ -58,20 +79,36 @@ export function previewOf(video: CallTrack): CallStream {
 export function watchScreenEnd(video: CallTrack, ended: () => void): void {
   if (video.platform !== 'native') return;
   video.cleanup?.();
-  const onEnd = (): void => { video.ended = true; ended(); };
-  const subscription = Platform.OS === 'ios' ? nativeCalls.addListener('onScreenShare', event => { if (!event.started) onEnd(); }) : null;
+  const onEnd = (): void => {
+    video.ended = true;
+    ended();
+  };
+  const subscription =
+    Platform.OS === 'ios'
+      ? nativeCalls.addListener('onScreenShare', (event) => {
+          if (!event.started) onEnd();
+        })
+      : null;
   video.value.addEventListener('ended', onEnd, { once: true });
-  video.cleanup = () => { subscription?.remove(); video.value.removeEventListener('ended', onEnd); };
+  video.cleanup = () => {
+    subscription?.remove();
+    video.value.removeEventListener('ended', onEnd);
+  };
   if (video.ended || video.value.readyState === 'ended') onEnd();
 }
 
-export function watchCallLifecycle(leave: () => void): () => void { void leave; return () => undefined; }
+export function watchCallLifecycle(leave: () => void): () => void {
+  void leave;
+  return () => undefined;
+}
 
 export function prepareAudio(): Promise<void> {
   const epoch = captureEpoch;
   preparing = acquireCallAudio().then(async () => {
     await setIsAudioActiveAsync(false);
-    await new Promise(resolve => { setTimeout(resolve, 150); });
+    await new Promise((resolve) => {
+      setTimeout(resolve, 150);
+    });
     if (epoch !== captureEpoch) throw new Error('Call was canceled');
     if (Platform.OS === 'android' && Platform.Version >= 31) {
       await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT);
@@ -85,7 +122,10 @@ export async function startAudio(video: boolean): Promise<void> {
   await preparing;
   if (epoch !== captureEpoch) throw new Error('Call was canceled');
   await nativeCalls.start(video);
-  if (epoch !== captureEpoch) { await nativeCalls.stop(); throw new Error('Call was canceled'); }
+  if (epoch !== captureEpoch) {
+    await nativeCalls.stop();
+    throw new Error('Call was canceled');
+  }
   if (!audioStarted) {
     watchRoutes(video);
     InCallManager.start({ media: video ? 'video' : 'audio' });
@@ -95,7 +135,10 @@ export async function startAudio(video: boolean): Promise<void> {
 
 function watchRoutes(video: boolean): void {
   if (Platform.OS === 'ios') {
-    routes.set({ available: Platform.isPad ? ['SPEAKER_PHONE'] : ['EARPIECE', 'SPEAKER_PHONE'], selected: video ? 'SPEAKER_PHONE' : 'EARPIECE' });
+    routes.set({
+      available: Platform.isPad ? ['SPEAKER_PHONE'] : ['EARPIECE', 'SPEAKER_PHONE'],
+      selected: video ? 'SPEAKER_PHONE' : 'EARPIECE',
+    });
     return;
   }
   routeEvents ??= DeviceEventEmitter.addListener('onAudioDeviceChanged', (status: unknown) => {
@@ -114,7 +157,12 @@ export function toggleSpeaker(): void {
     routes.set({ ...routes.get(), selected: target });
     return;
   }
-  ignore(InCallManager.chooseAudioRoute(target).then((status: unknown) => { if (audioStarted) routes.set(parseAudioRoutes(status)); }), 'ui');
+  ignore(
+    InCallManager.chooseAudioRoute(target).then((status: unknown) => {
+      if (audioStarted) routes.set(parseAudioRoutes(status));
+    }),
+    'ui',
+  );
 }
 
 export function stopAudio(): void {
@@ -138,5 +186,7 @@ async function restoreAudio(): Promise<void> {
 
 export function startRingtone(): () => void {
   InCallManager.startRingtone('_BUNDLE_', [0, 350, 1_700], 'default', 0);
-  return () => { InCallManager.stopRingtone(); };
+  return () => {
+    InCallManager.stopRingtone();
+  };
 }

@@ -13,15 +13,45 @@ export interface MailAddress {
 }
 
 export const CP1252_HIGH: Readonly<Record<number, number>> = {
-  0x80: 0x20ac, 0x82: 0x201a, 0x83: 0x0192, 0x84: 0x201e, 0x85: 0x2026, 0x86: 0x2020, 0x87: 0x2021,
-  0x88: 0x02c6, 0x89: 0x2030, 0x8a: 0x0160, 0x8b: 0x2039, 0x8c: 0x0152, 0x8e: 0x017d,
-  0x91: 0x2018, 0x92: 0x2019, 0x93: 0x201c, 0x94: 0x201d, 0x95: 0x2022, 0x96: 0x2013, 0x97: 0x2014,
-  0x98: 0x02dc, 0x99: 0x2122, 0x9a: 0x0161, 0x9b: 0x203a, 0x9c: 0x0153, 0x9e: 0x017e, 0x9f: 0x0178,
+  0x80: 0x20ac,
+  0x82: 0x201a,
+  0x83: 0x0192,
+  0x84: 0x201e,
+  0x85: 0x2026,
+  0x86: 0x2020,
+  0x87: 0x2021,
+  0x88: 0x02c6,
+  0x89: 0x2030,
+  0x8a: 0x0160,
+  0x8b: 0x2039,
+  0x8c: 0x0152,
+  0x8e: 0x017d,
+  0x91: 0x2018,
+  0x92: 0x2019,
+  0x93: 0x201c,
+  0x94: 0x201d,
+  0x95: 0x2022,
+  0x96: 0x2013,
+  0x97: 0x2014,
+  0x98: 0x02dc,
+  0x99: 0x2122,
+  0x9a: 0x0161,
+  0x9b: 0x203a,
+  0x9c: 0x0153,
+  0x9e: 0x017e,
+  0x9f: 0x0178,
 };
 
 const UTF8_NAMES: ReadonlySet<string> = new Set(['', 'utf-8', 'utf8', 'us-ascii', 'ascii']);
 const WINDOWS_1252_NAMES: ReadonlySet<string> = new Set([
-  'iso-8859-1', 'iso8859-1', 'iso_8859-1', 'latin1', 'l1', 'windows-1252', 'cp1252', 'x-cp1252',
+  'iso-8859-1',
+  'iso8859-1',
+  'iso_8859-1',
+  'latin1',
+  'l1',
+  'windows-1252',
+  'cp1252',
+  'x-cp1252',
 ]);
 
 const ENCODED_WORD = /=\?([^?\s]+)\?([bBqQ])\?([^?\s]*)\?=/g;
@@ -68,9 +98,8 @@ export function decodeQuotedPrintable(text: string): string {
 }
 
 function decodeWord(_match: string, charset: string, encoding: string, data: string): string {
-  const bytes = encoding.toLowerCase() === 'b'
-    ? decodeBase64Loose(data)
-    : binaryBytes(data.replace(/_/g, ' ').replace(/=([0-9A-Fa-f]{2})/g, hexByte));
+  const bytes =
+    encoding.toLowerCase() === 'b' ? decodeBase64Loose(data) : binaryBytes(data.replace(/_/g, ' ').replace(/=([0-9A-Fa-f]{2})/g, hexByte));
   return decodeCharset(bytes, charset.split('*')[0] ?? '');
 }
 
@@ -125,7 +154,10 @@ function unquote(value: string): string {
   return trimmed.slice(1, -1).replace(/\\(.)/g, '$1');
 }
 
-interface ParamSection { value: string; extended: boolean }
+interface ParamSection {
+  value: string;
+  extended: boolean;
+}
 
 function percentBytes(value: string): string {
   return value.replace(/%([0-9A-Fa-f]{2})/g, hexByte);
@@ -137,9 +169,9 @@ function joinSections(sections: ReadonlyMap<number, ParamSection>): string {
   if (first === undefined || !ordered.some((section) => section.extended)) {
     return decodeWords(headerBytesText(ordered.map((section) => section.value).join('')));
   }
-  const quote = first.extended ? first.value.split('\'') : [];
-  const charset = quote.length >= 3 ? quote[0] ?? '' : 'utf-8';
-  const head = quote.length >= 3 ? quote.slice(2).join('\'') : first.value;
+  const quote = first.extended ? first.value.split("'") : [];
+  const charset = quote.length >= 3 ? (quote[0] ?? '') : 'utf-8';
+  const head = quote.length >= 3 ? quote.slice(2).join("'") : first.value;
   const rest = ordered.slice(1).map((section) => (section.extended ? percentBytes(section.value) : section.value));
   const binary = (first.extended ? percentBytes(head) : head) + rest.join('');
   return decodeCharset(binaryBytes(binary), charset);
@@ -174,7 +206,7 @@ export function parseAddress(value: string): MailAddress {
   const text = value.slice(0, ADDRESS_MAX_CHARS).trim();
   const angled = /^(?:"((?:[^"\\]|\\.)*)"|([^<]*?))\s*<([^<>]*)>/.exec(text);
   if (angled !== null) {
-    const name = angled[1] === undefined ? angled[2] ?? '' : angled[1].replace(/\\(.)/g, '$1');
+    const name = angled[1] === undefined ? (angled[2] ?? '') : angled[1].replace(/\\(.)/g, '$1');
     return { name: name.trim(), address: (angled[3] ?? '').trim() };
   }
   const commented = /^([^\s(,]+)\s*\(([^)]*)\)/.exec(text);

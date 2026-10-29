@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react';
 import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../lib/xmtp.messages';
-import {
-  type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber,
-} from '@stage-labs/client/xmtp/tx';
+import { type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber } from '@stage-labs/client/xmtp/tx';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import {
-  type SignatureRequestContent, buildSignatureReference, personalMessageForRequest, typedDataForRequest,
+  type SignatureRequestContent,
+  buildSignatureReference,
+  personalMessageForRequest,
+  typedDataForRequest,
 } from '@stage-labs/client/xmtp/sign';
 import { sendCall } from '../../lib/tx';
 import { deriveConfirmSummary, confirmMessage, deriveSignSummary, signConfirmMessage } from '@stage-labs/client/wallet/txConfirm';
@@ -44,9 +45,10 @@ async function requestSigner(): Promise<RequestSigner> {
 
 async function produceAndPostSignature(activeLine: string, requestId: string, req: SignatureRequestContent): Promise<void> {
   const signer = await requestSigner();
-  const signature = req.kind === 'eip712'
-    ? await signer.signTypedData(typedDataOf(req))
-    : await signer.signMessage({ message: personalMessageForRequest(req) });
+  const signature =
+    req.kind === 'eip712'
+      ? await signer.signTypedData(typedDataOf(req))
+      : await signer.signMessage({ message: personalMessageForRequest(req) });
   await xmtpSendSignatureReference(activeLine, buildSignatureReference(requestId, signature, signer.address));
 }
 
@@ -70,18 +72,18 @@ async function broadcastCall(to: string, call: TxCall, chainId: number): Promise
 
 function chainMeta(chainId: number): { chainName: string; nativeSymbol: string } {
   const chain = VIEM_CHAINS[chainId];
-  return {
-    chainName: chain?.name ?? `chain ${chainId}`,
-    nativeSymbol: chain?.nativeCurrency?.symbol ?? 'ETH',
-  };
+  return { chainName: chain?.name ?? `chain ${chainId}`, nativeSymbol: chain?.nativeCurrency?.symbol ?? 'ETH' };
 }
 
 function paymentReceipt(
-  txHash: `0x${string}`, settledChainId: number,
-  summary: ReturnType<typeof deriveConfirmSummary>, nativeSymbol: string,
+  txHash: `0x${string}`,
+  settledChainId: number,
+  summary: ReturnType<typeof deriveConfirmSummary>,
+  nativeSymbol: string,
 ): TransactionReferenceContent {
   return {
-    networkId: settledChainId, reference: txHash,
+    networkId: settledChainId,
+    reference: txHash,
     metadata: {
       transactionType: 'transfer',
       currency: summary.symbol ?? nativeSymbol,
@@ -94,10 +96,18 @@ function paymentReceipt(
 function useBusyIds(): { ids: Set<string>; run: (id: string, failMsg: string, task: () => Promise<void>) => void } {
   const [ids, setIds] = useState<Set<string>>(new Set());
   const run = useCallback((id: string, failMsg: string, task: () => Promise<void>): void => {
-    setIds(prev => new Set(prev).add(id));
+    setIds((prev) => new Set(prev).add(id));
     void task()
-      .catch((e: unknown) => { capabilities.toast(txErrorMessage(e, failMsg)); })
-      .finally(() => { setIds(prev => { const n = new Set(prev); n.delete(id); return n; }); });
+      .catch((e: unknown) => {
+        capabilities.toast(txErrorMessage(e, failMsg));
+      })
+      .finally(() => {
+        setIds((prev) => {
+          const n = new Set(prev);
+          n.delete(id);
+          return n;
+        });
+      });
   }, []);
   return { ids, run };
 }
@@ -105,47 +115,58 @@ function useBusyIds(): { ids: Set<string>; run: (id: string, failMsg: string, ta
 export function useTxSignLayer(activeLine: string) {
   const signing = useBusyIds();
   const paying = useBusyIds();
-  const runSign = signing.run, runPay = paying.run;
+  const runSign = signing.run,
+    runPay = paying.run;
 
-  const onSign = useCallback((requestId: string, req: SignatureRequestContent) => {
-    const summary = deriveSignSummary(req);
-    void capabilities.confirm({
-      title: summary.highRisk ? 'High-risk signature' : 'Confirm signature',
-      message: signConfirmMessage(summary, req.description),
-      confirmLabel: summary.highRisk ? 'Sign anyway' : 'Sign',
-      destructive: summary.highRisk,
-    }).then((ok) => {
-      if (ok) runSign(requestId, 'Signing failed', () => produceAndPostSignature(activeLine, requestId, req));
-    });
-  }, [activeLine, runSign]);
+  const onSign = useCallback(
+    (requestId: string, req: SignatureRequestContent) => {
+      const summary = deriveSignSummary(req);
+      void capabilities
+        .confirm({
+          title: summary.highRisk ? 'High-risk signature' : 'Confirm signature',
+          message: signConfirmMessage(summary, req.description),
+          confirmLabel: summary.highRisk ? 'Sign anyway' : 'Sign',
+          destructive: summary.highRisk,
+        })
+        .then((ok) => {
+          if (ok) runSign(requestId, 'Signing failed', () => produceAndPostSignature(activeLine, requestId, req));
+        });
+    },
+    [activeLine, runSign],
+  );
 
-  const onPay = useCallback((requestId: string, wsc: WalletSendCallsContent) => {
-    const call = wsc.calls?.[0];
-    if (!call?.to) { capabilities.toast('Malformed payment request'); return; }
-    const callTo = call.to;
-    const chainId = chainIdToNumber(wsc.chainId);
-    const { chainName, nativeSymbol } = chainMeta(chainId);
-    const summary = deriveConfirmSummary(
-      { to: call.to, data: call.data, value: call.value }, nativeSymbol,
-    );
-    const broadcast = async (): Promise<void> => {
-      const { txHash, settledChainId } = await broadcastCall(callTo, call, chainId);
-      await xmtpSendTxReference(activeLine, paymentReceipt(txHash, settledChainId, summary, nativeSymbol));
-    };
-    void getActiveAccount().then(async (active) => {
-      const blocker = paymentBlocker({
-        callCount: wsc.calls?.length ?? 0, chainId, chainName, smartAccount: active?.type === 'smart',
+  const onPay = useCallback(
+    (requestId: string, wsc: WalletSendCallsContent) => {
+      const call = wsc.calls?.[0];
+      if (!call?.to) {
+        capabilities.toast('Malformed payment request');
+        return;
+      }
+      const callTo = call.to;
+      const chainId = chainIdToNumber(wsc.chainId);
+      const { chainName, nativeSymbol } = chainMeta(chainId);
+      const summary = deriveConfirmSummary({ to: call.to, data: call.data, value: call.value }, nativeSymbol);
+      const broadcast = async (): Promise<void> => {
+        const { txHash, settledChainId } = await broadcastCall(callTo, call, chainId);
+        await xmtpSendTxReference(activeLine, paymentReceipt(txHash, settledChainId, summary, nativeSymbol));
+      };
+      void getActiveAccount().then(async (active) => {
+        const blocker = paymentBlocker({ callCount: wsc.calls?.length ?? 0, chainId, chainName, smartAccount: active?.type === 'smart' });
+        if (blocker !== null) {
+          capabilities.toast(blocker);
+          return;
+        }
+        const ok = await capabilities.confirm({
+          title: summary.verified ? 'Confirm payment' : 'Unverified transaction',
+          message: confirmMessage(summary, chainName),
+          confirmLabel: summary.verified ? 'Pay' : 'Continue anyway',
+          destructive: !summary.verified,
+        });
+        if (ok) runPay(requestId, 'Payment failed', broadcast);
       });
-      if (blocker !== null) { capabilities.toast(blocker); return; }
-      const ok = await capabilities.confirm({
-        title: summary.verified ? 'Confirm payment' : 'Unverified transaction',
-        message: confirmMessage(summary, chainName),
-        confirmLabel: summary.verified ? 'Pay' : 'Continue anyway',
-        destructive: !summary.verified,
-      });
-      if (ok) runPay(requestId, 'Payment failed', broadcast);
-    });
-  }, [activeLine, runPay]);
+    },
+    [activeLine, runPay],
+  );
 
   return { signingIds: signing.ids, onSign, payingIds: paying.ids, onPay };
 }

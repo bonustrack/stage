@@ -18,10 +18,34 @@ const KIND_EXTENSIONS: readonly (readonly [StorageKind, readonly string[]])[] = 
   ['image', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'avif', 'bmp', 'tif', 'tiff', 'svg', 'ico']],
   ['video', ['mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi', 'wmv', '3gp', 'mpg', 'mpeg']],
   ['audio', ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'oga', 'opus', 'flac', 'weba', 'amr', 'caf', 'aif', 'aiff', 'mid', 'midi']],
-  ['document', [
-    'pdf', 'doc', 'docx', 'txt', 'md', 'rtf', 'odt', 'ods', 'odp', 'xls', 'xlsx', 'csv', 'tsv', 'ppt', 'pptx',
-    'key', 'pages', 'numbers', 'json', 'xml', 'html', 'htm', 'epub',
-  ]],
+  [
+    'document',
+    [
+      'pdf',
+      'doc',
+      'docx',
+      'txt',
+      'md',
+      'rtf',
+      'odt',
+      'ods',
+      'odp',
+      'xls',
+      'xlsx',
+      'csv',
+      'tsv',
+      'ppt',
+      'pptx',
+      'key',
+      'pages',
+      'numbers',
+      'json',
+      'xml',
+      'html',
+      'htm',
+      'epub',
+    ],
+  ],
 ];
 
 export interface StorageRow {
@@ -74,7 +98,7 @@ export function storageRows(files: readonly StoredFile[], view: StorageView, now
 }
 
 export function storageSummary(files: readonly StoredFile[], hidden: ReadonlySet<string>): string {
-  const shown = files.filter(f => !hidden.has(f.messageId));
+  const shown = files.filter((f) => !hidden.has(f.messageId));
   if (shown.length === 0) return '';
   const bytes = shown.reduce((sum, f) => sum + f.size, 0);
   const count = `${shown.length} ${shown.length === 1 ? 'file' : 'files'}`;

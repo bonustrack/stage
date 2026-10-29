@@ -14,11 +14,19 @@ export interface ConfirmOptions {
 function confirmDialog(options: ConfirmOptions): Promise<boolean> {
   return new Promise((resolve) => {
     Alert.alert(options.title, options.message, [
-      { text: 'Cancel', style: 'cancel', onPress: () => { resolve(false); } },
+      {
+        text: 'Cancel',
+        style: 'cancel',
+        onPress: () => {
+          resolve(false);
+        },
+      },
       {
         text: options.confirmLabel ?? 'OK',
         style: options.destructive ? 'destructive' : undefined,
-        onPress: () => { resolve(true); },
+        onPress: () => {
+          resolve(true);
+        },
       },
     ]);
   });
@@ -41,12 +49,26 @@ function toast(message: string): void {
 }
 
 export const capabilities: Capabilities = {
-  navigate: (to) => { router.push(to); },
-  back: () => { if (router.canGoBack()) router.back(); else router.replace('/'); },
-  backTo: (to) => { router.dismissTo(to); },
-  copyToClipboard: async (text) => { await Clipboard.setStringAsync(text); },
-  copy: (label, value) => { void Clipboard.setStringAsync(value); toast(`${label} copied`); },
+  navigate: (to) => {
+    router.push(to);
+  },
+  back: () => {
+    if (router.canGoBack()) router.back();
+    else router.replace('/');
+  },
+  backTo: (to) => {
+    router.dismissTo(to);
+  },
+  copyToClipboard: async (text) => {
+    await Clipboard.setStringAsync(text);
+  },
+  copy: (label, value) => {
+    void Clipboard.setStringAsync(value);
+    toast(`${label} copied`);
+  },
   toast,
   confirm: confirmDialog,
-  openUrl: (url) => { void Linking.openURL(url).catch(reported('link.open')); },
+  openUrl: (url) => {
+    void Linking.openURL(url).catch(reported('link.open'));
+  },
 };

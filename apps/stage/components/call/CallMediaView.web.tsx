@@ -32,7 +32,9 @@ export function CallMediaView({ stream, kind, mirrored = false, contain = false 
   }, [host, stream, kind, mirrored, contain]);
   return (
     <View
-      ref={(node) => { setHost(node as unknown as HTMLElement | null); }}
+      ref={(node) => {
+        setHost(node as unknown as HTMLElement | null);
+      }}
       style={kind === 'audio' ? { display: 'none' } : { width: '100%', height: '100%' }}
     />
   );

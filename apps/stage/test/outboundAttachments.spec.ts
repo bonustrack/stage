@@ -2,9 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { makeLocalAttachmentCache } from '../lib/localAttachmentCache.core';
 import type { UploadedAttachment } from '../lib/xmtp.types';
-import {
-  outboundView, recordSent, settleOutbound, type OutboundState,
-} from '../components/conversation/outboundRows.model';
+import { outboundView, recordSent, settleOutbound, type OutboundState } from '../components/conversation/outboundRows.model';
 
 const ME = 'metro://xmtp/me';
 const REMOTE = { url: 'https://store.example/encrypted-1', contentDigest: 'digest-1' };
@@ -12,29 +10,37 @@ const OTHER = { url: 'https://store.example/encrypted-2', contentDigest: 'digest
 const URI = 'file:///photo.jpg';
 
 function entry(id: string, attachments: object[], extra: Partial<HistoryEntry> = {}): HistoryEntry {
-  return {
-    id, station: 'xmtp', line: 'line', from: ME, to: 'line', ts: '2026-10-05T10:00:00.000Z',
-    payload: { attachments }, ...extra,
-  };
+  return { id, station: 'xmtp', line: 'line', from: ME, to: 'line', ts: '2026-10-05T10:00:00.000Z', payload: { attachments }, ...extra };
 }
 
 const photo = (id = 'tmp_1') => entry(id, [{ id: 'photo', url: URI, kind: 'image', mime: 'image/jpeg', name: 'photo.jpg' }]);
 const echo = (id = 'real_1', remotes = [REMOTE], extra: Partial<HistoryEntry> = {}) =>
-  entry(id, remotes.map(remote => ({ kind: 'image', name: 'photo.jpg', remote })), extra);
+  entry(
+    id,
+    remotes.map((remote) => ({ kind: 'image', name: 'photo.jpg', remote })),
+    extra,
+  );
 const pending = (...optimistic: HistoryEntry[]): OutboundState => ({ optimistic, confirmedIds: new Map() });
 
 function harness(state = pending(photo())) {
   const cache = makeLocalAttachmentCache();
   const view = (live: HistoryEntry[] = []) => outboundView(state, live, ME, cache.uploaded());
   return {
-    cache, view,
+    cache,
+    view,
     keys(live: HistoryEntry[] = []) {
       const result = view(live);
-      return [...result.pending, ...live].map(e => result.localIdOf.get(e.id) ?? e.id);
+      return [...result.pending, ...live].map((e) => result.localIdOf.get(e.id) ?? e.id);
     },
-    sent(localId: string, sentId?: string) { state = recordSent(state, localId, sentId); },
-    settle(live: HistoryEntry[]) { state = settleOutbound(state, view(live)); },
-    retry(localId: string) { state = { ...state, optimistic: [...state.optimistic, photo(localId)] }; },
+    sent(localId: string, sentId?: string) {
+      state = recordSent(state, localId, sentId);
+    },
+    settle(live: HistoryEntry[]) {
+      state = settleOutbound(state, view(live));
+    },
+    retry(localId: string) {
+      state = { ...state, optimistic: [...state.optimistic, photo(localId)] };
+    },
   };
 }
 
@@ -119,7 +125,7 @@ describe('one bubble per outgoing attachment message', () => {
       expect(h.view(live).localIdOf.get('real_2')).toBe('tmp_1');
       h.sent(firstResolved, firstResolved === 'tmp_1' ? 'real_1' : 'real_2');
       h.settle(live);
-      expect(h.view(live).pending.map(o => o.id)).toEqual(['tmp_1']);
+      expect(h.view(live).pending.map((o) => o.id)).toEqual(['tmp_1']);
       expect(h.keys(live)).toEqual(['tmp_2', 'tmp_1']);
       h.sent(firstResolved === 'tmp_1' ? 'tmp_2' : 'tmp_1', firstResolved === 'tmp_1' ? 'real_2' : 'real_1');
       h.settle(live);

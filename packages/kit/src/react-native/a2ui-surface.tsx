@@ -3,15 +3,31 @@ import type { A2uiClient } from '../a2ui/client';
 import { ROOT_SCOPE, isCheckRuleList, toBoolean, type Scope } from '../a2ui/evaluate';
 import { getAt, resolveScopedPath } from '../a2ui/pointer';
 import {
-  ROOT_ID, isChildTemplate, isDataBinding, isEventAction, isFunctionAction, isJsonObject,
-  type ComponentInstance, type JsonValue,
+  ROOT_ID,
+  isChildTemplate,
+  isDataBinding,
+  isEventAction,
+  isFunctionAction,
+  isJsonObject,
+  type ComponentInstance,
+  type JsonValue,
 } from '../a2ui/protocol';
 import type { ComponentInfo } from '../a2ui/catalog';
 import { childRefKinds, fitsRenderLimits, type RenderLimits } from '../a2ui/structure';
 import type { A2uiAccessibility } from './a2ui-props';
 import {
-  SortHandleContext, SurfaceContext, asEnum, asNumber, asOptionalString, asString, hasMarkdown,
-  type A2uiRenderer, type A2uiRenderers, type Binding, type RenderContext, type SurfaceContextValue,
+  SortHandleContext,
+  SurfaceContext,
+  asEnum,
+  asNumber,
+  asOptionalString,
+  asString,
+  hasMarkdown,
+  type A2uiRenderer,
+  type A2uiRenderers,
+  type Binding,
+  type RenderContext,
+  type SurfaceContextValue,
 } from './a2ui-context';
 import { KIT_RENDERERS } from './a2ui-renderers';
 import { SortableHandle, SortableScope } from './sortable';
@@ -37,13 +53,32 @@ function useSurfaceVersion(client: A2uiClient, surfaceId: string): number {
   return useSyncExternalStore((listener) => client.subscribe(surfaceId, listener), version, version);
 }
 
-export function A2uiSurface({ client, surfaceId, renderers, disabled, mediaUrl, fallback = null, limits, onActionError }: A2uiSurfaceProps): React.ReactElement | null {
+export function A2uiSurface({
+  client,
+  surfaceId,
+  renderers,
+  disabled,
+  mediaUrl,
+  fallback = null,
+  limits,
+  onActionError,
+}: A2uiSurfaceProps): React.ReactElement | null {
   const version = useSurfaceVersion(client, surfaceId);
   const surface = client.surface(surfaceId);
-  const renderable = useMemo(() => surface !== undefined && fitsRenderLimits(surface, client.registry, limits), [surface, client, version, limits]);
+  const renderable = useMemo(
+    () => surface !== undefined && fitsRenderLimits(surface, client.registry, limits),
+    [surface, client, version, limits],
+  );
   if (surface?.components.has(ROOT_ID) !== true) return null;
   if (!renderable) return <>{fallback}</>;
-  const value: SurfaceContextValue = { client, surfaceId, renderers: { ...KIT_RENDERERS, ...renderers }, disabled, mediaUrl, onActionError };
+  const value: SurfaceContextValue = {
+    client,
+    surfaceId,
+    renderers: { ...KIT_RENDERERS, ...renderers },
+    disabled,
+    mediaUrl,
+    onActionError,
+  };
   const root = <A2uiNode key={version < 0 ? 'none' : 'root'} id={ROOT_ID} scope={ROOT_SCOPE} />;
   return (
     <SurfaceContext.Provider value={value}>
@@ -55,7 +90,8 @@ export function A2uiSurface({ client, surfaceId, renderers, disabled, mediaUrl, 
 const SORT_SCOPE = { flexGrow: 1 };
 
 function hasSortableList(components: Iterable<ComponentInstance>): boolean {
-  for (const component of components) if (component.component === 'List' && component.sortable !== undefined && component.sortable !== false) return true;
+  for (const component of components)
+    if (component.component === 'List' && component.sortable !== undefined && component.sortable !== false) return true;
   return false;
 }
 
@@ -93,7 +129,8 @@ function resolveProps(ctx: SurfaceContextValue, instance: ComponentInstance, sco
 }
 
 function templateChildren(ctx: SurfaceContextValue, list: unknown, scope: Scope): ReactNode[] {
-  if (Array.isArray(list)) return list.filter((id): id is string => typeof id === 'string').map((id) => <A2uiNode key={id} id={id} scope={scope} />);
+  if (Array.isArray(list))
+    return list.filter((id): id is string => typeof id === 'string').map((id) => <A2uiNode key={id} id={id} scope={scope} />);
   if (!isChildTemplate(list)) return [];
   const base = resolveScopedPath(list.path, scope.path);
   const items = getAt(ctx.client.dataModel(ctx.surfaceId), base);
@@ -130,7 +167,17 @@ function A2uiNode({ id, scope }: { id: string; scope: Scope }): React.ReactEleme
   return <ResolvedNode ctx={ctx} instance={instance} scope={scope} render={render} />;
 }
 
-function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextValue; instance: ComponentInstance; scope: Scope; render: A2uiRenderer }): React.ReactElement {
+function ResolvedNode({
+  ctx,
+  instance,
+  scope,
+  render,
+}: {
+  ctx: SurfaceContextValue;
+  instance: ComponentInstance;
+  scope: Scope;
+  render: A2uiRenderer;
+}): React.ReactElement {
   const handleId = useContext(SortHandleContext);
   const dark = useKitScheme() === 'dark';
   const palette = useKitPalette();
@@ -150,18 +197,24 @@ function ResolvedNode({ ctx, instance, scope, render }: { ctx: SurfaceContextVal
     checks: ctx.client.checks(ctx.surfaceId, isCheckRuleList(instance.checks) ? instance.checks : undefined, scope),
     touched: bindings.touched,
     disabled: ctx.disabled === true,
-    mediaUrl: (value) => { const url = asString(value); return ctx.mediaUrl === undefined ? url : ctx.mediaUrl(url); },
+    mediaUrl: (value) => {
+      const url = asString(value);
+      return ctx.mediaUrl === undefined ? url : ctx.mediaUrl(url);
+    },
     child: (childId) => (typeof childId === 'string' ? <A2uiNode id={childId} scope={scope} /> : null),
     children: (list) => templateChildren(ctx, list, scope),
     childText: (childId) => plainChildText(ctx, childId, scope),
-    childComponent: (childId) => (typeof childId === 'string' ? ctx.client.surface(ctx.surfaceId)?.components.get(childId)?.component : undefined),
+    childComponent: (childId) =>
+      typeof childId === 'string' ? ctx.client.surface(ctx.surfaceId)?.components.get(childId)?.component : undefined,
     action: () => dispatchAction(ctx, instance.id, instance.action, scope),
     dispatch: (action) => dispatchAction(ctx, instance.id, action, scope),
     resolve: (value) => ctx.client.resolve(ctx.surfaceId, value as never, scope),
     binding: bindings.binding,
     pointer: (path) => resolveScopedPath(path, scope.path),
     read: (pointer) => getAt(ctx.client.dataModel(ctx.surfaceId), pointer),
-    write: (pointer, value) => { ctx.client.write(ctx.surfaceId, pointer, value); },
+    write: (pointer, value) => {
+      ctx.client.write(ctx.surfaceId, pointer, value);
+    },
   };
   const node = render(renderContext);
   return handleId === instance.id ? <SortableHandle>{node}</SortableHandle> : <>{node}</>;

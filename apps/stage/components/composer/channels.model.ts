@@ -7,7 +7,10 @@ export interface ChannelCandidate {
   avatarAddress: string | null;
 }
 
-export interface ChannelQuery { text: string; range: Span }
+export interface ChannelQuery {
+  text: string;
+  range: Span;
+}
 
 interface ChannelRow {
   convId: string;
@@ -37,24 +40,23 @@ export function channelQuery(pieces: Piece[], cursor: number): ChannelQuery | nu
   if (!m) return null;
   const typed = m[2] ?? '';
   const start = cursor - typed.length - 1;
-  const inside = pieces.some(p => p.mention && start >= p.displayStart && start < p.displayStart + p.display.length);
+  const inside = pieces.some((p) => p.mention && start >= p.displayStart && start < p.displayStart + p.display.length);
   return inside ? null : { text: typed, range: { start, end: cursor } };
 }
 
 function rankOf(name: string, query: string): number {
   const lower = name.toLowerCase();
   if (lower.startsWith(query)) return 0;
-  if (lower.split(/[\s_-]+/).some(word => word.startsWith(query))) return 1;
+  if (lower.split(/[\s_-]+/).some((word) => word.startsWith(query))) return 1;
   return lower.includes(query) ? 2 : -1;
 }
 
 export function matchChannels(candidates: ChannelCandidate[], query: string): ChannelCandidate[] {
   const q = query.toLowerCase();
   return candidates
-    .map(candidate => ({ candidate, rank: rankOf(candidate.name, q) }))
-    .filter(m => m.rank >= 0)
+    .map((candidate) => ({ candidate, rank: rankOf(candidate.name, q) }))
+    .filter((m) => m.rank >= 0)
     .sort((a, b) => a.rank - b.rank)
     .slice(0, MAX_CHANNEL_MATCHES)
-    .map(m => m.candidate);
+    .map((m) => m.candidate);
 }
-

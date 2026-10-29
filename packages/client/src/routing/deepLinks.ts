@@ -34,7 +34,7 @@ function extractRoute(url: string): { segments: string[]; query: URLSearchParams
 
   const segments = pathPart
     .split('/')
-    .map(s => decodeURIComponent(s))
+    .map((s) => decodeURIComponent(s))
     .filter(Boolean);
 
   return { segments, query: new URLSearchParams(queryPart) };
@@ -77,9 +77,7 @@ function headRoute(segments: string[], query: URLSearchParams): ParsedRoute | nu
   const [head, second, third] = segments;
   if (head === undefined) return null;
   if (CONVERSATION_HEADS.has(head)) {
-    return second === 'user'
-      ? conversationRoute('/[convId]', third, query)
-      : conversationRoute('/channel/[convId]', second, query);
+    return second === 'user' ? conversationRoute('/[convId]', third, query) : conversationRoute('/channel/[convId]', second, query);
   }
   const entity = entityRoute(head, second, query);
   if (entity !== undefined) return entity;

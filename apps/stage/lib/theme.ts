@@ -1,23 +1,26 @@
 import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 import { secureStorage } from '../platform/storage';
+import { THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference, type ThemePreference } from '@stage-labs/kit/theme';
 import {
-  THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference,
-  type ThemePreference,
-} from '@stage-labs/kit/theme';
-import {
-  semanticColors, kitPalette, type KitPalette, type Scheme, type RadiusName, type Density, type BaseSize,
+  semanticColors,
+  kitPalette,
+  type KitPalette,
+  type Scheme,
+  type RadiusName,
+  type Density,
+  type BaseSize,
 } from '@stage-labs/kit/tokens';
 import {
-  derivePalette, grayscaleFromHex,
-  type ThemeSeed, type AccentLevel,
-  type GrayscaleShade, type GrayscaleTint,
+  derivePalette,
+  grayscaleFromHex,
+  type ThemeSeed,
+  type AccentLevel,
+  type GrayscaleShade,
+  type GrayscaleTint,
 } from '@stage-labs/kit/theme-derive';
 import { createValueStore } from './persistedStore';
-import {
-  cloneSeed, defaultSeeds, migrateSeeds,
-  type SeedColorKey, type ThemeSeeds,
-} from './colorOverrides.model';
+import { cloneSeed, defaultSeeds, migrateSeeds, type SeedColorKey, type ThemeSeeds } from './colorOverrides.model';
 
 export type { ThemePreference, SeedColorKey };
 export { isHex, seedColorHex } from './colorOverrides.model';
@@ -80,22 +83,32 @@ function parseSeeds(raw: string): ThemeSeeds | undefined {
   try {
     const parsed: unknown = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? migrateSeeds(parsed) : undefined;
-  } catch { return undefined; }
+  } catch {
+    return undefined;
+  }
 }
 
 const seeds = createValueStore<ThemeSeeds>({
-  key: 'theme:seed', default: defaultSeeds(), serialize: (v) => JSON.stringify(v), deserialize: parseSeeds,
+  key: 'theme:seed',
+  default: defaultSeeds(),
+  serialize: (v) => JSON.stringify(v),
+  deserialize: parseSeeds,
 });
 
 const custom = createValueStore<boolean>({
-  key: 'theme:custom', default: false, serialize: (on) => (on ? '1' : '0'), deserialize: (raw) => raw === '1',
+  key: 'theme:custom',
+  default: false,
+  serialize: (on) => (on ? '1' : '0'),
+  deserialize: (raw) => raw === '1',
 });
 
 export const useThemeSeeds = (): ThemeSeeds => seeds.use();
 
 export const useCustomTheme = (): boolean => custom.use();
 
-export function setCustomTheme(on: boolean): void { custom.set(on); }
+export function setCustomTheme(on: boolean): void {
+  custom.set(on);
+}
 
 function patchSeeds(patch: Partial<ThemeSeeds>): void {
   seeds.set({ ...seeds.get(), ...patch });
@@ -119,21 +132,35 @@ export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): vo
 }
 
 export function setAccentLevel(scheme: Scheme, level: AccentLevel): void {
-  editSeed(scheme, (seed) => { seed.accent.level = level; });
+  editSeed(scheme, (seed) => {
+    seed.accent.level = level;
+  });
 }
 
 export function setGrayscaleTint(scheme: Scheme, tint: GrayscaleTint): void {
-  editSeed(scheme, (seed) => { seed.grayscale.tint = tint; });
+  editSeed(scheme, (seed) => {
+    seed.grayscale.tint = tint;
+  });
 }
 
 export function setGrayscaleShade(scheme: Scheme, shade: GrayscaleShade): void {
-  editSeed(scheme, (seed) => { seed.grayscale.shade = shade; });
+  editSeed(scheme, (seed) => {
+    seed.grayscale.shade = shade;
+  });
 }
 
-export function setSeedDensity(density: Density): void { patchSeeds({ density }); }
+export function setSeedDensity(density: Density): void {
+  patchSeeds({ density });
+}
 
-export function setSeedRadius(radius: RadiusName): void { patchSeeds({ radius }); }
+export function setSeedRadius(radius: RadiusName): void {
+  patchSeeds({ radius });
+}
 
-export function setSeedBaseSize(baseSize: BaseSize): void { patchSeeds({ baseSize }); }
+export function setSeedBaseSize(baseSize: BaseSize): void {
+  patchSeeds({ baseSize });
+}
 
-export function resetOverrides(): void { seeds.set(defaultSeeds()); }
+export function resetOverrides(): void {
+  seeds.set(defaultSeeds());
+}

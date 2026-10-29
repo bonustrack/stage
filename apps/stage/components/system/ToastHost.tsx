@@ -14,12 +14,7 @@ export function ToastHost(): React.ReactElement | null {
   const bottom = useFloatingBottom();
   if (toast === null) return null;
   return (
-    <Row
-      justify="center"
-      padding={{ x: PAGE_GUTTER }}
-      pointerEvents="none"
-      style={[pinnedBottom(TOAST_LAYER), { bottom }]}
-    >
+    <Row justify="center" padding={{ x: PAGE_GUTTER }} pointerEvents="none" style={[pinnedBottom(TOAST_LAYER), { bottom }]}>
       <Column
         key={toast.id}
         background={pal.link}
@@ -29,7 +24,9 @@ export function ToastHost(): React.ReactElement | null {
         accessibilityRole="alert"
         accessibilityLiveRegion="polite"
       >
-        <Text size="sm" color={pal.bg}>{toast.message}</Text>
+        <Text size="sm" color={pal.bg}>
+          {toast.message}
+        </Text>
       </Column>
     </Row>
   );

@@ -22,8 +22,12 @@ const MULTILINE_ROW_HEIGHT = 26;
 export const FORM_FIELD_HEIGHT = FIELD_PADDING_TOP + TRAILING_SLOT + FIELD_PADDING_BOTTOM;
 
 const BARE_INPUT: TextStyle = {
-  backgroundColor: 'transparent', borderWidth: 0, borderRadius: 0,
-  paddingHorizontal: 0, paddingVertical: 0, minHeight: 0,
+  backgroundColor: 'transparent',
+  borderWidth: 0,
+  borderRadius: 0,
+  paddingHorizontal: 0,
+  paddingVertical: 0,
+  minHeight: 0,
 };
 const CENTERED_LINE: TextStyle = { includeFontPadding: false, textAlignVertical: 'center' };
 const SLOT = { position: 'absolute', top: 0, bottom: 0 } as const;
@@ -48,8 +52,10 @@ function slotInset(slot: ReactNode, width: number): number {
 function lineStyle(props: TextFieldProps, inset: boolean): TextStyle {
   if (!inset) return { flex: 1 };
   return {
-    ...CENTERED_LINE, height: FORM_FIELD_HEIGHT,
-    paddingLeft: slotInset(props.leading, LEADING_SLOT), paddingRight: slotInset(props.trailing, props.trailingWidth ?? TRAILING_SLOT),
+    ...CENTERED_LINE,
+    height: FORM_FIELD_HEIGHT,
+    paddingLeft: slotInset(props.leading, LEADING_SLOT),
+    paddingRight: slotInset(props.trailing, props.trailingWidth ?? TRAILING_SLOT),
   };
 }
 
@@ -58,10 +64,14 @@ function InsetFrame({ field, props, background }: { field: ReactNode; props: Tex
     <Column background={background} radius={FORM_FIELD_RADIUS} style={props.disabled === true ? DISABLED : undefined}>
       {field}
       {props.leading === undefined ? null : (
-        <Row pointerEvents="none" align="center" justify="center" width={LEADING_SLOT} style={[SLOT, { left: FIELD_PADDING_X }]}>{props.leading}</Row>
+        <Row pointerEvents="none" align="center" justify="center" width={LEADING_SLOT} style={[SLOT, { left: FIELD_PADDING_X }]}>
+          {props.leading}
+        </Row>
       )}
       {props.trailing === undefined ? null : (
-        <Row pointerEvents="box-none" align="center" style={[SLOT, { right: FIELD_PADDING_X }]}>{props.trailing}</Row>
+        <Row pointerEvents="box-none" align="center" style={[SLOT, { right: FIELD_PADDING_X }]}>
+          {props.trailing}
+        </Row>
       )}
     </Column>
   );
@@ -69,8 +79,13 @@ function InsetFrame({ field, props, background }: { field: ReactNode; props: Tex
 
 function StackedFrame({ field, props, background }: { field: ReactNode; props: TextFieldProps; background: string }): React.ReactElement {
   return (
-    <Column background={background} radius={FORM_FIELD_RADIUS} padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }} gap={2}
-      style={props.disabled === true ? DISABLED : undefined}>
+    <Column
+      background={background}
+      radius={FORM_FIELD_RADIUS}
+      padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }}
+      gap={2}
+      style={props.disabled === true ? DISABLED : undefined}
+    >
       {props.label === undefined ? null : (
         <Row align="center" gap={6}>
           <Text text={props.label} size="xs" color="secondary" />
@@ -80,7 +95,11 @@ function StackedFrame({ field, props, background }: { field: ReactNode; props: T
       <Row align="center" gap={8} minHeight={TRAILING_SLOT}>
         {props.leading}
         {field}
-        {props.trailing === undefined ? null : <Row align="center" height={TRAILING_SLOT} style={{ flexShrink: 0 }}>{props.trailing}</Row>}
+        {props.trailing === undefined ? null : (
+          <Row align="center" height={TRAILING_SLOT} style={{ flexShrink: 0 }}>
+            {props.trailing}
+          </Row>
+        )}
       </Row>
     </Column>
   );
@@ -94,14 +113,29 @@ export const FilledField = forwardRef<TextInput, TextFieldProps>(function Filled
   const inset = props.label === undefined && !multiline;
   const textStyle: TextStyle = { color: palette.link, fontFamily: fontName.sans, fontSize: fontSize('md') };
   const inner: TextFieldProps = {
-    ...props, label: undefined, weight: undefined, appearance: 'soft', placeholderTextColor: props.placeholderTextColor ?? palette.sub, rows,
+    ...props,
+    label: undefined,
+    weight: undefined,
+    appearance: 'soft',
+    placeholderTextColor: props.placeholderTextColor ?? palette.sub,
+    rows,
   };
-  const field = multiline
-    ? <AreaField {...inner} ref={ref} style={{ ...BARE_INPUT, ...textStyle, flex: 1, textAlignVertical: 'top', height: undefined, minHeight: rows * MULTILINE_ROW_HEIGHT }} />
-    : <InputField {...inner} ref={ref} style={{ ...BARE_INPUT, ...textStyle, ...lineStyle(props, inset) }} />;
+  const field = multiline ? (
+    <AreaField
+      {...inner}
+      ref={ref}
+      style={{ ...BARE_INPUT, ...textStyle, flex: 1, textAlignVertical: 'top', height: undefined, minHeight: rows * MULTILINE_ROW_HEIGHT }}
+    />
+  ) : (
+    <InputField {...inner} ref={ref} style={{ ...BARE_INPUT, ...textStyle, ...lineStyle(props, inset) }} />
+  );
   return (
     <Column gap={hint === undefined ? 0 : 6} weight={props.weight}>
-      {inset ? <InsetFrame field={field} props={props} background={palette.border}/> : <StackedFrame field={field} props={props} background={palette.border}/>}
+      {inset ? (
+        <InsetFrame field={field} props={props} background={palette.border} />
+      ) : (
+        <StackedFrame field={field} props={props} background={palette.border} />
+      )}
       {hint === undefined ? null : <Text text={hint} size="xs" color={color} style={{ paddingHorizontal: 4 }} />}
     </Column>
   );

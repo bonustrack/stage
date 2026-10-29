@@ -11,11 +11,7 @@ function normalizeWorkspace(path, raw) {
   if (src !== undefined && !Array.isArray(src)) {
     throw new Error(`defineConfig: workspace "${path}" "src" must be an array of globs.`);
   }
-  return Object.freeze({
-    type,
-    knip: knip ?? {},
-    src: src ?? null,
-  });
+  return Object.freeze({ type, knip: knip ?? {}, src: src ?? null });
 }
 
 function resolveWorkspaces(config) {
@@ -29,7 +25,9 @@ function resolveWorkspaces(config) {
     const { workspaces: _w, madge: _m, knip: _k, ...ws } = config;
     return { '.': ws };
   }
-  throw new Error('defineConfig: missing "workspaces". Provide a workspaces map, a "root" workspace, or a top-level single-package shorthand with a "type".');
+  throw new Error(
+    'defineConfig: missing "workspaces". Provide a workspaces map, a "root" workspace, or a top-level single-package shorthand with a "type".',
+  );
 }
 
 export function defineConfig(config) {
@@ -45,9 +43,5 @@ export function defineConfig(config) {
   for (const [path, raw] of entries) {
     workspaces[path] = normalizeWorkspace(path, raw);
   }
-  return Object.freeze({
-    workspaces: Object.freeze(workspaces),
-    madge: config.madge ?? {},
-    knip: config.knip ?? {},
-  });
+  return Object.freeze({ workspaces: Object.freeze(workspaces), madge: config.madge ?? {}, knip: config.knip ?? {} });
 }

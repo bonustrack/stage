@@ -1,7 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  applyDisplayEdit, editRegion, insertMention, mentionKeyAction, mentionQuery, piecesOf, toDisplay,
-  activeSuggestIndex, withContactCandidates,
+  applyDisplayEdit,
+  editRegion,
+  insertMention,
+  mentionKeyAction,
+  mentionQuery,
+  piecesOf,
+  toDisplay,
+  activeSuggestIndex,
+  withContactCandidates,
 } from '../components/composer/mentions.model';
 
 const ALICE = `0x${'a'.repeat(40)}`;
@@ -11,7 +18,10 @@ const labelOf = (address: string): string => NAMES[address] ?? '@someone';
 const shortOf = (address: string): string => `@${address.slice(0, 6)}`;
 const BANG: Record<string, string> = { [BOB]: '@bob!' };
 const bangOf = (address: string): string => BANG[address] ?? labelOf(address);
-const people = [{ address: ALICE, name: 'alice' }, { address: BOB, name: 'bob' }];
+const people = [
+  { address: ALICE, name: 'alice' },
+  { address: BOB, name: 'bob' },
+];
 
 function edit(wire: string, next: string, at: number, end = at): ReturnType<typeof applyDisplayEdit> {
   return applyDisplayEdit(piecesOf(wire, labelOf), next, labelOf, { start: at, end });
@@ -141,7 +151,7 @@ describe('composer mention query', () => {
     const pieces = piecesOf(`@${BOB} @al`, labelOf);
     const q = mentionQuery(pieces, 8, people);
     expect(q.range).toEqual({ start: 5, end: 8 });
-    expect(q.matches.map(c => c.name)).toEqual(['alice']);
+    expect(q.matches.map((c) => c.name)).toEqual(['alice']);
   });
 
   test('stays closed on a label that is already a mention', () => {
@@ -183,13 +193,13 @@ describe('composer mention contacts', () => {
 
   test('puts the peer first and adds each other contact once, without self', () => {
     const pool = withContactCandidates(peer, contacts, SELF.toUpperCase().replace('0X', '0x'));
-    expect(pool.map(c => c.name)).toEqual(['bob', 'alice', 'carol']);
+    expect(pool.map((c) => c.name)).toEqual(['bob', 'alice', 'carol']);
   });
 
   test('suggests every contact for a bare @ and narrows as the name is typed', () => {
     const pool = withContactCandidates(peer, contacts, SELF);
-    expect(mentionQuery(piecesOf('@', labelOf), 1, pool).matches.map(c => c.name)).toEqual(['bob', 'alice', 'carol']);
-    expect(mentionQuery(piecesOf('hi @ca', labelOf), 6, pool).matches.map(c => c.name)).toEqual(['carol']);
+    expect(mentionQuery(piecesOf('@', labelOf), 1, pool).matches.map((c) => c.name)).toEqual(['bob', 'alice', 'carol']);
+    expect(mentionQuery(piecesOf('hi @ca', labelOf), 6, pool).matches.map((c) => c.name)).toEqual(['carol']);
   });
 });
 

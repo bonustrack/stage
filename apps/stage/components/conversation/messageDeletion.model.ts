@@ -1,8 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf, type DeletedBy } from '@stage-labs/client/xmtp/deleteMessage';
-import {
-  deletedByOf, deletedEntryView, isDeletableEntry, type DeletedMessages,
-} from '@stage-labs/client/xmtp/deletions';
+import { deletedByOf, deletedEntryView, isDeletableEntry, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import type { ConfirmOptions } from '../../lib/capabilities';
 import { previewOf } from './feed-helpers';
 import { isFrameActionEntry } from '../frame/frame.model';
@@ -41,7 +39,9 @@ export function deleteConfirmOf(asAdmin: boolean): ConfirmOptions {
 }
 
 export function replyQuoteOf(
-  item: HistoryEntry, deleted: DeletedMessages, lookup: (id: string) => HistoryEntry | undefined,
+  item: HistoryEntry,
+  deleted: DeletedMessages,
+  lookup: (id: string) => HistoryEntry | undefined,
 ): string | undefined {
   const target = item.replyTo;
   if (!target) return undefined;

@@ -34,11 +34,7 @@ interface CheckColors {
 }
 
 export function checkboxColors(dark: boolean): CheckColors {
-  return {
-    head: dark ? '#ffffff' : '#000000',
-    bg: dark ? '#0e0f10' : '#ffffff',
-    border: dark ? '#282a2d' : '#e4e4e5',
-  };
+  return { head: dark ? '#ffffff' : '#000000', bg: dark ? '#0e0f10' : '#ffffff', border: dark ? '#282a2d' : '#e4e4e5' };
 }
 
 export function CheckboxBox({ size, checked, colors }: { size: number; checked: boolean; colors: CheckColors }): React.ReactElement {
@@ -56,10 +52,18 @@ export function CheckboxBox({ size, checked, colors }: { size: number; checked: 
 }
 
 function SwitchTrack({ checked, dark }: { checked: boolean; dark: boolean }): React.ReactElement {
-  const track = checked ? (dark ? '#ffffff' : '#000000') : (dark ? '#3a3c40' : '#d8d8da');
+  const track = checked ? (dark ? '#ffffff' : '#000000') : dark ? '#3a3c40' : '#d8d8da';
   return (
     <View style={{ width: 44, height: 26, borderRadius: 13, backgroundColor: track, padding: 3, justifyContent: 'center' }}>
-      <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: checked && dark ? '#000000' : '#ffffff', alignSelf: checked ? 'flex-end' : 'flex-start' }} />
+      <View
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: checked && dark ? '#000000' : '#ffffff',
+          alignSelf: checked ? 'flex-end' : 'flex-start',
+        }}
+      />
     </View>
   );
 }
@@ -67,13 +71,29 @@ function SwitchTrack({ checked, dark }: { checked: boolean; dark: boolean }): Re
 function useChecked(value: boolean | undefined, defaultValue: boolean | undefined): [boolean, (next: boolean) => void] {
   const [internal, setInternal] = useState(defaultValue ?? false);
   const checked = value ?? internal;
-  return [checked, (next) => {
-    if (value === undefined) setInternal(next);
-  }];
+  return [
+    checked,
+    (next) => {
+      if (value === undefined) setInternal(next);
+    },
+  ];
 }
 
 export function CheckBox(props: CheckBoxProps): React.ReactElement {
-  const { label, value, defaultValue, onChange, checks, displayStyle = 'checkbox', disabled, size = 20, name, style, weight, accessibility } = props;
+  const {
+    label,
+    value,
+    defaultValue,
+    onChange,
+    checks,
+    displayStyle = 'checkbox',
+    disabled,
+    size = 20,
+    name,
+    style,
+    weight,
+    accessibility,
+  } = props;
   const scheme = useKitScheme();
   const dark = props.dark ?? scheme === 'dark';
   const [checked, setChecked] = useChecked(value, defaultValue);
@@ -94,7 +114,11 @@ export function CheckBox(props: CheckBoxProps): React.ReactElement {
           {...accessibilityProps(accessibility)}
           disabled={disabled}
           onPress={toggle}
-          style={[{ flexDirection: 'row', alignItems: 'center', gap: 10, opacity: disabled ? 0.5 : 1 }, ...styleList(style), ...styleList(rootStyle)]}
+          style={[
+            { flexDirection: 'row', alignItems: 'center', gap: 10, opacity: disabled ? 0.5 : 1 },
+            ...styleList(style),
+            ...styleList(rootStyle),
+          ]}
         >
           {isSwitch ? <SwitchTrack checked={checked} dark={dark} /> : <CheckboxBox size={size} checked={checked} colors={colors} />}
           {label ? <RNText style={{ color: colors.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.sans }}>{label}</RNText> : null}

@@ -15,7 +15,9 @@ export function OnboardingRouteReset({ ready, showing }: { ready: boolean; showi
   useEffect(() => {
     if (!active || next === undefined) return;
     const frame = requestAnimationFrame(prettifyRouteQuery);
-    return () => { cancelAnimationFrame(frame); };
+    return () => {
+      cancelAnimationFrame(frame);
+    };
   }, [active, pathname, next]);
   return null;
 }

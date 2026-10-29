@@ -1,7 +1,14 @@
 import { useMemo, type ReactNode } from 'react';
 import { Pressable, Text, type PressableProps, type TextStyle, type ViewStyle } from 'react-native';
 import {
-  resolveButtonVariant, resolveColors, SIZES, textLabelStyle, type ButtonColor, type ButtonSize, type ButtonVariant, type SizeSpec,
+  resolveButtonVariant,
+  resolveColors,
+  SIZES,
+  textLabelStyle,
+  type ButtonColor,
+  type ButtonSize,
+  type ButtonVariant,
+  type SizeSpec,
 } from '../button.styles';
 import type { ValidationResult } from '../a2ui/protocol';
 import { accessibilityProps, failingChecks, weightStyle, type A2uiCommonProps } from './a2ui-props';
@@ -22,8 +29,7 @@ export function getDefaultButtonRadius(): number {
   return defaultButtonRadius;
 }
 
-export interface ButtonProps
-  extends Omit<PressableProps, 'children' | 'style' | 'disabled'>, A2uiCommonProps {
+export interface ButtonProps extends Omit<PressableProps, 'children' | 'style' | 'disabled'>, A2uiCommonProps {
   color?: ButtonColor;
   variant?: ButtonVariant;
   checks?: readonly ValidationResult[];
@@ -77,10 +83,7 @@ function pickOpacity(c: ResolvedColors, usePressedBg: boolean, isDisabled: boole
   return 1;
 }
 
-function containerStyle(
-  args: ContainerStyleArgs,
-  pressed: boolean,
-): (ViewStyle | undefined)[] {
+function containerStyle(args: ContainerStyleArgs, pressed: boolean): (ViewStyle | undefined)[] {
   const { spec, square, stretch, radius, c, isDisabled, link, style } = args;
   const usePressedBg = pressed && !isDisabled;
   const base: ViewStyle = {
@@ -139,8 +142,8 @@ function useResolvedColors(t: TintArgs): ResolvedColors {
   }, [t.color, t.variant, t.dark, t.tintBg, t.tintFg, t.tintPressedBg]);
 }
 
-type ContainerInput = Pick<ContainerStyleArgs, 'spec' | 'c' | 'isDisabled'>
-  & Pick<ButtonProps, 'variant' | 'block' | 'fullWidth' | 'uniform' | 'pill' | 'radius' | 'weight' | 'style'>;
+type ContainerInput = Pick<ContainerStyleArgs, 'spec' | 'c' | 'isDisabled'> &
+  Pick<ButtonProps, 'variant' | 'block' | 'fullWidth' | 'uniform' | 'pill' | 'radius' | 'weight' | 'style'>;
 
 function containerArgs(input: ContainerInput): ContainerStyleArgs {
   const { spec, c, isDisabled, variant, block, fullWidth, uniform, pill, radius, weight, style } = input;

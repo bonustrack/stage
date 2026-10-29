@@ -14,9 +14,7 @@ export function movedPinOrder(order: PinOrder, convId: string, toIndex: number):
   return next;
 }
 
-export function pinOrderAfterRemote(
-  order: PinOrder, state: { convId: string; pinned: boolean; order?: readonly string[] },
-): PinOrder {
+export function pinOrderAfterRemote(order: PinOrder, state: { convId: string; pinned: boolean; order?: readonly string[] }): PinOrder {
   if (state.order !== undefined) return state.order;
   const pinned = order.includes(state.convId);
   if (pinned === state.pinned) return order;
@@ -24,10 +22,15 @@ export function pinOrderAfterRemote(
 }
 
 export function savedFirst<T>(
-  items: readonly T[], order: readonly string[], keyOf: (item: T) => string, rest: (a: T, b: T) => number = () => 0,
+  items: readonly T[],
+  order: readonly string[],
+  keyOf: (item: T) => string,
+  rest: (a: T, b: T) => number = () => 0,
 ): T[] {
   const rank = new Map<string, number>();
-  order.forEach((key, index) => { if (!rank.has(key)) rank.set(key, index); });
+  order.forEach((key, index) => {
+    if (!rank.has(key)) rank.set(key, index);
+  });
   return [...items].sort((a, b) => {
     const ra = rank.get(keyOf(a));
     const rb = rank.get(keyOf(b));

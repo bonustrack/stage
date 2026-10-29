@@ -35,24 +35,38 @@ const TokenRow = memo(function TokenRow({ r, border, bg }: { r: AssetRow; border
 
 const TOKENS_SPINNER = 28;
 
-function WalletTokens({ rows, err, border, bg }: {
-  rows: AssetRow[] | null; err: boolean; border: string; bg: string;
+function WalletTokens({
+  rows,
+  err,
+  border,
+  bg,
+}: {
+  rows: AssetRow[] | null;
+  err: boolean;
+  border: string;
+  bg: string;
 }): React.ReactElement {
   if (err && rows === null) {
     return (
       <Column padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center">
-        <Text size="xs" color={DANGER}>Couldn’t load tokens</Text>
+        <Text size="xs" color={DANGER}>
+          Couldn’t load tokens
+        </Text>
       </Column>
     );
   }
   if (rows === null) {
     return (
-      <Column padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center"><Spinner size={TOKENS_SPINNER} /></Column>
+      <Column padding={{ y: 40 }} margin={{ x: PAGE_GUTTER }} align="center">
+        <Spinner size={TOKENS_SPINNER} />
+      </Column>
     );
   }
   return (
     <Column margin={{ top: 16, x: PAGE_GUTTER }}>
-      {rows.map(r => <TokenRow key={tokenRowId(r)} r={r} border={border} bg={bg} />)}
+      {rows.map((r) => (
+        <TokenRow key={tokenRowId(r)} r={r} border={border} bg={bg} />
+      ))}
     </Column>
   );
 }
@@ -78,30 +92,37 @@ export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): Re
 
   return (
     <Column surface="surface" weight={1}>
-    <ScreenScroll
-      simultaneousHandlers={panRef}
-      style={{ backgroundColor: bg }}
-      contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
-      bounces
-      alwaysBounceVertical
-      overScrollMode="always"
-      nestedScrollEnabled
-      onScroll={pull.onScroll}
-      onScrollBeginDrag={pull.onScrollBeginDrag}
-      onScrollEndDrag={pull.onScrollEndDrag}
-      scrollEventThrottle={pull.scrollEventThrottle}
->
-      <WalletBalanceCard
-        balance={{
-          totalUsd: walletTotalUsd(rows), currency, prices: portfolio.data?.prices,
-          loading: rows === null, error: err, refreshing,
-          pricesLoading: refreshing,
-        }}
-        border={border} onAction={(href) => { router.push(href); }}
-      />
+      <ScreenScroll
+        simultaneousHandlers={panRef}
+        style={{ backgroundColor: bg }}
+        contentContainerStyle={{ paddingBottom: 24, flexGrow: 1 }}
+        bounces
+        alwaysBounceVertical
+        overScrollMode="always"
+        nestedScrollEnabled
+        onScroll={pull.onScroll}
+        onScrollBeginDrag={pull.onScrollBeginDrag}
+        onScrollEndDrag={pull.onScrollEndDrag}
+        scrollEventThrottle={pull.scrollEventThrottle}
+      >
+        <WalletBalanceCard
+          balance={{
+            totalUsd: walletTotalUsd(rows),
+            currency,
+            prices: portfolio.data?.prices,
+            loading: rows === null,
+            error: err,
+            refreshing,
+            pricesLoading: refreshing,
+          }}
+          border={border}
+          onAction={(href) => {
+            router.push(href);
+          }}
+        />
 
-      <WalletTokens rows={rows} err={err} border={border} bg={bg} />
-    </ScreenScroll>
+        <WalletTokens rows={rows} err={err} border={border} bg={bg} />
+      </ScreenScroll>
     </Column>
   );
 }

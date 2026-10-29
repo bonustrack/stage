@@ -96,11 +96,31 @@ export const PlainField = forwardRef<TextInput, TextFieldProps>(function PlainFi
       inputMode={props.inputMode}
       secureTextEntry={props.variant === 'obscured' ? true : undefined}
       onChangeText={grow.onChangeText}
-      onSubmitEditing={onSubmit === undefined ? undefined : (e) => { onSubmit(e.nativeEvent.text); }}
+      onSubmitEditing={
+        onSubmit === undefined
+          ? undefined
+          : (e) => {
+              onSubmit(e.nativeEvent.text);
+            }
+      }
       onKeyPress={props.onKeyPress}
       selection={props.selection}
-      onSelectionChange={onSelectionChange === undefined ? undefined : (event) => { onSelectionChange(event.nativeEvent.selection); }}
-      style={[styled.box, styled.text, sizeStyle(multiline, props, grow.height), overrideStyle(props), weightStyle(props.weight), props.disabled === true ? { opacity: 0.5 } : null, props.style]}
+      onSelectionChange={
+        onSelectionChange === undefined
+          ? undefined
+          : (event) => {
+              onSelectionChange(event.nativeEvent.selection);
+            }
+      }
+      style={[
+        styled.box,
+        styled.text,
+        sizeStyle(multiline, props, grow.height),
+        overrideStyle(props),
+        weightStyle(props.weight),
+        props.disabled === true ? { opacity: 0.5 } : null,
+        props.style,
+      ]}
     />
   );
 });

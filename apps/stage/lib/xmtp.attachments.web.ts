@@ -1,6 +1,9 @@
 import {
-  decryptAttachment, encryptAttachment, encodeRemoteAttachment,
-  type EncryptedAttachment, type RemoteAttachment,
+  decryptAttachment,
+  encryptAttachment,
+  encodeRemoteAttachment,
+  type EncryptedAttachment,
+  type RemoteAttachment,
 } from '@xmtp/browser-sdk';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import { sendableConvOfLine } from './xmtp.sdk.web';
@@ -21,9 +24,7 @@ async function fetchBytes(uri: string): Promise<Uint8Array> {
   return new Uint8Array(await blob.arrayBuffer());
 }
 
-function sanitizeAttachmentBytes(
-  input: Uint8Array, mimeType: string | undefined, filename: string | undefined,
-): SanitizedAttachmentBytes {
+function sanitizeAttachmentBytes(input: Uint8Array, mimeType: string | undefined, filename: string | undefined): SanitizedAttachmentBytes {
   if (!isStrippableImage(mimeType, filename)) return input as SanitizedAttachmentBytes;
   try {
     const { bytes } = stripMetadataBytes(input);
@@ -33,12 +34,12 @@ function sanitizeAttachmentBytes(
   }
 }
 
-export async function encryptSanitizedAttachment(
-  file: { bytes: SanitizedAttachmentBytes; mimeType: string; filename: string },
-): Promise<EncryptedAttachment> {
-  return await withMainThreadWasm(() => encryptAttachment({
-    filename: file.filename, mimeType: file.mimeType, content: file.bytes,
-  }));
+export async function encryptSanitizedAttachment(file: {
+  bytes: SanitizedAttachmentBytes;
+  mimeType: string;
+  filename: string;
+}): Promise<EncryptedAttachment> {
+  return await withMainThreadWasm(() => encryptAttachment({ filename: file.filename, mimeType: file.mimeType, content: file.bytes }));
 }
 
 async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedAttachment> {
@@ -65,35 +66,38 @@ const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
 export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
 
 export async function xmtpSendMultiRemoteAttachment(
-  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>, replyTo?: string,
+  line: string,
+  files: LocalAttachmentInput[],
+  onUploaded?: OnAttachmentsUploaded,
+  beforeSend?: () => Promise<void>,
+  replyTo?: string,
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
   const session = await accountClient();
-  const id = await withReadableSendError(() => sendPreparedAttachment({
-    assertCurrent: session.assertCurrent, uploaded: () => prep.uploaded(files), onUploaded, beforeSend,
-    find: () => sendableConvOfLine(line),
-    send: async (conv, infos) => {
-      if (replyTo === undefined) return conv.sendMultiRemoteAttachment({ attachments: infos });
-      const info = infos[0];
-      if (infos.length !== 1 || info === undefined) throw new Error('A file reply needs one attachment.');
-      return conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeRemoteAttachment(info)) });
-    },
-  }));
+  const id = await withReadableSendError(() =>
+    sendPreparedAttachment({
+      assertCurrent: session.assertCurrent,
+      uploaded: () => prep.uploaded(files),
+      onUploaded,
+      beforeSend,
+      find: () => sendableConvOfLine(line),
+      send: async (conv, infos) => {
+        if (replyTo === undefined) return conv.sendMultiRemoteAttachment({ attachments: infos });
+        const info = infos[0];
+        if (infos.length !== 1 || info === undefined) throw new Error('A file reply needs one attachment.');
+        return conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeRemoteAttachment(info)) });
+      },
+    }),
+  );
   prep.forget(files);
   return id;
 }
 
-export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{
-  fileUri: string; mimeType?: string; filename?: string;
-}> {
+export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{ fileUri: string; mimeType?: string; filename?: string }> {
   const res = await fetch(attachmentDownloadUrl(info.url));
   if (!res.ok) throw new Error(`Attachment download failed (${res.status})`);
   const encrypted = new Uint8Array(await res.arrayBuffer());
   const decrypted = await withMainThreadWasm(() => decryptAttachment(encrypted, info));
   const blob = new Blob([decrypted.content.slice().buffer], { type: inertBlobType(decrypted.mimeType) });
-  return {
-    fileUri: URL.createObjectURL(blob),
-    mimeType: decrypted.mimeType,
-    filename: decrypted.filename,
-  };
+  return { fileUri: URL.createObjectURL(blob), mimeType: decrypted.mimeType, filename: decrypted.filename };
 }

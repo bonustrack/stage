@@ -26,7 +26,12 @@ export function installMenu(): void {
     {
       role: 'help',
       submenu: [
-        { label: 'Open stage.box in the browser', click: () => { void shell.openExternal(WEBSITE); } },
+        {
+          label: 'Open stage.box in the browser',
+          click: () => {
+            void shell.openExternal(WEBSITE);
+          },
+        },
         { type: 'separator' },
         { label: 'Check for Updates…', click: checkForUpdatesNow },
         { label: `Version ${app.getVersion()}`, enabled: false },

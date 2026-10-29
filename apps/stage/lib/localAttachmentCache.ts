@@ -10,7 +10,9 @@ const listeners = makeListeners();
 const emit = listeners.notify;
 
 export function rememberLocalAttachments(
-  messageId: string, previews: readonly LocalAttachmentPreview[], uploaded?: readonly UploadedAttachment[],
+  messageId: string,
+  previews: readonly LocalAttachmentPreview[],
+  uploaded?: readonly UploadedAttachment[],
 ): void {
   if (cache.remember(messageId, previews, uploaded)) emit();
 }
@@ -34,7 +36,10 @@ export function stashLocalAttachment(srcUri: string): string {
     const name = `stage-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExtFor(srcUri)}`;
     const src = new File(srcUri);
     const dest = new File(Paths.cache, name);
-    if (dest.exists) attempt(() => { dest.delete(); }, 'cleanup');
+    if (dest.exists)
+      attempt(() => {
+        dest.delete();
+      }, 'cleanup');
     src.copySync(dest);
     return asFileUri(dest.uri);
   } catch {
@@ -46,8 +51,7 @@ const noSubscribe = (): (() => void) => () => undefined;
 
 export function useLocalAttachment(messageId?: string, index?: number, uploaded?: UploadedAttachment): LocalAttachmentPreview | undefined {
   const active = messageId !== undefined && index !== undefined;
-  return useStoreValue(
-    active ? listeners.subscribe : noSubscribe,
-    () => (messageId !== undefined && index !== undefined ? cache.get(messageId, index, uploaded) : undefined),
+  return useStoreValue(active ? listeners.subscribe : noSubscribe, () =>
+    messageId !== undefined && index !== undefined ? cache.get(messageId, index, uploaded) : undefined,
   );
 }

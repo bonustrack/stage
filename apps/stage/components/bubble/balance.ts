@@ -26,9 +26,11 @@ function trim(value: string): string {
 function isNativeToken(token?: string): boolean {
   if (!token) return true;
   const t = token.toLowerCase();
-  return t === NATIVE_TOKEN_SENTINEL.toLowerCase()
-    || t === '0x0000000000000000000000000000000000000000'
-    || t === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+  return (
+    t === NATIVE_TOKEN_SENTINEL.toLowerCase() ||
+    t === '0x0000000000000000000000000000000000000000' ||
+    t === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
+  );
 }
 
 interface OnchainMeta {
@@ -37,9 +39,7 @@ interface OnchainMeta {
   symbol: string;
 }
 
-async function readOnchain(
-  cid: number, token: string | undefined, addr: Hex,
-): Promise<OnchainMeta | null> {
+async function readOnchain(cid: number, token: string | undefined, addr: Hex): Promise<OnchainMeta | null> {
   const chain = chainFor(cid);
   const pub = publicClientFor(cid);
 
@@ -49,9 +49,7 @@ async function readOnchain(
   }
 
   if (token === undefined || !isAddress(token)) return null;
-  const raw = await pub.readContract({
-    address: token, abi: erc20Abi, functionName: 'balanceOf', args: [addr],
-  });
+  const raw = await pub.readContract({ address: token, abi: erc20Abi, functionName: 'balanceOf', args: [addr] });
   const [decimals, symbol] = await Promise.all([
     pub.readContract({ address: token, abi: erc20Abi, functionName: 'decimals' }).catch(ignored(18, 'optional')),
     pub.readContract({ address: token, abi: erc20Abi, functionName: 'symbol' }).catch(ignored('tokens', 'optional')),
@@ -61,28 +59,27 @@ async function readOnchain(
 
 function buildBalance(
   onchain: OnchainMeta,
-  symbol: string | undefined, needed: number | undefined,
+  symbol: string | undefined,
+  needed: number | undefined,
   known: { decimals: number; symbol: string } | undefined,
 ): PayerBalance {
   const decimals = known?.decimals ?? onchain.decimals;
   const human = formatUnits(onchain.raw, decimals);
   const sym = known?.symbol ?? symbol ?? onchain.symbol;
-  return {
-    text: `Balance: ${trim(human)} ${sym}`,
-    insufficient: needed != null && Number(human) < needed,
-  };
+  return { text: `Balance: ${trim(human)} ${sym}`, insufficient: needed != null && Number(human) < needed };
 }
 
 async function resolveBalance(
   chainId: string | number | undefined,
-  token: string | undefined, symbol: string | undefined, needed?: number,
+  token: string | undefined,
+  symbol: string | undefined,
+  needed?: number,
 ): Promise<PayerBalance | null> {
   const cid = parseChainId(chainId);
   const acct = await getActiveAccount();
   const addr = acct?.address;
   if (!addr || !isAddress(addr)) return null;
-  const known = ASSETS.find(a => a.chainId === cid
-    && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
+  const known = ASSETS.find((a) => a.chainId === cid && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
   const onchain = await readOnchain(cid, token, addr).catch(recover('bubble.balance', null));
   if (!onchain) return null;
   return buildBalance(onchain, symbol, needed, known);

@@ -8,15 +8,18 @@ let stacks: FrameStacks = new Map();
 const listeners = makeListeners();
 
 export function useFrameStack(id: string, frame: FrameContent | null): FrameNavigation {
-  const start = useMemo(() => (frame === null ? '' : frameStartSurface(frame) ?? ''), [frame]);
+  const start = useMemo(() => (frame === null ? '' : (frameStartSurface(frame) ?? '')), [frame]);
   const read = useCallback(() => stacks.get(id), [id]);
   const stack = frameStackOf(useStoreValue(listeners.subscribe, read), start);
-  const navigate = useCallback((nav: FrameNav): void => {
-    const next = withFrameNav(stacks, id, start, nav);
-    if (next === stacks) return;
-    stacks = next;
-    listeners.notify();
-  }, [id, start]);
+  const navigate = useCallback(
+    (nav: FrameNav): void => {
+      const next = withFrameNav(stacks, id, start, nav);
+      if (next === stacks) return;
+      stacks = next;
+      listeners.notify();
+    },
+    [id, start],
+  );
   return { screen: stack[stack.length - 1] ?? start, depth: stack.length - 1, navigate };
 }
 

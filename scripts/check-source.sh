@@ -8,6 +8,7 @@ check() {
   printf '::endgroup::\n'
 }
 
+check bun fmt --no-script --check
 check bun run lint
 check bun run typecheck
 check bun run knip

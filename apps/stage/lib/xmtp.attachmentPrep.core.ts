@@ -38,7 +38,10 @@ function limitConcurrency(max: number): Limit {
   let active = 0;
   const waiting: (() => void)[] = [];
   return async <T>(run: () => Promise<T>): Promise<T> => {
-    while (active >= max) await new Promise<void>((go) => { waiting.push(go); });
+    while (active >= max)
+      await new Promise<void>((go) => {
+        waiting.push(go);
+      });
     active += 1;
     try {
       return await run();
@@ -61,20 +64,24 @@ export function makeAttachmentPrep<E, R>(
   const stored = new Map<string, Promise<R>>();
   const encryptSlot = limitConcurrency(ENCRYPTS_AT_ONCE);
   const uploadSlot = limitConcurrency(UPLOADS_AT_ONCE);
-  const encryptedOf = (file: LocalAttachmentInput): Promise<E> =>
-    memoized(encrypted, keyOf(file), () => encryptSlot(() => encrypt(file)));
-  const storedOf = (file: LocalAttachmentInput): Promise<R> => memoized(stored, keyOf(file), async () => {
-    const ready = await encryptedOf(file);
-    try {
-      return await uploadSlot(() => store(ready, file));
-    } catch (err) {
-      encrypted.delete(keyOf(file));
-      throw err;
-    }
-  });
+  const encryptedOf = (file: LocalAttachmentInput): Promise<E> => memoized(encrypted, keyOf(file), () => encryptSlot(() => encrypt(file)));
+  const storedOf = (file: LocalAttachmentInput): Promise<R> =>
+    memoized(stored, keyOf(file), async () => {
+      const ready = await encryptedOf(file);
+      try {
+        return await uploadSlot(() => store(ready, file));
+      } catch (err) {
+        encrypted.delete(keyOf(file));
+        throw err;
+      }
+    });
   return {
-    prepare: (files) => { for (const file of files) void encryptedOf(file); },
-    upload: (files) => { for (const file of files) void storedOf(file); },
+    prepare: (files) => {
+      for (const file of files) void encryptedOf(file);
+    },
+    upload: (files) => {
+      for (const file of files) void storedOf(file);
+    },
     uploaded: (files) => Promise.all(files.map(storedOf)),
     forget: (files) => {
       for (const file of files) {

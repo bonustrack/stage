@@ -32,19 +32,15 @@ function isOneOf<A extends Arrow>(arrows: ReadonlySet<A>, key: string): key is A
   return known.has(key);
 }
 
-export function arrowKeyOf<A extends Arrow>(
-  event: ArrowKeyEvent, target: ArrowKeyTarget | null, arrows: ReadonlySet<A>,
-): A | null {
+export function arrowKeyOf<A extends Arrow>(event: ArrowKeyEvent, target: ArrowKeyTarget | null, arrows: ReadonlySet<A>): A | null {
   if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return null;
   const typing = target !== null && isEditableTarget(target.tagName, target.contentEditable) && target.text !== '';
   return !typing && isOneOf(arrows, event.key) ? event.key : null;
 }
 
-export function stepRow<T extends { convId: string }>(
-  rows: readonly T[], convId: string | null, arrow: VerticalArrow,
-): T | null {
-  const index = rows.findIndex(row => row.convId === convId);
-  return index === -1 ? null : rows[index + (arrow === 'ArrowUp' ? -1 : 1)] ?? null;
+export function stepRow<T extends { convId: string }>(rows: readonly T[], convId: string | null, arrow: VerticalArrow): T | null {
+  const index = rows.findIndex((row) => row.convId === convId);
+  return index === -1 ? null : (rows[index + (arrow === 'ArrowUp' ? -1 : 1)] ?? null);
 }
 
 export function revealScrollDelta(top: number, bottom: number, viewTop: number, viewBottom: number): number {

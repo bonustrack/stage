@@ -1,11 +1,6 @@
-
 export type AvatarSize = 'sm' | 'md' | 'lg';
 
-export const AVATAR_SIZES: Record<AvatarSize, number> = {
-  sm: 24,
-  md: 32,
-  lg: 64,
-};
+export const AVATAR_SIZES: Record<AvatarSize, number> = { sm: 24, md: 32, lg: 64 };
 
 export function stampAvatarUrl(address: string, displayPx: number, cacheBust?: string | number): string {
   const fetchPx = displayPx * 2;
@@ -14,7 +9,10 @@ export function stampAvatarUrl(address: string, displayPx: number, cacheBust?: s
 }
 
 export function channelStampSeed(channelId: string): string {
-  const hex = channelId.toLowerCase().replace(/^0x/, '').replace(/[^0-9a-f]/g, '');
+  const hex = channelId
+    .toLowerCase()
+    .replace(/^0x/, '')
+    .replace(/[^0-9a-f]/g, '');
   if (hex.length === 0) return `0x${'0'.repeat(40)}`;
   let out = hex;
   while (out.length < 40) out += hex;

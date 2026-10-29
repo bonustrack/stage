@@ -2,7 +2,11 @@ import type { Stage } from './flow';
 
 export type SetupRetry = 'restart' | 'messaging' | 'create';
 
-export interface SetupErr { message: string; accountId?: string; retry: SetupRetry }
+export interface SetupErr {
+  message: string;
+  accountId?: string;
+  retry: SetupRetry;
+}
 
 export type StageState = 'done' | 'active' | 'pending';
 
@@ -24,7 +28,11 @@ const SETUP_HINT = 'This only takes a moment while your wallet, messaging and pr
 const MESSAGING_RETRY_HINT =
   'Your wallet is ready, but secure messaging did not finish setting up. Try again. Your wallet and recovery phrase are safe.';
 
-export interface SetupPlan { restore?: boolean; profile?: boolean; history?: boolean }
+export interface SetupPlan {
+  restore?: boolean;
+  profile?: boolean;
+  history?: boolean;
+}
 
 export function stageLabel(stage: Stage, plan: SetupPlan): string {
   if (stage === 'wallet' && plan.restore === true) return RESTORE_WALLET_LABEL;

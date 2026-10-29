@@ -1,6 +1,1 @@
-{
-  "platforms": ["android"],
-  "android": {
-    "modules": ["box.stage.share.StageShareModule"]
-  }
-}
+{ "platforms": ["android"], "android": { "modules": ["box.stage.share.StageShareModule"] } }

@@ -12,11 +12,21 @@ export const Controls: Story<Pick<GesturePressableProps, 'hitSlop'>> = (args) =>
   return (
     <GesturePressable
       {...args}
-      onPress={(p) => { setLog(`press at ${Math.round(p.x)},${Math.round(p.y)}`); }}
-      onLongPress={() => { setLog('long press'); }}
-      onSwipe={(dir) => { setLog(`swipe ${dir}`); }}
+      onPress={(p) => {
+        setLog(`press at ${Math.round(p.x)},${Math.round(p.y)}`);
+      }}
+      onLongPress={() => {
+        setLog('long press');
+      }}
+      onSwipe={(dir) => {
+        setLog(`swipe ${dir}`);
+      }}
     >
-      <Column padding={32} background="#9b6bd6" radius="md"><Text size="xs" color="#fff">{log}</Text></Column>
+      <Column padding={32} background="#9b6bd6" radius="md">
+        <Text size="xs" color="#fff">
+          {log}
+        </Text>
+      </Column>
     </GesturePressable>
   );
 };

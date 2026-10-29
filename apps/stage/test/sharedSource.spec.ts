@@ -7,7 +7,9 @@ function harness() {
   const subscribe = makeSharedSource<string>((source, emit) => {
     log.push(`open:${source}`);
     emitters.set(source, emit);
-    return () => { log.push(`close:${source}`); };
+    return () => {
+      log.push(`close:${source}`);
+    };
   });
   return { log, emitters, subscribe };
 }
@@ -16,8 +18,12 @@ describe('makeSharedSource', () => {
   test('one underlying stream serves every listener and closes only when the last one leaves', () => {
     const { log, emitters, subscribe } = harness();
     const seen: string[] = [];
-    const offHome = subscribe('client-a', () => { seen.push('home'); });
-    const offChat = subscribe('client-a', () => { seen.push('chat'); });
+    const offHome = subscribe('client-a', () => {
+      seen.push('home');
+    });
+    const offChat = subscribe('client-a', () => {
+      seen.push('chat');
+    });
     expect(log).toEqual(['open:client-a']);
     emitters.get('client-a')?.();
     expect(seen).toEqual(['home', 'chat']);
@@ -35,12 +41,20 @@ describe('makeSharedSource', () => {
     const subscribe = makeSharedSource<string, number>((source, emit) => {
       opens += 1;
       emitters.set(source, emit);
-      return () => { emitters.delete(source); };
+      return () => {
+        emitters.delete(source);
+      };
     });
     const seen: string[] = [];
-    const offThrowing = subscribe('client-a', () => { throw new Error('listener failed'); });
-    const offA = subscribe('client-a', (n) => { seen.push(`a:${n}`); });
-    const offB = subscribe('client-a', (n) => { seen.push(`b:${n}`); });
+    const offThrowing = subscribe('client-a', () => {
+      throw new Error('listener failed');
+    });
+    const offA = subscribe('client-a', (n) => {
+      seen.push(`a:${n}`);
+    });
+    const offB = subscribe('client-a', (n) => {
+      seen.push(`b:${n}`);
+    });
     emitters.get('client-a')?.(7);
     expect(seen).toEqual(['a:7', 'b:7']);
     expect(opens).toBe(1);

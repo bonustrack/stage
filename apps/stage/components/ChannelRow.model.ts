@@ -35,25 +35,16 @@ function resolveDraft(draftText?: string | null): string | null {
   return draftText && draftText.trim().length > 0 ? withChannelLabels(draftText.trim()) : null;
 }
 
-function resolvePreview(
-  draft: string | null,
-  d: ChannelRowDomain,
-): string {
+function resolvePreview(draft: string | null, d: ChannelRowDomain): string {
   if (draft) return draft;
   if (d.lastPreview && d.lastPreview.length > 0) return d.lastPreview;
   if (d.subtitle && d.subtitle.length > 0) return d.subtitle;
   return '';
 }
 
-function resolveTitleSegments(
-  title: string,
-  query?: string,
-): ChannelTitleSegment[] | undefined {
+function resolveTitleSegments(title: string, query?: string): ChannelTitleSegment[] | undefined {
   if (query === undefined || query.trim() === '') return undefined;
-  return highlightSegments(title, query.trim()).map((s) => ({
-    text: s.value,
-    emphasized: s.match,
-  }));
+  return highlightSegments(title, query.trim()).map((s) => ({ text: s.value, emphasized: s.match }));
 }
 
 export function channelRowModel(d: ChannelRowDomain): ChannelRowParams {

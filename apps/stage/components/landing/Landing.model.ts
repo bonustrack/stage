@@ -41,10 +41,7 @@ export const HERO_LAYOUT = {
 
 export const HERO_LOGO_SIZE = HERO_LAYOUT.logoHeight - 2 * HERO_LAYOUT.logoPadY;
 
-export const HERO_TYPE = {
-  eyebrow: { letterSpacing: 1.7 },
-  paragraph: { lineHeight: 31.2 },
-} as const;
+export const HERO_TYPE = { eyebrow: { letterSpacing: 1.7 }, paragraph: { lineHeight: 31.2 } } as const;
 
 export interface HeroBox {
   x: number;
@@ -94,7 +91,12 @@ export const ASCII_GLYPH = {
   dot: { left: 3.34, right: 5.07, top: 5.91, bottom: 3.82 },
 } as const;
 
-interface GlyphRect { x: number; y: number; width: number; height: number }
+interface GlyphRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export function asciiOrigin(width: number, height: number, cols: number, rows: number): { x: number; y: number } {
   return { x: (width - cols * ASCII_GLYPH.pitch) / 2, y: (height - rows * ASCII.lineHeight) / 2 };
@@ -115,8 +117,10 @@ function caretPath(x: number, baseline: number): string {
   const mid = coord(x + (left + right) / 2);
   const foot = coord(baseline - bottom);
   const peak = baseline - top;
-  return `M${coord(x + left)} ${foot}L${mid} ${coord(peak)}L${coord(x + right)} ${foot}`
-    + `L${coord(x + right - leg)} ${foot}L${mid} ${coord(peak + apex)}L${coord(x + left + leg)} ${foot}Z`;
+  return (
+    `M${coord(x + left)} ${foot}L${mid} ${coord(peak)}L${coord(x + right)} ${foot}` +
+    `L${coord(x + right - leg)} ${foot}L${mid} ${coord(peak + apex)}L${coord(x + left + leg)} ${foot}Z`
+  );
 }
 
 function glyphPath(ch: string, x: number, baseline: number): string {
@@ -142,10 +146,7 @@ export function asciiPath(art: string, width: number, height: number): string {
 
 export function asciiGrid(width: number, height: number): { cols: number; rows: number } {
   const effectiveWidth = Math.min(width, ASCII.maxWidth);
-  return {
-    cols: Math.max(1, Math.floor(effectiveWidth / ASCII.cellWidth)),
-    rows: Math.ceil(height / ASCII.lineHeight) + 2,
-  };
+  return { cols: Math.max(1, Math.floor(effectiveWidth / ASCII.cellWidth)), rows: Math.ceil(height / ASCII.lineHeight) + 2 };
 }
 
 export function tornadoField(x: number, y: number, cols: number, rows: number, t: number): number {
@@ -157,8 +158,7 @@ export function tornadoField(x: number, y: number, cols: number, rows: number, t
   const angle = Math.atan2(dy, dx);
   const vortex = Math.sin((angle + distance * 0.02 - t * 0.6) * 3) * Math.exp(-distance * 0.003);
   const eye = distance < 30 ? -2 : 0;
-  const debris =
-    Math.sin((angle + distance * 0.03 - t * 0.4) * 8) * Math.exp(-distance * 0.004) * Math.sin(y * 0.1 - t * 0.6);
+  const debris = Math.sin((angle + distance * 0.03 - t * 0.4) * 8) * Math.exp(-distance * 0.004) * Math.sin(y * 0.1 - t * 0.6);
   const turbulence = Math.sin(x * 0.2 + y * 0.15 - t * 1.2) * Math.exp(-distance * 0.002) * 0.5;
   const rotation = Math.sin(angle * 5 + t * 0.9) * (1 - distance * 0.001);
   return eye + vortex * 1.5 + debris + turbulence + rotation * 0.8;

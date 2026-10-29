@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform, type ImageLoadEventData, type LayoutChangeEvent, type NativeSyntheticEvent } from 'react-native';
-import {
-  Gesture, GestureDetector, type ComposedGesture, type PanGesture, type PinchGesture,
-} from 'react-native-gesture-handler';
-import Animated, {
-  runOnJS, useAnimatedStyle, useSharedValue, withDecay, withTiming, type SharedValue,
-} from 'react-native-reanimated';
+import { Gesture, GestureDetector, type ComposedGesture, type PanGesture, type PinchGesture } from 'react-native-gesture-handler';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withDecay, withTiming, type SharedValue } from 'react-native-reanimated';
 import { getImageSize, Image, type ImageResizeMethod } from '@stage-labs/kit/react-native/image';
 import { ignore, ignored } from '../lib/errorPolicy';
 import { useStableCallback } from '../lib/useStableCallback';
 import { validSize } from './bubble/imageBox.model';
 import { dataUriDecodeSize, viewerResizeMethod } from './imageDecode.model';
 import {
-  clampOffset, doubleTapTarget, fromCenter, imageSwipeStep, isZoomed, panLimits, zoomAround, ZOOM_RESET,
-  type ZoomGeometry, type ZoomPoint, type ZoomSize, type ZoomState,
+  clampOffset,
+  doubleTapTarget,
+  fromCenter,
+  imageSwipeStep,
+  isZoomed,
+  panLimits,
+  zoomAround,
+  ZOOM_RESET,
+  type ZoomGeometry,
+  type ZoomPoint,
+  type ZoomSize,
+  type ZoomState,
 } from './ZoomableImage.model';
 
 const TAP_SLOP = 12;
@@ -96,11 +102,15 @@ function pinchGesture(z: ZoomValues): PinchGesture {
 
 function panGesture(z: ZoomValues, onStep: (delta: number) => void): PanGesture {
   return Gesture.Pan()
-    .onBegin((e) => { z.swipeEligible.value = e.numberOfPointers === 1 && !isZoomed(z.scale.value); })
+    .onBegin((e) => {
+      z.swipeEligible.value = e.numberOfPointers === 1 && !isZoomed(z.scale.value);
+    })
     .onTouchesDown((e) => {
       if (e.numberOfTouches > 1) z.swipeEligible.value = false;
     })
-    .onStart((e) => { z.pointers.value = e.numberOfPointers; })
+    .onStart((e) => {
+      z.pointers.value = e.numberOfPointers;
+    })
     .onChange((e) => {
       const steady = e.numberOfPointers === z.pointers.value;
       z.pointers.value = e.numberOfPointers;
@@ -131,10 +141,7 @@ function useZoomGesture(z: ZoomValues, onTap: () => void, onStep: (delta: number
       .onEnd((_e, success) => {
         if (success && !isZoomed(z.scale.value)) runOnJS(onTap)();
       });
-    return Gesture.Race(
-      Gesture.Simultaneous(pinchGesture(z), panGesture(z, onStep)),
-      Gesture.Exclusive(doubleTap, tap),
-    );
+    return Gesture.Race(Gesture.Simultaneous(pinchGesture(z), panGesture(z, onStep)), Gesture.Exclusive(doubleTap, tap));
   }, [z, onTap, onStep]);
 }
 
@@ -150,44 +157,63 @@ function useViewerResizeMethod(uri: string): ImageResizeMethod | null {
       if (live) setProbed({ uri, method: viewerResizeMethod(validSize(measured)) });
     };
     ignore(getImageSize(uri).catch(ignored(undefined, 'probe')).then(decide), 'ui');
-    return () => { live = false; };
+    return () => {
+      live = false;
+    };
   }, [probe, uri]);
   if (!android) return 'auto';
   if (inline) return viewerResizeMethod(inline);
   return probed?.uri === uri ? probed.method : null;
 }
 
-export function ZoomableImage({ uri, frame, onTap, onStep }: {
-  uri: string; frame: ZoomPoint; onTap: () => void; onStep?: (delta: number) => void;
+export function ZoomableImage({
+  uri,
+  frame,
+  onTap,
+  onStep,
+}: {
+  uri: string;
+  frame: ZoomPoint;
+  onTap: () => void;
+  onStep?: (delta: number) => void;
 }): React.ReactElement {
   const z = useZoomValues(frame);
-  const gesture = useZoomGesture(z, useStableCallback(onTap), useStableCallback((delta: number) => { onStep?.(delta); }));
+  const gesture = useZoomGesture(
+    z,
+    useStableCallback(onTap),
+    useStableCallback((delta: number) => {
+      onStep?.(delta);
+    }),
+  );
   const transform = useAnimatedStyle(() => ({
     transform: [{ translateX: z.x.value }, { translateY: z.y.value }, { scale: z.scale.value }],
   }));
-  const onLayout = useCallback((e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    z.view.value = { width, height };
-  }, [z]);
-  const onLoad = useCallback((event: NativeSyntheticEvent<ImageLoadEventData>) => {
-    const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
-      const size = validSize(measured);
-      if (size) z.natural.value = size;
-      return size !== undefined;
-    };
-    if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');
-  }, [z, uri]);
+  const onLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const { width, height } = e.nativeEvent.layout;
+      z.view.value = { width, height };
+    },
+    [z],
+  );
+  const onLoad = useCallback(
+    (event: NativeSyntheticEvent<ImageLoadEventData>) => {
+      const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
+        const size = validSize(measured);
+        if (size) z.natural.value = size;
+        return size !== undefined;
+      };
+      if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');
+    },
+    [z, uri],
+  );
   const resizeMethod = useViewerResizeMethod(uri);
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View
-        onLayout={onLayout}
-        style={{ flex: 1, paddingHorizontal: frame.x, paddingVertical: frame.y }}
-      >
+      <Animated.View onLayout={onLayout} style={{ flex: 1, paddingHorizontal: frame.x, paddingVertical: frame.y }}>
         <Animated.View style={[{ flex: 1 }, transform]}>
           {uri && resizeMethod ? (
-            <Image url={uri} style={{ width: '100%', height: '100%' }} fit="contain" resizeMethod={resizeMethod} onLoad={onLoad}/>
+            <Image url={uri} style={{ width: '100%', height: '100%' }} fit="contain" resizeMethod={resizeMethod} onLoad={onLoad} />
           ) : null}
         </Animated.View>
       </Animated.View>

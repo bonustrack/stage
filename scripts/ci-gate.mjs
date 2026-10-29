@@ -3,14 +3,7 @@ import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
-const DEFAULTS = {
-  repository: 'bonustrack/stage',
-  request: fetch,
-  sleep: delay,
-  log: console.log,
-  attempts: 241,
-  interval: 30_000,
-};
+const DEFAULTS = { repository: 'bonustrack/stage', request: fetch, sleep: delay, log: console.log, attempts: 241, interval: 30_000 };
 
 export function checkedCommit(expected, actual) {
   if (!/^[0-9a-f]{40}$/.test(expected ?? '') || expected !== actual) {
@@ -30,17 +23,19 @@ export function pollingAttempts(minutes = '120') {
 export function sourceRun(runs, { sha, branch, repository }) {
   if (!Array.isArray(runs)) throw new Error('GitHub returned no workflow run list');
   return runs
-    .filter((run) => run.head_sha === sha
-      && run.head_branch === branch
-      && run.head_repository?.full_name === repository
-      && run.path === '.github/workflows/ci.yml'
-      && ['push', 'workflow_dispatch'].includes(run.event))
+    .filter(
+      (run) =>
+        run.head_sha === sha &&
+        run.head_branch === branch &&
+        run.head_repository?.full_name === repository &&
+        run.path === '.github/workflows/ci.yml' &&
+        ['push', 'workflow_dispatch'].includes(run.event),
+    )
     .sort((left, right) => right.id - left.id)[0];
 }
 
 function sourceUrl({ sha, branch, repository }) {
-  if (!/^[0-9a-f]{40}$/.test(sha ?? '') || !branch
-    || !/^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9_.-]*$/i.test(repository)) {
+  if (!/^[0-9a-f]{40}$/.test(sha ?? '') || !branch || !/^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9_.-]*$/i.test(repository)) {
     throw new Error('An exact commit, branch and repository are required');
   }
   const url = new URL(`https://api.github.com/repos/${repository}/actions/workflows/ci.yml/runs`);

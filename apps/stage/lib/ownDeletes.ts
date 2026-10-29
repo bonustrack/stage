@@ -9,11 +9,17 @@ function parseIds(raw: string): readonly string[] {
   try {
     const parsed: unknown = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : NO_IDS;
-  } catch { return NO_IDS; }
+  } catch {
+    return NO_IDS;
+  }
 }
 
 const stored = createValueStore<readonly string[]>({
-  key: 'messages.deleted.', default: NO_IDS, deserialize: parseIds, serialize: (ids) => JSON.stringify(ids), perAccount: true,
+  key: 'messages.deleted.',
+  default: NO_IDS,
+  deserialize: parseIds,
+  serialize: (ids) => JSON.stringify(ids),
+  perAccount: true,
 });
 const listeners = makeListeners();
 let snapshotOf: readonly string[] = NO_IDS;
@@ -39,15 +45,20 @@ async function update(next: (ids: readonly string[]) => readonly string[]): Prom
 }
 
 export function markOwnDelete(messageId: string): Promise<void> {
-  return update(ids => (ids.includes(messageId) ? ids : [...ids, messageId].slice(-MAX_IDS)));
+  return update((ids) => (ids.includes(messageId) ? ids : [...ids, messageId].slice(-MAX_IDS)));
 }
 
 export function unmarkOwnDelete(messageId: string): Promise<void> {
-  return update(ids => (ids.includes(messageId) ? ids.filter(id => id !== messageId) : ids));
+  return update((ids) => (ids.includes(messageId) ? ids.filter((id) => id !== messageId) : ids));
 }
 
 function primeOwnDeletes(): void {
-  void stored.load().then(() => { listeners.notify(); }).catch(reported('ownDeletes.load'));
+  void stored
+    .load()
+    .then(() => {
+      listeners.notify();
+    })
+    .catch(reported('ownDeletes.load'));
 }
 
 export function useOwnDeletes(): ReadonlySet<string> {

@@ -12,11 +12,7 @@ export interface ReplyPayload {
   content: { text: string };
 }
 
-export function buildReaction(
-  messageId: string,
-  emoji: string,
-  action: 'added' | 'removed' = 'added',
-): ReactionPayload {
+export function buildReaction(messageId: string, emoji: string, action: 'added' | 'removed' = 'added'): ReactionPayload {
   return { reference: messageId, action, content: emoji, schema: 'unicode' };
 }
 
@@ -29,11 +25,7 @@ export function buildVote(
   return { reference: pollMessageId, action, content: voteKey(questionIndex, optionIndex), schema: 'custom' };
 }
 
-export function buildOpenAnswer(
-  pollMessageId: string,
-  content: string,
-  action: 'added' | 'removed' = 'added',
-): ReactionPayload {
+export function buildOpenAnswer(pollMessageId: string, content: string, action: 'added' | 'removed' = 'added'): ReactionPayload {
   return { reference: pollMessageId, action, content, schema: 'custom' };
 }
 

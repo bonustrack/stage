@@ -57,10 +57,17 @@ export const HAS_OPTIONS: readonly FilterOption[] = [
   { key: 'draft', label: 'Draft', value: 'draft' },
 ];
 
-export const PRIORITY_OPTIONS: readonly FilterOption[] = CHANNEL_PRIORITIES.map(value => ({ key: value, label: value, value }));
+export const PRIORITY_OPTIONS: readonly FilterOption[] = CHANNEL_PRIORITIES.map((value) => ({ key: value, label: value, value }));
 
 const FIELD_RE = /^(-?)(label|member|has|category|status|priority):(.*)$/i;
-const FILTER_KEYS = { label: 'labels', member: 'members', has: 'has', category: 'categories', status: 'statuses', priority: 'priorities' } as const;
+const FILTER_KEYS = {
+  label: 'labels',
+  member: 'members',
+  has: 'has',
+  category: 'categories',
+  status: 'statuses',
+  priority: 'priorities',
+} as const;
 
 function escapedAt(text: string, index: number): boolean {
   let slashes = 0;
@@ -86,7 +93,12 @@ function wordsOf(query: string): FilterSpan[] {
   return words;
 }
 
-const unquote = (raw: string): string => raw.replace(/^"/, '').replace(/"$/, '').replace(/\\(["\\])/g, '$1').trim();
+const unquote = (raw: string): string =>
+  raw
+    .replace(/^"/, '')
+    .replace(/"$/, '')
+    .replace(/\\(["\\])/g, '$1')
+    .trim();
 
 function valuesOf(raw: string): string[] {
   const values: string[] = [];
@@ -107,11 +119,11 @@ function valuesOf(raw: string): string[] {
 function fieldWord(word: string): { field: FilterField; negated: boolean; values: string[] } | null {
   const match = FIELD_RE.exec(word);
   if (match === null) return null;
-  const field = FILTER_FIELDS.find(value => value === match[2]?.toLowerCase());
+  const field = FILTER_FIELDS.find((value) => value === match[2]?.toLowerCase());
   return field === undefined ? null : { field, negated: match[1] === '-', values: valuesOf(match[3] ?? '') };
 }
 
-const filled = (values: readonly string[]): string[] => values.filter(value => value !== '');
+const filled = (values: readonly string[]): string[] => values.filter((value) => value !== '');
 
 const noValues = (): FilterValues => ({ labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] });
 
@@ -141,22 +153,29 @@ export function searchQueryText(query: string): string {
     end = span.end;
   }
   const free = `${text}${query.slice(end)}`.trimStart();
-  return wordsOf(free).toReversed().reduce((result, span) => (
-    `${result.slice(0, span.start)}${literalWord(free.slice(span.start, span.end))}${result.slice(span.end)}`
-  ), free);
+  return wordsOf(free)
+    .toReversed()
+    .reduce(
+      (result, span) => `${result.slice(0, span.start)}${literalWord(free.slice(span.start, span.end))}${result.slice(span.end)}`,
+      free,
+    );
 }
 
 function escapedQueryText(text: string): string {
-  return wordsOf(text).toReversed().reduce((result, span) => {
-    const word = text.slice(span.start, span.end);
-    const escaped = word.startsWith('\\') || fieldWord(word) !== null ? `\\${word}` : word;
-    return `${result.slice(0, span.start)}${escaped}${result.slice(span.end)}`;
-  }, text);
+  return wordsOf(text)
+    .toReversed()
+    .reduce((result, span) => {
+      const word = text.slice(span.start, span.end);
+      const escaped = word.startsWith('\\') || fieldWord(word) !== null ? `\\${word}` : word;
+      return `${result.slice(0, span.start)}${escaped}${result.slice(span.end)}`;
+    }, text);
 }
 
 export function setSearchQueryText(query: string, text: string): string {
-  const tokens = wordsOf(query).map(span => query.slice(span.start, span.end)).filter(word => fieldWord(word) !== null);
-  return [...tokens, escapedQueryText(text)].filter(part => part !== '').join(' ');
+  const tokens = wordsOf(query)
+    .map((span) => query.slice(span.start, span.end))
+    .filter((word) => fieldWord(word) !== null);
+  return [...tokens, escapedQueryText(text)].filter((part) => part !== '').join(' ');
 }
 
 export function selectedSearchFilters(query: string, field: FilterField, negated = false): string[] {
@@ -169,20 +188,33 @@ export function searchFilterCount(query: string): number {
 }
 
 function formatSearchFilter(filter: SearchFilter, text: string): string {
-  return [...FILTER_FIELDS.flatMap(field => [false, true].flatMap(negated => {
-    const values = (negated ? filter.exclude : filter)[FILTER_KEYS[field]];
-    return values.length === 0 ? [] : [searchFilterToken(field, values, negated)];
-  })), escapedQueryText(text)].filter(part => part !== '').join(' ');
+  return [
+    ...FILTER_FIELDS.flatMap((field) =>
+      [false, true].flatMap((negated) => {
+        const values = (negated ? filter.exclude : filter)[FILTER_KEYS[field]];
+        return values.length === 0 ? [] : [searchFilterToken(field, values, negated)];
+      }),
+    ),
+    escapedQueryText(text),
+  ]
+    .filter((part) => part !== '')
+    .join(' ');
 }
 
-export function toggleSearchFilter(query: string, field: FilterField, value: string, negated = false, aliases: readonly string[] = []): string {
+export function toggleSearchFilter(
+  query: string,
+  field: FilterField,
+  value: string,
+  negated = false,
+  aliases: readonly string[] = [],
+): string {
   const filter = parseSearchFilter(query);
   const key = FILTER_KEYS[field];
   const target = negated ? filter.exclude : filter;
-  const matches = (picked: string): boolean => [value, ...aliases].some(alias => sameSearchFilterValue(field, picked, alias));
+  const matches = (picked: string): boolean => [value, ...aliases].some((alias) => sameSearchFilterValue(field, picked, alias));
   const selected = target[key].some(matches);
-  filter[key] = filter[key].filter(picked => !matches(picked));
-  filter.exclude[key] = filter.exclude[key].filter(picked => !matches(picked));
+  filter[key] = filter[key].filter((picked) => !matches(picked));
+  filter.exclude[key] = filter.exclude[key].filter((picked) => !matches(picked));
   if (!selected) target[key].push(value);
   return formatSearchFilter(filter, searchQueryText(query));
 }
@@ -214,12 +246,12 @@ function hasSelf(row: FilterRow): boolean {
 function addressMatches(address: string, value: string, namesOf: MemberNames): boolean {
   const wanted = bare(value);
   if (wanted.startsWith('0x')) return address.startsWith(wanted);
-  return namesOf(address).some(name => bare(name) === wanted);
+  return namesOf(address).some((name) => bare(name) === wanted);
 }
 
 function memberMatches(row: FilterRow, value: string, namesOf: MemberNames): boolean {
   if (isMe(value)) return hasSelf(row);
-  return rowMembers(row).some(address => addressMatches(address, value, namesOf));
+  return rowMembers(row).some((address) => addressMatches(address, value, namesOf));
 }
 
 function hasMatches(row: FilterRow, value: string, draftOf: (convId: string) => string): boolean {
@@ -228,16 +260,16 @@ function hasMatches(row: FilterRow, value: string, draftOf: (convId: string) => 
   return false;
 }
 
-const labelMatches = (row: FilterRow, value: string): boolean => (
-  (row.labels ?? []).some(label => label.toLowerCase() === value.toLowerCase())
-);
+const labelMatches = (row: FilterRow, value: string): boolean =>
+  (row.labels ?? []).some((label) => label.toLowerCase() === value.toLowerCase());
 
-const metadataMatches = (row: FilterRow, field: ChannelField, value: string): boolean => (
-  channelFieldOf(field, row[field])?.toLowerCase() === value.toLowerCase()
-);
+const metadataMatches = (row: FilterRow, field: ChannelField, value: string): boolean =>
+  channelFieldOf(field, row[field])?.toLowerCase() === value.toLowerCase();
 
 export function searchRowMatcher(
-  filter: SearchFilter, namesOf: MemberNames, draftOf: (convId: string) => string = () => '',
+  filter: SearchFilter,
+  namesOf: MemberNames,
+  draftOf: (convId: string) => string = () => '',
   activityCutoff: number | null = null,
 ): (row: FilterRow) => boolean {
   const text = filter.text.toLowerCase();
@@ -254,13 +286,11 @@ export function searchRowMatcher(
     const hit = (value: string): boolean => tests[field](row, value);
     return (filter[key].length === 0 || filter[key].some(hit)) && !filter.exclude[key].some(hit);
   };
-  return row => matchesLastActivity(row, activityCutoff) && FILTER_FIELDS.every(field => kept(row, field)) && rowMatchesQuery(row, text);
+  return (row) =>
+    matchesLastActivity(row, activityCutoff) && FILTER_FIELDS.every((field) => kept(row, field)) && rowMatchesQuery(row, text);
 }
 
-const IN_SCOPE: Record<FilterScope, (row: FilterRow) => boolean> = {
-  board: row => !row.peerAddress,
-  chats: () => true,
-};
+const IN_SCOPE: Record<FilterScope, (row: FilterRow) => boolean> = { board: (row) => !row.peerAddress, chats: () => true };
 
 const sortedValues = (values: ReadonlyMap<string, string>): string[] => [...values.values()].sort((a, b) => a.localeCompare(b));
 
@@ -277,7 +307,12 @@ export function searchFilterSources(rows: readonly FilterRow[], scope: FilterSco
     }
     for (const address of rowMembers(row)) members.add(address);
   }
-  return { labels: sortedValues(labels), members: [...members], categories: sortedValues(fields.category), statuses: sortedValues(fields.status) };
+  return {
+    labels: sortedValues(labels),
+    members: [...members],
+    categories: sortedValues(fields.category),
+    statuses: sortedValues(fields.status),
+  };
 }
 
 export function memberFilterOption(address: string, label: string, names: readonly string[]): FilterOption {
@@ -285,12 +320,13 @@ export function memberFilterOption(address: string, label: string, names: readon
 }
 
 export function searchFilterOptionMatches(field: FilterField, option: FilterOption, value: string): boolean {
-  return [option.value, ...option.aliases ?? []].some(alias => sameSearchFilterValue(field, alias, value));
+  return [option.value, ...(option.aliases ?? [])].some((alias) => sameSearchFilterValue(field, alias, value));
 }
 
 export function memberNames(handle: string | undefined, displayName: string | undefined): string[] {
-  return [handle, handle === undefined ? undefined : displayHandle(handle), displayName]
-    .filter((name): name is string => name !== undefined && name.trim() !== '');
+  return [handle, handle === undefined ? undefined : displayHandle(handle), displayName].filter(
+    (name): name is string => name !== undefined && name.trim() !== '',
+  );
 }
 
 export function searchFilterValues(query: string, field: FilterField): string[] {
@@ -298,9 +334,8 @@ export function searchFilterValues(query: string, field: FilterField): string[] 
   return [...filter[FILTER_KEYS[field]], ...filter.exclude[FILTER_KEYS[field]]];
 }
 
-export const sameSearchFilterValue = (field: FilterField, a: string, b: string): boolean => (
-  field === 'member' ? memberKey(a) === memberKey(b) : a.trim().toLowerCase() === b.trim().toLowerCase()
-);
+export const sameSearchFilterValue = (field: FilterField, a: string, b: string): boolean =>
+  field === 'member' ? memberKey(a) === memberKey(b) : a.trim().toLowerCase() === b.trim().toLowerCase();
 
 const quoted = (value: string): string => (/[\s",\\]/.test(value) ? `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"` : value);
 

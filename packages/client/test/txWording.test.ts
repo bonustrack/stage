@@ -1,12 +1,14 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  isTransferRequest, humanizeAction, txActionLabel,
-} from '../src/wallet/txWording';
+import { isTransferRequest, humanizeAction, txActionLabel } from '../src/wallet/txWording';
 import type { DecodedCall } from '../src/wallet/txDecode';
 
 const call = (functionName: string, args: DecodedCall['args'] = []): DecodedCall => ({
-  decoded: true, verified: true, source: 'sourcify', functionName,
-  signature: `${functionName}()`, args,
+  decoded: true,
+  verified: true,
+  source: 'sourcify',
+  functionName,
+  signature: `${functionName}()`,
+  args,
 });
 
 describe('isTransferRequest', () => {
@@ -25,17 +27,27 @@ describe('isTransferRequest', () => {
 });
 
 describe('humanizeAction', () => {
-  test('post -> Post message', () => { expect(humanizeAction(call('post'))).toBe('Post message'); });
-  test('approve -> Approve', () => { expect(humanizeAction(call('approve'))).toBe('Approve'); });
+  test('post -> Post message', () => {
+    expect(humanizeAction(call('post'))).toBe('Post message');
+  });
+  test('approve -> Approve', () => {
+    expect(humanizeAction(call('approve'))).toBe('Approve');
+  });
   test('camelCase split + sentence-case', () => {
     expect(humanizeAction(call('swapExactTokensForETH'))).toBe('Swap exact tokens for eth');
   });
-  test('no decoded name -> Confirm', () => { expect(humanizeAction(null)).toBe('Confirm'); });
+  test('no decoded name -> Confirm', () => {
+    expect(humanizeAction(null)).toBe('Confirm');
+  });
 });
 
 describe('txActionLabel', () => {
-  test('transfer -> Pay', () => { expect(txActionLabel(call('transfer'), false)).toBe('Pay'); });
-  test('native transfer (no call) -> Pay', () => { expect(txActionLabel(null, false)).toBe('Pay'); });
+  test('transfer -> Pay', () => {
+    expect(txActionLabel(call('transfer'), false)).toBe('Pay');
+  });
+  test('native transfer (no call) -> Pay', () => {
+    expect(txActionLabel(null, false)).toBe('Pay');
+  });
   test('Poster post(string,string) -> Post message', () => {
     const c = call('post', [
       { name: 'content', type: 'string', value: 'Hello from Stage' },

@@ -1,4 +1,3 @@
-
 import { describe, expect, test } from 'bun:test';
 import { stripMetadataBytes, isStrippableImage } from '../src/image/stripMetadata';
 
@@ -36,28 +35,54 @@ function makeJpegWithExif(): Uint8Array {
   tiff.push(...w32(0));
   for (const c of lightStr) tiff.push(c.charCodeAt(0));
   for (const c of 'GPSLatitude 51.5074 GPSLongitude -0.1278 2026:06:08 12:00:00') tiff.push(c.charCodeAt(0));
-  const app1Payload = Array.from('Exif\0\0').map((c) => c.charCodeAt(0)).concat(tiff);
+  const app1Payload = Array.from('Exif\0\0')
+    .map((c) => c.charCodeAt(0))
+    .concat(tiff);
   const app1Len = app1Payload.length + 2;
   const iccFill: number[] = Array.from({ length: 32 }, () => 0x5a);
-  const iccPayload = Array.from('ICC_PROFILE\0').map((c) => c.charCodeAt(0)).concat([1, 1, ...iccFill]);
+  const iccPayload = Array.from('ICC_PROFILE\0')
+    .map((c) => c.charCodeAt(0))
+    .concat([1, 1, ...iccFill]);
   const iccLen = iccPayload.length + 2;
   const dqt = [0xff, 0xdb, 0x00, 0x04, 0x00, 0x00];
   return Uint8Array.from([
-    0xff, 0xd8,
-    0xff, 0xe0, 0x00, 0x04, 0x00, 0x00,
-    0xff, 0xe1, (app1Len >> 8) & 0xff, app1Len & 0xff, ...app1Payload,
-    0xff, 0xe2, (iccLen >> 8) & 0xff, iccLen & 0xff, ...iccPayload,
+    0xff,
+    0xd8,
+    0xff,
+    0xe0,
+    0x00,
+    0x04,
+    0x00,
+    0x00,
+    0xff,
+    0xe1,
+    (app1Len >> 8) & 0xff,
+    app1Len & 0xff,
+    ...app1Payload,
+    0xff,
+    0xe2,
+    (iccLen >> 8) & 0xff,
+    iccLen & 0xff,
+    ...iccPayload,
     ...dqt,
-    0xff, 0xda, 0x00, 0x03, 0x00,
+    0xff,
+    0xda,
+    0x00,
+    0x03,
+    0x00,
     0xaa,
-    0xff, 0xd9,
+    0xff,
+    0xd9,
   ]);
 }
 
 function readOrientation(b: Uint8Array): number | undefined {
   let i = 2;
   while (i + 4 < b.length) {
-    if (b[i] !== 0xff) { i += 1; continue; }
+    if (b[i] !== 0xff) {
+      i += 1;
+      continue;
+    }
     const m = b[i + 1];
     if (m === 0xda || m === 0xd9) break;
     const len = (b[i + 2] << 8) | b[i + 3];
@@ -80,17 +105,29 @@ function makePngWithText(): Uint8Array {
   const chunk = (type: string, data: number[]): number[] => {
     const len = data.length;
     return [
-      (len >> 24) & 0xff, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff,
+      (len >> 24) & 0xff,
+      (len >> 16) & 0xff,
+      (len >> 8) & 0xff,
+      len & 0xff,
       ...Array.from(type).map((c) => c.charCodeAt(0)),
       ...data,
-      0, 0, 0, 0,
+      0,
+      0,
+      0,
+      0,
     ];
   };
   return Uint8Array.from([
     ...sig,
     ...chunk('IHDR', [0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0, 0, 0]),
-    ...chunk('tEXt', Array.from('Comment\0secret GPS here').map((c) => c.charCodeAt(0))),
-    ...chunk('eXIf', Array.from('GPSdata').map((c) => c.charCodeAt(0))),
+    ...chunk(
+      'tEXt',
+      Array.from('Comment\0secret GPS here').map((c) => c.charCodeAt(0)),
+    ),
+    ...chunk(
+      'eXIf',
+      Array.from('GPSdata').map((c) => c.charCodeAt(0)),
+    ),
     ...chunk('IDAT', [0x78, 0x9c, 0x00]),
     ...chunk('IEND', []),
   ]);
@@ -105,12 +142,20 @@ function makeWebpWithExif(dataSize = 3): Uint8Array {
   };
   const vp8x = chunk('VP8X', [0b00001100, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   const exif = chunk('EXIF', fourcc('GPSLatitude secret'));
-  const vp8 = chunk('VP8 ', Array.from({ length: dataSize }, (_, i) => i % 256));
+  const vp8 = chunk(
+    'VP8 ',
+    Array.from({ length: dataSize }, (_, i) => i % 256),
+  );
   const body = [...vp8x, ...exif, ...vp8];
   const riffSize = 4 + body.length;
   return Uint8Array.from([
-    ...fourcc('RIFF'), riffSize & 0xff, (riffSize >> 8) & 0xff, (riffSize >> 16) & 0xff, (riffSize >> 24) & 0xff,
-    ...fourcc('WEBP'), ...body,
+    ...fourcc('RIFF'),
+    riffSize & 0xff,
+    (riffSize >> 8) & 0xff,
+    (riffSize >> 16) & 0xff,
+    (riffSize >> 24) & 0xff,
+    ...fourcc('WEBP'),
+    ...body,
   ]);
 }
 
@@ -155,7 +200,8 @@ describe('stripMetadataBytes - JPEG', () => {
     const tiff = exifAt + 6;
     const ifd0 = tiff + 8;
     const valueAt = ifd0 + 2 + 8;
-    input[valueAt] = 1; input[valueAt + 1] = 0;
+    input[valueAt] = 1;
+    input[valueAt + 1] = 0;
     const { bytes } = stripMetadataBytes(input);
     expect(contains(bytes, 'ICC_PROFILE')).toBe(false);
     expect(contains(bytes, 'iPhone')).toBe(false);

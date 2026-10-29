@@ -15,7 +15,14 @@ import { OverflowMenu, SMALL_OVERFLOW_ICON } from '../MenuRows';
 import { HoverIconButton, useHover } from '../hover';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import {
-  BOARD_COLUMN_WIDTH, addColumnProblem, draftEdit, draftNote, renameEdit, renameNote, type BoardColumn, type TitleCommit,
+  BOARD_COLUMN_WIDTH,
+  addColumnProblem,
+  draftEdit,
+  draftNote,
+  renameEdit,
+  renameNote,
+  type BoardColumn,
+  type TitleCommit,
   type TitleEdit,
 } from './BoardScreen.model';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
@@ -37,7 +44,9 @@ interface TitleEditState {
 }
 
 function useTitleEdit(
-  initial: string, decide: (name: string, via: TitleCommit) => TitleEdit, onSave: (name: string) => void,
+  initial: string,
+  decide: (name: string, via: TitleCommit) => TitleEdit,
+  onSave: (name: string) => void,
   onClose: () => void,
 ): TitleEditState {
   const [name, setName] = useState(initial);
@@ -63,8 +72,16 @@ function useTitleEdit(
 
 const SHRINK = { flexShrink: 1, minHeight: 0 };
 
-export function ColumnFrame({ over = false, maxHeight, shrink = false, children }: {
-  over?: boolean; maxHeight?: number | string; shrink?: boolean; children: React.ReactNode;
+export function ColumnFrame({
+  over = false,
+  maxHeight,
+  shrink = false,
+  children,
+}: {
+  over?: boolean;
+  maxHeight?: number | string;
+  shrink?: boolean;
+  children: React.ReactNode;
 }): React.ReactElement {
   const { border, link } = usePalette();
   return (
@@ -87,7 +104,7 @@ const COLUMN_MENU = [{ id: 'delete', label: 'Delete column', icon: IconTrashCan,
 
 export function ColumnMenu({ onDelete }: { onDelete: () => void }): React.ReactElement {
   const { text } = usePalette();
-  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={onDelete} size={SMALL_OVERFLOW_ICON}/>;
+  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={onDelete} size={SMALL_OVERFLOW_ICON} />;
 }
 
 function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?: string }): React.ReactElement {
@@ -103,16 +120,30 @@ function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?:
       placeholder={placeholder}
       placeholderTextColor={colors.placeholder}
       onChangeText={edit.setName}
-      onSubmit={() => { edit.finish('enter'); }}
+      onSubmit={() => {
+        edit.finish('enter');
+      }}
       inputProps={{
         blurOnSubmit: false,
-        onBlur: () => { edit.finish('blur'); },
-        onKeyPress: (e) => { if (e.nativeEvent.key === 'Escape') edit.close(); },
+        onBlur: () => {
+          edit.finish('blur');
+        },
+        onKeyPress: (e) => {
+          if (e.nativeEvent.key === 'Escape') edit.close();
+        },
       }}
       style={{
-        flex: 1, minWidth: 0, minHeight: 0, marginLeft: -4, paddingHorizontal: 4, paddingVertical: 1,
-        color: colors.text, backgroundColor: colors.background, borderWidth: 0,
-        fontSize: fontSize(TITLE_SIZE), fontFamily: fontName.head,
+        flex: 1,
+        minWidth: 0,
+        minHeight: 0,
+        marginLeft: -4,
+        paddingHorizontal: 4,
+        paddingVertical: 1,
+        color: colors.text,
+        backgroundColor: colors.background,
+        borderWidth: 0,
+        fontSize: fontSize(TITLE_SIZE),
+        fontFamily: fontName.head,
       }}
     />
   );
@@ -120,48 +151,90 @@ function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?:
 
 function TitleNote({ note }: { note: string | null }): React.ReactElement | null {
   if (note === null) return null;
-  return <Text text={note} size="2xs" color="secondary" style={{ paddingLeft: 4, paddingRight: COLUMN_PADDING }}/>;
+  return <Text text={note} size="2xs" color="secondary" style={{ paddingLeft: 4, paddingRight: COLUMN_PADDING }} />;
 }
 
-export function RenameHeading({ label, columns, count, onRename, onClose }: {
-  label: string; columns: Columns; count: number; onRename: (from: string, to: string) => void; onClose: () => void;
+export function RenameHeading({
+  label,
+  columns,
+  count,
+  onRename,
+  onClose,
+}: {
+  label: string;
+  columns: Columns;
+  count: number;
+  onRename: (from: string, to: string) => void;
+  onClose: () => void;
 }): React.ReactElement {
   const edit = useTitleEdit(
-    label, (name, via) => renameEdit(columns, label, name, via), (name) => { onRename(label, name); }, onClose,
+    label,
+    (name, via) => renameEdit(columns, label, name, via),
+    (name) => {
+      onRename(label, name);
+    },
+    onClose,
   );
   return (
     <>
       <Row align="center" gap={8} padding={HEADER_PADDING}>
-        <TitleInput edit={edit}/>
-        <CountTag count={count}/>
+        <TitleInput edit={edit} />
+        <CountTag count={count} />
       </Row>
-      <TitleNote note={renameNote(columns, label, edit.name, edit.tried)}/>
+      <TitleNote note={renameNote(columns, label, edit.name, edit.tried)} />
     </>
   );
 }
 
-function DraftColumn({ columns, onAdd, onAdded, onClose }: {
-  columns: Columns; onAdd: (name: string) => void; onAdded: () => void; onClose: () => void;
+function DraftColumn({
+  columns,
+  onAdd,
+  onAdded,
+  onClose,
+}: {
+  columns: Columns;
+  onAdd: (name: string) => void;
+  onAdded: () => void;
+  onClose: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text } = usePalette();
-  const edit = useTitleEdit('', (name, via) => draftEdit(columns, name, via), (name) => {
-    onAdd(name);
-    onAdded();
-  }, onClose);
+  const edit = useTitleEdit(
+    '',
+    (name, via) => draftEdit(columns, name, via),
+    (name) => {
+      onAdd(name);
+      onAdded();
+    },
+    onClose,
+  );
   return (
     <ColumnFrame>
       <Row align="center" padding={{ ...HEADER_PADDING, right: COLUMN_PADDING }}>
-        <TitleInput edit={edit} placeholder="Column name"/>
+        <TitleInput edit={edit} placeholder="Column name" />
       </Row>
-      <TitleNote note={draftNote(columns, edit.name, edit.tried)}/>
+      <TitleNote note={draftNote(columns, edit.name, edit.tried)} />
       <Row align="center" gap={12} padding={{ right: COLUMN_PADDING }}>
         <Button
-          label="Add column" size="sm" color="primary" variant="solid" dark={dark}
+          label="Add column"
+          size="sm"
+          color="primary"
+          variant="solid"
+          dark={dark}
           disabled={addColumnProblem(columns, edit.name) !== null}
-          onPress={() => { edit.finish('enter'); }}
+          onPress={() => {
+            edit.finish('enter');
+          }}
         />
-        <HoverIconButton icon={IconCrossMedium} label="Cancel" color={text} size={20} placement="below" onPointerDown={edit.close} onPress={edit.close} />
+        <HoverIconButton
+          icon={IconCrossMedium}
+          label="Cancel"
+          color={text}
+          size={20}
+          placement="below"
+          onPointerDown={edit.close}
+          onPress={edit.close}
+        />
       </Row>
     </ColumnFrame>
   );
@@ -174,10 +247,13 @@ function AddColumnButton({ onPress }: { onPress: () => void }): React.ReactEleme
   return (
     <HoverTooltip label="Add column" placement="below">
       <Button
-        uniform color="secondary" variant="outline" dark={dark}
+        uniform
+        color="secondary"
+        variant="outline"
+        dark={dark}
         accessibilityLabel="Add column"
         style={hover.hovered ? { borderColor: link } : undefined}
-        iconStart={<Glyph icon={IconPlusLarge} size={20} color={hover.hovered ? link : text}/>}
+        iconStart={<Glyph icon={IconPlusLarge} size={20} color={hover.hovered ? link : text} />}
         onPress={onPress}
         {...hover.hoverProps}
       />
@@ -185,16 +261,39 @@ function AddColumnButton({ onPress }: { onPress: () => void }): React.ReactEleme
   );
 }
 
-export function AddColumn({ columns, onAdd, onReveal }: {
-  columns: Columns; onAdd: (name: string) => void; onReveal: () => void;
+export function AddColumn({
+  columns,
+  onAdd,
+  onReveal,
+}: {
+  columns: Columns;
+  onAdd: (name: string) => void;
+  onReveal: () => void;
 }): React.ReactElement {
   const [drafting, setDrafting] = useState(false);
-  if (!drafting) return <AddColumnButton onPress={() => { onReveal(); setDrafting(true); }}/>;
-  return <DraftColumn columns={columns} onAdd={onAdd} onAdded={onReveal} onClose={() => { setDrafting(false); }}/>;
+  if (!drafting)
+    return (
+      <AddColumnButton
+        onPress={() => {
+          onReveal();
+          setDrafting(true);
+        }}
+      />
+    );
+  return (
+    <DraftColumn
+      columns={columns}
+      onAdd={onAdd}
+      onAdded={onReveal}
+      onClose={() => {
+        setDrafting(false);
+      }}
+    />
+  );
 }
 
 export function ColumnTitle({ label, onPress }: { label: string; onPress?: () => void }): React.ReactElement {
-  const title = <LabelText label={label} size={TITLE_SIZE} fontWeight="semibold" truncate/>;
+  const title = <LabelText label={label} size={TITLE_SIZE} fontWeight="semibold" truncate />;
   if (onPress === undefined) return <Column style={{ flexShrink: 1 }}>{title}</Column>;
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel="Rename column" style={{ flexShrink: 1 }}>

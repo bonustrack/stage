@@ -5,12 +5,27 @@ import { chartDomain, chartExtents, chartValueScale } from '../src/chart.scale';
 const DOMAIN: ChartDomain = ['dataMin', 'dataMax'];
 const SERIES: ChartSeries[] = [{ type: 'line', dataKey: 'v', label: 'USD', curveType: 'linear' }];
 const INPUT: ChartGeometryInput = {
-  data: [{ x: 'a', v: 2490 }, { x: 'b', v: 2505 }, { x: 'c', v: 2499 }],
-  series: SERIES, xAxis: 'x', width: 320, height: 114, showYAxis: true,
+  data: [
+    { x: 'a', v: 2490 },
+    { x: 'b', v: 2505 },
+    { x: 'c', v: 2499 },
+  ],
+  series: SERIES,
+  xAxis: 'x',
+  width: 320,
+  height: 114,
+  showYAxis: true,
 };
 
 function scale(values: number[], domain: ChartDomain = DOMAIN): ReturnType<typeof chartValueScale> {
-  return chartValueScale(chartExtents(values.map((v) => ({ v })), SERIES), SERIES, domain);
+  return chartValueScale(
+    chartExtents(
+      values.map((v) => ({ v })),
+      SERIES,
+    ),
+    SERIES,
+    domain,
+  );
 }
 
 describe('Chart yAxis.domain', () => {
@@ -18,7 +33,21 @@ describe('Chart yAxis.domain', () => {
     for (const domain of [DOMAIN, [0, 'auto'], ['auto', 'dataMax'], [-100, 100], [1, 1], ['dataMin', 0]]) {
       expect(chartDomain(domain)).toEqual(domain);
     }
-    for (const domain of [[], [0], [0, 1, 2], [null, 1], ['0', 1], ['dataMin - 10', 'dataMax'], [NaN, 1], [0, Infinity], [0, 1e308], [2, 1], null, 'auto', {}]) {
+    for (const domain of [
+      [],
+      [0],
+      [0, 1, 2],
+      [null, 1],
+      ['0', 1],
+      ['dataMin - 10', 'dataMax'],
+      [NaN, 1],
+      [0, Infinity],
+      [0, 1e308],
+      [2, 1],
+      null,
+      'auto',
+      {},
+    ]) {
       expect(chartDomain(domain)).toBeUndefined();
     }
   });
@@ -39,8 +68,9 @@ describe('Chart yAxis.domain', () => {
       expect(chartGeometry({ ...input, yAxis: {} })).toEqual(original);
       expect(chartGeometry({ ...input, yAxis: { domain: [0, 'auto'] } })).toEqual(original);
       expect(chartGeometry({ ...input, yAxis: { domain: [Infinity, NaN] } })).toEqual(original);
-      expect(chartGeometry({ ...input, showYAxis: false, yAxis: { domain: DOMAIN } }))
-        .toEqual(chartGeometry({ ...input, showYAxis: false }));
+      expect(chartGeometry({ ...input, showYAxis: false, yAxis: { domain: DOMAIN } })).toEqual(
+        chartGeometry({ ...input, showYAxis: false }),
+      );
       expect(original.ticks[0]?.value).toBe(0);
     }
   });
@@ -67,12 +97,22 @@ describe('Chart yAxis.domain', () => {
   });
 
   test('ranges include every series and stack base and total', () => {
-    const data = [{ x: 'a', v: 20, w: 30, z: -10 }, { x: 'b', v: 50, w: 40, z: 10 }];
-    const series: ChartSeries[] = [{ type: 'bar', dataKey: 'v', stack: 's' }, { type: 'area', dataKey: 'w', stack: 's' }, { type: 'line', dataKey: 'z' }];
+    const data = [
+      { x: 'a', v: 20, w: 30, z: -10 },
+      { x: 'b', v: 50, w: 40, z: 10 },
+    ];
+    const series: ChartSeries[] = [
+      { type: 'bar', dataKey: 'v', stack: 's' },
+      { type: 'area', dataKey: 'w', stack: 's' },
+      { type: 'line', dataKey: 'z' },
+    ];
     const extents = chartExtents(data, series);
     expect(chartValueScale(extents, series, DOMAIN)).toMatchObject({ lo: -10, hi: 90 });
     expect(chartValueScale(chartExtents(data, SERIES), SERIES, DOMAIN)).toMatchObject({ lo: 20, hi: 50 });
-    const negative = [{ type: 'area', dataKey: 'v', stack: 's' }, { type: 'area', dataKey: 'w', stack: 's' }] as const;
+    const negative = [
+      { type: 'area', dataKey: 'v', stack: 's' },
+      { type: 'area', dataKey: 'w', stack: 's' },
+    ] as const;
     expect(chartValueScale(chartExtents([{ v: -10, w: -20 }], negative), negative, DOMAIN)).toMatchObject({ lo: -30, hi: 0 });
   });
 
@@ -87,7 +127,18 @@ describe('Chart yAxis.domain', () => {
   });
 
   test('constant, absent, negative, subnormal and extreme data produce bounded finite geometry', () => {
-    for (const values of [[], [0], [2500, 2500], [-2500, -2500], [1e300], [-1e300, 1e300], [5e-324], [0, 5e-324], [2490.000000000001, 2490.000000000002], [NaN, Infinity]]) {
+    for (const values of [
+      [],
+      [0],
+      [2500, 2500],
+      [-2500, -2500],
+      [1e300],
+      [-1e300, 1e300],
+      [5e-324],
+      [0, 5e-324],
+      [2490.000000000001, 2490.000000000002],
+      [NaN, Infinity],
+    ]) {
       const data = values.map((v, i) => ({ x: String(i), v }));
       const g = chartGeometry({ ...INPUT, data, yAxis: { domain: DOMAIN } });
       expect(g.ticks.length).toBeLessThanOrEqual(10);

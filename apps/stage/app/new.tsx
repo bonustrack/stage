@@ -12,5 +12,5 @@ export default function NewChatRoute(): React.ReactElement {
   const loaded = useHomeViewLoaded();
   const accountEpoch = useAccountEpoch();
   const params = newChatParams(newChatMetadata(useLocalSearchParams()));
-  return wide && loaded && !board ? <Redirect href={{ pathname: '/', params }} /> : <NewChatScreen key={accountEpoch}/>;
+  return wide && loaded && !board ? <Redirect href={{ pathname: '/', params }} /> : <NewChatScreen key={accountEpoch} />;
 }

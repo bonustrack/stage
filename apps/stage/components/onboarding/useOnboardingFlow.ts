@@ -58,7 +58,8 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   const startOver = (): void => {
     void runner.startOver().then((cleared) => {
       if (!cleared) return;
-      setPending(null); setLabel('');
+      setPending(null);
+      setLabel('');
       setStep('username');
     });
   };
@@ -68,23 +69,54 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     if (err?.retry === 'create') runner.resume();
     else if (err?.accountId !== undefined && err.retry === 'messaging') runner.resume(err.accountId);
     else if (pending) start(pending);
-    else { runner.reset(); setStep('username'); }
+    else {
+      runner.reset();
+      setStep('username');
+    }
   };
 
   return {
     step,
-    busy: runner.busy, stage: runner.stage, setupErr: runner.setupErr, plan: runner.plan,
-    onUsernameContinue: (next) => { setLabel(next); if (next === '') start({ kind: 'create' }); else setStep('profile'); },
-    onProfileContinue: (details) => { start(createChoice(label, details)); },
-    onProfileSkip: () => { start(createChoice(label, EMPTY_DETAILS)); },
-    onProfileBack: () => { setStep('username'); },
-    onImportTransfer: (transfer) => { start(importChoice(transfer)); },
+    busy: runner.busy,
+    stage: runner.stage,
+    setupErr: runner.setupErr,
+    plan: runner.plan,
+    onUsernameContinue: (next) => {
+      setLabel(next);
+      if (next === '') start({ kind: 'create' });
+      else setStep('profile');
+    },
+    onProfileContinue: (details) => {
+      start(createChoice(label, details));
+    },
+    onProfileSkip: () => {
+      start(createChoice(label, EMPTY_DETAILS));
+    },
+    onProfileBack: () => {
+      setStep('username');
+    },
+    onImportTransfer: (transfer) => {
+      start(importChoice(transfer));
+    },
     history: runner.history,
     onSetupRetry,
     onSetupBack: startOver,
-    onSetupEdit: () => { void runner.editableProfile().then(value => { if (value !== null) { setProfileRecovery(value); setStep('edit'); } }); },
+    onSetupEdit: () => {
+      void runner.editableProfile().then((value) => {
+        if (value !== null) {
+          setProfileRecovery(value);
+          setStep('edit');
+        }
+      });
+    },
     profileRecovery,
-    onRecoverySave: (profile) => { setProfileRecovery(null); start({ kind: 'editProfile', profile }); },
-    onRecoveryBack: () => { setProfileRecovery(null); setStep('setup'); },
+    onRecoverySave: (profile) => {
+      setProfileRecovery(null);
+      start({ kind: 'editProfile', profile });
+    },
+    onRecoveryBack: () => {
+      setProfileRecovery(null);
+      setStep('setup');
+    },
   };
 }

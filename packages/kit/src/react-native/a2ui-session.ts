@@ -8,17 +8,27 @@ export interface A2uiSessionOptions extends Omit<A2uiClientOptions, 'send'> {
 
 export function useA2uiClient(messages: readonly unknown[], options: A2uiSessionOptions = {}): A2uiClient {
   const latest = useRef(options);
-  useEffect(() => { latest.current = options; });
+  useEffect(() => {
+    latest.current = options;
+  });
   return useMemo(() => {
     const client: A2uiClient = createA2uiClient({
       catalogs: latest.current.catalogs,
       functions: latest.current.functions,
       locale: latest.current.locale,
       validate: latest.current.validate,
-      openUrl: (url) => { latest.current.openUrl?.(url); },
-      navigate: (nav) => { latest.current.navigate?.(nav); },
-      send: (message, metadata) => { latest.current.send?.(message, client, metadata); },
-      onDiagnostic: (diagnostic) => { latest.current.onDiagnostic?.(diagnostic); },
+      openUrl: (url) => {
+        latest.current.openUrl?.(url);
+      },
+      navigate: (nav) => {
+        latest.current.navigate?.(nav);
+      },
+      send: (message, metadata) => {
+        latest.current.send?.(message, client, metadata);
+      },
+      onDiagnostic: (diagnostic) => {
+        latest.current.onDiagnostic?.(diagnostic);
+      },
     });
     for (const message of messages) if (isJsonObject(message)) client.receive(message);
     return client;

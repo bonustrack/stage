@@ -1,24 +1,22 @@
-
 import { describe, expect, test } from 'bun:test';
 import { githubLinkOf } from '../src/api/github';
 
 describe('githubLinkOf', () => {
   test('detects a bare repo link', () => {
     expect(githubLinkOf('see https://github.com/bonustrack/stage for code')).toMatchObject({
-      owner: 'bonustrack', repo: 'stage', kind: 'repo', number: undefined,
+      owner: 'bonustrack',
+      repo: 'stage',
+      kind: 'repo',
+      number: undefined,
     });
   });
 
   test('detects a PR link with number', () => {
-    expect(githubLinkOf('https://github.com/bonustrack/stage/pull/321')).toMatchObject({
-      kind: 'pull', number: 321,
-    });
+    expect(githubLinkOf('https://github.com/bonustrack/stage/pull/321')).toMatchObject({ kind: 'pull', number: 321 });
   });
 
   test('detects an issue link with number', () => {
-    expect(githubLinkOf('https://github.com/bonustrack/stage/issues/325')).toMatchObject({
-      kind: 'issue', number: 325,
-    });
+    expect(githubLinkOf('https://github.com/bonustrack/stage/issues/325')).toMatchObject({ kind: 'issue', number: 325 });
   });
 
   test('strips a trailing .git from the repo', () => {

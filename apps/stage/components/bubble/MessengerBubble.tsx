@@ -18,13 +18,19 @@ import { messageInteraction, type MessageInteraction } from './messageInteractio
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 import { Column, PAGE_GUTTER } from '../layout';
 
-function BubbleAvatar({ address, bg, onPress }: {
-  address?: string | null; bg: string; onPress?: (address: string) => void;
+function BubbleAvatar({
+  address,
+  bg,
+  onPress,
+}: {
+  address?: string | null;
+  bg: string;
+  onPress?: (address: string) => void;
 }): React.ReactElement {
-  if (!address) return <Avatar size="sm" style={{ backgroundColor: bg, marginTop: 2 }}/>;
+  if (!address) return <Avatar size="sm" style={{ backgroundColor: bg, marginTop: 2 }} />;
   return (
     <Pressable onPress={() => onPress?.(address)} hitSlop={6} style={{ marginTop: 2 }}>
-      <Avatar address={address} size="sm" style={{ backgroundColor: bg }}/>
+      <Avatar address={address} size="sm" style={{ backgroundColor: bg }} />
     </Pressable>
   );
 }
@@ -34,8 +40,18 @@ function rowBackground(replyTarget: boolean | undefined, dark: boolean): string 
   return 'transparent';
 }
 
-function BubbleColumn({ p, fg, sub, pillBg, interaction }: {
-  p: MessengerBubbleProps; fg: string; sub: string; pillBg: string; interaction: MessageInteraction;
+function BubbleColumn({
+  p,
+  fg,
+  sub,
+  pillBg,
+  interaction,
+}: {
+  p: MessengerBubbleProps;
+  fg: string;
+  sub: string;
+  pillBg: string;
+  interaction: MessageInteraction;
 }): React.ReactElement {
   const { pending } = p;
   return (
@@ -43,12 +59,18 @@ function BubbleColumn({ p, fg, sub, pillBg, interaction }: {
       <Column>
         {(interaction === 'selectableText' || interaction === 'readonlyInput') && p.onEndSelection ? (
           <MessageSelection text={p.entry.text ?? ''} fg={fg} input={interaction === 'readonlyInput'} onClose={p.onEndSelection} />
-        ) : <BubbleContent {...p} fg={fg} sub={sub} />}
+        ) : (
+          <BubbleContent {...p} fg={fg} sub={sub} />
+        )}
       </Column>
       {pending ? null : (
         <ReactionsRow
-          reactions={p.reactions} pendingReactions={p.pendingReactions} pendingRemovals={p.pendingRemovals}
-          ownEmojis={p.ownEmojis} pillBg={pillBg} onReact={p.onReact}
+          reactions={p.reactions}
+          pendingReactions={p.pendingReactions}
+          pendingRemovals={p.pendingRemovals}
+          ownEmojis={p.ownEmojis}
+          pillBg={pillBg}
+          onReact={p.onReact}
         />
       )}
     </Column>
@@ -57,8 +79,8 @@ function BubbleColumn({ p, fg, sub, pillBg, interaction }: {
 
 function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const { entry, dark, replyTarget, senderEthAddress, onAvatarPress } = props;
-  const muted = (entry.payload as { system?: boolean } | undefined)?.system === true || isDeletedPlaceholder(entry)
-    || isFrameActionEntry(entry);
+  const muted =
+    (entry.payload as { system?: boolean } | undefined)?.system === true || isDeletedPlaceholder(entry) || isFrameActionEntry(entry);
   const pal = usePalette();
   const fg = muted ? pal.text : pal.link;
   const sub = pal.text;
@@ -67,18 +89,26 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const row = (
     <Animated.View
       ref={g.rowRef}
-      {...contextMenuProps(point => { g.openMenu(point); })}
-      style={[g.swipeStyle, {
-        flexDirection: 'row', alignItems: 'flex-start',
-        paddingHorizontal: PAGE_GUTTER, paddingVertical: 6, gap: 10,
-        backgroundColor: rowBackground(replyTarget, dark),
-      }]}
+      {...contextMenuProps((point) => {
+        g.openMenu(point);
+      })}
+      style={[
+        g.swipeStyle,
+        {
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          paddingHorizontal: PAGE_GUTTER,
+          paddingVertical: 6,
+          gap: 10,
+          backgroundColor: rowBackground(replyTarget, dark),
+        },
+      ]}
     >
       <Animated.View
         pointerEvents="none"
         style={[g.replyHintStyle, { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }]}
       >
-        <Glyph icon={IconArrowUndoUp} size={20} color={sub}/>
+        <Glyph icon={IconArrowUndoUp} size={20} color={sub} />
       </Animated.View>
       <BubbleAvatar address={senderEthAddress} bg={pal.border} onPress={onAvatarPress} />
       <BubbleColumn p={props} fg={fg} sub={sub} pillBg={pal.border} interaction={interaction} />
@@ -88,10 +118,26 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
 }
 
 const DATA_KEYS = [
-  'entry', 'dark', 'pending', 'replyTarget', 'replyPreview',
-  'reactions', 'pendingReactions', 'pendingRemovals', 'ownEmojis',
-  'votes', 'ownVotes', 'openAnswers', 'call', 'signing', 'paying', 'selectable',
-  'highlight', 'senderEthAddress', 'myUri', 'consentAllowed',
+  'entry',
+  'dark',
+  'pending',
+  'replyTarget',
+  'replyPreview',
+  'reactions',
+  'pendingReactions',
+  'pendingRemovals',
+  'ownEmojis',
+  'votes',
+  'ownVotes',
+  'openAnswers',
+  'call',
+  'signing',
+  'paying',
+  'selectable',
+  'highlight',
+  'senderEthAddress',
+  'myUri',
+  'consentAllowed',
 ] as const satisfies readonly (keyof MessengerBubbleProps)[];
 
 function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps): boolean {

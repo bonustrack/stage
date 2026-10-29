@@ -9,7 +9,9 @@ import { attachmentsOf } from '../bubble/helpers';
 import { inlineAttachmentUrl } from '../bubble/attachmentUri';
 
 export class FileUnavailableError extends Error {
-  constructor() { super('This file is no longer available.'); }
+  constructor() {
+    super('This file is no longer available.');
+  }
 }
 
 async function openRemote(remote: RemoteAttachmentInfo, file: StoredFile): Promise<void> {

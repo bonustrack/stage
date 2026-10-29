@@ -20,7 +20,7 @@ import { IconChevronBottom } from '@central-icons-react-native/round-outlined-ra
 import { Column, Row } from '../layout';
 
 function findRow(rows: AssetRow[], sel: TokenChoice): AssetRow | undefined {
-  return rows.find(r => r.symbol === sel.symbol && r.chainId === sel.chainId);
+  return rows.find((r) => r.symbol === sel.symbol && r.chainId === sel.chainId);
 }
 
 function useSelectorRows(): { rows: AssetRow[]; loading: boolean } {
@@ -29,10 +29,7 @@ function useSelectorRows(): { rows: AssetRow[]; loading: boolean } {
   return { rows: rows ?? [], loading: record === null || rows === undefined };
 }
 
-function TokenChoiceList({ rows, onPick }: {
-  rows: AssetRow[];
-  onPick: (r: AssetRow) => void;
-}): React.ReactElement {
+function TokenChoiceList({ rows, onPick }: { rows: AssetRow[]; onPick: (r: AssetRow) => void }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
     <ListView dark={dark}>
@@ -45,7 +42,9 @@ function TokenChoiceList({ rows, onPick }: {
             align="center"
             gap={12}
             dark={dark}
-            onPress={() => { onPick(r); }}
+            onPress={() => {
+              onPick(r);
+            }}
           >
             <TokenRowBody
               title={r.symbol}
@@ -63,10 +62,7 @@ function TokenChoiceList({ rows, onPick }: {
   );
 }
 
-export function TokenSelector({ value, onChange }: {
-  value: TokenChoice;
-  onChange: (v: TokenChoice) => void;
-}): React.ReactElement {
+export function TokenSelector({ value, onChange }: { value: TokenChoice; onChange: (v: TokenChoice) => void }): React.ReactElement {
   const { text: fg, link: head, border, bg } = usePalette();
   const [open, setOpen] = useState(false);
   const { rows, loading } = useSelectorRows();
@@ -81,24 +77,30 @@ export function TokenSelector({ value, onChange }: {
     <Column gap={6}>
       <Eyebrow>TOKEN</Eyebrow>
       <Pressable
-        onPress={() => { setOpen(true); }}
+        onPress={() => {
+          setOpen(true);
+        }}
         style={({ pressed }) => ({
-          flexDirection: 'row', alignItems: 'center', gap: 10,
-          backgroundColor: border, borderRadius: 12,
-          paddingHorizontal: 14, paddingVertical: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 10,
+          backgroundColor: border,
+          borderRadius: 12,
+          paddingHorizontal: 14,
+          paddingVertical: 12,
           opacity: pressed ? 0.7 : 1,
         })}
->
+      >
         <Column width={28} height={28}>
-          <Image fit="cover"
-            url={selected?.logoUrl ?? ''}
-            style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: bg }}
-/>
-          <Column width={15} height={15} radius="full" surface="surface" style={{ position: 'absolute', right: -3, bottom: -3, borderWidth: 2, borderColor: border, overflow: 'hidden' }}>
-            <Image
-              url={NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO}
-              fit="cover" style={{ width: '100%', height: '100%' }}
-/>
+          <Image fit="cover" url={selected?.logoUrl ?? ''} style={{ width: 28, height: 28, borderRadius: 999, backgroundColor: bg }} />
+          <Column
+            width={15}
+            height={15}
+            radius="full"
+            surface="surface"
+            style={{ position: 'absolute', right: -3, bottom: -3, borderWidth: 2, borderColor: border, overflow: 'hidden' }}
+          >
+            <Image url={NETWORK_LOGO[value.chainId] ?? MAINNET_NETWORK_LOGO} fit="cover" style={{ width: '100%', height: '100%' }} />
           </Column>
         </Column>
         <Column minWidth={0} weight={1}>
@@ -109,13 +111,19 @@ export function TokenSelector({ value, onChange }: {
             {selected ? `Balance: ${selected.balance}` : '-'}
           </Text>
         </Column>
-        <Glyph icon={IconChevronBottom} size={18} color={fg}/>
+        <Glyph icon={IconChevronBottom} size={18} color={fg} />
       </Pressable>
 
-      <AppModal visible={open} onClose={() => { setOpen(false); }} title="Select token">
+      <AppModal
+        visible={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+        title="Select token"
+      >
         {loading ? (
           <Row padding={{ y: 24 }} align="center" justify="center">
-            <Spinner size={28} color={fg}/>
+            <Spinner size={28} color={fg} />
           </Row>
         ) : (
           <TokenChoiceList rows={rows} onPick={onPick} />

@@ -14,7 +14,14 @@ import { makeListeners, useStoreValue } from './storeCore';
 import { report, reported } from './errorPolicy';
 import { onStorageIndexForgotten, readStorageIndex, writeStorageIndex } from './storageIndexStore';
 import {
-  applyFindings, emptyIndex, findingsOf, finishScan, nextCursorNs, type ScanFindings, type StorageIndex, type StoredFile,
+  applyFindings,
+  emptyIndex,
+  findingsOf,
+  finishScan,
+  nextCursorNs,
+  type ScanFindings,
+  type StorageIndex,
+  type StoredFile,
 } from './storageIndex.model';
 import { ScanStopped, scanConversations, type ScanSink, type ScanSource } from './storageScan.model';
 
@@ -31,13 +38,23 @@ export interface StorageState {
   failed: boolean;
 }
 
-interface StorageChat { peerAddress: string | null; groupName: string }
+interface StorageChat {
+  peerAddress: string | null;
+  groupName: string;
+}
 
 const ALL_CONSENT: XmtpConsent[] = ['allowed', 'unknown', 'denied'];
 const PUBLISH_MS = 250;
 
 const INITIAL: StorageState = {
-  accountId: null, files: [], loaded: false, scanning: false, firstScan: false, done: 0, total: 0, failed: false,
+  accountId: null,
+  files: [],
+  loaded: false,
+  scanning: false,
+  firstScan: false,
+  done: 0,
+  total: 0,
+  failed: false,
 };
 
 let state = INITIAL;
@@ -52,7 +69,9 @@ function setState(patch: Partial<StorageState>): void {
   listeners.notify();
 }
 
-function getState(): StorageState { return state; }
+function getState(): StorageState {
+  return state;
+}
 
 function publishNow(): void {
   if (publishTimer !== null) clearTimeout(publishTimer);
@@ -91,7 +110,7 @@ async function heldIndex(accountId: string): Promise<StorageIndex | null> {
 }
 
 async function showCached(): Promise<void> {
-  const accountId = knownActiveAccountId() ?? await getActiveAccountId();
+  const accountId = knownActiveAccountId() ?? (await getActiveAccountId());
   if (accountId === null) return;
   const index = await heldIndex(accountId);
   if (state.accountId === accountId && state.loaded) return;
@@ -101,9 +120,9 @@ async function showCached(): Promise<void> {
 function sourceFor(context: AccountClient, live: () => boolean): ScanSource<Conv> {
   return {
     idOf: (conv) => conv.id,
-    page: async (conv, query) => (await sdk.messages(conv, query)).map(m => ({ ...sdk.rowOf(m), convId: conv.id })),
-    skip: async (conv) => sdk.isGroup(conv) && await conversationIsSyncGroup(conv),
-    superAdmins: async (conv) => new Set((await sdk.groupAdmins(conv)).superAdmins.map(id => id.toLowerCase())),
+    page: async (conv, query) => (await sdk.messages(conv, query)).map((m) => ({ ...sdk.rowOf(m), convId: conv.id })),
+    skip: async (conv) => sdk.isGroup(conv) && (await conversationIsSyncGroup(conv)),
+    superAdmins: async (conv) => new Set((await sdk.groupAdmins(conv)).superAdmins.map((id) => id.toLowerCase())),
     current: () => live() && context.current(),
     failed: reported('storage.scanChat'),
   };
@@ -112,8 +131,13 @@ function sourceFor(context: AccountClient, live: () => boolean): ScanSource<Conv
 function sinkFor(accountId: string): ScanSink {
   return {
     index: () => currentIndex(accountId),
-    apply: (findings) => { commit(accountId, applyFindings(currentIndex(accountId), findings)); },
-    progress: (done, total) => { state = { ...state, done, total }; publishSoon(); },
+    apply: (findings) => {
+      commit(accountId, applyFindings(currentIndex(accountId), findings));
+    },
+    progress: (done, total) => {
+      state = { ...state, done, total };
+      publishSoon();
+    },
   };
 }
 
@@ -137,7 +161,16 @@ async function runScan(live: () => boolean): Promise<void> {
   const accountId = context.account.id;
   const start = await startIndex(context);
   stopUnless(live);
-  setState({ accountId, files: start.files, loaded: true, scanning: true, firstScan: start.cursorNs === 0, done: 0, total: 0, failed: false });
+  setState({
+    accountId,
+    files: start.files,
+    loaded: true,
+    scanning: true,
+    firstScan: start.cursorNs === 0,
+    done: 0,
+    total: 0,
+    failed: false,
+  });
   const startedMs = Date.now();
   const convs = await sdk.listConvs(context.client, ALL_CONSENT);
   stopUnless(live);
@@ -162,18 +195,25 @@ function scanEnded(err: unknown): void {
 
 export function retryStorage(): void {
   const epoch = getAccountEpoch();
-  if (scanRun !== null && scanRun.epoch === epoch) { scanAgain = true; return; }
+  if (scanRun !== null && scanRun.epoch === epoch) {
+    scanAgain = true;
+    return;
+  }
   scanAgain = false;
   const run = { epoch };
   scanRun = run;
   const live = (): boolean => scanRun === run && getAccountEpoch() === epoch;
-  void runScan(live).catch((err: unknown) => { if (live()) scanEnded(err); }).finally(() => {
-    if (scanRun !== run) return;
-    scanRun = null;
-    if (!scanAgain) return;
-    scanAgain = false;
-    retryStorage();
-  });
+  void runScan(live)
+    .catch((err: unknown) => {
+      if (live()) scanEnded(err);
+    })
+    .finally(() => {
+      if (scanRun !== run) return;
+      scanRun = null;
+      if (!scanAgain) return;
+      scanAgain = false;
+      retryStorage();
+    });
 }
 
 function onStreamMessage({ convId, msg }: StreamMsg): void {
@@ -185,7 +225,11 @@ function onStreamMessage({ convId, msg }: StreamMsg): void {
 
 function openStorage(): () => void {
   let open = true;
-  void showCached().then(() => { if (open) retryStorage(); }).catch(reported('storage.open'));
+  void showCached()
+    .then(() => {
+      if (open) retryStorage();
+    })
+    .catch(reported('storage.open'));
   const stop = subscribeAllMessages(onStreamMessage, { includeHidden: true });
   return () => {
     open = false;

@@ -6,4 +6,9 @@ import { App } from './App';
 const stories = collectStories(import.meta.glob<StoryModule>('../stories/*.stories.tsx', { eager: true }));
 
 const root = document.getElementById('root');
-if (root) createRoot(root).render(<StrictMode><App stories={stories} /></StrictMode>);
+if (root)
+  createRoot(root).render(
+    <StrictMode>
+      <App stories={stories} />
+    </StrictMode>,
+  );

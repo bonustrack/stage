@@ -13,19 +13,27 @@ const SCANNER_HEIGHT = 260;
 
 type CameraModule = typeof import('expo-camera');
 
-const UNAVAILABLE_MESSAGE =
-  'Scanning needs a newer build of the app. Update the app, or paste the code below.';
+const UNAVAILABLE_MESSAGE = 'Scanning needs a newer build of the app. Update the app, or paste the code below.';
 
-interface CameraLoad { mod: CameraModule | null; failed: boolean }
+interface CameraLoad {
+  mod: CameraModule | null;
+  failed: boolean;
+}
 
 function useCameraModule(): CameraLoad {
   const [state, setState] = useState<CameraLoad>({ mod: null, failed: false });
   useEffect(() => {
     let alive = true;
     import('expo-camera')
-      .then((mod) => { if (alive) setState({ mod, failed: false }); })
-      .catch(() => { if (alive) setState({ mod: null, failed: true }); });
-    return () => { alive = false; };
+      .then((mod) => {
+        if (alive) setState({ mod, failed: false });
+      })
+      .catch(() => {
+        if (alive) setState({ mod: null, failed: true });
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
   return state;
 }
@@ -33,7 +41,9 @@ function useCameraModule(): CameraLoad {
 function Notice({ message }: { message: string }): React.ReactElement {
   return (
     <Column align="center" padding={{ y: 16 }}>
-      <Text size="2xs" color="secondary" textAlign="center">{message}</Text>
+      <Text size="2xs" color="secondary" textAlign="center">
+        {message}
+      </Text>
     </Column>
   );
 }
@@ -56,24 +66,41 @@ function LiveScanner({ mod, onScan, dark }: QrScannerProps & { mod: CameraModule
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    const listener = AppState.addEventListener('change', state => {
-      if (state === 'active') void getPermission().catch(() => { setFailed(true); });
+    const listener = AppState.addEventListener('change', (state) => {
+      if (state === 'active')
+        void getPermission().catch(() => {
+          setFailed(true);
+        });
     });
-    return () => { listener.remove(); };
+    return () => {
+      listener.remove();
+    };
   }, [getPermission]);
 
   if (failed) return <Notice message="Could not open the camera. Try again, or paste the code below." />;
   if (!permission) return <Column height={SCANNER_HEIGHT} />;
   if (!permission.granted) {
-    if (!permission.canAskAgain) return <Notice message="Camera access is blocked. Enable it in system settings, or paste the code below." />;
-    return <PermissionPrompt dark={dark} onAllow={() => { void requestPermission().catch(() => { setFailed(true); }); }} />;
+    if (!permission.canAskAgain)
+      return <Notice message="Camera access is blocked. Enable it in system settings, or paste the code below." />;
+    return (
+      <PermissionPrompt
+        dark={dark}
+        onAllow={() => {
+          void requestPermission().catch(() => {
+            setFailed(true);
+          });
+        }}
+      />
+    );
   }
   return (
     <Column height={SCANNER_HEIGHT} style={{ overflow: 'hidden', borderRadius: 12 }}>
       <CameraView
         style={{ flex: 1 }}
         facing="back"
-        onMountError={() => { setFailed(true); }}
+        onMountError={() => {
+          setFailed(true);
+        }}
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
         onBarcodeScanned={({ data }) => {
           if (handled.current || data.length === 0) return;

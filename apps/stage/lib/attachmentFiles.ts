@@ -1,9 +1,23 @@
 const EXT_MIME: Record<string, string> = {
-  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif',
-  webp: 'image/webp', heic: 'image/heic', heif: 'image/heif', avif: 'image/avif', bmp: 'image/bmp',
-  m4a: 'audio/m4a', mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
-  ogg: 'audio/ogg', caf: 'audio/x-caf', mp4: 'video/mp4', mov: 'video/quicktime',
-  webm: 'video/webm', pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  heic: 'image/heic',
+  heif: 'image/heif',
+  avif: 'image/avif',
+  bmp: 'image/bmp',
+  m4a: 'audio/m4a',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  aac: 'audio/aac',
+  ogg: 'audio/ogg',
+  caf: 'audio/x-caf',
+  mp4: 'video/mp4',
+  mov: 'video/quicktime',
+  webm: 'video/webm',
+  pdf: 'application/pdf',
 };
 
 function mimeFromName(name: string): string {
@@ -19,7 +33,12 @@ export function mimeOf(mime: string | undefined | null, nameOrUri: string): stri
   return mimeFromName(nameOrUri.split('?')[0]?.split('#')[0] ?? '');
 }
 
-interface OutgoingFile { id: string; url: string; mime?: string; name?: string }
+interface OutgoingFile {
+  id: string;
+  url: string;
+  mime?: string;
+  name?: string;
+}
 
 export function outgoingFileMeta(at: OutgoingFile): { mimeType: string; filename: string } {
   const mimeType = mimeOf(at.mime, at.name ?? at.url);
@@ -28,6 +47,6 @@ export function outgoingFileMeta(at: OutgoingFile): { mimeType: string; filename
 
 function withExtension(name: string, mimeType: string): string {
   if (name.includes('.')) return name;
-  const ext = Object.keys(EXT_MIME).find(k => EXT_MIME[k] === mimeType);
+  const ext = Object.keys(EXT_MIME).find((k) => EXT_MIME[k] === mimeType);
   return ext ? `${name}.${ext}` : name;
 }

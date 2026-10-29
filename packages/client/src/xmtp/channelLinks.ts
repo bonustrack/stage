@@ -1,7 +1,12 @@
 export const MARKDOWN_LINK_RE = /\[([^[\]\n]+)\]\(((?:[^\s()]|\([^\s()]*\))+)(?:\s+(?:"[^"\n]*"|'[^'\n]*'|\([^\)\n]*\)))?\)/g;
 
-export function channelLinkText(meta: { groupName?: string | null; peerAddress?: string | null }, label?: string, url?: string, text?: string): string {
-  return meta.peerAddress ? text ?? url ?? channelLinkLabel(undefined, label) : channelLinkLabel(meta.groupName, label);
+export function channelLinkText(
+  meta: { groupName?: string | null; peerAddress?: string | null },
+  label?: string,
+  url?: string,
+  text?: string,
+): string {
+  return meta.peerAddress ? (text ?? url ?? channelLinkLabel(undefined, label)) : channelLinkLabel(meta.groupName, label);
 }
 
 export function channelFallbackLabel(text: string): string | undefined {
@@ -9,7 +14,10 @@ export function channelFallbackLabel(text: string): string | undefined {
   return label.startsWith('#') ? label.slice(1) : undefined;
 }
 
-interface MarkdownTextNode { content: string; children: readonly MarkdownTextNode[] }
+interface MarkdownTextNode {
+  content: string;
+  children: readonly MarkdownTextNode[];
+}
 
 export function markdownLabelText(node: MarkdownTextNode): string {
   return node.children.length ? node.children.map(markdownLabelText).join('') : node.content;

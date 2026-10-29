@@ -1,10 +1,15 @@
-
 import { HERO_ICON_DATA } from './heroicons.data';
 
 export { isBrandIconName, brandIconPath, type BrandIconName } from './brand-icons.data';
 export type { IconName } from './central-icons';
 export { iconStroke, type CentralIcon, type IconStyle } from './glyph';
-export { HERO_SOLID_ICON_PATHS, HERO_SOLID_VIEW_BOX, isHeroSolidIconName, type HeroSolidIconName, type SolidPath } from './heroicons.solid.data';
+export {
+  HERO_SOLID_ICON_PATHS,
+  HERO_SOLID_VIEW_BOX,
+  isHeroSolidIconName,
+  type HeroSolidIconName,
+  type SolidPath,
+} from './heroicons.solid.data';
 
 export const HERO_ICON_PATHS = HERO_ICON_DATA;
 
@@ -12,9 +17,7 @@ export type HeroIconName = keyof typeof HERO_ICON_PATHS;
 
 const ICON_NAMES = new Set(Object.keys(HERO_ICON_PATHS));
 
-export function resolveIconName(
-  name: string | undefined,
-): HeroIconName | undefined {
+export function resolveIconName(name: string | undefined): HeroIconName | undefined {
   if (name === undefined) return undefined;
   const camel = name.replace(/-([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
   if (ICON_NAMES.has(camel)) return camel as HeroIconName;
@@ -27,11 +30,7 @@ export function heroIconPaths(name: HeroIconName): readonly string[] {
   return typeof value === 'string' ? [value] : value;
 }
 
-export const HERO_ICON_DEFAULTS = {
-  viewBox: '0 0 24 24',
-  strokeWidth: 1.8,
-  activeStrokeWidth: 1.8,
-} as const;
+export const HERO_ICON_DEFAULTS = { viewBox: '0 0 24 24', strokeWidth: 1.8, activeStrokeWidth: 1.8 } as const;
 
 export function iconStrokeWidth(focused: boolean | undefined): number {
   return focused ? HERO_ICON_DEFAULTS.activeStrokeWidth : HERO_ICON_DEFAULTS.strokeWidth;

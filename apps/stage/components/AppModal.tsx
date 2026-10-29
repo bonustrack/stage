@@ -3,7 +3,11 @@ import { Modal } from '@stage-labs/kit/react-native/modal';
 import { useWebTabRail } from '../lib/webLayout';
 
 export function AppModal({
-  visible, onClose, title, children, dismissable,
+  visible,
+  onClose,
+  title,
+  children,
+  dismissable,
 }: {
   visible: boolean;
   onClose: () => void;

@@ -1,8 +1,19 @@
 import { useId, useMemo, useState } from 'react';
 import { Platform, View, type DimensionValue, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
 import {
-  CHART_DEFAULTS, CHART_MARGIN, chartAspectRatio, chartBarColor, chartGeometry, chartSeriesColors, chartTooltipRows,
-  chartXLabel, type ChartCategory, type ChartDatum, type ChartSeries, type ChartXAxis, type ChartYAxisConfig,
+  CHART_DEFAULTS,
+  CHART_MARGIN,
+  chartAspectRatio,
+  chartBarColor,
+  chartGeometry,
+  chartSeriesColors,
+  chartTooltipRows,
+  chartXLabel,
+  type ChartCategory,
+  type ChartDatum,
+  type ChartSeries,
+  type ChartXAxis,
+  type ChartYAxisConfig,
 } from '../chart';
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { kitPalette, type KitPalette, type Scheme } from '../tokens';
@@ -14,8 +25,19 @@ import { TOOLTIP } from './tooltip';
 import { Row } from './row';
 
 export type {
-  ChartAreaSeries, ChartBarSeries, ChartColor, ChartCurveType, ChartDatum, ChartLineSeries, ChartSeries, ChartValue,
-  ChartXAxis, ChartXAxisConfig, ChartDomain, ChartDomainBound, ChartYAxisConfig,
+  ChartAreaSeries,
+  ChartBarSeries,
+  ChartColor,
+  ChartCurveType,
+  ChartDatum,
+  ChartLineSeries,
+  ChartSeries,
+  ChartValue,
+  ChartXAxis,
+  ChartXAxisConfig,
+  ChartDomain,
+  ChartDomainBound,
+  ChartYAxisConfig,
 } from '../chart';
 
 type Length = number | string;
@@ -101,15 +123,25 @@ function Swatch({ color, size }: { color: string; size: number }): React.ReactEl
   return <View style={{ width: size, height: size, borderRadius: SWATCH_RADIUS, backgroundColor: color }} />;
 }
 
-function Legend({ series, colors, palette }: { series: readonly ChartSeries[]; colors: readonly string[]; palette: KitPalette }): React.ReactElement {
+function Legend({
+  series,
+  colors,
+  palette,
+}: {
+  series: readonly ChartSeries[];
+  colors: readonly string[];
+  palette: KitPalette;
+}): React.ReactElement {
   return (
     <Row wrap justify="center" gap={LEGEND_GAP} padding={{ top: LEGEND_PAD_TOP, bottom: CHART_MARGIN }}>
-      {series.map((s, i) => (s.label === undefined || s.label === '' ? null : (
-        <Row key={i} gap={KEY_GAP} align="center">
-          <Swatch color={colors[i] ?? palette.link} size={LEGEND_SWATCH} />
-          <Text size="2xs" color={palette.link} text={s.label} style={{ lineHeight: LEGEND_LINE }} />
-        </Row>
-      )))}
+      {series.map((s, i) =>
+        s.label === undefined || s.label === '' ? null : (
+          <Row key={i} gap={KEY_GAP} align="center">
+            <Swatch color={colors[i] ?? palette.link} size={LEGEND_SWATCH} />
+            <Text size="2xs" color={palette.link} text={s.label} style={{ lineHeight: LEGEND_LINE }} />
+          </Row>
+        ),
+      )}
     </Row>
   );
 }
@@ -131,17 +163,32 @@ function ChartTooltip({ props, colors, palette, category, index, width, top }: T
   if (rows.length === 0 && title === '') return null;
   const side: ViewStyle = category.x <= width / 2 ? { left: category.x + TIP_OFFSET } : { right: width - category.x + TIP_OFFSET };
   return (
-    <View style={{
-      position: 'absolute', top, ...side, maxWidth: Math.max(TIP_OFFSET, width / 2 - TIP_OFFSET), pointerEvents: 'none',
-      backgroundColor: palette.border, borderRadius: TOOLTIP.radius, paddingHorizontal: TIP_PAD_X, paddingVertical: TIP_PAD_Y,
-      gap: TIP_ROW_GAP, ...OVERLAY_SHADOW,
-    }}>
+    <View
+      style={{
+        position: 'absolute',
+        top,
+        ...side,
+        maxWidth: Math.max(TIP_OFFSET, width / 2 - TIP_OFFSET),
+        pointerEvents: 'none',
+        backgroundColor: palette.border,
+        borderRadius: TOOLTIP.radius,
+        paddingHorizontal: TIP_PAD_X,
+        paddingVertical: TIP_PAD_Y,
+        gap: TIP_ROW_GAP,
+        ...OVERLAY_SHADOW,
+      }}
+    >
       {title === '' ? null : <Text size="3xs" fontWeight="semibold" color={palette.sub} text={title} />}
       {rows.map((r) => (
         <Row key={r.series} gap={KEY_GAP} align="center">
           {props.series.length > 1 ? <Swatch color={colors[r.series] ?? palette.link} size={TOOLTIP_SWATCH} /> : null}
           {r.name === undefined ? null : <Text size="3xs" color={palette.sub} text={r.name} style={{ flexShrink: 1 }} />}
-          <Text size="3xs" color={palette.link} text={r.value} style={{ ...TABULAR, marginLeft: r.name === undefined ? 0 : TIP_NAME_GAP }} />
+          <Text
+            size="3xs"
+            color={palette.link}
+            text={r.value}
+            style={{ ...TABULAR, marginLeft: r.name === undefined ? 0 : TIP_NAME_GAP }}
+          />
         </Row>
       ))}
     </View>
@@ -163,7 +210,14 @@ interface ChartModel {
 
 function useChartModel(props: ChartProps, scheme: Scheme): ChartModel {
   const { series } = props;
-  const colors = useMemo(() => chartSeriesColors(series.map((s) => s.color), scheme), [series, scheme]);
+  const colors = useMemo(
+    () =>
+      chartSeriesColors(
+        series.map((s) => s.color),
+        scheme,
+      ),
+    [series, scheme],
+  );
   const only = series.length === 1 ? series[0] : undefined;
   return {
     colors,
@@ -187,18 +241,37 @@ function ChartBody({ props, model, palette, size: measured }: BodyProps): React.
   const { colors, legend, showYAxis, showTooltip, perBar } = model;
   const [active, setActive] = useState<number | undefined>();
   const uid = `chart${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const geometry = useMemo(() => chartGeometry({
-    data, series, xAxis, yAxis, width: size.width, height: size.height, showYAxis, legend, barGap, barCategoryGap,
-  }), [data, series, xAxis, yAxis, size, showYAxis, legend, barGap, barCategoryGap]);
+  const geometry = useMemo(
+    () => chartGeometry({ data, series, xAxis, yAxis, width: size.width, height: size.height, showYAxis, legend, barGap, barCategoryGap }),
+    [data, series, xAxis, yAxis, size, showYAxis, legend, barGap, barCategoryGap],
+  );
   const shown = showTooltip && active !== undefined ? geometry.categories[active] : undefined;
   return (
     <>
-      <ChartPlot geometry={geometry} series={series} colors={colors} perBar={perBar} palette={palette}
+      <ChartPlot
+        geometry={geometry}
+        series={series}
+        colors={colors}
+        perBar={perBar}
+        palette={palette}
         barColor={(seriesIndex, index) => chartBarColor(series, colors, seriesIndex, index)}
-        width={size.width} height={size.height} showYAxis={showYAxis} active={shown === undefined ? undefined : active} uid={uid} />
+        width={size.width}
+        height={size.height}
+        showYAxis={showYAxis}
+        active={shown === undefined ? undefined : active}
+        uid={uid}
+      />
       {showTooltip ? <ChartBands categories={geometry.categories} height={size.height} setActive={setActive} /> : null}
       {shown === undefined || active === undefined ? null : (
-        <ChartTooltip props={props} colors={colors} palette={palette} category={shown} index={active} width={size.width} top={geometry.plot.top} />
+        <ChartTooltip
+          props={props}
+          colors={colors}
+          palette={palette}
+          category={shown}
+          index={active}
+          width={size.width}
+          top={geometry.plot.top}
+        />
       )}
     </>
   );

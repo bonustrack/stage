@@ -26,7 +26,12 @@ const NO_ROLES: Roles = {};
 const NO_MAP: Record<string, string> = {};
 
 const NO_EDIT_RIGHTS: GroupEditRights = {
-  name: false, description: false, image: false, appData: false, addMembers: false, removeMembers: false,
+  name: false,
+  description: false,
+  image: false,
+  appData: false,
+  addMembers: false,
+  removeMembers: false,
 };
 
 export function useChannelRoles(convId: string | undefined, inboxToAddr: Record<string, string>): Roles {
@@ -39,9 +44,10 @@ export function useChannelRoles(convId: string | undefined, inboxToAddr: Record<
   return data;
 }
 
-function useMemberDirectory(convId: string | undefined, row: ReturnType<typeof useConvRow>): {
-  members: string[]; memberNames: Names; memberRoles: Roles;
-} {
+function useMemberDirectory(
+  convId: string | undefined,
+  row: ReturnType<typeof useConvRow>,
+): { members: string[]; memberNames: Names; memberRoles: Roles } {
   const [memberNames, setMemberNames] = useState<Names>({});
   const members = useMemo(() => [...memberAddressesOf(row)].sort((x, y) => x.localeCompare(y)), [row]);
   const memberRoles = useChannelRoles(convId, row?.inboxToAddr ?? NO_MAP);
@@ -67,7 +73,9 @@ async function runTask(mark: (on: boolean) => void, failTitle: string, task: () 
     await task();
   } catch (e) {
     Alert.alert(failTitle, (e as Error).message ?? 'Unknown error');
-  } finally { mark(false); }
+  } finally {
+    mark(false);
+  }
 }
 
 export function useChannelEditRights(convId: string | undefined, enabled = true): GroupEditRights {
@@ -80,7 +88,7 @@ export function useChannelEditRights(convId: string | undefined, enabled = true)
 }
 
 export function confirmMemberRemoval(names: string[]): Promise<boolean> {
-  const who = names.length === 1 ? names[0] ?? '' : `${names.length} members`;
+  const who = names.length === 1 ? (names[0] ?? '') : `${names.length} members`;
   return capabilities.confirm({
     title: names.length === 1 ? 'Remove member' : 'Remove members',
     message: `Remove ${who} from this channel? They'll lose access to past + future messages.`,
@@ -100,15 +108,21 @@ export function useChannelDetail(convId: string | undefined) {
   const rights = useChannelEditRights(convId);
 
   const removeMember = async (addr: string): Promise<void> => {
-    if (!await confirmMemberRemoval([shortAddress(addr)])) return;
-    await runTask((on) => { setRemoving(on ? addr.toLowerCase() : null); }, 'Remove member failed', async () => {
-      await removeGroupMembers(convIdOf(line), [addr]);
-      refreshConv(convIdOf(line));
-    });
+    if (!(await confirmMemberRemoval([shortAddress(addr)]))) return;
+    await runTask(
+      (on) => {
+        setRemoving(on ? addr.toLowerCase() : null);
+      },
+      'Remove member failed',
+      async () => {
+        await removeGroupMembers(convIdOf(line), [addr]);
+        refreshConv(convIdOf(line));
+      },
+    );
   };
 
   const leaveChannel = async (): Promise<void> => {
-    if (!await capabilities.confirm(LEAVE_CHANNEL_CONFIRM)) return;
+    if (!(await capabilities.confirm(LEAVE_CHANNEL_CONFIRM))) return;
     await runTask(setLeaving, 'Couldn’t leave', async () => {
       const result = await leaveGroupConv(line);
       capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden');
@@ -117,7 +131,14 @@ export function useChannelDetail(convId: string | undefined) {
   };
 
   return {
-    ...directory, leaving, removing,
-    name: row?.groupName ?? null, description, imageUrl: row?.avatarUri ?? '', rights, removeMember, leaveChannel,
+    ...directory,
+    leaving,
+    removing,
+    name: row?.groupName ?? null,
+    description,
+    imageUrl: row?.avatarUri ?? '',
+    rights,
+    removeMember,
+    leaveChannel,
   };
 }

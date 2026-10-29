@@ -26,9 +26,7 @@ const hits = new Map<string, { count: number; reset: number }>();
 type RateBudget = 'preview' | 'img' | 'settle' | 'history' | 'names' | 'attachments' | 'nodes';
 
 function clientIp(request: Request): string {
-  return request.headers.get('cf-connecting-ip')
-    ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    ?? 'unknown';
+  return request.headers.get('cf-connecting-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
 }
 
 function rateLimited(request: Request, budget: RateBudget): boolean {
@@ -43,10 +41,7 @@ function rateLimited(request: Request, budget: RateBudget): boolean {
   return e.count > RL_MAX;
 }
 
-const BASE_HEADERS = {
-  'x-served-by': 'worker',
-  'access-control-allow-origin': '*',
-};
+const BASE_HEADERS = { 'x-served-by': 'worker', 'access-control-allow-origin': '*' };
 
 function json(body: unknown, status = 200, extra: HeaderMap = {}): Response {
   return jsonResponse(body, status, { ...BASE_HEADERS, ...extra });
@@ -150,7 +145,10 @@ type ProxyEnv = NamesEnv & {
   NODE_PUBLISHES_ALL?: RateLimit;
 };
 
-interface MailWiring { mailbox: (label: string) => ReturnType<typeof mailboxStub>; chain: MailChain }
+interface MailWiring {
+  mailbox: (label: string) => ReturnType<typeof mailboxStub>;
+  chain: MailChain;
+}
 
 function mailWiring(env: ProxyEnv): MailWiring | null {
   const chain = configuredChain(env);
@@ -158,7 +156,10 @@ function mailWiring(env: ProxyEnv): MailWiring | null {
   if (chain === null || boxes === undefined) return null;
   return {
     mailbox: (label) => mailboxStub(boxes, label),
-    chain: { owner: (label) => chain.subnameOwner(label), verify: (address, message, signature) => chain.verifyClaim(address, message, signature) },
+    chain: {
+      owner: (label) => chain.subnameOwner(label),
+      verify: (address, message, signature) => chain.verifyClaim(address, message, signature),
+    },
   };
 }
 
@@ -185,15 +186,17 @@ async function limitedBy(request: Request, budget: RateBudget, limiter: RateLimi
 }
 
 async function routeAttachments(request: Request, env: ProxyEnv): Promise<Response> {
-  if (request.method === 'POST' && await limitedBy(request, 'attachments', env.ATTACHMENT_UPLOADS)) return json({ error: 'rate limited' }, 429);
+  if (request.method === 'POST' && (await limitedBy(request, 'attachments', env.ATTACHMENT_UPLOADS)))
+    return json({ error: 'rate limited' }, 429);
   return handleAttachments(request, env.ATTACHMENTS === undefined ? undefined : r2AttachmentStore(env.ATTACHMENTS));
 }
 
 function routeNodes(request: Request, env: ProxyEnv): Promise<Response> {
   return handleNodes(request, {
     api: cloudflareApi(env.NODES_CF_API_TOKEN, env.NODES_CF_ACCOUNT_ID),
-    limited: async () => await limitedBy(request, 'nodes', env.NODE_PUBLISHES, clientRateKey(clientIp(request)))
-      || (env.NODE_PUBLISHES_ALL !== undefined && !(await env.NODE_PUBLISHES_ALL.limit({ key: 'all' })).success),
+    limited: async () =>
+      (await limitedBy(request, 'nodes', env.NODE_PUBLISHES, clientRateKey(clientIp(request)))) ||
+      (env.NODE_PUBLISHES_ALL !== undefined && !(await env.NODE_PUBLISHES_ALL.limit({ key: 'all' })).success),
   });
 }
 

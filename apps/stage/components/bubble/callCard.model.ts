@@ -36,7 +36,11 @@ function callSignalOf(entry: HistoryEntry): CallSignal | null {
   return parseCallSignal((entry.payload as { callSignal?: unknown } | undefined)?.callSignal);
 }
 
-interface InviteSeen { messageId: string; callerUri: string; record: CallRecord }
+interface InviteSeen {
+  messageId: string;
+  callerUri: string;
+  record: CallRecord;
+}
 
 function invitesOf(events: readonly HistoryEntry[], dm: boolean, myUri: string): Map<string, InviteSeen> {
   const byCall = new Map<string, InviteSeen>();
@@ -46,7 +50,8 @@ function invitesOf(events: readonly HistoryEntry[], dm: boolean, myUri: string):
     const known = invite ? byCall.get(invite.callId) : undefined;
     if (!invite || (known && known.record.startMs <= startMs)) continue;
     byCall.set(invite.callId, {
-      messageId: e.id, callerUri: e.from,
+      messageId: e.id,
+      callerUri: e.from,
       record: { callId: invite.callId, video: invite.video, dm, outgoing: e.from === myUri, startMs, answeredMs: null, endMs: null },
     });
   }
@@ -67,7 +72,7 @@ export function callRecordsOf(events: readonly HistoryEntry[], dm: boolean, myUr
     if (!signal || !seen) continue;
     seen.record = withSignal(seen.record, signal, Date.parse(e.ts), e.from !== seen.callerUri);
   }
-  return new Map([...byCall.values()].map(seen => [seen.messageId, seen.record]));
+  return new Map([...byCall.values()].map((seen) => [seen.messageId, seen.record]));
 }
 
 export function callLiveOf(state: CallsState, convId: string, record: CallRecord, nowMs: number): CallLive {

@@ -1,9 +1,6 @@
 import { FilePicker, type PickedFile } from '@stage-labs/kit/react-native/file-picker';
 
-export function SquareImagePicker({ openNonce, onPick }: {
-  openNonce: number;
-  onPick: (file: PickedFile) => void;
-}): React.ReactElement {
+export function SquareImagePicker({ openNonce, onPick }: { openNonce: number; onPick: (file: PickedFile) => void }): React.ReactElement {
   return (
     <FilePicker
       openNonce={openNonce}

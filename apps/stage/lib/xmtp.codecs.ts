@@ -1,7 +1,12 @@
 import {
   PublicIdentity,
-  ReactionCodec, ReplyCodec, StaticAttachmentCodec, RemoteAttachmentCodec,
-  MultiRemoteAttachmentCodec, GroupUpdatedCodec, DeleteMessageCodec,
+  ReactionCodec,
+  ReplyCodec,
+  StaticAttachmentCodec,
+  RemoteAttachmentCodec,
+  MultiRemoteAttachmentCodec,
+  GroupUpdatedCodec,
+  DeleteMessageCodec,
   type Signer,
 } from '@xmtp/react-native-sdk';
 import { STAGE_JSON_CODECS, TRANSACTION_REFERENCE_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';

@@ -1,4 +1,3 @@
-
 import { afterEach, describe, expect, test } from 'bun:test';
 import { fetchUsdPrice, fmtUsdValue } from '../src/wallet/prices';
 
@@ -13,7 +12,10 @@ function respond(id: string, price: number | null, status = 200): void {
   };
 }
 
-afterEach(() => { globalThis.fetch = realFetch; requests = []; });
+afterEach(() => {
+  globalThis.fetch = realFetch;
+  requests = [];
+});
 
 describe('fetchUsdPrice', () => {
   test('reads the DefiLlama quote and caches it', async () => {

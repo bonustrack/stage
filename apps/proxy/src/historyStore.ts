@@ -16,10 +16,7 @@ const OBJECT_URL = 'https://history-archive/';
 
 const HISTORY_CORS_HEADERS = corsHeaders('GET, POST, OPTIONS');
 
-type HistoryRoute =
-  | { kind: 'upload'; env: string }
-  | { kind: 'part'; env: string; id: string }
-  | { kind: 'file'; env: string; id: string };
+type HistoryRoute = { kind: 'upload'; env: string } | { kind: 'part'; env: string; id: string } | { kind: 'file'; env: string; id: string };
 
 export interface ArchiveStub {
   fetch(input: string, init?: RequestInit): Promise<Response>;
@@ -63,9 +60,7 @@ function stubFor<Id>(ns: ArchiveNamespace<Id>, env: string, id: string): Archive
   return ns.get(ns.idFromName(`${env}/${id}`));
 }
 
-async function upload<Id>(
-  request: Request, ns: ArchiveNamespace<Id>, route: Exclude<HistoryRoute, { kind: 'file' }>,
-): Promise<Response> {
+async function upload<Id>(request: Request, ns: ArchiveNamespace<Id>, route: Exclude<HistoryRoute, { kind: 'file' }>): Promise<Response> {
   const id = route.kind === 'part' ? route.id : crypto.randomUUID();
   const { search } = new URL(request.url);
   const stored = await stubFor(ns, route.env, id).fetch(`${OBJECT_URL}${route.kind}${search}`, { method: 'POST', body: request.body });
@@ -137,7 +132,11 @@ export async function storedChunkKeys(storage: Pick<ArchiveStorage, 'get'>, pref
   return [`${prefix}${COUNT_KEY}`, ...chunkKeys(await chunkCount(storage, prefix), prefix)];
 }
 
-interface ArchiveState { count: number; bytes: number; size: number | null }
+interface ArchiveState {
+  count: number;
+  bytes: number;
+  size: number | null;
+}
 
 async function archiveState(storage: Pick<ArchiveStorage, 'get'>): Promise<ArchiveState> {
   const stored = await storage.get([COUNT_KEY, BYTES_KEY, SIZE_KEY]);
@@ -157,7 +156,10 @@ function plain(body: string, status: number): Response {
 }
 
 async function writeChunks(
-  storage: Pick<ArchiveStorage, 'put'>, body: ReadableStream<Uint8Array> | null, first: number, limit: number,
+  storage: Pick<ArchiveStorage, 'put'>,
+  body: ReadableStream<Uint8Array> | null,
+  first: number,
+  limit: number,
 ): Promise<{ count: number; bytes: number } | null> {
   const chunk = new Uint8Array(CHUNK_BYTES);
   let count = first;
@@ -197,9 +199,7 @@ function declaredSize(raw: string | null): number | null | Response {
   return size > MAX_ARCHIVE_BYTES ? plain('archive too large', 413) : size;
 }
 
-async function appendTo(
-  request: Request, storage: ArchiveStorage, state: ArchiveState, size: number | null,
-): Promise<Response> {
+async function appendTo(request: Request, storage: ArchiveStorage, state: ArchiveState, size: number | null): Promise<Response> {
   const room = size === null ? MAX_UPLOAD_BYTES : Math.min(MAX_UPLOAD_BYTES, size - state.bytes);
   const written = await writeChunks(storage, request.body, state.count, room);
   if (written === null) return plain('archive too large', 413);

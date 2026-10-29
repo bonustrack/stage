@@ -26,7 +26,7 @@ export function ConversationSidebarToggle(): React.ReactElement | null {
         hitSlop={8}
         {...hover.hoverProps}
       >
-        <Glyph icon={IconSidebarSimpleRightWide} size={24} color={hover.hovered ? link : text}/>
+        <Glyph icon={IconSidebarSimpleRightWide} size={24} color={hover.hovered ? link : text} />
       </Pressable>
     </HoverTooltip>
   );

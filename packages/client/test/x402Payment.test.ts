@@ -1,11 +1,5 @@
-
 import { afterEach, describe, expect, test } from 'bun:test';
-import {
-  buildAuthorization,
-  buildTypedData,
-  buildPaymentHeader,
-  randomNonce,
-} from '../src/x402/payment';
+import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from '../src/x402/payment';
 import type { X402Accept } from '../src/x402/challenge';
 
 const FIXTURE_ACCEPT: X402Accept = {
@@ -28,23 +22,11 @@ describe('buildAuthorization', () => {
     const auth = buildAuthorization({ from: FROM, accept: FIXTURE_ACCEPT, now: NOW, nonce: NONCE });
     const payTo = FIXTURE_ACCEPT.payTo;
     if (payTo === undefined) throw new Error('fixture must define payTo');
-    expect(auth).toEqual({
-      from: FROM,
-      to: payTo,
-      value: '10000',
-      validAfter: '0',
-      validBefore: String(NOW + 600),
-      nonce: NONCE,
-    });
+    expect(auth).toEqual({ from: FROM, to: payTo, value: '10000', validAfter: '0', validBefore: String(NOW + 600), nonce: NONCE });
   });
 
   test('defaults the timeout to 600s when the challenge omits it', () => {
-    const auth = buildAuthorization({
-      from: FROM,
-      accept: { ...FIXTURE_ACCEPT, maxTimeoutSeconds: undefined },
-      now: NOW,
-      nonce: NONCE,
-    });
+    const auth = buildAuthorization({ from: FROM, accept: { ...FIXTURE_ACCEPT, maxTimeoutSeconds: undefined }, now: NOW, nonce: NONCE });
     expect(auth.validBefore).toBe(String(NOW + 600));
   });
 });
@@ -54,15 +36,10 @@ describe('buildTypedData', () => {
     const auth = buildAuthorization({ from: FROM, accept: FIXTURE_ACCEPT, now: NOW, nonce: NONCE });
     const td = buildTypedData(FIXTURE_ACCEPT, auth);
     expect(td.primaryType).toBe('TransferWithAuthorization');
-    expect(td.domain).toMatchObject({
-      name: 'USD Coin',
-      version: '2',
-      chainId: 8453,
-      verifyingContract: FIXTURE_ACCEPT.asset,
-    });
-    expect((td.message).value).toBe(BigInt(10000));
-    expect((td.message).validAfter).toBe(BigInt(0));
-    expect((td.message).nonce).toBe(NONCE);
+    expect(td.domain).toMatchObject({ name: 'USD Coin', version: '2', chainId: 8453, verifyingContract: FIXTURE_ACCEPT.asset });
+    expect(td.message.value).toBe(BigInt(10000));
+    expect(td.message.validAfter).toBe(BigInt(0));
+    expect(td.message.nonce).toBe(NONCE);
   });
 
   test('falls back to USD Coin / version 2 when extra is missing', () => {
@@ -111,16 +88,16 @@ describe('buildPaymentHeader', () => {
     const auth = buildAuthorization({ from: FROM, accept: FIXTURE_ACCEPT, now: NOW, nonce: NONCE });
     const header = buildPaymentHeader({ accept: FIXTURE_ACCEPT, authorization: auth, signature: SIGNATURE, x402Version: 2 });
     const decoded: unknown = JSON.parse(Buffer.from(header, 'base64').toString('utf-8'));
-    const version = decoded !== null && typeof decoded === 'object' && 'x402Version' in decoded
-      ? decoded.x402Version
-      : undefined;
+    const version = decoded !== null && typeof decoded === 'object' && 'x402Version' in decoded ? decoded.x402Version : undefined;
     expect(version).toBe(2);
   });
 });
 
 describe('randomNonce (SEC8)', () => {
   const orig = (globalThis as { crypto?: unknown }).crypto;
-  afterEach(() => { (globalThis as { crypto?: unknown }).crypto = orig; });
+  afterEach(() => {
+    (globalThis as { crypto?: unknown }).crypto = orig;
+  });
 
   test('produces a 32-byte 0x nonce from crypto.getRandomValues', () => {
     const n = randomNonce();

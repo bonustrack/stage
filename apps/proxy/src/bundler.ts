@@ -22,10 +22,7 @@ export function isBrowserRequest(request: Request): boolean {
 export function manifestUrl(channel: string, request: Request): string {
   const target = new URL(`https://u.expo.dev/${EAS_PROJECT_ID}`);
   target.searchParams.set('channel-name', channel);
-  target.searchParams.set(
-    'runtime-version',
-    request.headers.get('expo-runtime-version') ?? DEFAULT_RUNTIME_VERSION,
-  );
+  target.searchParams.set('runtime-version', request.headers.get('expo-runtime-version') ?? DEFAULT_RUNTIME_VERSION);
   target.searchParams.set('platform', request.headers.get('expo-platform') ?? DEFAULT_PLATFORM);
   return target.toString();
 }

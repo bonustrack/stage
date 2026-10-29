@@ -13,18 +13,26 @@ const PROXY = 'https://proxy.stage.box';
 const CODE = 'export default { fetch: () => Response.json({ type: "Card", children: [] }) };';
 const realFetch = globalThis.fetch;
 
-interface Seen { url: string; init: RequestInit }
+interface Seen {
+  url: string;
+  init: RequestInit;
+}
 
 function stubFetch(respond: () => Response | Promise<Response>): Seen[] {
   const seen: Seen[] = [];
-  globalThis.fetch = Object.assign(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    seen.push({ url: String(input), init: init ?? {} });
-    return respond();
-  }, { preconnect: realFetch.preconnect });
+  globalThis.fetch = Object.assign(
+    async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      seen.push({ url: String(input), init: init ?? {} });
+      return respond();
+    },
+    { preconnect: realFetch.preconnect },
+  );
   return seen;
 }
 
-afterEach(() => { globalThis.fetch = realFetch; });
+afterEach(() => {
+  globalThis.fetch = realFetch;
+});
 
 describe('hosted node ids', () => {
   test('are the first 16 bytes of the SHA-256 of the public key, in hex', () => {
@@ -96,7 +104,13 @@ describe('publishing', () => {
     expect(headers['Content-Type']).toBe('application/javascript');
     expect(headers['Stage-Key']).toBe(nodeKeyId(RFC8032_KEY));
     const text = nodeSigningText('PUT', `${PROXY}/nodes`, headers['Stage-Timestamp'] ?? '', CODE);
-    expect(ed25519.verify(base64urlBytes(headers['Stage-Signature'] ?? '') ?? new Uint8Array(), utf8ToBytes(text), base64urlBytes(RFC8032_PUBLIC) ?? new Uint8Array())).toBe(true);
+    expect(
+      ed25519.verify(
+        base64urlBytes(headers['Stage-Signature'] ?? '') ?? new Uint8Array(),
+        utf8ToBytes(text),
+        base64urlBytes(RFC8032_PUBLIC) ?? new Uint8Array(),
+      ),
+    ).toBe(true);
   });
 
   test('checks the code before sending it', async () => {
@@ -110,7 +124,10 @@ describe('publishing', () => {
 
   test('maps proxy answers to problems', async () => {
     const cases: [Response, unknown][] = [
-      [Response.json({ error: 'Uncaught SyntaxError: Unexpected token' }, { status: 400 }), { ok: false, problem: 'refused', detail: 'Uncaught SyntaxError: Unexpected token' }],
+      [
+        Response.json({ error: 'Uncaught SyntaxError: Unexpected token' }, { status: 400 }),
+        { ok: false, problem: 'refused', detail: 'Uncaught SyntaxError: Unexpected token' },
+      ],
       [Response.json({ error: 'code too large' }, { status: 413 }), { ok: false, problem: 'too-large' }],
       [Response.json({ error: 'rate limited' }, { status: 429 }), { ok: false, problem: 'busy' }],
       [Response.json({ error: 'nodes are not set up' }, { status: 503 }), { ok: false, problem: 'not-ready' }],
@@ -134,7 +151,13 @@ describe('publishing', () => {
     const headers = seen[0]?.init.headers as Record<string, string>;
     expect(headers['Content-Type']).toBeUndefined();
     const text = nodeSigningText('DELETE', `${PROXY}/nodes`, headers['Stage-Timestamp'] ?? '', '');
-    expect(ed25519.verify(base64urlBytes(headers['Stage-Signature'] ?? '') ?? new Uint8Array(), utf8ToBytes(text), base64urlBytes(RFC8032_PUBLIC) ?? new Uint8Array())).toBe(true);
+    expect(
+      ed25519.verify(
+        base64urlBytes(headers['Stage-Signature'] ?? '') ?? new Uint8Array(),
+        utf8ToBytes(text),
+        base64urlBytes(RFC8032_PUBLIC) ?? new Uint8Array(),
+      ),
+    ).toBe(true);
     stubFetch(() => Response.json({ error: 'no such node' }, { status: 404 }));
     expect(await deleteNode(PROXY, RFC8032_KEY)).toBe(true);
     stubFetch(() => Response.json({ error: 'node hosting failed' }, { status: 502 }));

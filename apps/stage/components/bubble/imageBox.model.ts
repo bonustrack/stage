@@ -3,7 +3,10 @@ export const ATTACHMENT_MAX_HEIGHT = 400;
 export const ATTACHMENT_GAP = 4;
 export const VIDEO_PLACEHOLDER_RATIO = 16 / 9;
 
-interface ImageSize { width: number; height: number }
+interface ImageSize {
+  width: number;
+  height: number;
+}
 
 export function validSize(size: { width?: number; height?: number } | undefined): ImageSize | undefined {
   const width = size?.width;

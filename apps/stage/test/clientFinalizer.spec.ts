@@ -9,12 +9,27 @@ function harness(overrides: Partial<FinalizeDeps<string>> = {}) {
   const log: string[] = [];
   const deps: FinalizeDeps<string> = {
     active: () => Promise.resolve(account(selected)),
-    markRegistered: (id) => { log.push(`registered:${id}`); return Promise.resolve(undefined); },
-    saveEnv: () => { log.push('env'); return Promise.resolve(undefined); },
-    discard: (client) => { log.push(`discard:${client}`); },
+    markRegistered: (id) => {
+      log.push(`registered:${id}`);
+      return Promise.resolve(undefined);
+    },
+    saveEnv: () => {
+      log.push('env');
+      return Promise.resolve(undefined);
+    },
+    discard: (client) => {
+      log.push(`discard:${client}`);
+    },
     ...overrides,
   };
-  return { finalize: makeClientFinalizer(deps), log, selected: () => selected, select: (id: string) => { selected = id; } };
+  return {
+    finalize: makeClientFinalizer(deps),
+    log,
+    selected: () => selected,
+    select: (id: string) => {
+      selected = id;
+    },
+  };
 }
 
 describe('client finalization', () => {
@@ -23,15 +38,20 @@ describe('client finalization', () => {
       const failure = new Error(boundary);
       const { finalize, log } = harness({ [boundary]: () => Promise.reject(failure) });
       await expect(finalize('client-a', account('a'), 'production', { markRegistered: true })).rejects.toBe(failure);
-      expect(log.filter(e => e.startsWith('cache:') || e.startsWith('push:'))).toEqual([]);
-      expect(log.filter(e => e.startsWith('discard:'))).toEqual(['discard:client-a']);
+      expect(log.filter((e) => e.startsWith('cache:') || e.startsWith('push:'))).toEqual([]);
+      expect(log.filter((e) => e.startsWith('discard:'))).toEqual(['discard:client-a']);
     });
   }
 
   test('a selection change during registration cannot restore the old account or publish its client', async () => {
     const entered = Promise.withResolvers<undefined>();
     const persistence = Promise.withResolvers<undefined>();
-    const h = harness({ markRegistered: () => { entered.resolve(undefined); return persistence.promise; } });
+    const h = harness({
+      markRegistered: () => {
+        entered.resolve(undefined);
+        return persistence.promise;
+      },
+    });
     const opening = h.finalize('client-a', account('a'), 'production', { markRegistered: true });
     const result = opening.catch((e: unknown) => e);
     await entered.promise;
@@ -57,24 +77,38 @@ describe('client finalization', () => {
       const opening = openFinalizedClient({
         open: () => Promise.resolve('offline-client'),
         canFallback: () => true,
-        fallback: () => { h.log.push('delete-inbox', 'online-open'); return Promise.resolve('online-client'); },
-        finalize: client => h.finalize(client, account('a'), 'production', { markRegistered: true }),
+        fallback: () => {
+          h.log.push('delete-inbox', 'online-open');
+          return Promise.resolve('online-client');
+        },
+        finalize: (client) => h.finalize(client, account('a'), 'production', { markRegistered: true }),
       });
       await expect(opening).rejects.toBe(failure);
       expect(h.log).not.toContain('delete-inbox');
       expect(h.log).not.toContain('online-open');
-      expect(h.log.filter(value => value.startsWith('discard:'))).toEqual(['discard:offline-client']);
+      expect(h.log.filter((value) => value.startsWith('discard:'))).toEqual(['discard:offline-client']);
     });
   }
 
   test('a genuine permitted offline open failure still falls back once before finalization', async () => {
     const events: string[] = [];
-    expect(await openFinalizedClient({
-      open: () => { events.push('offline'); return Promise.reject(new Error('offline open failed')); },
-      canFallback: () => true,
-      fallback: () => { events.push('online'); return Promise.resolve('client'); },
-      finalize: client => { events.push(`finalize:${client}`); return Promise.resolve(client); },
-    })).toBe('client');
+    expect(
+      await openFinalizedClient({
+        open: () => {
+          events.push('offline');
+          return Promise.reject(new Error('offline open failed'));
+        },
+        canFallback: () => true,
+        fallback: () => {
+          events.push('online');
+          return Promise.resolve('client');
+        },
+        finalize: (client) => {
+          events.push(`finalize:${client}`);
+          return Promise.resolve(client);
+        },
+      }),
+    ).toBe('client');
     expect(events).toEqual(['offline', 'online', 'finalize:client']);
   });
 

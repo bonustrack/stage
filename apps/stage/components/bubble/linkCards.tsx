@@ -36,12 +36,19 @@ export function GithubLogo({ size, color }: { size: number; color: string }): Re
   );
 }
 
-function LinkPreviewBody({ meta, url, subColor, imageBg }: {
-  meta: Exclude<LinkPreviewResult, { kind: 'x402' }>; url: string; subColor: string; imageBg: string;
+function LinkPreviewBody({
+  meta,
+  url,
+  subColor,
+  imageBg,
+}: {
+  meta: Exclude<LinkPreviewResult, { kind: 'x402' }>;
+  url: string;
+  subColor: string;
+  imageBg: string;
 }): React.ReactElement {
-  const domain = meta.siteName == null || meta.siteName === ''
-    ? domainOf(meta.url == null || meta.url === '' ? url : meta.url)
-    : meta.siteName;
+  const domain =
+    meta.siteName == null || meta.siteName === '' ? domainOf(meta.url == null || meta.url === '' ? url : meta.url) : meta.siteName;
   return (
     <>
       {meta.image ? (
@@ -52,7 +59,9 @@ function LinkPreviewBody({ meta, url, subColor, imageBg }: {
           {meta.favicon ? (
             <Image fit="cover" url={meta.favicon} description={domain} radius="xs" style={{ width: 14, height: 14, marginRight: 6 }} />
           ) : null}
-          <Text color={subColor} numberOfLines={1} size="3xs">{domain}</Text>
+          <Text color={subColor} numberOfLines={1} size="3xs">
+            {domain}
+          </Text>
         </Row>
         <LinkCardText title={meta.title === '' ? undefined : meta.title} description={meta.description} subColor={subColor} />
       </Column>
@@ -60,19 +69,36 @@ function LinkPreviewBody({ meta, url, subColor, imageBg }: {
   );
 }
 
-function CardFrame({ background, padding, children }: {
-  background?: string; padding?: SpacingValue; children: React.ReactNode;
+function CardFrame({
+  background,
+  padding,
+  children,
+}: {
+  background?: string;
+  padding?: SpacingValue;
+  children: React.ReactNode;
 }): React.ReactElement {
   const { border } = usePalette();
   return (
-    <Column background={background} padding={padding} radius={BLOCK_RADIUS_DEFAULT} style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}>
+    <Column
+      background={background}
+      padding={padding}
+      radius={BLOCK_RADIUS_DEFAULT}
+      style={{ borderWidth: 1, borderColor: border, overflow: 'hidden' }}
+    >
       {children}
     </Column>
   );
 }
 
-function OutlinedLinkCard({ url, padding, children }: {
-  url: string; padding?: SpacingValue; children: React.ReactNode;
+function OutlinedLinkCard({
+  url,
+  padding,
+  children,
+}: {
+  url: string;
+  padding?: SpacingValue;
+  children: React.ReactNode;
 }): React.ReactElement {
   return (
     <Pressable {...bubbleLinkProps(url, openInBubbleLink)}>
@@ -83,13 +109,13 @@ function OutlinedLinkCard({ url, padding, children }: {
   );
 }
 
-function LinkCardText({ title, description, subColor }: {
-  title?: string; description?: string; subColor: string;
-}): React.ReactElement {
+function LinkCardText({ title, description, subColor }: { title?: string; description?: string; subColor: string }): React.ReactElement {
   return (
     <>
       {title === undefined ? null : (
-        <Text fontWeight="semibold" size="xl" numberOfLines={2}>{title}</Text>
+        <Text fontWeight="semibold" size="xl" numberOfLines={2}>
+          {title}
+        </Text>
       )}
       {description ? (
         <Text size="xs" color={subColor} style={{ lineHeight: 21, marginTop: 3 }} numberOfLines={2}>
@@ -100,9 +126,7 @@ function LinkCardText({ title, description, subColor }: {
   );
 }
 
-export function LinkPreviewCard({ url, dark }: {
-  url: string; dark?: boolean;
-}): React.ReactElement | null {
+export function LinkPreviewCard({ url, dark }: { url: string; dark?: boolean }): React.ReactElement | null {
   const meta = useLinkPreview(url);
   const pal = usePalette();
   if (!meta) return null;
@@ -115,9 +139,7 @@ export function LinkPreviewCard({ url, dark }: {
   );
 }
 
-const DOT: Record<string, string> = {
-  open: SUCCESS, merged: '#a371f7', closed: DANGER,
-};
+const DOT: Record<string, string> = { open: SUCCESS, merged: '#a371f7', closed: DANGER };
 
 const fmt = (n: number): string => n.toLocaleString('en-US');
 
@@ -126,10 +148,14 @@ function GithubDiffStats({ meta }: { meta: GithubMeta }): React.ReactElement | n
   return (
     <>
       {meta.additions != null ? (
-        <Text fontWeight="semibold" color={SUCCESS} size="3xs" style={{ marginLeft: 8 }}>+{fmt(meta.additions)}</Text>
+        <Text fontWeight="semibold" color={SUCCESS} size="3xs" style={{ marginLeft: 8 }}>
+          +{fmt(meta.additions)}
+        </Text>
       ) : null}
       {meta.deletions != null ? (
-        <Text fontWeight="semibold" color={DANGER} size="3xs" style={{ marginLeft: 6 }}>−{fmt(meta.deletions)}</Text>
+        <Text fontWeight="semibold" color={DANGER} size="3xs" style={{ marginLeft: 6 }}>
+          −{fmt(meta.deletions)}
+        </Text>
       ) : null}
     </>
   );
@@ -139,17 +165,21 @@ function GithubFooter({ meta, subColor }: { meta: GithubMeta; subColor: string }
   const dot = DOT[meta.state];
   return (
     <Row margin={{ top: 6 }} align="center" justify="start">
-      {dot ? (
-        <Column width={8} height={8} radius="full" background={dot} margin={{ right: 6 }}/>
-      ) : null}
+      {dot ? <Column width={8} height={8} radius="full" background={dot} margin={{ right: 6 }} /> : null}
       {meta.state ? (
-        <Text color={subColor} size="3xs" textTransform="capitalize">{meta.state}</Text>
+        <Text color={subColor} size="3xs" textTransform="capitalize">
+          {meta.state}
+        </Text>
       ) : null}
       {meta.kind === 'repo' && meta.stars != null ? (
-        <Text color={subColor} size="3xs">★ {meta.stars}</Text>
+        <Text color={subColor} size="3xs">
+          ★ {meta.stars}
+        </Text>
       ) : null}
       {meta.author ? (
-        <Text color={subColor} size="3xs" style={{ marginLeft: meta.state ? 8 : 0 }}>{meta.author}</Text>
+        <Text color={subColor} size="3xs" style={{ marginLeft: meta.state ? 8 : 0 }}>
+          {meta.author}
+        </Text>
       ) : null}
       <GithubDiffStats meta={meta} />
     </Row>
@@ -168,9 +198,10 @@ export function GitHubLinkCard({ url }: { url: string }): React.ReactElement | n
   return (
     <OutlinedLinkCard url={url} padding={{ x: 12, y: 10 }}>
       <Row margin={{ bottom: 4 }} align="center" justify="start">
-        <GithubLogo size={16} color={pal.link}/>
+        <GithubLogo size={16} color={pal.link} />
         <Text color={subColor} size="3xs" style={{ marginLeft: 6 }}>
-          {meta.repo}{numLabel ? ` · ${numLabel}` : ''}
+          {meta.repo}
+          {numLabel ? ` · ${numLabel}` : ''}
         </Text>
       </Row>
       <LinkCardText title={meta.title} description={meta.description} subColor={subColor} />
@@ -186,7 +217,10 @@ export function PreviewLinkCard({ url }: { url: string }): React.ReactElement | 
 
   const pressedBg = schemePalette(dark).pressed;
   return (
-    <Pressable {...bubbleLinkProps(ref.url, openInBubbleLink)} style={({ pressed }) => (pressed ? { backgroundColor: pressedBg } : undefined)}>
+    <Pressable
+      {...bubbleLinkProps(ref.url, openInBubbleLink)}
+      style={({ pressed }) => (pressed ? { backgroundColor: pressedBg } : undefined)}
+    >
       <ListViewItem dark={dark}>
         <Column radius="lg">
           <Column gap={2} padding={{ x: 12, y: 10 }}>
@@ -199,9 +233,15 @@ export function PreviewLinkCard({ url }: { url: string }): React.ReactElement | 
   );
 }
 
-export function ChannelCard(
-  { convId, peerAddress, url }: { convId?: string; peerAddress?: string; url: string },
-): React.ReactElement | null {
+export function ChannelCard({
+  convId,
+  peerAddress,
+  url,
+}: {
+  convId?: string;
+  peerAddress?: string;
+  url: string;
+}): React.ReactElement | null {
   if (peerAddress) return <DmPeerCard address={peerAddress} url={url} />;
   if (!convId) return null;
   return <ConvIdCard convId={convId} url={url} />;
@@ -222,9 +262,7 @@ function convSubtitle(row: ConvRow | null): string {
   return row?.peerAddress ? 'Direct message' : 'Open channel';
 }
 
-function convAvatar(
-  row: ConvRow | null, convId: string,
-): { avatarUri: string | null; avatarAddress: string | null } {
+function convAvatar(row: ConvRow | null, convId: string): { avatarUri: string | null; avatarAddress: string | null } {
   if (row === null || row.peerAddress !== null) {
     const peer = row?.peerAddress ?? null;
     return { avatarUri: null, avatarAddress: peer !== null && isPeerResolved(peer) ? peer : null };
@@ -250,7 +288,9 @@ function ConvIdCard({ convId, url }: { convId: string; url: string }): React.Rea
         avatarUri={avatarUri}
         avatarAddress={avatarAddress}
         square={isGroupRow(row)}
-        onPress={() => { router.push({ pathname: '/channel/[convId]', params: { convId } }); }}
+        onPress={() => {
+          router.push({ pathname: '/channel/[convId]', params: { convId } });
+        }}
         linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />
     </CardFrame>
@@ -269,10 +309,11 @@ function DmPeerCard({ address, url }: { address: string; url: string }): React.R
         title={title}
         subtitle="Direct message"
         avatarAddress={isPeerResolved(address) ? address : null}
-        onPress={() => { router.push({ pathname: '/[convId]', params: { convId: address } }); }}
+        onPress={() => {
+          router.push({ pathname: '/[convId]', params: { convId: address } });
+        }}
         linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />
     </CardFrame>
   );
 }
-

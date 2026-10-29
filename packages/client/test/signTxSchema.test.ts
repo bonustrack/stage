@@ -1,9 +1,10 @@
-
 import { describe, expect, test } from 'bun:test';
 import { encodeJsonContent, decodeJsonContent } from '../src/xmtp/codecs';
 import {
-  SIGNATURE_REQUEST_CONTENT_TYPE, SIGNATURE_REFERENCE_CONTENT_TYPE,
-  WALLET_SEND_CALLS_CONTENT_TYPE, TRANSACTION_REFERENCE_CONTENT_TYPE,
+  SIGNATURE_REQUEST_CONTENT_TYPE,
+  SIGNATURE_REFERENCE_CONTENT_TYPE,
+  WALLET_SEND_CALLS_CONTENT_TYPE,
+  TRANSACTION_REFERENCE_CONTENT_TYPE,
 } from '../src/xmtp/codecs';
 import { signatureRequestSchema, signatureReferenceSchema } from '../src/xmtp/sign.schema';
 import { walletSendCallsSchema, transactionReferenceSchema } from '../src/xmtp/tx.schema';
@@ -23,9 +24,7 @@ const permitTypedData = {
   message: { spender: '0xattacker', sigDeadline: '123' },
 };
 
-const validSigReq: SignatureRequestContent = {
-  id: 'sig_1', kind: 'eip712', eip712: permitTypedData, description: 'Sign in',
-};
+const validSigReq: SignatureRequestContent = { id: 'sig_1', kind: 'eip712', eip712: permitTypedData, description: 'Sign in' };
 
 describe('signatureRequestSchema', () => {
   test('valid eip712 request round-trips', () => {
@@ -55,18 +54,14 @@ describe('signatureRequestSchema', () => {
   });
 
   test('eip712 missing the message/domain shape is REJECTED', () => {
-    const bad = encodeJsonContent(SIGNATURE_REQUEST_CONTENT_TYPE, {
-      id: 's', kind: 'eip712', eip712: { primaryType: 'X' },
-    });
+    const bad = encodeJsonContent(SIGNATURE_REQUEST_CONTENT_TYPE, { id: 's', kind: 'eip712', eip712: { primaryType: 'X' } });
     expect(() => decodeJsonContent(bad.content, signatureRequestSchema)).toThrow();
   });
 
   test('a pathological blob (too many message keys) is REJECTED', () => {
     const message: Record<string, string> = {};
     for (let i = 0; i < 500; i++) message[`k${i}`] = 'v';
-    const bad = encodeJsonContent(SIGNATURE_REQUEST_CONTENT_TYPE, {
-      id: 's', kind: 'eip712', eip712: { ...permitTypedData, message },
-    });
+    const bad = encodeJsonContent(SIGNATURE_REQUEST_CONTENT_TYPE, { id: 's', kind: 'eip712', eip712: { ...permitTypedData, message } });
     expect(() => decodeJsonContent(bad.content, signatureRequestSchema)).toThrow();
   });
 });
@@ -85,7 +80,9 @@ describe('signatureReferenceSchema', () => {
 
 describe('walletSendCallsSchema', () => {
   const valid: WalletSendCallsContent = {
-    version: '1.0', chainId: '0x1', from: '0xfrom',
+    version: '1.0',
+    chainId: '0x1',
+    from: '0xfrom',
     calls: [{ to: '0xto', value: '0x0', data: '0x' }],
   };
   test('valid request round-trips', () => {

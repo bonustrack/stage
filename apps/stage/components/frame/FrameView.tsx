@@ -8,7 +8,12 @@ import type { SpacingValue } from '@stage-labs/kit/layout';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { report } from '../../lib/errorPolicy';
 import {
-  activateFrameSessionHost, frameSession, rejectAgentCall, releaseFrameSession, setFrameSessionHost, type FrameSessionHost,
+  activateFrameSessionHost,
+  frameSession,
+  rejectAgentCall,
+  releaseFrameSession,
+  setFrameSessionHost,
+  type FrameSessionHost,
 } from '../../lib/frameSession';
 import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { usePalette } from '../../lib/theme';
@@ -58,7 +63,9 @@ function accepts({ disabled = false, untilTap = false }: FrameViewProps, message
 function useSessionHost(sessionKey: string, props: FrameViewProps): () => void {
   const latest = useRef(props);
   const host = useRef<FrameSessionHost | null>(null);
-  useEffect(() => { latest.current = props; });
+  useEffect(() => {
+    latest.current = props;
+  });
   useEffect(() => {
     host.current = {
       accepts: (message, engaged) => accepts(latest.current, message, engaged),
@@ -69,15 +76,25 @@ function useSessionHost(sessionKey: string, props: FrameViewProps): () => void {
           return;
         }
         const label = 'action' in message ? tapLabel(client, message.action) : undefined;
-        void Promise.resolve(onMessage({ message, metadata, label })).catch((err: unknown) => { report('frame.message', err); });
+        void Promise.resolve(onMessage({ message, metadata, label })).catch((err: unknown) => {
+          report('frame.message', err);
+        });
       },
-      navigate: (nav) => { latest.current.navigation.navigate(nav); },
-      openUrl: (url) => { openInBubbleLink(url); },
+      navigate: (nav) => {
+        latest.current.navigation.navigate(nav);
+      },
+      openUrl: (url) => {
+        openInBubbleLink(url);
+      },
     };
     return setFrameSessionHost(sessionKey, host.current);
   }, [sessionKey]);
-  useEffect(() => { releaseFrameSession(sessionKey); }, [sessionKey, props.disabled]);
-  return () => { if (host.current !== null) activateFrameSessionHost(sessionKey, host.current); };
+  useEffect(() => {
+    releaseFrameSession(sessionKey);
+  }, [sessionKey, props.disabled]);
+  return () => {
+    if (host.current !== null) activateFrameSessionHost(sessionKey, host.current);
+  };
 }
 
 export function FrameView(props: FrameViewProps): React.ReactElement {
@@ -85,12 +102,26 @@ export function FrameView(props: FrameViewProps): React.ReactElement {
   const client = frameSession(sessionKey, frame);
   const activate = useSessionHost(sessionKey, props);
   return (
-    <Column padding={padding} onStartShouldSetResponderCapture={() => { activate(); return false; }}>
+    <Column
+      padding={padding}
+      onStartShouldSetResponderCapture={() => {
+        activate();
+        return false;
+      }}
+    >
       <ResetBoundary resetKey={client} fallback={() => <FrameNotice text="This frame could not be shown." />}>
-        {client.surface(navigation.screen) === undefined
-          ? <FrameNotice text="This screen is not in the frame." />
-          : <A2uiSurface client={client} surfaceId={navigation.screen} renderers={MEDIA_RENDERERS} disabled={disabled} mediaUrl={frameMediaUrl}
-              fallback={<FrameNotice text="This frame could not be shown." />} />}
+        {client.surface(navigation.screen) === undefined ? (
+          <FrameNotice text="This screen is not in the frame." />
+        ) : (
+          <A2uiSurface
+            client={client}
+            surfaceId={navigation.screen}
+            renderers={MEDIA_RENDERERS}
+            disabled={disabled}
+            mediaUrl={frameMediaUrl}
+            fallback={<FrameNotice text="This frame could not be shown." />}
+          />
+        )}
       </ResetBoundary>
     </Column>
   );

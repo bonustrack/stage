@@ -87,8 +87,9 @@ describe('description changes in appData', () => {
     expect(humanizeGroupUpdated({ metadataFieldChanges: changes })).toBe(notice);
     expect(previewOfXmtpContent({ metadataFieldsChanged: changes }, 'xmtp.org/group_updated:1.0')).toBe(notice);
     expect(previewOfXmtpContent({ metadataFieldChanges: changes }, 'xmtp.org/groupUpdated:1.0')).toBe(notice);
-    expect(humanizeGroupUpdated({ metadataFieldsChanged: changes, membersAdded: [{ inboxId: 'member' }] }, () => 'Alice'))
-      .toBe(`${notice} • added Alice`);
+    expect(humanizeGroupUpdated({ metadataFieldsChanged: changes, membersAdded: [{ inboxId: 'member' }] }, () => 'Alice')).toBe(
+      `${notice} • added Alice`,
+    );
   });
 
   test('recognizes the native protocol description key without guessing other field aliases', () => {
@@ -96,7 +97,9 @@ describe('description changes in appData', () => {
       expect(humanizeGroupUpdated({ metadataFieldsChanged: [{ fieldName, oldValue: 'Before', newValue: 'After' }] })).toBe(notice);
       expect(humanizeGroupUpdated({ metadataFieldChanges: [{ fieldName, oldValue: 'Before', newValue: '' }] })).toBe(notice);
     }
-    expect(humanizeGroupUpdated({ metadataFieldChanges: [{ fieldName: 'future_setting', newValue: 'value' }] })).toBe('changed future setting');
+    expect(humanizeGroupUpdated({ metadataFieldChanges: [{ fieldName: 'future_setting', newValue: 'value' }] })).toBe(
+      'changed future setting',
+    );
   });
 });
 
@@ -135,8 +138,9 @@ describe('assignment changes in appData', () => {
   });
 
   test('normalizes valid addresses and ignores invalid array entries', () => {
-    expect(describeAppDataChange(assigned([null, 17, 'bad', ` ${alice} `]), assigned(['bad', bob, bob])))
-      .toBe(`assigned @${bob} • unassigned @${alice}`);
+    expect(describeAppDataChange(assigned([null, 17, 'bad', ` ${alice} `]), assigned(['bad', bob, bob]))).toBe(
+      `assigned @${bob} • unassigned @${alice}`,
+    );
   });
 
   test('does not invent deltas from missing or malformed event values', () => {
@@ -153,10 +157,12 @@ describe('assignment changes in appData', () => {
   test('retains label and GitHub details in a combined update', () => {
     const before = JSON.stringify({ v: 1, labels: ['Todo'], assigned: [alice], preview: 'old' });
     const after = JSON.stringify({ v: 1, labels: ['Stage'], assigned: [bob], github: 'https://github.com/o/r', preview: 'new' });
-    expect(describeAppDataChange(before, after))
-      .toBe(`added label "Stage" • removed label "Todo" • linked github.com/o/r • assigned @${bob} • unassigned @${alice}`);
-    expect(describeAppDataChange(assigned([alice]), JSON.stringify({ assigned: [alice], preview: 'new', future: true })))
-      .toBe('updated the channel settings');
+    expect(describeAppDataChange(before, after)).toBe(
+      `added label "Stage" • removed label "Todo" • linked github.com/o/r • assigned @${bob} • unassigned @${alice}`,
+    );
+    expect(describeAppDataChange(assigned([alice]), JSON.stringify({ assigned: [alice], preview: 'new', future: true }))).toBe(
+      'updated the channel settings',
+    );
   });
 
   test('works through both native and browser metadata field aliases', () => {
@@ -175,8 +181,9 @@ describe('assignment changes in appData', () => {
       ],
       membersAdded: [{ inboxId: 'new-member' }],
     };
-    expect(humanizeGroupUpdated(update, () => 'Carol'))
-      .toBe(`assigned @${bob} • unassigned @${alice} • renamed the channel to "New name" • updated the channel description • updated the channel image • added Carol`);
+    expect(humanizeGroupUpdated(update, () => 'Carol')).toBe(
+      `assigned @${bob} • unassigned @${alice} • renamed the channel to "New name" • updated the channel description • updated the channel image • added Carol`,
+    );
   });
 });
 
@@ -191,13 +198,13 @@ describe('humanizeGroupUpdated member names', () => {
   });
 
   test('shortens long lists', () => {
-    const members = ['a', 'b', 'c', 'd'].map(inboxId => ({ inboxId }));
+    const members = ['a', 'b', 'c', 'd'].map((inboxId) => ({ inboxId }));
     expect(humanizeGroupUpdated({ addedInboxes: members }, nameOf)).toBe('added Alice, @bobby1 and 2 others');
   });
 
   test('names the known members and counts the unknown ones', () => {
     expect(humanizeGroupUpdated({ addedInboxes: [{ inboxId: 'a' }, { inboxId: 'z' }] }, nameOf)).toBe('added Alice and 1 other');
-    const mixed = ['a', 'y', 'b', 'z'].map(inboxId => ({ inboxId }));
+    const mixed = ['a', 'y', 'b', 'z'].map((inboxId) => ({ inboxId }));
     expect(humanizeGroupUpdated({ membersRemoved: mixed }, nameOf)).toBe('removed Alice, @bobby1 and 2 others');
     expect(humanizeGroupUpdated({ removedInboxes: [{ inboxId: 'z' }, { inboxId: 'y' }] }, nameOf)).toBe('removed 2 members');
     expect(humanizeGroupUpdated({ addedInboxes: [{ inboxId: 'a' }] })).toBe('added 1 member');

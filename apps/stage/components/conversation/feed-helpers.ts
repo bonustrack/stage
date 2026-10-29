@@ -2,7 +2,7 @@ import { humanizeMentions, attachmentEmojiPreview } from '@stage-labs/client/xmt
 import type { HistoryEntry } from '@stage-labs/client/types';
 
 export function hasAttachments(e: HistoryEntry): boolean {
-  return (((e.payload as { attachments?: unknown[] } | undefined)?.attachments?.length) ?? 0) > 0;
+  return ((e.payload as { attachments?: unknown[] } | undefined)?.attachments?.length ?? 0) > 0;
 }
 
 export interface FeedScrollMetrics {
@@ -21,16 +21,12 @@ interface FeedPositionHold {
   autoscrollToTopThreshold?: number;
 }
 
-export function feedPositionHold(
-  upright: boolean, awayFromNewest: boolean, followWithinPx: number,
-): FeedPositionHold | undefined {
+export function feedPositionHold(upright: boolean, awayFromNewest: boolean, followWithinPx: number): FeedPositionHold | undefined {
   if (upright) return { minIndexForVisible: 0 };
   return awayFromNewest ? { minIndexForVisible: 0, autoscrollToTopThreshold: followWithinPx } : undefined;
 }
 
-export function uprightScrollOffset(
-  distanceFromNewest: number, contentHeight: number, viewportHeight: number,
-): number {
+export function uprightScrollOffset(distanceFromNewest: number, contentHeight: number, viewportHeight: number): number {
   return Math.max(0, contentHeight - viewportHeight - distanceFromNewest);
 }
 
@@ -48,8 +44,11 @@ export function uprightFirstBatch(rowCount: number): number {
 }
 
 export function planUprightRestore(args: {
-  loaded: boolean; restoredSaved: boolean; savedDistance: number | undefined;
-  userDragged: boolean; atNewest: boolean;
+  loaded: boolean;
+  restoredSaved: boolean;
+  savedDistance: number | undefined;
+  userDragged: boolean;
+  atNewest: boolean;
 }): 'saved' | 'newest' | 'skip' {
   const { loaded, restoredSaved, savedDistance, userDragged, atNewest } = args;
   if (!loaded) return 'skip';

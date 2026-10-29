@@ -1,7 +1,10 @@
 import type { CallStream } from '../../lib/calls.types';
 import { clockLabel } from '../bubble/audioCard.model';
 
-interface CallGrid { cols: number; rows: number }
+interface CallGrid {
+  cols: number;
+  rows: number;
+}
 
 export function callGrid(count: number, wide: boolean): CallGrid {
   const n = Math.max(1, count);

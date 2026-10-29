@@ -10,7 +10,7 @@ export function isLocation(at: Attachment): boolean {
 }
 
 export function withLocation(pending: Attachment[], location: Attachment): Attachment[] {
-  return [...pending.filter(at => !isLocation(at)), location];
+  return [...pending.filter((at) => !isLocation(at)), location];
 }
 
 export function locationText(location: Attachment): string {

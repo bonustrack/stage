@@ -32,9 +32,11 @@ interface ChannelMenuProps {
 }
 
 function confirmLeaveChannel(
-  convId: string, context: 'list' | 'view',
+  convId: string,
+  context: 'list' | 'view',
   router: ReturnType<typeof useRouter>,
-  onClose: () => void, onAfterLeave?: (result: 'left' | 'hidden') => void,
+  onClose: () => void,
+  onAfterLeave?: (result: 'left' | 'hidden') => void,
 ): void {
   onClose();
   void capabilities.confirm(LEAVE_CHANNEL_CONFIRM).then(async (ok) => {
@@ -59,11 +61,15 @@ async function checkSync(convId: string): Promise<void> {
   }
 }
 
-const DELETE_CHAT_MESSAGE = 'The chat is removed from all your devices. If they write again, it comes back with only the new messages. Delete and block also stops their messages for good.';
+const DELETE_CHAT_MESSAGE =
+  'The chat is removed from all your devices. If they write again, it comes back with only the new messages. Delete and block also stops their messages for good.';
 
 function confirmDeleteChat(
-  convId: string, peerAddress: string, context: 'list' | 'view',
-  router: ReturnType<typeof useRouter>, onClose: () => void,
+  convId: string,
+  peerAddress: string,
+  context: 'list' | 'view',
+  router: ReturnType<typeof useRouter>,
+  onClose: () => void,
 ): void {
   onClose();
   const remove = (block: boolean): void => {
@@ -80,41 +86,106 @@ function confirmDeleteChat(
   };
   Alert.alert('Delete chat', DELETE_CHAT_MESSAGE, [
     { text: 'Cancel', style: 'cancel' },
-    { text: 'Delete', style: 'destructive', onPress: () => { remove(false); } },
-    { text: 'Delete and block', style: 'destructive', onPress: () => { remove(true); } },
+    {
+      text: 'Delete',
+      style: 'destructive',
+      onPress: () => {
+        remove(false);
+      },
+    },
+    {
+      text: 'Delete and block',
+      style: 'destructive',
+      onPress: () => {
+        remove(true);
+      },
+    },
   ]);
 }
 
 export function ChannelMenu({
-  convId, isGroup, peerAddress, isUnread, isPinned,
-  visible, onClose, anchor, context = 'list', onAfterLeave, onSearch, onEdit,
+  convId,
+  isGroup,
+  peerAddress,
+  isUnread,
+  isPinned,
+  visible,
+  onClose,
+  anchor,
+  context = 'list',
+  onAfterLeave,
+  onSearch,
+  onEdit,
 }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
 
-  const run = (fn: () => void): void => { onClose(); fn(); };
+  const run = (fn: () => void): void => {
+    onClose();
+    fn();
+  };
 
   const handlers: Record<string, () => void> = {
-    search: () => { onClose(); setTimeout(() => onSearch?.(), 0); },
-    'add-members': () => { onClose(); setTimeout(() => { openAddMembers(convId); }, 0); },
-    'toggle-read': () => { run(() => { void (isUnread ? markConvRead(convId) : markConvUnread(convId)); }); },
-    'toggle-pin': () => { run(() => { void togglePin(convId); }); },
-    info: () => { run(() => {
-      if (isGroup) router.push(channelProfileLinkOf(convId));
-      else if (peerAddress) router.push(profileLinkOf(peerAddress));
-    }); },
-    sync: () => { run(() => { void checkSync(convId); }); },
-    edit: () => { onClose(); setTimeout(() => onEdit?.(), 0); },
-    leave: () => { confirmLeaveChannel(convId, context, router, onClose, onAfterLeave); },
-    delete: () => { if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose); },
+    search: () => {
+      onClose();
+      setTimeout(() => onSearch?.(), 0);
+    },
+    'add-members': () => {
+      onClose();
+      setTimeout(() => {
+        openAddMembers(convId);
+      }, 0);
+    },
+    'toggle-read': () => {
+      run(() => {
+        void (isUnread ? markConvRead(convId) : markConvUnread(convId));
+      });
+    },
+    'toggle-pin': () => {
+      run(() => {
+        void togglePin(convId);
+      });
+    },
+    info: () => {
+      run(() => {
+        if (isGroup) router.push(channelProfileLinkOf(convId));
+        else if (peerAddress) router.push(profileLinkOf(peerAddress));
+      });
+    },
+    sync: () => {
+      run(() => {
+        void checkSync(convId);
+      });
+    },
+    edit: () => {
+      onClose();
+      setTimeout(() => onEdit?.(), 0);
+    },
+    leave: () => {
+      confirmLeaveChannel(convId, context, router, onClose, onAfterLeave);
+    },
+    delete: () => {
+      if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose);
+    },
   };
 
   const developerMode = useDeveloperMode();
-  const items = channelMenuItems({ isGroup, hasPeer: !!peerAddress, isUnread, isPinned }, { search: !!onSearch, edit: !!onEdit, developerMode });
+  const items = channelMenuItems(
+    { isGroup, hasPeer: !!peerAddress, isUnread, isPinned },
+    { search: !!onSearch, edit: !!onEdit, developerMode },
+  );
 
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
       {items.map((item) => (
-        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={() => { handlers[item.id]?.(); }} />
+        <MenuRow
+          key={item.id}
+          icon={item.icon}
+          label={item.label}
+          danger={item.danger}
+          onPress={() => {
+            handlers[item.id]?.();
+          }}
+        />
       ))}
     </AnchoredMenu>
   );

@@ -69,18 +69,25 @@ describe('Title style parity', () => {
           for (const size of [undefined, 'sm', 'md', 'lg'] as const) {
             for (const color of [undefined, 'secondary', '#123456'] as const) {
               for (const style of [undefined, { fontSize: 13, color: '#abcdef' }, [{ fontSize: 14 }, { lineHeight: 20 }]]) {
-                const base = Object.assign({
-                  color: color != null ? resolveColorToken(color, scheme) : palette.link,
-                  fontSize: levelSizes[level ?? (size ? sizeLevels[size] : 2)],
-                  fontFamily: fontName.head,
-                }, hero === undefined ? {} : HERO_TITLE_STYLE[hero]);
+                const base = Object.assign(
+                  {
+                    color: color != null ? resolveColorToken(color, scheme) : palette.link,
+                    fontSize: levelSizes[level ?? (size ? sizeLevels[size] : 2)],
+                    fontFamily: fontName.head,
+                  },
+                  hero === undefined ? {} : HERO_TITLE_STYLE[hero],
+                );
                 const actual = renderToStaticMarkup(
                   <KitThemeProvider value={palette} scheme={scheme}>
-                    <Title level={level} size={size} hero={hero} color={color} style={style} numberOfLines={2}>Example</Title>
+                    <Title level={level} size={size} hero={hero} color={color} style={style} numberOfLines={2}>
+                      Example
+                    </Title>
                   </KitThemeProvider>,
                 );
                 const expected = renderToStaticMarkup(
-                  <ReactNativeWeb.Text style={style ? [base, style] : base} numberOfLines={2}>Example</ReactNativeWeb.Text>,
+                  <ReactNativeWeb.Text style={style ? [base, style] : base} numberOfLines={2}>
+                    Example
+                  </ReactNativeWeb.Text>,
                 );
                 expect(normalizeInlineStyleOrder(actual)).toBe(normalizeInlineStyleOrder(expected));
               }

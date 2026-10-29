@@ -1,12 +1,18 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  CHANNEL_WAITING_NOTICE, INACTIVE_SEND_MESSAGE, classifyKeyPackageStatuses, isGroupInactive, isMissingMlsState,
-  pickNativeErrors, readableSendError,
+  CHANNEL_WAITING_NOTICE,
+  INACTIVE_SEND_MESSAGE,
+  classifyKeyPackageStatuses,
+  isGroupInactive,
+  isMissingMlsState,
+  pickNativeErrors,
+  readableSendError,
 } from '../src/xmtp/clientErrors';
 import { errorLine } from '../src/errors';
 
-const NATIVE_INACTIVE = 'Call to function \'XMTP.sendMessage\' has been rejected. Caused by: '
-  + 'uniffi.xmtpv3.FfiException$Exception: [GroupError::GroupInactive] Group error: Group is inactive';
+const NATIVE_INACTIVE =
+  "Call to function 'XMTP.sendMessage' has been rejected. Caused by: " +
+  'uniffi.xmtpv3.FfiException$Exception: [GroupError::GroupInactive] Group error: Group is inactive';
 
 describe('inactive conversations', () => {
   test('recognises the native and web inactive group errors', () => {
@@ -29,8 +35,9 @@ describe('inactive conversations', () => {
   });
 });
 
-const NATIVE_RESTORED = 'Call to function \'XMTP.findConversation\' has been rejected. \u2192 Caused by: '
-  + 'uniffi.xmtpv3.FfiException$Exception: [NotFound::MlsGroup] Group error: MLS Group bb4e76e238f67034feae85db784edfd6 Not Found';
+const NATIVE_RESTORED =
+  "Call to function 'XMTP.findConversation' has been rejected. \u2192 Caused by: " +
+  'uniffi.xmtpv3.FfiException$Exception: [NotFound::MlsGroup] Group error: MLS Group bb4e76e238f67034feae85db784edfd6 Not Found';
 
 describe('restored copies without MLS state', () => {
   test('recognises the native and plain libxmtp errors', () => {
@@ -81,9 +88,7 @@ describe('classifyKeyPackageStatuses', () => {
   test('all lifetime-expired key packages means stale installations', () => {
     expect(classifyKeyPackageStatuses([LIFETIME])).toBe('stale-installations');
     expect(classifyKeyPackageStatuses([LIFETIME, 'KeyPackage expired'])).toBe('stale-installations');
-    expect(classifyKeyPackageStatuses(['key package not found', 'no key package'])).toBe(
-      'stale-installations',
-    );
+    expect(classifyKeyPackageStatuses(['key package not found', 'no key package'])).toBe('stale-installations');
   });
 
   test('non-expiry failures are indeterminate, never reported as expired keys', () => {

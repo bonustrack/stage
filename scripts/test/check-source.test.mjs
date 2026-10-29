@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const COMMANDS = [
+  'fmt --no-script --check',
   'run lint',
   'run typecheck',
   'run knip',
@@ -21,10 +22,14 @@ function runChecks(failCommand = '') {
   const directory = mkdtempSync(join(tmpdir(), 'stage-source-checks-'));
   const calls = join(directory, 'calls');
   try {
-    writeFileSync(join(directory, 'bun'), `#!/usr/bin/env bash
+    writeFileSync(
+      join(directory, 'bun'),
+      `#!/usr/bin/env bash
 printf '%s|%s\\n' "$PWD" "$*" >> "$CALLS"
 if [ "$*" = "$FAIL_COMMAND" ]; then exit 1; fi
-`, { mode: 0o700 });
+`,
+      { mode: 0o700 },
+    );
     const result = spawnSync('bash', [join(ROOT, 'scripts/check-source.sh')], {
       cwd: join(ROOT, 'apps/stage'),
       env: {
@@ -54,7 +59,6 @@ describe('shared source checks', () => {
   test.each(COMMANDS)('stops immediately when %s fails', (command) => {
     const check = runChecks(command);
     expect(check.result.status).toBe(1);
-    expect(check.calls).toEqual(COMMANDS.slice(0, COMMANDS.indexOf(command) + 1)
-      .map((entry) => `${ROOT}|${entry}`));
+    expect(check.calls).toEqual(COMMANDS.slice(0, COMMANDS.indexOf(command) + 1).map((entry) => `${ROOT}|${entry}`));
   });
 });

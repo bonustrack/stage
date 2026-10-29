@@ -32,7 +32,10 @@ describe('dictation language fallback', () => {
   });
 
   it('retains the existing single-model consent flow instead of starting or downloading in a loop', async () => {
-    const h = harness({ availability: async () => ({ available: false, download: true, locale: 'en-US' }) }, { confirmDownload: async () => true });
+    const h = harness(
+      { availability: async () => ({ available: false, download: true, locale: 'en-US' }) },
+      { confirmDownload: async () => true },
+    );
     await h.control.start();
     expect(h.downloads()).toBe(1);
     expect(h.starts).toHaveLength(0);

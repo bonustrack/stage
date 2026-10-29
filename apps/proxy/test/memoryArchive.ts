@@ -16,7 +16,8 @@ export function memoryStorage(): MemoryStorage {
       return Promise.resolve();
     },
     delete: (keys) => Promise.resolve(keys.filter((key) => data.delete(key)).length),
-    list: ({ prefix }) => Promise.resolve(new Map([...data].filter(([key]) => key.startsWith(prefix)).sort(([a], [b]) => a.localeCompare(b)))),
+    list: ({ prefix }) =>
+      Promise.resolve(new Map([...data].filter(([key]) => key.startsWith(prefix)).sort(([a], [b]) => a.localeCompare(b)))),
     setAlarm(time) {
       this.alarm = time;
       return Promise.resolve();
@@ -28,9 +29,7 @@ export function memoryStorage(): MemoryStorage {
   };
 }
 
-export function memoryNamespace(
-  objectFetch: ObjectFetch, now: number,
-): ArchiveNamespace<string> & { objects: Map<string, MemoryStorage> } {
+export function memoryNamespace(objectFetch: ObjectFetch, now: number): ArchiveNamespace<string> & { objects: Map<string, MemoryStorage> } {
   const objects = new Map<string, MemoryStorage>();
   return {
     objects,

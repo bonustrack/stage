@@ -37,15 +37,13 @@ export function categorySectionOrderWith(order: readonly string[], visible: read
   return [...(full.includes('dm') ? [] : ['dm']), ...full, ...(full.includes('none') ? [] : ['none'])];
 }
 
-export function movedCategoryOrder(
-  order: readonly string[], visible: readonly string[], key: string, targetKey: string,
-): string[] {
+export function movedCategoryOrder(order: readonly string[], visible: readonly string[], key: string, targetKey: string): string[] {
   const shown = categorySectionKeysOf(visible);
   const full = categorySectionOrderWith(order, shown);
-  const named = (value: string): string | undefined => (
-    shown.some(item => item.toLowerCase() === value.toLowerCase())
-      ? full.find(item => item.toLowerCase() === value.toLowerCase()) : undefined
-  );
+  const named = (value: string): string | undefined =>
+    shown.some((item) => item.toLowerCase() === value.toLowerCase())
+      ? full.find((item) => item.toLowerCase() === value.toLowerCase())
+      : undefined;
   const moved = named(key);
   const target = named(targetKey);
   return moved === undefined || target === undefined ? [...order] : movedKey(full, moved, target);

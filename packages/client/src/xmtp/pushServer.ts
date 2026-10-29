@@ -54,7 +54,11 @@ function hmacKeysJson(keys: readonly HmacKeyData[] | undefined): { thirtyDayPeri
   return (keys ?? []).map((k) => ({ thirtyDayPeriodsSinceEpoch: k.thirtyDayPeriodsSinceEpoch, key: bytesToBase64(k.hmacKey) }));
 }
 
-export function registerInstallationBody(installationId: string, token: string, platform: PushPlatform): {
+export function registerInstallationBody(
+  installationId: string,
+  token: string,
+  platform: PushPlatform,
+): {
   installationId: string;
   deliveryMechanism: { firebaseDeviceToken: string } | { apnsDeviceToken: string };
   payloadFormat: 'PAYLOAD_FORMAT_V3';
@@ -120,11 +124,11 @@ export function joinDeviceGroupBody(installationId: string, groupKey: string): {
   return { installationId, groupKey };
 }
 
-export function clearConversationBody(installationId: string, groupKey: string, convId: string): {
-  installationId: string;
-  groupKey: string;
-  topic: string;
-} {
+export function clearConversationBody(
+  installationId: string,
+  groupKey: string,
+  convId: string,
+): { installationId: string; groupKey: string; topic: string } {
   return { installationId, groupKey, topic: groupTopicOf(convId) };
 }
 
@@ -136,16 +140,27 @@ export interface SenderFilterTopic {
 export const SENDER_FILTER_BATCH_SIZE = 256;
 
 export function senderFilterTopics(topics: readonly string[], keys: HmacKeysByTopic): SenderFilterTopic[] {
-  return [...new Set(topics)].filter(topic => !isWelcomeTopic(topic)).sort().map(topic => ({
-    topic,
-    hmacKeys: hmacKeysJson(keys[topic]).sort((a, b) => a.thirtyDayPeriodsSinceEpoch - b.thirtyDayPeriodsSinceEpoch || a.key.localeCompare(b.key)),
-  })).filter(topic => topic.hmacKeys.length > 0);
+  return [...new Set(topics)]
+    .filter((topic) => !isWelcomeTopic(topic))
+    .sort()
+    .map((topic) => ({
+      topic,
+      hmacKeys: hmacKeysJson(keys[topic]).sort(
+        (a, b) => a.thirtyDayPeriodsSinceEpoch - b.thirtyDayPeriodsSinceEpoch || a.key.localeCompare(b.key),
+      ),
+    }))
+    .filter((topic) => topic.hmacKeys.length > 0);
 }
 
 export function deriveSenderFilterGroupKey(
-  address: string, inboxId: string, signOwnerMessage: (message: string) => Promise<Hex>,
+  address: string,
+  inboxId: string,
+  signOwnerMessage: (message: string) => Promise<Hex>,
 ): Promise<string> {
-  return signatureGroupKey(`stage.box sender filter group v1 for ${address.toLowerCase()} inbox ${inboxId.toLowerCase()}`, signOwnerMessage);
+  return signatureGroupKey(
+    `stage.box sender filter group v1 for ${address.toLowerCase()} inbox ${inboxId.toLowerCase()}`,
+    signOwnerMessage,
+  );
 }
 
 export function senderFilterSignatureText(payload: string): string {
@@ -153,14 +168,20 @@ export function senderFilterSignatureText(payload: string): string {
 }
 
 export async function signedSenderFilters(
-  installationId: string, groupKey: string, topics: readonly SenderFilterTopic[], issuedAt: number,
+  installationId: string,
+  groupKey: string,
+  topics: readonly SenderFilterTopic[],
+  issuedAt: number,
   sign: (text: string) => Promise<Uint8Array | readonly number[]>,
 ): Promise<{ payload: string; signature: string }> {
   const payload = JSON.stringify({
-    installationId: installationId.toLowerCase(), groupKey, issuedAt,
-    topics: topics.map(topic => ({ topic: topic.topic, hmacKeys: topic.hmacKeys.map(key => ({
-      thirtyDayPeriodsSinceEpoch: key.thirtyDayPeriodsSinceEpoch, key: key.key,
-    })) })),
+    installationId: installationId.toLowerCase(),
+    groupKey,
+    issuedAt,
+    topics: topics.map((topic) => ({
+      topic: topic.topic,
+      hmacKeys: topic.hmacKeys.map((key) => ({ thirtyDayPeriodsSinceEpoch: key.thirtyDayPeriodsSinceEpoch, key: key.key })),
+    })),
   });
   return { payload, signature: bytesToBase64(Uint8Array.from(await sign(senderFilterSignatureText(payload)))) };
 }

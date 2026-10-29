@@ -26,14 +26,18 @@ import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radiu
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
-const kindIcon = (kind: string): CentralIcon => (
-  kind === 'image' ? IconImages1 : kind === 'audio' ? IconMicrophone : IconPaperclip3
-);
+const kindIcon = (kind: string): CentralIcon => (kind === 'image' ? IconImages1 : kind === 'audio' ? IconMicrophone : IconPaperclip3);
 
 export function ReplyBanner({
-  dark, sub, sender, onClear, onPress,
+  dark,
+  sub,
+  sender,
+  onClear,
+  onPress,
 }: {
-  dark: boolean; sub: string; sender?: string | null;
+  dark: boolean;
+  sub: string;
+  sender?: string | null;
   onClear?: () => void;
   onPress?: () => void;
 }): React.ReactElement {
@@ -43,15 +47,17 @@ export function ReplyBanner({
     <Column padding={{ x: 22 }} surface="surface" style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: borderColor }}>
       <Pressable onPress={onPress} disabled={!onPress}>
         <Row padding={{ y: 11, x: 0 }} align="center" gap={10}>
-          <Glyph icon={IconArrowUndoUp} size={16} color={sub}/>
+          <Glyph icon={IconArrowUndoUp} size={16} color={sub} />
           <Text size="sm" numberOfLines={1} style={{ flex: 1 }}>
-            <Text size="sm" color="secondary">Replying to </Text>
+            <Text size="sm" color="secondary">
+              Replying to{' '}
+            </Text>
             <Text size="sm" color={nameColor}>
               {sender ? peerLabel(sender) : 'message'}
             </Text>
           </Text>
           <Pressable onPress={onClear} hitSlop={8}>
-            <Glyph icon={IconCrossMedium} size={18} color={sub}/>
+            <Glyph icon={IconCrossMedium} size={18} color={sub} />
           </Pressable>
         </Row>
       </Pressable>
@@ -59,9 +65,14 @@ export function ReplyBanner({
   );
 }
 
-export const keepInputFocus = Platform.OS === 'web'
-  ? { onMouseDown: (event: { preventDefault: () => void }) => { event.preventDefault(); } }
-  : {};
+export const keepInputFocus =
+  Platform.OS === 'web'
+    ? {
+        onMouseDown: (event: { preventDefault: () => void }) => {
+          event.preventDefault();
+        },
+      }
+    : {};
 
 export function SuggestMenu<T extends { name: string }>({ suggest }: { suggest: Suggest<T> }): React.ReactElement | null {
   if (suggest.matches.length === 0) return null;
@@ -75,8 +86,10 @@ export function SuggestMenu<T extends { name: string }>({ suggest }: { suggest: 
               key={suggest.idOf(c)}
               label={c.name}
               highlighted={i === suggest.active}
-              icon={<Avatar address={avatar.address} imageUri={avatar.imageUri} square={avatar.square} size={DROPDOWN_MENU.icon}/>}
-              onPress={() => { suggest.pick(c); }}
+              icon={<Avatar address={avatar.address} imageUri={avatar.imageUri} square={avatar.square} size={DROPDOWN_MENU.icon} />}
+              onPress={() => {
+                suggest.pick(c);
+              }}
             />
           );
         })}
@@ -106,7 +119,7 @@ function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void 
           accessibilityLabel={label}
           style={{ backgroundColor: '#000', borderRadius: 999, padding: 2 }}
         >
-          <Glyph icon={IconCrossMedium} size={12} color="#ffffff"/>
+          <Glyph icon={IconCrossMedium} size={12} color="#ffffff" />
         </Pressable>
       </HoverTooltip>
     </Column>
@@ -114,9 +127,19 @@ function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void 
 }
 
 function TrayTile({
-  at, fg, label, removeLabel, onRemove, children,
+  at,
+  fg,
+  label,
+  removeLabel,
+  onRemove,
+  children,
 }: {
-  at: Attachment; fg: string; label: string; removeLabel: string; onRemove: () => void; children: React.ReactNode;
+  at: Attachment;
+  fg: string;
+  label: string;
+  removeLabel: string;
+  onRemove: () => void;
+  children: React.ReactNode;
 }): React.ReactElement {
   return (
     <Column width={TRAY_TILE} align="center" gap={4}>
@@ -124,14 +147,18 @@ function TrayTile({
         <Column size={TRAY_TILE} radius={8} surface="surface" style={{ overflow: 'hidden' }}>
           {children}
         </Column>
-        <RemoveBadge label={removeLabel} onRemove={onRemove}/>
+        <RemoveBadge label={removeLabel} onRemove={onRemove} />
       </Column>
-      <TileName name={at.name ?? at.id} fg={fg}/>
+      <TileName name={at.name ?? at.id} fg={fg} />
     </Column>
   );
 }
 
-interface PendingProps { at: Attachment; fg: string; onRemove: () => void }
+interface PendingProps {
+  at: Attachment;
+  fg: string;
+  onRemove: () => void;
+}
 
 function PendingImage({ at, fg, onRemove }: PendingProps): React.ReactElement {
   const [open, setOpen] = useState(false);
@@ -139,15 +166,23 @@ function PendingImage({ at, fg, onRemove }: PendingProps): React.ReactElement {
     <>
       <TrayTile at={at} fg={fg} label={`Image preview ${at.name ?? at.id}`} removeLabel="Remove image" onRemove={onRemove}>
         <Pressable
-          onPress={() => { setOpen(true); }}
+          onPress={() => {
+            setOpen(true);
+          }}
           pressedOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="View image"
         >
-          <Image url={at.url} size={TRAY_TILE} fit="contain"/>
+          <Image url={at.url} size={TRAY_TILE} fit="contain" />
         </Pressable>
       </TrayTile>
-      <ImageViewer uri={at.url} visible={open} onClose={() => { setOpen(false); }}/>
+      <ImageViewer
+        uri={at.url}
+        visible={open}
+        onClose={() => {
+          setOpen(false);
+        }}
+      />
     </>
   );
 }
@@ -156,7 +191,7 @@ function PendingVideo({ at, fg, onRemove }: PendingProps): React.ReactElement {
   const { bg } = usePalette();
   return (
     <TrayTile at={at} fg={fg} label={`Video preview ${at.name ?? at.id}`} removeLabel="Remove video" onRemove={onRemove}>
-      <CallAwareVideo url={at.url} controls={false} background={bg} aspectRatio={1} fit="contain"/>
+      <CallAwareVideo url={at.url} controls={false} background={bg} aspectRatio={1} fit="contain" />
     </TrayTile>
   );
 }
@@ -166,7 +201,7 @@ function PendingLocation({ at, fg, onRemove }: PendingProps): React.ReactElement
   if (!coords) return null;
   return (
     <TrayTile at={at} fg={fg} label="Location preview" removeLabel="Remove location" onRemove={onRemove}>
-      <LocationTile lat={coords.lat} lng={coords.lng} size="sm"/>
+      <LocationTile lat={coords.lat} lng={coords.lng} size="sm" />
     </TrayTile>
   );
 }
@@ -175,7 +210,7 @@ function PendingFile({ at, fg, onRemove }: PendingProps): React.ReactElement {
   return (
     <TrayTile at={at} fg={fg} label={`File preview ${at.name ?? at.id}`} removeLabel="Remove file" onRemove={onRemove}>
       <Column size={TRAY_TILE} align="center" justify="center">
-        <Glyph icon={kindIcon(at.kind)} size={24} color={fg}/>
+        <Glyph icon={kindIcon(at.kind)} size={24} color={fg} />
       </Column>
     </TrayTile>
   );
@@ -183,26 +218,37 @@ function PendingFile({ at, fg, onRemove }: PendingProps): React.ReactElement {
 
 function PendingItem(props: PendingProps): React.ReactElement | null {
   const { at } = props;
-  if (at.kind === 'image') return <PendingImage {...props}/>;
-  if (at.kind === 'video') return <PendingVideo {...props}/>;
-  if (isLocation(at)) return <PendingLocation {...props}/>;
-  return <PendingFile {...props}/>;
+  if (at.kind === 'image') return <PendingImage {...props} />;
+  if (at.kind === 'video') return <PendingVideo {...props} />;
+  if (isLocation(at)) return <PendingLocation {...props} />;
+  return <PendingFile {...props} />;
 }
 
 const TRAY_PADDING = { x: PAGE_GUTTER, top: 10, bottom: 6 };
 const TRAY_SCROLL = { flexGrow: 0 };
 
 export function PendingRow({
-  fg, pending, onRemove,
+  fg,
+  pending,
+  onRemove,
 }: {
-  fg: string; pending: Attachment[]; onRemove: (index: number) => void;
+  fg: string;
+  pending: Attachment[];
+  onRemove: (index: number) => void;
 }): React.ReactElement {
   const gesture = useMemo(() => Gesture.Native().disallowInterruption(true).shouldCancelWhenOutside(false), []);
   const tray = (
     <List direction="horizontal" style={TRAY_SCROLL} showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       <Row padding={TRAY_PADDING} gap={8}>
         {pending.map((a, i) => (
-          <PendingItem key={a.id} at={a} fg={fg} onRemove={() => { onRemove(i); }}/>
+          <PendingItem
+            key={a.id}
+            at={a}
+            fg={fg}
+            onRemove={() => {
+              onRemove(i);
+            }}
+          />
         ))}
       </Row>
     </List>

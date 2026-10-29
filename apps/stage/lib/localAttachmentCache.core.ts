@@ -4,7 +4,10 @@ export function uploadedAttachmentKey(attachment: UploadedAttachment): string {
   return JSON.stringify([attachment.url, attachment.contentDigest]);
 }
 
-export interface LocalAttachmentPreview { uri: string; mime?: string }
+export interface LocalAttachmentPreview {
+  uri: string;
+  mime?: string;
+}
 
 export function makeLocalAttachmentCache() {
   const byMessageId = new Map<string, readonly LocalAttachmentPreview[]>();
@@ -14,7 +17,7 @@ export function makeLocalAttachmentCache() {
   return {
     remember(messageId: string, previews: readonly LocalAttachmentPreview[], uploaded?: readonly UploadedAttachment[]): boolean {
       const locals = previews.map(({ uri, mime }) => ({ uri, mime }));
-      if (locals.every(local => local.uri === '')) return false;
+      if (locals.every((local) => local.uri === '')) return false;
       byMessageId.set(messageId, locals);
       if (uploaded) {
         const keys = uploaded.map(uploadedAttachmentKey);

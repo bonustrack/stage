@@ -10,17 +10,27 @@ const SENT: FrameContent = { messages: titleMessages('$100'), source: { url: NOD
 const NEXT = titleMessages('$101');
 const LATER = titleMessages('$102');
 
-interface NodeCall { method: 'GET' | 'POST'; url: string; key: string; request?: NodeRequest }
+interface NodeCall {
+  method: 'GET' | 'POST';
+  url: string;
+  key: string;
+  request?: NodeRequest;
+}
 
 type OnMessage = (message: FrameMessage) => void;
 type Answer = (onMessage: OnMessage, load: boolean) => Promise<NodeResult>;
 
-const streamed = (messages: FrameMessage[]): Answer => (onMessage, load) => {
-  for (const message of messages) onMessage(message);
-  return Promise.resolve({ ok: true, reply: { kind: 'streamed', load } });
-};
+const streamed =
+  (messages: FrameMessage[]): Answer =>
+  (onMessage, load) => {
+    for (const message of messages) onMessage(message);
+    return Promise.resolve({ ok: true, reply: { kind: 'streamed', load } });
+  };
 
-const failing = (result: NodeResult): Answer => () => Promise.resolve(result);
+const failing =
+  (result: NodeResult): Answer =>
+  () =>
+    Promise.resolve(result);
 
 function harness() {
   const calls: NodeCall[] = [];
@@ -28,17 +38,37 @@ function harness() {
   let answer: Answer = streamed(NEXT);
   let keys = 0;
   const frames = makeLiveFrames({
-    load: (url, key, onMessage) => { calls.push({ method: 'GET', url, key }); return answer(onMessage, true); },
-    send: (url, key, request, onMessage) => { calls.push({ method: 'POST', url, key, request }); return answer(onMessage, false); },
-    newKey: () => { keys += 1; return `key${keys}`; },
+    load: (url, key, onMessage) => {
+      calls.push({ method: 'GET', url, key });
+      return answer(onMessage, true);
+    },
+    send: (url, key, request, onMessage) => {
+      calls.push({ method: 'POST', url, key, request });
+      return answer(onMessage, false);
+    },
+    newKey: () => {
+      keys += 1;
+      return `key${keys}`;
+    },
     now: () => 5_000,
-    toast: (message) => { toasts.push(message); },
+    toast: (message) => {
+      toasts.push(message);
+    },
   });
-  return { frames, calls, toasts, reply: (next: Answer) => { answer = next; } };
+  return {
+    frames,
+    calls,
+    toasts,
+    reply: (next: Answer) => {
+      answer = next;
+    },
+  };
 }
 
 describe('live frames in chats', () => {
-  beforeEach(() => { clearFrameSessions(); });
+  beforeEach(() => {
+    clearFrameSessions();
+  });
 
   test('nothing is shown or called before a tap', () => {
     const h = harness();
@@ -49,7 +79,9 @@ describe('live frames in chats', () => {
   test('a refresh loads the node with the frame key and shows the reply in place', async () => {
     const h = harness();
     let updates = 0;
-    h.frames.subscribe(() => { updates += 1; });
+    h.frames.subscribe(() => {
+      updates += 1;
+    });
     await h.frames.refresh('m1', SENT, NODE);
     expect(h.calls).toEqual([{ method: 'GET', url: NODE, key: 'key1' }]);
     expect(h.frames.frameOf('m1')).toEqual({ messages: NEXT });
@@ -62,11 +94,16 @@ describe('live frames in chats', () => {
     frameSession('m1', SENT);
     const rest = Promise.withResolvers<undefined>();
     const seen: (FrameContent | null)[] = [];
-    h.frames.subscribe(() => { seen.push(h.frames.frameOf('m1')); });
+    h.frames.subscribe(() => {
+      seen.push(h.frames.frameOf('m1'));
+    });
     h.reply(async (onMessage, load) => {
       onMessage(NEXT[0] ?? {});
       await rest.promise;
-      onMessage({ version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$102' }] } });
+      onMessage({
+        version: 'v1.0',
+        updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$102' }] },
+      });
       return { ok: true, reply: { kind: 'streamed', load } };
     });
     const pending = h.frames.refresh('m1', SENT, NODE);
@@ -86,7 +123,12 @@ describe('live frames in chats', () => {
     expect(h.calls).toEqual([
       { method: 'GET', url: NODE, key: 'key1' },
       { method: 'POST', url: NODE, key: 'key1', request: { message: { version: 'v1.0', action: actionOf('buy', { amount: 1 }) } } },
-      { method: 'POST', url: NODE, key: 'key2', request: { message: { version: 'v1.0', action: actionOf('buy') }, dataModel: { main: { amount: 2 } } } },
+      {
+        method: 'POST',
+        url: NODE,
+        key: 'key2',
+        request: { message: { version: 'v1.0', action: actionOf('buy') }, dataModel: { main: { amount: 2 } } },
+      },
     ]);
   });
 
@@ -94,19 +136,26 @@ describe('live frames in chats', () => {
     const h = harness();
     const client = frameSession('m1', SENT);
     client.write('main', '/note', 'typed');
-    const price = { version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: { '@path': '/price' } }] } };
+    const price = {
+      version: 'v1.0',
+      updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: { '@path': '/price' } }] },
+    };
     const value = { version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/price', value: '$103' } };
     h.reply(streamed([price, value]));
     await h.frames.send('m1', SENT, NODE, tapOf('buy'));
     const shown = h.frames.frameOf('m1');
     expect(shown?.source).toEqual({ url: NODE });
-    expect(shown?.messages).toEqual([{
-      version: 'v1.0',
-      createSurface: {
-        surfaceId: 'main', catalogId: KIT_CATALOG,
-        components: [{ id: 'root', component: 'Title', text: { '@path': '/price' } }], dataModel: { note: 'typed', price: '$103' },
+    expect(shown?.messages).toEqual([
+      {
+        version: 'v1.0',
+        createSurface: {
+          surfaceId: 'main',
+          catalogId: KIT_CATALOG,
+          components: [{ id: 'root', component: 'Title', text: { '@path': '/price' } }],
+          dataModel: { note: 'typed', price: '$103' },
+        },
       },
-    }]);
+    ]);
     expect(shown === null ? null : frameSession('m1', shown)).toBe(client);
   });
 

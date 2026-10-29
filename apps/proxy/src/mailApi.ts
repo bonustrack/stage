@@ -1,7 +1,12 @@
 import type { Hex } from 'viem';
 import { claimIsFresh } from '@stage-labs/client/identity/stageNames';
 import {
-  isMailboxLabel, isMailId, isMailPublicKey, mailAddressOf, mailRegisterMessage, mailSessionMessage,
+  isMailboxLabel,
+  isMailId,
+  isMailPublicKey,
+  mailAddressOf,
+  mailRegisterMessage,
+  mailSessionMessage,
 } from '@stage-labs/client/mail/mailbox';
 import type { ArchiveStub } from './historyStore.ts';
 import { mailboxCall, readMailKey, saveMailKey } from './mailBox.ts';
@@ -31,7 +36,11 @@ export interface MailDeps {
 
 type Fields = Record<string, unknown>;
 type Handler = (request: Request, deps: MailDeps) => Promise<Response>;
-interface Access { stub: ArchiveStub; owner: string; id: string }
+interface Access {
+  stub: ArchiveStub;
+  owner: string;
+  id: string;
+}
 
 const reply = (body: unknown, status = 200): Response => jsonResponse(body, status, CORS);
 const fail = (status: number, error: string): Response => reply({ error }, status);
@@ -50,7 +59,12 @@ async function verifiedOwner(deps: MailDeps, label: string, message: string, sig
   return owner;
 }
 
-interface KeyClaim { label: string; publicKey: Hex; issuedAt: number; signature: Hex }
+interface KeyClaim {
+  label: string;
+  publicKey: Hex;
+  issuedAt: number;
+  signature: Hex;
+}
 
 function parseKeyClaim(body: Fields): KeyClaim | null {
   const label = text(body.label).toLowerCase();

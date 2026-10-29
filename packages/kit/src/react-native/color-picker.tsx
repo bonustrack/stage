@@ -26,16 +26,7 @@ export interface ColorPickerProps {
   rowBg?: string;
 }
 
-export const DEFAULT_SWATCHES = [
-  '#000000',
-  '#ffffff',
-  '#eb4c5b',
-  '#e07a0c',
-  '#e0a106',
-  '#1f9d57',
-  '#2f6df6',
-  '#8b5cf6',
-];
+export const DEFAULT_SWATCHES = ['#000000', '#ffffff', '#eb4c5b', '#e07a0c', '#e0a106', '#1f9d57', '#2f6df6', '#8b5cf6'];
 
 interface HsvPalette {
   dark: boolean;
@@ -47,32 +38,73 @@ interface HsvPalette {
 
 const TRACK_H = 26;
 
-function Track({ colors, thumb, onFraction, p }: { colors: string[]; thumb: number; onFraction: (f: number) => void; p: HsvPalette }): React.ReactElement {
+function Track({
+  colors,
+  thumb,
+  onFraction,
+  p,
+}: {
+  colors: string[];
+  thumb: number;
+  onFraction: (f: number) => void;
+  p: HsvPalette;
+}): React.ReactElement {
   const widthRef = useRef(1);
   const emit = (x: number): void => {
     onFraction(Math.max(0, Math.min(1, x / widthRef.current)));
   };
-  const gesture = useMemo(() => Gesture.Pan()
-    .minDistance(0)
-    .shouldCancelWhenOutside(false)
-    .onBegin((e) => { runOnJS(emit)(e.x); })
-    .onUpdate((e) => { runOnJS(emit)(e.x); }), [onFraction]);
+  const gesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .minDistance(0)
+        .shouldCancelWhenOutside(false)
+        .onBegin((e) => {
+          runOnJS(emit)(e.x);
+        })
+        .onUpdate((e) => {
+          runOnJS(emit)(e.x);
+        }),
+    [onFraction],
+  );
   return (
     <GestureDetector gesture={gesture}>
-      <Column height={TRACK_H} radius={TRACK_H / 2}
-        onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width || 1; }}
-        justify="center" style={{ overflow: 'hidden' }}
->
+      <Column
+        height={TRACK_H}
+        radius={TRACK_H / 2}
+        onLayout={(e) => {
+          widthRef.current = e.nativeEvent.layout.width || 1;
+        }}
+        justify="center"
+        style={{ overflow: 'hidden' }}
+      >
         <Row style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
           {colors.map((c, i) => (
-            <Column background={c} weight={1} key={i}/>
+            <Column background={c} weight={1} key={i} />
           ))}
         </Row>
-        <Column width={22} height={22} radius="md" background={'transparent'} margin={{ left: -11 }}
+        <Column
+          width={22}
+          height={22}
+          radius="md"
+          background={'transparent'}
+          margin={{ left: -11 }}
           pointerEvents="none"
-          style={{ position: 'absolute', left: `${thumb * 100}%`, borderWidth: 3, borderColor: '#ffffff', shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 2, elevation: 3 }}
-/>
-        <Column radius={TRACK_H / 2} pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderWidth: 1, borderColor: p.border }}/>
+          style={{
+            position: 'absolute',
+            left: `${thumb * 100}%`,
+            borderWidth: 3,
+            borderColor: '#ffffff',
+            shadowColor: '#000',
+            shadowOpacity: 0.4,
+            shadowRadius: 2,
+            elevation: 3,
+          }}
+        />
+        <Column
+          radius={TRACK_H / 2}
+          pointerEvents="none"
+          style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, borderWidth: 1, borderColor: p.border }}
+        />
       </Column>
     </GestureDetector>
   );
@@ -83,7 +115,11 @@ function hueStops(): string[] {
 }
 
 function Label({ text, p }: { text: string; p: HsvPalette }): React.ReactElement {
-  return <Text fontWeight="semibold" size="3xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>{text}</Text>;
+  return (
+    <Text fontWeight="semibold" size="3xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>
+      {text}
+    </Text>
+  );
 }
 
 function HsvPicker({ value, onChange, p }: { value: string; onChange: (hex: string) => void; p: HsvPalette }): React.ReactElement {
@@ -103,41 +139,73 @@ function HsvPicker({ value, onChange, p }: { value: string; onChange: (hex: stri
   return (
     <Column>
       <Row gap={14} align="center">
-        <Column width={64} height={64} radius="lg" background={hex} style={{ borderWidth: 1, borderColor: p.border }}/>
+        <Column width={64} height={64} radius="lg" background={hex} style={{ borderWidth: 1, borderColor: p.border }} />
         <Column weight={1}>
-          <Text fontWeight="semibold" size="2xl" color={p.head}>{hex}</Text>
-          <Text size="3xs" color={p.sub} style={{ marginTop: 2 }}>live preview</Text>
+          <Text fontWeight="semibold" size="2xl" color={p.head}>
+            {hex}
+          </Text>
+          <Text size="3xs" color={p.sub} style={{ marginTop: 2 }}>
+            live preview
+          </Text>
         </Column>
       </Row>
 
-      <Label text="Hue" p={p}/>
-      <Track colors={hueStops()} thumb={hsv.h / 360} p={p}
-        onFraction={(f) => { apply(f * 360, hsv.s, hsv.v); }}/>
-      <Label text="Saturation" p={p}/>
-      <Track colors={satStops} thumb={hsv.s} p={p}
-        onFraction={(f) => { apply(hsv.h, f, hsv.v); }}/>
-      <Label text="Value" p={p}/>
-      <Track colors={valStops} thumb={hsv.v} p={p}
-        onFraction={(f) => { apply(hsv.h, hsv.s, f); }}/>
+      <Label text="Hue" p={p} />
+      <Track
+        colors={hueStops()}
+        thumb={hsv.h / 360}
+        p={p}
+        onFraction={(f) => {
+          apply(f * 360, hsv.s, hsv.v);
+        }}
+      />
+      <Label text="Saturation" p={p} />
+      <Track
+        colors={satStops}
+        thumb={hsv.s}
+        p={p}
+        onFraction={(f) => {
+          apply(hsv.h, f, hsv.v);
+        }}
+      />
+      <Label text="Value" p={p} />
+      <Track
+        colors={valStops}
+        thumb={hsv.v}
+        p={p}
+        onFraction={(f) => {
+          apply(hsv.h, hsv.s, f);
+        }}
+      />
 
-      <Label text="Hex" p={p}/>
+      <Label text="Hex" p={p} />
       <TextField
         value={text ?? hex}
         onChangeText={(t) => {
           setText(t);
-          if (isHexColor(t)) { setHsv(hexToHsv(t)); onChange(t.trim().toLowerCase()); }
+          if (isHexColor(t)) {
+            setHsv(hexToHsv(t));
+            onChange(t.trim().toLowerCase());
+          }
         }}
         dark={p.dark}
         inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-        placeholder="#rrggbb" placeholderTextColor={p.sub}
+        placeholder="#rrggbb"
+        placeholderTextColor={p.sub}
         style={{
-          marginTop: 4, paddingVertical: 8, paddingHorizontal: 12, minHeight: 0,
-          borderRadius: 10, borderWidth: 1, borderColor: p.border,
+          marginTop: 4,
+          paddingVertical: 8,
+          paddingHorizontal: 12,
+          minHeight: 0,
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: p.border,
           backgroundColor: p.rowBg,
           color: text != null && !isHexColor(text) ? '#eb4c5b' : p.head,
-          fontSize: fontSize('xs'), fontFamily: fontName.sans,
+          fontSize: fontSize('xs'),
+          fontFamily: fontName.sans,
         }}
-/>
+      />
     </Column>
   );
 }
@@ -154,7 +222,16 @@ function Swatches({ value, swatches = DEFAULT_SWATCHES, onChange, dark = false }
             accessibilityRole="button"
             accessibilityState={{ selected }}
             onPress={() => onChange?.(hex)}
-            style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: hex, borderWidth: 1, borderColor: border, alignItems: 'center', justifyContent: 'center' }}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              backgroundColor: hex,
+              borderWidth: 1,
+              borderColor: border,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
             {selected ? <Glyph icon={IconCheckmark1} size={18} color={readableForeground(hex)} /> : null}
           </Pressable>
@@ -175,7 +252,7 @@ export function ColorPicker(props: ColorPickerProps): React.ReactElement {
       border: props.borderColor ?? palette.border,
       rowBg: props.rowBg ?? palette.inputBg,
     };
-    return <HsvPicker value={value} onChange={(hex) => onChange?.(hex)} p={p}/>;
+    return <HsvPicker value={value} onChange={(hex) => onChange?.(hex)} p={p} />;
   }
   return <Swatches {...props} />;
 }

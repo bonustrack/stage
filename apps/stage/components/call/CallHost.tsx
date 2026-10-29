@@ -15,12 +15,14 @@ export function CallHost({ active }: { active: boolean }): React.ReactElement | 
   const session = view.calls.session;
   if (!active || session === null) return null;
   if (session.phase === 'ringing') {
-    return <IncomingCall session={session} info={view.calls.calls[session.convId]} selfInboxId={view.selfInboxId}/>;
+    return <IncomingCall session={session} info={view.calls.calls[session.convId]} selfInboxId={view.selfInboxId} />;
   }
   return (
     <>
-      {minimized ? <CallBubble view={view} session={session}/> : <CallScreen view={view} session={session}/>}
-      {view.peers.map((p) => <CallMediaView key={p.peerId} stream={p.stream} kind="audio"/>)}
+      {minimized ? <CallBubble view={view} session={session} /> : <CallScreen view={view} session={session} />}
+      {view.peers.map((p) => (
+        <CallMediaView key={p.peerId} stream={p.stream} kind="audio" />
+      ))}
     </>
   );
 }

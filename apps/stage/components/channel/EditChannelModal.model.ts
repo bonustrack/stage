@@ -3,9 +3,15 @@ import type { GroupMetaPatch } from '@stage-labs/client/xmtp/groups';
 export const CHANNEL_NAME_MAX = 100;
 export const CHANNEL_DESCRIPTION_MAX = 1000;
 
-export interface ChannelDraft { name: string; description: string }
+export interface ChannelDraft {
+  name: string;
+  description: string;
+}
 
-export interface ChannelCurrent { name: string | null; description: string }
+export interface ChannelCurrent {
+  name: string | null;
+  description: string;
+}
 
 export function channelDraftFrom(current: ChannelCurrent): ChannelDraft {
   return { name: current.name ?? '', description: current.description };

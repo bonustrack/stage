@@ -9,10 +9,12 @@ import { sdk } from './xmtp.sdk';
 const CURSOR_PREFIX = 'developerMode.cursor.v1.';
 const PAGE_SIZE = 5000;
 
-export function createDeveloperModePublisher(send: (accountId: string, state: DeveloperModeContent) => Promise<boolean>): (accountId: string) => void {
-  return createVisibilityPublisher(async accountId => {
+export function createDeveloperModePublisher(
+  send: (accountId: string, state: DeveloperModeContent) => Promise<boolean>,
+): (accountId: string) => void {
+  return createVisibilityPublisher(async (accountId) => {
     const state = await loadDeveloperMode(accountId);
-    return state === null || await send(accountId, state);
+    return state === null || (await send(accountId, state));
   });
 }
 

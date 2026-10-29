@@ -3,9 +3,20 @@ import { resolveDynamic, ROOT_SCOPE, toDiagnostic, type Diagnostic, type EvalEnv
 import type { FunctionImpl } from './functions';
 import { setAt } from './pointer';
 import {
-  A2UI_VERSION, ERROR_CODES, isJsonObject,
-  type AgentMessage, type CallRendererFunction, type ComponentInstance, type CreateSurface, type FunctionResponse,
-  type JsonObject, type JsonValue, type RendererError, type RendererMessage, type UpdateComponents, type UpdateDataModel,
+  A2UI_VERSION,
+  ERROR_CODES,
+  isJsonObject,
+  type AgentMessage,
+  type CallRendererFunction,
+  type ComponentInstance,
+  type CreateSurface,
+  type FunctionResponse,
+  type JsonObject,
+  type JsonValue,
+  type RendererError,
+  type RendererMessage,
+  type UpdateComponents,
+  type UpdateDataModel,
 } from './protocol';
 import { compositionIssues } from './structure';
 import type { SurfaceState } from './surface';
@@ -34,9 +45,10 @@ export function bump(rt: Pick<Runtime, 'emit'>, surface: SurfaceState): void {
 function acceptComponent(rt: Runtime, surface: SurfaceState, component: ComponentInstance, path: string[]): boolean {
   if (!rt.validate) return true;
   const catalogId = component.catalogId ?? surface.catalogId;
-  const [first] = catalogId === undefined
-    ? [{ path: `/${path.join('/')}/catalogId`, message: `Component '${component.id}' has no catalog to resolve against.` }]
-    : rt.registry.validateComponent(catalogId, component, path);
+  const [first] =
+    catalogId === undefined
+      ? [{ path: `/${path.join('/')}/catalogId`, message: `Component '${component.id}' has no catalog to resolve against.` }]
+      : rt.registry.validateComponent(catalogId, component, path);
   if (first === undefined) return true;
   sendError(rt, { code: ERROR_CODES.validation, surfaceId: surface.id, path: first.path, message: first.message });
   return false;
@@ -57,11 +69,19 @@ function applyComponents(rt: Runtime, surface: SurfaceState, components: readonl
 function onCreateSurface(rt: Runtime, msg: CreateSurface): void {
   const { surfaceId, catalogId } = msg;
   if (rt.surfaces.has(surfaceId)) {
-    sendError(rt, { code: ERROR_CODES.integrity, surfaceId, message: `Surface '${surfaceId}' already exists. Delete it before creating it again.` });
+    sendError(rt, {
+      code: ERROR_CODES.integrity,
+      surfaceId,
+      message: `Surface '${surfaceId}' already exists. Delete it before creating it again.`,
+    });
     return;
   }
   if (catalogId !== undefined && rt.registry.catalog(catalogId) === undefined) {
-    sendError(rt, { code: ERROR_CODES.unsupportedCatalog, surfaceId, message: `Catalog '${catalogId}' is not supported by this renderer.` });
+    sendError(rt, {
+      code: ERROR_CODES.unsupportedCatalog,
+      surfaceId,
+      message: `Catalog '${catalogId}' is not supported by this renderer.`,
+    });
     return;
   }
   const surface: SurfaceState = {
@@ -82,7 +102,8 @@ function onCreateSurface(rt: Runtime, msg: CreateSurface): void {
 
 function requireSurface(rt: Runtime, surfaceId: string): SurfaceState | undefined {
   const surface = rt.surfaces.get(surfaceId);
-  if (surface === undefined) sendError(rt, { code: ERROR_CODES.integrity, surfaceId, message: `Surface '${surfaceId}' does not exist. Send createSurface first.` });
+  if (surface === undefined)
+    sendError(rt, { code: ERROR_CODES.integrity, surfaceId, message: `Surface '${surfaceId}' does not exist. Send createSurface first.` });
   return surface;
 }
 
@@ -168,7 +189,9 @@ export function receiveMessage(rt: Runtime, message: JsonValue): void {
     }
     return;
   }
-  const body = isJsonObject(message) ? Object.values(message).find((value) => isJsonObject(value) && typeof value.surfaceId === 'string') : undefined;
+  const body = isJsonObject(message)
+    ? Object.values(message).find((value) => isJsonObject(value) && typeof value.surfaceId === 'string')
+    : undefined;
   const surfaceId = isJsonObject(body) ? body.surfaceId : undefined;
   if (typeof surfaceId === 'string') sendError(rt, { code: ERROR_CODES.validation, surfaceId, path: issue.path, message: issue.message });
   else rt.diagnose({ code: ERROR_CODES.validation, message: `${issue.path}: ${issue.message}` });
@@ -178,7 +201,10 @@ function stableKey(value: JsonValue | Record<string, unknown>): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null';
   if (Array.isArray(value)) return `[${value.map((v) => stableKey(v)).join(',')}]`;
   const record: Record<string, unknown> = value;
-  return `{${Object.keys(value).sort().map((k) => `${JSON.stringify(k)}:${stableKey((record[k] ?? null) as JsonValue)}`).join(',')}}`;
+  return `{${Object.keys(value)
+    .sort()
+    .map((k) => `${JSON.stringify(k)}:${stableKey((record[k] ?? null) as JsonValue)}`)
+    .join(',')}}`;
 }
 
 export function createAgentCalls(rt: Pick<Runtime, 'surfaces' | 'send' | 'emit'>): {

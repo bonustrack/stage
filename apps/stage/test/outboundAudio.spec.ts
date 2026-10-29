@@ -10,34 +10,42 @@ const REMOTE = { url: 'https://store.example/voice', contentDigest: 'voice-diges
 
 function voice(mime: string): Attachment {
   const meta = voiceFileMeta(mime);
-  return {
-    id: 'voice', url: 'blob:voice', kind: 'audio', mime: meta.mime,
-    name: `voice-123.${meta.extension}`, size: 1024,
-  };
+  return { id: 'voice', url: 'blob:voice', kind: 'audio', mime: meta.mime, name: `voice-123.${meta.extension}`, size: 1024 };
 }
 
 describe('outgoing audio previews', () => {
   test.each(['audio/webm;codecs=opus', 'audio/mp4', 'audio/m4a', 'audio/ogg', 'audio/wav'])(
-    '%s keeps its MIME through upload, early echo and send confirmation', async mime => {
+    '%s keeps its MIME through upload, early echo and send confirmation',
+    async (mime) => {
       const audio = voice(mime);
       const upload = Promise.withResolvers<undefined>();
       const sent = Promise.withResolvers<string>();
       const cache = makeLocalAttachmentCache();
-      const steps = planSendSteps('line', '', [audio], undefined, {
-        text: async () => 'text', reply: async () => 'reply',
-        attachments: async (_line, files, notify) => {
-          expect(files[0]?.mimeType).toBe(mime);
-          await upload.promise;
-          notify?.([REMOTE]);
-          return sent.promise;
+      const steps = planSendSteps(
+        'line',
+        '',
+        [audio],
+        undefined,
+        {
+          text: async () => 'text',
+          reply: async () => 'reply',
+          attachments: async (_line, files, notify) => {
+            expect(files[0]?.mimeType).toBe(mime);
+            await upload.promise;
+            notify?.([REMOTE]);
+            return sent.promise;
+          },
         },
-      }, () => 'tmp_voice');
+        () => 'tmp_voice',
+      );
       const step = steps[0];
       if (!step) throw new Error('Missing voice step');
       expect(step.attachments).toEqual([audio]);
       expect(resolvedAttachmentKind(audio)).toBe('audio');
-      const previews = step.attachments.map(at => ({ uri: at.url, mime: at.mime }));
-      const result = step.run(uploaded => { cache.remember(step.localId, previews, uploaded); });
+      const previews = step.attachments.map((at) => ({ uri: at.url, mime: at.mime }));
+      const result = step.run((uploaded) => {
+        cache.remember(step.localId, previews, uploaded);
+      });
       expect(cache.get('echo', 0, REMOTE)).toBeUndefined();
       expect(resolvedAttachmentKind(step.attachments[0] ?? audio)).toBe('audio');
       upload.resolve();
@@ -67,10 +75,20 @@ describe('outgoing audio previews', () => {
 
   test('failed upload restores audio metadata for retry without a video filename guess', async () => {
     const audio = voice('audio/webm');
-    const steps = planSendSteps('line', '', [audio], undefined, {
-      text: async () => 'text', reply: async () => 'reply',
-      attachments: async () => { throw new Error('Upload failed'); },
-    }, () => 'tmp_voice');
+    const steps = planSendSteps(
+      'line',
+      '',
+      [audio],
+      undefined,
+      {
+        text: async () => 'text',
+        reply: async () => 'reply',
+        attachments: async () => {
+          throw new Error('Upload failed');
+        },
+      },
+      () => 'tmp_voice',
+    );
     const step = steps[0];
     if (!step) throw new Error('Missing voice step');
     await expect(step.run()).rejects.toThrow('Upload failed');

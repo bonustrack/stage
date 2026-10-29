@@ -7,7 +7,13 @@ export default { title: 'Title' };
 
 export const Controls: Story<TitleProps> = (args) => <Title {...args} />;
 Controls.args = { text: 'Title', level: 2 };
-Controls.argTypes = { text, level: select([1, 2, 3]), size: select(['sm', 'md', 'lg']), hero: select(['3xl', '4xl']), color: select(COLOR_TOKENS) };
+Controls.argTypes = {
+  text,
+  level: select([1, 2, 3]),
+  size: select(['sm', 'md', 'lg']),
+  hero: select(['3xl', '4xl']),
+  color: select(COLOR_TOKENS),
+};
 
 export const Matrix: Story = () => (
   <Column gap={12}>

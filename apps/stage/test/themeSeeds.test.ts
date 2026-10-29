@@ -28,7 +28,6 @@ describe('migrateSeeds', () => {
   test('garbage and missing fields fall back to defaults', () => {
     expect(migrateSeeds(null).dark).toEqual(DEFAULT_SEED.dark);
     expect(migrateSeeds({}).light).toEqual(DEFAULT_SEED.light);
-    expect(migrateSeeds({ dark: { accent: 42, grayscale: [], surface: 'nope' } }).dark)
-      .toEqual(DEFAULT_SEED.dark);
+    expect(migrateSeeds({ dark: { accent: 42, grayscale: [], surface: 'nope' } }).dark).toEqual(DEFAULT_SEED.dark);
   });
 });

@@ -2,7 +2,11 @@ import { EMPTY_CALLS, type CallsState } from '@stage-labs/client/xmtp/callMachin
 import { makeListeners, useStoreValue } from './storeCore';
 import type { CallStream } from './calls.types';
 
-export interface CallMedia { audio: boolean; video: boolean; screen: boolean }
+export interface CallMedia {
+  audio: boolean;
+  video: boolean;
+  screen: boolean;
+}
 
 export type CallLinkStatus = 'connecting' | 'connected' | 'failed';
 
@@ -49,7 +53,7 @@ function callMinimized(): boolean {
 }
 
 export function setCallMinimized(minimized: boolean): void {
-  minimizedPeerId = minimized ? view.calls.session?.selfPeerId ?? null : null;
+  minimizedPeerId = minimized ? (view.calls.session?.selfPeerId ?? null) : null;
   listeners.notify();
 }
 

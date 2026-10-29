@@ -1,9 +1,8 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { channelsLabelChips, selectChannelsFilter } from '../components/home/model';
 
-const chips = (unreadOnly = false, barLabels: string[] = [], enabledLabels: string[] = []) => (
-  channelsLabelChips({ barLabels, enabledLabels: new Set(enabledLabels), unreadOnly })
-);
+const chips = (unreadOnly = false, barLabels: string[] = [], enabledLabels: string[] = []) =>
+  channelsLabelChips({ barLabels, enabledLabels: new Set(enabledLabels), unreadOnly });
 
 describe('chat list filter chips', () => {
   test('always offers All and Unread without labels or active filters', () => {
@@ -27,7 +26,7 @@ describe('chat list filter chips', () => {
       { value: 'Stage', label: 'Stage', selected: true },
       { value: 'Metro', label: 'Metro', selected: false },
     ]);
-    expect(chips(true, ['Stage'], ['stage']).map(chip => chip.selected)).toEqual([false, true, true]);
+    expect(chips(true, ['Stage'], ['stage']).map((chip) => chip.selected)).toEqual([false, true, true]);
   });
 
   test('dispatches All, Unread and custom labels to their own actions', () => {

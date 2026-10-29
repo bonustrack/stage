@@ -16,7 +16,11 @@ export interface ShortcutTarget {
   contentEditable: boolean;
 }
 
-const SHORTCUT_KEYS: ReadonlyMap<string, Shortcut> = new Map<string, Shortcut>([['/', '/'], ['c', 'c'], ['C', 'c']]);
+const SHORTCUT_KEYS: ReadonlyMap<string, Shortcut> = new Map<string, Shortcut>([
+  ['/', '/'],
+  ['c', 'c'],
+  ['C', 'c'],
+]);
 
 export function shortcutOf(event: ShortcutKeyEvent, target: ShortcutTarget | null, dialogOpen: boolean): Shortcut | null {
   if (dialogOpen || event.defaultPrevented || event.isComposing) return null;

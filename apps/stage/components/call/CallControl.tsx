@@ -5,8 +5,20 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 
 const SIZES = { sm: { button: 'sm', glyph: 16 }, xl: { button: 'xl', glyph: 22 } } as const;
 
-export function CallControl({ icon, label, active, danger, size = 'xl', onPress }: {
-  icon: CentralIcon; label: string; active: boolean; danger?: boolean; size?: keyof typeof SIZES; onPress: () => void;
+export function CallControl({
+  icon,
+  label,
+  active,
+  danger,
+  size = 'xl',
+  onPress,
+}: {
+  icon: CentralIcon;
+  label: string;
+  active: boolean;
+  danger?: boolean;
+  size?: keyof typeof SIZES;
+  onPress: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { link, bg, danger: red } = usePalette();
@@ -15,10 +27,17 @@ export function CallControl({ icon, label, active, danger, size = 'xl', onPress 
   return (
     <HoverTooltip label={label} placement="above">
       <Button
-        size={spec.button} uniform pill dark={dark} accessibilityLabel={label} aria-pressed={active}
-        color="secondary" variant={active || danger === true ? 'solid' : 'soft'}
+        size={spec.button}
+        uniform
+        pill
+        dark={dark}
+        accessibilityLabel={label}
+        aria-pressed={active}
+        color="secondary"
+        variant={active || danger === true ? 'solid' : 'soft'}
         tintBg={danger === true ? red : active ? link : undefined}
-        icon={<Glyph icon={icon} size={spec.glyph} color={fg}/>} onPress={onPress}
+        icon={<Glyph icon={icon} size={spec.glyph} color={fg} />}
+        onPress={onPress}
       />
     </HoverTooltip>
   );

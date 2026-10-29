@@ -1,8 +1,6 @@
 import { decodeAccountTransfer, type AccountTransfer } from '@stage-labs/client/accounts/transfer';
 
-type ImportParse =
-  | { ok: true; transfer: AccountTransfer }
-  | { ok: false; error: string };
+type ImportParse = { ok: true; transfer: AccountTransfer } | { ok: false; error: string };
 
 export const IMPORT_EMPTY = 'Scan the code from your other device, or paste a private key or recovery phrase.';
 export const IMPORT_INVALID = 'That is not a Stage link code, private key, or recovery phrase.';

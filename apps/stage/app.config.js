@@ -1,21 +1,13 @@
-
 // @ts-check
 
 function resolveGitHash() {
-  const fromEnv =
-    process.env.EAS_BUILD_GIT_COMMIT_HASH ||
-    process.env.GIT_HASH ||
-    process.env.GIT_COMMIT;
+  const fromEnv = process.env.EAS_BUILD_GIT_COMMIT_HASH || process.env.GIT_HASH || process.env.GIT_COMMIT;
   if (fromEnv && fromEnv.length > 0) return fromEnv;
   try {
     const { execSync } = require('node:child_process');
-    const sha = execSync('git rev-parse HEAD', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
+    const sha = execSync('git rev-parse HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
     if (sha.length > 0) return sha;
-  } catch {
-  }
+  } catch {}
   return 'dev';
 }
 
@@ -24,16 +16,11 @@ function resolveCommitTime() {
   if (fromEnv && fromEnv.length > 0) return fromEnv;
   try {
     const { execSync } = require('node:child_process');
-    const iso = execSync('git show -s --format=%cI HEAD', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim();
+    const iso = execSync('git show -s --format=%cI HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
     if (iso.length > 0) return iso;
-  } catch {
-  }
+  } catch {}
   return '';
 }
-
 
 const PROD_NAME = 'Stage';
 
@@ -75,21 +62,13 @@ const config = {
     fallbackToCacheTimeout: 0,
     url: 'https://u.expo.dev/1707f2db-c2b8-4c91-9341-27b1d57d355f',
   },
-  splash: {
-    image: './assets/splash-icon.png',
-    resizeMode: 'contain',
-    backgroundColor: '#0f1115',
-  },
+  splash: { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#0f1115' },
   ios: {
     supportsTablet: true,
     bundleIdentifier: variant.bundleId,
     associatedDomains: [`applinks:${variant.host}`],
-    entitlements: {
-      'aps-environment': IS_PROD ? 'production' : 'development',
-    },
-    config: {
-      usesNonExemptEncryption: false,
-    },
+    entitlements: { 'aps-environment': IS_PROD ? 'production' : 'development' },
+    config: { usesNonExemptEncryption: false },
     infoPlist: {
       NSSpeechRecognitionUsageDescription: `Allow ${variant.name} to turn your speech into message text on this device.`,
       NSFaceIDUsageDescription: `Allow ${variant.name} to use Face ID to verify it is you before revealing a recovery phrase or key.`,
@@ -109,65 +88,26 @@ const config = {
       'android.permission.READ_EXTERNAL_STORAGE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
     ],
-    adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#0f1115',
-    },
-    androidStatusBar: {
-      barStyle: 'light-content',
-      translucent: true,
-    },
+    adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#0f1115' },
+    androidStatusBar: { barStyle: 'light-content', translucent: true },
     predictiveBackGestureEnabled: false,
     softwareKeyboardLayoutMode: 'resize',
     googleServicesFile: variant.googleServicesFile,
     allowBackup: false,
     intentFilters: [
-      {
-        action: 'SEND',
-        data: [{ mimeType: '*/*' }],
-        category: ['DEFAULT'],
-      },
-      {
-        action: 'SEND_MULTIPLE',
-        data: [{ mimeType: '*/*' }],
-        category: ['DEFAULT'],
-      },
-      {
-        action: 'VIEW',
-        autoVerify: true,
-        data: [{ scheme: 'https', host: variant.host }],
-        category: ['BROWSABLE', 'DEFAULT'],
-      },
-      {
-        action: 'VIEW',
-        data: [{ scheme: variant.scheme }],
-        category: ['BROWSABLE', 'DEFAULT'],
-      },
+      { action: 'SEND', data: [{ mimeType: '*/*' }], category: ['DEFAULT'] },
+      { action: 'SEND_MULTIPLE', data: [{ mimeType: '*/*' }], category: ['DEFAULT'] },
+      { action: 'VIEW', autoVerify: true, data: [{ scheme: 'https', host: variant.host }], category: ['BROWSABLE', 'DEFAULT'] },
+      { action: 'VIEW', data: [{ scheme: variant.scheme }], category: ['BROWSABLE', 'DEFAULT'] },
     ],
   },
-  web: {
-    bundler: 'metro',
-    output: 'single',
-  },
+  web: { bundler: 'metro', output: 'single' },
   plugins: [
     'expo-router',
     'expo-secure-store',
     'expo-font',
-    [
-      'expo-splash-screen',
-      {
-        image: './assets/splash-icon.png',
-        resizeMode: 'contain',
-        backgroundColor: '#0f1115',
-      },
-    ],
-    [
-      'expo-notifications',
-      {
-        icon: './assets/notification-icon.png',
-        color: '#ffffff',
-      },
-    ],
+    ['expo-splash-screen', { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#0f1115' }],
+    ['expo-notifications', { icon: './assets/notification-icon.png', color: '#ffffff' }],
     [
       'expo-image-picker',
       {
@@ -177,22 +117,10 @@ const config = {
     ],
     [
       'expo-audio',
-      {
-        microphonePermission: `Allow ${variant.name} to use your microphone for on-device dictation, calls and voice messages.`,
-      },
+      { microphonePermission: `Allow ${variant.name} to use your microphone for on-device dictation, calls and voice messages.` },
     ],
-    [
-      'expo-camera',
-      {
-        cameraPermission: `Allow ${variant.name} to use your camera for video calls, photos and QR codes.`,
-      },
-    ],
-    [
-      'expo-location',
-      {
-        locationAlwaysAndWhenInUsePermission: `Allow ${variant.name} to share your current location in chat.`,
-      },
-    ],
+    ['expo-camera', { cameraPermission: `Allow ${variant.name} to use your camera for video calls, photos and QR codes.` }],
+    ['expo-location', { locationAlwaysAndWhenInUsePermission: `Allow ${variant.name} to share your current location in chat.` }],
     [
       'expo-media-library',
       {
@@ -202,16 +130,7 @@ const config = {
         granularPermissions: ['photo'],
       },
     ],
-    [
-      'expo-build-properties',
-      {
-        android: {
-          minSdkVersion: 30,
-          compileSdkVersion: 36,
-          targetSdkVersion: 36,
-        },
-      },
-    ],
+    ['expo-build-properties', { android: { minSdkVersion: 30, compileSdkVersion: 36, targetSdkVersion: 36 } }],
     './plugins/withStagePill',
     './plugins/withStageShare',
     './plugins/withGradleMemory',
@@ -220,17 +139,10 @@ const config = {
     './plugins/withCalls',
     ...(!IS_PROD ? ['./plugins/withCrashReport'] : []),
   ],
-  notification: {
-    icon: './assets/notification-icon.png',
-    color: '#ffffff',
-    iosDisplayInForeground: true,
-    androidMode: 'default',
-  },
+  notification: { icon: './assets/notification-icon.png', color: '#ffffff', iosDisplayInForeground: true, androidMode: 'default' },
   extra: {
     router: {},
-    eas: {
-      projectId: '1707f2db-c2b8-4c91-9341-27b1d57d355f',
-    },
+    eas: { projectId: '1707f2db-c2b8-4c91-9341-27b1d57d355f' },
     gitHash: resolveGitHash(),
     commitTime: resolveCommitTime(),
     buildProfile: process.env.EAS_BUILD_PROFILE || 'dev',

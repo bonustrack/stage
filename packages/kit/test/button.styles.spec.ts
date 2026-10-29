@@ -7,11 +7,7 @@ describe('resolveColors', () => {
     for (const color of BUTTON_COLORS) {
       for (const variant of BUTTON_FILLS) {
         for (const dark of [false, true]) {
-          matrix[`${color}/${variant}/${dark ? 'dark' : 'light'}`] = resolveColors(
-            color,
-            variant,
-            dark,
-          );
+          matrix[`${color}/${variant}/${dark ? 'dark' : 'light'}`] = resolveColors(color, variant, dark);
         }
       }
     }

@@ -27,7 +27,7 @@ export function reactionPills(
 ): ReactionPillModel[] {
   const adds = new Set(pendingAdds);
   const removals = new Set(pendingRemovals);
-  const emojis = [...(confirmed?.keys() ?? []), ...[...adds].filter(e => !confirmed?.has(e))];
+  const emojis = [...(confirmed?.keys() ?? []), ...[...adds].filter((e) => !confirmed?.has(e))];
   return emojis.flatMap((emoji) => {
     const confirmedNames = confirmed?.get(emoji) ?? [];
     const confirmedOwn = !!ownEmojis?.has(emoji);

@@ -1,15 +1,31 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyReadUpTo, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import {
-  collectSyncReplay, isSyncType, pickPublishGroup, shouldApplyReadState, type BoardStateContent, type LatestKind,
-  type PinStateContent, type ReadStateContent, type SyncContents, type SyncGroupState, type SyncOwner, type SyncReplay,
+  collectSyncReplay,
+  isSyncType,
+  pickPublishGroup,
+  shouldApplyReadState,
+  type BoardStateContent,
+  type LatestKind,
+  type PinStateContent,
+  type ReadStateContent,
+  type SyncContents,
+  type SyncGroupState,
+  type SyncOwner,
+  type SyncReplay,
 } from '@stage-labs/client/xmtp/readState';
 import { replaySyncGroups } from './readSyncReplay';
 import { syncTarget, sendSyncState, type SyncTarget } from './syncTarget';
 import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import {
-  getCachedRows, getLastReadNs, onReadStateChanged, setCachedRows, setLastReadNs, setMarkedUnreadFlag, type ReadStateChange,
+  getCachedRows,
+  getLastReadNs,
+  onReadStateChanged,
+  setCachedRows,
+  setLastReadNs,
+  setMarkedUnreadFlag,
+  type ReadStateChange,
 } from './channelsCache';
 import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } from './pins';
 import { onClearedChatsChanged } from './clearedChats';
@@ -51,8 +67,12 @@ const localAt = new Map<string, number>();
 const pendingPublish = new Map<string, ReturnType<typeof setTimeout>>();
 const nudgedFrom = new Set<string>();
 
-function readKey(convId: string): string { return `read:${convId}`; }
-function pinKey(convId: string): string { return `pin:${convId}`; }
+function readKey(convId: string): string {
+  return `read:${convId}`;
+}
+function pinKey(convId: string): string {
+  return `pin:${convId}`;
+}
 const PIN_ORDER_KEY = 'pinOrder';
 
 function trustGroup(id: string): void {
@@ -77,7 +97,7 @@ async function pinStateForRows(state: PinStateContent): Promise<PinStateContent>
 }
 
 async function applyReadStates(remote: readonly ReadStateContent[]): Promise<void> {
-  const reads = await Promise.all(remote.map(async state => ({ ...state, convId: await rowIdOfConv(state.convId) })));
+  const reads = await Promise.all(remote.map(async (state) => ({ ...state, convId: await rowIdOfConv(state.convId) })));
   const applied: ReadStateContent[] = [];
   for (const state of reads) {
     if (!shouldApplyReadState(localAt.get(readKey(state.convId)), state.at)) continue;
@@ -134,7 +154,7 @@ async function ensureGroup(context: AccountClient): Promise<string> {
 }
 
 async function replay(context: AccountClient, target: string, groups: readonly SyncGroupState[]): Promise<void> {
-  await replaySyncGroups(context, target, groups, state => applyReplay(context.account.id, state), nudgeFrom);
+  await replaySyncGroups(context, target, groups, (state) => applyReplay(context.account.id, state), nudgeFrom);
   await replayDeveloperMode(context, groups);
   context.assertCurrent();
   queueDeveloperModePublish(context.account.id);
@@ -152,8 +172,11 @@ async function bootReplay(token: number): Promise<void> {
     const target = await chooseGroup(context, groups);
     await replay(context, target, groups);
     await adoptBoardCategoryOrder(id);
-    void addOwnInstallationsToChats(id).catch(reported('readSync.ownInstallations'))
-      .then(() => { if (context.current()) queueClearedPublish(id); });
+    void addOwnInstallationsToChats(id)
+      .catch(reported('readSync.ownInstallations'))
+      .then(() => {
+        if (context.current()) queueClearedPublish(id);
+      });
   } catch (err) {
     report('readSync.boot', err);
   }
@@ -187,12 +210,14 @@ function catchUpInFront(): void {
   if (replaying || sdk.cachedClient() === null || !isAppInFront() || now - lastCatchUpAt < CATCH_UP_GAP_MS) return;
   replaying = true;
   lastCatchUpAt = now;
-  void catchUp().catch(reported('readSync.catchUp')).finally(() => { replaying = false; });
+  void catchUp()
+    .catch(reported('readSync.catchUp'))
+    .finally(() => {
+      replaying = false;
+    });
 }
 
-async function withGroup(
-  send: (target: SyncTarget, accountId: string) => Promise<unknown>, onlyFor?: string,
-): Promise<boolean> {
+async function withGroup(send: (target: SyncTarget, accountId: string) => Promise<unknown>, onlyFor?: string): Promise<boolean> {
   const context = await accountClient(onlyFor);
   const target = await syncTarget(context, await ensureGroup(context));
   context.assertCurrent();
@@ -216,15 +241,28 @@ interface LatestWins {
   publishTo: (target: SyncTarget, accountId: string) => Promise<void>;
 }
 
-function latestWins<K extends LatestKind>(kind: K, setting: {
-  onLocal: (send: (accountId: string, state: SyncContents[K]) => void) => void;
-  apply: (accountId: string, state: SyncContents[K]) => Promise<void>;
-  load: (accountId: string) => Promise<SyncContents[K] | null>;
-  delayMs?: number;
-}): LatestWins {
+function latestWins<K extends LatestKind>(
+  kind: K,
+  setting: {
+    onLocal: (send: (accountId: string, state: SyncContents[K]) => void) => void;
+    apply: (accountId: string, state: SyncContents[K]) => Promise<void>;
+    load: (accountId: string) => Promise<SyncContents[K] | null>;
+    delayMs?: number;
+  },
+): LatestWins {
   const codec = SYNC_CODECS[kind];
   return {
-    start: () => { setting.onLocal((accountId, state) => { debounce(kind, () => { publish(codec, state, accountId); }, setting.delayMs); }); },
+    start: () => {
+      setting.onLocal((accountId, state) => {
+        debounce(
+          kind,
+          () => {
+            publish(codec, state, accountId);
+          },
+          setting.delayMs,
+        );
+      });
+    },
     apply: async (accountId, replay) => {
       const state = replay.latest[kind];
       if (state !== null) await setting.apply(accountId, state);
@@ -236,13 +274,20 @@ function latestWins<K extends LatestKind>(kind: K, setting: {
   };
 }
 
-function orderWins(kind: 'board' | 'categoryOrder', setting: {
-  onChanged: (cb: (change: AccountOrderChange) => void) => void;
-  apply: (accountId: string, order: readonly string[]) => Promise<void>;
-  load: (accountId: string) => Promise<readonly string[]>;
-}): LatestWins {
+function orderWins(
+  kind: 'board' | 'categoryOrder',
+  setting: {
+    onChanged: (cb: (change: AccountOrderChange) => void) => void;
+    apply: (accountId: string, order: readonly string[]) => Promise<void>;
+    load: (accountId: string) => Promise<readonly string[]>;
+  },
+): LatestWins {
   return latestWins(kind, {
-    onLocal: (send) => { setting.onChanged((change) => { send(change.accountId, stampOrderState(kind, change.order)); }); },
+    onLocal: (send) => {
+      setting.onChanged((change) => {
+        send(change.accountId, stampOrderState(kind, change.order));
+      });
+    },
     apply: async (accountId, state) => {
       if (!shouldApplyReadState(localAt.get(kind), state.at)) return;
       localAt.set(kind, state.at);
@@ -259,20 +304,41 @@ const LATEST_WINS: readonly LatestWins[] = [
   orderWins('board', { onChanged: onBoardOrderChanged, apply: applyRemoteBoardOrder, load: loadBoardOrder }),
   orderWins('categoryOrder', { onChanged: onCategoryOrderChanged, apply: applyRemoteCategoryOrder, load: loadCategoryOrder }),
   latestWins('search', {
-    onLocal: (send) => { onSearchStateChanged((change) => { send(change.accountId, change.state); }); },
-    apply: applyRemoteSearchState, load: loadSearchState, delayMs: SEARCH_DEBOUNCE_MS,
+    onLocal: (send) => {
+      onSearchStateChanged((change) => {
+        send(change.accountId, change.state);
+      });
+    },
+    apply: applyRemoteSearchState,
+    load: loadSearchState,
+    delayMs: SEARCH_DEBOUNCE_MS,
   }),
   latestWins('homeView', {
-    onLocal: (send) => { onHomeViewChanged((change) => { send(change.accountId, change.state); }); },
-    apply: applyRemoteHomeView, load: loadHomeView,
+    onLocal: (send) => {
+      onHomeViewChanged((change) => {
+        send(change.accountId, change.state);
+      });
+    },
+    apply: applyRemoteHomeView,
+    load: loadHomeView,
   }),
   latestWins('dashboard', {
-    onLocal: (send) => { onDashboardChanged((change) => { send(change.accountId, change.state); }); },
-    apply: applyRemoteDashboard, load: loadDashboard,
+    onLocal: (send) => {
+      onDashboardChanged((change) => {
+        send(change.accountId, change.state);
+      });
+    },
+    apply: applyRemoteDashboard,
+    load: loadDashboard,
   }),
   latestWins('developerMode', {
-    onLocal: () => { onDeveloperModeChanged((change) => { queueDeveloperModePublish(change.accountId); }); },
-    apply: applyRemoteDeveloperMode, load: loadDeveloperMode,
+    onLocal: () => {
+      onDeveloperModeChanged((change) => {
+        queueDeveloperModePublish(change.accountId);
+      });
+    },
+    apply: applyRemoteDeveloperMode,
+    load: loadDeveloperMode,
   }),
 ];
 
@@ -291,23 +357,29 @@ function nudgeFrom(sourceId: string): void {
   if (nudgedFrom.has(sourceId)) return;
   nudgedFrom.add(sourceId);
   groupId = null;
-  void withGroup((target, accountId) => (target.conv.id === sourceId ? Promise.resolve() : publishSnapshot(target, accountId)))
-    .catch(reported('readSync.snapshot'));
+  void withGroup((target, accountId) => (target.conv.id === sourceId ? Promise.resolve() : publishSnapshot(target, accountId))).catch(
+    reported('readSync.snapshot'),
+  );
 }
 
 function debounce(key: string, fn: () => void, delayMs = PUBLISH_DEBOUNCE_MS): void {
   clearTimeout(pendingPublish.get(key));
-  pendingPublish.set(key, setTimeout(() => {
-    pendingPublish.delete(key);
-    fn();
-  }, delayMs));
+  pendingPublish.set(
+    key,
+    setTimeout(() => {
+      pendingPublish.delete(key);
+      fn();
+    }, delayMs),
+  );
 }
 
 function queueReadPublish(change: ReadStateChange): void {
   const at = Date.now();
   localAt.set(readKey(change.convId), at);
   const content: ReadStateContent = { ...change, at };
-  debounce(readKey(change.convId), () => { publish(SYNC_CODECS.read, content); });
+  debounce(readKey(change.convId), () => {
+    publish(SYNC_CODECS.read, content);
+  });
 }
 
 function queuePinPublish(change: PinChange): void {
@@ -315,21 +387,29 @@ function queuePinPublish(change: PinChange): void {
   localAt.set(pinKey(change.convId), at);
   localAt.set(PIN_ORDER_KEY, at);
   const content: PinStateContent = { convId: change.convId, pinned: change.pinned, order: [...change.order], at };
-  debounce(PIN_ORDER_KEY, () => { publish(SYNC_CODECS.pin, content); });
+  debounce(PIN_ORDER_KEY, () => {
+    publish(SYNC_CODECS.pin, content);
+  });
 }
 
-const queueClearedPublish = createVisibilityPublisher((accountId) => withGroup(async (target) =>
-  sendSyncState(target, SYNC_CODECS.clear, await loadChatVisibility(accountId)), accountId));
+const queueClearedPublish = createVisibilityPublisher((accountId) =>
+  withGroup(async (target) => sendSyncState(target, SYNC_CODECS.clear, await loadChatVisibility(accountId)), accountId),
+);
 
-const queueDeveloperModePublish = createDeveloperModePublisher((accountId, state) => withGroup(async target =>
-  sendSyncState(target, SYNC_CODECS.developerMode, state), accountId));
+const queueDeveloperModePublish = createDeveloperModePublisher((accountId, state) =>
+  withGroup(async (target) => sendSyncState(target, SYNC_CODECS.developerMode, state), accountId),
+);
 
-interface Adopted { context: AccountClient; owner: SyncOwner }
+interface Adopted {
+  context: AccountClient;
+  owner: SyncOwner;
+}
 
 async function adoptSyncGroup(convId: string): Promise<Adopted | null> {
   const context = await accountClient();
   const owner = ownerOf(context);
-  if (!(groupAccountId === context.account.id && ownGroups.has(convId)) && !(await isOwnSyncGroupId(convId, owner, context.client))) return null;
+  if (!(groupAccountId === context.account.id && ownGroups.has(convId)) && !(await isOwnSyncGroupId(convId, owner, context.client)))
+    return null;
   context.assertCurrent();
   trustGroup(convId);
   return { context, owner };
@@ -351,11 +431,20 @@ function onStreamMessage(m: StreamMsg): void {
 export function startReadSync(): void {
   onReadStateChanged(queueReadPublish);
   onPinChanged(queuePinPublish);
-  onClearedChatsChanged(() => { void getActiveAccount().then(rec => { if (rec) queueClearedPublish(rec.id); }).catch(reported('readSync.clear')); });
+  onClearedChatsChanged(() => {
+    void getActiveAccount()
+      .then((rec) => {
+        if (rec) queueClearedPublish(rec.id);
+      })
+      .catch(reported('readSync.clear'));
+  });
   onHiddenChannelsChanged(queueClearedPublish);
   for (const setting of LATEST_WINS) setting.start();
   subscribeAllMessages(onStreamMessage, { includeHidden: true });
-  subscribeAccountEpoch(() => { nudgedFrom.clear(); void boot(); });
+  subscribeAccountEpoch(() => {
+    nudgedFrom.clear();
+    void boot();
+  });
   subscribeAppInFront(catchUpInFront);
   void boot();
 }

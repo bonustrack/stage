@@ -8,7 +8,12 @@ import { createWindow, frontWindow } from './window';
 import { serveFileOpening } from './fileOpen';
 
 const ALLOWED_PERMISSIONS = new Set([
-  'notifications', 'media', 'display-capture', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen',
+  'notifications',
+  'media',
+  'display-capture',
+  'clipboard-read',
+  'clipboard-sanitized-write',
+  'fullscreen',
 ]);
 
 const remoteUi = process.env.STAGE_DESKTOP_URL;
@@ -28,31 +33,46 @@ function openLink(link: string): void {
 
 async function systemMediaAccess(kinds: readonly ('video' | 'audio')[]): Promise<boolean> {
   if (process.platform !== 'darwin') return true;
-  const granted = await Promise.all(
-    kinds.map((kind) => systemPreferences.askForMediaAccess(kind === 'video' ? 'camera' : 'microphone')),
-  );
+  const granted = await Promise.all(kinds.map((kind) => systemPreferences.askForMediaAccess(kind === 'video' ? 'camera' : 'microphone')));
   return granted.every(Boolean);
 }
 
 function restrictPermissions(): void {
-  const allowed = (permission: string, origin: string): boolean =>
-    ALLOWED_PERMISSIONS.has(permission) && sameSite(origin, site);
+  const allowed = (permission: string, origin: string): boolean => ALLOWED_PERMISSIONS.has(permission) && sameSite(origin, site);
   session.defaultSession.setPermissionRequestHandler((_contents, permission, callback, details) => {
-    if (!allowed(permission, details.requestingUrl)) { callback(false); return; }
-    if (permission !== 'media') { callback(true); return; }
-    void systemMediaAccess('mediaTypes' in details ? details.mediaTypes ?? [] : []).then(callback);
+    if (!allowed(permission, details.requestingUrl)) {
+      callback(false);
+      return;
+    }
+    if (permission !== 'media') {
+      callback(true);
+      return;
+    }
+    void systemMediaAccess('mediaTypes' in details ? (details.mediaTypes ?? []) : []).then(callback);
   });
   session.defaultSession.setPermissionCheckHandler((_contents, permission, origin, details) =>
-    allowed(permission, origin !== '' ? origin : details.embeddingOrigin ?? ''));
+    allowed(permission, origin !== '' ? origin : (details.embeddingOrigin ?? '')),
+  );
 }
 
 function allowScreenShare(): void {
-  session.defaultSession.setDisplayMediaRequestHandler((request, callback) => {
-    if (!request.userGesture || !sameSite(request.securityOrigin, site)) { callback({}); return; }
-    desktopCapturer.getSources({ types: ['screen'] })
-      .then((sources) => { callback(sources[0] ? { video: sources[0] } : {}); })
-      .catch(() => { callback({}); });
-  }, { useSystemPicker: true });
+  session.defaultSession.setDisplayMediaRequestHandler(
+    (request, callback) => {
+      if (!request.userGesture || !sameSite(request.securityOrigin, site)) {
+        callback({});
+        return;
+      }
+      desktopCapturer
+        .getSources({ types: ['screen'] })
+        .then((sources) => {
+          callback(sources[0] ? { video: sources[0] } : {});
+        })
+        .catch(() => {
+          callback({});
+        });
+    },
+    { useSystemPicker: true },
+  );
 }
 
 function start(): void {

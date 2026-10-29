@@ -18,14 +18,22 @@ const MONTHS: ChartDatum[] = [
 ];
 
 const DAYS: ChartDatum[] = [
-  { day: 'mon', visits: 32 }, { day: 'tue', visits: 48 }, { day: 'wed', visits: 41 }, { day: 'thu', visits: 63 },
-  { day: 'fri', visits: 58 }, { day: 'sat', visits: 24 }, { day: 'sun', visits: 19 },
+  { day: 'mon', visits: 32 },
+  { day: 'tue', visits: 48 },
+  { day: 'wed', visits: 41 },
+  { day: 'thu', visits: 63 },
+  { day: 'fri', visits: 58 },
+  { day: 'sat', visits: 24 },
+  { day: 'sun', visits: 19 },
 ];
 
 const DAY_LABELS = { mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun' };
 
 const BALANCE: ChartDatum[] = [
-  { quarter: 'Q1', profit: 42 }, { quarter: 'Q2', profit: -18 }, { quarter: 'Q3', profit: 27 }, { quarter: 'Q4', profit: -6 },
+  { quarter: 'Q1', profit: 42 },
+  { quarter: 'Q2', profit: -18 },
+  { quarter: 'Q3', profit: 27 },
+  { quarter: 'Q4', profit: -6 },
 ];
 
 type SeriesType = ChartSeries['type'];
@@ -46,7 +54,11 @@ interface ChartStoryArgs {
   height: number;
 }
 
-const KEYS = [['web', 'Web'], ['mobile', 'Mobile'], ['desktop', 'Desktop']] as const;
+const KEYS = [
+  ['web', 'Web'],
+  ['mobile', 'Mobile'],
+  ['desktop', 'Desktop'],
+] as const;
 
 function seriesOf(type: SeriesType, count: number, stacked: boolean, curveType: ChartCurveType): ChartSeries[] {
   return KEYS.slice(0, Math.max(1, Math.min(KEYS.length, count))).map(([dataKey, label]): ChartSeries => {
@@ -64,20 +76,45 @@ export const Controls: Story<ChartStoryArgs> = (args) => (
       series={seriesOf(args.type, args.seriesCount, args.stacked, args.curveType)}
       xAxis={{ dataKey: 'month', hide: args.hideXAxis }}
       yAxis={args.dataDomain ? { domain: ['dataMin', 'dataMax'] } : undefined}
-      showYAxis={args.showYAxis} showLegend={args.showLegend} showTooltip={args.showTooltip}
-      barGap={args.barGap} barCategoryGap={args.barCategoryGap > 0 ? args.barCategoryGap : undefined}
-      aspectRatio={args.aspectRatio} height={args.height > 0 ? args.height : undefined}
+      showYAxis={args.showYAxis}
+      showLegend={args.showLegend}
+      showTooltip={args.showTooltip}
+      barGap={args.barGap}
+      barCategoryGap={args.barCategoryGap > 0 ? args.barCategoryGap : undefined}
+      aspectRatio={args.aspectRatio}
+      height={args.height > 0 ? args.height : undefined}
     />
   </Column>
 );
 Controls.args = {
-  type: 'bar', stacked: false, seriesCount: 2, curveType: 'natural', showYAxis: false, showLegend: true, showTooltip: true,
-  dataDomain: false, hideXAxis: false, barGap: 3, barCategoryGap: 0, aspectRatio: '4/3', height: 0,
+  type: 'bar',
+  stacked: false,
+  seriesCount: 2,
+  curveType: 'natural',
+  showYAxis: false,
+  showLegend: true,
+  showTooltip: true,
+  dataDomain: false,
+  hideXAxis: false,
+  barGap: 3,
+  barCategoryGap: 0,
+  aspectRatio: '4/3',
+  height: 0,
 };
 Controls.argTypes = {
-  type: select(['bar', 'line', 'area']), stacked: bool, seriesCount: select([1, 2, 3]), curveType: select(CHART_CURVE_TYPES),
-  dataDomain: bool, showYAxis: bool, showLegend: bool, showTooltip: bool, hideXAxis: bool, barGap: number, barCategoryGap: number,
-  aspectRatio: text, height: number,
+  type: select(['bar', 'line', 'area']),
+  stacked: bool,
+  seriesCount: select([1, 2, 3]),
+  curveType: select(CHART_CURVE_TYPES),
+  dataDomain: bool,
+  showYAxis: bool,
+  showLegend: bool,
+  showTooltip: bool,
+  hideXAxis: bool,
+  barGap: number,
+  barCategoryGap: number,
+  aspectRatio: text,
+  height: number,
 };
 
 function Sample({ title, children }: { title: string; children: React.ReactNode }): React.ReactElement {
@@ -92,17 +129,38 @@ function Sample({ title, children }: { title: string; children: React.ReactNode 
 export const Types: Story = () => (
   <Row gap={24} wrap>
     <Sample title="Bar">
-      <Chart data={MONTHS} xAxis="month" series={[{ type: 'bar', dataKey: 'web', label: 'Web' }, { type: 'bar', dataKey: 'mobile', label: 'Mobile' }]} />
+      <Chart
+        data={MONTHS}
+        xAxis="month"
+        series={[
+          { type: 'bar', dataKey: 'web', label: 'Web' },
+          { type: 'bar', dataKey: 'mobile', label: 'Mobile' },
+        ]}
+      />
     </Sample>
     <Sample title="Line">
-      <Chart data={MONTHS} xAxis="month" series={[{ type: 'line', dataKey: 'web', label: 'Web' }, { type: 'line', dataKey: 'mobile', label: 'Mobile' }]} />
+      <Chart
+        data={MONTHS}
+        xAxis="month"
+        series={[
+          { type: 'line', dataKey: 'web', label: 'Web' },
+          { type: 'line', dataKey: 'mobile', label: 'Mobile' },
+        ]}
+      />
     </Sample>
     <Sample title="Area">
       <Chart data={MONTHS} xAxis="month" series={[{ type: 'area', dataKey: 'web', label: 'Web' }]} />
     </Sample>
     <Sample title="Bar and line">
-      <Chart data={MONTHS} xAxis="month" showYAxis
-        series={[{ type: 'bar', dataKey: 'web', label: 'Web' }, { type: 'line', dataKey: 'mobile', label: 'Mobile', color: 'orange' }]} />
+      <Chart
+        data={MONTHS}
+        xAxis="month"
+        showYAxis
+        series={[
+          { type: 'bar', dataKey: 'web', label: 'Web' },
+          { type: 'line', dataKey: 'mobile', label: 'Mobile', color: 'orange' },
+        ]}
+      />
     </Sample>
   </Row>
 );
@@ -110,10 +168,19 @@ export const Types: Story = () => (
 export const Stacked: Story = () => (
   <Row gap={24} wrap>
     <Sample title="Stacked bars">
-      <Chart data={MONTHS} xAxis="month" showYAxis series={KEYS.map(([dataKey, label]): ChartSeries => ({ type: 'bar', dataKey, label, stack: 'all' }))} />
+      <Chart
+        data={MONTHS}
+        xAxis="month"
+        showYAxis
+        series={KEYS.map(([dataKey, label]): ChartSeries => ({ type: 'bar', dataKey, label, stack: 'all' }))}
+      />
     </Sample>
     <Sample title="Stacked areas">
-      <Chart data={MONTHS} xAxis="month" series={KEYS.map(([dataKey, label]): ChartSeries => ({ type: 'area', dataKey, label, stack: 'all' }))} />
+      <Chart
+        data={MONTHS}
+        xAxis="month"
+        series={KEYS.map(([dataKey, label]): ChartSeries => ({ type: 'area', dataKey, label, stack: 'all' }))}
+      />
     </Sample>
   </Row>
 );
@@ -124,19 +191,38 @@ export const Axes: Story = () => (
       <Chart data={DAYS} xAxis={{ dataKey: 'day', labels: DAY_LABELS }} series={[{ type: 'bar', dataKey: 'visits' }]} />
     </Sample>
     <Sample title="Hidden x axis, y axis, no legend">
-      <Chart data={DAYS} xAxis={{ dataKey: 'day', hide: true }} showYAxis showLegend={false}
-        series={[{ type: 'area', dataKey: 'visits', label: 'Visits', color: 'green', curveType: 'monotone' }]} />
+      <Chart
+        data={DAYS}
+        xAxis={{ dataKey: 'day', hide: true }}
+        showYAxis
+        showLegend={false}
+        series={[{ type: 'area', dataKey: 'visits', label: 'Visits', color: 'green', curveType: 'monotone' }]}
+      />
     </Sample>
     <Sample title="Negative values">
       <Chart data={BALANCE} xAxis="quarter" showYAxis series={[{ type: 'bar', dataKey: 'profit', label: 'Profit', color: 'purple' }]} />
     </Sample>
     <Sample title="Data-based price range (USD)">
-      <Chart data={[{ day: 'Mon', usd: 2490 }, { day: 'Tue', usd: 2505 }, { day: 'Wed', usd: 2499 }]}
-        xAxis="day" showYAxis showLegend={false} yAxis={{ domain: ['dataMin', 'dataMax'] }}
-        series={[{ type: 'line', dataKey: 'usd', label: 'USD', curveType: 'linear' }]} />
+      <Chart
+        data={[
+          { day: 'Mon', usd: 2490 },
+          { day: 'Tue', usd: 2505 },
+          { day: 'Wed', usd: 2499 },
+        ]}
+        xAxis="day"
+        showYAxis
+        showLegend={false}
+        yAxis={{ domain: ['dataMin', 'dataMax'] }}
+        series={[{ type: 'line', dataKey: 'usd', label: 'USD', curveType: 'linear' }]}
+      />
     </Sample>
     <Sample title="Fixed height">
-      <Chart data={MONTHS} xAxis="month" height={180} series={[{ type: 'line', dataKey: 'desktop', label: 'Desktop', color: { light: 'blue-600', dark: 'blue-300' } }]} />
+      <Chart
+        data={MONTHS}
+        xAxis="month"
+        height={180}
+        series={[{ type: 'line', dataKey: 'desktop', label: 'Desktop', color: { light: 'blue-600', dark: 'blue-300' } }]}
+      />
     </Sample>
   </Row>
 );
@@ -144,7 +230,9 @@ export const Axes: Story = () => (
 export const Colors: Story = () => (
   <Column gap={8} maxWidth={560}>
     <Chart
-      data={MONTHS} xAxis="month" aspectRatio="16/9"
+      data={MONTHS}
+      xAxis="month"
+      aspectRatio="16/9"
       series={CHART_COLORS.map((color): ChartSeries => ({ type: 'bar', dataKey: 'web', label: color, color }))}
     />
   </Column>
@@ -154,8 +242,16 @@ export const Curves: Story = () => (
   <Row gap={16} wrap>
     {CHART_CURVE_TYPES.map((curveType) => (
       <Sample key={curveType} title={curveType}>
-        <Chart data={MONTHS} xAxis="month" showLegend={false} aspectRatio={2}
-          series={[{ type: 'area', dataKey: 'mobile', curveType }, { type: 'line', dataKey: 'web', curveType }]} />
+        <Chart
+          data={MONTHS}
+          xAxis="month"
+          showLegend={false}
+          aspectRatio={2}
+          series={[
+            { type: 'area', dataKey: 'mobile', curveType },
+            { type: 'line', dataKey: 'web', curveType },
+          ]}
+        />
       </Sample>
     ))}
   </Row>

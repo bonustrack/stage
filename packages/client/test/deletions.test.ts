@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '../src/types';
-import {
-  deletedEntryView, deletedMessages, deletedRowBy, isDeletableEntry, isDeleteRequest,
-} from '../src/xmtp/deletions';
+import { deletedEntryView, deletedMessages, deletedRowBy, isDeletableEntry, isDeleteRequest } from '../src/xmtp/deletions';
 import { XMTP_USER_PREFIX } from '../src/xmtp/line';
 import type { StreamedMessage } from '../src/xmtp/summarizeRow';
 import { entry } from './helpers';
@@ -27,7 +25,7 @@ describe('deletedMessages', () => {
     expect(deletedMessages([request('d1', BOB, 'm1'), hello]).size).toBe(0);
   });
 
-  test('a channel super admin may delete anyone\'s message', () => {
+  test("a channel super admin may delete anyone's message", () => {
     const deleted = deletedMessages([request('d1', OWNER, 'm1'), hello], { superAdmins: SUPER_ADMINS });
     expect([...deleted]).toEqual([['m1', 'admin']]);
   });
@@ -42,7 +40,7 @@ describe('deletedMessages', () => {
     expect(deletedMessages([request('d1', OWNER, 'm1'), hello]).size).toBe(0);
   });
 
-  test('the sender\'s own delete wins over an admin delete', () => {
+  test("the sender's own delete wins over an admin delete", () => {
     const both = [request('d2', OWNER, 'm1'), request('d1', ALICE, 'm1'), hello];
     expect(deletedMessages(both, { superAdmins: SUPER_ADMINS }).get('m1')).toBe('sender');
   });
@@ -77,7 +75,13 @@ describe('deletedEntryView', () => {
   test('keeps the position and sender but drops every piece of content', () => {
     const withMedia = { ...reply, payload: { contentType: 'reply', replyTo: 'm1', attachments: [{ kind: 'image' }] } };
     expect(deletedEntryView(withMedia)).toEqual({
-      id: 'm2', ts: reply.ts, station: 'xmtp', line: reply.line, from: BOB, to: 'c', messageId: undefined,
+      id: 'm2',
+      ts: reply.ts,
+      station: 'xmtp',
+      line: reply.line,
+      from: BOB,
+      to: 'c',
+      messageId: undefined,
       payload: { contentType: 'deletedMessage', deletedBy: 'sender' },
     });
     expect(deletedEntryView(withMedia, 'admin').payload).toEqual({ contentType: 'deletedMessage', deletedBy: 'admin' });
@@ -85,8 +89,13 @@ describe('deletedEntryView', () => {
 });
 
 describe('deletedRowBy', () => {
-  const row = (id: string, sender: string, contentTypeId: string, content: unknown): StreamedMessage =>
-    ({ id, senderInboxId: sender, contentTypeId, content, sentNs: 1 });
+  const row = (id: string, sender: string, contentTypeId: string, content: unknown): StreamedMessage => ({
+    id,
+    senderInboxId: sender,
+    contentTypeId,
+    content,
+    sentNs: 1,
+  });
   const last = row('m1', 'alice', 'xmtp.org/text:1.0', 'hello');
   const deleteBy = (sender: string, target = 'm1'): StreamedMessage =>
     row('d1', sender, 'xmtp.org/deleteMessage:1.0', { messageId: target });
@@ -114,14 +123,13 @@ describe('deletedRowBy', () => {
 
   test('a Stage delete request hides a frame action, from its sender or a super admin only', () => {
     const tap = row('m1', 'alice', 'stage.box/frameAction:2.0', { frameId: 'f1', action: { name: 'subscribe' } });
-    const stageDelete = (sender: string): StreamedMessage =>
-      row('d1', sender, 'stage.box/deleteRequest:1.0', { messageId: 'm1' });
+    const stageDelete = (sender: string): StreamedMessage => row('d1', sender, 'stage.box/deleteRequest:1.0', { messageId: 'm1' });
     expect(deletedRowBy(tap, [stageDelete('alice'), tap])).toBe('sender');
     expect(deletedRowBy(tap, [stageDelete('owner'), tap], { superAdmins: SUPER_ADMINS })).toBe('admin');
     expect(deletedRowBy(tap, [stageDelete('bob'), tap])).toBeNull();
   });
 
-  test('web: the SDK placeholder, and this device\'s own delete', () => {
+  test("web: the SDK placeholder, and this device's own delete", () => {
     expect(deletedRowBy(row('m1', 'alice', 'deletedMessage', { deletedBy: 0 }), [])).toBe('sender');
     expect(deletedRowBy(row('m1', 'alice', 'deletedMessage', { deletedBy: 1, adminInboxId: 'owner' }), [])).toBe('admin');
     expect(deletedRowBy(last, [last], { ownDeletes: new Set(['m1']), selfInboxId: 'alice' })).toBe('sender');

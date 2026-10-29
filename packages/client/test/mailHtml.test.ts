@@ -6,14 +6,16 @@ const plain = (blocks: MailBlock[]): string[] =>
 
 describe('mailHtmlBlocks', () => {
   test('drops scripts, styles, head, hidden preheaders and every attribute but safe links', () => {
-    const blocks = mailHtmlBlocks([
-      '<html><head><title>T</title><style>p { color: red }</style></head><body>',
-      '<div style="display:none">preheader</div><span hidden>secret</span>',
-      '<script>alert(1)</script><p onclick="steal()" style="color:red">Hi <a href="https://ok.example/x">there</a></p>',
-      '<p><a href="javascript:alert(1)">bad</a> <a href=" java\tscript:x">tab</a> <a href="mailto:a@b.c">mail</a></p>',
-      '<iframe src="https://evil.example"></iframe><object><param name=x>obj</object><svg><text>svg</text></svg>',
-      '</body></html>',
-    ].join(''));
+    const blocks = mailHtmlBlocks(
+      [
+        '<html><head><title>T</title><style>p { color: red }</style></head><body>',
+        '<div style="display:none">preheader</div><span hidden>secret</span>',
+        '<script>alert(1)</script><p onclick="steal()" style="color:red">Hi <a href="https://ok.example/x">there</a></p>',
+        '<p><a href="javascript:alert(1)">bad</a> <a href=" java\tscript:x">tab</a> <a href="mailto:a@b.c">mail</a></p>',
+        '<iframe src="https://evil.example"></iframe><object><param name=x>obj</object><svg><text>svg</text></svg>',
+        '</body></html>',
+      ].join(''),
+    );
     expect(plain(blocks)).toEqual(['Hi there', 'bad tab mail']);
     const spans = blocks.flatMap((block) => (block.type === 'text' ? block.spans : []));
     expect(spans.filter((span) => span.href !== undefined).map((span) => span.href)).toEqual(['https://ok.example/x', 'mailto:a@b.c']);
@@ -22,14 +24,19 @@ describe('mailHtmlBlocks', () => {
 
   test('keeps structure: headings, bold, lists, quotes, rules and line breaks', () => {
     const blocks = mailHtmlBlocks(
-      '<h2>Title</h2><p>One<br>two <strong>bold</strong> <em>it</em></p><ul><li>a</li><li>b</li></ul>'
-      + '<ol start="4"><li>d</li></ol><blockquote><p>quoted</p></blockquote><hr><pre>  x  y</pre>',
+      '<h2>Title</h2><p>One<br>two <strong>bold</strong> <em>it</em></p><ul><li>a</li><li>b</li></ul>' +
+        '<ol start="4"><li>d</li></ol><blockquote><p>quoted</p></blockquote><hr><pre>  x  y</pre>',
     );
     expect(plain(blocks)).toEqual(['Title', 'One\ntwo bold it', 'a', 'b', 'd', 'quoted', '[rule]', 'x  y']);
     const text = blocks.filter((block) => block.type === 'text');
     expect(text.map((block) => [block.heading, block.bullet, block.quote, block.pre])).toEqual([
-      [2, null, 0, false], [0, null, 0, false], [0, '•', 0, false], [0, '•', 0, false], [0, '4.', 0, false],
-      [0, null, 1, false], [0, null, 0, true],
+      [2, null, 0, false],
+      [0, null, 0, false],
+      [0, '•', 0, false],
+      [0, '•', 0, false],
+      [0, '4.', 0, false],
+      [0, null, 1, false],
+      [0, null, 0, true],
     ]);
     expect(text[1]?.spans.find((span) => span.text === 'bold')?.bold).toBe(true);
     expect(text[1]?.spans.find((span) => span.text === 'it')?.italic).toBe(true);
@@ -37,9 +44,9 @@ describe('mailHtmlBlocks', () => {
 
   test('marks remote images, resolves cid images and drops tracking pixels and unsafe sources', () => {
     const blocks = mailHtmlBlocks(
-      '<img src="https://img.example/a.png" width="600" height="300" alt="Banner">'
-      + '<img src="cid:logo%40x"><img src="https://t.example/p.gif" width="1" height="1">'
-      + '<img src="javascript:x"><img src="data:image/svg+xml;base64,AAA"><img src="data:image/png;base64,AAA">',
+      '<img src="https://img.example/a.png" width="600" height="300" alt="Banner">' +
+        '<img src="cid:logo%40x"><img src="https://t.example/p.gif" width="1" height="1">' +
+        '<img src="javascript:x"><img src="data:image/svg+xml;base64,AAA"><img src="data:image/png;base64,AAA">',
       new Map([['logo@x', 'data:image/png;base64,BBB']]),
     );
     expect(blocks).toEqual([
@@ -52,8 +59,9 @@ describe('mailHtmlBlocks', () => {
   });
 
   test('decodes entities and strips invisible padding', () => {
-    expect(plain(mailHtmlBlocks('<p>Tom &amp; Jerry &eacute;&Eacute; &#8364;&#x41; &nbsp;&zwnj;&#847;x &unknown; AT&T</p>')))
-      .toEqual(['Tom & Jerry éÉ €A \u00a0x &unknown; AT&T']);
+    expect(plain(mailHtmlBlocks('<p>Tom &amp; Jerry &eacute;&Eacute; &#8364;&#x41; &nbsp;&zwnj;&#847;x &unknown; AT&T</p>'))).toEqual([
+      'Tom & Jerry éÉ €A \u00a0x &unknown; AT&T',
+    ]);
   });
 
   test('stays linear on hostile markup', () => {

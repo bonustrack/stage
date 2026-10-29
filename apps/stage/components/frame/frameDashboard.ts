@@ -11,7 +11,7 @@ async function addedFromChat(convId: string, messageId: string, frame: FrameCont
   const origin = { conversationId: convId, messageId };
   const node = frameNodeOf(frame);
   if (node === null) return addFrameToDashboard(origin, 'half');
-  if (!await capabilities.confirm(liveConfirmOf(node.host))) return null;
+  if (!(await capabilities.confirm(liveConfirmOf(node.host)))) return null;
   return (await addLiveToDashboard({ url: node.url, key: newNodeKey(), origin }, 'half')).outcome;
 }
 

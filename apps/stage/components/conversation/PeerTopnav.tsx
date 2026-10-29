@@ -15,15 +15,35 @@ export function PeerTopnav({ peer }: { peer?: string }): React.ReactElement {
   const parsed = parseHandle(peer);
   const address = parsed.kind === 'address' ? parsed.value : null;
   usePeerProfiles([address]);
-  const title = address ? peerLabel(address)
+  const title = address
+    ? peerLabel(address)
     : parsed.kind === 'stage' || parsed.kind === 'basename' || parsed.kind === 'ens'
-      ? displayHandle(parsed.value) : 'Conversation';
+      ? displayHandle(parsed.value)
+      : 'Conversation';
   return (
-    <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={() => { router.replace(homeRoute()); }}>
+    <ConvTopnavShell
+      fg={fg}
+      border={border}
+      safeTop={insets.top}
+      onBack={() => {
+        router.replace(homeRoute());
+      }}
+    >
       <ConvTopnavIdentity
-        peerAddr={address} groupImage="" channelId="" isGroup={false}
-        border={border} head={head} title={{ text: title, placeholder: false }}
-        onPress={address ? () => { router.push(profileLinkOf(address)); } : undefined}
+        peerAddr={address}
+        groupImage=""
+        channelId=""
+        isGroup={false}
+        border={border}
+        head={head}
+        title={{ text: title, placeholder: false }}
+        onPress={
+          address
+            ? () => {
+                router.push(profileLinkOf(address));
+              }
+            : undefined
+        }
       />
     </ConvTopnavShell>
   );

@@ -1,4 +1,3 @@
-
 import { createPublicClient, http, type Chain, type PublicClient } from 'viem';
 import { VIEM_CHAINS } from './assets';
 
@@ -23,8 +22,5 @@ export function chainFor(chainId: number): Chain {
 }
 
 export function publicClientFor(chainId: number): PublicClient {
-  return createPublicClient({
-    chain: chainFor(chainId),
-    transport: broviderTransport(chainId),
-  });
+  return createPublicClient({ chain: chainFor(chainId), transport: broviderTransport(chainId) });
 }

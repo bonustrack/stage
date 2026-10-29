@@ -60,7 +60,10 @@ function inboxRow(entry: InboxEntry, read: ReadonlySet<string>, showTo: boolean)
   const key = mailReadKey(entry.label, entry.id);
   const index = entry.index;
   return {
-    key, label: entry.label, id: entry.id, ts: entry.ts,
+    key,
+    label: entry.label,
+    id: entry.id,
+    ts: entry.ts,
     sender: index === null ? 'Unreadable mail' : senderLabel(index.from || index.envelopeFrom),
     subject: index === null ? 'This mail could not be decrypted on this device.' : subjectLabel(index.subject),
     unread: !read.has(key),
@@ -69,9 +72,7 @@ function inboxRow(entry: InboxEntry, read: ReadonlySet<string>, showTo: boolean)
 }
 
 export function inboxRows(entries: readonly InboxEntry[], read: ReadonlySet<string>, mailboxCount: number): InboxRow[] {
-  return [...entries]
-    .sort((a, b) => b.ts - a.ts || b.id.localeCompare(a.id))
-    .map((entry) => inboxRow(entry, read, mailboxCount > 1));
+  return [...entries].sort((a, b) => b.ts - a.ts || b.id.localeCompare(a.id)).map((entry) => inboxRow(entry, read, mailboxCount > 1));
 }
 
 export function withReadKey(keys: readonly string[], key: string): readonly string[] {
@@ -98,7 +99,10 @@ export function mailDataUri(attachment: MailAttachment): string {
 }
 
 export function safeFileName(name: string): string {
-  const clean = Array.from(name.replace(UNSAFE_FILE_CHARS, '_')).filter((ch) => ch.charCodeAt(0) >= 0x20).join('').trim();
+  const clean = Array.from(name.replace(UNSAFE_FILE_CHARS, '_'))
+    .filter((ch) => ch.charCodeAt(0) >= 0x20)
+    .join('')
+    .trim();
   return clean === '' || clean === '.' || clean === '..' ? 'attachment' : clean.slice(0, 200);
 }
 
@@ -128,9 +132,7 @@ export function mailBody(mail: ParsedMail): MailBody {
   return {
     blocks,
     remoteImages: hasRemoteImages(blocks),
-    attachments: mail.attachments
-      .filter((attachment) => !(shownInline && isInlineImage(attachment)))
-      .map(attachmentRow),
+    attachments: mail.attachments.filter((attachment) => !(shownInline && isInlineImage(attachment))).map(attachmentRow),
   };
 }
 
@@ -139,7 +141,5 @@ export function visibleBlocks(blocks: readonly MailBlock[], showImages: boolean)
 }
 
 export function mailDateLabel(ts: number): string {
-  return new Date(ts).toLocaleString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-  });
+  return new Date(ts).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 }

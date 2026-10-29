@@ -19,27 +19,24 @@ export interface ChannelListFilter {
 export function rowMatchesQuery(row: ChannelListRow, normalizedQuery: string): boolean {
   if (!normalizedQuery) return true;
   return (
-    row.title.toLowerCase().includes(normalizedQuery)
-    || row.lastPreview.toLowerCase().includes(normalizedQuery)
-    || (row.peerAddress?.toLowerCase().includes(normalizedQuery) ?? false)
-    || (row.memberAddresses ?? []).some(a => a.toLowerCase().includes(normalizedQuery))
+    row.title.toLowerCase().includes(normalizedQuery) ||
+    row.lastPreview.toLowerCase().includes(normalizedQuery) ||
+    (row.peerAddress?.toLowerCase().includes(normalizedQuery) ?? false) ||
+    (row.memberAddresses ?? []).some((a) => a.toLowerCase().includes(normalizedQuery))
   );
 }
 
-export function filterChannelRows<T extends ChannelListRow>(
-  rows: T[],
-  filter: ChannelListFilter,
-): T[] {
+export function filterChannelRows<T extends ChannelListRow>(rows: T[], filter: ChannelListFilter): T[] {
   let out = rows;
   const enabledLabels = filter.enabledLabels;
   if (enabledLabels && enabledLabels.size > 0) {
-    out = out.filter(r => (r.labels ?? []).some(l => enabledLabels.has(l.toLowerCase())));
+    out = out.filter((r) => (r.labels ?? []).some((l) => enabledLabels.has(l.toLowerCase())));
   }
   if (filter.unreadOnly) {
-    out = out.filter(r => r.unreadCount > 0 || r.markedUnread === true);
+    out = out.filter((r) => r.unreadCount > 0 || r.markedUnread === true);
   }
   const q = filter.query?.trim().toLowerCase() ?? '';
-  if (q) out = out.filter(r => rowMatchesQuery(r, q));
+  if (q) out = out.filter((r) => rowMatchesQuery(r, q));
   return out;
 }
 

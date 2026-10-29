@@ -18,7 +18,11 @@ const TIMESTAMP = /^\d{1,12}$/;
 const LONG_HEX = /[0-9a-f]{32,}/gi;
 const CORS = corsHeaders('PUT, DELETE, OPTIONS', 'content-type, stage-key, stage-timestamp, stage-signature');
 
-interface ApiReply { status: number; result: unknown; message: string | null }
+interface ApiReply {
+  status: number;
+  result: unknown;
+  message: string | null;
+}
 
 export type NodesApi = (method: 'GET' | 'PUT' | 'DELETE', path: string, body?: FormData) => Promise<ApiReply>;
 
@@ -51,7 +55,10 @@ export function cloudflareApi(token: string | undefined, accountId: string | und
   return async (method, path, body) => {
     try {
       const response = await fetcher(`${base}${path}`, {
-        method, body, headers: { authorization: `Bearer ${secret}` }, signal: AbortSignal.timeout(API_TIMEOUT_MS),
+        method,
+        body,
+        headers: { authorization: `Bearer ${secret}` },
+        signal: AbortSignal.timeout(API_TIMEOUT_MS),
       });
       return await apiReply(response);
     } catch {
@@ -78,7 +85,12 @@ async function verified(publicKey: Uint8Array, signature: Uint8Array, text: stri
   }
 }
 
-interface SignedParts { keyId: string; publicKey: Uint8Array; signature: Uint8Array; timestamp: string }
+interface SignedParts {
+  keyId: string;
+  publicKey: Uint8Array;
+  signature: Uint8Array;
+  timestamp: string;
+}
 
 function fresh(timestamp: string, nowMs: number): boolean {
   return TIMESTAMP.test(timestamp) && Math.abs(Number(timestamp) - nowMs / 1000) <= MAX_SKEW_SECONDS;
@@ -126,7 +138,12 @@ async function roomFor(api: NodesApi, script: string): Promise<Response | null> 
 
 function uploadForm(code: Uint8Array): FormData {
   const form = new FormData();
-  const metadata = { main_module: MAIN_MODULE, compatibility_date: COMPATIBILITY_DATE, compatibility_flags: COMPATIBILITY_FLAGS, bindings: [] };
+  const metadata = {
+    main_module: MAIN_MODULE,
+    compatibility_date: COMPATIBILITY_DATE,
+    compatibility_flags: COMPATIBILITY_FLAGS,
+    bindings: [],
+  };
   form.set('metadata', JSON.stringify(metadata));
   form.set(MAIN_MODULE, new File([code], MAIN_MODULE, { type: 'application/javascript+module' }));
   return form;

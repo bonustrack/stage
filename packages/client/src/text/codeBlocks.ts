@@ -1,8 +1,10 @@
-type BodyPart =
-  | { type: 'text'; text: string }
-  | { type: 'code'; code: string; lang?: string };
+type BodyPart = { type: 'text'; text: string } | { type: 'code'; code: string; lang?: string };
 
-interface Fence { indent: number; marker: string; lang?: string }
+interface Fence {
+  indent: number;
+  marker: string;
+  lang?: string;
+}
 
 const OPEN_FENCE_RE = /^( *)(`{3,}|~{3,})(.*)$/;
 const FENCE_HINT_RE = /^ *(?:`{3}|~{3})/m;
@@ -69,5 +71,5 @@ export function splitCodeBlocks(body: string): BodyPart[] {
   }
   if (fence) parts.push(codePart(fence, code));
   flushText();
-  return parts.some(part => part.type === 'code') ? parts : whole;
+  return parts.some((part) => part.type === 'code') ? parts : whole;
 }

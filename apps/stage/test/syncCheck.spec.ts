@@ -22,9 +22,7 @@ describe('syncCheckResult', () => {
   });
 
   test('a forked channel says this device lost track and shows the fork details', () => {
-    const result = syncCheckResult({
-      ...HEALTHY, state: { epoch: 7, forked: true, forkDetails: 'epoch mismatch', pausedForVersion: '' },
-    });
+    const result = syncCheckResult({ ...HEALTHY, state: { epoch: 7, forked: true, forkDetails: 'epoch mismatch', pausedForVersion: '' } });
     expect(result.ok).toBe(false);
     expect(result.title).toBe('Out of sync');
     expect(result.message).toContain('Details: epoch mismatch');
@@ -33,7 +31,9 @@ describe('syncCheckResult', () => {
 
   test('a paused channel asks for an update before anything else', () => {
     const result = syncCheckResult({
-      ...HEALTHY, syncError: 'paused', state: { epoch: 3, forked: true, forkDetails: '', pausedForVersion: '1.11.0' },
+      ...HEALTHY,
+      syncError: 'paused',
+      state: { epoch: 3, forked: true, forkDetails: '', pausedForVersion: '1.11.0' },
     });
     expect(result.title).toBe('Update needed');
     expect(result.message).toContain('1.11.0');
@@ -47,7 +47,7 @@ describe('syncCheckResult', () => {
   test('a sync error is shown, clipped to a readable length', () => {
     const result = syncCheckResult({ ...HEALTHY, syncError: 'x'.repeat(500) });
     expect(result.title).toBe('Sync failed');
-    const errorLine = result.message.split('\n').find(line => line.startsWith('Error: '));
+    const errorLine = result.message.split('\n').find((line) => line.startsWith('Error: '));
     expect(errorLine?.length).toBe('Error: '.length + 301);
   });
 
@@ -57,7 +57,14 @@ describe('syncCheckResult', () => {
   });
 
   test('a restored copy waits for a member and shows no local state', () => {
-    const result = syncCheckResult({ ...HEALTHY, restored: true, active: false, syncError: 'MLS Group bb4e Not Found', state: null, newest: '' });
+    const result = syncCheckResult({
+      ...HEALTHY,
+      restored: true,
+      active: false,
+      syncError: 'MLS Group bb4e Not Found',
+      state: null,
+      newest: '',
+    });
     expect(result.title).toBe('Not in the channel yet');
     expect(result.message.split('\n')).toEqual([
       'This device only has a restored copy of this channel from the history import, so it is not a member yet. It is added when a member next sends a message.',
@@ -67,7 +74,14 @@ describe('syncCheckResult', () => {
 
   test('a restored copy whose invite sync failed shows that error and the device', () => {
     const result = syncCheckResult({
-      ...HEALTHY, restored: true, active: false, inviteError: 'network unavailable', syncError: 'MLS Group bb4e Not Found', state: null, newest: '', device: 'a99e0b1c',
+      ...HEALTHY,
+      restored: true,
+      active: false,
+      inviteError: 'network unavailable',
+      syncError: 'MLS Group bb4e Not Found',
+      state: null,
+      newest: '',
+      device: 'a99e0b1c',
     });
     expect(result.title).toBe('Not in the channel yet');
     expect(result.message.split('\n')).toEqual([
@@ -79,14 +93,26 @@ describe('syncCheckResult', () => {
   });
 
   test('a restored copy left out by a clean invite sync says no invite reached this device', () => {
-    const result = syncCheckResult({ ...HEALTHY, restored: true, active: false, inviteError: '', syncError: 'MLS Group bb4e Not Found', state: null, newest: '' });
+    const result = syncCheckResult({
+      ...HEALTHY,
+      restored: true,
+      active: false,
+      inviteError: '',
+      syncError: 'MLS Group bb4e Not Found',
+      state: null,
+      newest: '',
+    });
     expect(result.message).toContain('The invite sync ran, but no invite for this channel reached this device.');
     expect(result.message).not.toContain('Invite sync:');
   });
 
   test('a restored copy that became active has just joined', () => {
     const result = syncCheckResult({ ...HEALTHY, restored: true, active: true, inviteError: '', syncError: '', state: null, newest: '' });
-    expect(result).toEqual({ ok: true, title: 'Joined now', message: 'This device just took in its invite to this channel. Open the channel again.' });
+    expect(result).toEqual({
+      ok: true,
+      title: 'Joined now',
+      message: 'This device just took in its invite to this channel. Open the channel again.',
+    });
   });
 
   test('the device id is the last line when given', () => {
@@ -132,9 +158,7 @@ describe('runSyncCheck', () => {
   test('lookup errors are not misreported as a missing channel', async () => {
     const ops = syncOps();
     ops.find.mockRejectedValue(new Error('lookup failed'));
-    expect(await runSyncCheck(ops)).toEqual({
-      ok: false, title: 'Couldn’t check sync', message: 'Local channel lookup: lookup failed',
-    });
+    expect(await runSyncCheck(ops)).toEqual({ ok: false, title: 'Couldn’t check sync', message: 'Local channel lookup: lookup failed' });
   });
 
   test('a lookup that fails for want of MLS state names the restored copy', async () => {
@@ -156,7 +180,11 @@ describe('runSyncCheck', () => {
       return found === 1 ? Promise.reject(new Error('MLS Group bb4e Not Found')) : Promise.resolve('channel');
     });
     const result = await runSyncCheck(ops);
-    expect(result).toEqual({ ok: true, title: 'Joined now', message: 'This device just took in its invite to this channel. Open the channel again.\nDevice: a99e0b1c' });
+    expect(result).toEqual({
+      ok: true,
+      title: 'Joined now',
+      message: 'This device just took in its invite to this channel. Open the channel again.\nDevice: a99e0b1c',
+    });
     expect(ops.syncInvites).toHaveBeenCalledTimes(1);
     expect(ops.isActive).toHaveBeenCalledWith('channel');
     expect(ops.sync).not.toHaveBeenCalled();
@@ -185,7 +213,12 @@ describe('runSyncCheck', () => {
   });
 
   test('a restored copy left out captures the native load error', async () => {
-    const nativeError = mock((work: () => Promise<unknown>) => work().then(() => 'unexpected', () => 'openmls error while loading group SerializationError'));
+    const nativeError = mock((work: () => Promise<unknown>) =>
+      work().then(
+        () => 'unexpected',
+        () => 'openmls error while loading group SerializationError',
+      ),
+    );
     const ops = { ...syncOps(), syncInvites: mock(() => Promise.resolve()), nativeError, device: 'a99ecf50' };
     ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
     const result = await runSyncCheck(ops);
@@ -203,7 +236,11 @@ describe('runSyncCheck', () => {
   });
 
   test('a failing native capture is reported, not fatal', async () => {
-    const ops = { ...syncOps(), syncInvites: mock(() => Promise.resolve()), nativeError: mock(() => Promise.reject(new Error('log writer unavailable'))) };
+    const ops = {
+      ...syncOps(),
+      syncInvites: mock(() => Promise.resolve()),
+      nativeError: mock(() => Promise.reject(new Error('log writer unavailable'))),
+    };
     ops.find.mockRejectedValue(new Error('MLS Group bb4e Not Found'));
     const result = await runSyncCheck(ops);
     expect(result.title).toBe('Not in the channel yet');

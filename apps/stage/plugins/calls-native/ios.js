@@ -17,34 +17,39 @@ function plistXml(body) {
 }
 
 function extensionPlist(group) {
-  return plistXml([
-    '  <key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>',
-    '  <key>CFBundleDisplayName</key><string>Stage Screen Share</string>',
-    '  <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>',
-    '  <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>',
-    '  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>',
-    '  <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>',
-    '  <key>CFBundlePackageType</key><string>XPC!</string>',
-    '  <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>',
-    '  <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>',
-    `  <key>RTCAppGroupIdentifier</key><string>${group}</string>`,
-    '  <key>NSExtension</key><dict>',
-    '    <key>NSExtensionPointIdentifier</key><string>com.apple.broadcast-services-upload</string>',
-    '    <key>NSExtensionPrincipalClass</key><string>$(PRODUCT_MODULE_NAME).SampleHandler</string>',
-    '    <key>RPBroadcastProcessMode</key><string>RPBroadcastProcessModeSampleBuffer</string>',
-    '  </dict>',
-  ].join('\n'));
+  return plistXml(
+    [
+      '  <key>CFBundleDevelopmentRegion</key><string>$(DEVELOPMENT_LANGUAGE)</string>',
+      '  <key>CFBundleDisplayName</key><string>Stage Screen Share</string>',
+      '  <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>',
+      '  <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>',
+      '  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>',
+      '  <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>',
+      '  <key>CFBundlePackageType</key><string>XPC!</string>',
+      '  <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>',
+      '  <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>',
+      `  <key>RTCAppGroupIdentifier</key><string>${group}</string>`,
+      '  <key>NSExtension</key><dict>',
+      '    <key>NSExtensionPointIdentifier</key><string>com.apple.broadcast-services-upload</string>',
+      '    <key>NSExtensionPrincipalClass</key><string>$(PRODUCT_MODULE_NAME).SampleHandler</string>',
+      '    <key>RPBroadcastProcessMode</key><string>RPBroadcastProcessModeSampleBuffer</string>',
+      '  </dict>',
+    ].join('\n'),
+  );
 }
 
 function withExtensionAssets(config, group) {
-  return withDangerousMod(config, ['ios', (cfg) => {
-    const dir = path.join(cfg.modRequest.platformProjectRoot, TARGET);
-    fs.mkdirSync(dir, { recursive: true });
-    for (const name of [...SOURCES, ...RESOURCES]) fs.copyFileSync(path.join(__dirname, name), path.join(dir, name));
-    fs.writeFileSync(path.join(dir, INFO_PLIST), extensionPlist(group));
-    fs.writeFileSync(path.join(dir, ENTITLEMENTS), plistXml(`  <key>${APP_GROUPS}</key><array><string>${group}</string></array>`));
-    return cfg;
-  }]);
+  return withDangerousMod(config, [
+    'ios',
+    (cfg) => {
+      const dir = path.join(cfg.modRequest.platformProjectRoot, TARGET);
+      fs.mkdirSync(dir, { recursive: true });
+      for (const name of [...SOURCES, ...RESOURCES]) fs.copyFileSync(path.join(__dirname, name), path.join(dir, name));
+      fs.writeFileSync(path.join(dir, INFO_PLIST), extensionPlist(group));
+      fs.writeFileSync(path.join(dir, ENTITLEMENTS), plistXml(`  <key>${APP_GROUPS}</key><array><string>${group}</string></array>`));
+      return cfg;
+    },
+  ]);
 }
 
 function withExtensionMetadata(config, bundleIdentifier, group) {
@@ -57,10 +62,7 @@ function withExtensionMetadata(config, bundleIdentifier, group) {
   appExtensions.push({ targetName: TARGET, bundleIdentifier, entitlements: { [APP_GROUPS]: [group] } });
   return {
     ...config,
-    extra: {
-      ...extra,
-      eas: { ...eas, build: { ...build, experimental: { ...experimental, ios: { ...ios, appExtensions } } } },
-    },
+    extra: { ...extra, eas: { ...eas, build: { ...build, experimental: { ...experimental, ios: { ...ios, appExtensions } } } } },
   };
 }
 

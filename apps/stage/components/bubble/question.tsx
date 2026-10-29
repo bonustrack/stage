@@ -14,15 +14,19 @@ function useQuestionState(question: Question, onAnswer: (label: string) => void)
   const multi = question.multiSelect === true;
   const allowOther = question.allowOther !== false;
   const toggle = (label: string): void => {
-    if (!multi) { onAnswer(label); return; }
-    setSelected(prev => {
+    if (!multi) {
+      onAnswer(label);
+      return;
+    }
+    setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(label)) next.delete(label); else next.add(label);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
       return next;
     });
   };
   const submit = (): void => {
-    const chosen = question.options.filter(o => selected.has(o.label)).map(o => o.label);
+    const chosen = question.options.filter((o) => selected.has(o.label)).map((o) => o.label);
     const other = otherText.trim();
     if (multi) {
       if (chosen.length === 0 && !other) return;
@@ -43,23 +47,41 @@ function optionBg(isOn: boolean, pressed: boolean, dark: boolean): string {
   return dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
 }
 
-function OptionRow({ opt, isOn, multi, dark, fg, onPress }: {
-  opt: Question['options'][number]; isOn: boolean; multi: boolean;
-  dark: boolean; fg: string; onPress: () => void;
+function OptionRow({
+  opt,
+  isOn,
+  multi,
+  dark,
+  fg,
+  onPress,
+}: {
+  opt: Question['options'][number];
+  isOn: boolean;
+  multi: boolean;
+  dark: boolean;
+  fg: string;
+  onPress: () => void;
 }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
         backgroundColor: optionBg(isOn, pressed, dark),
         borderWidth: 1,
-        borderColor: isOn ? '#c0a06e' : (dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'),
+        borderColor: isOn ? '#c0a06e' : dark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)',
       })}
     >
-      <Text size="xs" color={fg}>{multi ? (isOn ? '☑︎  ' : '☐  ') : ''}{opt.label}</Text>
+      <Text size="xs" color={fg}>
+        {multi ? (isOn ? '☑︎  ' : '☐  ') : ''}
+        {opt.label}
+      </Text>
       {opt.description ? (
-        <Text size="3xs" color="secondary" style={{ marginTop: 2 }}>{opt.description}</Text>
+        <Text size="3xs" color="secondary" style={{ marginTop: 2 }}>
+          {opt.description}
+        </Text>
       ) : null}
     </Pressable>
   );
@@ -70,40 +92,63 @@ function OtherToggle({ dark, onPress }: { dark: boolean; onPress: () => void }):
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
         backgroundColor: pressed
-          ? (dark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)')
-          : (dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)'),
-        borderWidth: 1, borderStyle: 'dashed',
+          ? dark
+            ? 'rgba(255,255,255,0.16)'
+            : 'rgba(0,0,0,0.08)'
+          : dark
+            ? 'rgba(255,255,255,0.04)'
+            : 'rgba(0,0,0,0.02)',
+        borderWidth: 1,
+        borderStyle: 'dashed',
         borderColor: dark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.18)',
       })}
     >
-      <Text size="xs" color="secondary">Other…</Text>
+      <Text size="xs" color="secondary">
+        Other…
+      </Text>
     </Pressable>
   );
 }
 
-function OtherField({ value, onChange, onSubmit }: {
-  value: string; onChange: (v: string) => void; onSubmit: () => void;
+function OtherField({
+  value,
+  onChange,
+  onSubmit,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: () => void;
 }): React.ReactElement {
   return (
-    <FormField label="Your answer" placeholder="Type your answer…" multiline rows={1} value={value} onChangeText={onChange}
-      inputProps={{ autoFocus: true, onSubmitEditing: onSubmit, blurOnSubmit: true }} />
+    <FormField
+      label="Your answer"
+      placeholder="Type your answer…"
+      multiline
+      rows={1}
+      value={value}
+      onChangeText={onChange}
+      inputProps={{ autoFocus: true, onSubmitEditing: onSubmit, blurOnSubmit: true }}
+    />
   );
 }
 
 function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.ReactElement {
-  const disabled = s.multi ? (s.selected.size === 0 && !s.otherText.trim()) : !s.otherText.trim();
+  const disabled = s.multi ? s.selected.size === 0 && !s.otherText.trim() : !s.otherText.trim();
   return (
     <Pressable
       onPress={s.submit}
       disabled={disabled}
       style={({ pressed }) => ({
-        marginTop: 4, alignSelf: 'flex-start',
-        paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-        backgroundColor: disabled
-          ? (dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)')
-          : pressed ? '#a08458' : '#c0a06e',
+        marginTop: 4,
+        alignSelf: 'flex-start',
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 999,
+        backgroundColor: disabled ? (dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') : pressed ? '#a08458' : '#c0a06e',
         opacity: disabled ? 0.5 : 1,
       })}
     >
@@ -114,8 +159,14 @@ function SubmitButton({ s, dark }: { s: QuestionState; dark: boolean }): React.R
   );
 }
 
-export function QuestionView({ question, dark, onAnswer }: {
-  question: Question; dark: boolean; onAnswer: (label: string) => void;
+export function QuestionView({
+  question,
+  dark,
+  onAnswer,
+}: {
+  question: Question;
+  dark: boolean;
+  onAnswer: (label: string) => void;
 }): React.ReactElement {
   const s = useQuestionState(question, onAnswer);
   const fg = usePalette().text;
@@ -124,21 +175,32 @@ export function QuestionView({ question, dark, onAnswer }: {
     <Column margin={{ top: 8 }} gap={6} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
       {question.header ? (
         <Text fontWeight="semibold" color="secondary" size="3xs" textTransform="uppercase" letterSpacing={1.5}>
-          {question.header}{s.multi ? ' · multi-select' : ''}
+          {question.header}
+          {s.multi ? ' · multi-select' : ''}
         </Text>
       ) : null}
       {question.options.map((opt, i) => (
         <OptionRow
-          key={`${i}-${opt.label}`} opt={opt} isOn={s.selected.has(opt.label)}
-          multi={s.multi} dark={dark} fg={fg} onPress={() => { s.toggle(opt.label); }}
+          key={`${i}-${opt.label}`}
+          opt={opt}
+          isOn={s.selected.has(opt.label)}
+          multi={s.multi}
+          dark={dark}
+          fg={fg}
+          onPress={() => {
+            s.toggle(opt.label);
+          }}
         />
       ))}
       {s.allowOther && !s.otherOpen ? (
-        <OtherToggle dark={dark} onPress={() => { s.setOtherOpen(true); }} />
+        <OtherToggle
+          dark={dark}
+          onPress={() => {
+            s.setOtherOpen(true);
+          }}
+        />
       ) : null}
-      {s.otherOpen ? (
-        <OtherField value={s.otherText} onChange={s.setOtherText} onSubmit={s.submit} />
-      ) : null}
+      {s.otherOpen ? <OtherField value={s.otherText} onChange={s.setOtherText} onSubmit={s.submit} /> : null}
       {needSubmitButton ? <SubmitButton s={s} dark={dark} /> : null}
     </Column>
   );

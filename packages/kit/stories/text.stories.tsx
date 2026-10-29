@@ -11,18 +11,60 @@ const FAMILIES = ['sans', 'head', 'mono'] as const;
 const TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'] as const;
 
 export const Controls: Story<TextProps> = (args) => <Text {...args} />;
-Controls.args = { text: 'The quick brown fox jumps over the lazy dog', variant: 'body', size: 'md', fontWeight: 'normal', fontFamily: 'sans', letterSpacing: 0, textTransform: 'none', textAlign: 'start', italic: false, lineThrough: false, truncate: false, markdown: false };
+Controls.args = {
+  text: 'The quick brown fox jumps over the lazy dog',
+  variant: 'body',
+  size: 'md',
+  fontWeight: 'normal',
+  fontFamily: 'sans',
+  letterSpacing: 0,
+  textTransform: 'none',
+  textAlign: 'start',
+  italic: false,
+  lineThrough: false,
+  truncate: false,
+  markdown: false,
+};
 Controls.argTypes = {
-  text, variant: select(VARIANTS), size: select(FONT_SIZES), fontWeight: select(WEIGHTS), fontFamily: select(FAMILIES), letterSpacing: number, textTransform: select(TRANSFORMS),
-  color: select(COLOR_TOKENS), textAlign: select(ALIGNS), italic: bool, lineThrough: bool, truncate: bool, maxLines: number, markdown: bool, weight: number,
+  text,
+  variant: select(VARIANTS),
+  size: select(FONT_SIZES),
+  fontWeight: select(WEIGHTS),
+  fontFamily: select(FAMILIES),
+  letterSpacing: number,
+  textTransform: select(TRANSFORMS),
+  color: select(COLOR_TOKENS),
+  textAlign: select(ALIGNS),
+  italic: bool,
+  lineThrough: bool,
+  truncate: bool,
+  maxLines: number,
+  markdown: bool,
+  weight: number,
 };
 
 export const Matrix: Story = () => (
   <Column gap={12}>
-    {FONT_SIZES.map((s) => <Text key={s} size={s}>{s} · Calibre {s}</Text>)}
-    {WEIGHTS.map((w) => <Text key={w} fontWeight={w}>fontWeight {w}</Text>)}
-    {VARIANTS.map((v) => <Text key={v} variant={v}>variant {v}</Text>)}
-    {COLOR_TOKENS.map((c) => <Text key={c} color={c}>color {c}</Text>)}
+    {FONT_SIZES.map((s) => (
+      <Text key={s} size={s}>
+        {s} · Calibre {s}
+      </Text>
+    ))}
+    {WEIGHTS.map((w) => (
+      <Text key={w} fontWeight={w}>
+        fontWeight {w}
+      </Text>
+    ))}
+    {VARIANTS.map((v) => (
+      <Text key={v} variant={v}>
+        variant {v}
+      </Text>
+    ))}
+    {COLOR_TOKENS.map((c) => (
+      <Text key={c} color={c}>
+        color {c}
+      </Text>
+    ))}
     <Text fontFamily="mono">fontFamily mono</Text>
   </Column>
 );

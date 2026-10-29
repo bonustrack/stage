@@ -8,15 +8,33 @@ function fixture() {
   const deps = {
     signal: controller.signal,
     current: () => state.current,
-    messages: async () => () => { state.messageStops += 1; },
+    messages: async () => () => {
+      state.messageStops += 1;
+    },
     preferences: async (refresh: () => void) => {
       onChange = refresh;
-      return () => { state.preferenceStops += 1; };
+      return () => {
+        state.preferenceStops += 1;
+      };
     },
-    deletions: () => { state.deletions += 1; return () => { state.deletionStops += 1; }; },
-    refreshPush: () => { state.refreshes += 1; },
+    deletions: () => {
+      state.deletions += 1;
+      return () => {
+        state.deletionStops += 1;
+      };
+    },
+    refreshPush: () => {
+      state.refreshes += 1;
+    },
   };
-  return { deps, state, controller, emitPreference: () => { onChange(); } };
+  return {
+    deps,
+    state,
+    controller,
+    emitPreference: () => {
+      onChange();
+    },
+  };
 }
 
 describe('account streams and sender-filter refreshes', () => {
@@ -35,7 +53,7 @@ describe('account streams and sender-filter refreshes', () => {
   test('refreshes after attaching even if a preference changed during SDK stream setup', async () => {
     const f = fixture();
     const preferences = f.deps.preferences;
-    f.deps.preferences = async refresh => {
+    f.deps.preferences = async (refresh) => {
       refresh();
       return preferences(refresh);
     };
@@ -63,7 +81,7 @@ describe('account streams and sender-filter refreshes', () => {
   test('a switch during preference setup stops both handles without refreshing or opening deletions', async () => {
     const f = fixture();
     const preferences = f.deps.preferences;
-    f.deps.preferences = async refresh => {
+    f.deps.preferences = async (refresh) => {
       f.state.current = false;
       return preferences(refresh);
     };
@@ -76,8 +94,13 @@ describe('account streams and sender-filter refreshes', () => {
   test('account cancellation releases messages even when the preference worker never answers', async () => {
     const f = fixture();
     let attached = (): void => undefined;
-    const started = new Promise<void>(resolve => { attached = resolve; });
-    f.deps.preferences = () => { attached(); return new Promise(() => undefined); };
+    const started = new Promise<void>((resolve) => {
+      attached = resolve;
+    });
+    f.deps.preferences = () => {
+      attached();
+      return new Promise(() => undefined);
+    };
     const opening = openAccountStreams(f.deps);
     await started;
     f.state.current = false;
@@ -97,7 +120,9 @@ describe('account streams and sender-filter refreshes', () => {
 
   test('deletion setup failure also releases the preference handle', async () => {
     const f = fixture();
-    f.deps.deletions = () => { throw new Error('deletion stream offline'); };
+    f.deps.deletions = () => {
+      throw new Error('deletion stream offline');
+    };
     await expect(openAccountStreams(f.deps)).rejects.toThrow('deletion stream offline');
     expect(f.state.messageStops).toBe(1);
     expect(f.state.preferenceStops).toBe(1);

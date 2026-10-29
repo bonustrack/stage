@@ -23,16 +23,30 @@ interface AccountStreams {
 }
 
 export async function openAccountStreams(deps: AccountStreams): Promise<() => void> {
-  const stop = await abortable(deps.messages(), deps.signal, late => { late(); });
+  const stop = await abortable(deps.messages(), deps.signal, (late) => {
+    late();
+  });
   if (!deps.current()) return stop;
   let stopPreferences: (() => void) | undefined;
   try {
-    const refreshPush = (): void => { if (deps.current()) deps.refreshPush(); };
-    stopPreferences = await abortable(deps.preferences(refreshPush), deps.signal, late => { late(); });
-    if (!deps.current()) return () => { stop(); stopPreferences?.(); };
+    const refreshPush = (): void => {
+      if (deps.current()) deps.refreshPush();
+    };
+    stopPreferences = await abortable(deps.preferences(refreshPush), deps.signal, (late) => {
+      late();
+    });
+    if (!deps.current())
+      return () => {
+        stop();
+        stopPreferences?.();
+      };
     refreshPush();
     const stopDeletions = deps.deletions();
-    return () => { stop(); stopPreferences?.(); stopDeletions(); };
+    return () => {
+      stop();
+      stopPreferences?.();
+      stopDeletions();
+    };
   } catch (error) {
     stop();
     stopPreferences?.();
@@ -50,7 +64,10 @@ export function makeGlobalStream<C>(deps: StreamDeps<C>) {
 
   function rearm(delay = 500): void {
     if (timer || !deps.wanted()) return;
-    timer = deps.schedule(() => { timer = null; void ensure(); }, delay);
+    timer = deps.schedule(() => {
+      timer = null;
+      void ensure();
+    }, delay);
   }
 
   function retry(error: unknown, stale: boolean): void {
@@ -58,7 +75,10 @@ export function makeGlobalStream<C>(deps: StreamDeps<C>) {
     const absent = error instanceof NoAccountError;
     if (!changed && !absent) deps.report(error);
     if (stale || changed) rearm();
-    else if (!absent) { failures += 1; rearm(Math.min(5_000 * 2 ** (failures - 1), 60_000)); }
+    else if (!absent) {
+      failures += 1;
+      rearm(Math.min(5_000 * 2 ** (failures - 1), 60_000));
+    }
   }
 
   function reportLate(error: unknown): void {
@@ -71,7 +91,9 @@ export function makeGlobalStream<C>(deps: StreamDeps<C>) {
     const controller = new AbortController();
     startup = controller;
     const startedIn = generation;
-    const assertCurrent = (): void => { if (startedIn !== generation) throw new AccountChangedError(); };
+    const assertCurrent = (): void => {
+      if (startedIn !== generation) throw new AccountChangedError();
+    };
     try {
       const context = await abortable(deps.prepare(assertCurrent), controller.signal, undefined, reportLate);
       assertCurrent();
@@ -87,9 +109,18 @@ export function makeGlobalStream<C>(deps: StreamDeps<C>) {
         deps.closed();
         rearm();
       };
-      const stop = await abortable(deps.open(context, current, onClose, controller.signal), controller.signal, late => { late(); });
-      if (!current()) { stop(); rearm(); return; }
-      cancel = () => { closed = true; stop(); };
+      const stop = await abortable(deps.open(context, current, onClose, controller.signal), controller.signal, (late) => {
+        late();
+      });
+      if (!current()) {
+        stop();
+        rearm();
+        return;
+      }
+      cancel = () => {
+        closed = true;
+        stop();
+      };
       failures = 0;
       deps.live();
     } catch (error) {

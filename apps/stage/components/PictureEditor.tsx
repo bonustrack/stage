@@ -11,23 +11,65 @@ import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-
 
 export type PictureChoice = { kind: 'keep' } | { kind: 'new'; file: PickedFile } | { kind: 'remove' };
 
-export function PictureEditor({ avatar, editable, removable, onChange }: {
-  avatar: React.ReactElement; editable: boolean; removable: boolean; onChange: (choice: PictureChoice) => void;
+export function PictureEditor({
+  avatar,
+  editable,
+  removable,
+  onChange,
+}: {
+  avatar: React.ReactElement;
+  editable: boolean;
+  removable: boolean;
+  onChange: (choice: PictureChoice) => void;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const [open, setOpen] = useState(false);
   const [pickNonce, setPickNonce] = useState(0);
-  const close = (): void => { setOpen(false); };
-  usePastedPicture(editable, (file) => { onChange({ kind: 'new', file }); });
+  const close = (): void => {
+    setOpen(false);
+  };
+  usePastedPicture(editable, (file) => {
+    onChange({ kind: 'new', file });
+  });
   if (!editable) return avatar;
   return (
     <>
-      <Pressable onPress={(e) => { setAnchor(menuPointBelow(e)); setOpen(true); }} hitSlop={8}>{avatar}</Pressable>
+      <Pressable
+        onPress={(e) => {
+          setAnchor(menuPointBelow(e));
+          setOpen(true);
+        }}
+        hitSlop={8}
+      >
+        {avatar}
+      </Pressable>
       <AnchoredMenu visible={open} onClose={close} anchor={anchor}>
-        <MenuRow icon={IconCamera1} label="Upload a picture" onPress={() => { close(); setPickNonce(n => n + 1); }} />
-        {removable ? <MenuRow icon={IconTrashCan} label="Remove picture" danger onPress={() => { close(); onChange({ kind: 'remove' }); }} /> : null}
+        <MenuRow
+          icon={IconCamera1}
+          label="Upload a picture"
+          onPress={() => {
+            close();
+            setPickNonce((n) => n + 1);
+          }}
+        />
+        {removable ? (
+          <MenuRow
+            icon={IconTrashCan}
+            label="Remove picture"
+            danger
+            onPress={() => {
+              close();
+              onChange({ kind: 'remove' });
+            }}
+          />
+        ) : null}
       </AnchoredMenu>
-      <SquareImagePicker openNonce={pickNonce} onPick={(file) => { onChange({ kind: 'new', file }); }} />
+      <SquareImagePicker
+        openNonce={pickNonce}
+        onPick={(file) => {
+          onChange({ kind: 'new', file });
+        }}
+      />
     </>
   );
 }

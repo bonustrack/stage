@@ -13,7 +13,8 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, ScreenScroll } from '../../components/layout';
 
 const ADDRESS_LABEL = 'Wallet address (tap to copy)';
-const ADDRESS_HINT = 'Scan or share this address to receive ETH or tokens on Base. Funds sent on another network will not show up in your Stage wallet.';
+const ADDRESS_HINT =
+  'Scan or share this address to receive ETH or tokens on Base. Funds sent on another network will not show up in your Stage wallet.';
 
 const QR_FIXED_FOREGROUND = '#000000';
 const QR_FIXED_BACKGROUND = '#ffffff';
@@ -23,7 +24,7 @@ function AddressCard({ address, onCopy }: { address: string; onCopy: () => void 
   const dark = useKitScheme() === 'dark';
   return (
     <Column gap={8}>
-      <Eyebrow text={ADDRESS_LABEL.toUpperCase()} size="3xs" color="secondary"/>
+      <Eyebrow text={ADDRESS_LABEL.toUpperCase()} size="3xs" color="secondary" />
       <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
         <Column weight={1}>
           <Text text={address || '-'} size="xs" truncate />
@@ -35,9 +36,7 @@ function AddressCard({ address, onCopy }: { address: string; onCopy: () => void 
   );
 }
 
-function QrPanel({ address, border }: {
-  address: string; border: string;
-}): React.ReactElement {
+function QrPanel({ address, border }: { address: string; border: string }): React.ReactElement {
   const side = { width: 1, color: border };
   return (
     <Column
@@ -49,12 +48,7 @@ function QrPanel({ address, border }: {
       border={{ top: side, right: side, bottom: side, left: side }}
     >
       {address ? (
-        <QrCode
-          value={address}
-          size={240}
-          color={QR_FIXED_FOREGROUND}
-          background={QR_FIXED_BACKGROUND}
-        />
+        <QrCode value={address} size={240} color={QR_FIXED_FOREGROUND} background={QR_FIXED_BACKGROUND} />
       ) : (
         <Column width={240} height={240} background={QR_PLACEHOLDER_BACKGROUND} />
       )}
@@ -65,10 +59,7 @@ function QrPanel({ address, border }: {
 export default function WalletReceive(): React.ReactElement {
   const { border } = usePalette();
 
-  const { data: active } = useQuery({
-    queryKey: ['receiveActiveAccount'],
-    queryFn: getActiveAccount,
-  });
+  const { data: active } = useQuery({ queryKey: ['receiveActiveAccount'], queryFn: getActiveAccount });
   const address = active?.address ?? '';
 
   const onCopy = (): void => {

@@ -10,21 +10,32 @@ function check(): void {
 }
 
 function ask(message: string, detail: string, accept: string, onAccept: () => void): void {
-  void dialog.showMessageBox({ type: 'info', message, detail, buttons: [accept, 'Later'], defaultId: 0, cancelId: 1 })
-    .then(({ response }) => { if (response === 0) onAccept(); });
+  void dialog
+    .showMessageBox({ type: 'info', message, detail, buttons: [accept, 'Later'], defaultId: 0, cancelId: 1 })
+    .then(({ response }) => {
+      if (response === 0) onAccept();
+    });
 }
 
 function offerDownload(info: UpdateInfo): void {
   if (!manualCheck && offeredVersion === info.version) return;
   offeredVersion = info.version;
   manualCheck = false;
-  ask(`Stage ${info.version} is available`, 'Download the new version from the releases page and replace the app to update.', 'Download',
-    () => { void shell.openExternal(releasePageUrl(info.version)); });
+  ask(
+    `Stage ${info.version} is available`,
+    'Download the new version from the releases page and replace the app to update.',
+    'Download',
+    () => {
+      void shell.openExternal(releasePageUrl(info.version));
+    },
+  );
 }
 
 function offerRestart(info: UpdateInfo): void {
   manualCheck = false;
-  ask(`Stage ${info.version} is ready to install`, 'Restart Stage to finish updating.', 'Restart now', () => { autoUpdater.quitAndInstall(); });
+  ask(`Stage ${info.version} is ready to install`, 'Restart Stage to finish updating.', 'Restart now', () => {
+    autoUpdater.quitAndInstall();
+  });
 }
 
 function tellManualCheck(options: MessageBoxOptions): void {

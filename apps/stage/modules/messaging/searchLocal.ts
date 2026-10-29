@@ -26,7 +26,7 @@ function matches(e: HistoryEntry, needle: string): boolean {
 }
 
 function yieldToEventLoop(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 0));
+  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 interface ScanState {
@@ -37,11 +37,7 @@ interface ScanState {
   rights: DeleteRights;
 }
 
-async function readLocalSearchPage(
-  conv: ConvHandle,
-  beforeTsMs: number | undefined,
-  line: string,
-): Promise<HistoryEntry[] | null> {
+async function readLocalSearchPage(conv: ConvHandle, beforeTsMs: number | undefined, line: string): Promise<HistoryEntry[] | null> {
   try {
     return beforeTsMs === undefined
       ? await latestConvMessages(conv, line, PAGE_SIZE)
@@ -59,18 +55,22 @@ function collectPageHits(mapped: HistoryEntry[], needle: string, state: ScanStat
     state.seen.add(e.id);
     if (!deleted.has(e.id) && !isDeleteRequest(e) && matches(e, needle)) {
       state.hits.push(e);
-      if (state.hits.length >= SEARCH_MAX_RESULTS) { state.truncated = true; return true; }
+      if (state.hits.length >= SEARCH_MAX_RESULTS) {
+        state.truncated = true;
+        return true;
+      }
     }
   }
   return false;
 }
 
-function shouldStopScan(
-  capped: boolean, state: ScanState, pageLen: number, page: number,
-): boolean {
+function shouldStopScan(capped: boolean, state: ScanState, pageLen: number, page: number): boolean {
   if (capped || state.truncated) return true;
   if (pageLen < PAGE_SIZE) return true;
-  if (page === SEARCH_MAX_PAGES - 1) { state.truncated = true; return true; }
+  if (page === SEARCH_MAX_PAGES - 1) {
+    state.truncated = true;
+    return true;
+  }
   return false;
 }
 
@@ -101,7 +101,11 @@ export async function searchLocalHistory(
   if (!conv) return empty;
 
   const state: ScanState = {
-    hits: [], seen: new Set<string>(), truncated: false, deleteRequests: [], rights: await searchDeleteRights(conv, line),
+    hits: [],
+    seen: new Set<string>(),
+    truncated: false,
+    deleteRequests: [],
+    rights: await searchDeleteRights(conv, line),
   };
   let beforeTsMs: number | undefined;
 

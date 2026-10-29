@@ -10,7 +10,14 @@ import { markMailRead, useMail, useMailboxes } from '../../lib/mail';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { RetryNotice } from '../chrome/RetryNotice';
 import {
-  mailBody, mailDataUri, mailDateLabel, mailReceivedAt, safeFileName, subjectLabel, visibleBlocks, type MailAttachmentRow,
+  mailBody,
+  mailDataUri,
+  mailDateLabel,
+  mailReceivedAt,
+  safeFileName,
+  subjectLabel,
+  visibleBlocks,
+  type MailAttachmentRow,
 } from './Inbox.model';
 import { MailBlocks } from './MailBlocks';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
@@ -36,8 +43,12 @@ function ImagesNotice({ shown, onToggle }: { shown: boolean; onToggle: () => voi
   return (
     <Column padding={12} radius="sm" surface="raised">
       <Row align="center" gap={12}>
-        <Text text={shown ? 'Images from the sender are shown.' : 'Images from the sender are hidden.'}
-          size="xs" color="secondary" style={{ flex: 1 }} />
+        <Text
+          text={shown ? 'Images from the sender are shown.' : 'Images from the sender are hidden.'}
+          size="xs"
+          color="secondary"
+          style={{ flex: 1 }}
+        />
         <Button label={shown ? 'Hide images' : 'Show images'} size="sm" color="secondary" variant="solid" dark={dark} onPress={onToggle} />
       </Row>
     </Column>
@@ -57,8 +68,16 @@ function Attachments({ rows }: { rows: readonly MailAttachmentRow[] }): React.Re
   return (
     <SettingsGroup title="Attachments">
       {rows.map((row) => (
-        <SettingsNavRow key={row.key} label={row.title} value={row.subtitle} iconStart={IconFileBend} iconEnd={IconFileDownload}
-          onPress={() => { saveAttachment(row); }} />
+        <SettingsNavRow
+          key={row.key}
+          label={row.title}
+          value={row.subtitle}
+          iconStart={IconFileBend}
+          iconEnd={IconFileDownload}
+          onPress={() => {
+            saveAttachment(row);
+          }}
+        />
       ))}
     </SettingsGroup>
   );
@@ -79,7 +98,14 @@ function MailContent({ mail, id }: { mail: ParsedMail; id: string }): React.Reac
           <MetaLine label="Cc" value={mail.cc} />
           <MetaLine label="Date" value={received === null ? mail.date : mailDateLabel(received)} />
         </Column>
-        {body.remoteImages ? <ImagesNotice shown={showImages} onToggle={() => { setShowImages(!showImages); }} /> : null}
+        {body.remoteImages ? (
+          <ImagesNotice
+            shown={showImages}
+            onToggle={() => {
+              setShowImages(!showImages);
+            }}
+          />
+        ) : null}
         <MailBlocks blocks={blocks} />
       </Column>
       <Attachments rows={body.attachments} />
@@ -92,12 +118,37 @@ function MailBodyState({ label, id }: { label: string; id: string }): React.Reac
   const box = mailboxes.data?.find((candidate) => candidate.label === label);
   const mail = useMail(box, id);
   const opened = mail.data !== undefined;
-  useEffect(() => { if (opened) markMailRead(label, id); }, [opened, label, id]);
-  if (mailboxes.isError) return <RetryNotice message="Could not load your mailbox. Try again." onRetry={() => { void mailboxes.refetch(); }} />;
+  useEffect(() => {
+    if (opened) markMailRead(label, id);
+  }, [opened, label, id]);
+  if (mailboxes.isError)
+    return (
+      <RetryNotice
+        message="Could not load your mailbox. Try again."
+        onRetry={() => {
+          void mailboxes.refetch();
+        }}
+      />
+    );
   if (mailboxes.data !== undefined && box === undefined) {
-    return <RetryNotice message="This mail is not in your mailboxes." onRetry={() => { void mailboxes.refetch(); }} />;
+    return (
+      <RetryNotice
+        message="This mail is not in your mailboxes."
+        onRetry={() => {
+          void mailboxes.refetch();
+        }}
+      />
+    );
   }
-  if (mail.isError) return <RetryNotice message="Could not decrypt this mail. Check your connection and try again." onRetry={() => { void mail.refetch(); }} />;
+  if (mail.isError)
+    return (
+      <RetryNotice
+        message="Could not decrypt this mail. Check your connection and try again."
+        onRetry={() => {
+          void mail.refetch();
+        }}
+      />
+    );
   if (mail.data === undefined) {
     return (
       <Column align="center" gap={8} padding={{ x: PAGE_GUTTER, y: 48 }}>

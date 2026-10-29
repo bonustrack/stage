@@ -10,7 +10,10 @@ let tabLock: TabLock | null = null;
 
 function stepDown(): void {
   const client = getCachedXmtpClient();
-  if (client) attempt(() => { client.close(); }, 'cleanup');
+  if (client)
+    attempt(() => {
+      client.close();
+    }, 'cleanup');
   reloadApp();
 }
 

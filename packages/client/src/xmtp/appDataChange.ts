@@ -6,13 +6,13 @@ function stringOf(value: unknown): string {
 }
 
 function quotedList(items: string[]): string {
-  return items.map(item => `"${item}"`).join(', ');
+  return items.map((item) => `"${item}"`).join(', ');
 }
 
 function labelClauses(before: string[], after: string[]): string[] {
-  const has = (list: string[], label: string): boolean => list.some(l => l.toLowerCase() === label.toLowerCase());
-  const added = after.filter(l => !has(before, l));
-  const removed = before.filter(l => !has(after, l));
+  const has = (list: string[], label: string): boolean => list.some((l) => l.toLowerCase() === label.toLowerCase());
+  const added = after.filter((l) => !has(before, l));
+  const removed = before.filter((l) => !has(after, l));
   return [
     added.length ? `added label${added.length === 1 ? '' : 's'} ${quotedList(added)}` : '',
     removed.length ? `removed label${removed.length === 1 ? '' : 's'} ${quotedList(removed)}` : '',
@@ -43,8 +43,8 @@ function assigneeClauses(before: Record<string, unknown> | null, after: Record<s
   const previous = assigneesOf(before);
   const next = assigneesOf(after);
   if (!previous || !next) return [];
-  const added = next.filter(address => !previous.includes(address));
-  const removed = previous.filter(address => !next.includes(address));
+  const added = next.filter((address) => !previous.includes(address));
+  const removed = previous.filter((address) => !next.includes(address));
   return [
     added.length ? `assigned ${added.map(mentionToken).join(', ')}` : '',
     removed.length ? `unassigned ${removed.map(mentionToken).join(', ')}` : '',
@@ -53,12 +53,14 @@ function assigneeClauses(before: Record<string, unknown> | null, after: Record<s
 
 function onlyDescriptionChanged(before: Record<string, unknown> | null, after: Record<string, unknown> | null): boolean {
   if (!before || !after) return false;
-  if (![before.description, after.description].every(value => value === undefined || typeof value === 'string')) return false;
+  if (![before.description, after.description].every((value) => value === undefined || typeof value === 'string')) return false;
   if ((before.description ?? '') === (after.description ?? '')) return false;
   const fields = new Set([...Object.keys(before), ...Object.keys(after)]);
-  return [...fields].every(field => field === 'description' || (
-    Object.hasOwn(before, field) === Object.hasOwn(after, field) && JSON.stringify(before[field]) === JSON.stringify(after[field])
-  ));
+  return [...fields].every(
+    (field) =>
+      field === 'description' ||
+      (Object.hasOwn(before, field) === Object.hasOwn(after, field) && JSON.stringify(before[field]) === JSON.stringify(after[field])),
+  );
 }
 
 export function describeAppDataChange(oldValue: string | undefined, newValue: string | undefined): string {
@@ -67,7 +69,7 @@ export function describeAppDataChange(oldValue: string | undefined, newValue: st
   if (onlyDescriptionChanged(before, after)) return 'updated the channel description';
   const clauses = [
     ...labelClauses(stringList(before?.labels), stringList(after?.labels)),
-    ...(['category', 'status', 'priority'] as const).map(field => fieldClause(field, before?.[field], after?.[field])),
+    ...(['category', 'status', 'priority'] as const).map((field) => fieldClause(field, before?.[field], after?.[field])),
     githubClause(stringOf(before?.github), stringOf(after?.github)),
     ...assigneeClauses(before, after),
   ].filter(Boolean);

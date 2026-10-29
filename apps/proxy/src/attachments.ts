@@ -57,7 +57,9 @@ export function parseAttachmentRoute(pathname: string, method: string): Attachme
 
 export function newAttachmentId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(ID_BYTES));
-  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_');
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
 }
 
 function text(body: string | null, status: number): Response {

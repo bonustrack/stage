@@ -2,9 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
-import {
-  RECIPIENT_HELP, RECIPIENT_PLACEHOLDER, recipientHint, settleRecipient, startRecipient,
-} from '../wallet/recipient.model';
+import { RECIPIENT_HELP, RECIPIENT_PLACEHOLDER, recipientHint, settleRecipient, startRecipient } from '../wallet/recipient.model';
 import { capabilities } from '../../lib/capabilities';
 import { FormField, useFocusOnOpen } from '../FormField';
 import { useContacts, type Contact } from '../../lib/useContacts';
@@ -30,9 +28,7 @@ interface MemberPickerState {
 
 export async function lookupMember(raw: string): Promise<Member | string> {
   const start = startRecipient(raw);
-  const found = start.kind === 'resolving'
-    ? settleRecipient(start, await resolveHandleToAddress(start.query.handle))
-    : start;
+  const found = start.kind === 'resolving' ? settleRecipient(start, await resolveHandleToAddress(start.query.handle)) : start;
   if (found.kind !== 'resolved') return recipientHint(found)?.text ?? RECIPIENT_HELP;
   return { address: found.address, label: found.label ?? shortAddress(found.address) };
 }
@@ -48,12 +44,17 @@ export function useMemberPicker(): MemberPickerState {
     setAdding(true);
     try {
       const member = await lookupMember(raw);
-      if (typeof member === 'string') { capabilities.toast(member); return; }
-      const lower = member.address.toLowerCase();
-      if (members.some(m => m.address.toLowerCase() === lower)) {
-        capabilities.toast('Already added'); setEntry(''); return;
+      if (typeof member === 'string') {
+        capabilities.toast(member);
+        return;
       }
-      setMembers(prev => togglePick(prev, member));
+      const lower = member.address.toLowerCase();
+      if (members.some((m) => m.address.toLowerCase() === lower)) {
+        capabilities.toast('Already added');
+        setEntry('');
+        return;
+      }
+      setMembers((prev) => togglePick(prev, member));
       setEntry('');
     } catch (err) {
       capabilities.toast((err as Error)?.message ?? 'Failed to add member');
@@ -63,22 +64,20 @@ export function useMemberPicker(): MemberPickerState {
   }, [entry, adding, members]);
 
   const toggleContact = useCallback((contact: Contact): void => {
-    setMembers(prev => togglePick(prev, { address: contact.address, label: contact.name }));
+    setMembers((prev) => togglePick(prev, { address: contact.address, label: contact.name }));
     setEntry('');
   }, []);
 
-  const selectedAddresses = useMemo(
-    () => new Set(members.map(m => m.address.toLowerCase())),
-    [members],
-  );
+  const selectedAddresses = useMemo(() => new Set(members.map((m) => m.address.toLowerCase())), [members]);
 
-  return {
-    members, entry, setEntry, adding, addMember,
-    toggleContact, selectedAddresses,
-  };
+  return { members, entry, setEntry, adding, addMember, toggleContact, selectedAddresses };
 }
 
-export function MemberPicker({ state, dark, exclude = [] }: {
+export function MemberPicker({
+  state,
+  dark,
+  exclude = [],
+}: {
   state: MemberPickerState;
   dark: boolean;
   exclude?: string[];
@@ -86,18 +85,35 @@ export function MemberPicker({ state, dark, exclude = [] }: {
   const { members, entry, setEntry, adding, addMember, toggleContact, selectedAddresses } = state;
   const contacts = useContacts(exclude, entry);
   const input = useFocusOnOpen();
-  const rows = useMemo(
-    () => pickerRows(members, contacts, (m) => ({ address: m.address, name: m.label })),
-    [members, contacts],
-  );
-  const addButton = entry.trim() === '' ? undefined : (
-    <Button color="secondary" variant="solid" size="sm" dark={dark} loading={adding} onPress={() => { void addMember(); }} label="Add" />
-  );
+  const rows = useMemo(() => pickerRows(members, contacts, (m) => ({ address: m.address, name: m.label })), [members, contacts]);
+  const addButton =
+    entry.trim() === '' ? undefined : (
+      <Button
+        color="secondary"
+        variant="solid"
+        size="sm"
+        dark={dark}
+        loading={adding}
+        onPress={() => {
+          void addMember();
+        }}
+        label="Add"
+      />
+    );
   return (
     <Column gap={12}>
-      <FormField label="Search" placeholder={RECIPIENT_PLACEHOLDER} value={entry} onChangeText={setEntry}
-        onSubmit={() => { void addMember(); }} trailing={addButton} inputRef={input}
-        inputProps={{ ...SEARCH_INPUT_PROPS, autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }} />
+      <FormField
+        label="Search"
+        placeholder={RECIPIENT_PLACEHOLDER}
+        value={entry}
+        onChangeText={setEntry}
+        onSubmit={() => {
+          void addMember();
+        }}
+        trailing={addButton}
+        inputRef={input}
+        inputProps={{ ...SEARCH_INPUT_PROPS, autoFocus: true, autoCapitalize: 'none', autoCorrect: false, returnKeyType: 'done' }}
+      />
       <ContactSuggestions contacts={rows} selected={selectedAddresses} onToggle={toggleContact} />
     </Column>
   );

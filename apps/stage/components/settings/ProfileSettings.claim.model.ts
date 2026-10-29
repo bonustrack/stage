@@ -9,11 +9,18 @@ export interface ClaimState {
 }
 
 export function sanitizeLabelInput(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9-]/g, '').replace(/-{2,}/g, '-').replace(/^-/, '');
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-/, '');
 }
 
 export function normalizeLabel(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\.stage\.base\.eth$/, '');
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/\.stage\.base\.eth$/, '');
 }
 
 export function localLabelProblem(label: string): string | null {

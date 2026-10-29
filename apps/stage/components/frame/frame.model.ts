@@ -76,7 +76,10 @@ export function frameLinkOf(convId: string, messageId: string): FrameLink {
   return { pathname: FRAME_ROUTE, params: { convId, id: messageId } };
 }
 
-export interface FrameNodeLink { url: string; host: string }
+export interface FrameNodeLink {
+  url: string;
+  host: string;
+}
 
 export function frameNodeOf(frame: FrameContent): FrameNodeLink | null {
   if (frame.source === undefined) return null;
@@ -97,7 +100,10 @@ export function frameActionContent(frameId: string, out: FrameOut): FrameActionC
   const label = filled(out.label);
   const dataModel = frameDataModelOf(out);
   const parsed = frameActionSchema.safeParse({
-    frameId, action: out.message.action, ...(label === undefined ? {} : { label }), ...(dataModel === undefined ? {} : { dataModel }),
+    frameId,
+    action: out.message.action,
+    ...(label === undefined ? {} : { label }),
+    ...(dataModel === undefined ? {} : { dataModel }),
   });
   return parsed.success ? parsed.data : null;
 }
@@ -108,7 +114,7 @@ export function nodeRequestOf(out: FrameOut): NodeRequest {
 
 export function frameScreenTitle(frame: FrameContent, screen: string): string {
   const card = frameCardModel(frame).title;
-  return screen === frameStartSurface(frame) ? card : filled(frameSummaryOf(frame, screen).title) ?? card;
+  return screen === frameStartSurface(frame) ? card : (filled(frameSummaryOf(frame, screen).title) ?? card);
 }
 
 export function frameRenders(frame: Pick<FrameContent, 'messages'>): boolean {

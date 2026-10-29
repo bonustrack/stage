@@ -5,7 +5,10 @@ const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
 const originalLocation = Object.getOwnPropertyDescriptor(globalThis, 'location');
 
 afterEach(() => {
-  for (const [key, descriptor] of [['window', originalWindow], ['location', originalLocation]] as const) {
+  for (const [key, descriptor] of [
+    ['window', originalWindow],
+    ['location', originalLocation],
+  ] as const) {
     if (descriptor) Object.defineProperty(globalThis, key, descriptor);
     else Reflect.deleteProperty(globalThis, key);
   }
@@ -17,7 +20,9 @@ function browserHistory() {
   let index = 0;
   const browser = {
     history: {
-      get state() { return entries[index]?.state; },
+      get state() {
+        return entries[index]?.state;
+      },
       pushState(state: { id: string }, _title: string, path: string) {
         entries.splice(index + 1, entries.length, { state, path });
         index += 1;
@@ -75,7 +80,9 @@ describe('browser history popstate synchronization', () => {
   test('new navigation after Back discards the old forward branch', () => {
     const { browser, history } = setup();
     let popCount = 0;
-    const stop = history.listen(() => { popCount += 1; });
+    const stop = history.listen(() => {
+      popCount += 1;
+    });
     browser.popTo(1);
     expect(popCount).toBe(1);
     expect(history.backIndex({ path: '/#/home' })).toBe(0);

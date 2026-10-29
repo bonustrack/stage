@@ -1,4 +1,3 @@
-
 export interface X402Accept {
   scheme: string;
   network: string;
@@ -53,12 +52,8 @@ export function normaliseAccept(a: RawAccept): X402Accept | null {
     amount,
     payTo: str(a.payTo),
     description: str(a.description),
-    maxTimeoutSeconds:
-      typeof a.maxTimeoutSeconds === 'number' ? a.maxTimeoutSeconds : undefined,
-    extra:
-      a.extra && typeof a.extra === 'object'
-        ? (a.extra as Record<string, unknown>)
-        : undefined,
+    maxTimeoutSeconds: typeof a.maxTimeoutSeconds === 'number' ? a.maxTimeoutSeconds : undefined,
+    extra: a.extra && typeof a.extra === 'object' ? (a.extra as Record<string, unknown>) : undefined,
   };
 }
 
@@ -72,18 +67,13 @@ function trustedEndpoint(claimed: string | undefined, fetched: string): string {
   }
 }
 
-export function parseX402Challenge(
-  obj: unknown,
-  endpoint: string,
-): X402Challenge | null {
+export function parseX402Challenge(obj: unknown, endpoint: string): X402Challenge | null {
   if (!obj || typeof obj !== 'object') return null;
   const o = obj as Record<string, unknown>;
   const rawAccepts = rawAcceptsOf(o);
   if (!rawAccepts || rawAccepts.length === 0) return null;
 
-  const accepts = rawAccepts
-    .map(normaliseAccept)
-    .filter((a): a is X402Accept => a !== null);
+  const accepts = rawAccepts.map(normaliseAccept).filter((a): a is X402Accept => a !== null);
   if (accepts.length === 0) return null;
 
   return {

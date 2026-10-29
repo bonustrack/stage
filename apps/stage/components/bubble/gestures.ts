@@ -4,9 +4,7 @@ import { Gesture, type GestureType } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from 'expo-router/js-stack';
 import { initialMenuAnchor, type MenuAnchor } from './props';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import {
-  useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation,
-} from 'react-native-reanimated';
+import { useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation } from 'react-native-reanimated';
 
 interface BubbleGestureInput {
   pending?: boolean;
@@ -15,7 +13,9 @@ interface BubbleGestureInput {
   onOpenMenu?: (anchor: MenuAnchor) => void;
 }
 
-function lightHaptic(): void { Vibration.vibrate(10); }
+function lightHaptic(): void {
+  Vibration.vibrate(10);
+}
 
 function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
   gesture.config.touchAction = 'pan-y';
@@ -33,7 +33,9 @@ export function useBubbleGestures(input: BubbleGestureInput) {
   const lastAnchor = useRef<MenuAnchor>({ y: 0, height: 0 });
   const navGestureRef = useGestureHandlerRef() as React.RefObject<React.ComponentType | undefined> | null;
 
-  const fireReply = (): void => { if (!pending) onReply?.(); };
+  const fireReply = (): void => {
+    if (!pending) onReply?.();
+  };
   const openMenu = (point?: MenuPoint): void => {
     if (pending || !onOpenMenu) return;
     lightHaptic();
@@ -47,37 +49,58 @@ export function useBubbleGestures(input: BubbleGestureInput) {
       });
     }
   };
-  const onDoubleTap = (): void => { if (!pending) { lightHaptic(); onReact?.('👍'); } };
+  const onDoubleTap = (): void => {
+    if (!pending) {
+      lightHaptic();
+      onReact?.('👍');
+    }
+  };
 
   const replyPan = useMemo(() => {
-    const pan = keepsFeedScrollable(Gesture.Pan())
-      .activeOffsetX(-15)
-      .failOffsetX(15)
-      .failOffsetY([-12, 12]);
+    const pan = keepsFeedScrollable(Gesture.Pan()).activeOffsetX(-15).failOffsetX(15).failOffsetY([-12, 12]);
     if (navGestureRef) pan.simultaneousWithExternalGesture(navGestureRef);
     return pan
-      .onBegin(() => { crossed.value = false; })
-      .onChange(e => {
+      .onBegin(() => {
+        crossed.value = false;
+      })
+      .onChange((e) => {
         const raw = Math.min(0, e.translationX);
         swipeX.value = raw > THRESHOLD ? raw : THRESHOLD + (raw - THRESHOLD) / 3;
         const past = raw <= THRESHOLD;
-        if (past && !crossed.value) { crossed.value = true; runOnJS(lightHaptic)(); }
-        else if (!past && crossed.value) { crossed.value = false; }
+        if (past && !crossed.value) {
+          crossed.value = true;
+          runOnJS(lightHaptic)();
+        } else if (!past && crossed.value) {
+          crossed.value = false;
+        }
       })
-      .onEnd(e => {
+      .onEnd((e) => {
         if (e.translationX <= THRESHOLD) runOnJS(fireReply)();
         swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
       })
       .onFinalize(() => {
         swipeX.value = withSpring(0, { damping: 18, stiffness: 220 });
       });
-  },
-  [onReply, pending, swipeX, crossed, navGestureRef]);
+  }, [onReply, pending, swipeX, crossed, navGestureRef]);
 
-  const doubleTap = useMemo(() => keepsFeedScrollable(Gesture.Tap()).numberOfTaps(2)
-    .onEnd((_e, ok) => { if (ok) runOnJS(onDoubleTap)(); }), [onDoubleTap]);
-  const longPress = useMemo(() => keepsFeedScrollable(Gesture.LongPress()).minDuration(300)
-    .onStart((e) => { runOnJS(openMenu)({ x: e.absoluteX, y: e.absoluteY }); }), [openMenu]);
+  const doubleTap = useMemo(
+    () =>
+      keepsFeedScrollable(Gesture.Tap())
+        .numberOfTaps(2)
+        .onEnd((_e, ok) => {
+          if (ok) runOnJS(onDoubleTap)();
+        }),
+    [onDoubleTap],
+  );
+  const longPress = useMemo(
+    () =>
+      keepsFeedScrollable(Gesture.LongPress())
+        .minDuration(300)
+        .onStart((e) => {
+          runOnJS(openMenu)({ x: e.absoluteX, y: e.absoluteY });
+        }),
+    [openMenu],
+  );
   const tapGestures = useMemo(() => {
     const menuOrReact = Gesture.Exclusive(longPress, doubleTap);
     return SWIPE_TO_REPLY ? Gesture.Race(replyPan, menuOrReact) : menuOrReact;

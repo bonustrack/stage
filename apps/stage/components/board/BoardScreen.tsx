@@ -41,15 +41,35 @@ import { useBottomChromeHeight } from '../../lib/bottomChrome';
 import { useWebTabRail } from '../../lib/webLayout';
 import { BOARD_ROUTE, channelRouteConvId } from '../tabs/splitRoutes';
 import {
-  BOARD_GAP, acceptsCardMove, acceptsColumnMove, activeColumnIndex, boardCardPress, boardColumns, cardLanding, cardsRightPadding, columnEditable,
-  columnMovable, columnsEditable, orderedColumns, revealScrollX, searchedColumns, type BoardColumn,
+  BOARD_GAP,
+  acceptsCardMove,
+  acceptsColumnMove,
+  activeColumnIndex,
+  boardCardPress,
+  boardColumns,
+  cardLanding,
+  cardsRightPadding,
+  columnEditable,
+  columnMovable,
+  columnsEditable,
+  orderedColumns,
+  revealScrollX,
+  searchedColumns,
+  type BoardColumn,
 } from './BoardScreen.model';
 import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { ALL_ARROWS, type MarkedNode } from '../arrowKeys.model';
 import { boardArrowMove } from './boardKeys.model';
 import { addBoardColumn, deleteBoardColumn, dropCard, dropColumn, renameBoardColumn } from './boardActions';
 import {
-  AddColumn, CARD_GAP, COLUMN_PADDING, ColumnFrame, ColumnMenu, ColumnTitle, HEADER_PADDING, RenameHeading,
+  AddColumn,
+  CARD_GAP,
+  COLUMN_PADDING,
+  ColumnFrame,
+  ColumnMenu,
+  ColumnTitle,
+  HEADER_PADDING,
+  RenameHeading,
 } from './BoardColumnEdit';
 import { List } from '@stage-labs/kit/react-native/list';
 import { SortableHandle, SortableItem, SortableList, SortableScope } from '@stage-labs/kit/react-native/sortable';
@@ -61,9 +81,7 @@ const SHRINK = { flexShrink: 1, minHeight: 0 };
 const LANE = { alignSelf: 'stretch', alignItems: 'flex-start' } as const;
 const FILL = { flex: 1 };
 type BoardRouter = ReturnType<typeof useRouter>;
-const cardDataSet = (columnKey: string, convId: string): MarkedNode => (
-  { dataSet: { boardcard: convId, boardcolumn: columnKey } }
-);
+const cardDataSet = (columnKey: string, convId: string): MarkedNode => ({ dataSet: { boardcard: convId, boardcolumn: columnKey } });
 
 function showInPanel(router: BoardRouter, convId: string, press: 'push' | 'replace'): void {
   const link = conversationLinkOf(convId, null);
@@ -84,8 +102,18 @@ function columnMaxHeight(laneHeight: number): DimensionValue | undefined {
   return laneHeight > 0 ? laneHeight : undefined;
 }
 
-function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
-  item: ChannelRowData; pinned: boolean; columnKey: string; editable: boolean; onOpen: () => void;
+function BoardCard({
+  item,
+  pinned,
+  columnKey,
+  editable,
+  onOpen,
+}: {
+  item: ChannelRowData;
+  pinned: boolean;
+  columnKey: string;
+  editable: boolean;
+  onOpen: () => void;
 }): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
@@ -99,53 +127,71 @@ function BoardCard({ item, pinned, columnKey, editable, onOpen }: {
   const title = rowTitle(item);
   return (
     <SortableItem itemId={item.convId} disabled={!editable} onHold={openMenu}>
-    <Column
-      {...cardDataSet(columnKey, item.convId)}
-      surface="surface"
-      radius={BLOCK_RADIUS_DEFAULT}
-      style={{
-        overflow: 'hidden',
-        borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : bg,
-      }}
-    >
-      <ChannelRow
-        title={title.text}
-        placeholderTitle={title.placeholder}
-        avatarUri={item.avatarUri} avatarAddress={rowAvatarAddress(item)} square={!item.peerAddress}
-        hideAvatar={!fields.avatar} wrapTitle
-        lastPreview={rowPreview(item)}
-        showPreview={fields.lastMessage}
-        timestamp={channelTimestamp(item.lastTs)}
-        unreadCount={item.unreadCount}
-        markedUnread={item.markedUnread}
-        pinned={pinned}
-        draftText={draftText}
-        fields={<ChannelRowFields data={item} fields={fields}/>}
-        onPressIn={() => { prefetchFeed(lineOfConv(item.convId)); }}
-        onPress={() => {
-          if (!panel) {
-            router.push(conversationLinkOf(item.convId, item.peerAddress));
-            return;
-          }
-          const press = boardCardPress(openConvId, item.convId);
-          if (press === 'close') {
-            capabilities.backTo(BOARD_ROUTE);
-            return;
-          }
-          onOpen();
-          showInPanel(router, item.convId, press);
-        }}
-        onLongPress={editable ? undefined : openMenu}
-        onContextMenu={openMenu}
-      />
-      <RowChannelMenu menu={menu} isPinned={pinned} onClose={() => { setMenu(null); }}/>
-    </Column>
+      <Column
+        {...cardDataSet(columnKey, item.convId)}
+        surface="surface"
+        radius={BLOCK_RADIUS_DEFAULT}
+        style={{ overflow: 'hidden', borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : bg }}
+      >
+        <ChannelRow
+          title={title.text}
+          placeholderTitle={title.placeholder}
+          avatarUri={item.avatarUri}
+          avatarAddress={rowAvatarAddress(item)}
+          square={!item.peerAddress}
+          hideAvatar={!fields.avatar}
+          wrapTitle
+          lastPreview={rowPreview(item)}
+          showPreview={fields.lastMessage}
+          timestamp={channelTimestamp(item.lastTs)}
+          unreadCount={item.unreadCount}
+          markedUnread={item.markedUnread}
+          pinned={pinned}
+          draftText={draftText}
+          fields={<ChannelRowFields data={item} fields={fields} />}
+          onPressIn={() => {
+            prefetchFeed(lineOfConv(item.convId));
+          }}
+          onPress={() => {
+            if (!panel) {
+              router.push(conversationLinkOf(item.convId, item.peerAddress));
+              return;
+            }
+            const press = boardCardPress(openConvId, item.convId);
+            if (press === 'close') {
+              capabilities.backTo(BOARD_ROUTE);
+              return;
+            }
+            onOpen();
+            showInPanel(router, item.convId, press);
+          }}
+          onLongPress={editable ? undefined : openMenu}
+          onContextMenu={openMenu}
+        />
+        <RowChannelMenu
+          menu={menu}
+          isPinned={pinned}
+          onClose={() => {
+            setMenu(null);
+          }}
+        />
+      </Column>
     </SortableItem>
   );
 }
 
-function ColumnCards({ column, pinned, editable, placeholder, onOpen }: {
-  column: BoardColumn<ChannelRowData>; pinned: readonly string[]; editable: boolean; placeholder: React.ReactNode; onOpen: (key: string) => void;
+function ColumnCards({
+  column,
+  pinned,
+  editable,
+  placeholder,
+  onOpen,
+}: {
+  column: BoardColumn<ChannelRowData>;
+  pinned: readonly string[];
+  editable: boolean;
+  placeholder: React.ReactNode;
+  onOpen: (key: string) => void;
 }): React.ReactElement | null {
   if (column.rows.length === 0 && placeholder === null) return null;
   return (
@@ -156,10 +202,16 @@ function ColumnCards({ column, pinned, editable, placeholder, onOpen }: {
       style={{ flexGrow: 0, flexShrink: 1 }}
       contentContainerStyle={{ paddingRight: cardsRightPadding(COLUMN_PADDING, gutterScrollbarWidth()) }}
     >
-      {column.rows.map(item => (
+      {column.rows.map((item) => (
         <BoardCard
-          key={item.convId} item={item} pinned={pinned.includes(item.convId)} columnKey={column.key} editable={editable}
-          onOpen={() => { onOpen(column.key); }}
+          key={item.convId}
+          item={item}
+          pinned={pinned.includes(item.convId)}
+          columnKey={column.key}
+          editable={editable}
+          onOpen={() => {
+            onOpen(column.key);
+          }}
         />
       ))}
       {placeholder}
@@ -167,7 +219,14 @@ function ColumnCards({ column, pinned, editable, placeholder, onOpen }: {
   );
 }
 
-function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }: {
+function BoardColumnView({
+  column,
+  columns,
+  maxHeight,
+  pinned,
+  actions,
+  onOpen,
+}: {
   column: BoardColumn<ChannelRowData>;
   columns: readonly BoardColumn<ChannelRowData>[];
   maxHeight?: DimensionValue;
@@ -181,32 +240,65 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   const [editing, setEditing] = useState(false);
   const heading = editing ? (
     <RenameHeading
-      label={label} columns={columns} count={column.rows.length} onRename={actions.rename}
-      onClose={() => { setEditing(false); }}
+      label={label}
+      columns={columns}
+      count={column.rows.length}
+      onRename={actions.rename}
+      onClose={() => {
+        setEditing(false);
+      }}
     />
   ) : (
     <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
       <SortableHandle style={GROW}>
         <Row align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
-          <ColumnTitle label={label} onPress={editable ? () => { setEditing(true); } : undefined}/>
-          <CountTag count={column.rows.length}/>
-          <Column weight={1}/>
+          <ColumnTitle
+            label={label}
+            onPress={
+              editable
+                ? () => {
+                    setEditing(true);
+                  }
+                : undefined
+            }
+          />
+          <CountTag count={column.rows.length} />
+          <Column weight={1} />
         </Row>
       </SortableHandle>
-      {editable ? <ColumnMenu onDelete={() => { actions.remove(label); }}/> : null}
-      <NewChatAction by={columnBy} groupKey={column.key} title={label}/>
+      {editable ? (
+        <ColumnMenu
+          onDelete={() => {
+            actions.remove(label);
+          }}
+        />
+      ) : null}
+      <NewChatAction by={columnBy} groupKey={column.key} title={label} />
     </Row>
   );
   return (
-    <SortableItem itemId={column.key} handle disabled={editing || !columnMovable(column.key)} style={maxHeight === undefined ? undefined : { maxHeight }}>
+    <SortableItem
+      itemId={column.key}
+      handle
+      disabled={editing || !columnMovable(column.key)}
+      style={maxHeight === undefined ? undefined : { maxHeight }}
+    >
       <SortableList
-        listId={column.key} group="cards" itemIds={column.rows.map(row => row.convId)} keyboard={false} style={SHRINK}
-        accepts={acceptsCardMove} placeAt={actions.placeCard} onMove={(move) => { actions.dropCard(move.itemId, move.fromListId, column.key); }}
+        listId={column.key}
+        group="cards"
+        itemIds={column.rows.map((row) => row.convId)}
+        keyboard={false}
+        style={SHRINK}
+        accepts={acceptsCardMove}
+        placeAt={actions.placeCard}
+        onMove={(move) => {
+          actions.dropCard(move.itemId, move.fromListId, column.key);
+        }}
       >
         {({ over, placeholder }) => (
           <ColumnFrame over={over} shrink>
             {heading}
-            <ColumnCards column={column} pinned={pinned} editable={actions.editable} placeholder={placeholder} onOpen={onOpen}/>
+            <ColumnCards column={column} pinned={pinned} editable={actions.editable} placeholder={placeholder} onOpen={onOpen} />
           </ColumnFrame>
         )}
       </SortableList>
@@ -214,7 +306,13 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
   );
 }
 
-function useCardArrows({ columns, openIndex, openConvId, paused, onMove }: {
+function useCardArrows({
+  columns,
+  openIndex,
+  openConvId,
+  paused,
+  onMove,
+}: {
   columns: readonly BoardColumn<ChannelRowData>[];
   openIndex: number;
   openConvId: string | null;
@@ -234,7 +332,12 @@ function useCardArrows({ columns, openIndex, openConvId, paused, onMove }: {
   });
 }
 
-function BoardLanes({ columns, pinned, actions, filtering }: {
+function BoardLanes({
+  columns,
+  pinned,
+  actions,
+  filtering,
+}: {
   columns: BoardColumn<ChannelRowData>[];
   pinned: readonly string[];
   actions: ColumnActions;
@@ -255,10 +358,18 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
     const x = revealScrollX(index, scrollX.current, frame.width, PAGE_GUTTER);
     if (x !== scrollX.current) scroll.current?.scrollTo({ x, animated: true });
   };
-  useEffect(() => { revealColumn(openIndex); }, [openIndex, frame.width]);
+  useEffect(() => {
+    revealColumn(openIndex);
+  }, [openIndex, frame.width]);
   useCardArrows({
-    columns, openIndex, openConvId, paused: filtering,
-    onMove: (key) => { setOpenedFrom(key); revealColumn(columns.findIndex(column => column.key === key)); },
+    columns,
+    openIndex,
+    openConvId,
+    paused: filtering,
+    onMove: (key) => {
+      setOpenedFrom(key);
+      revealColumn(columns.findIndex((column) => column.key === key));
+    },
   });
   const revealEnd = (): void => {
     if (!reveal.current) return;
@@ -267,42 +378,66 @@ function BoardLanes({ columns, pinned, actions, filtering }: {
   };
   return (
     <SortableScope style={FILL}>
-    <List
-      ref={scroll}
-      direction="horizontal"
-      {...SELF_SCROLLBAR}
-      gap={BOARD_GAP}
-      keyboardShouldPersistTaps="handled"
-      style={{ flex: 1 }}
-      contentContainerStyle={{ ...padding, alignItems: 'flex-start' }}
-      onLayout={(e) => { setFrame({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height }); }}
-      onScroll={(e) => { scrollX.current = e.nativeEvent.contentOffset.x; }}
-      scrollEventThrottle={16}
-      onContentSizeChange={revealEnd}
-    >
-      <SortableList
-        listId="board-columns" group="columns" direction="horizontal" gap={BOARD_GAP} keyboard={false} style={LANE}
-        itemIds={columns.map(column => column.key)} accepts={acceptsColumnMove}
-        onMove={(move) => { const target = moveAnchor(move); if (target !== null) actions.dropColumn(move.itemId, target); }}
+      <List
+        ref={scroll}
+        direction="horizontal"
+        {...SELF_SCROLLBAR}
+        gap={BOARD_GAP}
+        keyboardShouldPersistTaps="handled"
+        style={{ flex: 1 }}
+        contentContainerStyle={{ ...padding, alignItems: 'flex-start' }}
+        onLayout={(e) => {
+          setFrame({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height });
+        }}
+        onScroll={(e) => {
+          scrollX.current = e.nativeEvent.contentOffset.x;
+        }}
+        scrollEventThrottle={16}
+        onContentSizeChange={revealEnd}
       >
-        {columns.map(column => (
-          <BoardColumnView
-            key={column.key}
-            column={column} columns={columns} pinned={pinned}
-            maxHeight={columnMaxHeight(laneHeight)}
-            actions={actions} onOpen={setOpenedFrom}
+        <SortableList
+          listId="board-columns"
+          group="columns"
+          direction="horizontal"
+          gap={BOARD_GAP}
+          keyboard={false}
+          style={LANE}
+          itemIds={columns.map((column) => column.key)}
+          accepts={acceptsColumnMove}
+          onMove={(move) => {
+            const target = moveAnchor(move);
+            if (target !== null) actions.dropColumn(move.itemId, target);
+          }}
+        >
+          {columns.map((column) => (
+            <BoardColumnView
+              key={column.key}
+              column={column}
+              columns={columns}
+              pinned={pinned}
+              maxHeight={columnMaxHeight(laneHeight)}
+              actions={actions}
+              onOpen={setOpenedFrom}
+            />
+          ))}
+        </SortableList>
+        {actions.editable ? (
+          <AddColumn
+            columns={columns}
+            onAdd={actions.create}
+            onReveal={() => {
+              reveal.current = true;
+            }}
           />
-        ))}
-      </SortableList>
-      {actions.editable ? <AddColumn columns={columns} onAdd={actions.create} onReveal={() => { reveal.current = true; }}/> : null}
-    </List>
+        ) : null}
+      </List>
     </SortableScope>
   );
 }
 function useMemberProfiles(rows: ChannelRowData[] | null, query: string, assignees: boolean): number {
   const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'board').members : [];
-  const assigned = assignees ? (rows ?? []).flatMap(r => r.assigned) : [];
-  return usePeerProfiles([...(rows ?? []).map(r => r.lastSenderAddress), ...members, ...assigned]);
+  const assigned = assignees ? (rows ?? []).flatMap((r) => r.assigned) : [];
+  return usePeerProfiles([...(rows ?? []).map((r) => r.lastSenderAddress), ...members, ...assigned]);
 }
 function BoardBody({ query, filtering }: { query: string; filtering: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -321,7 +456,11 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(
-    () => orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, r => isRowCleared(cleared, r), sort, boardOrder), order),
+    () =>
+      orderedColumns(
+        boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, (r) => isRowCleared(cleared, r), sort, boardOrder),
+        order,
+      ),
     [rows, cleared, pinned, order, columnBy, profiles, sort, boardOrder],
   );
   const activityCutoff = useLastActivityCutoff('board');
@@ -329,26 +468,43 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
     () => searchedColumns(columns, query, memberNamesOf, getDraft, activityCutoff),
     [columns, query, profiles, draftsVersion, activityCutoff],
   );
-  if (error) return <HomeError error={error} dark={dark} fg={fg}/>;
-  if (!rows) return <HomeSpinner head={head}/>;
+  if (error) return <HomeError error={error} dark={dark} fg={fg} />;
+  if (!rows) return <HomeSpinner head={head} />;
   const actions: ColumnActions = {
     editable: columnsEditable(columnBy),
-    dropCard: (convId, from, to) => { dropCard(columns, order, convId, from, to, columnBy); },
-    dropColumn: (from, target) => { dropColumn(columns, order, from, target); },
-    placeCard: move => cardLanding(shown, move, list => sortHomeRows(list, pinned, sort, boardOrder)),
+    dropCard: (convId, from, to) => {
+      dropCard(columns, order, convId, from, to, columnBy);
+    },
+    dropColumn: (from, target) => {
+      dropColumn(columns, order, from, target);
+    },
+    placeCard: (move) => cardLanding(shown, move, (list) => sortHomeRows(list, pinned, sort, boardOrder)),
     rename: (from, to) => {
       if (columnsEditable(columnBy)) void renameBoardColumn(rows, columns, order, from, to, columnBy).catch(reported('board.rename'));
     },
     remove: (label) => {
       if (columnsEditable(columnBy)) void deleteBoardColumn(rows, columns, order, label, columnBy).catch(reported('board.delete'));
     },
-    create: (name) => { if (columnsEditable(columnBy)) addBoardColumn(columns, order, name, columnBy); },
+    create: (name) => {
+      if (columnsEditable(columnBy)) addBoardColumn(columns, order, name, columnBy);
+    },
   };
-  return <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} filtering={filtering}/>;
+  return <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} filtering={filtering} />;
 }
-function BoardFrame({ pane, query, setQuery, onFilterMenu, menu, children }: {
-  pane: boolean; query: string; setQuery: (query: string) => void; onFilterMenu: (open: boolean) => void;
-  children: React.ReactNode; menu: HomeMenuState;
+function BoardFrame({
+  pane,
+  query,
+  setQuery,
+  onFilterMenu,
+  menu,
+  children,
+}: {
+  pane: boolean;
+  query: string;
+  setQuery: (query: string) => void;
+  onFilterMenu: (open: boolean) => void;
+  children: React.ReactNode;
+  menu: HomeMenuState;
 }): React.ReactElement {
   const { text, link, border } = usePalette();
   const wide = useWebTabRail();
@@ -356,23 +512,45 @@ function BoardFrame({ pane, query, setQuery, onFilterMenu, menu, children }: {
   const slot = useHomeTopnav({ scope: 'board', pane, query, setQuery, onFilterMenu, menu }, search, wide);
   const [laneHeight, setLaneHeight] = useState(0);
   const scroll = useRef<React.ComponentRef<typeof ScreenScroll>>(null);
-  const openSearch = (): void => { scroll.current?.scrollToOffset({ offset: 0, animated: false }); search.open(); };
-  const topnav = pane ? slot.override ?? <Topnav inline right={slot.right}/> : null;
-  if (wide) return <>{topnav}{children}</>;
-  return <>
-    {topnav}
-    <Column weight={1} onLayout={event => { setLaneHeight(event.nativeEvent.layout.height); }}>
-      <TopnavFade stickyTop={`${TOPNAV_HEIGHT}px`}/>
-      <ScreenScroll ref={scroll} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
-        <FilterSearch
-          key={search.key} autoFocus={search.key > 0}
-          query={query} setQuery={setQuery} onClose={search.close} onOpen={openSearch}
-          head={link} sub={text} border={border}
-        />
-        <Column height={laneHeight}>{children}</Column>
-      </ScreenScroll>
-    </Column>
-  </>;
+  const openSearch = (): void => {
+    scroll.current?.scrollToOffset({ offset: 0, animated: false });
+    search.open();
+  };
+  const topnav = pane ? (slot.override ?? <Topnav inline right={slot.right} />) : null;
+  if (wide)
+    return (
+      <>
+        {topnav}
+        {children}
+      </>
+    );
+  return (
+    <>
+      {topnav}
+      <Column
+        weight={1}
+        onLayout={(event) => {
+          setLaneHeight(event.nativeEvent.layout.height);
+        }}
+      >
+        <TopnavFade stickyTop={`${TOPNAV_HEIGHT}px`} />
+        <ScreenScroll ref={scroll} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
+          <FilterSearch
+            key={search.key}
+            autoFocus={search.key > 0}
+            query={query}
+            setQuery={setQuery}
+            onClose={search.close}
+            onOpen={openSearch}
+            head={link}
+            sub={text}
+            border={border}
+          />
+          <Column height={laneHeight}>{children}</Column>
+        </ScreenScroll>
+      </Column>
+    </>
+  );
 }
 function useBoardHeight(): number | undefined {
   const { height } = useWindowDimensions();
@@ -388,7 +566,7 @@ export function BoardScreen({ pane, menu }: { pane: boolean; menu: HomeMenuState
   return (
     <Column weight={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
       <BoardFrame pane={pane} query={query} setQuery={setQuery} onFilterMenu={setFiltering} menu={menu}>
-        <BoardBody query={query} filtering={filtering}/>
+        <BoardBody query={query} filtering={filtering} />
       </BoardFrame>
     </Column>
   );

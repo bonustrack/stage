@@ -6,7 +6,9 @@ mock.module('../platform/storage', () => ({ appStorage: { get: async (key: strin
 mock.module('../lib/cache', () => ({
   persistenceBackend: {
     read: async (key: string) => cached.get(key) ?? null,
-    write: (key: string, value: unknown) => { cached.set(key, value); },
+    write: (key: string, value: unknown) => {
+      cached.set(key, value);
+    },
     onFlushSignal: () => undefined,
   },
 }));
@@ -16,18 +18,34 @@ const { getCachedRows, hydrateCachedRows, setActiveAccountForCache, setCachedRow
 const { filterChannelRows } = await import('@stage-labs/client/xmtp/channelsFilter');
 
 test('cache hydration never publishes a durable hidden channel', async () => {
-  const rows = [{ convId: 'hidden', peerAddress: null }, { convId: 'shown', peerAddress: null }];
+  const rows = [
+    { convId: 'hidden', peerAddress: null },
+    { convId: 'shown', peerAddress: null },
+  ];
   cached.set('rows', rows);
   values.set('channels.hidden.a', JSON.stringify({ hidden: { hidden: true, at: 1 } }));
   const store = new PersistentStore('rows', undefined, (stored: typeof rows) => visibleCachedRows('a', stored));
   const published: unknown[] = [];
-  store.subscribe(value => { published.push(value); });
+  store.subscribe((value) => {
+    published.push(value);
+  });
   expect(await store.hydrate()).toEqual([rows[1]]);
   expect(published).toEqual([[rows[1]]]);
 });
 
 test('actual channel-cache hydration and writes publish the same safe title used for search', async () => {
-  const row = { convId: 'unnamed', title: 'proto', peerAddress: null, groupName: '', inboxToAddr: {}, selfInboxId: 'self', unreadCount: 0, lastReadNs: 0, lastTs: null, lastPreview: '' };
+  const row = {
+    convId: 'unnamed',
+    title: 'proto',
+    peerAddress: null,
+    groupName: '',
+    inboxToAddr: {},
+    selfInboxId: 'self',
+    unreadCount: 0,
+    lastReadNs: 0,
+    lastTs: null,
+    lastPreview: '',
+  };
   cached.set('channels-cache.title-test.json', [row]);
   setActiveAccountForCache('title-test');
   await hydrateCachedRows();

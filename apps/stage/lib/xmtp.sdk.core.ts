@@ -13,11 +13,22 @@ import { AccountChangedError } from './xmtp.client.core';
 import { prepareNotifyingSend } from '@stage-labs/client/xmtp/pushSenderFilter';
 import { timeSendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 
-export interface GroupMeta { name?: string; imageUrl?: string; appData?: string }
+export interface GroupMeta {
+  name?: string;
+  imageUrl?: string;
+  appData?: string;
+}
 
-export interface GroupInfo { name: string; imageUrl: string; description: string }
+export interface GroupInfo {
+  name: string;
+  imageUrl: string;
+  description: string;
+}
 
-export interface GroupAdmins { admins: string[]; superAdmins: string[] }
+export interface GroupAdmins {
+  admins: string[];
+  superAdmins: string[];
+}
 
 export const NO_GROUP_ADMINS: GroupAdmins = { admins: [], superAdmins: [] };
 
@@ -29,10 +40,17 @@ export function notAGroup(): never {
   throw new Error('Not a channel');
 }
 
-export interface ConvLike { id: string }
+export interface ConvLike {
+  id: string;
+}
 
 export interface MessageQuery {
-  limit: number; beforeMs?: number; beforeNs?: number; afterNs?: number; insertedAfterNs?: number; order?: 'asc' | 'desc';
+  limit: number;
+  beforeMs?: number;
+  beforeNs?: number;
+  afterNs?: number;
+  insertedAfterNs?: number;
+  order?: 'asc' | 'desc';
   filesOnly?: boolean;
 }
 
@@ -48,11 +66,22 @@ export interface SendOps<C> {
   json: <T>(conv: C, codec: JsonCodec<T>, content: T) => Promise<string>;
 }
 
-export interface MessageDeletion { convId: string; messageId: string }
+export interface MessageDeletion {
+  convId: string;
+  messageId: string;
+}
 
-export interface SyncState { epoch: number; forked: boolean; forkDetails: string; pausedForVersion: string }
+export interface SyncState {
+  epoch: number;
+  forked: boolean;
+  forkDetails: string;
+  pausedForVersion: string;
+}
 
-export interface MessageTarget<C> { conv: C; contentTypeId: string }
+export interface MessageTarget<C> {
+  conv: C;
+  contentTypeId: string;
+}
 
 export interface HistoryOps<Cl> {
   sendSyncRequest: (client: Cl, serverUrl: string) => Promise<unknown>;
@@ -117,9 +146,7 @@ interface ConvPrimitives<C, M> {
 
 export type XmtpSdk<Cl, C extends ConvLike, M> = ClientPrimitives<Cl, C, M> & ConvPrimitives<C, M>;
 
-export function convFinder<Cl, C extends ConvLike, M>(
-  sdk: XmtpSdk<Cl, C, M>,
-): (line: string) => Promise<C | null> {
+export function convFinder<Cl, C extends ConvLike, M>(sdk: XmtpSdk<Cl, C, M>): (line: string) => Promise<C | null> {
   return async (line) => {
     const convId = convIdOfLine(line);
     if (!convId) return null;
@@ -128,7 +155,8 @@ export function convFinder<Cl, C extends ConvLike, M>(
 }
 
 export function sendableFinder<Cl, C extends ConvLike, M>(
-  sdk: XmtpSdk<Cl, C, M>, prepare: (client: Cl, conv: C, timing?: SendTiming) => Promise<void>,
+  sdk: XmtpSdk<Cl, C, M>,
+  prepare: (client: Cl, conv: C, timing?: SendTiming) => Promise<void>,
 ): (line: string, shouldPush?: boolean, timing?: SendTiming) => Promise<C> {
   const find = convFinder(sdk);
   return async (line, shouldPush = true, timing) => {
@@ -142,7 +170,9 @@ export function sendableFinder<Cl, C extends ConvLike, M>(
     if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
     const active = await timeSendPhase(timing, 'conversation.active', () => activeForSend(sdk, client, conv, line));
     assertCurrent();
-    await timeSendPhase(timing, 'filter.prepare', () => prepareNotifyingSend(shouldPush, () => prepare(client, active, timing), assertCurrent));
+    await timeSendPhase(timing, 'filter.prepare', () =>
+      prepareNotifyingSend(shouldPush, () => prepare(client, active, timing), assertCurrent),
+    );
     return active;
   };
 }

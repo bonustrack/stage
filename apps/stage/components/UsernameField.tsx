@@ -6,7 +6,11 @@ import { RailTooltip } from './tabs/RailTooltip';
 import { usePalette } from '../lib/theme';
 import { randomUsername } from '@stage-labs/client/identity/stageNames';
 import {
-  claimStatusTone, localLabelProblem, normalizeLabel, sanitizeLabelInput, type ClaimState,
+  claimStatusTone,
+  localLabelProblem,
+  normalizeLabel,
+  sanitizeLabelInput,
+  type ClaimState,
 } from './settings/ProfileSettings.claim.model';
 import { usernameHint, usernameStatus } from './UsernameField.model';
 import { IconArrowLeftRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeftRight';
@@ -19,21 +23,32 @@ const CHECK_DEBOUNCE_MS = 400;
 
 function useNameAvailability(label: string, setState: (next: ClaimState) => void): void {
   useEffect(() => {
-    if (label === '') { setState({ label, phase: 'idle' }); return; }
+    if (label === '') {
+      setState({ label, phase: 'idle' });
+      return;
+    }
     const problem = localLabelProblem(label);
-    if (problem) { setState({ label, phase: 'invalid', detail: problem }); return; }
+    if (problem) {
+      setState({ label, phase: 'invalid', detail: problem });
+      return;
+    }
     setState({ label, phase: 'checking' });
     let cancelled = false;
     const timer = setTimeout(() => {
-      void checkStageName(label).then((check) => {
-        if (cancelled) return;
-        if (!check.valid) setState({ label, phase: 'invalid', detail: check.reason });
-        else setState({ label, phase: check.available ? 'available' : 'unavailable' });
-      }).catch((err: unknown) => {
-        if (!cancelled) setState({ label, phase: 'failed', detail: errorMessage(err) });
-      });
+      void checkStageName(label)
+        .then((check) => {
+          if (cancelled) return;
+          if (!check.valid) setState({ label, phase: 'invalid', detail: check.reason });
+          else setState({ label, phase: check.available ? 'available' : 'unavailable' });
+        })
+        .catch((err: unknown) => {
+          if (!cancelled) setState({ label, phase: 'failed', detail: errorMessage(err) });
+        });
     }, CHECK_DEBOUNCE_MS);
-    return () => { cancelled = true; clearTimeout(timer); };
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [label]);
 }
 
@@ -64,7 +79,13 @@ export function useUsernameInput(initialLabel = ''): UsernameInput {
 
 function ShuffleButton({ pal, disabled, onPick }: { pal: Pal; disabled: boolean; onPick: (label: string) => void }): React.ReactElement {
   return (
-    <RailTooltip label="Random username" onPress={() => { if (!disabled) onPick(randomUsername()); }} style={undefined}>
+    <RailTooltip
+      label="Random username"
+      onPress={() => {
+        if (!disabled) onPick(randomUsername());
+      }}
+      style={undefined}
+    >
       <Glyph icon={IconArrowLeftRight} size={SHUFFLE_ICON} color={pal.sub} />
     </RailTooltip>
   );
@@ -86,10 +107,19 @@ export function UsernameField({ input, busy }: { input: UsernameInput; busy: boo
   const pal = usePalette();
   const { raw, setRaw, label, state } = input;
   return (
-    <FormField label="Username" placeholder="e.g. alice123" value={raw} onChangeText={(t) => { setRaw(sanitizeLabelInput(t)); }} disabled={busy}
+    <FormField
+      label="Username"
+      placeholder="e.g. alice123"
+      value={raw}
+      onChangeText={(t) => {
+        setRaw(sanitizeLabelInput(t));
+      }}
+      disabled={busy}
       labelTrailing={<ShuffleButton pal={pal} disabled={busy} onPick={setRaw} />}
       inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
       trailing={StatusMark({ state, label, pal })}
-      hint={usernameHint(state, label)} hintTone={claimStatusTone(state)} />
+      hint={usernameHint(state, label)}
+      hintTone={claimStatusTone(state)}
+    />
   );
 }

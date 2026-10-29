@@ -20,15 +20,25 @@ function fixture() {
     if (writing) throw new Error(ALIASING);
     readers += 1;
     events.push('read');
-    try { await readGate.promise; if (readFailure) throw readFailure; return value; }
-    finally { readers -= 1; }
+    try {
+      await readGate.promise;
+      if (readFailure) throw readFailure;
+      return value;
+    } finally {
+      readers -= 1;
+    }
   }
   async function sign(): Promise<Uint8Array> {
     if (readers > 0 || writing) throw new Error(ALIASING);
     writing = true;
     events.push('sign');
-    try { await signGate.promise; if (signFailure) throw signFailure; return new Uint8Array([7]); }
-    finally { writing = false; }
+    try {
+      await signGate.promise;
+      if (signFailure) throw signFailure;
+      return new Uint8Array([7]);
+    } finally {
+      writing = false;
+    }
   }
   const client: AccessClient = {
     canMessage: () => read(new Map([[IDENTIFIER.identifier, true]])),
@@ -39,30 +49,40 @@ function fixture() {
     conversations: { fetchDmByIdentifier: () => read(undefined) },
     preferences: {
       sync: () => read({ numEligible: 0, numSynced: 0 }),
-      inboxState: () => read(state), fetchInboxState: () => read(state),
-      getInboxStates: () => read([state]), fetchInboxStates: () => read([state]),
-      setConsentStates: () => read(undefined), getConsentState: () => read(0),
+      inboxState: () => read(state),
+      fetchInboxState: () => read(state),
+      getInboxStates: () => read([state]),
+      fetchInboxStates: () => read([state]),
+      setConsentStates: () => read(undefined),
+      getConsentState: () => read(0),
     },
   };
   return {
-    client, events, releaseRead: () => readGate.resolve(undefined), releaseSign: () => signGate.resolve(undefined),
-    failRead: (error: Error) => { readFailure = error; },
-    failSign: (error: Error) => { signFailure = error; },
+    client,
+    events,
+    releaseRead: () => readGate.resolve(undefined),
+    releaseSign: () => signGate.resolve(undefined),
+    failRead: (error: Error) => {
+      readFailure = error;
+    },
+    failSign: (error: Error) => {
+      signFailure = error;
+    },
   };
 }
 
 const READS: [string, (client: AccessClient) => Promise<unknown>][] = [
-  ['canMessage', client => client.canMessage([IDENTIFIER])],
-  ['fetchInboxIdByIdentifier', client => client.fetchInboxIdByIdentifier(IDENTIFIER)],
-  ['fetchKeyPackageStatuses', client => client.fetchKeyPackageStatuses([])],
-  ['conversations.fetchDmByIdentifier', client => client.conversations.fetchDmByIdentifier(IDENTIFIER)],
-  ['preferences.sync', client => client.preferences.sync()],
-  ['preferences.inboxState', client => client.preferences.inboxState()],
-  ['preferences.fetchInboxState', client => client.preferences.fetchInboxState()],
-  ['preferences.getInboxStates', client => client.preferences.getInboxStates(['inbox'])],
-  ['preferences.fetchInboxStates', client => client.preferences.fetchInboxStates(['inbox'])],
-  ['preferences.setConsentStates', client => client.preferences.setConsentStates([])],
-  ['preferences.getConsentState', client => client.preferences.getConsentState(0, 'inbox')],
+  ['canMessage', (client) => client.canMessage([IDENTIFIER])],
+  ['fetchInboxIdByIdentifier', (client) => client.fetchInboxIdByIdentifier(IDENTIFIER)],
+  ['fetchKeyPackageStatuses', (client) => client.fetchKeyPackageStatuses([])],
+  ['conversations.fetchDmByIdentifier', (client) => client.conversations.fetchDmByIdentifier(IDENTIFIER)],
+  ['preferences.sync', (client) => client.preferences.sync()],
+  ['preferences.inboxState', (client) => client.preferences.inboxState()],
+  ['preferences.fetchInboxState', (client) => client.preferences.fetchInboxState()],
+  ['preferences.getInboxStates', (client) => client.preferences.getInboxStates(['inbox'])],
+  ['preferences.fetchInboxStates', (client) => client.preferences.fetchInboxStates(['inbox'])],
+  ['preferences.setConsentStates', (client) => client.preferences.setConsentStates([])],
+  ['preferences.getConsentState', (client) => client.preferences.getConsentState(0, 'inbox')],
 ];
 
 describe('web client signing access', () => {
@@ -159,12 +179,25 @@ describe('web client signing access', () => {
     let posts = 0;
     let sends = 0;
     const publisher = makeSenderFilterPublisher();
-    const send = prepareNotifyingSend(true, () => publisher.publish({
-      installationId: 'a'.repeat(64), current: () => true, signal: new AbortController().signal,
-      groupKey: async () => 'b'.repeat(64), sign: text => client.signWithInstallationKey(text),
-      syncPreferences: async () => undefined, collectTopics: async () => ({ topics: [], hmacKeys: {} }),
-      post: async () => { posts += 1; },
-    }), () => undefined).then(() => { sends += 1; });
+    const send = prepareNotifyingSend(
+      true,
+      () =>
+        publisher.publish({
+          installationId: 'a'.repeat(64),
+          current: () => true,
+          signal: new AbortController().signal,
+          groupKey: async () => 'b'.repeat(64),
+          sign: (text) => client.signWithInstallationKey(text),
+          syncPreferences: async () => undefined,
+          collectTopics: async () => ({ topics: [], hmacKeys: {} }),
+          post: async () => {
+            posts += 1;
+          },
+        }),
+      () => undefined,
+    ).then(() => {
+      sends += 1;
+    });
     await tick();
     expect(posts).toBe(0);
     expect(sends).toBe(0);

@@ -10,19 +10,25 @@ export function fileSizeLabel(bytes: number | undefined): string {
   if (bytes === undefined || !Number.isFinite(bytes) || bytes < 0) return '';
   let value = bytes;
   let unit = 0;
-  while (value >= 1024 && unit < UNITS.length - 1) { value /= 1024; unit += 1; }
+  while (value >= 1024 && unit < UNITS.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
   const rounded = unit === 0 || value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
   return `${rounded} ${UNITS[unit] ?? 'B'}`;
 }
 
 function fileTypeLabel(name: string | undefined, mime: string | undefined): string {
-  const ext = name?.includes('.') ? name.split('.').pop() ?? '' : '';
+  const ext = name?.includes('.') ? (name.split('.').pop() ?? '') : '';
   if (ext) return ext.toUpperCase();
   const sub = mime?.split('/')[1]?.split(/[+;]/)[0] ?? '';
   return sub ? sub.toUpperCase() : 'File';
 }
 
-export interface FileCardModel { title: string; subtitle: string }
+export interface FileCardModel {
+  title: string;
+  subtitle: string;
+}
 
 export function fileCardModel(a: { name?: string; mime?: string; size?: number; kind: string }): FileCardModel {
   const name = a.name?.trim() ?? '';

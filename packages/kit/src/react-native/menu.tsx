@@ -31,10 +31,7 @@ const SheetMenuContext = createContext(false);
 
 export function useDropdownMenuText(): Pick<TextProps, 'size' | 'style'> {
   const sheet = useContext(SheetMenuContext);
-  return {
-    size: sheet ? 'lg' : 'sm',
-    style: { lineHeight: sheet ? DROPDOWN_MENU.sheetLineHeight : DROPDOWN_MENU.lineHeight },
-  };
+  return { size: sheet ? 'lg' : 'sm', style: { lineHeight: sheet ? DROPDOWN_MENU.sheetLineHeight : DROPDOWN_MENU.lineHeight } };
 }
 
 export interface DropdownMenuProps {
@@ -50,16 +47,23 @@ export function DropdownMenu({ children, dark, background, maxHeight, style }: D
   const list = <View style={{ paddingVertical: DROPDOWN_MENU.padY }}>{children}</View>;
   return (
     <View
-      style={[{
-        alignSelf: 'flex-start',
-        backgroundColor: background ?? pal.border,
-        borderRadius: DROPDOWN_MENU.radius,
-        overflow: 'hidden',
-        ...OVERLAY_SHADOW,
-      }, style]}
+      style={[
+        {
+          alignSelf: 'flex-start',
+          backgroundColor: background ?? pal.border,
+          borderRadius: DROPDOWN_MENU.radius,
+          overflow: 'hidden',
+          ...OVERLAY_SHADOW,
+        },
+        style,
+      ]}
     >
-      {maxHeight === undefined ? list : (
-        <ScrollView style={{ maxHeight }} showsVerticalScrollIndicator={false}>{list}</ScrollView>
+      {maxHeight === undefined ? (
+        list
+      ) : (
+        <ScrollView style={{ maxHeight }} showsVerticalScrollIndicator={false}>
+          {list}
+        </ScrollView>
       )}
     </View>
   );
@@ -87,14 +91,19 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
   const pressedBg = props.pressedBackground ?? withAlpha(pal.link, DROPDOWN_MENU.pressedAlpha);
   const hoverBg = withAlpha(pal.link, DROPDOWN_MENU.hoverAlpha);
   const color = props.color ?? (props.danger === true ? pal.danger : pal.link);
-  const icon = props.icon ?? (props.iconName === undefined ? null : <Glyph icon={props.iconName} size={DROPDOWN_MENU.icon} color={color} />);
+  const icon =
+    props.icon ?? (props.iconName === undefined ? null : <Glyph icon={props.iconName} size={DROPDOWN_MENU.icon} color={color} />);
   return (
     <Pressable
       onPress={props.onPress}
       accessibilityRole="menuitem"
       accessibilityLabel={props.label}
-      onHoverIn={() => { setHovered(true); }}
-      onHoverOut={() => { setHovered(false); }}
+      onHoverIn={() => {
+        setHovered(true);
+      }}
+      onHoverOut={() => {
+        setHovered(false);
+      }}
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
@@ -116,7 +125,11 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
 export function DropdownMenuSeparator({ dark }: { dark?: boolean }): React.ReactElement {
   const pal = useKitPaletteFor(dark);
   const space = useContext(SheetMenuContext) ? DROPDOWN_MENU.sheetPadY : DROPDOWN_MENU.padY;
-  return <View style={{ height: DROPDOWN_MENU.separator, marginVertical: space, backgroundColor: withAlpha(pal.text, DROPDOWN_MENU.separatorAlpha) }} />;
+  return (
+    <View
+      style={{ height: DROPDOWN_MENU.separator, marginVertical: space, backgroundColor: withAlpha(pal.text, DROPDOWN_MENU.separatorAlpha) }}
+    />
+  );
 }
 
 export interface DropdownMenuSheetProps {
@@ -130,7 +143,16 @@ export interface DropdownMenuSheetProps {
   avoidKeyboard?: boolean;
 }
 
-export function DropdownMenuSheet({ open, onClose, children, side = 'bottom', dark, background, maxWidth = MODAL.maxWidth, avoidKeyboard }: DropdownMenuSheetProps): React.ReactElement {
+export function DropdownMenuSheet({
+  open,
+  onClose,
+  children,
+  side = 'bottom',
+  dark,
+  background,
+  maxWidth = MODAL.maxWidth,
+  avoidKeyboard,
+}: DropdownMenuSheetProps): React.ReactElement {
   const pal = useKitPaletteFor(dark);
   const centered = side === 'center';
   return (

@@ -7,13 +7,11 @@ const WEB_PLAYABLE_MIME: Readonly<Record<string, string>> = { 'audio/m4a': 'audi
 
 function dataUrlMime(mime: string | undefined): string {
   const declared = mime ?? 'application/octet-stream';
-  return Platform.OS === 'web' ? WEB_PLAYABLE_MIME[declared] ?? declared : declared;
+  return Platform.OS === 'web' ? (WEB_PLAYABLE_MIME[declared] ?? declared) : declared;
 }
 
 export function inlineAttachmentUrl(att: Attachment): string {
-  return att.dataB64
-    ? `data:${dataUrlMime(att.mime)};base64,${att.dataB64}`
-    : att.url ?? '';
+  return att.dataB64 ? `data:${dataUrlMime(att.mime)};base64,${att.dataB64}` : (att.url ?? '');
 }
 
 const REMOTE_RETRIES = 6;
@@ -28,7 +26,10 @@ function fetchRemote(remote: Attachment['remote']): Promise<{ fileUri: string; m
 }
 
 export function useRemoteAttachment(remote: Attachment['remote']): {
-  uri: string | null; mime: string | undefined; isError: boolean; retry: () => void;
+  uri: string | null;
+  mime: string | undefined;
+  isError: boolean;
+  retry: () => void;
 } {
   const { data, isError, refetch } = useQuery({
     queryKey: ['remoteAttachment', remote?.url ?? ''],
@@ -42,6 +43,8 @@ export function useRemoteAttachment(remote: Attachment['remote']): {
     uri: data?.fileUri ?? null,
     mime: data?.mimeType,
     isError,
-    retry: () => { void refetch(); },
+    retry: () => {
+      void refetch();
+    },
   };
 }

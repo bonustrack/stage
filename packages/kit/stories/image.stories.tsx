@@ -15,8 +15,20 @@ const URL = svgSwatch('#5b8def', 'IMG');
 export const Controls: Story<ImageProps> = (args) => <Image {...args} />;
 Controls.args = { url: URL, description: 'Blue swatch', fit: 'cover', position: 'center', frame: false, radius: 'md', size: 160 };
 Controls.argTypes = {
-  url: text, description: text, fit: select(FIT), variant: select(VARIANTS), position: select(POSITION), frame: bool, flush: number,
-  radius: select(RADII), size: number, aspectRatio: number, width: text, height: text, background: color, margin: number,
+  url: text,
+  description: text,
+  fit: select(FIT),
+  variant: select(VARIANTS),
+  position: select(POSITION),
+  frame: bool,
+  flush: number,
+  radius: select(RADII),
+  size: number,
+  aspectRatio: number,
+  width: text,
+  height: text,
+  background: color,
+  margin: number,
 };
 
 export const Variants: Story = () => (
@@ -31,7 +43,11 @@ export const Variants: Story = () => (
 );
 
 export const Radii: Story = () => (
-  <Row gap={8} wrap>{RADII.map((r) => <Image key={r} url={svgSwatch('#9b6bd6', r)} radius={r} size={72} description={r} />)}</Row>
+  <Row gap={8} wrap>
+    {RADII.map((r) => (
+      <Image key={r} url={svgSwatch('#9b6bd6', r)} radius={r} size={72} description={r} />
+    ))}
+  </Row>
 );
 
 export const Placeholder: Story = () => <Image url="" variant="avatar" background="#282a2d" />;

@@ -38,7 +38,13 @@ export const TAB_ICONS: readonly (readonly [TabName | 'contacts', CentralIcon])[
   ['wallet', IconWallet4],
 ];
 
-const TAB_LABELS: Record<TabName | 'contacts', string> = { index: 'Chats', board: 'Board', contacts: 'Contacts', wallet: 'Wallet', settings: 'Settings' };
+const TAB_LABELS: Record<TabName | 'contacts', string> = {
+  index: 'Chats',
+  board: 'Board',
+  contacts: 'Contacts',
+  wallet: 'Wallet',
+  settings: 'Settings',
+};
 
 const RAIL_BUTTON = { height: 48, alignItems: 'center', justifyContent: 'center' } as const;
 
@@ -46,25 +52,30 @@ function activeTabIndex(pathname: string, boardHome: boolean): number {
   return pathname.startsWith('/settings') ? -1 : homeTabIndex(pathname, boardHome);
 }
 
-function TabIcon({ icon, active, badge }: {
-  icon: CentralIcon; active: boolean; badge?: string;
-}): React.ReactElement {
+function TabIcon({ icon, active, badge }: { icon: CentralIcon; active: boolean; badge?: string }): React.ReactElement {
   const pal = usePalette();
   return (
     <HoverTint>
       {(hovered) => (
-    <Column width={TAB_ICON_FRAME.width} height={TAB_ICON_FRAME.height} align="center" justify="center">
-      <Glyph icon={icon} size={24} color={active || hovered ? pal.link : pal.text}/>
-      {badge !== undefined ? (
-        <Column
-          minWidth={TAB_BADGE_SIZE} height={TAB_BADGE_SIZE} padding={{ x: 4 }} radius="full" background={pal.link}
-          align="center" justify="center"
-          style={TAB_BADGE_POSITION}
->
-          <Text fontWeight="semibold" color={pal.bg} size="3xs">{badge}</Text>
+        <Column width={TAB_ICON_FRAME.width} height={TAB_ICON_FRAME.height} align="center" justify="center">
+          <Glyph icon={icon} size={24} color={active || hovered ? pal.link : pal.text} />
+          {badge !== undefined ? (
+            <Column
+              minWidth={TAB_BADGE_SIZE}
+              height={TAB_BADGE_SIZE}
+              padding={{ x: 4 }}
+              radius="full"
+              background={pal.link}
+              align="center"
+              justify="center"
+              style={TAB_BADGE_POSITION}
+            >
+              <Text fontWeight="semibold" color={pal.bg} size="3xs">
+                {badge}
+              </Text>
+            </Column>
+          ) : null}
         </Column>
-      ) : null}
-    </Column>
       )}
     </HoverTint>
   );
@@ -79,7 +90,11 @@ function useRailNavigate(pathname: string): (href: Href) => void {
   };
 }
 
-function TabButtons({ pathname, unreadBadge, vertical }: {
+function TabButtons({
+  pathname,
+  unreadBadge,
+  vertical,
+}: {
   pathname: string;
   unreadBadge: string | undefined;
   vertical: boolean;
@@ -90,9 +105,11 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
   return (
     <>
       {TAB_ICONS.map(([name, icon]) => {
-        const active = name === 'contacts' ? isMenuPageOpen(pathname, '/contacts')
-          : !isMenuPageRoute(pathname) && (name === activeName || (name === 'index' && activeName === 'board'));
-        const icn = <TabIcon icon={icon} active={active} badge={name === 'index' ? unreadBadge : undefined}/>;
+        const active =
+          name === 'contacts'
+            ? isMenuPageOpen(pathname, '/contacts')
+            : !isMenuPageRoute(pathname) && (name === activeName || (name === 'index' && activeName === 'board'));
+        const icn = <TabIcon icon={icon} active={active} badge={name === 'index' ? unreadBadge : undefined} />;
         const go = (): void => {
           if (name === 'index' && chatsTabOpensNewChat(pathname, vertical)) {
             openNewChat();
@@ -106,8 +123,14 @@ function TabButtons({ pathname, unreadBadge, vertical }: {
             {icn}
           </RailTooltip>
         ) : (
-          <Pressable key={name} accessibilityRole="button" accessibilityLabel={TAB_LABELS[name]}
-            accessibilityState={{ selected: active }} onPress={go} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Pressable
+            key={name}
+            accessibilityRole="button"
+            accessibilityLabel={TAB_LABELS[name]}
+            accessibilityState={{ selected: active }}
+            onPress={go}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
             {icn}
           </Pressable>
         );
@@ -121,19 +144,26 @@ function MenuPageButtons({ pathname }: { pathname: string }): React.ReactElement
   const developerMode = useDeveloperMode();
   return (
     <>
-      {menuPagesFor(true, developerMode).filter(page => page.href !== '/contacts').map((page) => (
-        <RailTooltip key={page.href} label={page.label} onPress={() => { navigate(page.href); }} placement="beside" style={RAIL_BUTTON}>
-          <TabIcon icon={appIcon(page.icon)} active={isMenuPageOpen(pathname, page.href)}/>
-        </RailTooltip>
-      ))}
+      {menuPagesFor(true, developerMode)
+        .filter((page) => page.href !== '/contacts')
+        .map((page) => (
+          <RailTooltip
+            key={page.href}
+            label={page.label}
+            onPress={() => {
+              navigate(page.href);
+            }}
+            placement="beside"
+            style={RAIL_BUTTON}
+          >
+            <TabIcon icon={appIcon(page.icon)} active={isMenuPageOpen(pathname, page.href)} />
+          </RailTooltip>
+        ))}
     </>
   );
 }
 
-export function WebTabBar({ pathname, unreadBadge }: {
-  pathname: string;
-  unreadBadge: string | undefined;
-}): React.ReactElement {
+export function WebTabBar({ pathname, unreadBadge }: { pathname: string; unreadBadge: string | undefined }): React.ReactElement {
   const pal = usePalette();
   useReportBottomChrome(WEB_TAB_BAR_HEIGHT);
   return (
@@ -141,19 +171,16 @@ export function WebTabBar({ pathname, unreadBadge }: {
       height={WEB_TAB_BAR_HEIGHT}
       surface="toolbar"
       style={[pinnedEdges({ bottom: 0, left: 0, right: 0 }, 3), { borderTopWidth: 1, borderTopColor: pal.border }]}
->
-      <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical={false}/>
+    >
+      <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical={false} />
       <Column weight={1} align="center" justify="center">
-        <AccountAvatarButton size={26}/>
+        <AccountAvatarButton size={26} />
       </Column>
     </Row>
   );
 }
 
-export function WebTabRail({ pathname, unreadBadge }: {
-  pathname: string;
-  unreadBadge: string | undefined;
-}): React.ReactElement {
+export function WebTabRail({ pathname, unreadBadge }: { pathname: string; unreadBadge: string | undefined }): React.ReactElement {
   const pal = usePalette();
   const inset = useTopChromeInset();
   return (
@@ -162,16 +189,13 @@ export function WebTabRail({ pathname, unreadBadge }: {
       padding={{ top: 12 }}
       gap={4}
       surface="toolbar"
-      style={[
-        pinnedEdges({ top: inset, bottom: 0, left: 0 }, 3),
-        { borderRightWidth: inset > 0 ? 0 : 1, borderRightColor: pal.border },
-      ]}
->
-      <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical/>
-      <MenuPageButtons pathname={pathname}/>
-      <Column weight={1}/>
+      style={[pinnedEdges({ top: inset, bottom: 0, left: 0 }, 3), { borderRightWidth: inset > 0 ? 0 : 1, borderRightColor: pal.border }]}
+    >
+      <TabButtons pathname={pathname} unreadBadge={unreadBadge} vertical />
+      <MenuPageButtons pathname={pathname} />
+      <Column weight={1} />
       <Column align="center" padding={{ bottom: 16 }}>
-        <AccountAvatarButton size={32}/>
+        <AccountAvatarButton size={32} />
       </Column>
     </Column>
   );

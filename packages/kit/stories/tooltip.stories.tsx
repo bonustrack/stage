@@ -15,7 +15,7 @@ export const Arrows: Story = () => {
   const dark = useDark();
   return (
     <>
-      {(['left', 'up', 'down', 'none'] as const).map(arrow => (
+      {(['left', 'up', 'down', 'none'] as const).map((arrow) => (
         <Tooltip key={arrow} label={`Arrow ${arrow}`} arrow={arrow} dark={dark} style={{ alignSelf: 'flex-start', marginBottom: 16 }} />
       ))}
     </>

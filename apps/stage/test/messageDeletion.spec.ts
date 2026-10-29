@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import {
-  canDeleteMessage, deleteConfirmOf, deletedViewCache, isAdminDelete, replyQuoteOf,
+  canDeleteMessage,
+  deleteConfirmOf,
+  deletedViewCache,
+  isAdminDelete,
+  replyQuoteOf,
 } from '../components/conversation/messageDeletion.model';
 import { bubbleMenuItems } from '../components/conversation/bubbleMenu.model';
 import { mergeFeedEntries } from '../lib/feedOrder.model';
@@ -24,7 +28,7 @@ describe('canDeleteMessage', () => {
     expect(canDeleteMessage(null, member)).toBe(false);
   });
 
-  test('a channel super admin also deletes other people\'s messages', () => {
+  test("a channel super admin also deletes other people's messages", () => {
     expect(canDeleteMessage(theirs, superAdmin)).toBe(true);
     expect(canDeleteMessage(mine, superAdmin)).toBe(true);
     expect(canDeleteMessage(theirs, { ...superAdmin, deleted: new Map([['m2', 'admin']]) })).toBe(false);
@@ -56,13 +60,13 @@ describe('Delete in the message menu', () => {
   test('comes last, in red, only when allowed', () => {
     const items = bubbleMenuItems(true, { selectText: false, canDelete: true });
     expect(items.at(-1)).toEqual({ id: 'delete', icon: 'IconTrashCan', label: 'Delete', danger: true });
-    expect(bubbleMenuItems(true, { selectText: false }).map(i => i.id)).not.toContain('delete');
+    expect(bubbleMenuItems(true, { selectText: false }).map((i) => i.id)).not.toContain('delete');
   });
 });
 
 describe('reply quote', () => {
   const answer = entry('m3', { from: PEER, text: 'sure', replyTo: 'm1' });
-  const lookup = (id: string): HistoryEntry | undefined => [mine, theirs, answer].find(e => e.id === id);
+  const lookup = (id: string): HistoryEntry | undefined => [mine, theirs, answer].find((e) => e.id === id);
 
   test('a reply to a deleted message quotes who deleted it', () => {
     expect(replyQuoteOf(answer, new Map([['m1', 'sender']]), lookup)).toBe('Message deleted');
@@ -77,10 +81,19 @@ describe('reply quote', () => {
   test('a frame tap quotes its frame, or just Frame while the frame is not loaded', () => {
     const frame = entry('f1', { from: PEER, text: 'Frame: Deploy?', payload: { contentType: 'frame' } });
     const tap = entry('t1', {
-      from: ME, text: 'Tapped "Ship it"', replyTo: 'f1',
-      payload: { contentType: 'frameAction', frameAction: { frameId: 'f1', action: { name: 'ship', surfaceId: 'main', sourceComponentId: 'ship', timestamp: '2026-10-26T00:00:00.000Z', context: {} }, label: 'Ship it' } },
+      from: ME,
+      text: 'Tapped "Ship it"',
+      replyTo: 'f1',
+      payload: {
+        contentType: 'frameAction',
+        frameAction: {
+          frameId: 'f1',
+          action: { name: 'ship', surfaceId: 'main', sourceComponentId: 'ship', timestamp: '2026-10-26T00:00:00.000Z', context: {} },
+          label: 'Ship it',
+        },
+      },
     });
-    expect(replyQuoteOf(tap, none, id => (id === 'f1' ? frame : undefined))).toBe('Frame: Deploy?');
+    expect(replyQuoteOf(tap, none, (id) => (id === 'f1' ? frame : undefined))).toBe('Frame: Deploy?');
     expect(replyQuoteOf(tap, none, () => undefined)).toBe('Frame');
     expect(replyQuoteOf(tap, new Map([['f1', 'sender']]), () => undefined)).toBe('Message deleted');
   });
@@ -101,7 +114,7 @@ describe('deleted row', () => {
     const merged = mergeFeedEntries([theirs, mine], [placeholder]);
     expect(merged.replaced).toBe(1);
     expect(merged.added).toBe(0);
-    expect(merged.entries.map(e => e.payload)).toEqual([theirs.payload, placeholder.payload]);
+    expect(merged.entries.map((e) => e.payload)).toEqual([theirs.payload, placeholder.payload]);
     expect(mergeFeedEntries(merged.entries, [mine]).entries[1]).toBe(placeholder);
   });
 });

@@ -31,8 +31,13 @@ function sharedStoreRoot(): Directory | null {
 function isPushAccount(value: unknown): value is PushAccount {
   if (!value || typeof value !== 'object') return false;
   const v = value as Record<string, unknown>;
-  return typeof v.id === 'string' && typeof v.address === 'string' && typeof v.inboxId === 'string'
-    && typeof v.dbDir === 'string' && typeof v.env === 'string';
+  return (
+    typeof v.id === 'string' &&
+    typeof v.address === 'string' &&
+    typeof v.inboxId === 'string' &&
+    typeof v.dbDir === 'string' &&
+    typeof v.env === 'string'
+  );
 }
 
 function manifestFile(): File | null {
@@ -51,7 +56,11 @@ function readManifest(file: File): PushAccount[] {
 }
 
 function writeManifest(file: File, accounts: PushAccount[]): void {
-  try { file.write(JSON.stringify(accounts)); } catch (err) { report('xmtp.pushManifest', err); }
+  try {
+    file.write(JSON.stringify(accounts));
+  } catch (err) {
+    report('xmtp.pushManifest', err);
+  }
 }
 
 export function recordPushAccount(account: PushAccount): void {
@@ -64,7 +73,10 @@ export function recordPushAccount(account: PushAccount): void {
 export function forgetPushAccount(accountId: string): void {
   const file = manifestFile();
   if (!file) return;
-  writeManifest(file, readManifest(file).filter((a) => a.id !== accountId));
+  writeManifest(
+    file,
+    readManifest(file).filter((a) => a.id !== accountId),
+  );
 }
 
 function removeDir(dir: Directory): void {
@@ -74,21 +86,30 @@ function removeDir(dir: Directory): void {
     report('xmtp.deleteDbFiles', err);
     attempt(() => {
       for (const entry of dir.list()) {
-        if (entry instanceof File) attempt(() => { entry.delete(); }, 'cleanup');
+        if (entry instanceof File)
+          attempt(() => {
+            entry.delete();
+          }, 'cleanup');
       }
     }, 'cleanup');
-    attempt(() => { dir.delete(); }, 'cleanup');
+    attempt(() => {
+      dir.delete();
+    }, 'cleanup');
   }
 }
 
 export function deleteDbFiles(dbDirName: string): Promise<void> {
   const dir = dbDirObj(dbDirName);
   if (dir.exists) removeDir(dir);
-  attempt(() => { dbDirObj(dbDirName).create({ intermediates: true }); }, 'cleanup');
+  attempt(() => {
+    dbDirObj(dbDirName).create({ intermediates: true });
+  }, 'cleanup');
   return Promise.resolve();
 }
 
-function dbDirObj(name: string): Directory { return new Directory(sharedStoreRoot() ?? Paths.document, name); }
+function dbDirObj(name: string): Directory {
+  return new Directory(sharedStoreRoot() ?? Paths.document, name);
+}
 
 export function ensureDbDir(name: string): Promise<string> {
   const dir = dbDirObj(name);
@@ -99,11 +120,20 @@ export function ensureDbDir(name: string): Promise<string> {
 }
 
 function toFsPath(dir: Directory): string {
-  const decoded = (() => { try { return decodeURI(dir.uri); } catch { return dir.uri; } })();
-  return '/' + decoded
-    .replace(/^file:\/+/i, '')
-    .replace(/\/{2,}/g, '/')
-    .replace(/\/+$/, '');
+  const decoded = (() => {
+    try {
+      return decodeURI(dir.uri);
+    } catch {
+      return dir.uri;
+    }
+  })();
+  return (
+    '/' +
+    decoded
+      .replace(/^file:\/+/i, '')
+      .replace(/\/{2,}/g, '/')
+      .replace(/\/+$/, '')
+  );
 }
 
 function assertWritableDir(dir: Directory, path: string): void {
@@ -111,7 +141,9 @@ function assertWritableDir(dir: Directory, path: string): void {
     const probe = new File(dir, '.xmtp_write_probe');
     probe.write('1');
     const ok = probe.exists;
-    attempt(() => { probe.delete(); }, 'cleanup');
+    attempt(() => {
+      probe.delete();
+    }, 'cleanup');
     console.log(`[xmtp] dbDirectory ready path=${path} exists=${dir.exists} writable=${ok}`);
   } catch (e) {
     console.warn(`[xmtp] dbDirectory NOT writable path=${path} exists=${dir.exists} err=${String(e)}`);

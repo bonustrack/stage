@@ -38,7 +38,7 @@ const MIXED = encode([
   'iVBORw0KGgo=',
   '--mix',
   'Content-Type: application/pdf',
-  'Content-Disposition: attachment; filename*=UTF-8\'\'r%C3%A9sum%C3%A9.pdf',
+  "Content-Disposition: attachment; filename*=UTF-8''r%C3%A9sum%C3%A9.pdf",
   'Content-Transfer-Encoding: base64',
   '',
   'JVBERi0xLjQK',
@@ -65,7 +65,10 @@ describe('parseMail', () => {
 
   test('reads a single part latin-1 mail with LF line ends', () => {
     const bytes = Uint8Array.from([
-      ...new TextEncoder().encode('Subject: Hi\nContent-Type: text/plain; charset=iso-8859-1\n\nCaf'), 0xe9, 0x20, 0x80,
+      ...new TextEncoder().encode('Subject: Hi\nContent-Type: text/plain; charset=iso-8859-1\n\nCaf'),
+      0xe9,
+      0x20,
+      0x80,
     ]);
     const mail = parseMail(bytes);
     expect(mail.subject).toBe('Hi');
@@ -74,30 +77,34 @@ describe('parseMail', () => {
   });
 
   test('keeps a text part with a file name as an attachment and names unnamed parts', () => {
-    const mail = parseMail(encode([
-      'Content-Type: multipart/mixed; boundary=b',
-      '',
-      '--b',
-      'Content-Type: text/plain',
-      '',
-      'Body',
-      '--b',
-      'Content-Type: text/plain; name="notes.txt"',
-      '',
-      'Notes',
-      '--b',
-      'Content-Type: text/calendar',
-      'Content-Disposition: attachment',
-      '',
-      'BEGIN:VCALENDAR',
-      '--b--',
-    ]));
+    const mail = parseMail(
+      encode([
+        'Content-Type: multipart/mixed; boundary=b',
+        '',
+        '--b',
+        'Content-Type: text/plain',
+        '',
+        'Body',
+        '--b',
+        'Content-Type: text/plain; name="notes.txt"',
+        '',
+        'Notes',
+        '--b',
+        'Content-Type: text/calendar',
+        'Content-Disposition: attachment',
+        '',
+        'BEGIN:VCALENDAR',
+        '--b--',
+      ]),
+    );
     expect(mail.text).toBe('Body');
     expect(mail.attachments.map((a) => a.filename)).toEqual(['notes.txt', 'attachment-2.ics']);
   });
 
   test('survives a missing closing boundary, no header gap and garbage', () => {
-    expect(parseMail(encode(['Content-Type: multipart/mixed; boundary=b', '', '--b', 'Content-Type: text/plain', '', 'cut off'])).text).toBe('cut off');
+    expect(
+      parseMail(encode(['Content-Type: multipart/mixed; boundary=b', '', '--b', 'Content-Type: text/plain', '', 'cut off'])).text,
+    ).toBe('cut off');
     expect(parseMail(encode(['Subject: only headers'])).subject).toBe('only headers');
     expect(parseMail(new Uint8Array([0, 255, 13, 10, 13, 10, 1])).text).not.toBeNull();
   });

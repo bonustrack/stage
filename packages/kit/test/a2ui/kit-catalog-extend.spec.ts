@@ -41,7 +41,9 @@ describe('extendKitCatalog', () => {
   test('runs the Kit functions for surfaces in the host catalog', () => {
     const client = createA2uiClient({ catalogs: [BASIC_CATALOG, KIT_CATALOG, host] });
     client.receive([{ version: 'v1.0', createSurface: { surfaceId: 's', catalogId: HOST_ID, dataModel: { a: 'x', b: 'x' } } }]);
-    const rules = [{ condition: { '@call': 'equals', args: { value: { '@path': '/a' }, other: { '@path': '/b' } } }, message: 'Different.' }];
+    const rules = [
+      { condition: { '@call': 'equals', args: { value: { '@path': '/a' }, other: { '@path': '/b' } } }, message: 'Different.' },
+    ];
     expect(client.checks('s', rules as never, ROOT_SCOPE)[0]?.valid).toBe(true);
     expect(client.capabilities()['v1.0']?.supportedCatalogIds).toContain(HOST_ID);
   });

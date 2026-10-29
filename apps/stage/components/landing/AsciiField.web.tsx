@@ -30,7 +30,10 @@ function useCanvas(host: HTMLElement | null): HTMLCanvasElement | null {
     el.style.left = '0';
     host.appendChild(el);
     setCanvas(el);
-    return (): void => { el.remove(); setCanvas(null); };
+    return (): void => {
+      el.remove();
+      setCanvas(null);
+    };
   }, [host]);
   return canvas;
 }
@@ -40,11 +43,17 @@ export function AsciiField({ width, height }: { width: number; height: number })
   const [host, setHost] = useState<HTMLElement | null>(null);
   const canvas = useCanvas(host);
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
-  useEffect(() => { setCtx(canvas === null ? null : sizeCanvas(canvas, width, height)); }, [canvas, width, height]);
-  useEffect(() => { if (ctx !== null) drawArt(ctx, art, width, height); }, [ctx, art, width, height]);
+  useEffect(() => {
+    setCtx(canvas === null ? null : sizeCanvas(canvas, width, height));
+  }, [canvas, width, height]);
+  useEffect(() => {
+    if (ctx !== null) drawArt(ctx, art, width, height);
+  }, [ctx, art, width, height]);
   return (
     <View
-      ref={(node) => { setHost(node as unknown as HTMLElement | null); }}
+      ref={(node) => {
+        setHost(node as unknown as HTMLElement | null);
+      }}
       pointerEvents="none"
       style={{ position: 'absolute', top: 0, left: 0, width, height, overflow: 'hidden' }}
     />

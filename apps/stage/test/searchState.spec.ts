@@ -1,16 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { collectSyncReplay, searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/readState';
-import {
-  EMPTY_SEARCH, editFilters, receiveSearch, restoreSearch, syncedSearch, toggledLabel,
-} from '../lib/syncedSettings.model';
+import { EMPTY_SEARCH, editFilters, receiveSearch, restoreSearch, syncedSearch, toggledLabel } from '../lib/syncedSettings.model';
 
 const SEARCH_TYPE = 'stage.box/searchState:1.0';
 const OWN_INBOX = 'inbox-me';
 const MINE = { inboxId: OWN_INBOX, nowMs: 1_000 };
 
-const state = (query: string, at: number, labels: string[] = []): SearchStateContent => (
-  { query, labels, unreadOnly: false, at }
-);
+const state = (query: string, at: number, labels: string[] = []): SearchStateContent => ({ query, labels, unreadOnly: false, at });
 
 describe('editFilters', () => {
   test('stamps the edit with the wall clock and keeps the search text', () => {

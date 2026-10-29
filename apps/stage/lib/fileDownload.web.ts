@@ -11,7 +11,9 @@ function saveBlob(blob: Blob, filename: string): void {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  setTimeout(() => { URL.revokeObjectURL(href); }, REVOKE_AFTER_MS);
+  setTimeout(() => {
+    URL.revokeObjectURL(href);
+  }, REVOKE_AFTER_MS);
 }
 
 async function saveOrOpen(uri: string, nameOf: (blob: Blob) => string, unreadable: string): Promise<void> {

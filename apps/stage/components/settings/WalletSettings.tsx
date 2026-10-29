@@ -59,10 +59,7 @@ function useWalletModel(): { model: WalletModel | null; deploy: WalletDeployStat
   return { model: rec ? modelFromRecord(rec) : null, deploy: deploy ?? 'loading' };
 }
 
-function WalletInfoRow({ label, value }: {
-  label: string;
-  value: string;
-}): React.ReactElement {
+function WalletInfoRow({ label, value }: { label: string; value: string }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="center" gap={12} dark={dark}>
@@ -74,11 +71,7 @@ function WalletInfoRow({ label, value }: {
   );
 }
 
-function WalletCopyRow({ label, value, onCopy }: {
-  label: string;
-  value: string;
-  onCopy: () => void;
-}): React.ReactElement {
+function WalletCopyRow({ label, value, onCopy }: { label: string; value: string; onCopy: () => void }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="start" gap={12} dark={dark} onPress={onCopy}>
@@ -115,8 +108,22 @@ function SmartAccountSections({ model }: { model: WalletModel }): React.ReactEle
       </SettingsGroup>
 
       <SettingsGroup title="Identity">
-        <WalletCopyRow label="XMTP identity" value={model.address} onCopy={() => { capabilities.copy('XMTP identity', model.address); }} />
-        {owner ? <WalletCopyRow label="Owner key" value={owner} onCopy={() => { capabilities.copy('Owner key', owner); }} /> : null}
+        <WalletCopyRow
+          label="XMTP identity"
+          value={model.address}
+          onCopy={() => {
+            capabilities.copy('XMTP identity', model.address);
+          }}
+        />
+        {owner ? (
+          <WalletCopyRow
+            label="Owner key"
+            value={owner}
+            onCopy={() => {
+              capabilities.copy('Owner key', owner);
+            }}
+          />
+        ) : null}
       </SettingsGroup>
 
       <SettingsGroup title="Network">
@@ -135,14 +142,18 @@ export function WalletSettings(): React.ReactElement {
   return (
     <SettingsPage title="Wallet">
       {!model ? (
-        <Text size="xs" color={fg} style={{ padding: 24 }}>No active account.</Text>
+        <Text size="xs" color={fg} style={{ padding: 24 }}>
+          No active account.
+        </Text>
       ) : (
         <>
           <SettingsGroup title="Address" footnote={model.isSmart ? 'Your smart account on Base. Tap to copy.' : 'Tap to copy.'}>
             <WalletCopyRow
               label={model.isSmart ? 'Smart account' : 'Address'}
               value={model.address}
-              onCopy={() => { capabilities.copy('Address', model.address); }}
+              onCopy={() => {
+                capabilities.copy('Address', model.address);
+              }}
             />
           </SettingsGroup>
 

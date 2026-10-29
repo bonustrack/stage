@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  channelRefLabel, channelRefToken, channelRefsOf, splitChannelRefs, withChannelLabels,
-} from '../src/xmtp/channelRefs';
+import { channelRefLabel, channelRefToken, channelRefsOf, splitChannelRefs, withChannelLabels } from '../src/xmtp/channelRefs';
 import { humanizeMentions } from '../src/xmtp/humanize';
 
 const CONV = '9f2c4e1ab37d4c0e8f1a2b3c4d5e6f70';
@@ -26,7 +24,7 @@ describe('channelRefToken', () => {
 describe('channelRefsOf', () => {
   test('finds every ref with its position', () => {
     const text = `${REF} and [#Ops](https://stage.box/#/channel/abc)`;
-    expect(channelRefsOf(text).map(r => [r.index, r.label, r.convId])).toEqual([
+    expect(channelRefsOf(text).map((r) => [r.index, r.label, r.convId])).toEqual([
       [0, 'Design team', CONV],
       [REF.length + 5, 'Ops', 'abc'],
     ]);

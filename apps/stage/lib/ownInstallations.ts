@@ -12,7 +12,9 @@ const DONE_PREFIX = 'ownInstallations.done.';
 const SPACING_MS = 1500;
 
 function pause(ms: number): Promise<void> {
-  return new Promise((resolve) => { setTimeout(resolve, ms); });
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function repairConversation(context: AccountClient, conv: Conv, devices: string[]): Promise<void> {
@@ -20,7 +22,7 @@ async function repairConversation(context: AccountClient, conv: Conv, devices: s
   if (!installationsIn) return;
   const present = await installationsIn(conv, context.client.inboxId ?? '');
   if (missingInstallationIds(devices, present).length === 0) return;
-  if (await channelAccess(context, conv) !== 'member') return;
+  if ((await channelAccess(context, conv)) !== 'member') return;
   const hidden = await loadHiddenChannels(context.account.id);
   context.assertCurrent();
   if (hidden[conv.id]?.hidden) return;
@@ -33,7 +35,7 @@ export async function addOwnInstallationsToChats(accountId: string): Promise<voi
   const context = await accountClient(accountId);
   const inboxId = context.client.inboxId ?? '';
   if (inboxId === '') return;
-  const devices = (await sdk.installationIdsOf(context.client, inboxId)).map(id => id.toLowerCase()).sort();
+  const devices = (await sdk.installationIdsOf(context.client, inboxId)).map((id) => id.toLowerCase()).sort();
   const hidden = await loadHiddenChannels(accountId);
   const signature = JSON.stringify([devices, hidden]);
   const doneKey = `${DONE_PREFIX}${accountId}`;

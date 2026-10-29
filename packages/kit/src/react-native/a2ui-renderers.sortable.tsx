@@ -37,8 +37,11 @@ function applyMove(ctx: RenderContext, here: string, itemKey: string, move: Sort
 export function listBoxProps(ctx: RenderContext): Omit<ListProps, 'children'> {
   const p = ctx.props;
   return {
-    ...commonProps(ctx), direction: asEnum(p.direction, ['vertical', 'horizontal']), align: asEnum(p.align, ALIGN),
-    padding: spacingOf(p.padding), style: ctx.weight === undefined ? CONTENT_SIZED : undefined,
+    ...commonProps(ctx),
+    direction: asEnum(p.direction, ['vertical', 'horizontal']),
+    align: asEnum(p.align, ALIGN),
+    padding: spacingOf(p.padding),
+    style: ctx.weight === undefined ? CONTENT_SIZED : undefined,
   };
 }
 

@@ -1,4 +1,3 @@
-
 export const colors = {
   'bg-dark': '#0e0f10',
   'bg-light': '#ffffff',
@@ -108,10 +107,7 @@ export function resolveColor(value: Color, scheme: Scheme): string {
   return resolveColorToken(value, scheme);
 }
 
-export function resolveOptionalColor(
-  value: Color | undefined,
-  scheme: Scheme,
-): string | undefined {
+export function resolveOptionalColor(value: Color | undefined, scheme: Scheme): string | undefined {
   return value === undefined ? undefined : resolveColor(value, scheme);
 }
 
@@ -129,7 +125,17 @@ export function readableForeground(hex: string): string {
 
 export type ColorToken = 'text' | 'secondary' | 'muted' | 'link' | 'primary' | 'danger' | 'success' | 'border' | 'surface';
 
-export const COLOR_TOKENS: readonly ColorToken[] = ['text', 'secondary', 'muted', 'link', 'primary', 'danger', 'success', 'border', 'surface'];
+export const COLOR_TOKENS: readonly ColorToken[] = [
+  'text',
+  'secondary',
+  'muted',
+  'link',
+  'primary',
+  'danger',
+  'success',
+  'border',
+  'surface',
+];
 
 const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
   text: 'textColor',
@@ -216,7 +222,9 @@ export function fontSize(name: FontSizeName): number {
 }
 
 export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
-  '10': '3xs', '11': '3xs', '12': '3xs',
+  '10': '3xs',
+  '11': '3xs',
+  '12': '3xs',
   '13': '3xs',
   '14': '2xs',
   '15': 'xs',
@@ -225,8 +233,12 @@ export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
   '18': 'md',
   '19': 'lg',
   '20': 'xl',
-  '22': '2xl', '24': '2xl', '26': '3xl',
-  '28': '3xl', '34': '3xl', '38': '3xl',
+  '22': '2xl',
+  '24': '2xl',
+  '26': '3xl',
+  '28': '3xl',
+  '34': '3xl',
+  '38': '3xl',
 } as const;
 
 export const fontFamily = {
@@ -235,20 +247,11 @@ export const fontFamily = {
   mono: ['Menlo', 'ui-monospace', 'monospace'],
 } as const;
 
-export const fontName = {
-  sans: fontFamily.sans[0],
-  head: fontFamily.head[0],
-  mono: fontFamily.mono[0],
-} as const;
+export const fontName = { sans: fontFamily.sans[0], head: fontFamily.head[0], mono: fontFamily.mono[0] } as const;
 
 export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
 
-export const RADIUS_SCALE: Record<RadiusName, number> = {
-  pill: 999,
-  round: 16,
-  soft: 12,
-  sharp: 0,
-} as const;
+export const RADIUS_SCALE: Record<RadiusName, number> = { pill: 999, round: 16, soft: 12, sharp: 0 } as const;
 
 export const RADIUS_NAME_DEFAULT: RadiusName = 'pill';
 
@@ -293,10 +296,7 @@ export const BASE_SIZE_DEFAULT: BaseSize = 15;
 
 export interface KitTheme {
   colorScheme: 'light' | 'dark';
-  color: {
-    surface: { background: string; foreground: string };
-    accent: { primary: string; level: 0 | 1 | 2 | 3 };
-  };
+  color: { surface: { background: string; foreground: string }; accent: { primary: string; level: 0 | 1 | 2 | 3 } };
   status: { danger: string; success: string };
   border: string;
   radius: { name: RadiusName; px: number };
@@ -318,26 +318,13 @@ export function kitTheme(scheme: 'light' | 'dark', opts: KitThemeOptions = {}): 
   return {
     colorScheme: scheme,
     color: {
-      surface: {
-        background: semanticColors.bgColor[scheme],
-        foreground: semanticColors.textColor[scheme],
-      },
-      accent: {
-        primary: semanticColors.linkColor[scheme],
-        level: opts.accentLevel ?? 0,
-      },
+      surface: { background: semanticColors.bgColor[scheme], foreground: semanticColors.textColor[scheme] },
+      accent: { primary: semanticColors.linkColor[scheme], level: opts.accentLevel ?? 0 },
     },
-    status: {
-      danger: semanticColors.dangerColor[scheme],
-      success: semanticColors.successColor[scheme],
-    },
+    status: { danger: semanticColors.dangerColor[scheme], success: semanticColors.successColor[scheme] },
     border: semanticColors.borderColor[scheme],
     radius: { name: radiusName, px: RADIUS_SCALE[radiusName] },
     density: { name: densityName, ...density },
-    typography: {
-      baseSize: opts.baseSize ?? BASE_SIZE_DEFAULT,
-      fontFamily: fontFamily.sans[0],
-      fontFamilyMono: fontFamily.mono[0],
-    },
+    typography: { baseSize: opts.baseSize ?? BASE_SIZE_DEFAULT, fontFamily: fontFamily.sans[0], fontFamilyMono: fontFamily.mono[0] },
   };
 }

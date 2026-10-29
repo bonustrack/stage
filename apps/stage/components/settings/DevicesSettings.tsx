@@ -27,9 +27,7 @@ function addedOn(ms: number | undefined): string {
   return `Added ${new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}`;
 }
 
-function SessionRow({ inst, busy, onRevoke }: {
-  inst: XmtpInstallation; busy: boolean; onRevoke: () => void;
-}): React.ReactElement {
+function SessionRow({ inst, busy, onRevoke }: { inst: XmtpInstallation; busy: boolean; onRevoke: () => void }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   return (
     <ListViewItem align="center" gap={12} dark={dark}>
@@ -51,22 +49,32 @@ function useSessions(): { list: XmtpInstallation[] | null; error: boolean; reloa
   const [error, setError] = useState(false);
   const reload = useCallback(async (): Promise<void> => {
     setError(false);
-    try { setList(await listXmtpInstallations()); }
-    catch { setList([]); setError(true); }
+    try {
+      setList(await listXmtpInstallations());
+    } catch {
+      setList([]);
+      setError(true);
+    }
   }, []);
-  useEffect(() => { void reload(); }, [reload, epoch]);
+  useEffect(() => {
+    void reload();
+  }, [reload, epoch]);
   return { list, error, reload };
 }
 
 function confirmRevoke(inst: XmtpInstallation, run: () => void): void {
-  void capabilities.confirm({
-    title: inst.current ? 'Revoke this device?' : 'Revoke session',
-    message: inst.current
-      ? 'This is the device you are using. Revoking it logs this device out of messaging. You will need to set up XMTP again here.'
-      : `Revoke the session ${shortAddress(inst.id)}? That device will lose access to this inbox.`,
-    confirmLabel: 'Revoke',
-    destructive: true,
-  }).then((ok) => { if (ok) run(); });
+  void capabilities
+    .confirm({
+      title: inst.current ? 'Revoke this device?' : 'Revoke session',
+      message: inst.current
+        ? 'This is the device you are using. Revoking it logs this device out of messaging. You will need to set up XMTP again here.'
+        : `Revoke the session ${shortAddress(inst.id)}? That device will lose access to this inbox.`,
+      confirmLabel: 'Revoke',
+      destructive: true,
+    })
+    .then((ok) => {
+      if (ok) run();
+    });
 }
 
 function sessionsNote(list: XmtpInstallation[] | null, error: boolean): string | null {
@@ -82,17 +90,35 @@ function DeviceSessions(): React.ReactElement {
     confirmRevoke(inst, () => {
       setBusy(inst.id);
       void revokeXmtpInstallation(inst.id)
-        .then(() => { capabilities.toast('Session revoked'); return reload(); })
-        .catch(() => { Alert.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.'); })
-        .finally(() => { setBusy(null); });
+        .then(() => {
+          capabilities.toast('Session revoked');
+          return reload();
+        })
+        .catch(() => {
+          Alert.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.');
+        })
+        .finally(() => {
+          setBusy(null);
+        });
     });
   };
   const note = sessionsNote(list, error);
   return (
     <SettingsGroup title="Sessions" footnote="Every device signed in to this inbox. Revoke the ones you do not use.">
-      {note !== null || list === null ? <SettingsValueRow label={note ?? ''} value="" /> : list.map((inst) => (
-        <SessionRow key={inst.id} inst={inst} busy={busy === inst.id} onRevoke={() => { revoke(inst); }} />
-      ))}
+      {note !== null || list === null ? (
+        <SettingsValueRow label={note ?? ''} value="" />
+      ) : (
+        list.map((inst) => (
+          <SessionRow
+            key={inst.id}
+            inst={inst}
+            busy={busy === inst.id}
+            onRevoke={() => {
+              revoke(inst);
+            }}
+          />
+        ))
+      )}
     </SettingsGroup>
   );
 }
@@ -105,9 +131,21 @@ function LinkDeviceGroup(): React.ReactElement | null {
   return (
     <>
       <SettingsGroup title="Add a device" footnote="Scan the code with Stage on your other phone or computer to sign in there.">
-        <SettingsNavRow label="Link a device" iconStart={IconQrCode} onPress={() => { setOpen(true); }} />
+        <SettingsNavRow
+          label="Link a device"
+          iconStart={IconQrCode}
+          onPress={() => {
+            setOpen(true);
+          }}
+        />
       </SettingsGroup>
-      <TransferAccountSheet rec={open ? rec : null} dark={dark} onClose={() => { setOpen(false); }} />
+      <TransferAccountSheet
+        rec={open ? rec : null}
+        dark={dark}
+        onClose={() => {
+          setOpen(false);
+        }}
+      />
     </>
   );
 }
@@ -124,7 +162,9 @@ function HistorySyncSection(): React.ReactElement {
         label={syncing ? 'Syncing history…' : 'Sync history from another device'}
         description={status ?? SYNC_DESC}
         iconStart={IconArrowRotateClockwise}
-        onPress={() => { if (!syncing) void runHistorySync(); }}
+        onPress={() => {
+          if (!syncing) void runHistorySync();
+        }}
       />
     </SettingsGroup>
   );
@@ -133,9 +173,9 @@ function HistorySyncSection(): React.ReactElement {
 export function DevicesSettings(): React.ReactElement {
   return (
     <SettingsPage title="Devices">
-      <DeviceSessions/>
-      <LinkDeviceGroup/>
-      <HistorySyncSection/>
+      <DeviceSessions />
+      <LinkDeviceGroup />
+      <HistorySyncSection />
     </SettingsPage>
   );
 }

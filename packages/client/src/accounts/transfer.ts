@@ -2,9 +2,7 @@ import type { Hex } from 'viem';
 import { normalizePk } from './keys';
 import { isValidMnemonic, normalizeMnemonic } from '../zerodev/derive';
 
-export type AccountTransfer =
-  | { kind: 'pk'; pk: Hex }
-  | { kind: 'phrase'; phrase: string };
+export type AccountTransfer = { kind: 'pk'; pk: Hex } | { kind: 'phrase'; phrase: string };
 
 const PREFIX = 'stage-account:1:';
 const PK_TAG = 'pk:';

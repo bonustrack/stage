@@ -1,25 +1,14 @@
-
 import '../cryptoShim';
 import { secureStorage } from '../../platform/storage';
 import { migrateLegacyHdIndex, resetSmartHdIndex } from './hdIndexStore';
 import type { DeviceBoundAccessOptions } from '../../platform/types';
-import {
-  privateKeyToAccount,
-  type PrivateKeyAccount, type HDAccount,
-} from 'viem/accounts';
+import { privateKeyToAccount, type PrivateKeyAccount, type HDAccount } from 'viem/accounts';
 import { keccak256, stringToBytes, type Hex } from 'viem';
-import {
-  generateWalletMnemonic, normalizeMnemonic, isValidMnemonic, deriveOwner,
-} from '@stage-labs/client/zerodev/derive';
-import {
-  PK_PREFIX, LEGACY_PK_KEY,
-} from '@stage-labs/client/accounts/keys';
+import { generateWalletMnemonic, normalizeMnemonic, isValidMnemonic, deriveOwner } from '@stage-labs/client/zerodev/derive';
+import { PK_PREFIX, LEGACY_PK_KEY } from '@stage-labs/client/accounts/keys';
 import { recover, ignored } from '../errorPolicy';
 
-
-const STORE_OPTS: DeviceBoundAccessOptions = {
-  thisDeviceOnly: true,
-};
+const STORE_OPTS: DeviceBoundAccessOptions = { thisDeviceOnly: true };
 
 const AUTH_SENTINEL_KEY = 'wallet.authGate';
 
@@ -45,7 +34,10 @@ const PHRASE_KEY_PREFIX = 'wallet.mnemonic.';
 const PRIMARY_PHRASE_KEY = 'wallet.mnemonic.primary';
 const LEGACY_MNEMONIC_KEY = 'wallet.mnemonic';
 
-export interface SmartKeyRef { hdIndex: number; phraseId?: string }
+export interface SmartKeyRef {
+  hdIndex: number;
+  phraseId?: string;
+}
 
 export function phraseIdOf(phrase: string): string {
   return keccak256(stringToBytes(normalizeMnemonic(phrase))).slice(2, 18);
@@ -88,7 +80,7 @@ export async function primaryPhraseId(): Promise<string | null> {
 }
 
 async function phraseIdFor(ref: { phraseId?: string }): Promise<string> {
-  const id = ref.phraseId ?? await primaryPhraseId();
+  const id = ref.phraseId ?? (await primaryPhraseId());
   if (!id) throw new Error('Recovery phrase unavailable for this smart account.');
   return id;
 }
@@ -194,7 +186,6 @@ export async function adoptLegacyKey(): Promise<{ id: string; address: string } 
 export async function deleteKey(id: string): Promise<void> {
   await secureStorage.delete(PK_PREFIX + id).catch(ignored(undefined, 'cleanup'));
 }
-
 
 export async function revealActiveRecoveryPhrase(expectedAccountId: string): Promise<string | null> {
   const { getActiveAccountId, loadAccounts } = await import('../accounts');

@@ -6,8 +6,17 @@ export function useCopiedFlag(): [copied: boolean, markCopied: () => void] {
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
-    const timer = setTimeout(() => { setCopied(false); }, COPIED_MS);
-    return () => { clearTimeout(timer); };
+    const timer = setTimeout(() => {
+      setCopied(false);
+    }, COPIED_MS);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [copied]);
-  return [copied, () => { setCopied(true); }];
+  return [
+    copied,
+    () => {
+      setCopied(true);
+    },
+  ];
 }

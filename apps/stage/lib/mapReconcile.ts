@@ -24,7 +24,7 @@ function arrayEquals(a: readonly unknown[], b: readonly unknown[]): boolean {
 
 function recordEquals(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
   const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length && keys.every(k => deepValueEquals(a[k], b[k]));
+  return keys.length === Object.keys(b).length && keys.every((k) => deepValueEquals(a[k], b[k]));
 }
 
 function collectionEquals(a: unknown, b: unknown): boolean | null {

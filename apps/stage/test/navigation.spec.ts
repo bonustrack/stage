@@ -3,11 +3,7 @@ import { TabRouter, type TabNavigationState } from 'expo-router/build/react-navi
 import type { CommonNavigationAction, ParamListBase } from 'expo-router/build/react-navigation/routers/types';
 import { WEB_TAB_BACK_BEHAVIOR } from '../lib/navigation.model';
 
-const options = {
-  routeNames: ['index', 'wallet', 'settings', 'board'],
-  routeParamList: {},
-  routeGetIdList: {},
-};
+const options = { routeNames: ['index', 'wallet', 'settings', 'board'], routeParamList: {}, routeGetIdList: {} };
 const router = TabRouter({ backBehavior: WEB_TAB_BACK_BEHAVIOR });
 type State = TabNavigationState<ParamListBase>;
 
@@ -22,7 +18,7 @@ function visit(state: State, name: string, params?: object): State {
 }
 
 function historyNames(state: State): (string | undefined)[] {
-  return state.history.map(item => state.routes.find(route => route.key === item.key)?.name);
+  return state.history.map((item) => state.routes.find((route) => route.key === item.key)?.name);
 }
 
 function currentName(state: State): string | undefined {
@@ -58,11 +54,7 @@ describe('web tab history', () => {
   });
 
   test('a direct tab link has no invented home entry', () => {
-    const state = router.getRehydratedState({
-      stale: true,
-      routes: [{ name: 'settings' }],
-      index: 0,
-    }, options);
+    const state = router.getRehydratedState({ stale: true, routes: [{ name: 'settings' }], index: 0 }, options);
     expect(currentName(state)).toBe('settings');
     expect(historyNames(state)).toEqual(['settings']);
     expect(router.getStateForAction(state, { type: 'GO_BACK' }, options)).toBeNull();

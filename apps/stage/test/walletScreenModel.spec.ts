@@ -1,14 +1,20 @@
 import { describe, expect, test } from 'bun:test';
 import { walletTotalUsd, sendTokenFor } from '../components/wallet/screen/model';
 import {
-  balanceCurrency, nextBalanceCurrency, walletBalanceDisplay,
+  balanceCurrency,
+  nextBalanceCurrency,
+  walletBalanceDisplay,
   type BalanceDisplayInput,
 } from '../components/wallet/screen/balance.model';
 
 const loaded: BalanceDisplayInput = {
-  totalUsd: 8000, currency: 'USD',
+  totalUsd: 8000,
+  currency: 'USD',
   prices: { ethereum: { usd: 4000 }, bitcoin: { usd: 80000 } },
-  loading: false, error: false, refreshing: false, pricesLoading: false,
+  loading: false,
+  error: false,
+  refreshing: false,
+  pricesLoading: false,
 };
 
 function text(input: BalanceDisplayInput): string {
@@ -22,10 +28,12 @@ describe('walletTotalUsd', () => {
   });
 
   test('sums the same portfolio across all token rows', () => {
-    expect(walletTotalUsd([
-      { priceUsd: 2, balance: '3' },
-      { priceUsd: 0.5, balance: '4' },
-    ])).toBe(8);
+    expect(
+      walletTotalUsd([
+        { priceUsd: 2, balance: '3' },
+        { priceUsd: 0.5, balance: '4' },
+      ]),
+    ).toBe(8);
   });
 
   test('zero holdings need no price, including an empty portfolio', () => {
@@ -34,7 +42,12 @@ describe('walletTotalUsd', () => {
   });
 
   test.each([null, 0, -1, NaN, Infinity])('does not understate holdings with invalid price %p', (priceUsd) => {
-    expect(walletTotalUsd([{ priceUsd: 2, balance: '3' }, { priceUsd, balance: '10' }])).toBeNull();
+    expect(
+      walletTotalUsd([
+        { priceUsd: 2, balance: '3' },
+        { priceUsd, balance: '10' },
+      ]),
+    ).toBeNull();
   });
 
   test.each(['', ' ', 'invalid', '-1', 'Infinity'])('rejects invalid balance %p', (balance) => {
@@ -75,7 +88,14 @@ describe('wallet display currency', () => {
     expect(text({ ...loaded, totalUsd, currency })).toBe(currency === 'ETH' ? '2 ETH' : '0.1 BTC');
   });
 
-  test.each([undefined, {}, { ethereum: { usd: 0 } }, { ethereum: { usd: -1 } }, { ethereum: { usd: NaN } }, { ethereum: { usd: Infinity } }])('hides invalid conversion prices %p', (prices) => {
+  test.each([
+    undefined,
+    {},
+    { ethereum: { usd: 0 } },
+    { ethereum: { usd: -1 } },
+    { ethereum: { usd: NaN } },
+    { ethereum: { usd: Infinity } },
+  ])('hides invalid conversion prices %p', (prices) => {
     const result = walletBalanceDisplay({ ...loaded, currency: 'ETH', prices });
     expect(result.total).toBe('-');
     expect(result.subtitle).toBe('ETH price unavailable');

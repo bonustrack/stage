@@ -10,11 +10,7 @@ export interface AlertRequest {
 const alert = makeValue<AlertRequest | null>(null);
 
 function presentAlert(title: string, message?: string, buttons?: AlertButton[]): void {
-  alert.set({
-    title,
-    message,
-    buttons: buttons !== undefined && buttons.length > 0 ? buttons : [{ text: 'OK' }],
-  });
+  alert.set({ title, message, buttons: buttons !== undefined && buttons.length > 0 ? buttons : [{ text: 'OK' }] });
 }
 
 export function dismissAlert(): void {

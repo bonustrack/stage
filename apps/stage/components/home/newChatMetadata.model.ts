@@ -26,18 +26,21 @@ export function renamedNewChatFields(fields: NewChatFields, from: string, to: st
 }
 
 type Params = Record<string, string | string[] | undefined>;
-const values = (value: string | string[] | undefined): string[] => typeof value === 'string' ? value.split('\n') : value ?? [];
+const values = (value: string | string[] | undefined): string[] => (typeof value === 'string' ? value.split('\n') : (value ?? []));
 
 export function newChatMetadata(params: Params): NewChatMetadata {
   return {
-    ...NO_NEW_CHAT_METADATA, status: categoryOf(params.status),
-    labels: values(params.labels).reduce(addLabel, []), assigned: assignedAddresses(values(params.assigned)),
+    ...NO_NEW_CHAT_METADATA,
+    status: categoryOf(params.status),
+    labels: values(params.labels).reduce(addLabel, []),
+    assigned: assignedAddresses(values(params.assigned)),
   };
 }
 
 function metadataFields(metadata: NewChatMetadata): Params {
   return {
-    category: metadata.category ?? undefined, status: metadata.status ?? undefined,
+    category: metadata.category ?? undefined,
+    status: metadata.status ?? undefined,
     labels: metadata.labels.length > 0 ? metadata.labels : undefined,
     assigned: metadata.assigned.length > 0 ? metadata.assigned : undefined,
   };
@@ -57,7 +60,7 @@ export function groupedChatMetadata(by: GroupKey, key: string, title: string): N
 
 export function memberChatMetadata(metadata: NewChatMetadata, members: readonly string[], self: string | null): NewChatMetadata {
   const allowed = self === null ? members : [...members, self];
-  return { ...metadata, assigned: metadata.assigned.filter(address => includesKey(allowed, address)) };
+  return { ...metadata, assigned: metadata.assigned.filter((address) => includesKey(allowed, address)) };
 }
 
 export function newChatAppData(metadata: NewChatMetadata): string | undefined {

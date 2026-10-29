@@ -1,10 +1,19 @@
 import {
-  DEFAULT_SEED, grayscaleHex,
-  type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint,
+  DEFAULT_SEED,
+  grayscaleHex,
+  type ThemeSeed,
+  type AccentLevel,
+  type GrayscaleShade,
+  type GrayscaleTint,
 } from '@stage-labs/kit/theme-derive';
 import {
-  RADIUS_NAME_DEFAULT, DENSITY_DEFAULT, BASE_SIZE_DEFAULT,
-  type Scheme, type RadiusName, type Density, type BaseSize,
+  RADIUS_NAME_DEFAULT,
+  DENSITY_DEFAULT,
+  BASE_SIZE_DEFAULT,
+  type Scheme,
+  type RadiusName,
+  type Density,
+  type BaseSize,
 } from '@stage-labs/kit/tokens';
 
 export interface ThemeSeeds {
@@ -17,14 +26,12 @@ export interface ThemeSeeds {
 
 const HEX_RE = /^#([0-9a-fA-F]{6})$/;
 
-export function isHex(v: string): boolean { return HEX_RE.test(v.trim()); }
+export function isHex(v: string): boolean {
+  return HEX_RE.test(v.trim());
+}
 
 export function cloneSeed(s: ThemeSeed): ThemeSeed {
-  return {
-    accent: { ...s.accent },
-    grayscale: { ...s.grayscale },
-    surface: { ...s.surface },
-  };
+  return { accent: { ...s.accent }, grayscale: { ...s.grayscale }, surface: { ...s.surface } };
 }
 
 export function defaultSeeds(): ThemeSeeds {
@@ -49,10 +56,7 @@ function migrateAccent(raw: unknown, fallback: ThemeSeed['accent']): ThemeSeed['
   if (!raw || typeof raw !== 'object') return { ...fallback };
   const o = raw as Record<string, unknown>;
   const level = num(o.level, fallback.level);
-  return {
-    primary: hex(o.primary, fallback.primary),
-    level: Math.min(3, Math.max(0, Math.round(level))) as AccentLevel,
-  };
+  return { primary: hex(o.primary, fallback.primary), level: Math.min(3, Math.max(0, Math.round(level))) as AccentLevel };
 }
 
 function migrateGrayscale(raw: unknown, fallback: ThemeSeed['grayscale']): ThemeSeed['grayscale'] {
@@ -68,10 +72,7 @@ function migrateGrayscale(raw: unknown, fallback: ThemeSeed['grayscale']): Theme
 function migrateSurface(raw: unknown, fallback: ThemeSeed['surface']): ThemeSeed['surface'] {
   if (!raw || typeof raw !== 'object') return { ...fallback };
   const o = raw as Record<string, unknown>;
-  return {
-    background: hex(o.background, fallback.background),
-    foreground: hex(o.foreground, fallback.foreground),
-  };
+  return { background: hex(o.background, fallback.background), foreground: hex(o.foreground, fallback.foreground) };
 }
 
 function migrateSeed(raw: unknown, scheme: Scheme): ThemeSeed {
@@ -89,12 +90,7 @@ export function migrateSeeds(raw: unknown): ThemeSeeds {
   const base = defaultSeeds();
   if (!raw || typeof raw !== 'object') return base;
   const o = raw as Record<string, unknown>;
-  return {
-    ...base,
-    ...o,
-    light: migrateSeed(o.light, 'light'),
-    dark: migrateSeed(o.dark, 'dark'),
-  };
+  return { ...base, ...o, light: migrateSeed(o.light, 'light'), dark: migrateSeed(o.dark, 'dark') };
 }
 
 export type SeedColorKey = 'grayscale' | 'accent' | 'background' | 'foreground';

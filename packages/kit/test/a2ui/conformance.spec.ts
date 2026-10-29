@@ -31,7 +31,9 @@ function catalogFor(suite: Suite): JsonObject {
   return loaded;
 }
 
-const suites = readdirSync(CASES).filter((f) => f.endsWith('.json') && f !== 'testing_catalog.json' && f !== 'contact_form_example_test.json');
+const suites = readdirSync(CASES).filter(
+  (f) => f.endsWith('.json') && f !== 'testing_catalog.json' && f !== 'contact_form_example_test.json',
+);
 
 describe('A2UI v1.0 schema conformance', () => {
   for (const file of suites) {

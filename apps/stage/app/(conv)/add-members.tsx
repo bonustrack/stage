@@ -12,11 +12,15 @@ export default function AddMembers(): React.ReactElement {
   return (
     <Column surface="surface" weight={1}>
       <StackHeader title="Add members" />
-      <ScreenScroll
-        contentContainerStyle={{ padding: 16, paddingBottom: 24 + insets.bottom }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {convId ? <AddMembersForm convId={convId} onDone={() => { router.back(); }}/> : null}
+      <ScreenScroll contentContainerStyle={{ padding: 16, paddingBottom: 24 + insets.bottom }} keyboardShouldPersistTaps="handled">
+        {convId ? (
+          <AddMembersForm
+            convId={convId}
+            onDone={() => {
+              router.back();
+            }}
+          />
+        ) : null}
       </ScreenScroll>
     </Column>
   );

@@ -2,8 +2,15 @@ import type { CatalogRegistry, ComponentInfo } from './catalog';
 import { getAt, resolveScopedPath } from './pointer';
 import type { SurfaceState } from './surface';
 import {
-  ERROR_CODES, ROOT_ID, SURFACE_COMPONENT, entriesOf, isChildTemplate, isJsonObject,
-  type ComponentInstance, type JsonObject, type JsonValue,
+  ERROR_CODES,
+  ROOT_ID,
+  SURFACE_COMPONENT,
+  entriesOf,
+  isChildTemplate,
+  isJsonObject,
+  type ComponentInstance,
+  type JsonObject,
+  type JsonValue,
 } from './protocol';
 
 export type ChildRefKind = 'child' | 'children';
@@ -66,10 +73,19 @@ export interface CompositionIssue {
   message: string;
 }
 
-function edgeIssues(parentType: string, parentInfo: ComponentInfo | undefined, child: ComponentInstance, childInfo: ComponentInfo | undefined): CompositionIssue[] {
+function edgeIssues(
+  parentType: string,
+  parentInfo: ComponentInfo | undefined,
+  child: ComponentInstance,
+  childInfo: ComponentInfo | undefined,
+): CompositionIssue[] {
   const out: CompositionIssue[] = [];
   if (childInfo?.allowedParents?.includes(parentType) === false) {
-    out.push({ code: ERROR_CODES.unallowedParent, componentId: child.id, message: `'${child.component}' cannot be placed inside '${parentType}'.` });
+    out.push({
+      code: ERROR_CODES.unallowedParent,
+      componentId: child.id,
+      message: `'${child.component}' cannot be placed inside '${parentType}'.`,
+    });
   }
   if (parentInfo?.allowedChildren?.includes(child.component) === false) {
     out.push({ code: ERROR_CODES.unallowedChild, componentId: child.id, message: `'${parentType}' cannot contain '${child.component}'.` });
@@ -99,7 +115,10 @@ export function compositionIssues(
   return out;
 }
 
-export interface RenderLimits { depth: number; nodes: number }
+export interface RenderLimits {
+  depth: number;
+  nodes: number;
+}
 
 export const RENDER_LIMITS: RenderLimits = { depth: 32, nodes: 2000 };
 
@@ -125,18 +144,19 @@ function fits(walk: Walk, id: string, lineage: readonly string[], scopePath: str
   walk.left -= 1;
   if (walk.left < 0 || lineage.length >= walk.depth || lineage.includes(id)) return false;
   const instance = walk.surface.components.get(id);
-  const info = instance === undefined ? undefined : walk.registry.component(instance.catalogId ?? walk.surface.catalogId ?? '', instance.component);
+  const info =
+    instance === undefined ? undefined : walk.registry.component(instance.catalogId ?? walk.surface.catalogId ?? '', instance.component);
   if (instance === undefined || info === undefined) return true;
   const next = [...lineage, id];
   const templates = templateScopes(walk, instance, info, scopePath);
   const templateIds = new Set(templates.map(([childId]) => childId));
   const direct = childReferences(info, instance).filter((childId) => !templateIds.has(childId));
-  return direct.every((childId) => fits(walk, childId, next, scopePath))
-    && templates.every(([childId, path]) => fits(walk, childId, next, path));
+  return (
+    direct.every((childId) => fits(walk, childId, next, scopePath)) && templates.every(([childId, path]) => fits(walk, childId, next, path))
+  );
 }
 
 export function fitsRenderLimits(surface: SurfaceState, registry: CatalogRegistry, limits: Partial<RenderLimits> = {}): boolean {
   const { depth, nodes } = { ...RENDER_LIMITS, ...limits };
   return fits({ surface, registry, left: nodes, depth }, ROOT_ID, [], '/');
 }
-

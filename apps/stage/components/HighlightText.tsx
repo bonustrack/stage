@@ -5,11 +5,7 @@ import { highlightSegments } from './HighlightText.model';
 import { HIGHLIGHT_BG } from '../lib/uiColors';
 import { Row } from './layout';
 
-export function HighlightText({ text, query, fg }: {
-  text: string;
-  query: string;
-  fg: string;
-}): React.ReactElement {
+export function HighlightText({ text, query, fg }: { text: string; query: string; fg: string }): React.ReactElement {
   const scheme = useKitScheme();
   const segments = highlightSegments(text, query.trim());
   return (
@@ -21,11 +17,7 @@ export function HighlightText({ text, query, fg }: {
           color={fg}
           size="lg"
           selectable={Platform.OS === 'web'}
-          style={{
-            lineHeight: 23,
-            minWidth: 0,
-            ...(segment.match ? { backgroundColor: HIGHLIGHT_BG[scheme] } : {}),
-          }}
+          style={{ lineHeight: 23, minWidth: 0, ...(segment.match ? { backgroundColor: HIGHLIGHT_BG[scheme] } : {}) }}
         />
       ))}
     </Row>

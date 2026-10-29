@@ -6,11 +6,7 @@ const sdkRequire = createRequire(require.resolve('@xmtp/browser-sdk'));
 const bindingsDir = path.dirname(sdkRequire.resolve('@xmtp/wasm-bindings'));
 
 function findWasm(file) {
-  const candidates = [
-    path.join(bindingsDir, 'pkg-esm', file),
-    path.join(bindingsDir, '..', 'pkg-esm', file),
-    path.join(bindingsDir, file),
-  ];
+  const candidates = [path.join(bindingsDir, 'pkg-esm', file), path.join(bindingsDir, '..', 'pkg-esm', file), path.join(bindingsDir, file)];
   const found = candidates.find((candidate) => fs.existsSync(candidate));
   if (!found) throw new Error(`wasm not found: ${file}`);
   return found;

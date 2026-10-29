@@ -9,16 +9,24 @@ export const NAME_TAKEN = 'name already taken';
 const ZERO = '0x0000000000000000000000000000000000000000';
 
 export class NameTransactionRevertedError extends Error {
-  constructor(hash: Hex) { super(`transaction ${hash} reverted`); this.name = 'NameTransactionRevertedError'; }
+  constructor(hash: Hex) {
+    super(`transaction ${hash} reverted`);
+    this.name = 'NameTransactionRevertedError';
+  }
 }
 
 const REGISTRY_ABI = [
   ...BASENAME_REGISTRY_ABI,
   {
-    name: 'setSubnodeRecord', type: 'function', stateMutability: 'nonpayable',
+    name: 'setSubnodeRecord',
+    type: 'function',
+    stateMutability: 'nonpayable',
     inputs: [
-      { name: 'node', type: 'bytes32' }, { name: 'label', type: 'bytes32' }, { name: 'owner', type: 'address' },
-      { name: 'resolver', type: 'address' }, { name: 'ttl', type: 'uint64' },
+      { name: 'node', type: 'bytes32' },
+      { name: 'label', type: 'bytes32' },
+      { name: 'owner', type: 'address' },
+      { name: 'resolver', type: 'address' },
+      { name: 'ttl', type: 'uint64' },
     ],
     outputs: [],
   },
@@ -52,7 +60,8 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
       const current = await publicClient.readContract({ ...registry, functionName: 'owner', args: [node] });
       if (current !== ZERO && current.toLowerCase() !== account.address.toLowerCase()) throw new Error(NAME_TAKEN);
       const hash = await wallet.writeContract({
-        ...registry, functionName: 'setSubnodeRecord',
+        ...registry,
+        functionName: 'setSubnodeRecord',
         args: [parentNode, keccak256(stringToBytes(label)), owner, resolver, 0n],
       });
       await onSubmitted?.(hash);

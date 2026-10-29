@@ -5,7 +5,8 @@ import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/
 import {
   MultiRemoteAttachmentCodec,
   type RemoteAttachmentInfo,
-  type RemoteAttachmentMetadata, type EncryptedLocalAttachment,
+  type RemoteAttachmentMetadata,
+  type EncryptedLocalAttachment,
 } from '@xmtp/react-native-sdk';
 import { xmtpClient } from './xmtp.client';
 import { sendableConvOfLine } from './xmtp.sdk';
@@ -42,19 +43,20 @@ async function materializeFileUri(src: string): Promise<string> {
 function freshCacheFile(prefix: string, ext: string): File {
   const tmpName = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const dest = new File(Paths.cache, tmpName);
-  if (dest.exists) attempt(() => { dest.delete(); }, 'cleanup');
+  if (dest.exists)
+    attempt(() => {
+      dest.delete();
+    }, 'cleanup');
   return dest;
 }
 
-export async function sanitizeFileUri(
-  uri: string, mimeType: string | undefined, filename: string | undefined,
-): Promise<SanitizedFileUri> {
+export async function sanitizeFileUri(uri: string, mimeType: string | undefined, filename: string | undefined): Promise<SanitizedFileUri> {
   if (!isStrippableImage(mimeType, filename)) return uri as SanitizedFileUri;
   try {
     const blob = await (await fetch(uri)).blob();
     const input = new Uint8Array(await blob.arrayBuffer());
     const { bytes, stripped } = stripMetadataBytes(input);
-    if (!stripped || bytes.length === input.length && bytes.every((v, k) => v === input[k])) {
+    if (!stripped || (bytes.length === input.length && bytes.every((v, k) => v === input[k]))) {
       return uri as SanitizedFileUri;
     }
     return writeCleanImage(bytes, filename, uri);
@@ -63,9 +65,7 @@ export async function sanitizeFileUri(
   }
 }
 
-function writeCleanImage(
-  bytes: Uint8Array, filename: string | undefined, uri: string,
-): SanitizedFileUri {
+function writeCleanImage(bytes: Uint8Array, filename: string | undefined, uri: string): SanitizedFileUri {
   const ext = (filename ?? uri).split('?')[0]?.split('.').pop()?.toLowerCase() ?? 'img';
   const dest = freshCacheFile('xmtp-clean', ext.length <= 5 ? ext : 'img');
   dest.create();
@@ -83,9 +83,7 @@ async function uploadEncrypted(encryptedFileUri: string, filename: string): Prom
 }
 
 interface AttachmentEncryptor {
-  encryptAttachment: (file: {
-    fileUri: string; mimeType?: string; filename?: string;
-  }) => Promise<EncryptedLocalAttachment>;
+  encryptAttachment: (file: { fileUri: string; mimeType?: string; filename?: string }) => Promise<EncryptedLocalAttachment>;
 }
 export async function encryptSanitizedAttachment(
   client: AttachmentEncryptor,
@@ -112,27 +110,36 @@ const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
 export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
 
 export async function xmtpSendMultiRemoteAttachment(
-  line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>, replyTo?: string,
+  line: string,
+  files: LocalAttachmentInput[],
+  onUploaded?: OnAttachmentsUploaded,
+  beforeSend?: () => Promise<void>,
+  replyTo?: string,
 ): Promise<string> {
   if (files.length === 0) throw new Error('No attachments to send.');
   const session = await accountClient();
-  const id = await withReadableSendError(() => sendPreparedAttachment({
-    assertCurrent: session.assertCurrent, uploaded: () => prep.uploaded(files), onUploaded, beforeSend,
-    find: () => sendableConvOfLine(line),
-    send: (conv, infos) => {
-      if (replyTo === undefined) return conv.send({ multiRemoteAttachment: { attachments: infos } });
-      const info = infos[0];
-      if (infos.length !== 1 || info === undefined) throw new Error('A file reply needs one attachment.');
-      return conv.send({ reply: { reference: replyTo, content: { remoteAttachment: info } } });
-    },
-  }));
+  const id = await withReadableSendError(() =>
+    sendPreparedAttachment({
+      assertCurrent: session.assertCurrent,
+      uploaded: () => prep.uploaded(files),
+      onUploaded,
+      beforeSend,
+      find: () => sendableConvOfLine(line),
+      send: (conv, infos) => {
+        if (replyTo === undefined) return conv.send({ multiRemoteAttachment: { attachments: infos } });
+        const info = infos[0];
+        if (infos.length !== 1 || info === undefined) throw new Error('A file reply needs one attachment.');
+        return conv.send({ reply: { reference: replyTo, content: { remoteAttachment: info } } });
+      },
+    }),
+  );
   prep.forget(files);
   return id;
 }
 
-export async function resolveRemoteAttachment(info: RemoteAttachmentInfo): Promise<{
-  fileUri: string; mimeType?: string; filename?: string;
-}> {
+export async function resolveRemoteAttachment(
+  info: RemoteAttachmentInfo,
+): Promise<{ fileUri: string; mimeType?: string; filename?: string }> {
   const client = await xmtpClient();
   const dest = freshCacheFile('xmtp-att', 'bin');
   const { secret, salt, nonce, contentDigest, contentLength, filename } = info;

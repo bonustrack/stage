@@ -6,10 +6,30 @@ import { ALICE, NAMES, SELF } from './searchFixtures';
 
 function row(convId: string, unreadCount: number, fields: Partial<Row> = {}): Row {
   return {
-    convId, title: convId, groupName: convId, lastPreview: '', createdTs: null, lastTs: 1, lastBubbleTs: null,
-    unreadCount, lastReadNs: 0, markedUnread: false, lastFromSelf: false, lastSenderAddress: null,
-    peerAddress: null, avatarUri: null, avatarAddress: null, inboxToAddr: { self: SELF }, selfInboxId: 'self', consent: 'allowed',
-    labels: [], assigned: [], category: null, status: null, priority: null, ...fields,
+    convId,
+    title: convId,
+    groupName: convId,
+    lastPreview: '',
+    createdTs: null,
+    lastTs: 1,
+    lastBubbleTs: null,
+    unreadCount,
+    lastReadNs: 0,
+    markedUnread: false,
+    lastFromSelf: false,
+    lastSenderAddress: null,
+    peerAddress: null,
+    avatarUri: null,
+    avatarAddress: null,
+    inboxToAddr: { self: SELF },
+    selfInboxId: 'self',
+    consent: 'allowed',
+    labels: [],
+    assigned: [],
+    category: null,
+    status: null,
+    priority: null,
+    ...fields,
   };
 }
 
@@ -23,12 +43,21 @@ const rows = [
 ];
 const namesOf = (address: string): string[] => NAMES[address] ?? [];
 
-interface View { query?: string; labels?: string[]; unreadOnly?: boolean; cleared?: ClearedChats }
+interface View {
+  query?: string;
+  labels?: string[];
+  unreadOnly?: boolean;
+  cleared?: ClearedChats;
+}
 
-const count = (v: View = {}): number => visibleUnreadCount({
-  rows, enabledLabels: new Set(v.labels ?? []),
-  unreadOnly: v.unreadOnly ?? false, matches: searchRowMatcher(parseSearchFilter(v.query ?? ''), namesOf), cleared: v.cleared ?? {},
-});
+const count = (v: View = {}): number =>
+  visibleUnreadCount({
+    rows,
+    enabledLabels: new Set(v.labels ?? []),
+    unreadOnly: v.unreadOnly ?? false,
+    matches: searchRowMatcher(parseSearchFilter(v.query ?? ''), namesOf),
+    cleared: v.cleared ?? {},
+  });
 
 describe('the chats badge counts what the chat list shows', () => {
   test('counts unread chats, not messages, and a chat marked unread once', () => {
@@ -39,7 +68,12 @@ describe('the chats badge counts what the chat list shows', () => {
   test('follows the chat list chips and search filters', () => {
     expect(count({ labels: ['stage'] })).toBe(2);
     expect(count({ unreadOnly: true })).toBe(5);
-    expect([count({ query: 'status:Todo' }), count({ query: '-label:Stage' }), count({ query: 'member:alice123' }), count({ query: 'b' })]).toEqual([1, 3, 1, 1]);
+    expect([
+      count({ query: 'status:Todo' }),
+      count({ query: '-label:Stage' }),
+      count({ query: 'member:alice123' }),
+      count({ query: 'b' }),
+    ]).toEqual([1, 3, 1, 1]);
   });
 
   test('Last activity keeps the badge and visible list consistent, including pinned chats', () => {
@@ -47,10 +81,10 @@ describe('the chats badge counts what the chat list shows', () => {
     const matches = searchRowMatcher(parseSearchFilter(''), namesOf, () => '', 50);
     const listed = deriveSortedRows({ rows: recent, enabledLabels: new Set(['stage']), unreadOnly: false, pinned: ['c'] });
     const visible = listed.filter(matches);
-    expect(visible.map(row => row.convId)).toEqual(['a']);
-    expect(visibleUnreadCount({
-      rows: recent, enabledLabels: new Set(['stage']), unreadOnly: false, matches, cleared: {},
-    })).toBe(unreadRowCount(visible));
+    expect(visible.map((row) => row.convId)).toEqual(['a']);
+    expect(visibleUnreadCount({ rows: recent, enabledLabels: new Set(['stage']), unreadOnly: false, matches, cleared: {} })).toBe(
+      unreadRowCount(visible),
+    );
   });
 
   test('leaves out a deleted direct chat until a newer message revives it', () => {
@@ -64,7 +98,7 @@ describe('the chats badge counts what the chat list shows', () => {
     for (const query of ['', 'status:Todo', '-label:Stage', 'member:alice123', 'b']) {
       const matches = searchRowMatcher(parseSearchFilter(query), namesOf);
       const listed = deriveSortedRows({ rows, enabledLabels: new Set(['stage']), unreadOnly: false, pinned: [] });
-      expect(count({ query, labels: ['stage'], cleared })).toBe(unreadRowCount(listed.filter(r => matches(r) && !hidden(r))));
+      expect(count({ query, labels: ['stage'], cleared })).toBe(unreadRowCount(listed.filter((r) => matches(r) && !hidden(r))));
     }
   });
 });

@@ -56,7 +56,11 @@ function balanceParts(value: number, currency: BalanceCurrency): { int: string; 
 }
 
 export function walletBalanceDisplay(input: BalanceDisplayInput): {
-  total: string; decimals: string; unit: string; subtitle?: string; spinner: boolean;
+  total: string;
+  decimals: string;
+  unit: string;
+  subtitle?: string;
+  spinner: boolean;
 } {
   const value = balanceValue(input.totalUsd, input.currency, input.prices);
   const parts = value === null ? { int: '-', dec: '' } : balanceParts(value, input.currency);

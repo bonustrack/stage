@@ -23,7 +23,9 @@ export const Matrix: Story = () => {
         {SIZES.map((size) => (
           <Column key={size} gap={6} align="center">
             <Spinner size={size} />
-            <Text size="2xs" color="secondary">{size}</Text>
+            <Text size="2xs" color="secondary">
+              {size}
+            </Text>
           </Column>
         ))}
       </Row>
@@ -31,7 +33,9 @@ export const Matrix: Story = () => {
         {ROLES.map((role) => (
           <Column key={role} gap={6} align="center">
             <Spinner color={palette[role]} />
-            <Text size="2xs" color="secondary">{role}</Text>
+            <Text size="2xs" color="secondary">
+              {role}
+            </Text>
           </Column>
         ))}
       </Row>

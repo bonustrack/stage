@@ -4,7 +4,9 @@ import * as Updates from 'expo-updates';
 import { freshUrl, isDevClientLauncher, loadedCommit, type MainUpdate } from '../components/settings/DevClientUpdate.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from './devClientUpdates.core';
 
-interface DevLauncher { loadApp(url: string): Promise<void> }
+interface DevLauncher {
+  loadApp(url: string): Promise<void>;
+}
 const installedLauncher = requireOptionalNativeModule<DevLauncher>('ExpoDevLauncher');
 const launcher = isDevClientLauncher(NativeModules.EXDevLauncher, installedLauncher) ? installedLauncher : null;
 
@@ -14,7 +16,9 @@ export function devClientInfo(): { runtime: string | null; updateId: string | nu
 
 const requestUpdate: UpdateRequest = async (url, headers) => {
   const controller = new AbortController();
-  const timeout = setTimeout(() => { controller.abort(); }, 15000);
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 15000);
   try {
     const response = await fetch(url, {
       headers: { ...headers, 'Cache-Control': 'no-cache', Pragma: 'no-cache' },

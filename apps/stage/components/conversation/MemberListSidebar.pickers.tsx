@@ -11,42 +11,63 @@ import { useContacts } from '../../lib/useContacts';
 import { usePalette } from '../../lib/theme';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 
-interface PersonOption { address: string; name: string; disabled: boolean }
+interface PersonOption {
+  address: string;
+  name: string;
+  disabled: boolean;
+}
 
 function PersonRow({ option, draft, toggle }: { option: PersonOption } & SectionDraft): React.ReactElement {
   return (
-    <PickerRow selected={includesKey(draft, option.address)} disabled={option.disabled} label={option.name}
-      onPress={() => { toggle(option.address.toLowerCase()); }} leading={<Avatar address={option.address} size="sm"/>}/>
+    <PickerRow
+      selected={includesKey(draft, option.address)}
+      disabled={option.disabled}
+      label={option.name}
+      onPress={() => {
+        toggle(option.address.toLowerCase());
+      }}
+      leading={<Avatar address={option.address} size="sm" />}
+    />
   );
 }
 
 function useOrderedEntries(entries: MemberListEntry[], draft: string[]): MemberListEntry[] {
-  const [order] = useState(() => selectedFirst(entries.map(entry => entry.address), draft));
-  const byAddress = new Map(entries.map(entry => [entry.address.toLowerCase(), entry]));
-  const ordered = order.flatMap(address => byAddress.get(address.toLowerCase()) ?? []);
-  return [...ordered, ...entries.filter(entry => !includesKey(order, entry.address))];
+  const [order] = useState(() =>
+    selectedFirst(
+      entries.map((entry) => entry.address),
+      draft,
+    ),
+  );
+  const byAddress = new Map(entries.map((entry) => [entry.address.toLowerCase(), entry]));
+  const ordered = order.flatMap((address) => byAddress.get(address.toLowerCase()) ?? []);
+  return [...ordered, ...entries.filter((entry) => !includesKey(order, entry.address))];
 }
 
 export function AssigneePicker({ draft, toggle, entries }: SectionDraft & { entries: MemberListEntry[] }): React.ReactElement {
   const [query, setQuery] = useState('');
-  const shown = useOrderedEntries(entries, draft).filter(entry => matchesQuery(query, entry.name, entry.address));
+  const shown = useOrderedEntries(entries, draft).filter((entry) => matchesQuery(query, entry.name, entry.address));
   return (
     <>
-      <PickerSearch value={query} onChangeText={setQuery} placeholder="Search members"/>
+      <PickerSearch value={query} onChangeText={setQuery} placeholder="Search members" />
       <PickerList>
-        {shown.map(entry => (
-          <PersonRow key={entry.address.toLowerCase()} option={{ address: entry.address, name: entry.name, disabled: false }}
-            draft={draft} toggle={toggle}/>
+        {shown.map((entry) => (
+          <PersonRow
+            key={entry.address.toLowerCase()}
+            option={{ address: entry.address, name: entry.name, disabled: false }}
+            draft={draft}
+            toggle={toggle}
+          />
         ))}
-        {shown.length === 0 ? <PickerNote text="No matching members."/> : null}
+        {shown.length === 0 ? <PickerNote text="No matching members." /> : null}
       </PickerList>
     </>
   );
 }
 
-function useLookup(draft: string[], toggle: (key: string) => void): {
-  found: PersonOption[]; looking: boolean; look: (raw: string, done: () => void) => void;
-} {
+function useLookup(
+  draft: string[],
+  toggle: (key: string) => void,
+): { found: PersonOption[]; looking: boolean; look: (raw: string, done: () => void) => void } {
   const [found, setFound] = useState<PersonOption[]>([]);
   const [looking, setLooking] = useState(false);
   const look = (raw: string, done: () => void): void => {
@@ -54,14 +75,27 @@ function useLookup(draft: string[], toggle: (key: string) => void): {
     setLooking(true);
     void lookupMember(raw)
       .then((member) => {
-        if (typeof member === 'string') { capabilities.toast(member); return; }
-        setFound(list => (includesKey(list.map(option => option.address), member.address)
-          ? list : [...list, { address: member.address, name: member.label, disabled: false }]));
+        if (typeof member === 'string') {
+          capabilities.toast(member);
+          return;
+        }
+        setFound((list) =>
+          includesKey(
+            list.map((option) => option.address),
+            member.address,
+          )
+            ? list
+            : [...list, { address: member.address, name: member.label, disabled: false }],
+        );
         if (!includesKey(draft, member.address)) toggle(member.address.toLowerCase());
         done();
       })
-      .catch((err: unknown) => { capabilities.toast(err instanceof Error ? err.message : 'Could not find that person.'); })
-      .finally(() => { setLooking(false); });
+      .catch((err: unknown) => {
+        capabilities.toast(err instanceof Error ? err.message : 'Could not find that person.');
+      })
+      .finally(() => {
+        setLooking(false);
+      });
   };
   return { found, looking, look };
 }
@@ -69,34 +103,62 @@ function useLookup(draft: string[], toggle: (key: string) => void): {
 function LookupRow({ query, looking, onPress }: { query: string; looking: boolean; onPress: () => void }): React.ReactElement {
   const { text: fg } = usePalette();
   return (
-    <PickerRow selected={false} disabled={looking} label={`Add ${query}`} text={looking ? 'Looking up…' : `Add "${query}"`}
-      onPress={onPress} leading={<Glyph icon={IconPlusLarge} size={16} color={fg}/>}/>
+    <PickerRow
+      selected={false}
+      disabled={looking}
+      label={`Add ${query}`}
+      text={looking ? 'Looking up…' : `Add "${query}"`}
+      onPress={onPress}
+      leading={<Glyph icon={IconPlusLarge} size={16} color={fg} />}
+    />
   );
 }
 
-export function MembersPicker({ draft, toggle, entries, self, rights }: SectionDraft & {
-  entries: MemberListEntry[]; self: string; rights: { add: boolean; remove: boolean };
-}): React.ReactElement {
+export function MembersPicker({
+  draft,
+  toggle,
+  entries,
+  self,
+  rights,
+}: SectionDraft & { entries: MemberListEntry[]; self: string; rights: { add: boolean; remove: boolean } }): React.ReactElement {
   const [query, setQuery] = useState('');
-  const memberAddresses = entries.map(entry => entry.address);
+  const memberAddresses = entries.map((entry) => entry.address);
   const contacts = useContacts(memberAddresses, query);
   const { found, looking, look } = useLookup(draft, toggle);
   const members: PersonOption[] = useOrderedEntries(entries, draft)
-    .filter(entry => matchesQuery(query, entry.name, entry.address))
-    .map(entry => ({ address: entry.address, name: entry.name, disabled: !rights.remove || entry.address.toLowerCase() === self.toLowerCase() }));
-  const contactOptions = contacts.map(contact => ({ address: contact.address, name: contact.name, disabled: false }));
-  const extra = uniqueBy([...found, ...contactOptions], option => option.address.toLowerCase(), new Set(memberAddresses.map(a => a.toLowerCase())));
+    .filter((entry) => matchesQuery(query, entry.name, entry.address))
+    .map((entry) => ({
+      address: entry.address,
+      name: entry.name,
+      disabled: !rights.remove || entry.address.toLowerCase() === self.toLowerCase(),
+    }));
+  const contactOptions = contacts.map((contact) => ({ address: contact.address, name: contact.name, disabled: false }));
+  const extra = uniqueBy(
+    [...found, ...contactOptions],
+    (option) => option.address.toLowerCase(),
+    new Set(memberAddresses.map((a) => a.toLowerCase())),
+  );
   const others = rights.add ? extra : [];
   const typed = query.trim();
-  const add = (): void => { look(typed, () => { setQuery(''); }); };
+  const add = (): void => {
+    look(typed, () => {
+      setQuery('');
+    });
+  };
   return (
     <>
-      <PickerSearch value={query} onChangeText={setQuery} placeholder={rights.add ? 'Search or add by name' : 'Search members'}
-        onSubmit={rights.add ? add : undefined}/>
+      <PickerSearch
+        value={query}
+        onChangeText={setQuery}
+        placeholder={rights.add ? 'Search or add by name' : 'Search members'}
+        onSubmit={rights.add ? add : undefined}
+      />
       <PickerList>
-        {[...members, ...others].map(option => <PersonRow key={option.address.toLowerCase()} option={option} draft={draft} toggle={toggle}/>)}
-        {rights.add && typed !== '' ? <LookupRow query={typed} looking={looking} onPress={add}/> : null}
-        {members.length + others.length === 0 && !(rights.add && typed !== '') ? <PickerNote text="No matching people."/> : null}
+        {[...members, ...others].map((option) => (
+          <PersonRow key={option.address.toLowerCase()} option={option} draft={draft} toggle={toggle} />
+        ))}
+        {rights.add && typed !== '' ? <LookupRow query={typed} looking={looking} onPress={add} /> : null}
+        {members.length + others.length === 0 && !(rights.add && typed !== '') ? <PickerNote text="No matching people." /> : null}
       </PickerList>
     </>
   );

@@ -1,15 +1,29 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import {
-  matchConfirmed, mergeConfirmed, optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound,
-  type OutboundState, type OutboundView,
+  matchConfirmed,
+  mergeConfirmed,
+  optimisticRowPreview,
+  outboundView,
+  pendingFromMe,
+  recordSent,
+  settleOutbound,
+  type OutboundState,
+  type OutboundView,
 } from '../components/conversation/outboundRows.model';
 
 const ME = 'metro://xmtp/me';
 const T0 = Date.parse('2026-09-25T10:00:00.000Z');
 
 const entry = (id: string, ms: number, text: string, extra: Partial<HistoryEntry> = {}): HistoryEntry => ({
-  id, ts: new Date(T0 + ms).toISOString(), station: 'xmtp', line: 'l', from: ME, to: 'l', text, ...extra,
+  id,
+  ts: new Date(T0 + ms).toISOString(),
+  station: 'xmtp',
+  line: 'l',
+  from: ME,
+  to: 'l',
+  text,
+  ...extra,
 });
 
 const pendingState = (...optimistic: HistoryEntry[]): OutboundState => ({ optimistic, confirmedIds: new Map() });
@@ -26,7 +40,7 @@ describe('a sent message keeps its row once the server confirms it', () => {
     const live = [entry('real_1', 400, 'hello')];
     const { before, next, after } = settle(pendingState(entry('tmp_1', 0, 'hello')), live);
     expect(before.pending).toEqual([]);
-    expect(next.optimistic.map(o => o.id)).toEqual(['tmp_1']);
+    expect(next.optimistic.map((o) => o.id)).toEqual(['tmp_1']);
     expect(keyOf(before, 'real_1')).toBe('tmp_1');
     expect(keyOf(after, 'real_1')).toBe('tmp_1');
     const resolved = settle(recordSent(next, 'tmp_1', 'real_1'), live);
@@ -48,7 +62,7 @@ describe('a sent message keeps its row once the server confirms it', () => {
     const settled = settle(pendingState(entry('tmp_1', 0, 'ok')), first).next;
     const again = { ...settled, optimistic: [entry('tmp_2', 700, 'ok')] };
     const waiting = outboundView(again, first, ME);
-    expect(waiting.pending.map(o => o.id)).toEqual(['tmp_2']);
+    expect(waiting.pending.map((o) => o.id)).toEqual(['tmp_2']);
     expect(keyOf(waiting, 'real_1')).toBe('tmp_1');
     const { before, after } = settle(again, [...first, entry('real_2', 1_100, 'ok')]);
     expect([keyOf(before, 'real_1'), keyOf(before, 'real_2')]).toEqual(['tmp_1', 'tmp_2']);
@@ -58,7 +72,7 @@ describe('a sent message keeps its row once the server confirms it', () => {
 
   test('a failed send drops its pending row', () => {
     const state = pendingState(entry('tmp_2', 100, 'b'), entry('tmp_1', 0, 'a'));
-    expect(recordSent(state, 'tmp_1').optimistic.map(o => o.id)).toEqual(['tmp_2']);
+    expect(recordSent(state, 'tmp_1').optimistic.map((o) => o.id)).toEqual(['tmp_2']);
   });
 });
 
@@ -98,7 +112,10 @@ describe('recording confirmations', () => {
     const prev = new Map([['tmp_1', 'real_1']]);
     const next = mergeConfirmed(prev, new Map([['tmp_2', 'real_2']]));
     expect(next).not.toBe(prev);
-    expect([...next]).toEqual([['tmp_1', 'real_1'], ['tmp_2', 'real_2']]);
+    expect([...next]).toEqual([
+      ['tmp_1', 'real_1'],
+      ['tmp_2', 'real_2'],
+    ]);
     expect(prev.size).toBe(1);
   });
 });
@@ -110,8 +127,7 @@ describe('optimisticRowPreview', () => {
 
   test('words the attachments when there is no text', () => {
     expect(optimisticRowPreview('', [{ mime: 'image/png' }])).toBe('Sent an image');
-    expect(optimisticRowPreview(' ', [{ mime: 'image/png' }, { name: 'b.jpg' }, { mime: 'image/heic' }]))
-      .toBe('Sent 3 images');
+    expect(optimisticRowPreview(' ', [{ mime: 'image/png' }, { name: 'b.jpg' }, { mime: 'image/heic' }])).toBe('Sent 3 images');
     expect(optimisticRowPreview('', [{ name: 'a.jpg' }, { mime: 'application/pdf' }])).toBe('Sent 2 attachments');
   });
 });

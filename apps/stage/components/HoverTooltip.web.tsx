@@ -17,13 +17,25 @@ function useShortcut(shortcut: Shortcut | undefined, onShortcut: (() => void) | 
       handler.current?.();
     };
     window.addEventListener('keydown', onKeyDown);
-    return (): void => { window.removeEventListener('keydown', onKeyDown); };
+    return (): void => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
   }, [shortcut]);
   return node;
 }
 
-export function HoverTooltip({ label, children, placement = 'above', shortcut, onShortcut }: {
-  label: string; children: ReactNode; placement?: TooltipPlacement; shortcut?: Shortcut; onShortcut?: () => void;
+export function HoverTooltip({
+  label,
+  children,
+  placement = 'above',
+  shortcut,
+  onShortcut,
+}: {
+  label: string;
+  children: ReactNode;
+  placement?: TooltipPlacement;
+  shortcut?: Shortcut;
+  onShortcut?: () => void;
 }): React.ReactElement {
   const node = useShortcut(shortcut, onShortcut);
   const keyLabel = shortcut === undefined ? undefined : shortcutKey(shortcut);

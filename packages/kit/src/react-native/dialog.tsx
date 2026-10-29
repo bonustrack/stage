@@ -1,4 +1,3 @@
-
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -49,9 +48,7 @@ function overlayStyle(props: DialogProps): ViewStyle {
   const stretch = props.side === 'bottom' || props.fullBleedPanel === true;
   return {
     flex: 1,
-    justifyContent: props.fullBleedPanel
-      ? 'flex-start'
-      : props.side === 'bottom' ? 'flex-end' : 'center',
+    justifyContent: props.fullBleedPanel ? 'flex-start' : props.side === 'bottom' ? 'flex-end' : 'center',
     alignItems: stretch ? 'stretch' : 'center',
     paddingBottom: props.bottomInset,
   };
@@ -111,17 +108,18 @@ function PanelBody(bodyProps: { props: DialogProps; content: ReactNode }): React
   );
 }
 
-function Panel(panelProps: {
-  props: DialogProps;
-  scheme: Scheme;
-  insetBottom: number;
-  content: ReactNode;
-}): ReactNode {
+function Panel(panelProps: { props: DialogProps; scheme: Scheme; insetBottom: number; content: ReactNode }): ReactNode {
   const { props, scheme, insetBottom, content } = panelProps;
   const handleColor = resolveOptionalColor(props.handleColor, scheme) ?? 'rgba(0,0,0,0.2)';
   return (
     <Pressable
-      onPress={props.fullBleedPanel ? undefined : (e) => { e.stopPropagation(); }}
+      onPress={
+        props.fullBleedPanel
+          ? undefined
+          : (e) => {
+              e.stopPropagation();
+            }
+      }
       pointerEvents={props.fullBleedPanel ? 'box-none' : undefined}
       style={[props.fullBleedPanel ? { flex: 1 } : panelStyle(props, scheme, insetBottom), NO_FOCUS_RING]}
     >
@@ -143,11 +141,17 @@ export function Dialog(props: DialogProps): ReactNode {
   };
   const overlay = (
     <KeyboardAvoidingView
-      enabled={props.avoidKeyboard === true && Platform.OS === 'ios'} behavior="padding"
+      enabled={props.avoidKeyboard === true && Platform.OS === 'ios'}
+      behavior="padding"
       pointerEvents="box-none"
-      style={[overlayStyle(props), backdrop ? { backgroundColor: resolveOptionalColor(props.backdropColor, scheme) ?? 'rgba(0,0,0,0.5)' } : null]}
+      style={[
+        overlayStyle(props),
+        backdrop ? { backgroundColor: resolveOptionalColor(props.backdropColor, scheme) ?? 'rgba(0,0,0,0.5)' } : null,
+      ]}
     >
-      {backdrop ? <Pressable accessible={false} focusable={false} onPress={close} style={[StyleSheet.absoluteFill, NO_FOCUS_RING]} /> : null}
+      {backdrop ? (
+        <Pressable accessible={false} focusable={false} onPress={close} style={[StyleSheet.absoluteFill, NO_FOCUS_RING]} />
+      ) : null}
       <Panel props={props} scheme={scheme} insetBottom={insets.bottom} content={children} />
     </KeyboardAvoidingView>
   );

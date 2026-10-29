@@ -6,7 +6,11 @@ export interface ConvRow {
   selfInboxId: string;
 }
 
-export interface ConvDetails { description: string; assigned: string[]; assignedReady: boolean }
+export interface ConvDetails {
+  description: string;
+  assigned: string[];
+  assignedReady: boolean;
+}
 
 export const NO_DETAILS: ConvDetails = { description: '', assigned: [], assignedReady: false };
 
@@ -41,7 +45,11 @@ export function listedConvRow(rows: readonly CachedRowLike[] | null, convId: str
 }
 
 export async function rowCreatedTs<C extends { id: string }>(
-  conv: C, rowId: string, cached: unknown, lookup: (id: string) => Promise<C | null>, createdAtNs: (conv: C) => number,
+  conv: C,
+  rowId: string,
+  cached: unknown,
+  lookup: (id: string) => Promise<C | null>,
+  createdAtNs: (conv: C) => number,
 ): Promise<number | null> {
   if (conv.id !== rowId && typeof cached === 'number' && Number.isFinite(cached) && cached > 0) return cached;
   const source = conv.id === rowId ? conv : await lookup(rowId);
@@ -51,12 +59,17 @@ export async function rowCreatedTs<C extends { id: string }>(
 
 function sameRecord(a: Record<string, string>, b: Record<string, string>): boolean {
   const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length && keys.every(k => a[k] === b[k]);
+  return keys.length === Object.keys(b).length && keys.every((k) => a[k] === b[k]);
 }
 
 export function sameConvRow(a: ConvRow, b: ConvRow): boolean {
-  return a.peerAddress === b.peerAddress && a.groupName === b.groupName && a.avatarUri === b.avatarUri
-    && a.selfInboxId === b.selfInboxId && sameRecord(a.inboxToAddr, b.inboxToAddr);
+  return (
+    a.peerAddress === b.peerAddress &&
+    a.groupName === b.groupName &&
+    a.avatarUri === b.avatarUri &&
+    a.selfInboxId === b.selfInboxId &&
+    sameRecord(a.inboxToAddr, b.inboxToAddr)
+  );
 }
 
 export function isGroupRow(row: ConvRow | null): boolean {
@@ -65,5 +78,7 @@ export function isGroupRow(row: ConvRow | null): boolean {
 
 export function memberAddressesOf(row: ConvRow | null): string[] {
   if (row === null || row.peerAddress !== null) return NO_ADDRESSES;
-  return Object.entries(row.inboxToAddr).filter(([inboxId]) => inboxId !== row.selfInboxId).map(([, addr]) => addr);
+  return Object.entries(row.inboxToAddr)
+    .filter(([inboxId]) => inboxId !== row.selfInboxId)
+    .map(([, addr]) => addr);
 }

@@ -3,21 +3,20 @@ export const INSTALLATION_LIMIT_MESSAGE =
   'This wallet already has XMTP set up on too many devices (installation limit reached). ' +
   'Messaging is unavailable for this account. Wallet features still work.';
 
-export const STORE_LOCKED_MESSAGE =
-  'Stage is already open in another tab or window on this device. Close it and reload.';
+export const STORE_LOCKED_MESSAGE = 'Stage is already open in another tab or window on this device. Close it and reload.';
 
 const STORE_LOCKED = ['Access Handle', 'NoModificationAllowedError', 'database is locked'];
 
 export function isStoreLocked(err: unknown): boolean {
   const msg = errorMessage(err);
-  return STORE_LOCKED.some(sig => msg.includes(sig));
+  return STORE_LOCKED.some((sig) => msg.includes(sig));
 }
 
 const STORE_CORRUPTION = ['PRAGMA key', 'StorageError', 'incorrect value'];
 
 export function isStoreCorruption(err: unknown, extraSignatures: string[] = []): boolean {
   const msg = errorMessage(err);
-  return [...STORE_CORRUPTION, ...extraSignatures].some(sig => msg.includes(sig));
+  return [...STORE_CORRUPTION, ...extraSignatures].some((sig) => msg.includes(sig));
 }
 
 const INSTALLATION_LIMIT = [
@@ -30,23 +29,18 @@ const INSTALLATION_LIMIT = [
 
 export function isInstallationLimit(err: unknown): boolean {
   const msg = errorMessage(err);
-  return INSTALLATION_LIMIT.some(sig => msg.toLowerCase().includes(sig.toLowerCase()));
+  return INSTALLATION_LIMIT.some((sig) => msg.toLowerCase().includes(sig.toLowerCase()));
 }
 
 const STALE_KEY_PACKAGE = ['lifetime', 'expired', 'not found', 'no key package'];
 
 export type KeyPackageVerdict = 'reachable' | 'stale-installations' | 'indeterminate';
 
-export function classifyKeyPackageStatuses(
-  validationErrors: (string | null | undefined)[],
-): KeyPackageVerdict {
+export function classifyKeyPackageStatuses(validationErrors: (string | null | undefined)[]): KeyPackageVerdict {
   if (validationErrors.length === 0) return 'indeterminate';
-  if (validationErrors.some(e => e == null || e === '')) return 'reachable';
-  const stale = (e: string): boolean =>
-    STALE_KEY_PACKAGE.some(sig => e.toLowerCase().includes(sig));
-  return validationErrors.every(e => e != null && stale(e))
-    ? 'stale-installations'
-    : 'indeterminate';
+  if (validationErrors.some((e) => e == null || e === '')) return 'reachable';
+  const stale = (e: string): boolean => STALE_KEY_PACKAGE.some((sig) => e.toLowerCase().includes(sig));
+  return validationErrors.every((e) => e != null && stale(e)) ? 'stale-installations' : 'indeterminate';
 }
 
 export function convIdFromTopic(topic: string | undefined): string | null {
@@ -69,16 +63,22 @@ const GROUP_INACTIVE = ['GroupInactive', 'Group is inactive', 'inactive group'];
 
 export function isGroupInactive(err: unknown): boolean {
   const msg = errorMessage(err);
-  return GROUP_INACTIVE.some(sig => msg.includes(sig));
+  return GROUP_INACTIVE.some((sig) => msg.includes(sig));
 }
 
 const NATIVE_ERROR_LINES = 3;
 
 export function pickNativeErrors(log: string): string {
-  const lines = log.split('\n').map((line) => line.trim()).filter((line) => line !== '');
+  const lines = log
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
   const loading = lines.filter((line) => /loading group/i.test(line));
   const picked = loading.length > 0 ? loading : lines.filter((line) => /\bERROR\b/.test(line));
-  return picked.slice(-NATIVE_ERROR_LINES).map((line) => line.replace(/^\S+\s+ERROR\s+/, '')).join(' | ');
+  return picked
+    .slice(-NATIVE_ERROR_LINES)
+    .map((line) => line.replace(/^\S+\s+ERROR\s+/, ''))
+    .join(' | ');
 }
 
 export function isMissingMlsState(err: unknown): boolean {

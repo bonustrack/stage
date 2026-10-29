@@ -7,10 +7,14 @@ test('failed preference refreshes coalesce and retry with bounded backoff until 
   const retry = makePushRetry((run, delay) => {
     const id = next++;
     scheduled.set(id, { run, delay });
-    return () => { scheduled.delete(id); };
+    return () => {
+      scheduled.delete(id);
+    };
   });
   let attempts = 0;
-  const run = (): void => { attempts += 1; };
+  const run = (): void => {
+    attempts += 1;
+  };
   for (const expected of [5_000, 10_000, 20_000, 40_000, 60_000, 60_000]) {
     retry.failed('mobile', run);
     retry.failed('mobile', run);

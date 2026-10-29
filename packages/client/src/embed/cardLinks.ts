@@ -18,8 +18,7 @@ interface PreviewLinkRef {
   shortGroup: string;
 }
 
-const PREVIEW_RE =
-  /(?:(?:metro|stage):\/\/expo-development-client\/\?url=|https?:\/\/stage\.box\/preview-launcher\.html\?u=)(\S+)/i;
+const PREVIEW_RE = /(?:(?:metro|stage):\/\/expo-development-client\/\?url=|https?:\/\/stage\.box\/preview-launcher\.html\?u=)(\S+)/i;
 
 function decodedOrRaw(raw: string): string {
   try {
@@ -47,29 +46,27 @@ export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
 type Detector = (token: string) => CardLink | null;
 
 const DETECTORS: Detector[] = [
-  token => {
+  (token) => {
     const peerAddress = stageDmPeerOf(token);
     return peerAddress ? { kind: 'dm', url: token, peerAddress } : null;
   },
-  token => {
+  (token) => {
     const convId = stageChannelIdOf(token);
     return convId ? { kind: 'channel', url: token, convId } : null;
   },
-  token => {
+  (token) => {
     const videoId = youtubeIdOf(token);
     return videoId ? { kind: 'youtube', url: token, videoId } : null;
   },
-  token => {
+  (token) => {
     const coords = mapCoordsOf(token);
-    return coords
-      ? { kind: 'map', url: coords.sourceUrl, lat: coords.lat, lng: coords.lng }
-      : null;
+    return coords ? { kind: 'map', url: coords.sourceUrl, lat: coords.lat, lng: coords.lng } : null;
   },
-  token => {
+  (token) => {
     const gh = githubLinkOf(token);
     return gh ? { kind: 'github', url: gh.url } : null;
   },
-  token => {
+  (token) => {
     const preview = previewLinkOf(token);
     return preview ? { kind: 'preview', url: preview.url } : null;
   },

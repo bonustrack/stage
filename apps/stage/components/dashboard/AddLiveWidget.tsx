@@ -16,8 +16,9 @@ import { NODE_URL_HINTS, livePreviewOf, type LivePreview } from './liveWidget.mo
 import { NodeCodeForm } from './NodeCodeForm';
 import { Column, Row } from '../layout';
 
-const NOTE = 'The widget loads from this link and refreshes every minute while you look at it. '
-  + 'The site sees your IP and a key made for this widget, never your account.';
+const NOTE =
+  'The widget loads from this link and refreshes every minute while you look at it. ' +
+  'The site sees your IP and a key made for this widget, never your account.';
 
 type AddMode = 'link' | 'code';
 
@@ -35,7 +36,14 @@ function ModePicker({ mode, onChange }: { mode: AddMode; onChange: (mode: AddMod
   return (
     <Row gap={8}>
       {MODES.map(({ value, label }) => (
-        <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: mode === value }} onPress={() => { onChange(value); }}>
+        <Pressable
+          key={value}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: mode === value }}
+          onPress={() => {
+            onChange(value);
+          }}
+        >
           <LabelChip label={label} selected={mode === value} />
         </Pressable>
       ))}
@@ -54,7 +62,10 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
   const ready = preview !== null && node.ok && preview.url === node.url;
 
   const load = async (): Promise<void> => {
-    if (!node.ok) { setHint(NODE_URL_HINTS[node.problem]); return; }
+    if (!node.ok) {
+      setHint(NODE_URL_HINTS[node.problem]);
+      return;
+    }
     setBusy(true);
     setPreview(null);
     const loaded = livePreviewOf(node, await loadNode(node.url, key, { capabilities: RENDERER_CAPABILITIES }), Date.now());
@@ -77,9 +88,20 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
   return (
     <Column gap={12}>
       <FormField
-        label="Link" placeholder="https://" value={text} inputType="url" autoFocus disabled={busy} onSubmit={submit}
-        onChangeText={(value) => { setText(value); setHint(null); }} inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
-        hint={hint ?? undefined} hintTone="danger"
+        label="Link"
+        placeholder="https://"
+        value={text}
+        inputType="url"
+        autoFocus
+        disabled={busy}
+        onSubmit={submit}
+        onChangeText={(value) => {
+          setText(value);
+          setHint(null);
+        }}
+        inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+        hint={hint ?? undefined}
+        hintTone="danger"
       />
       {ready ? (
         <Column gap={6}>
@@ -89,8 +111,14 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
       ) : null}
       <Text text={NOTE} size="xs" color="secondary" />
       <Button
-        label={buttonLabel(busy, ready)} block size="lg" color="primary" variant="solid" dark={dark}
-        disabled={busy || text.trim() === ''} onPress={submit}
+        label={buttonLabel(busy, ready)}
+        block
+        size="lg"
+        color="primary"
+        variant="solid"
+        dark={dark}
+        disabled={busy || text.trim() === ''}
+        onPress={submit}
       />
     </Column>
   );
@@ -108,10 +136,18 @@ export function AddLiveWidgetButton({ disabled }: { disabled: boolean }): React.
   return (
     <>
       <Button
-        size="md" color="secondary" variant="solid" dark={dark} label="Add from URL" disabled={disabled}
-        iconStart={<Glyph icon={IconPlusLarge} size={18} color={link} />} onPress={() => { setOpen(true); }}
+        size="md"
+        color="secondary"
+        variant="solid"
+        dark={dark}
+        label="Add from URL"
+        disabled={disabled}
+        iconStart={<Glyph icon={IconPlusLarge} size={18} color={link} />}
+        onPress={() => {
+          setOpen(true);
+        }}
       />
-      <AppModal visible={open} onClose={close} title={MODES.find(item => item.value === mode)?.title}>
+      <AppModal visible={open} onClose={close} title={MODES.find((item) => item.value === mode)?.title}>
         {open ? (
           <Column gap={12}>
             <ModePicker mode={mode} onChange={setMode} />

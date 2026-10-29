@@ -5,39 +5,70 @@ import type { SpeechBridge } from '../lib/speech.types';
 
 type Host = Parameters<typeof makeDictation>[1];
 const cleanups: (() => Promise<void>)[] = [];
-afterEach(async () => { await Promise.all(cleanups.splice(0).map(cleanup => cleanup())); });
+afterEach(async () => {
+  await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+});
 
 function harness(host: Partial<Host> = {}, bridge: Partial<SpeechBridge> = {}) {
   const events: string[] = [];
   const phases: DictationPhase[] = [];
   const errors: (string | null)[] = [];
   let background = false;
-  const control = makeDictation({
-    availability: async () => ({ available: true, download: false, locale: 'en-US' }),
-    requestPermission: async () => { events.push('speech-permission'); return true; },
-    downloadModel: async () => undefined,
-    start: async () => { events.push('start'); },
-    stop: async () => { events.push('stop'); },
-    cancel: async () => { events.push('cancel'); },
-    subscribe: () => () => undefined,
-    ...bridge,
-  }, {
-    read: () => ({ text: 'Kept', selection: { start: 4, end: 4 } }),
-    apply: () => undefined,
-    phase: value => { phases.push(value); },
-    error: message => { errors.push(message); },
-    microphoneGranted: async () => true,
-    permission: async () => { events.push('mic-request'); return true; },
-    confirmDownload: async () => false,
-    blocked: () => background,
-    cleanupError: () => { events.push('cleanup-error'); },
-    ...host,
-  });
+  const control = makeDictation(
+    {
+      availability: async () => ({ available: true, download: false, locale: 'en-US' }),
+      requestPermission: async () => {
+        events.push('speech-permission');
+        return true;
+      },
+      downloadModel: async () => undefined,
+      start: async () => {
+        events.push('start');
+      },
+      stop: async () => {
+        events.push('stop');
+      },
+      cancel: async () => {
+        events.push('cancel');
+      },
+      subscribe: () => () => undefined,
+      ...bridge,
+    },
+    {
+      read: () => ({ text: 'Kept', selection: { start: 4, end: 4 } }),
+      apply: () => undefined,
+      phase: (value) => {
+        phases.push(value);
+      },
+      error: (message) => {
+        errors.push(message);
+      },
+      microphoneGranted: async () => true,
+      permission: async () => {
+        events.push('mic-request');
+        return true;
+      },
+      confirmDownload: async () => false,
+      blocked: () => background,
+      cleanupError: () => {
+        events.push('cleanup-error');
+      },
+      ...host,
+    },
+  );
   cleanups.push(control.dispose);
   return {
-    control, events, phases, errors,
-    background: () => { background = true; control.background(); },
-    foreground: () => { background = false; },
+    control,
+    events,
+    phases,
+    errors,
+    background: () => {
+      background = true;
+      control.background();
+    },
+    foreground: () => {
+      background = false;
+    },
   };
 }
 
@@ -68,7 +99,10 @@ describe('dictation permission lifecycle', () => {
   it('does not start if permission completes while the app remains in the background', async () => {
     const h = harness({
       microphoneGranted: async () => false,
-      permission: async () => { h.background(); return true; },
+      permission: async () => {
+        h.background();
+        return true;
+      },
     });
     await h.control.start();
     h.foreground();
@@ -77,7 +111,12 @@ describe('dictation permission lifecycle', () => {
   });
 
   it('still cancels backgrounding during the read-only permission check', async () => {
-    const h = harness({ microphoneGranted: async () => { h.background(); return true; } });
+    const h = harness({
+      microphoneGranted: async () => {
+        h.background();
+        return true;
+      },
+    });
     await h.control.start();
     h.foreground();
     expect(h.events).toEqual([]);
@@ -96,7 +135,12 @@ describe('dictation permission lifecycle', () => {
   it('does not revive an explicitly cancelled session after the permission prompt', async () => {
     const h = harness({
       microphoneGranted: async () => false,
-      permission: async () => { h.background(); await h.control.cancel(); h.foreground(); return true; },
+      permission: async () => {
+        h.background();
+        await h.control.cancel();
+        h.foreground();
+        return true;
+      },
     });
     await h.control.start();
     expect(h.events).toEqual([]);
@@ -106,7 +150,11 @@ describe('dictation permission lifecycle', () => {
   it('keeps useful denial feedback after the permission activity resumes', async () => {
     const h = harness({
       microphoneGranted: async () => false,
-      permission: async () => { h.background(); h.foreground(); return false; },
+      permission: async () => {
+        h.background();
+        h.foreground();
+        return false;
+      },
     });
     await h.control.start();
     expect(h.events).toEqual([]);
@@ -114,7 +162,16 @@ describe('dictation permission lifecycle', () => {
   });
 
   it('also waits for a foreground speech permission response before starting', async () => {
-    const h = harness({}, { requestPermission: async () => { h.background(); h.foreground(); return true; } });
+    const h = harness(
+      {},
+      {
+        requestPermission: async () => {
+          h.background();
+          h.foreground();
+          return true;
+        },
+      },
+    );
     await h.control.start();
     expect(h.events).toEqual(['start']);
     expect(h.errors).toEqual([null]);

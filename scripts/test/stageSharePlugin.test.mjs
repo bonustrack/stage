@@ -14,7 +14,8 @@ describe('Android share activity integration', () => {
   });
 
   test('preserves an existing handler and captures before its super call', () => {
-    const source = 'class MainActivity {\n  override fun onNewIntent(intent: Intent) {\n    existing(intent)\n    super.onNewIntent(intent)\n  }\n}';
+    const source =
+      'class MainActivity {\n  override fun onNewIntent(intent: Intent) {\n    existing(intent)\n    super.onNewIntent(intent)\n  }\n}';
     const patched = stageShare.captureNewIntents(source);
     expect(patched).toContain('existing(intent)');
     expect(patched.indexOf(capture)).toBeLessThan(patched.indexOf('super.onNewIntent(intent)'));

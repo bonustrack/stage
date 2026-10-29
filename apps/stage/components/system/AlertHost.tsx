@@ -27,13 +27,21 @@ function AlertButtons({ request, dark }: { request: AlertRequest; dark: boolean 
         color={buttonColor(button)}
         variant={button.style === 'cancel' ? 'soft' : 'solid'}
         dark={dark}
-        onPress={() => { press(button); }}
+        onPress={() => {
+          press(button);
+        }}
       />
     </Column>
   ));
-  return sideBySide
-    ? <Row gap={10} padding={{ top: 8 }}>{items}</Row>
-    : <Column gap={10} padding={{ top: 8 }}>{items}</Column>;
+  return sideBySide ? (
+    <Row gap={10} padding={{ top: 8 }}>
+      {items}
+    </Row>
+  ) : (
+    <Column gap={10} padding={{ top: 8 }}>
+      {items}
+    </Column>
+  );
 }
 
 export function AlertHost(): React.ReactElement | null {
@@ -49,7 +57,9 @@ export function AlertHost(): React.ReactElement | null {
     <AppModal visible onClose={onClose} title={request.title}>
       <Column gap={8}>
         {request.message !== undefined && request.message !== '' ? (
-          <Text size="xl" style={{ paddingVertical: 12 }}>{request.message}</Text>
+          <Text size="xl" style={{ paddingVertical: 12 }}>
+            {request.message}
+          </Text>
         ) : null}
         <AlertButtons request={request} dark={dark} />
       </Column>

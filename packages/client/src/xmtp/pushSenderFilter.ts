@@ -1,7 +1,5 @@
 import { sha256 } from 'viem';
-import {
-  SENDER_FILTER_BATCH_SIZE, senderFilterTopics, signedSenderFilters, type SenderFilterTopic,
-} from './pushServer';
+import { SENDER_FILTER_BATCH_SIZE, senderFilterTopics, signedSenderFilters, type SenderFilterTopic } from './pushServer';
 import type { PushTopics } from './pushRegistration';
 import { abortable } from '../abortable';
 import { timeSendPhase, type SendTiming } from './sendTiming';
@@ -21,7 +19,7 @@ export interface SenderFilterInput {
 
 export async function maintainPushPaths(publish: () => Promise<void>, receive: () => Promise<void>): Promise<void> {
   const results = await Promise.allSettled([publish(), receive()]);
-  const failed = results.find(result => result.status === 'rejected');
+  const failed = results.find((result) => result.status === 'rejected');
   if (failed?.status === 'rejected') throw failed.reason;
 }
 
@@ -31,8 +29,16 @@ export async function prepareNotifyingSend(shouldPush: boolean, prepare: () => P
   assertCurrent();
 }
 
-interface Published { signature: string; at: number }
-interface Prepared { groupKey: string; topics: SenderFilterTopic[]; version: number; preferences: number }
+interface Published {
+  signature: string;
+  at: number;
+}
+interface Prepared {
+  groupKey: string;
+  topics: SenderFilterTopic[];
+  version: number;
+  preferences: number;
+}
 interface Revision {
   publication: number;
   preferences: number;
@@ -66,7 +72,7 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     const imported = revision.preferences;
     const collected = await timeSendPhase(input.timing, 'filter.keys', () => input.collectTopics(input.topic));
     assertCurrent();
-    const selected = input.topic ? collected.topics.filter(topic => topic === input.topic) : collected.topics;
+    const selected = input.topic ? collected.topics.filter((topic) => topic === input.topic) : collected.topics;
     const topics = senderFilterTopics(selected, collected.hmacKeys);
     if (input.topic && topics.length === 0) throw new Error('Sender filter key is not ready');
     const groupKey = await timeSendPhase(input.timing, 'filter.group_key', () => input.groupKey());
@@ -74,13 +80,18 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     return { groupKey, topics, version, preferences: imported };
   }
 
-  async function update(input: SenderFilterInput, prepared: Prepared, signal: AbortSignal, assertCurrent: () => void): Promise<PublicationResult> {
+  async function update(
+    input: SenderFilterInput,
+    prepared: Prepared,
+    signal: AbortSignal,
+    assertCurrent: () => void,
+  ): Promise<PublicationResult> {
     assertCurrent();
     const revision = revisionFor(revisions, input.installationId);
     if (stalePreparation(prepared, revision)) return 'retry';
     const { groupKey, topics } = prepared;
     const cache = published.get(input.installationId) ?? new Map<string, Published>();
-    const dirty = topics.filter(topic => {
+    const dirty = topics.filter((topic) => {
       const prev = cache.get(topic.topic);
       return !prev || prev.signature !== fingerprint(groupKey, topic) || now() - prev.at >= 240_000;
     });
@@ -89,7 +100,8 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     const batch = dirty.slice(0, SENDER_FILTER_BATCH_SIZE);
     const version = beginPublication(revision, groupKey, batch);
     const body = await timeSendPhase(input.timing, 'filter.sign', () =>
-      signedSenderFilters(input.installationId, groupKey, batch, Math.floor(now() / 1_000), input.sign));
+      signedSenderFilters(input.installationId, groupKey, batch, Math.floor(now() / 1_000), input.sign),
+    );
     assertCurrent();
     if (prepared.preferences !== revision.preferences) return 'retry';
     await timeSendPhase(input.timing, 'filter.http', () => input.post(body, signal));
@@ -108,15 +120,19 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     const assertCurrent = (): void => {
       if (capturedEpoch !== epoch || !input.current() || controller.signal.aborted) throw new Error('Sender filter account changed');
     };
-    const abort = (): void => { controller.abort(new Error('Sender filter refresh cancelled')); };
+    const abort = (): void => {
+      controller.abort(new Error('Sender filter refresh cancelled'));
+    };
     if (input.signal.aborted) abort();
     else input.signal.addEventListener('abort', abort, { once: true });
-    const timer = setTimeout(() => { controller.abort(new Error('Sender filter refresh timed out')); }, timeoutMs);
+    const timer = setTimeout(() => {
+      controller.abort(new Error('Sender filter refresh timed out'));
+    }, timeoutMs);
     let releaseForeground: (() => void) | undefined;
     try {
       let prepared = await abortable(prepare(input, controller.signal, assertCurrent), controller.signal);
       while (true) {
-        const result = await queuePublication(pending, input, controller.signal, waited => {
+        const result = await queuePublication(pending, input, controller.signal, (waited) => {
           assertCurrent();
           if (input.topic && waited) {
             releaseForeground = foreground.hold(input.installationId);
@@ -127,15 +143,33 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
         });
         if (result === 'done' || result === 'unchanged') return;
         if (result === 'retry') {
-          try { prepared = await abortable(prepare(input, controller.signal, assertCurrent), controller.signal); }
-          finally { releaseForeground?.(); releaseForeground = undefined; }
+          try {
+            prepared = await abortable(prepare(input, controller.signal, assertCurrent), controller.signal);
+          } finally {
+            releaseForeground?.();
+            releaseForeground = undefined;
+          }
         }
         if (result === 'yield') await foreground.wait(input.installationId, controller.signal);
       }
-    } finally { releaseForeground?.(); clearTimeout(timer); input.signal.removeEventListener('abort', abort); }
+    } finally {
+      releaseForeground?.();
+      clearTimeout(timer);
+      input.signal.removeEventListener('abort', abort);
+    }
   }
 
-  return { publish, warm, clear: () => { epoch += 1; published.clear(); revisions.clear(); preferences.clear(); foreground.clear(); } };
+  return {
+    publish,
+    warm,
+    clear: () => {
+      epoch += 1;
+      published.clear();
+      revisions.clear();
+      preferences.clear();
+      foreground.clear();
+    },
+  };
 }
 
 function makePreferenceSync(now: () => number, freshMs: number, revisions: Map<string, Revision>) {
@@ -147,9 +181,16 @@ function makePreferenceSync(now: () => number, freshMs: number, revisions: Map<s
     const started = now();
     const revision = revisionFor(revisions, input.installationId);
     revision.preferences += 1;
-    const run = input.syncPreferences().then(() => started).finally(() => { revision.preferences += 1; });
+    const run = input
+      .syncPreferences()
+      .then(() => started)
+      .finally(() => {
+        revision.preferences += 1;
+      });
     syncing.set(input.installationId, run);
-    const release = (): void => { if (syncing.get(input.installationId) === run) syncing.delete(input.installationId); };
+    const release = (): void => {
+      if (syncing.get(input.installationId) === run) syncing.delete(input.installationId);
+    };
     void run.then(release, release);
     return run;
   }
@@ -159,15 +200,22 @@ function makePreferenceSync(now: () => number, freshMs: number, revisions: Map<s
     if (!known && last !== undefined && now() - last < freshMs) return;
     const run = known ?? start(input);
     let started: number;
-    try { started = await (signal ? abortable(run, signal) : run); }
-    catch (err) {
+    try {
+      started = await (signal ? abortable(run, signal) : run);
+    } catch (err) {
       if (syncing.get(input.installationId) === run) syncing.delete(input.installationId);
       throw err;
     }
     assertCurrent();
     syncedAt.set(input.installationId, started);
   }
-  return { sync, clear: () => { syncedAt.clear(); syncing.clear(); } };
+  return {
+    sync,
+    clear: () => {
+      syncedAt.clear();
+      syncing.clear();
+    },
+  };
 }
 
 function revisionFor(revisions: Map<string, Revision>, installationId: string): Revision {
@@ -180,9 +228,11 @@ function revisionFor(revisions: Map<string, Revision>, installationId: string): 
 }
 
 function stalePreparation(prepared: Prepared, revision: Revision): boolean {
-  return prepared.preferences !== revision.preferences
-    || (revision.group?.key !== prepared.groupKey && (revision.group?.version ?? 0) > prepared.version)
-    || prepared.topics.some(topic => (revision.topics.get(topic.topic) ?? 0) > prepared.version);
+  return (
+    prepared.preferences !== revision.preferences ||
+    (revision.group?.key !== prepared.groupKey && (revision.group?.version ?? 0) > prepared.version) ||
+    prepared.topics.some((topic) => (revision.topics.get(topic.topic) ?? 0) > prepared.version)
+  );
 }
 
 function beginPublication(revision: Revision, groupKey: string, topics: SenderFilterTopic[]): number {
@@ -193,18 +243,28 @@ function beginPublication(revision: Revision, groupKey: string, topics: SenderFi
 }
 
 async function queuePublication(
-  pending: Map<string, Promise<PublicationResult>>, input: SenderFilterInput,
-  signal: AbortSignal, update: (waited: boolean) => Promise<PublicationResult>,
+  pending: Map<string, Promise<PublicationResult>>,
+  input: SenderFilterInput,
+  signal: AbortSignal,
+  update: (waited: boolean) => Promise<PublicationResult>,
 ): Promise<PublicationResult> {
   const previous = pending.get(input.installationId);
   const endQueue = input.timing?.phase('filter.queue');
-  const run = (): Promise<PublicationResult> => { endQueue?.(); return abortable(update(previous !== undefined), signal); };
+  const run = (): Promise<PublicationResult> => {
+    endQueue?.();
+    return abortable(update(previous !== undefined), signal);
+  };
   const next = previous ? previous.then(run, run) : run();
   pending.set(input.installationId, next);
-  const release = (): void => { if (pending.get(input.installationId) === next) pending.delete(input.installationId); };
+  const release = (): void => {
+    if (pending.get(input.installationId) === next) pending.delete(input.installationId);
+  };
   void next.then(release, release);
-  try { return await abortable(next, signal); }
-  finally { endQueue?.(); }
+  try {
+    return await abortable(next, signal);
+  } finally {
+    endQueue?.();
+  }
 }
 
 function makeForegroundPreparations() {
@@ -224,7 +284,14 @@ function makeForegroundPreparations() {
     const known = active.get(installationId);
     if (known) await abortable(Promise.all(known), signal);
   }
-  return { hold, wait, blocked: (installationId: string) => active.has(installationId), clear: () => { active.clear(); } };
+  return {
+    hold,
+    wait,
+    blocked: (installationId: string) => active.has(installationId),
+    clear: () => {
+      active.clear();
+    },
+  };
 }
 
 function fingerprint(groupKey: string, topic: SenderFilterTopic): string {

@@ -5,14 +5,23 @@ const ID = '0123456789abcdef0123456789abcdef';
 const NODE_URL = `https://nodes.stage.box/${ID}`;
 const CARD = JSON.stringify({ type: 'Card', children: [] });
 
-interface Dispatched { name: string; options: unknown; request: Request }
+interface Dispatched {
+  name: string;
+  options: unknown;
+  request: Request;
+}
 
 function namespace(node: (request: Request) => Response | Promise<Response>): { nodes: DispatchNamespace; seen: Dispatched[] } {
   const seen: Dispatched[] = [];
   const nodes = {
     get: (name: string, _args?: unknown, options?: unknown) => {
       if (!name.startsWith('node-')) throw new Error(`Worker not found: ${name}`);
-      return { fetch: async (request: Request) => { seen.push({ name, options, request }); return node(request); } };
+      return {
+        fetch: async (request: Request) => {
+          seen.push({ name, options, request });
+          return node(request);
+        },
+      };
     },
   } as unknown as DispatchNamespace;
   return { nodes, seen };
@@ -49,8 +58,14 @@ describe('routing', () => {
     const { nodes, seen } = namespace(() => new Response(CARD));
     const body = '{}';
     const caller = {
-      cookie: 'session=1', 'cf-connecting-ip': '203.0.113.7', 'x-forwarded-for': '203.0.113.7', 'x-real-ip': '203.0.113.7',
-      'true-client-ip': '203.0.113.7', 'cf-ipcountry': 'CH', 'cf-ipcity': 'Zug', 'cf-timezone': 'Europe/Zurich',
+      cookie: 'session=1',
+      'cf-connecting-ip': '203.0.113.7',
+      'x-forwarded-for': '203.0.113.7',
+      'x-real-ip': '203.0.113.7',
+      'true-client-ip': '203.0.113.7',
+      'cf-ipcountry': 'CH',
+      'cf-ipcity': 'Zug',
+      'cf-timezone': 'Europe/Zurich',
       'cf-ray': '8f00000000000000-ZRH',
     };
     await call(new Request(NODE_URL, { method: 'POST', body, headers: { ...caller, 'content-length': '2', 'stage-key': 'k' } }), { nodes });
@@ -61,7 +76,17 @@ describe('routing', () => {
 
   test('refuses anything that is not a node id', async () => {
     const { nodes, seen } = namespace(() => new Response(CARD));
-    for (const path of ['', '/', '/health', `/${ID.toUpperCase()}`, `/${ID}0`, `/${ID.slice(1)}`, `/%30${ID.slice(1)}`, `/x/${ID}`, `/node-${ID}`]) {
+    for (const path of [
+      '',
+      '/',
+      '/health',
+      `/${ID.toUpperCase()}`,
+      `/${ID}0`,
+      `/${ID.slice(1)}`,
+      `/%30${ID.slice(1)}`,
+      `/x/${ID}`,
+      `/node-${ID}`,
+    ]) {
       expect((await call(`https://nodes.stage.box${path}`, { nodes })).status).toBe(404);
     }
     expect(seen).toEqual([]);
@@ -73,8 +98,11 @@ describe('routing', () => {
     expect(pre.status).toBe(204);
     expect(pre.headers.get('access-control-allow-origin')).toBe('*');
     expect(pre.headers.get('access-control-allow-methods')).toBe('GET, POST, OPTIONS');
-    expect(pre.headers.get('access-control-allow-headers')).toBe('content-type, stage-key, stage-timestamp, stage-signature, stage-a2ui-capabilities');
-    for (const method of ['PUT', 'DELETE', 'PATCH', 'HEAD']) expect((await call(new Request(NODE_URL, { method }), { nodes })).status).toBe(405);
+    expect(pre.headers.get('access-control-allow-headers')).toBe(
+      'content-type, stage-key, stage-timestamp, stage-signature, stage-a2ui-capabilities',
+    );
+    for (const method of ['PUT', 'DELETE', 'PATCH', 'HEAD'])
+      expect((await call(new Request(NODE_URL, { method }), { nodes })).status).toBe(405);
     expect(seen).toEqual([]);
   });
 
@@ -95,18 +123,27 @@ describe('abuse limits', () => {
   test('caps request bodies and needs their length', async () => {
     const { nodes, seen } = namespace(() => new Response(CARD));
     const big = 'x'.repeat(REQUEST_MAX_BYTES + 1);
-    expect((await call(new Request(NODE_URL, { method: 'POST', body: big, headers: { 'content-length': String(big.length) } }), { nodes })).status).toBe(413);
+    expect(
+      (await call(new Request(NODE_URL, { method: 'POST', body: big, headers: { 'content-length': String(big.length) } }), { nodes }))
+        .status,
+    ).toBe(413);
     expect((await call(new Request(NODE_URL, { method: 'POST', body: new Blob(['{}']).stream() }), { nodes })).status).toBe(413);
     expect(seen).toEqual([]);
   });
 
   test('rate limits per client address, an IPv6 one by its /64, and per node', async () => {
     const keys: string[] = [];
-    const limit = (success: boolean): RateLimit => ({
-      limit: ({ key }: { key: string }) => { keys.push(key); return Promise.resolve({ success }); },
-    }) as unknown as RateLimit;
+    const limit = (success: boolean): RateLimit =>
+      ({
+        limit: ({ key }: { key: string }) => {
+          keys.push(key);
+          return Promise.resolve({ success });
+        },
+      }) as unknown as RateLimit;
     const { nodes, seen } = namespace(() => new Response(CARD));
-    expect((await call(new Request(NODE_URL, { headers: { 'cf-connecting-ip': '203.0.113.7' } }), { nodes, limiter: limit(false) })).status).toBe(429);
+    expect(
+      (await call(new Request(NODE_URL, { headers: { 'cf-connecting-ip': '203.0.113.7' } }), { nodes, limiter: limit(false) })).status,
+    ).toBe(429);
     const v6 = new Request(NODE_URL, { headers: { 'cf-connecting-ip': '2001:db8:1:2:3:4:5:6' } });
     expect((await call(v6, { nodes, limiter: limit(true), nodeLimiter: limit(false) })).status).toBe(429);
     expect(keys).toEqual(['203.0.113.7', '2001:db8:1:2::/64', ID]);
@@ -122,9 +159,12 @@ describe('abuse limits', () => {
 
 describe('replies', () => {
   test('are always JSON from nodes.stage.box, never a page, a cookie or a redirect', async () => {
-    const { nodes } = namespace(() => new Response('<script>alert(1)</script>', {
-      headers: { 'content-type': 'text/html', 'set-cookie': 'a=b; Domain=stage.box', location: 'https://evil.example' },
-    }));
+    const { nodes } = namespace(
+      () =>
+        new Response('<script>alert(1)</script>', {
+          headers: { 'content-type': 'text/html', 'set-cookie': 'a=b; Domain=stage.box', location: 'https://evil.example' },
+        }),
+    );
     const res = await call(NODE_URL, { nodes });
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('application/json; charset=utf-8');
@@ -158,18 +198,31 @@ describe('replies', () => {
     const declared = namespace(() => new Response('{}', { headers: { 'content-length': String(limit + 1) } }));
     expect((await call(NODE_URL, { nodes: declared.nodes })).status).toBe(502);
     const chunk = new Uint8Array(64 * 1024);
-    const streamed = namespace(() => new Response(new ReadableStream({
-      pull: (controller) => { controller.enqueue(chunk); },
-    })));
+    const streamed = namespace(
+      () =>
+        new Response(
+          new ReadableStream({
+            pull: (controller) => {
+              controller.enqueue(chunk);
+            },
+          }),
+        ),
+    );
     expect((await call(NODE_URL, { nodes: streamed.nodes })).status).toBe(502);
   });
 
   test('a missing node is 404 and a crash or a hit limit is 502 without details', async () => {
-    const missing = { get: () => { throw new Error('Worker not found.'); } } as unknown as DispatchNamespace;
+    const missing = {
+      get: () => {
+        throw new Error('Worker not found.');
+      },
+    } as unknown as DispatchNamespace;
     const gone = await call(NODE_URL, { nodes: missing });
     expect(gone.status).toBe(404);
     expect(await gone.json()).toEqual({ error: 'no such node' });
-    const crash = namespace(() => { throw new Error('Exceeded CPU limit with secret detail'); });
+    const crash = namespace(() => {
+      throw new Error('Exceeded CPU limit with secret detail');
+    });
     const failed = await call(NODE_URL, { nodes: crash.nodes });
     expect(failed.status).toBe(502);
     expect(await failed.json()).toEqual({ error: 'node failed' });

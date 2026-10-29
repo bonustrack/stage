@@ -2,8 +2,15 @@ import { describe, expect, test } from 'bun:test';
 import { createGroupWith } from '@stage-labs/client/xmtp/groups';
 import { resolveHref } from 'expo-router/build/link/href';
 import {
-  groupedChatMetadata, memberChatMetadata, newChatAppData, newChatMetadata, newChatParams, NO_NEW_CHAT_FIELDS,
-  NO_NEW_CHAT_METADATA, parseNewChatFields, renamedNewChatFields,
+  groupedChatMetadata,
+  memberChatMetadata,
+  newChatAppData,
+  newChatMetadata,
+  newChatParams,
+  NO_NEW_CHAT_FIELDS,
+  NO_NEW_CHAT_METADATA,
+  parseNewChatFields,
+  renamedNewChatFields,
 } from '../components/home/newChatMetadata.model';
 
 const alice = `0x${'1'.repeat(40)}`;
@@ -38,10 +45,17 @@ describe('grouped new chat metadata', () => {
   });
 
   test('the route carries status, labels and assignees, normalized and deduplicated, but never the project', () => {
-    expect(newChatMetadata({ category: 'Stage', status: ' To-do ', labels: ['UI', 'ui', ''], assigned: [alice, alice, 'Alice'] }))
-      .toEqual({ ...NO_NEW_CHAT_METADATA, status: 'To-do', labels: ['UI'], assigned: [alice] });
-    expect(newChatParams({ category: 'Stage', status: 'To-do', labels: ['UI'], assigned: [alice] }))
-      .toEqual({ status: 'To-do', labels: 'UI', assigned: alice });
+    expect(newChatMetadata({ category: 'Stage', status: ' To-do ', labels: ['UI', 'ui', ''], assigned: [alice, alice, 'Alice'] })).toEqual({
+      ...NO_NEW_CHAT_METADATA,
+      status: 'To-do',
+      labels: ['UI'],
+      assigned: [alice],
+    });
+    expect(newChatParams({ category: 'Stage', status: 'To-do', labels: ['UI'], assigned: [alice] })).toEqual({
+      status: 'To-do',
+      labels: 'UI',
+      assigned: alice,
+    });
   });
 
   test('supports a single label or assignee in route params', () => {
@@ -70,8 +84,10 @@ describe('grouped new chat metadata', () => {
   test('new route values explicitly clear previous fields in a reused tab route', () => {
     const previous = newChatParams({ category: 'Stage', status: 'To-do', labels: ['UI'], assigned: [alice] });
     expect(newChatMetadata({ ...previous, ...newChatParams(NO_NEW_CHAT_METADATA) })).toEqual(NO_NEW_CHAT_METADATA);
-    expect(newChatMetadata({ ...previous, ...newChatParams(groupedChatMetadata('label', 'label:Mobile', 'Mobile')) }))
-      .toEqual({ ...NO_NEW_CHAT_METADATA, labels: ['Mobile'] });
+    expect(newChatMetadata({ ...previous, ...newChatParams(groupedChatMetadata('label', 'label:Mobile', 'Mobile')) })).toEqual({
+      ...NO_NEW_CHAT_METADATA,
+      labels: ['Mobile'],
+    });
   });
 
   test('only selected members or self can remain assigned', () => {
@@ -84,10 +100,15 @@ describe('grouped new chat metadata', () => {
   test('sends metadata once as part of channel creation with no update step', async () => {
     const appData = newChatAppData({ ...NO_NEW_CHAT_METADATA, category: 'Stage', status: 'To-do' });
     const calls: { members: string[]; appData: string | undefined }[] = [];
-    const result = await createGroupWith([alice], id => `test:${id}`, async members => {
-      calls.push({ members, appData });
-      return { id: 'synthetic' };
-    }, async () => 'synthetic-inbox');
+    const result = await createGroupWith(
+      [alice],
+      (id) => `test:${id}`,
+      async (members) => {
+        calls.push({ members, appData });
+        return { id: 'synthetic' };
+      },
+      async () => 'synthetic-inbox',
+    );
     expect(result).toEqual({ line: 'test:synthetic', id: 'synthetic' });
     expect(calls).toEqual([{ members: [alice], appData: '{"v":1,"category":"Stage","status":"To-do"}' }]);
   });

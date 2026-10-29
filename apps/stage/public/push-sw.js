@@ -18,7 +18,9 @@ function clearedConvOfTopic(topic) {
 
 async function closeCards(convId) {
   var cards = await self.registration.getNotifications({ tag: convId });
-  cards.forEach(function (card) { card.close(); });
+  cards.forEach(function (card) {
+    card.close();
+  });
 }
 
 function payloadOf(event) {
@@ -36,22 +38,25 @@ function windowClients() {
 }
 
 function wait(ms) {
-  return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function showGenericCard(convId) {
   var clients = await windowClients();
-  if (clients.some(function (c) { return c.visibilityState === 'visible' && c.focused; })) return;
+  if (
+    clients.some(function (c) {
+      return c.visibilityState === 'visible' && c.focused;
+    })
+  )
+    return;
   if (clients.length > 0) {
     await wait(3000);
     var existing = await self.registration.getNotifications({ tag: convId });
     if (existing.length > 0) return;
   }
-  await self.registration.showNotification('Stage', {
-    body: 'New message',
-    tag: convId,
-    data: { convId: convId },
-  });
+  await self.registration.showNotification('Stage', { body: 'New message', tag: convId, data: { convId: convId } });
 }
 
 self.addEventListener('push', function (event) {
@@ -73,7 +78,11 @@ async function openConversation(convId) {
   if (target) {
     await target.focus();
     if (typeof target.navigate === 'function') {
-      try { await target.navigate(url); } catch { await self.clients.openWindow(url); }
+      try {
+        await target.navigate(url);
+      } catch {
+        await self.clients.openWindow(url);
+      }
     }
     return;
   }

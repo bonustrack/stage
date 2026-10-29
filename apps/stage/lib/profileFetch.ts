@@ -1,5 +1,8 @@
 export async function profileRequest<T>(
-  input: string, init: RequestInit, read: (response: Response) => Promise<T>, timeoutMs = 30_000,
+  input: string,
+  init: RequestInit,
+  read: (response: Response) => Promise<T>,
+  timeoutMs = 30_000,
 ): Promise<T> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;

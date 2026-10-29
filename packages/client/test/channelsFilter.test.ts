@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  deriveBarLabels,
-  filterChannelRows,
-  rowMatchesQuery,
-  type ChannelListRow,
-} from '../src/xmtp/channelsFilter';
+import { deriveBarLabels, filterChannelRows, rowMatchesQuery, type ChannelListRow } from '../src/xmtp/channelsFilter';
 
 const row = (over: Partial<ChannelListRow> & { convId: string }): ChannelListRow => ({
   title: 'Chat',
@@ -22,15 +17,15 @@ describe('filterChannelRows', () => {
   ];
 
   test('label filter matches case-insensitively', () => {
-    expect(filterChannelRows(rows, { enabledLabels: new Set(['work']) }).map(r => r.convId)).toEqual(['a']);
+    expect(filterChannelRows(rows, { enabledLabels: new Set(['work']) }).map((r) => r.convId)).toEqual(['a']);
   });
 
   test('unreadOnly keeps unread count or markedUnread', () => {
-    expect(filterChannelRows(rows, { unreadOnly: true }).map(r => r.convId)).toEqual(['a', 'b']);
+    expect(filterChannelRows(rows, { unreadOnly: true }).map((r) => r.convId)).toEqual(['a', 'b']);
   });
 
   test('query matches title, preview, peerAddress, memberAddresses per field', () => {
-    expect(filterChannelRows(rows, { query: 'hello' }).map(r => r.convId)).toEqual(['c']);
+    expect(filterChannelRows(rows, { query: 'hello' }).map((r) => r.convId)).toEqual(['c']);
     const withPeer = [row({ convId: 'p', peerAddress: '0xAbCd' })];
     expect(filterChannelRows(withPeer, { query: '0xab' })).toHaveLength(1);
     const withMembers = [row({ convId: 'm', memberAddresses: ['0xDEAD'] })];
@@ -52,10 +47,7 @@ describe('rowMatchesQuery', () => {
 
 describe('deriveBarLabels', () => {
   test('dedupes case-insensitively keeping first casing, sorted', () => {
-    const labels = deriveBarLabels([
-      { labels: ['Work', 'fun'] },
-      { labels: ['WORK', 'Alpha'] },
-    ]);
+    const labels = deriveBarLabels([{ labels: ['Work', 'fun'] }, { labels: ['WORK', 'Alpha'] }]);
     expect(labels).toEqual(['Alpha', 'fun', 'Work']);
   });
 });

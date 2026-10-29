@@ -9,7 +9,17 @@ const RESOLVER = '0x00000000000000000000000000000000000000c0';
 const NAME = 'synthetic123.stage.base.eth';
 const RECORDS = { avatar: 'ipfs://synthetic', name: 'Synthetic', description: 'Offline test' };
 
-function harness(patch: { owner?: string; resolver?: string; reverseResolver?: string; forward?: string; primary?: string; records?: Record<string, string>; fail?: boolean } = {}) {
+function harness(
+  patch: {
+    owner?: string;
+    resolver?: string;
+    reverseResolver?: string;
+    forward?: string;
+    primary?: string;
+    records?: Record<string, string>;
+    fail?: boolean;
+  } = {},
+) {
   const blocks: (bigint | undefined)[] = [];
   const answers: Record<string, string> = { owner: patch.owner ?? ADDRESS, addr: patch.forward ?? ADDRESS, name: patch.primary ?? NAME };
   const texts = patch.records ?? RECORDS;
@@ -33,9 +43,15 @@ describe('authoritative setup confirmation', () => {
     const h = harness();
     expect(await inspectNameSetup(h.client, ADDRESS, NAME, RECORDS)).toEqual({ owned: true, ready: true });
     expect(h.blocks.length).toBeGreaterThanOrEqual(8);
-    expect(h.blocks.every(block => block === 99n)).toBe(true);
+    expect(h.blocks.every((block) => block === 99n)).toBe(true);
   });
-  for (const patch of [{ resolver: ZERO }, { reverseResolver: ZERO }, { forward: OTHER }, { primary: 'other123.stage.base.eth' }, { records: { ...RECORDS, avatar: 'ipfs://old' } }]) {
+  for (const patch of [
+    { resolver: ZERO },
+    { reverseResolver: ZERO },
+    { forward: OTHER },
+    { primary: 'other123.stage.base.eth' },
+    { records: { ...RECORDS, avatar: 'ipfs://old' } },
+  ]) {
     test(`missing or mismatched records cannot finish setup ${JSON.stringify(patch)}`, async () => {
       expect(await inspectNameSetup(harness(patch).client, ADDRESS, NAME, RECORDS)).toEqual({ owned: true, ready: false });
     });

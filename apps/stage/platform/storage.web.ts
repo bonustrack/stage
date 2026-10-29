@@ -1,8 +1,5 @@
 import type { AppStorage, SecureStorage } from './types';
-import {
-  adoptLegacyKey, namespacedKey, readNamespaced, removeNamespaced,
-  type WebStorageLike,
-} from './storageNamespace';
+import { adoptLegacyKey, namespacedKey, readNamespaced, removeNamespaced, type WebStorageLike } from './storageNamespace';
 
 const SECURE_PREFIX = 'secure.';
 let legacySecureAdopted = false;
@@ -52,7 +49,9 @@ export const secureStorage: SecureStorage = {
       if (event.storageArea === localStorage && (event.key === null || watched.has(event.key))) listener();
     };
     window.addEventListener('storage', changed);
-    return () => { window.removeEventListener('storage', changed); };
+    return () => {
+      window.removeEventListener('storage', changed);
+    };
   },
 };
 

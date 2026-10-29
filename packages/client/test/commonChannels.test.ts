@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  commonChannelFromRow,
-  resolveCommonChannels,
-  type CommonChannelRow,
-} from '../src/xmtp/commonChannels';
+import { commonChannelFromRow, resolveCommonChannels, type CommonChannelRow } from '../src/xmtp/commonChannels';
 
 const PEER = '0xPeerAddress';
 
@@ -21,12 +17,10 @@ describe('commonChannelFromRow', () => {
   });
 
   test('uses avatarAddress only when no avatarUri', () => {
-    const withUri = commonChannelFromRow(
-      { convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' }, []);
+    const withUri = commonChannelFromRow({ convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' }, []);
     expect(withUri.avatarUri).toBe('ipfs://x');
     expect(withUri.avatarAddress).toBeNull();
-    const withSeed = commonChannelFromRow(
-      { convId: 'c1', avatarAddress: '0xSeed' }, []);
+    const withSeed = commonChannelFromRow({ convId: 'c1', avatarAddress: '0xSeed' }, []);
     expect(withSeed.avatarAddress).toBe('0xSeed');
   });
 
@@ -39,8 +33,7 @@ describe('commonChannelFromRow', () => {
     const seedOf = (r: CommonChannelRow): string => `seed:${r.convId}`;
     const withSeed = commonChannelFromRow({ convId: 'c1', avatarAddress: '0xSeed' }, [], seedOf);
     expect(withSeed.avatarAddress).toBe('seed:c1');
-    const withUri = commonChannelFromRow(
-      { convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' }, [], seedOf);
+    const withUri = commonChannelFromRow({ convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' }, [], seedOf);
     expect(withUri.avatarAddress).toBeNull();
   });
 });
@@ -52,35 +45,22 @@ describe('resolveCommonChannels', () => {
     { convId: 'dm', peerAddress: '0xSomeone', title: 'DM' },
   ];
 
-  const members: Record<string, string[]> = {
-    g1: ['0xpeeraddress', '0xother'],
-    g2: ['0xnobody'],
-  };
+  const members: Record<string, string[]> = { g1: ['0xpeeraddress', '0xother'], g2: ['0xnobody'] };
 
   test('keeps groups containing the peer, excludes DMs', async () => {
-    const result = await resolveCommonChannels(
-      PEER,
-      rows,
-      (convId) => Promise.resolve(members[convId] ?? []),
-    );
-    expect(result.map(c => c.convId)).toEqual(['g1']);
+    const result = await resolveCommonChannels(PEER, rows, (convId) => Promise.resolve(members[convId] ?? []));
+    expect(result.map((c) => c.convId)).toEqual(['g1']);
   });
 
   test('case-insensitive peer match', async () => {
-    const result = await resolveCommonChannels(
-      '0XPEERADDRESS',
-      [{ convId: 'g1', peerAddress: null }],
-      () => Promise.resolve(['0xPeerAddress']),
+    const result = await resolveCommonChannels('0XPEERADDRESS', [{ convId: 'g1', peerAddress: null }], () =>
+      Promise.resolve(['0xPeerAddress']),
     );
     expect(result).toHaveLength(1);
   });
 
   test('swallows member resolution errors', async () => {
-    const result = await resolveCommonChannels(
-      PEER,
-      [{ convId: 'g1', peerAddress: null }],
-      () => Promise.reject(new Error('boom')),
-    );
+    const result = await resolveCommonChannels(PEER, [{ convId: 'g1', peerAddress: null }], () => Promise.reject(new Error('boom')));
     expect(result).toEqual([]);
   });
 });

@@ -6,7 +6,10 @@ function account(id: string): AccountRecord {
   return { id, address: `0x${id}`, type: 'generated', dbDir: `db-${id}`, createdAt: 0 };
 }
 
-interface FakeClient { id: string; address: string }
+interface FakeClient {
+  id: string;
+  address: string;
+}
 
 function harness(initial: AccountRecord[], activeId: string | null, ready = false) {
   const log: string[] = [];
@@ -16,35 +19,80 @@ function harness(initial: AccountRecord[], activeId: string | null, ready = fals
   let failBuild = false;
   const lifecycle = makeClientLifecycle<FakeClient>({
     accounts: {
-      active: () => Promise.resolve(records.find(r => r.id === active) ?? null),
+      active: () => Promise.resolve(records.find((r) => r.id === active) ?? null),
       list: () => Promise.resolve(records),
-      setActive: (id) => { log.push(`setActive:${id}`); active = id; return Promise.resolve(); },
-      remove: (id) => { log.push(`remove:${id}`); records = records.filter(r => r.id !== id); return Promise.resolve(); },
+      setActive: (id) => {
+        log.push(`setActive:${id}`);
+        active = id;
+        return Promise.resolve();
+      },
+      remove: (id) => {
+        log.push(`remove:${id}`);
+        records = records.filter((r) => r.id !== id);
+        return Promise.resolve();
+      },
     },
     store: {
-      deleteFiles: (dir) => { log.push(`deleteFiles:${dir}`); return Promise.resolve(); },
-      deleteKey: (id) => { log.push(`deleteKey:${id}`); return Promise.resolve(); },
-      wipe: (id, dir) => { log.push(`wipe:${id}:${dir}`); return Promise.resolve(); },
-      forgetSaved: (id) => { log.push(`forget:${id}`); return Promise.resolve(); },
+      deleteFiles: (dir) => {
+        log.push(`deleteFiles:${dir}`);
+        return Promise.resolve();
+      },
+      deleteKey: (id) => {
+        log.push(`deleteKey:${id}`);
+        return Promise.resolve();
+      },
+      wipe: (id, dir) => {
+        log.push(`wipe:${id}:${dir}`);
+        return Promise.resolve();
+      },
+      forgetSaved: (id) => {
+        log.push(`forget:${id}`);
+        return Promise.resolve();
+      },
     },
     client: {
       get: () => cached,
-      getOrCreate: async (create) => { cached ??= await create(); return cached; },
+      getOrCreate: async (create) => {
+        cached ??= await create();
+        return cached;
+      },
       build: (rec) => {
         log.push(`build:${rec.id}`);
         return failBuild ? Promise.reject(new Error('boom')) : Promise.resolve({ id: rec.id, address: rec.address });
       },
-      ...(ready ? { ready: (client: FakeClient) => { if (cached !== client) throw new Error('client not ready'); log.push(`ready:${client.id}`); return Promise.resolve(); } } : {}),
-      dispose: () => { log.push('dispose'); cached = null; },
+      ...(ready
+        ? {
+            ready: (client: FakeClient) => {
+              if (cached !== client) throw new Error('client not ready');
+              log.push(`ready:${client.id}`);
+              return Promise.resolve();
+            },
+          }
+        : {}),
+      dispose: () => {
+        log.push('dispose');
+        cached = null;
+      },
       selfAddressOf: (c) => c.address,
       syncPreferences: () => Promise.resolve(),
       installations: () => Promise.resolve([]),
       installationIdOf: (c) => c.id,
-      revoke: (_c, acct, installationId) => { log.push(`revoke:${acct.id}:${installationId}`); return Promise.resolve(); },
+      revoke: (_c, acct, installationId) => {
+        log.push(`revoke:${acct.id}:${installationId}`);
+        return Promise.resolve();
+      },
     },
-    bumpEpoch: () => { log.push('epoch'); },
+    bumpEpoch: () => {
+      log.push('epoch');
+    },
   });
-  return { log, lifecycle, setFailBuild: (v: boolean) => { failBuild = v; } };
+  return {
+    log,
+    lifecycle,
+    setFailBuild: (v: boolean) => {
+      failBuild = v;
+    },
+  };
 }
 
 describe('makeClientLifecycle', () => {
@@ -105,7 +153,11 @@ describe('makeClientLifecycle', () => {
 
 describe('installationsOf', () => {
   test('marks the current installation and sorts newest first', () => {
-    const list = [{ id: 'old', createdAt: 1 }, { id: 'unknown', createdAt: undefined }, { id: 'new', createdAt: 5 }];
+    const list = [
+      { id: 'old', createdAt: 1 },
+      { id: 'unknown', createdAt: undefined },
+      { id: 'new', createdAt: 5 },
+    ];
     expect(installationsOf(list, 'old')).toEqual([
       { id: 'new', createdAt: 5, current: false },
       { id: 'old', createdAt: 1, current: true },

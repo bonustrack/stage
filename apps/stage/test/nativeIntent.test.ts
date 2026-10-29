@@ -1,4 +1,3 @@
-
 import { describe, expect, test } from 'bun:test';
 import { redirectSystemPath } from '../app/+native-intent';
 
@@ -34,11 +33,10 @@ describe('redirectSystemPath', () => {
   });
 
   test('channel + address deep links pass through unchanged', () => {
-    expect(r('stage://channel/47bf58a8f56cad829b2263797a7e25e4'))
-      .toBe('stage://channel/47bf58a8f56cad829b2263797a7e25e4');
-    expect(r('stage://0x1234567890123456789012345678901234567890'))
-      .toBe('stage://0x1234567890123456789012345678901234567890');
-    expect(r('https://stage.box/#/0x1234567890123456789012345678901234567890'))
-      .toBe('https://stage.box/#/0x1234567890123456789012345678901234567890');
+    expect(r('stage://channel/47bf58a8f56cad829b2263797a7e25e4')).toBe('stage://channel/47bf58a8f56cad829b2263797a7e25e4');
+    expect(r('stage://0x1234567890123456789012345678901234567890')).toBe('stage://0x1234567890123456789012345678901234567890');
+    expect(r('https://stage.box/#/0x1234567890123456789012345678901234567890')).toBe(
+      'https://stage.box/#/0x1234567890123456789012345678901234567890',
+    );
   });
 });

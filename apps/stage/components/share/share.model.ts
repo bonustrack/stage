@@ -10,7 +10,7 @@ const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 function record(value: unknown): Record<string, unknown> | null {
-  return value !== null && typeof value === 'object' ? value as Record<string, unknown> : null;
+  return value !== null && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 }
 
 function validName(name: unknown): name is string {
@@ -27,8 +27,13 @@ function validSize(size: unknown): size is number {
 
 function validFileUri(uri: unknown, id: string): uri is string {
   if (typeof uri !== 'string') return false;
-  return uri.startsWith('file:///') && !/[?#%\\]/.test(uri) && !uri.split('/').includes('..')
-    && uri.slice(0, -1).endsWith(`/stage-shares/${id}/`) && /^[0-9]$/.test(uri.slice(-1));
+  return (
+    uri.startsWith('file:///') &&
+    !/[?#%\\]/.test(uri) &&
+    !uri.split('/').includes('..') &&
+    uri.slice(0, -1).endsWith(`/stage-shares/${id}/`) &&
+    /^[0-9]$/.test(uri.slice(-1))
+  );
 }
 
 function sharedFile(value: unknown, id: string): SharedFile | null {
@@ -42,10 +47,11 @@ function sharedFile(value: unknown, id: string): SharedFile | null {
 function readyShare(id: string, value: unknown): IncomingShare {
   const failed: IncomingShare = { id, status: 'error', error: 'unsupported' };
   if (!Array.isArray(value) || value.length === 0 || value.length > 10) return failed;
-  const files = value.map(file => sharedFile(file, id));
-  if (files.some(file => file === null)) return failed;
+  const files = value.map((file) => sharedFile(file, id));
+  if (files.some((file) => file === null)) return failed;
   const valid = files.filter((file): file is SharedFile => file !== null);
-  if (new Set(valid.map(file => file.uri)).size !== valid.length || valid.reduce((sum, file) => sum + file.size, 0) > MAX_TOTAL_BYTES) return { id, status: 'error', error: 'size' };
+  if (new Set(valid.map((file) => file.uri)).size !== valid.length || valid.reduce((sum, file) => sum + file.size, 0) > MAX_TOTAL_BYTES)
+    return { id, status: 'error', error: 'size' };
   return { id, status: 'ready', files: valid };
 }
 
@@ -61,7 +67,14 @@ export function parseIncomingShare(value: unknown): IncomingShare | null {
 export function sharedAttachments(share: Extract<IncomingShare, { status: 'ready' }>): Attachment[] {
   return share.files.map((file, index) => {
     const mime = attachmentMimeType(file.mimeType, file.name);
-    return { id: `${share.id}:${index}`, url: file.uri, name: file.name, mime, kind: attachmentKindOf({ mimeType: mime }), size: file.size };
+    return {
+      id: `${share.id}:${index}`,
+      url: file.uri,
+      name: file.name,
+      mime,
+      kind: attachmentKindOf({ mimeType: mime }),
+      size: file.size,
+    };
   });
 }
 
@@ -80,7 +93,13 @@ function destinationOf(row: CachedChannelRow, cleared: ClearedChats): ShareDesti
   const lastTs = typeof row.lastTs === 'number' ? row.lastTs : null;
   const lastBubbleTs = typeof row.lastBubbleTs === 'number' ? row.lastBubbleTs : null;
   if (isRowCleared(cleared, { peerAddress, lastTs, lastBubbleTs })) return null;
-  return { convId: row.convId, title: row.title, peerAddress, avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null, lastBubbleTs };
+  return {
+    convId: row.convId,
+    title: row.title,
+    peerAddress,
+    avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null,
+    lastBubbleTs,
+  };
 }
 
 export function acceptedShareConsent(group: boolean, hidden: boolean | undefined, consent: string | null): boolean {
@@ -89,13 +108,14 @@ export function acceptedShareConsent(group: boolean, hidden: boolean | undefined
 }
 
 export function mergeShareRows<T extends { convId: string }>(previous: readonly T[] | null, updates: readonly T[] | null): T[] {
-  const rows = new Map((previous ?? []).map(row => [row.convId, row]));
+  const rows = new Map((previous ?? []).map((row) => [row.convId, row]));
   for (const row of updates ?? []) rows.set(row.convId, row);
   return [...rows.values()];
 }
 
 export function shareDestinations(rows: readonly CachedChannelRow[] | null, cleared: ClearedChats, query: string): ShareDestination[] {
-  return (rows ?? []).map(row => destinationOf(row, cleared))
+  return (rows ?? [])
+    .map((row) => destinationOf(row, cleared))
     .filter((row): row is ShareDestination => row !== null && row.title.toLowerCase().includes(query.trim().toLowerCase()));
 }
 

@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { filterChannelRows } from '@stage-labs/client/xmtp/channelsFilter';
 import {
-  parseSearchFilter, searchFilterSources, searchFilterToken, searchRowMatcher, type FilterRow,
+  parseSearchFilter,
+  searchFilterSources,
+  searchFilterToken,
+  searchRowMatcher,
+  type FilterRow,
 } from '../components/searchFilter.model';
 import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
 import { ALICE, BOB, NAMES, SELF, group } from './searchFixtures';
@@ -18,20 +22,22 @@ const rows = [
 
 const matching = (query: string): string[] => {
   const matches = searchRowMatcher(parseSearchFilter(query), namesOf);
-  return rows.filter(matches).map(row => row.convId);
+  return rows.filter(matches).map((row) => row.convId);
 };
 
 describe('parsing the search filter', () => {
   test('splits label and member tokens from the free text', () => {
     expect(parseSearchFilter('label:"🚧 In progress" member:alice123 ship it')).toEqual({
-      ...NONE, labels: ['🚧 In progress'], members: ['alice123'], exclude: NONE, text: 'ship it',
+      ...NONE,
+      labels: ['🚧 In progress'],
+      members: ['alice123'],
+      exclude: NONE,
+      text: 'ship it',
     });
   });
 
   test('field names ignore case, empty values filter nothing and extra spaces go away', () => {
-    expect(parseSearchFilter('  LABEL:Todo   Member:  label:""  ')).toEqual({
-      ...NONE, labels: ['Todo'], exclude: NONE, text: '',
-    });
+    expect(parseSearchFilter('  LABEL:Todo   Member:  label:""  ')).toEqual({ ...NONE, labels: ['Todo'], exclude: NONE, text: '' });
   });
 
   test('an unfinished quote keeps the rest of the words in the value', () => {
@@ -40,7 +46,10 @@ describe('parsing the search filter', () => {
 
   test('member:@me is a member token like any other', () => {
     expect(parseSearchFilter('member:@me ship member:alice123')).toEqual({
-      ...NONE, members: ['@me', 'alice123'], exclude: NONE, text: 'ship',
+      ...NONE,
+      members: ['@me', 'alice123'],
+      exclude: NONE,
+      text: 'ship',
     });
   });
 });
@@ -70,8 +79,10 @@ describe('matching board cards', () => {
 
   test('searched columns keep every column and filter their cards', () => {
     const shown = searchedColumns(boardColumns(rows, [], [], 'label'), 'member:bob.base.eth', namesOf);
-    expect(shown.map(c => [c.label, c.rows.map(r => r.convId)])).toEqual([
-      ['🚧 In progress', ['ship']], ['Bug', ['ship']], ['Todo', ['plan']],
+    expect(shown.map((c) => [c.label, c.rows.map((r) => r.convId)])).toEqual([
+      ['🚧 In progress', ['ship']],
+      ['Bug', ['ship']],
+      ['Todo', ['plan']],
     ]);
   });
 });
@@ -80,7 +91,7 @@ describe('member:@me', () => {
   const left: FilterRow = { ...group('left', ['Todo'], [ALICE]), inboxToAddr: { 'inbox-0': ALICE } };
   const unknown: FilterRow = { ...group('unknown', ['Todo'], [BOB]), selfInboxId: undefined };
   const all = [...rows, left, unknown];
-  const found = (query: string): string[] => all.filter(searchRowMatcher(parseSearchFilter(query), namesOf)).map(row => row.convId);
+  const found = (query: string): string[] => all.filter(searchRowMatcher(parseSearchFilter(query), namesOf)).map((row) => row.convId);
 
   test('matches the channels you are a member of, whatever the case', () => {
     expect(found('member:@me')).toEqual(['build', 'ship', 'plan']);
@@ -107,7 +118,10 @@ describe('filter values on the board', () => {
     const dm = { ...group('dm', ['Private'], ['0xprivate']), peerAddress: BOB };
     const unlabelled = group('loose', [], ['0xc0ffee']);
     expect(searchFilterSources([...rows, dm, unlabelled, group('dup', ['todo'])], 'board')).toEqual({
-      labels: ['🚧 In progress', 'Bug', 'Todo'], members: [ALICE, BOB, '0xc0ffee'], categories: [], statuses: [],
+      labels: ['🚧 In progress', 'Bug', 'Todo'],
+      members: [ALICE, BOB, '0xc0ffee'],
+      categories: [],
+      statuses: [],
     });
   });
 });
@@ -115,14 +129,15 @@ describe('filter values on the board', () => {
 describe('the search filter on the chats page', () => {
   const dm: FilterRow = { ...group('bob dm', [], [BOB]), peerAddress: BOB, lastPreview: 'see you at lunch' };
   const chats = [...rows, dm];
-  const found = (query: string): string[] => (
-    chats.filter(searchRowMatcher(parseSearchFilter(query), namesOf)).map(row => row.convId)
-  );
+  const found = (query: string): string[] => chats.filter(searchRowMatcher(parseSearchFilter(query), namesOf)).map((row) => row.convId);
 
   test('every chat gives values, direct chats and unlabelled groups included, without you', () => {
     const loose = group('loose', [], ['0xc0ffee']);
     expect(searchFilterSources([...chats, loose], 'chats')).toEqual({
-      labels: ['🚧 In progress', 'Bug', 'Todo'], members: [ALICE, BOB, '0xc0ffee'], categories: [], statuses: [],
+      labels: ['🚧 In progress', 'Bug', 'Todo'],
+      members: [ALICE, BOB, '0xc0ffee'],
+      categories: [],
+      statuses: [],
     });
   });
 
@@ -133,7 +148,7 @@ describe('the search filter on the chats page', () => {
 
   test('free text alone matches like the chats search did', () => {
     for (const query of ['lunch', 'PLAN', ' ship ', 'bob dm', BOB.slice(0, 8), 'nothing']) {
-      expect(found(query)).toEqual(filterChannelRows(chats, { query }).map(row => row.convId));
+      expect(found(query)).toEqual(filterChannelRows(chats, { query }).map((row) => row.convId));
     }
   });
 });
@@ -141,7 +156,11 @@ describe('the search filter on the chats page', () => {
 describe('values grouped per field', () => {
   test('a comma joins values of one field, in any order next to the old repeated form', () => {
     expect(parseSearchFilter('member:@me,chen123 ship label:Todo,Bug')).toEqual({
-      ...NONE, labels: ['Todo', 'Bug'], members: ['@me', 'chen123'], exclude: NONE, text: 'ship',
+      ...NONE,
+      labels: ['Todo', 'Bug'],
+      members: ['@me', 'chen123'],
+      exclude: NONE,
+      text: 'ship',
     });
     expect(parseSearchFilter('member:@me member:chen123,,')).toEqual(parseSearchFilter('member:@me,chen123'));
   });

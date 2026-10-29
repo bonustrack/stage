@@ -3,7 +3,13 @@ import { persistenceBackend, sealedCache } from './cache';
 import { getActiveAccountId } from './accounts';
 import { knownActiveAccountId } from './channelsCache';
 import {
-  EMPTY_SNAPSHOT, decodeSnapshot, encodeSnapshot, lineEntries, snapshotEntries, withLine, withSelf,
+  EMPTY_SNAPSHOT,
+  decodeSnapshot,
+  encodeSnapshot,
+  lineEntries,
+  snapshotEntries,
+  withLine,
+  withSelf,
   type FeedSnapshot,
 } from './feedSnapshot.model';
 import { recover, reported } from './errorPolicy';
@@ -48,17 +54,25 @@ function writeNow(accountId: string): Promise<void> {
   });
 }
 
-if (sealedCache) persistenceBackend.onFlushSignal(() => { for (const accountId of [...pendingWrites.keys()]) void writeNow(accountId); });
+if (sealedCache)
+  persistenceBackend.onFlushSignal(() => {
+    for (const accountId of [...pendingWrites.keys()]) void writeNow(accountId);
+  });
 
 function update(accountId: string, change: (snapshot: FeedSnapshot) => FeedSnapshot): void {
   snapshots.set(accountId, loadSnapshot(accountId).then(change));
   if (pendingWrites.has(accountId)) return;
-  pendingWrites.set(accountId, setTimeout(() => { void writeNow(accountId); }, WRITE_DELAY_MS));
+  pendingWrites.set(
+    accountId,
+    setTimeout(() => {
+      void writeNow(accountId);
+    }, WRITE_DELAY_MS),
+  );
 }
 
 async function activeSnapshot(): Promise<FeedSnapshot | null> {
   if (!sealedCache) return null;
-  const accountId = knownActiveAccountId() ?? await getActiveAccountId();
+  const accountId = knownActiveAccountId() ?? (await getActiveAccountId());
   if (!accountId) return null;
   const loading = loadSnapshot(accountId);
   const snapshot = await loading;

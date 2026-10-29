@@ -1,8 +1,16 @@
 import { filterChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../modules/messaging/conversation';
 import {
-  GROUP_KEYS, homeSortSchema, homeViewSchema, isRowCleared, type ClearableRow, type ClearedChats, type GroupKey, type HomeSort,
-  type HomeViewContent, type HomeViewEdit,
+  GROUP_KEYS,
+  homeSortSchema,
+  homeViewSchema,
+  isRowCleared,
+  type ClearableRow,
+  type ClearedChats,
+  type GroupKey,
+  type HomeSort,
+  type HomeViewContent,
+  type HomeViewEdit,
 } from '@stage-labs/client/xmtp/readState';
 import type { AppIconName, MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../ProfileScreen.model';
@@ -49,11 +57,7 @@ export function channelsLabelChips(m: ChannelsFilterModel): LabelBarChip[] {
   return [
     { value: '', label: 'All', selected: allSelected },
     { value: UNREAD_FILTER_VALUE, label: 'Unread', selected: m.unreadOnly },
-    ...m.barLabels.map(label => ({
-      value: label,
-      label,
-      selected: m.enabledLabels.has(label.toLowerCase()),
-    })),
+    ...m.barLabels.map((label) => ({ value: label, label, selected: m.enabledLabels.has(label.toLowerCase()) })),
   ];
 }
 
@@ -64,8 +68,14 @@ interface ChannelsFilterHandlers {
 }
 
 export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): void {
-  if (value === '') { h.onClearAll(); return; }
-  if (value === UNREAD_FILTER_VALUE) { h.onToggleUnread(); return; }
+  if (value === '') {
+    h.onClearAll();
+    return;
+  }
+  if (value === UNREAD_FILTER_VALUE) {
+    h.onToggleUnread();
+    return;
+  }
   h.onToggleLabel(value);
 }
 
@@ -90,56 +100,107 @@ export interface ViewMenuSection {
 
 const GROUP_ID_PREFIX = 'group:';
 const GROUP_ICONS: Record<GroupKey, AppIconName> = {
-  assignee: 'IconPeopleAdded', category: 'IconFolder1', label: 'IconTag', status: 'IconCircleDashed',
+  assignee: 'IconPeopleAdded',
+  category: 'IconFolder1',
+  label: 'IconTag',
+  status: 'IconCircleDashed',
 };
 
 const SORT_ICONS: Record<HomeSort['by'], AppIconName> = {
-  status: 'IconCircleDashed', created: 'IconCalendar1', updated: 'IconClock', priority: 'IconFlag1',
+  status: 'IconCircleDashed',
+  created: 'IconCalendar1',
+  updated: 'IconClock',
+  priority: 'IconFlag1',
 };
 const DIRECTION_ICONS: Record<HomeSort['direction'], AppIconName> = { asc: 'IconArrowUp', desc: 'IconArrowDown' };
 
 export function homeSortMenu(current: HomeViewContent): ViewMenuSection[] {
   const sort = homeSortOf(current);
   return [
-    { heading: 'Sort by', rows: homeSortSchema.shape.by.options.map(by => ({
-      id: `sort:${by}`, label: SORT_LABELS[by], icon: SORT_ICONS[by], selected: sort.by === by,
-    })) },
-    { heading: 'Direction', rows: homeSortSchema.shape.direction.options.map(direction => ({
-      id: `direction:${direction}`, label: direction === 'asc' ? 'Ascending' : 'Descending',
-      icon: DIRECTION_ICONS[direction], selected: sort.direction === direction,
-    })) },
+    {
+      heading: 'Sort by',
+      rows: homeSortSchema.shape.by.options.map((by) => ({
+        id: `sort:${by}`,
+        label: SORT_LABELS[by],
+        icon: SORT_ICONS[by],
+        selected: sort.by === by,
+      })),
+    },
+    {
+      heading: 'Direction',
+      rows: homeSortSchema.shape.direction.options.map((direction) => ({
+        id: `direction:${direction}`,
+        label: direction === 'asc' ? 'Ascending' : 'Descending',
+        icon: DIRECTION_ICONS[direction],
+        selected: sort.direction === direction,
+      })),
+    },
   ];
 }
 
 export function homeActivityMenu(current: LastActivity): ViewMenuSection[] {
-  return [{ heading: 'Last activity', rows: LAST_ACTIVITY_WINDOWS.map(window => ({
-    id: `activity:${window}`, label: lastActivityLabel(window), selected: current === window,
-  })) }];
+  return [
+    {
+      heading: 'Last activity',
+      rows: LAST_ACTIVITY_WINDOWS.map((window) => ({
+        id: `activity:${window}`,
+        label: lastActivityLabel(window),
+        selected: current === window,
+      })),
+    },
+  ];
 }
 
 export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMenuSection[] {
   const board = current.view === 'board';
   const sort = homeSortOf(current);
   const picked = board ? current.columnBy : current.groupBy;
-  if (!grouping) return [{ rows: [
-    { id: 'layout', label: 'View', value: board ? 'Board' : 'Chats', icon: board ? 'IconColumns3Wide' : 'IconBubble3', selected: false },
-    { id: 'grouping', label: board ? 'Column by' : 'Group by', value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked], icon: 'IconLayersThree', selected: false },
-    { id: 'sorting', label: 'Sort by', value: SORT_LABELS[sort.by], icon: DIRECTION_ICONS[sort.direction], selected: false },
-    { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
-    { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false },
-  ] }];
-  const groups = GROUP_KEYS.map((key): ViewMenuRow => (
-    { id: GROUP_ID_PREFIX + key, label: GROUP_BY_LABELS[key], icon: GROUP_ICONS[key], selected: picked === key }
-  ));
+  if (!grouping)
+    return [
+      {
+        rows: [
+          {
+            id: 'layout',
+            label: 'View',
+            value: board ? 'Board' : 'Chats',
+            icon: board ? 'IconColumns3Wide' : 'IconBubble3',
+            selected: false,
+          },
+          {
+            id: 'grouping',
+            label: board ? 'Column by' : 'Group by',
+            value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked],
+            icon: 'IconLayersThree',
+            selected: false,
+          },
+          { id: 'sorting', label: 'Sort by', value: SORT_LABELS[sort.by], icon: DIRECTION_ICONS[sort.direction], selected: false },
+          { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false },
+          { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false },
+        ],
+      },
+    ];
+  const groups = GROUP_KEYS.map((key): ViewMenuRow => ({
+    id: GROUP_ID_PREFIX + key,
+    label: GROUP_BY_LABELS[key],
+    icon: GROUP_ICONS[key],
+    selected: picked === key,
+  }));
   if (!board) groups.push({ id: `${GROUP_ID_PREFIX}none`, label: 'No grouping', selected: picked === 'none' });
   return [{ heading: board ? 'Column by' : 'Group by', rows: groups }];
 }
 
 export function homeLayoutMenu(current: HomeViewContent): ViewMenuSection[] {
-  return [{ heading: 'View', rows: homeViewSchema.shape.view.options.map(view => ({
-    id: `view:${view}`, label: view === 'board' ? 'Board' : 'Chats',
-    icon: view === 'board' ? 'IconColumns3Wide' : 'IconBubble3', selected: current.view === view,
-  })) }];
+  return [
+    {
+      heading: 'View',
+      rows: homeViewSchema.shape.view.options.map((view) => ({
+        id: `view:${view}`,
+        label: view === 'board' ? 'Board' : 'Chats',
+        icon: view === 'board' ? 'IconColumns3Wide' : 'IconBubble3',
+        selected: current.view === view,
+      })),
+    },
+  ];
 }
 
 export function homeViewEdit(current: HomeViewContent, id: string): HomeViewEdit | null {
@@ -167,10 +228,7 @@ interface SortInputs {
 }
 
 export function deriveSortedRows(i: SortInputs): Row[] {
-  const filtered = filterChannelRows(i.rows ?? [], {
-    enabledLabels: i.enabledLabels,
-    unreadOnly: i.unreadOnly,
-  });
+  const filtered = filterChannelRows(i.rows ?? [], { enabledLabels: i.enabledLabels, unreadOnly: i.unreadOnly });
   return sortHomeRows(filtered, i.pinned, i.sort, i.statusOrder);
 }
 
@@ -180,7 +238,7 @@ interface UnreadRow {
 }
 
 export function unreadRowCount(rows: readonly UnreadRow[]): number {
-  return rows.filter(row => row.unreadCount > 0 || row.markedUnread === true).length;
+  return rows.filter((row) => row.unreadCount > 0 || row.markedUnread === true).length;
 }
 
 interface VisibleUnreadInputs<R> {
@@ -193,34 +251,34 @@ interface VisibleUnreadInputs<R> {
 
 export function visibleUnreadCount<R extends ChannelListRow & ClearableRow>(i: VisibleUnreadInputs<R>): number {
   const listed = filterChannelRows(i.rows ?? [], { enabledLabels: i.enabledLabels, unreadOnly: i.unreadOnly });
-  return unreadRowCount(listed.filter(row => !isRowCleared(i.cleared, row) && i.matches(row)));
+  return unreadRowCount(listed.filter((row) => !isRowCleared(i.cleared, row) && i.matches(row)));
 }
 
-export function searchBarLabels(
-  matching: string[], enabled: ReadonlySet<string>, boardOrder: readonly string[],
-): string[] {
-  const keys = new Set(matching.map(l => l.toLowerCase()));
-  const kept = [...enabled].filter(l => !keys.has(l.toLowerCase()));
+export function searchBarLabels(matching: string[], enabled: ReadonlySet<string>, boardOrder: readonly string[]): string[] {
+  const keys = new Set(matching.map((l) => l.toLowerCase()));
+  const kept = [...enabled].filter((l) => !keys.has(l.toLowerCase()));
   const labels = [...matching, ...kept].sort((a, b) => a.localeCompare(b));
-  return orderedColumns(labels.map(label => ({ key: labelColumnKey(label), label })), boardOrder).map(c => c.label);
+  return orderedColumns(
+    labels.map((label) => ({ key: labelColumnKey(label), label })),
+    boardOrder,
+  ).map((c) => c.label);
 }
 
 export function mergePaintedRows<R extends { convId: string; lastTs: number | null }>(
-  beforeIds: readonly string[], current: readonly R[] | null, painted: readonly R[],
+  beforeIds: readonly string[],
+  current: readonly R[] | null,
+  painted: readonly R[],
 ): R[] {
   const before = new Set(beforeIds);
-  const now = new Set((current ?? []).map(r => r.convId));
-  const paintedIds = new Set(painted.map(r => r.convId));
-  const addedMeanwhile = (current ?? []).filter(r => !before.has(r.convId) && !paintedIds.has(r.convId));
-  const kept = painted.filter(r => now.has(r.convId) || !before.has(r.convId));
+  const now = new Set((current ?? []).map((r) => r.convId));
+  const paintedIds = new Set(painted.map((r) => r.convId));
+  const addedMeanwhile = (current ?? []).filter((r) => !before.has(r.convId) && !paintedIds.has(r.convId));
+  const kept = painted.filter((r) => now.has(r.convId) || !before.has(r.convId));
   return [...addedMeanwhile, ...kept].sort((a, b) => (b.lastTs ?? 0) - (a.lastTs ?? 0));
 }
 
 export function visibleRowsDiff(rowIds: readonly string[], visibleIds: readonly string[]): { added: string[]; gone: string[] } {
   const rows = new Set(rowIds);
   const visible = new Set(visibleIds);
-  return {
-    added: visibleIds.filter(id => !rows.has(id)),
-    gone: rowIds.filter(id => !visible.has(id)),
-  };
+  return { added: visibleIds.filter((id) => !rows.has(id)), gone: rowIds.filter((id) => !visible.has(id)) };
 }

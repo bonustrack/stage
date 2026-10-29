@@ -11,10 +11,7 @@ import { channelTimestamp } from '../lib/format';
 import { peerLabel } from '../lib/peerProfiles';
 import { Column, Row, PAGE_GUTTER } from './layout';
 
-export function CommonChannels({ peerAddress, c }: {
-  peerAddress: string;
-  c: Palette;
-}): React.ReactElement | null {
+export function CommonChannels({ peerAddress, c }: { peerAddress: string; c: Palette }): React.ReactElement | null {
   const router = useRouter();
   const { channels, loading } = useCommonChannels(peerAddress);
 
@@ -22,8 +19,13 @@ export function CommonChannels({ peerAddress, c }: {
 
   return (
     <Column margin={{ top: 20 }}>
-      <Row margin={{ x: PAGE_GUTTER, bottom: 6 }} justify="start" align="center" gap={24}
-        style={{ borderBottomWidth: 1, borderBottomColor: c.border }}>
+      <Row
+        margin={{ x: PAGE_GUTTER, bottom: 6 }}
+        justify="start"
+        align="center"
+        gap={24}
+        style={{ borderBottomWidth: 1, borderBottomColor: c.border }}
+      >
         <Pressable style={{ paddingVertical: 10, marginBottom: -1, borderBottomWidth: 2, borderBottomColor: c.link }}>
           <Text fontWeight="semibold" size="lg" color={c.link}>
             Channels
@@ -32,10 +34,9 @@ export function CommonChannels({ peerAddress, c }: {
         {loading ? <Spinner size={20} color={c.text} /> : null}
       </Row>
 
-      {channels.map(ch => {
-        const preview = ch.lastPreview.length > 0
-          ? `${ch.lastSenderAddress ? `${peerLabel(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}`
-          : null;
+      {channels.map((ch) => {
+        const preview =
+          ch.lastPreview.length > 0 ? `${ch.lastSenderAddress ? `${peerLabel(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}` : null;
         const showAddr = ch.avatarUri || !ch.avatarAddress ? null : ch.avatarAddress;
         return (
           <ChannelRow
@@ -52,7 +53,9 @@ export function CommonChannels({ peerAddress, c }: {
             markedUnread={ch.markedUnread}
             pinned={isPinned(ch.convId)}
             draftText={getDraft(ch.convId)}
-            onPress={() => { router.push({ pathname: '/channel/[convId]', params: { convId: ch.convId } }); }}
+            onPress={() => {
+              router.push({ pathname: '/channel/[convId]', params: { convId: ch.convId } });
+            }}
           />
         );
       })}

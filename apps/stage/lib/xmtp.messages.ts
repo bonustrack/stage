@@ -12,8 +12,14 @@ import { sendPreparedMessage } from './xmtp.messageSend.core';
 import { beginSendTiming } from './sendTiming';
 import { timeSendPhase } from '@stage-labs/client/xmtp/sendTiming';
 import {
-  DELETE_REQUEST_CODEC, POLL_CODEC, SIGNATURE_REQUEST_CODEC, SIGNATURE_REFERENCE_CODEC,
-  WALLET_SEND_CALLS_CODEC, TRANSACTION_REFERENCE_CODEC, FRAME_ACTION_CODEC, type JsonCodec,
+  DELETE_REQUEST_CODEC,
+  POLL_CODEC,
+  SIGNATURE_REQUEST_CODEC,
+  SIGNATURE_REFERENCE_CODEC,
+  WALLET_SEND_CALLS_CODEC,
+  TRANSACTION_REFERENCE_CODEC,
+  FRAME_ACTION_CODEC,
+  type JsonCodec,
 } from '@stage-labs/client/xmtp/jsonCodecs';
 
 export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
@@ -24,18 +30,16 @@ export async function rowMessagesOf(conv: ConvHandle, limit: number): Promise<St
   return (await sdk.messages(conv, { limit })).map(sdk.rowOf);
 }
 
-export async function latestConvMessages(
-  conv: ConvHandle, line: string, limit: number,
-): Promise<HistoryEntry[]> {
+export async function latestConvMessages(conv: ConvHandle, line: string, limit: number): Promise<HistoryEntry[]> {
   const msgs = await sdk.messages(conv, { limit, order: 'desc' });
-  return msgs.map(m => sdk.envelopeOf(m, line));
+  return msgs.map((m) => sdk.envelopeOf(m, line));
 }
 
 export async function olderConvMessages(line: string, beforeTsMs: number, limit: number): Promise<HistoryEntry[]> {
   const conv = await convOfLine(line);
   if (!conv) return [];
   const older = await sdk.messages(conv, { limit, beforeMs: beforeTsMs, order: 'desc' });
-  return older.map(m => sdk.envelopeOf(m, line));
+  return older.map((m) => sdk.envelopeOf(m, line));
 }
 
 export function xmtpDeleteMessage(messageId: string): Promise<string> {
@@ -48,24 +52,32 @@ export function xmtpDeleteMessage(messageId: string): Promise<string> {
   });
 }
 
-function sendOn(line: string, send: (conv: ConvHandle) => Promise<string>, shouldPush = true, beforeSend?: () => Promise<void>): Promise<string> {
+function sendOn(
+  line: string,
+  send: (conv: ConvHandle) => Promise<string>,
+  shouldPush = true,
+  beforeSend?: () => Promise<void>,
+): Promise<string> {
   const timing = shouldPush ? beginSendTiming() : undefined;
   return withReadableSendError(async () => {
     try {
       return await sendPreparedMessage(
         () => sendableConvOfLine(line, shouldPush, timing),
-        conv => timeSendPhase(timing, 'sdk.send', () => send(conv)), beforeSend,
+        (conv) => timeSendPhase(timing, 'sdk.send', () => send(conv)),
+        beforeSend,
       );
-    } finally { timing?.finish(); }
+    } finally {
+      timing?.finish();
+    }
   });
 }
 
 export function xmtpSendText(line: string, text: string, beforeSend?: () => Promise<void>): Promise<string> {
-  return sendOn(line, conv => sdk.send.text(conv, text), true, beforeSend);
+  return sendOn(line, (conv) => sdk.send.text(conv, text), true, beforeSend);
 }
 
 function sendReaction(line: string, reaction: ReactionPayload): Promise<string> {
-  return sendOn(line, conv => sdk.send.reaction(conv, reaction));
+  return sendOn(line, (conv) => sdk.send.reaction(conv, reaction));
 }
 
 export function xmtpReact(line: string, messageId: string, emoji: string, action: ReactionAction = 'added'): Promise<string> {
@@ -73,7 +85,7 @@ export function xmtpReact(line: string, messageId: string, emoji: string, action
 }
 
 export function xmtpSendJson<T>(line: string, codec: JsonCodec<T>, content: T): Promise<string> {
-  return sendOn(line, conv => sdk.send.json(conv, codec, content), codec.shouldPush());
+  return sendOn(line, (conv) => sdk.send.json(conv, codec, content), codec.shouldPush());
 }
 
 export const xmtpSendPoll = (line: string, poll: PollContent): Promise<string> => xmtpSendJson(line, POLL_CODEC, poll);
@@ -94,7 +106,11 @@ export const xmtpSendFrameAction = (line: string, content: FrameActionContent): 
   xmtpSendJson(line, FRAME_ACTION_CODEC, content);
 
 export function xmtpVote(
-  line: string, pollMessageId: string, optionIndex: number, action: ReactionAction = 'added', questionIndex = 0,
+  line: string,
+  pollMessageId: string,
+  optionIndex: number,
+  action: ReactionAction = 'added',
+  questionIndex = 0,
 ): Promise<string> {
   return sendReaction(line, buildVote(pollMessageId, optionIndex, action, questionIndex));
 }
@@ -105,5 +121,5 @@ export function xmtpOpenAnswer(line: string, pollMessageId: string, questionInde
 }
 
 export function xmtpReply(line: string, replyTo: string, text: string, beforeSend?: () => Promise<void>): Promise<string> {
-  return sendOn(line, conv => sdk.send.reply(conv, replyTo, text), true, beforeSend);
+  return sendOn(line, (conv) => sdk.send.reply(conv, replyTo, text), true, beforeSend);
 }

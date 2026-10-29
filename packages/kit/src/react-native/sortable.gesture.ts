@@ -21,10 +21,20 @@ export function useKeyboard(list: ListContextValue, itemId: string, node: () => 
     return listenKeys(node(), (key) => {
       const lifted = coordinator.state().drag?.itemId === itemId && coordinator.state().drag?.keyboard === true;
       const step = KEY_STEPS[direction][key];
-      if (key === ' ' || key === 'Enter') { if (lifted) coordinator.keyDrop(); else coordinator.keyLift(listId, itemId, preview()); return true; }
+      if (key === ' ' || key === 'Enter') {
+        if (lifted) coordinator.keyDrop();
+        else coordinator.keyLift(listId, itemId, preview());
+        return true;
+      }
       if (!lifted) return false;
-      if (key === 'Escape') { coordinator.keyCancel(); return true; }
-      if (step !== undefined) { coordinator.keyStep(step); return true; }
+      if (key === 'Escape') {
+        coordinator.keyCancel();
+        return true;
+      }
+      if (step !== undefined) {
+        coordinator.keyStep(step);
+        return true;
+      }
       return false;
     });
   }, [list, itemId, node, preview, enabled]);
@@ -32,7 +42,10 @@ export function useKeyboard(list: ListContextValue, itemId: string, node: () => 
 
 function accessibilityActions(list: ListContextValue): { name: SortStep; label: string }[] {
   const along = list.direction === 'vertical' ? ['Move up', 'Move down'] : ['Move left', 'Move right'];
-  const base: { name: SortStep; label: string }[] = [{ name: 'backward', label: along[0] ?? '' }, { name: 'forward', label: along[1] ?? '' }];
+  const base: { name: SortStep; label: string }[] = [
+    { name: 'backward', label: along[0] ?? '' },
+    { name: 'forward', label: along[1] ?? '' },
+  ];
   if (list.coordinator.groupSize(list.group) < 2) return base;
   return [...base, { name: 'previousList', label: 'Move to previous list' }, { name: 'nextList', label: 'Move to next list' }];
 }
@@ -42,28 +55,41 @@ export function accessibilityProps(list: ListContextValue, itemId: string, enabl
   return {
     accessibilityActions: accessibilityActions(list),
     onAccessibilityAction: (event: AccessibilityActionEvent): void => {
-      const step = SORT_STEPS.find(name => name === event.nativeEvent.actionName);
+      const step = SORT_STEPS.find((name) => name === event.nativeEvent.actionName);
       if (step !== undefined) list.coordinator.moveBy(list.listId, itemId, step);
     },
   };
 }
 
-export function usePan(list: ListContextValue, itemId: string, preview: () => ReactNode, onHold: ((point: { x: number; y: number }) => void) | undefined, enabled: boolean): PanGesture {
+export function usePan(
+  list: ListContextValue,
+  itemId: string,
+  preview: () => ReactNode,
+  onHold: ((point: { x: number; y: number }) => void) | undefined,
+  enabled: boolean,
+): PanGesture {
   const touch = isTouchPointer();
   return useMemo(() => {
     const { coordinator, listId } = list;
     const pan = Gesture.Pan()
       .runOnJS(true)
       .enabled(enabled)
-      .onBegin((e) => { coordinator.press({ x: e.absoluteX, y: e.absoluteY }); })
+      .onBegin((e) => {
+        coordinator.press({ x: e.absoluteX, y: e.absoluteY });
+      })
       .onStart((e) => {
         coordinator.begin(listId, itemId, preview());
         coordinator.move({ x: e.absoluteX, y: e.absoluteY });
       })
-      .onUpdate((e) => { coordinator.move({ x: e.absoluteX, y: e.absoluteY }); })
+      .onUpdate((e) => {
+        coordinator.move({ x: e.absoluteX, y: e.absoluteY });
+      })
       .onEnd((e, success) => {
         const moved = coordinator.wasMoved();
-        if (!success) { coordinator.cancel(); return; }
+        if (!success) {
+          coordinator.cancel();
+          return;
+        }
         coordinator.drop();
         if (moved || !touch || onHold === undefined) return;
         suppressNextClick();

@@ -12,17 +12,26 @@ const rows = [
 
 const drafts: Record<string, string> = { plan: 'later' };
 
-const matching = (query: string): string[] => (
-  rows.filter(searchRowMatcher(parseSearchFilter(query), address => NAMES[address] ?? [], id => drafts[id] ?? ''))
-    .map(row => row.convId)
-);
+const matching = (query: string): string[] =>
+  rows
+    .filter(
+      searchRowMatcher(
+        parseSearchFilter(query),
+        (address) => NAMES[address] ?? [],
+        (id) => drafts[id] ?? '',
+      ),
+    )
+    .map((row) => row.convId);
 
 const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
 
 describe('parsing exclude filters', () => {
   test('a minus before a field excludes its values, next to included ones and free text', () => {
     expect(parseSearchFilter('-label:Bug label:Todo -MEMBER:alice123,bob.base.eth ship')).toEqual({
-      ...NONE, labels: ['Todo'], exclude: { ...NONE, labels: ['Bug'], members: ['alice123', 'bob.base.eth'] }, text: 'ship',
+      ...NONE,
+      labels: ['Todo'],
+      exclude: { ...NONE, labels: ['Bug'], members: ['alice123', 'bob.base.eth'] },
+      text: 'ship',
     });
   });
 

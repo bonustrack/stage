@@ -11,11 +11,18 @@ export function NewChatAction({ by, groupKey, title }: { by: GroupKey; groupKey:
   const metadata = groupedChatMetadata(by, groupKey, title);
   const open = useOpenNewChat(metadata);
   return (
-    <HoverIconButton icon={IconPlusLarge} size={16} color={sub} role="button" label={`New chat in ${title}`} placement="below"
+    <HoverIconButton
+      icon={IconPlusLarge}
+      size={16}
+      color={sub}
+      role="button"
+      label={`New chat in ${title}`}
+      placement="below"
       onPress={(event) => {
         event.stopPropagation();
         if (by === 'category') setNewChatProject(metadata.category);
         open();
-      }}/>
+      }}
+    />
   );
 }

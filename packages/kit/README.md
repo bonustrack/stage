@@ -19,25 +19,25 @@ Style logic lives in framework-free core modules (`text.styles.ts`, `button.styl
 
 ### Components
 
-| A2UI basic catalog | Kit component | Kit extras (ChatKit names) |
-| --- | --- | --- |
-| `Text` (`text`, `variant: body \| caption`) | `react-native/text` | `size`, `fontWeight`, `color`, `textAlign`, `italic`, `lineThrough`, `truncate`, `maxLines`, `fontFamily: sans \| head \| mono`, `markdown` |
-| `Image` (`url`, `description`, `fit`, `variant`) | `react-native/image` | `radius`, `size`, `width`, `height`, `aspectRatio`, `background`, `frame`, `flush`, `headers`, Android `resizeMethod` / `resizeMultiplier` (a blank `url` renders a placeholder; `getImageSize(url)` measures one) |
-| `Icon` (`name`, `{ svgPath }`) | `react-native/icon` | Central Icons through their HeroIcon alias names and brand names on top of the 59 A2UI names, `size`, `color`, `variant: line \| solid` |
-| `Video` (`url`, `posterUrl`) | `react-native/video` | `controls`, `background`, `aspectRatio`, `fit: contain \| cover`, `onVideoSize` |
-| `AudioPlayer` (`url`, `description`) | `react-native/audio-player` | `waveform`, `bars`, `accent`, ... |
-| `Row` / `Column` (`children`, `justify`, `align`) | `react-native/row`, `react-native/column` | `gap`, `padding`, `margin`, `wrap`, `surface`, `background`, `radius`, sizes, `border`, `align: baseline` |
-| `List` (`children`, `direction`, `align`) | `react-native/list` | `gap`, `padding`, and every `ScrollView` prop and ref; both directions scroll |
-| `Card` (`child`) | `react-native/card` | `size`, `padding`, `background`, `status`, `confirm`, `cancel`, `onPress` |
-| `Tabs` (`tabs: { title, child }[]`) | `react-native/tabs` | `variant: segmented \| underline`, `selectedIndex`, `onChange` |
-| `Modal` (`trigger`, `content`) | `react-native/modal` | `open`, `defaultOpen`, `onClose`, `title`, `footer`, `side`, `dismissable`, `fullBleedPanel`, `gestureRoot`, backdrop options |
-| `Divider` (`axis`) | `react-native/divider` | `spacing`, `color`, `size`, `flush` |
-| `Button` (`child`, `variant`, `action`, `checks`) | `react-native/button` | `color`, `size`, `pill`, `block`, `uniform`, `label`, `iconStart`, `iconEnd`, `loading`, tints |
-| `TextField` (`label`, `value`, `placeholder`, `variant`, `checks`) | `react-native/text-field` | `appearance: soft \| outline \| plain`, `hint`, `trailing`, `inputType`, composer options; a `label` gives the Stage form-field look |
-| `CheckBox` (`label`, `value`, `checks`) | `react-native/check-box` | `displayStyle: checkbox \| switch` |
-| `ChoicePicker` (`options`, `value`, `variant`, `displayStyle`, `filterable`) | `react-native/choice-picker` | `direction` |
-| `Slider` (`min`, `max`, `value`, `steps`) | `react-native/slider` | `showValue`, `onChangeEnd` |
-| `DateTimeInput` (`value`, `enableDate`, `enableTime`, `min`, `max`) | `react-native/date-time-input` | `placeholder`, `appearance`, `clearable` |
+| A2UI basic catalog                                                           | Kit component                             | Kit extras (ChatKit names)                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Text` (`text`, `variant: body \| caption`)                                  | `react-native/text`                       | `size`, `fontWeight`, `color`, `textAlign`, `italic`, `lineThrough`, `truncate`, `maxLines`, `fontFamily: sans \| head \| mono`, `markdown`                                                                        |
+| `Image` (`url`, `description`, `fit`, `variant`)                             | `react-native/image`                      | `radius`, `size`, `width`, `height`, `aspectRatio`, `background`, `frame`, `flush`, `headers`, Android `resizeMethod` / `resizeMultiplier` (a blank `url` renders a placeholder; `getImageSize(url)` measures one) |
+| `Icon` (`name`, `{ svgPath }`)                                               | `react-native/icon`                       | Central Icons through their HeroIcon alias names and brand names on top of the 59 A2UI names, `size`, `color`, `variant: line \| solid`                                                                            |
+| `Video` (`url`, `posterUrl`)                                                 | `react-native/video`                      | `controls`, `background`, `aspectRatio`, `fit: contain \| cover`, `onVideoSize`                                                                                                                                    |
+| `AudioPlayer` (`url`, `description`)                                         | `react-native/audio-player`               | `waveform`, `bars`, `accent`, ...                                                                                                                                                                                  |
+| `Row` / `Column` (`children`, `justify`, `align`)                            | `react-native/row`, `react-native/column` | `gap`, `padding`, `margin`, `wrap`, `surface`, `background`, `radius`, sizes, `border`, `align: baseline`                                                                                                          |
+| `List` (`children`, `direction`, `align`)                                    | `react-native/list`                       | `gap`, `padding`, and every `ScrollView` prop and ref; both directions scroll                                                                                                                                      |
+| `Card` (`child`)                                                             | `react-native/card`                       | `size`, `padding`, `background`, `status`, `confirm`, `cancel`, `onPress`                                                                                                                                          |
+| `Tabs` (`tabs: { title, child }[]`)                                          | `react-native/tabs`                       | `variant: segmented \| underline`, `selectedIndex`, `onChange`                                                                                                                                                     |
+| `Modal` (`trigger`, `content`)                                               | `react-native/modal`                      | `open`, `defaultOpen`, `onClose`, `title`, `footer`, `side`, `dismissable`, `fullBleedPanel`, `gestureRoot`, backdrop options                                                                                      |
+| `Divider` (`axis`)                                                           | `react-native/divider`                    | `spacing`, `color`, `size`, `flush`                                                                                                                                                                                |
+| `Button` (`child`, `variant`, `action`, `checks`)                            | `react-native/button`                     | `color`, `size`, `pill`, `block`, `uniform`, `label`, `iconStart`, `iconEnd`, `loading`, tints                                                                                                                     |
+| `TextField` (`label`, `value`, `placeholder`, `variant`, `checks`)           | `react-native/text-field`                 | `appearance: soft \| outline \| plain`, `hint`, `trailing`, `inputType`, composer options; a `label` gives the Stage form-field look                                                                               |
+| `CheckBox` (`label`, `value`, `checks`)                                      | `react-native/check-box`                  | `displayStyle: checkbox \| switch`                                                                                                                                                                                 |
+| `ChoicePicker` (`options`, `value`, `variant`, `displayStyle`, `filterable`) | `react-native/choice-picker`              | `direction`                                                                                                                                                                                                        |
+| `Slider` (`min`, `max`, `value`, `steps`)                                    | `react-native/slider`                     | `showValue`, `onChangeEnd`                                                                                                                                                                                         |
+| `DateTimeInput` (`value`, `enableDate`, `enableTime`, `min`, `max`)          | `react-native/date-time-input`            | `placeholder`, `appearance`, `clearable`                                                                                                                                                                           |
 
 Kit extras with no A2UI equivalent, kept because Stage needs them: `Title`, `Badge` (with `fontWeight`, `textSize`, `background`, composed `children`), `ListView` / `ListViewItem`, `Spinner`, `QrCode`, `Chart` (ChatKit's Chart widget, see below), `DropdownMenu`, `Tooltip`, `VoiceRecorder`, `ColorPicker`, `FilePicker`, `Glyph` (draws one Central icon), and the platform primitives `Pressable` and `GesturePressable`.
 
@@ -45,16 +45,16 @@ Kit extras with no A2UI equivalent, kept because Stage needs them: `Title`, `Bad
 
 A2UI v1.0 leaves branding to the renderer, so the theme stays Kit's ChatKit-shaped `ThemeOption` surface (every key name and literal union matches ChatKit):
 
-| ChatKit | Kit |
-| --- | --- |
-| `colorScheme: 'light' \| 'dark'` | `Scheme` (`tokens.ts`) |
-| `radius: 'pill' \| 'round' \| 'soft' \| 'sharp'` | `RadiusName` + `RADIUS_SCALE` |
-| `density: 'compact' \| 'normal' \| 'spacious'` | `Density` + `DENSITY_SCALE` |
-| `typography.baseSize: 14\|15\|16\|17\|18` | `BaseSize` + `BASE_SIZE_DEFAULT` |
-| `typography.fontFamily` / `fontFamilyMono` | `fontFamily.sans` / `.mono` (+ `fontName.*` for RN) |
-| `color.surface: { background, foreground }` | `SurfaceColors` (`theme-derive.ts`) |
-| `color.accent: { primary, level: 0\|1\|2\|3 }` | `AccentColor` |
-| `color.grayscale: { hue, tint: 0-9, shade?: ±4 }` | `GrayscaleOptions` |
+| ChatKit                                           | Kit                                                 |
+| ------------------------------------------------- | --------------------------------------------------- |
+| `colorScheme: 'light' \| 'dark'`                  | `Scheme` (`tokens.ts`)                              |
+| `radius: 'pill' \| 'round' \| 'soft' \| 'sharp'`  | `RadiusName` + `RADIUS_SCALE`                       |
+| `density: 'compact' \| 'normal' \| 'spacious'`    | `Density` + `DENSITY_SCALE`                         |
+| `typography.baseSize: 14\|15\|16\|17\|18`         | `BaseSize` + `BASE_SIZE_DEFAULT`                    |
+| `typography.fontFamily` / `fontFamilyMono`        | `fontFamily.sans` / `.mono` (+ `fontName.*` for RN) |
+| `color.surface: { background, foreground }`       | `SurfaceColors` (`theme-derive.ts`)                 |
+| `color.accent: { primary, level: 0\|1\|2\|3 }`    | `AccentColor`                                       |
+| `color.grayscale: { hue, tint: 0-9, shade?: ±4 }` | `GrayscaleOptions`                                  |
 
 OpenAI publishes ChatKit's theme types but not its colour maths, so `theme-derive.ts` implements the documented semantics itself, and the defaults are lossless (guarded by tests). Colour tokens (`text`, `secondary`, `muted`, `link`, `primary`, `danger`, `success`, `border`) on `Text`, `Row`/`Column` backgrounds and the A2UI renderer resolve against the live palette from `KitThemeProvider`.
 
@@ -76,7 +76,7 @@ import { A2uiSurface } from '@stage-labs/kit/react-native/a2ui-surface';
 const client = createA2uiClient({ send: (message, metadata) => transport.send(message, metadata), openUrl });
 client.receive(jsonlFromAgent);
 
-<A2uiSurface client={client} surfaceId="payment_request" onActionError={toast} />
+<A2uiSurface client={client} surfaceId="payment_request" onActionError={toast} />;
 ```
 
 In React, `useA2uiClient(messages, options)` (`@stage-labs/kit/react-native/a2ui-session`) builds the client for a message list and keeps the latest callbacks; its `send` also gets the client. `A2uiSurface` takes `disabled` (read only: no actions, inputs and buttons disabled) and `mediaUrl`, a filter applied to every `Image`, `Video` and `AudioPlayer` URL (return `''` to block one).
@@ -124,7 +124,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
   <Text text="Hello" size="xl" fontWeight="semibold" />
   <Text variant="caption" text="Small print" />
   <Button variant="primary" label="Continue" onPress={next} />
-</Column>
+</Column>;
 ```
 
 `Text` with `markdown` renders A2UI's simple Markdown: no HTML, images or links, which show as plain text. Text sizes are the `FONT_SIZE` tokens: `3xs` 13px, `2xs` 14px, `xs` 16px, `sm` 17px, `md` 18px (body), `lg` 19px, `xl` 20px, `2xl` 24px, `3xl` 26px. The `caption` variant defaults to `3xs` in the secondary colour. `Title` takes `hero` (`3xl` or `4xl`) for the landing and onboarding headlines.
@@ -135,7 +135,7 @@ Icons are [Central Icons](https://centralicons.com) (round, radius 1, stroke 2) 
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
 
-<Glyph icon={IconThumbtack} size={16} color={link} />
+<Glyph icon={IconThumbtack} size={16} color={link} />;
 ```
 
 The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `round-filled-radius-1-stroke-2` is `solid`. Metro does not tree-shake, so a per-icon import is what keeps the other icons out of the bundle. `Icon` also takes names: the HeroIcon aliases in `CENTRAL_ICON_ALIASES`, the 59 A2UI icon names (`icons.a2ui.ts` maps each one onto a Central icon) and the brand icons, with `variant` `'line'` (default) or `'solid'`; it bundles every named icon. Installing the packages with a package manager that runs dependency install scripts needs a Central licence key; Bun does not run them.
@@ -150,13 +150,16 @@ The package picks the style: `round-outlined-radius-1-stroke-2` is `line`, `roun
 import { Chart } from '@stage-labs/kit/react-native/chart';
 
 <Chart
-  data={[{ month: 'Jan', web: 186, mobile: 80 }, { month: 'Feb', web: 305, mobile: 200 }]}
+  data={[
+    { month: 'Jan', web: 186, mobile: 80 },
+    { month: 'Feb', web: 305, mobile: 200 },
+  ]}
   xAxis="month"
   series={[
     { type: 'bar', dataKey: 'web', label: 'Web' },
     { type: 'line', dataKey: 'mobile', label: 'Mobile', color: 'orange' },
   ]}
-/>
+/>;
 ```
 
 - `data` is a list of rows of `string` or `number` values. `xAxis` is the key of the category, or `{ dataKey, hide, labels }`, where `labels` maps a value to the text shown for it. Numbers beyond 1e300 count as missing.
@@ -175,7 +178,11 @@ import { Chart } from '@stage-labs/kit/react-native/chart';
 ```tsx
 <SortableScope>
   <SortableList listId="todo" group="board" itemIds={ids} onMove={(move) => save(move)}>
-    {cards.map(card => <SortableItem key={card.id} itemId={card.id}><Card>{card.title}</Card></SortableItem>)}
+    {cards.map((card) => (
+      <SortableItem key={card.id} itemId={card.id}>
+        <Card>{card.title}</Card>
+      </SortableItem>
+    ))}
   </SortableList>
 </SortableScope>
 ```
@@ -223,11 +230,11 @@ The gallery opens on a Home page with one live example of each component (its `C
 
 ## Scripts
 
-| Script              | Description                  |
-| ------------------- | --------------------------- |
-| `bun run typecheck` | Type-check without emitting. |
-| `bun run test`      | Unit, snapshot and A2UI conformance tests (`test/**/*.spec.ts`). |
-| `bun run storybook` | Gallery dev server with a story per component. |
+| Script                    | Description                                                             |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `bun run typecheck`       | Type-check without emitting.                                            |
+| `bun run test`            | Unit, snapshot and A2UI conformance tests (`test/**/*.spec.ts`).        |
+| `bun run storybook`       | Gallery dev server with a story per component.                          |
 | `bun run storybook:build` | Static gallery build into `build/`, including `a2ui/v1_0/catalog.json`. |
 
 Form controls default to `CONTROL_RADIUS_DEFAULT` (8px) and draw no focus ring (`outlineWidth: 0` with `outlineStyle: 'solid'` so the browser's own ring stays off on web). `Modal` renders the Stage look (page background, 1px border, 17px radius, optional title, centered with a 480px max width or a bottom sheet). `DropdownMenu` and `Tooltip` default to the Stage app look and share `OVERLAY_SHADOW` from `overlay.styles.ts`. Cards and images keep `BLOCK_RADIUS_DEFAULT` (12px). Markdown styles come from `markdown.styles.ts` (`@stage-labs/kit/markdown-styles`).

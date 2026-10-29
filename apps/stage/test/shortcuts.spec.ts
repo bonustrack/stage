@@ -2,7 +2,13 @@ import { describe, expect, test } from 'bun:test';
 import { shortcutKey, shortcutOf, type ShortcutKeyEvent, type ShortcutTarget } from '../components/shortcuts.model';
 
 const press = (key: string, extra: Partial<ShortcutKeyEvent> = {}): ShortcutKeyEvent => ({
-  key, altKey: false, ctrlKey: false, metaKey: false, defaultPrevented: false, isComposing: false, ...extra,
+  key,
+  altKey: false,
+  ctrlKey: false,
+  metaKey: false,
+  defaultPrevented: false,
+  isComposing: false,
+  ...extra,
 });
 
 const on = (tagName: string, contentEditable = false): ShortcutTarget => ({ tagName, contentEditable });

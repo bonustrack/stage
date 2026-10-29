@@ -3,18 +3,14 @@ import type { Eip712TypedData, SignatureRequestContent, SignatureReferenceConten
 
 export type { Eip712TypedData, SignatureRequestContent, SignatureReferenceContent } from './sign.schema';
 
-export function buildPersonalSignatureRequest(
-  message: string, description?: string,
-): SignatureRequestContent {
+export function buildPersonalSignatureRequest(message: string, description?: string): SignatureRequestContent {
   const msg = message.trim();
   if (!msg) throw new Error('Enter a message to sign');
   const desc = description?.trim();
   return { id: mintId('sig'), kind: 'personal', message: msg, ...(desc ? { description: desc } : {}) };
 }
 
-export function buildEip712SignatureRequest(
-  json: string, description?: string,
-): SignatureRequestContent {
+export function buildEip712SignatureRequest(json: string, description?: string): SignatureRequestContent {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -62,9 +58,7 @@ export function personalMessageForRequest(req: SignatureRequestContent): string 
   return message;
 }
 
-export function buildSignatureReference(
-  requestId: string, signature: string, signer: string,
-): SignatureReferenceContent {
+export function buildSignatureReference(requestId: string, signature: string, signer: string): SignatureReferenceContent {
   if (!requestId) throw new Error('Signature reference is missing its request id');
   if (!signature) throw new Error('Signature reference is missing the signature');
   if (!signer) throw new Error('Signature reference is missing the signer address');

@@ -1,8 +1,21 @@
 export type ChartPoint = readonly [number, number];
 
 export const CHART_CURVE_TYPES = [
-  'basis', 'basisClosed', 'basisOpen', 'bumpX', 'bumpY', 'bump', 'linear', 'linearClosed', 'natural',
-  'monotoneX', 'monotoneY', 'monotone', 'step', 'stepBefore', 'stepAfter',
+  'basis',
+  'basisClosed',
+  'basisOpen',
+  'bumpX',
+  'bumpY',
+  'bump',
+  'linear',
+  'linearClosed',
+  'natural',
+  'monotoneX',
+  'monotoneY',
+  'monotone',
+  'step',
+  'stepBefore',
+  'stepAfter',
 ] as const;
 
 export type ChartCurveType = (typeof CHART_CURVE_TYPES)[number];
@@ -42,15 +55,24 @@ function at(points: readonly ChartPoint[], i: number): ChartPoint {
 }
 
 const linear: Curve = (points, pen) => {
-  points.forEach(([x, y], i) => { (i === 0 ? start : line)(pen, x, y); });
+  points.forEach(([x, y], i) => {
+    (i === 0 ? start : line)(pen, x, y);
+  });
 };
 
 function stepCurve(t: number): Curve {
   return (points, pen) => {
     points.forEach(([x, y], i) => {
-      if (i === 0) { start(pen, x, y); return; }
+      if (i === 0) {
+        start(pen, x, y);
+        return;
+      }
       const [px, py] = at(points, i - 1);
-      if (t <= 0) { line(pen, px, y); line(pen, x, y); return; }
+      if (t <= 0) {
+        line(pen, px, y);
+        line(pen, x, y);
+        return;
+      }
       const mid = px * (1 - t) + x * t;
       line(pen, mid, py);
       line(pen, mid, y);
@@ -66,9 +88,17 @@ function controlPoints(v: readonly number[]): [number[], number[]] {
   const b: number[] = new Array<number>(n).fill(0);
   const r: number[] = new Array<number>(n).fill(0);
   const get = (arr: readonly number[], i: number): number => arr[i] ?? 0;
-  a[0] = 0; b[0] = 2; r[0] = get(v, 0) + 2 * get(v, 1);
-  for (let i = 1; i < n - 1; i += 1) { a[i] = 1; b[i] = 4; r[i] = 4 * get(v, i) + 2 * get(v, i + 1); }
-  a[n - 1] = 2; b[n - 1] = 7; r[n - 1] = 8 * get(v, n - 1) + get(v, n);
+  a[0] = 0;
+  b[0] = 2;
+  r[0] = get(v, 0) + 2 * get(v, 1);
+  for (let i = 1; i < n - 1; i += 1) {
+    a[i] = 1;
+    b[i] = 4;
+    r[i] = 4 * get(v, i) + 2 * get(v, i + 1);
+  }
+  a[n - 1] = 2;
+  b[n - 1] = 7;
+  r[n - 1] = 8 * get(v, n - 1) + get(v, n);
   for (let i = 1; i < n; i += 1) {
     const m = get(a, i) / get(b, i - 1);
     b[i] = get(b, i) - m;
@@ -82,7 +112,10 @@ function controlPoints(v: readonly number[]): [number[], number[]] {
 }
 
 const natural: Curve = (points, pen) => {
-  if (points.length < 3) { linear(points, pen); return; }
+  if (points.length < 3) {
+    linear(points, pen);
+    return;
+  }
   const [ax, bx] = controlPoints(points.map((p) => p[0]));
   const [ay, by] = controlPoints(points.map((p) => p[1]));
   start(pen, at(points, 0)[0], at(points, 0)[1]);
@@ -107,7 +140,7 @@ function slope3(p0: ChartPoint, p1: ChartPoint, p2: ChartPoint): number {
 
 function slope2(p0: ChartPoint, p1: ChartPoint, t: number): number {
   const h = p1[0] - p0[0];
-  return h === 0 ? t : (3 * (p1[1] - p0[1]) / h - t) / 2;
+  return h === 0 ? t : ((3 * (p1[1] - p0[1])) / h - t) / 2;
 }
 
 function hermite(pen: Pen, p0: ChartPoint, p1: ChartPoint, t0: number, t1: number): void {
@@ -121,7 +154,10 @@ function distinct(points: readonly ChartPoint[]): ChartPoint[] {
 
 const monotone: Curve = (raw, pen) => {
   const points = distinct(pen.swap ? raw.map(([x, y]): ChartPoint => [y, x]) : raw);
-  if (points.length < 3) { linear(points, pen); return; }
+  if (points.length < 3) {
+    linear(points, pen);
+    return;
+  }
   start(pen, at(points, 0)[0], at(points, 0)[1]);
   let t0 = slope3(at(points, 0), at(points, 1), at(points, 2));
   hermite(pen, at(points, 0), at(points, 1), slope2(at(points, 0), at(points, 1), t0), t0);
@@ -136,13 +172,20 @@ const monotone: Curve = (raw, pen) => {
 
 function bspline(pen: Pen, a: ChartPoint, b: ChartPoint, c: ChartPoint): void {
   cubic(pen, [
-    (2 * a[0] + b[0]) / 3, (2 * a[1] + b[1]) / 3, (a[0] + 2 * b[0]) / 3, (a[1] + 2 * b[1]) / 3,
-    (a[0] + 4 * b[0] + c[0]) / 6, (a[1] + 4 * b[1] + c[1]) / 6,
+    (2 * a[0] + b[0]) / 3,
+    (2 * a[1] + b[1]) / 3,
+    (a[0] + 2 * b[0]) / 3,
+    (a[1] + 2 * b[1]) / 3,
+    (a[0] + 4 * b[0] + c[0]) / 6,
+    (a[1] + 4 * b[1] + c[1]) / 6,
   ]);
 }
 
 const basis: Curve = (points, pen) => {
-  if (points.length < 3) { linear(points, pen); return; }
+  if (points.length < 3) {
+    linear(points, pen);
+    return;
+  }
   const first = at(points, 0);
   const second = at(points, 1);
   start(pen, first[0], first[1]);
@@ -162,7 +205,10 @@ const basisOpen: Curve = (points, pen) => {
 
 const basisClosed: Curve = (points, pen) => {
   const [a, b] = [at(points, 0), at(points, 1)];
-  if (points.length >= 3) { basisOpen([...points, a, b, at(points, 2)], pen); return; }
+  if (points.length >= 3) {
+    basisOpen([...points, a, b, at(points, 2)], pen);
+    return;
+  }
   if (points.length === 2) {
     start(pen, (a[0] + 2 * b[0]) / 3, (a[1] + 2 * b[1]) / 3);
     line(pen, (b[0] + 2 * a[0]) / 3, (b[1] + 2 * a[1]) / 3);
@@ -175,7 +221,10 @@ const basisClosed: Curve = (points, pen) => {
 function bumpCurve(alongX: boolean): Curve {
   return (points, pen) => {
     points.forEach(([x, y], i) => {
-      if (i === 0) { start(pen, x, y); return; }
+      if (i === 0) {
+        start(pen, x, y);
+        return;
+      }
       const [px, py] = at(points, i - 1);
       const mx = (px + x) / 2;
       const my = (py + y) / 2;
@@ -190,9 +239,21 @@ const closed: Curve = (points, pen) => {
 };
 
 const CURVES: Record<ChartCurveType, Curve> = {
-  basis, basisClosed, basisOpen, bumpX: bumpCurve(true), bumpY: bumpCurve(false), bump: bumpCurve(true),
-  linear, linearClosed: closed, natural, monotoneX: monotone, monotoneY: monotone, monotone,
-  step: stepCurve(0.5), stepBefore: stepCurve(0), stepAfter: stepCurve(1),
+  basis,
+  basisClosed,
+  basisOpen,
+  bumpX: bumpCurve(true),
+  bumpY: bumpCurve(false),
+  bump: bumpCurve(true),
+  linear,
+  linearClosed: closed,
+  natural,
+  monotoneX: monotone,
+  monotoneY: monotone,
+  monotone,
+  step: stepCurve(0.5),
+  stepBefore: stepCurve(0),
+  stepAfter: stepCurve(1),
 };
 
 const CLOSED_TO_OPEN: Partial<Record<ChartCurveType, ChartCurveType>> = { basisClosed: 'basis', linearClosed: 'linear' };
@@ -202,7 +263,7 @@ const STEP_FLIP: Partial<Record<ChartCurveType, ChartCurveType>> = { stepBefore:
 function curveFor(curve: ChartCurveType, mode: ChartCurveMode): ChartCurveType {
   if (mode === 'line') return curve;
   const open = CLOSED_TO_OPEN[curve] ?? curve;
-  return mode === 'base' ? STEP_FLIP[open] ?? open : open;
+  return mode === 'base' ? (STEP_FLIP[open] ?? open) : open;
 }
 
 export function chartCurvePath(points: readonly ChartPoint[], curve: ChartCurveType, mode: ChartCurveMode): string {

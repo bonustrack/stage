@@ -1,4 +1,3 @@
-
 import type { ZodType, ZodTypeDef } from 'zod';
 
 export type OutputSchema<T> = ZodType<T, ZodTypeDef, unknown>;
@@ -6,9 +5,7 @@ export type OutputSchema<T> = ZodType<T, ZodTypeDef, unknown>;
 function summarize(error: unknown): string {
   const issues = (error as { issues?: { path: unknown[]; message: string }[] }).issues;
   if (!Array.isArray(issues)) return String(error);
-  return issues
-    .map(i => `${i.path.length ? i.path.join('.') : '(root)'}: ${i.message}`)
-    .join('; ');
+  return issues.map((i) => `${i.path.length ? i.path.join('.') : '(root)'}: ${i.message}`).join('; ');
 }
 
 export function parseOrThrow<T>(where: string, schema: OutputSchema<T>, data: unknown): T {

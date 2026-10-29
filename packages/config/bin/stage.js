@@ -54,11 +54,32 @@ function run(bin, args) {
 }
 
 const LINT_VALUE_FLAGS = new Set([
-  '-c', '--config', '--ext', '--global', '--parser', '--parser-options', '--plugin', '--rule', '--fix-type',
-  '--ignore-pattern', '--stdin-filename', '--max-warnings', '-o', '--output-file', '-f', '--format',
-  '--report-unused-disable-directives-severity', '--report-unused-inline-configs', '--cache-file',
-  '--cache-location', '--cache-strategy', '--suppress-rule', '--suppressions-location', '--print-config',
-  '--flag', '--concurrency',
+  '-c',
+  '--config',
+  '--ext',
+  '--global',
+  '--parser',
+  '--parser-options',
+  '--plugin',
+  '--rule',
+  '--fix-type',
+  '--ignore-pattern',
+  '--stdin-filename',
+  '--max-warnings',
+  '-o',
+  '--output-file',
+  '-f',
+  '--format',
+  '--report-unused-disable-directives-severity',
+  '--report-unused-inline-configs',
+  '--cache-file',
+  '--cache-location',
+  '--cache-strategy',
+  '--suppress-rule',
+  '--suppressions-location',
+  '--print-config',
+  '--flag',
+  '--concurrency',
 ]);
 const LINTABLE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|vue)$/;
 
@@ -142,9 +163,11 @@ function madgeRoots(stageConfig, argv) {
   if (argv.length > 0) return argv;
   const configured = stageConfig.madge?.roots;
   if (Array.isArray(configured) && configured.length > 0) return configured;
-  return Object.entries(stageConfig.workspaces).flatMap(([path, workspace]) => (Array.isArray(workspace.src) && workspace.src.length > 0
-    ? workspace.src.map((g) => prefixed(path, globToDir(g)))
-    : [path === '.' ? 'src' : `${path}/src`]));
+  return Object.entries(stageConfig.workspaces).flatMap(([path, workspace]) =>
+    Array.isArray(workspace.src) && workspace.src.length > 0
+      ? workspace.src.map((g) => prefixed(path, globToDir(g)))
+      : [path === '.' ? 'src' : `${path}/src`],
+  );
 }
 
 async function cmdMadge(stageConfig, argv) {
@@ -176,8 +199,12 @@ function spawnCaptured(bin, args) {
     let output = '';
     child.stdout.setEncoding('utf8');
     child.stderr.setEncoding('utf8');
-    child.stdout.on('data', (chunk) => { output += chunk; });
-    child.stderr.on('data', (chunk) => { output += chunk; });
+    child.stdout.on('data', (chunk) => {
+      output += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      output += chunk;
+    });
     child.on('error', (error) => done({ status: 2, output: `${error.message}\n` }));
     child.on('close', (code) => done({ status: code ?? 2, output }));
   });

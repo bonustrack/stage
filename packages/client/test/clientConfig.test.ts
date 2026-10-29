@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  webXmtpDbPath, canReuseSavedClient, offlineOpenOptions, installationCreatedAtMs, nativeInstallationCreatedAtMs, openPersistedClient, OPEN_ATTEMPTS,
+  webXmtpDbPath,
+  canReuseSavedClient,
+  offlineOpenOptions,
+  installationCreatedAtMs,
+  nativeInstallationCreatedAtMs,
+  openPersistedClient,
+  OPEN_ATTEMPTS,
 } from '../src/xmtp/clientConfig';
 import { dbDirFor } from '../src/accounts/registry';
 
@@ -82,15 +88,28 @@ describe('openPersistedClient', () => {
   const deps = (over: Partial<Deps>) => {
     const calls: string[] = [];
     const d: Deps = {
-      open: () => { calls.push('open'); return Promise.resolve('inst-a'); },
+      open: () => {
+        calls.push('open');
+        return Promise.resolve('inst-a');
+      },
       isRegistered: () => Promise.resolve(true),
-      register: () => { calls.push('register'); return Promise.resolve(); },
+      register: () => {
+        calls.push('register');
+        return Promise.resolve();
+      },
       installationIdOf: (c: string) => c,
-      close: (c: string) => { calls.push(`close:${c}`); },
+      close: (c: string) => {
+        calls.push(`close:${c}`);
+      },
       savedInstallationId: 'inst-a',
       retryable: () => true,
-      sleep: () => { calls.push('sleep'); return Promise.resolve(); },
-      onEvent: (event: string) => { calls.push(`event:${event}`); },
+      sleep: () => {
+        calls.push('sleep');
+        return Promise.resolve();
+      },
+      onEvent: (event: string) => {
+        calls.push(`event:${event}`);
+      },
       ...over,
     };
     return { d, calls };
@@ -125,20 +144,35 @@ describe('openPersistedClient', () => {
 
   test('a store that opens with a changing installation is closed and retried, never registered', async () => {
     let opens = 0;
-    const { d, calls } = deps({ open: () => { opens += 1; return Promise.resolve(opens < 3 ? `inst-memory-${opens}` : 'inst-a'); } });
+    const { d, calls } = deps({
+      open: () => {
+        opens += 1;
+        return Promise.resolve(opens < 3 ? `inst-memory-${opens}` : 'inst-a');
+      },
+    });
     expect(await openPersistedClient(d)).toEqual({ client: 'inst-a', registered: false });
     expect(calls).toEqual([
-      'event:installation-mismatch', 'close:inst-memory-1', 'sleep',
-      'event:installation-mismatch', 'close:inst-memory-2', 'sleep',
+      'event:installation-mismatch',
+      'close:inst-memory-1',
+      'sleep',
+      'event:installation-mismatch',
+      'close:inst-memory-2',
+      'sleep',
     ]);
   });
 
   test('a mismatch that changes on every attempt gives up with the locked-store error', async () => {
     let opens = 0;
-    const { d, calls } = deps({ open: () => { opens += 1; return Promise.resolve(`inst-memory-${opens}`); }, attempts: 2 });
+    const { d, calls } = deps({
+      open: () => {
+        opens += 1;
+        return Promise.resolve(`inst-memory-${opens}`);
+      },
+      attempts: 2,
+    });
     await expect(openPersistedClient(d)).rejects.toThrow(/another tab/);
-    expect(calls.filter(c => c === 'register')).toEqual([]);
-    expect(calls.filter(c => c.startsWith('close'))).toHaveLength(2);
+    expect(calls.filter((c) => c === 'register')).toEqual([]);
+    expect(calls.filter((c) => c.startsWith('close'))).toHaveLength(2);
   });
 
   test('a store that keeps opening with the same unexpected installation is adopted and registered if needed', async () => {
@@ -146,12 +180,20 @@ describe('openPersistedClient', () => {
     const { d, calls } = deps({
       open: () => Promise.resolve('inst-b'),
       isRegistered: () => Promise.resolve(registered),
-      register: () => { registered = true; calls.push('register'); return Promise.resolve(); },
+      register: () => {
+        registered = true;
+        calls.push('register');
+        return Promise.resolve();
+      },
     });
     expect(await openPersistedClient(d)).toEqual({ client: 'inst-b', registered: true });
     expect(calls).toEqual([
-      'event:installation-mismatch', 'close:inst-b', 'sleep',
-      'event:installation-adopted', 'register', 'event:registered',
+      'event:installation-mismatch',
+      'close:inst-b',
+      'sleep',
+      'event:installation-adopted',
+      'register',
+      'event:registered',
     ]);
   });
 
@@ -166,25 +208,39 @@ describe('openPersistedClient', () => {
     });
     expect(await openPersistedClient(d)).toEqual({ client: 'inst-b', registered: false });
     expect(calls).toEqual([
-      'event:installation-mismatch', 'close:inst-b', 'sleep',
-      'event:open-failed', 'sleep',
+      'event:installation-mismatch',
+      'close:inst-b',
+      'sleep',
+      'event:open-failed',
+      'sleep',
       'event:installation-adopted',
     ]);
   });
 
   test('a failing open is retried and the last error surfaces', async () => {
     let opens = 0;
-    const { d, calls } = deps({ open: () => { opens += 1; return opens < 2 ? Promise.reject(new Error('locked')) : Promise.resolve('inst-a'); } });
+    const { d, calls } = deps({
+      open: () => {
+        opens += 1;
+        return opens < 2 ? Promise.reject(new Error('locked')) : Promise.resolve('inst-a');
+      },
+    });
     expect(await openPersistedClient(d)).toEqual({ client: 'inst-a', registered: false });
     expect(calls).toEqual(['event:open-failed', 'sleep']);
     const failing = deps({ open: () => Promise.reject(new Error('locked')), attempts: 3 });
     await expect(openPersistedClient(failing.d)).rejects.toThrow('locked');
-    expect(failing.calls.filter(c => c === 'event:open-failed')).toHaveLength(3);
+    expect(failing.calls.filter((c) => c === 'event:open-failed')).toHaveLength(3);
   });
 
   test('an open error the seam calls final is thrown after a single attempt', async () => {
     let opens = 0;
-    const { d, calls } = deps({ open: () => { opens += 1; return Promise.reject(new Error('12/10 installations')); }, retryable: () => false });
+    const { d, calls } = deps({
+      open: () => {
+        opens += 1;
+        return Promise.reject(new Error('12/10 installations'));
+      },
+      retryable: () => false,
+    });
     await expect(openPersistedClient(d)).rejects.toThrow('12/10');
     expect(opens).toBe(1);
     expect(calls).toEqual(['event:open-failed']);
@@ -198,10 +254,7 @@ describe('openPersistedClient', () => {
 
   test('registration rejection closes the opened client without retrying or changing the error', async () => {
     const failure = new Error('registration offline');
-    const { d, calls } = deps({
-      isRegistered: () => Promise.resolve(false),
-      register: () => Promise.reject(failure),
-    });
+    const { d, calls } = deps({ isRegistered: () => Promise.resolve(false), register: () => Promise.reject(failure) });
     await expect(openPersistedClient(d)).rejects.toBe(failure);
     expect(calls).toEqual(['open', 'close:inst-a']);
   });
@@ -210,7 +263,9 @@ describe('openPersistedClient', () => {
     const failure = new Error('registration offline');
     const { d } = deps({
       isRegistered: () => Promise.reject(failure),
-      close: () => { throw new Error('close failed'); },
+      close: () => {
+        throw new Error('close failed');
+      },
     });
     await expect(openPersistedClient(d)).rejects.toBe(failure);
   });

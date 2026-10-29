@@ -5,12 +5,20 @@ import { makeSendTimingDiagnostic } from '../lib/sendTiming.core';
 function fixture() {
   let now = 0;
   const diagnostic = makeSendTimingDiagnostic(() => now);
-  return { diagnostic, advance: (ms: number) => { now += ms; } };
+  return {
+    diagnostic,
+    advance: (ms: number) => {
+      now += ms;
+    },
+  };
 }
 
 test('timing is opt-in and the disabled path returns the original promise without reading the clock', async () => {
   let clocks = 0;
-  const d = makeSendTimingDiagnostic(() => { clocks += 1; return clocks; });
+  const d = makeSendTimingDiagnostic(() => {
+    clocks += 1;
+    return clocks;
+  });
   expect(d.begin()).toBeUndefined();
   const promise = Promise.resolve('synthetic message result');
   expect(timeSendPhase(d.begin(), 'sdk.send', () => promise)).toBe(promise);
@@ -24,13 +32,27 @@ test('snapshots contain only fixed phases and durations, not results, errors or 
   f.diagnostic.start();
   const timing = f.diagnostic.begin();
   const result = { message: 'synthetic private text', accountId: 'synthetic-account', url: 'https://private.invalid' };
-  expect(await timeSendPhase(timing, 'conversation.find', async () => { f.advance(7); return result; })).toBe(result);
+  expect(
+    await timeSendPhase(timing, 'conversation.find', async () => {
+      f.advance(7);
+      return result;
+    }),
+  ).toBe(result);
   const error = new Error('synthetic private error and account identifier');
-  await expect(timeSendPhase(timing, 'sdk.send', async () => { f.advance(23); throw error; })).rejects.toBe(error);
+  await expect(
+    timeSendPhase(timing, 'sdk.send', async () => {
+      f.advance(23);
+      throw error;
+    }),
+  ).rejects.toBe(error);
   timing?.finish();
-  const expected = [[
-    { phase: 'conversation.find', durationMs: 7 }, { phase: 'sdk.send', durationMs: 23 }, { phase: 'xmtp.total', durationMs: 30 },
-  ]];
+  const expected = [
+    [
+      { phase: 'conversation.find', durationMs: 7 },
+      { phase: 'sdk.send', durationMs: 23 },
+      { phase: 'xmtp.total', durationMs: 30 },
+    ],
+  ];
   expect(f.diagnostic.read()).toEqual(expected);
   const copy = f.diagnostic.read();
   copy[0]?.splice(0);
@@ -43,11 +65,19 @@ test('the same synchronous exception is rethrown without being retained', () => 
   f.diagnostic.start();
   const timing = f.diagnostic.begin();
   const error = new Error('synthetic secret');
-  expect(() => timeSendPhase(timing, 'sdk.send', () => { f.advance(5); throw error; })).toThrow(error);
+  expect(() =>
+    timeSendPhase(timing, 'sdk.send', () => {
+      f.advance(5);
+      throw error;
+    }),
+  ).toThrow(error);
   timing?.finish();
-  expect(f.diagnostic.read()).toEqual([[
-    { phase: 'sdk.send', durationMs: 5 }, { phase: 'xmtp.total', durationMs: 5 },
-  ]]);
+  expect(f.diagnostic.read()).toEqual([
+    [
+      { phase: 'sdk.send', durationMs: 5 },
+      { phase: 'xmtp.total', durationMs: 5 },
+    ],
+  ]);
 });
 
 test('overlapping sends stay separate without any stored send identifiers', () => {
@@ -67,8 +97,14 @@ test('overlapping sends stay separate without any stored send identifiers', () =
   first?.finish();
   endFirst?.();
   expect(f.diagnostic.read()).toEqual([
-    [{ phase: 'filter.queue', durationMs: 5 }, { phase: 'xmtp.total', durationMs: 5 }],
-    [{ phase: 'sdk.send', durationMs: 10 }, { phase: 'xmtp.total', durationMs: 10 }],
+    [
+      { phase: 'filter.queue', durationMs: 5 },
+      { phase: 'xmtp.total', durationMs: 5 },
+    ],
+    [
+      { phase: 'sdk.send', durationMs: 10 },
+      { phase: 'xmtp.total', durationMs: 10 },
+    ],
   ]);
 });
 
@@ -115,7 +151,7 @@ test('storage is bounded to ten completed and ten pending sends, with sixty-four
     timing?.finish();
   }
   expect(f.diagnostic.read()).toHaveLength(10);
-  expect(f.diagnostic.read().every(samples => samples.length === 64)).toBe(true);
+  expect(f.diagnostic.read().every((samples) => samples.length === 64)).toBe(true);
   expect(f.diagnostic.read()[0]?.at(-1)).toEqual({ phase: 'xmtp.total', durationMs: 2 });
   const pending = Array.from({ length: 10 }, () => f.diagnostic.begin());
   expect(pending.every(Boolean)).toBe(true);
@@ -129,11 +165,18 @@ test('settlement closes unfinished phases at the observed wait and ignores their
   f.diagnostic.start();
   const timing = f.diagnostic.begin();
   let release = (): void => undefined;
-  const pending = new Promise<void>(resolve => { release = resolve; });
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   const work = timeSendPhase(timing, 'filter.keys', () => pending);
   f.advance(30);
   timing?.finish();
-  const expected = [[{ phase: 'filter.keys', durationMs: 30 }, { phase: 'xmtp.total', durationMs: 30 }]];
+  const expected = [
+    [
+      { phase: 'filter.keys', durationMs: 30 },
+      { phase: 'xmtp.total', durationMs: 30 },
+    ],
+  ];
   expect(f.diagnostic.read()).toEqual(expected);
   f.advance(200);
   release();
@@ -150,19 +193,25 @@ test('outstanding phase storage is bounded before any of those phases finish', (
   timing?.finish();
   const rows = f.diagnostic.read();
   expect(rows[0]).toHaveLength(64);
-  expect(rows[0]?.filter(sample => sample.phase === 'filter.http')).toHaveLength(63);
+  expect(rows[0]?.filter((sample) => sample.phase === 'filter.http')).toHaveLength(63);
   for (const end of ends) end?.();
   expect(f.diagnostic.read()).toEqual(rows);
 });
 
 test('invalid, backwards and throwing clocks cannot affect sends or expose raw clock errors', async () => {
   let now = 100;
-  const d = makeSendTimingDiagnostic(() => { if (now === -1) throw new Error('synthetic clock secret'); return now; });
+  const d = makeSendTimingDiagnostic(() => {
+    if (now === -1) throw new Error('synthetic clock secret');
+    return now;
+  });
   d.start();
   const timing = d.begin();
   for (const value of [-2, Number.NaN, Number.POSITIVE_INFINITY, -1]) {
     now = 100;
-    await timeSendPhase(timing, 'sdk.send', async () => { now = value; return 'real-id'; });
+    await timeSendPhase(timing, 'sdk.send', async () => {
+      now = value;
+      return 'real-id';
+    });
   }
   timing?.finish();
   expect(d.read()).toEqual([[]]);

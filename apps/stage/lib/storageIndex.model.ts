@@ -1,6 +1,4 @@
-import {
-  deleteTargetOfContent, isDeleteRequestType, isDeletedPlaceholderType, shortTypeId,
-} from '@stage-labs/client/xmtp/deleteMessage';
+import { deleteTargetOfContent, isDeleteRequestType, isDeletedPlaceholderType, shortTypeId } from '@stage-labs/client/xmtp/deleteMessage';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { remoteAttachmentOfReply } from '@stage-labs/client/xmtp/envelope';
 
@@ -26,9 +24,15 @@ export interface StorageIndex {
   retry: Record<string, number>;
 }
 
-export interface ScannedMessage extends StreamedMessage { convId: string }
+export interface ScannedMessage extends StreamedMessage {
+  convId: string;
+}
 
-interface ForeignDelete { convId: string; target: string; by: string }
+interface ForeignDelete {
+  convId: string;
+  target: string;
+  by: string;
+}
 
 export interface ScanFindings {
   files: StoredFile[];
@@ -38,7 +42,10 @@ export interface ScanFindings {
 
 export const NO_FINDINGS: ScanFindings = { files: [], deletedIds: [], foreignDeletes: [] };
 
-interface FilePart { name?: unknown; size?: unknown }
+interface FilePart {
+  name?: unknown;
+  size?: unknown;
+}
 
 export function emptyIndex(inboxId: string): StorageIndex {
   return { inboxId, cursorNs: 0, files: [], deleted: [], retry: {} };
@@ -56,7 +63,7 @@ function byteCount(value: unknown): number {
 
 function base64Bytes(data: string): number {
   const padding = data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0;
-  return Math.max(0, Math.floor(data.length * 3 / 4) - padding);
+  return Math.max(0, Math.floor((data.length * 3) / 4) - padding);
 }
 
 function inlineSize(content: { content?: unknown; data?: unknown }): number {
@@ -65,7 +72,7 @@ function inlineSize(content: { content?: unknown; data?: unknown }): number {
 }
 
 function objectOf(content: unknown): Record<string, unknown> | null {
-  return typeof content === 'object' && content !== null ? content as Record<string, unknown> : null;
+  return typeof content === 'object' && content !== null ? (content as Record<string, unknown>) : null;
 }
 
 function partsOf(typeId: string, content: Record<string, unknown>): FilePart[] {
@@ -76,7 +83,7 @@ function partsOf(typeId: string, content: Record<string, unknown>): FilePart[] {
   if (typeId === 'attachment') return [{ name: content.filename, size: inlineSize(content) }];
   if (typeId === 'remoteStaticAttachment') return [{ name: content.filename, size: byteCount(content.contentLength) }];
   if (typeId !== 'multiRemoteStaticAttachment' && typeId !== 'multiRemoteAttachment') return [];
-  const list = Array.isArray(content.attachments) ? content.attachments as unknown[] : [];
+  const list = Array.isArray(content.attachments) ? (content.attachments as unknown[]) : [];
   return list.map((item) => {
     const info = objectOf(item) ?? {};
     return { name: info.filename, size: byteCount(info.contentLength) };
@@ -96,7 +103,10 @@ export function filesOfMessage(m: ScannedMessage): StoredFile[] {
   return parts.map((part, index) => {
     const size = byteCount(part.size);
     return {
-      messageId: m.id, convId: m.convId, index, sentMs,
+      messageId: m.id,
+      convId: m.convId,
+      index,
+      sentMs,
       name: fileName(part.name, index, parts.length),
       size: Number.isFinite(size) && size >= 0 ? size : 0,
     };
@@ -108,7 +118,10 @@ export function findingsOf(messages: readonly ScannedMessage[], selfInboxId: str
   const deletedIds: string[] = [];
   const foreignDeletes: ForeignDelete[] = [];
   for (const m of messages) {
-    if (isDeletedPlaceholderType(m.contentTypeId)) { deletedIds.push(m.id); continue; }
+    if (isDeletedPlaceholderType(m.contentTypeId)) {
+      deletedIds.push(m.id);
+      continue;
+    }
     if (isDeleteRequestType(m.contentTypeId)) {
       const target = deleteTargetOfContent(m.content);
       if (target === undefined) continue;
@@ -133,8 +146,8 @@ export function joinFindings(a: ScanFindings, b: ScanFindings): ScanFindings {
 
 export function deletesToCheck(index: StorageIndex, findings: ScanFindings): ForeignDelete[] {
   if (findings.foreignDeletes.length === 0) return [];
-  const chatOf = new Map([...index.files, ...findings.files].map(f => [f.messageId, f.convId]));
-  return findings.foreignDeletes.filter(d => chatOf.get(d.target) === d.convId);
+  const chatOf = new Map([...index.files, ...findings.files].map((f) => [f.messageId, f.convId]));
+  return findings.foreignDeletes.filter((d) => chatOf.get(d.target) === d.convId);
 }
 
 export function newestFirst(a: StoredFile, b: StoredFile): number {
@@ -145,7 +158,7 @@ export function newestFirst(a: StoredFile, b: StoredFile): number {
 
 function withDeleted(deleted: readonly string[], ids: readonly string[]): string[] {
   if (ids.length === 0) return [...deleted];
-  const fresh = ids.filter(id => !deleted.includes(id));
+  const fresh = ids.filter((id) => !deleted.includes(id));
   return [...deleted, ...new Set(fresh)].slice(-DELETED_LIMIT);
 }
 
@@ -185,8 +198,15 @@ export function nextPageBeforeNs(page: readonly { sentNs: number }[]): number | 
 
 function isStoredFile(value: unknown): value is StoredFile {
   const f = objectOf(value);
-  return f !== null && typeof f.messageId === 'string' && typeof f.convId === 'string' && typeof f.name === 'string'
-    && typeof f.index === 'number' && typeof f.size === 'number' && typeof f.sentMs === 'number';
+  return (
+    f !== null &&
+    typeof f.messageId === 'string' &&
+    typeof f.convId === 'string' &&
+    typeof f.name === 'string' &&
+    typeof f.index === 'number' &&
+    typeof f.size === 'number' &&
+    typeof f.sentMs === 'number'
+  );
 }
 
 export function indexRecord(index: StorageIndex): Record<string, unknown> {
@@ -211,5 +231,9 @@ export function encodeIndex(index: StorageIndex): string {
 }
 
 export function decodeIndex(text: string): StorageIndex | null {
-  try { return indexOfRecord(JSON.parse(text)); } catch { return null; }
+  try {
+    return indexOfRecord(JSON.parse(text));
+  } catch {
+    return null;
+  }
 }

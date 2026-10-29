@@ -12,6 +12,8 @@ export function useGalleryKeys(active: boolean, onStep: (delta: number) => void)
       onStep(delta);
     };
     window.addEventListener('keydown', onKeyDown);
-    return (): void => { window.removeEventListener('keydown', onKeyDown); };
+    return (): void => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
   }, [active, onStep]);
 }

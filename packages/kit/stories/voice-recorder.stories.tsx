@@ -20,24 +20,60 @@ export const Controls: Story<Pick<VoiceRecorderProps, 'slideThresholdPx'>> = (ar
   const [levels, setLevels] = useState<number[]>([]);
   const [log, setLog] = useState('Hold the microphone to record, slide left to cancel');
   useEffect(() => {
-    if (!recording) { setSecs(0); setLevels([]); return undefined; }
-    const id = setInterval(() => { setSecs((s) => s + 0.1); setLevels((l) => [...l.slice(-39), Math.random()]); }, 100);
-    return (): void => { clearInterval(id); };
+    if (!recording) {
+      setSecs(0);
+      setLevels([]);
+      return undefined;
+    }
+    const id = setInterval(() => {
+      setSecs((s) => s + 0.1);
+      setLevels((l) => [...l.slice(-39), Math.random()]);
+    }, 100);
+    return (): void => {
+      clearInterval(id);
+    };
   }, [recording]);
   return (
     <Column gap={12}>
-      <Text color="secondary" size="2xs">{log}</Text>
+      <Text color="secondary" size="2xs">
+        {log}
+      </Text>
       <Column surface="sunken" radius="xl" padding={8}>
         <VoiceRecorder
           {...args}
-          recording={recording} levels={levels} recordSecs={secs} dark={dark}
-          fg={p.textColor} head={p.textColor} sub={p.subColor} bg={p.bgColor} chipBg={p.inputBgColor} primary={p.primaryColor}
-          inputSlot={<Text size="xs" color="secondary">Message</Text>}
+          recording={recording}
+          levels={levels}
+          recordSecs={secs}
+          dark={dark}
+          fg={p.textColor}
+          head={p.textColor}
+          sub={p.subColor}
+          bg={p.bgColor}
+          chipBg={p.inputBgColor}
+          primary={p.primaryColor}
+          inputSlot={
+            <Text size="xs" color="secondary">
+              Message
+            </Text>
+          }
           leftControls={<Glyph icon={IconPlusLarge} size={22} dark={dark} />}
-          rightAction={<Pressable><Glyph icon={IconMicrophone} size={22} dark={dark} /></Pressable>}
-          onStart={() => { setRecording(true); setLog('recording'); }}
-          onCancel={() => { setRecording(false); setLog('cancelled'); }}
-          onComplete={() => { setRecording(false); setLog('completed'); }}
+          rightAction={
+            <Pressable>
+              <Glyph icon={IconMicrophone} size={22} dark={dark} />
+            </Pressable>
+          }
+          onStart={() => {
+            setRecording(true);
+            setLog('recording');
+          }}
+          onCancel={() => {
+            setRecording(false);
+            setLog('cancelled');
+          }}
+          onComplete={() => {
+            setRecording(false);
+            setLog('completed');
+          }}
         />
       </Column>
     </Column>

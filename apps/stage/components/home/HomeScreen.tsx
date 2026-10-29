@@ -34,23 +34,27 @@ import { BOARD_ROUTE } from '../tabs/splitRoutes';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
 import { Column } from '../layout';
 
-export function HomeScreen({ panRef, pane, board = false }: {
-  panRef?: SimultaneousRefs; pane?: boolean; board?: boolean;
-} = {}): React.ReactElement | null {
+export function HomeScreen({
+  panRef,
+  pane,
+  board = false,
+}: { panRef?: SimultaneousRefs; pane?: boolean; board?: boolean } = {}): React.ReactElement | null {
   const splitHome = useWebTabRail() && pane !== true;
   const accountEpoch = useAccountEpoch();
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const menu = useMemo(() => ({ anchor, setAnchor }), [anchor]);
-  useEffect(() => { setAnchor(null); }, [accountEpoch]);
-  if (splitHome) return board ? null : <NewChatScreen key={accountEpoch}/>;
-  if (board) return <BoardScreen pane={pane === true} menu={menu}/>;
-  return <ChannelsHome panRef={panRef} pane={pane === true} menu={menu}/>;
+  useEffect(() => {
+    setAnchor(null);
+  }, [accountEpoch]);
+  if (splitHome) return board ? null : <NewChatScreen key={accountEpoch} />;
+  if (board) return <BoardScreen pane={pane === true} menu={menu} />;
+  return <ChannelsHome panRef={panRef} pane={pane === true} menu={menu} />;
 }
 
 export function BoardHome(): React.ReactElement | null {
   const here = usePathname() === BOARD_ROUTE;
   const opened = useTabFocused(BOARD_ROUTE);
-  return here || opened ? <HomeScreen board/> : null;
+  return here || opened ? <HomeScreen board /> : null;
 }
 
 function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane: boolean; menu: HomeMenuState }): React.ReactElement {
@@ -68,7 +72,8 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const boardOrder = useBoardOrder();
   const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'chats').members : [];
   const channelProfilesVersion = usePeerProfiles([
-    ...members, ...(rows ?? []).flatMap(r => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(groupBy === 'assignee' ? r.assigned : [])]),
+    ...members,
+    ...(rows ?? []).flatMap((r) => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(groupBy === 'assignee' ? r.assigned : [])]),
   ]);
   const draftsVersion = useDraftsVersion();
   const search = useMemo(() => parseSearchFilter(query), [query]);
@@ -87,10 +92,7 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     [rows, matches, enabledLabels, boardOrder],
   );
   const cleared = useClearedChats();
-  const visibleRows = useMemo(
-    () => sortedRows.filter(r => matches(r) && !isRowCleared(cleared, r)),
-    [sortedRows, matches, cleared],
-  );
+  const visibleRows = useMemo(() => sortedRows.filter((r) => matches(r) && !isRowCleared(cleared, r)), [sortedRows, matches, cleared]);
   const list = useGroupedRows(visibleRows, search.text, groupBy, peerLabel, channelProfilesVersion);
   const accountEpoch = useAccountEpoch();
   const fields = useChannelFields('chats');
@@ -105,37 +107,60 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields],
   );
   const visiblePinned = useMemo(
-    () => (list.grouped ? [] : visibleRows.map(r => r.convId).filter(id => pinned.includes(id))),
+    () => (list.grouped ? [] : visibleRows.map((r) => r.convId).filter((id) => pinned.includes(id))),
     [list.grouped, visibleRows, pinned],
   );
   const drag = useHomeDrag(list.items, groupBy === 'category', pinned, visiblePinned);
   useRowArrows({ rows: list.rows, items: list.items, activePath, router, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(router, st.setRowMenu, {
-    channelProfilesVersion, draftsVersion, pinned, query: search.text, activePath, menuConvId, drag,
-    hideAvatar, fields, items: list.items,
+    channelProfilesVersion,
+    draftsVersion,
+    pinned,
+    query: search.text,
+    activePath,
+    menuConvId,
+    drag,
+    hideAvatar,
+    fields,
+    items: list.items,
   });
 
-  const placeholder = st.error ? <HomeError error={st.error} dark={dark} fg={fg}/> : (!rows ? (
-    <Column weight={1} align="center" justify="center"><Spinner size={28} color={head}/></Column>
-  ) : null);
+  const placeholder = st.error ? (
+    <HomeError error={st.error} dark={dark} fg={fg} />
+  ) : !rows ? (
+    <Column weight={1} align="center" justify="center">
+      <Spinner size={28} color={head} />
+    </Column>
+  ) : null;
 
   return (
     <Column weight={1} surface="surface">
       <ChannelsList
-        panRef={panRef} items={list.items}
-        barLabels={barLabels} placeholder={placeholder}
-        enabledLabels={enabledLabels} onToggleLabel={toggleLabel}
-        unreadOnly={unreadOnly} onToggleUnread={toggleUnread} onClearAll={clearAllFilters}
-        query={query} setQuery={setQuery} onFilterMenu={setFiltering}
+        panRef={panRef}
+        items={list.items}
+        barLabels={barLabels}
+        placeholder={placeholder}
+        enabledLabels={enabledLabels}
+        onToggleLabel={toggleLabel}
+        unreadOnly={unreadOnly}
+        onToggleUnread={toggleUnread}
+        onClearAll={clearAllFilters}
+        query={query}
+        setQuery={setQuery}
+        onFilterMenu={setFiltering}
         listExtraData={listExtraData}
         scroll={st.scroll}
         renderRow={renderRow}
         wrapList={(node) => <HomeDragLists drag={drag}>{node}</HomeDragLists>}
-        pane={pane} menu={menu}
+        pane={pane}
+        menu={menu}
       />
       <RowChannelMenu
-        menu={rowMenu} isPinned={rowMenu !== null && pinned.includes(rowMenu.convId)}
-        onClose={() => { st.setRowMenu(null); }}
+        menu={rowMenu}
+        isPinned={rowMenu !== null && pinned.includes(rowMenu.convId)}
+        onClose={() => {
+          st.setRowMenu(null);
+        }}
       />
     </Column>
   );

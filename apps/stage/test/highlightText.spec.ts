@@ -16,9 +16,7 @@ describe('highlightSegments', () => {
   });
 
   test('no match yields the whole text as one segment', () => {
-    expect(highlightSegments('plain text', 'needle')).toEqual([
-      { value: 'plain text', match: false },
-    ]);
+    expect(highlightSegments('plain text', 'needle')).toEqual([{ value: 'plain text', match: false }]);
   });
 
   test('match preserves original casing of the source text', () => {
@@ -31,7 +29,15 @@ describe('highlightSegments', () => {
 
   test('matches across a link label and a channel name in a named plain body', () => {
     const body = 'read [ping @Chen](https://example.com) today #Ops';
-    expect(highlightSegments(body, 'today #Ops').filter(s => s.match).map(s => s.value)).toEqual(['today #Ops']);
-    expect(highlightSegments(body, 'example.com) today').filter(s => s.match).map(s => s.value)).toEqual(['example.com) today']);
+    expect(
+      highlightSegments(body, 'today #Ops')
+        .filter((s) => s.match)
+        .map((s) => s.value),
+    ).toEqual(['today #Ops']);
+    expect(
+      highlightSegments(body, 'example.com) today')
+        .filter((s) => s.match)
+        .map((s) => s.value),
+    ).toEqual(['example.com) today']);
   });
 });

@@ -15,11 +15,7 @@ export interface A2uiCommonProps {
   accessibility?: A2uiAccessibility;
 }
 
-const LIVE: Record<A2uiLive, AccessibilityProps['accessibilityLiveRegion']> = {
-  off: 'none',
-  polite: 'polite',
-  assertive: 'assertive',
-};
+const LIVE: Record<A2uiLive, AccessibilityProps['accessibilityLiveRegion']> = { off: 'none', polite: 'polite', assertive: 'assertive' };
 
 export function accessibilityProps(accessibility: A2uiAccessibility | undefined): AccessibilityProps {
   if (accessibility === undefined) return {};

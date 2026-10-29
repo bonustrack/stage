@@ -18,7 +18,10 @@ export function useSearchFilterSources(scope: FilterScope): ReturnType<typeof se
   const statusOrder = useBoardOrder();
   const categoryOrder = useChannelGroups().order;
   return useMemo(() => {
-    const sources = searchFilterSources((rows ?? []).filter(row => !isRowCleared(cleared, row)), scope);
+    const sources = searchFilterSources(
+      (rows ?? []).filter((row) => !isRowCleared(cleared, row)),
+      scope,
+    );
     return {
       ...sources,
       categories: configuredFieldOptions('category', sources.categories, categoryOrder),
@@ -31,15 +34,25 @@ export function memberNamesOf(address: string): string[] {
   return memberNames(getPeerHandle(address), getPeerDisplayName(address));
 }
 
-export function FilterSearch({ query, setQuery, ...bar }: {
-  query: string;
-  setQuery: (query: string) => void;
-} & Omit<React.ComponentProps<typeof SearchTopnavBar>, 'query' | 'setQuery' | 'inputProps' | 'placeholder' | 'field'>): React.ReactElement {
+export function FilterSearch({
+  query,
+  setQuery,
+  ...bar
+}: { query: string; setQuery: (query: string) => void } & Omit<
+  React.ComponentProps<typeof SearchTopnavBar>,
+  'query' | 'setQuery' | 'inputProps' | 'placeholder' | 'field'
+>): React.ReactElement {
   const wide = useWebTabRail();
   return (
     <SearchTopnavBar
-      {...bar} inline={!wide || bar.inline === true} field={!wide} persistent={wide} query={searchQueryText(query)}
-      setQuery={text => { setQuery(setSearchQueryText(query, text)); }}
+      {...bar}
+      inline={!wide || bar.inline === true}
+      field={!wide}
+      persistent={wide}
+      query={searchQueryText(query)}
+      setQuery={(text) => {
+        setQuery(setSearchQueryText(query, text));
+      }}
       inputProps={{ accessibilityLabel: 'Search' }}
     />
   );

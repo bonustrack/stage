@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import type { Story } from '../gallery/story';
-import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSheet, type DropdownMenuProps, type DropdownMenuSheetProps } from '../src/react-native/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSheet,
+  type DropdownMenuProps,
+  type DropdownMenuSheetProps,
+} from '../src/react-native/dropdown-menu';
 import { Button } from '../src/react-native/button';
 import { Badge } from '../src/react-native/badge';
 import { Text } from '../src/react-native/text';
@@ -36,12 +43,17 @@ export const CustomContent: Story = () => {
   return (
     <DropdownMenu>
       <DropdownMenuItem label="Sort by: Priority" onPress={() => undefined}>
-        <Text {...menuText}>Sort by: <Text {...menuText} color="secondary">Priority</Text></Text>
+        <Text {...menuText}>
+          Sort by:{' '}
+          <Text {...menuText} color="secondary">
+            Priority
+          </Text>
+        </Text>
       </DropdownMenuItem>
       <DropdownMenuItem label="Fields (2)" onPress={() => undefined}>
         <Row align="center" gap={DROPDOWN_MENU.itemGap}>
           <Text {...menuText}>Fields</Text>
-          <Badge label="2" color="secondary" variant="soft"/>
+          <Badge label="2" color="secondary" variant="soft" />
         </Row>
       </DropdownMenuItem>
     </DropdownMenu>
@@ -51,10 +63,19 @@ export const CustomContent: Story = () => {
 export const Sheet: Story<Pick<DropdownMenuSheetProps, 'side' | 'background' | 'avoidKeyboard'>> = (args) => {
   const dark = useDark();
   const [open, setOpen] = useState(false);
-  const close = (): void => { setOpen(false); };
+  const close = (): void => {
+    setOpen(false);
+  };
   return (
     <>
-      <Button variant="primary" label="Open menu" dark={dark} onPress={() => { setOpen(true); }} />
+      <Button
+        variant="primary"
+        label="Open menu"
+        dark={dark}
+        onPress={() => {
+          setOpen(true);
+        }}
+      />
       <DropdownMenuSheet {...args} dark={dark} open={open} onClose={close}>
         <DropdownMenuItem dark={dark} iconName={IconArrowUndoUp} label="Reply" onPress={close} />
         <DropdownMenuItem dark={dark} iconName={IconSquareBehindSquare2} label="Copy text" onPress={close} />

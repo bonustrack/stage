@@ -52,12 +52,19 @@ interface OptionViewProps {
 
 function RadioMark({ selected, palette }: { selected: boolean; palette: Palette }): React.ReactElement {
   const outer: ViewStyle = {
-    width: SIZE, height: SIZE, borderRadius: SIZE / 2, borderWidth: 1.5,
-    borderColor: selected ? palette.head : palette.border, alignItems: 'center', justifyContent: 'center',
+    width: SIZE,
+    height: SIZE,
+    borderRadius: SIZE / 2,
+    borderWidth: 1.5,
+    borderColor: selected ? palette.head : palette.border,
+    alignItems: 'center',
+    justifyContent: 'center',
   };
   return (
     <View style={outer}>
-      {selected ? <View style={{ width: SIZE * 0.5, height: SIZE * 0.5, borderRadius: SIZE * 0.25, backgroundColor: palette.head }} /> : null}
+      {selected ? (
+        <View style={{ width: SIZE * 0.5, height: SIZE * 0.5, borderRadius: SIZE * 0.25, backgroundColor: palette.head }} />
+      ) : null}
     </View>
   );
 }
@@ -69,7 +76,9 @@ function OptionRow({ option, selected, disabled, palette, onPick, multiple }: Op
       accessibilityState={multiple ? { checked: selected, disabled } : { selected, disabled }}
       accessibilityLabel={option.label}
       disabled={disabled}
-      onPress={() => { onPick(option.value); }}
+      onPress={() => {
+        onPick(option.value);
+      }}
       style={{ flexDirection: 'row', alignItems: 'center', gap: 10, opacity: disabled ? 0.5 : 1 }}
     >
       {multiple ? <CheckboxBox size={SIZE} checked={selected} colors={palette} /> : <RadioMark selected={selected} palette={palette} />}
@@ -85,15 +94,22 @@ function Chip({ option, selected, disabled, palette, onPick }: OptionViewProps):
       accessibilityState={{ selected, disabled }}
       accessibilityLabel={option.label}
       disabled={disabled}
-      onPress={() => { onPick(option.value); }}
+      onPress={() => {
+        onPick(option.value);
+      }}
       style={{
-        paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, borderWidth: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 999,
+        borderWidth: 1,
         borderColor: selected ? palette.head : palette.border,
         backgroundColor: selected ? palette.head : 'transparent',
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <RNText style={{ color: selected ? palette.bg : palette.head, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>{option.label}</RNText>
+      <RNText style={{ color: selected ? palette.bg : palette.head, fontSize: FONT_SIZE['2xs'], fontFamily: fontName.sans }}>
+        {option.label}
+      </RNText>
     </Pressable>
   );
 }
@@ -111,11 +127,14 @@ function filterOptions(options: readonly ChoiceOption[], query: string): readonl
 function useSelection(props: ChoicePickerProps): [readonly string[], (value: string) => void] {
   const [internal, setInternal] = useState<readonly string[]>(props.defaultValue ?? []);
   const selected = props.value ?? internal;
-  return [selected, (value) => {
-    const next = nextSelection(selected, value, props.variant === 'multipleSelection');
-    if (props.value === undefined) setInternal(next);
-    props.onChange?.(next);
-  }];
+  return [
+    selected,
+    (value) => {
+      const next = nextSelection(selected, value, props.variant === 'multipleSelection');
+      if (props.value === undefined) setInternal(next);
+      props.onChange?.(next);
+    },
+  ];
 }
 
 function containerStyle(chips: boolean, direction: 'row' | 'col'): ViewStyle {
@@ -124,7 +143,18 @@ function containerStyle(chips: boolean, direction: 'row' | 'col'): ViewStyle {
 }
 
 export function ChoicePicker(props: ChoicePickerProps): React.ReactElement {
-  const { options, label, displayStyle = 'checkbox', filterable, checks, disabled = false, direction = 'col', style, weight, accessibility } = props;
+  const {
+    options,
+    label,
+    displayStyle = 'checkbox',
+    filterable,
+    checks,
+    disabled = false,
+    direction = 'col',
+    style,
+    weight,
+    accessibility,
+  } = props;
   const scheme = useKitScheme();
   const dark = props.dark ?? scheme === 'dark';
   const palette = checkboxColors(dark);
@@ -136,12 +166,26 @@ export function ChoicePicker(props: ChoicePickerProps): React.ReactElement {
   return (
     <WithChecks checks={checks} weight={weight}>
       {(rootStyle) => (
-        <View accessibilityRole={multiple ? undefined : 'radiogroup'} {...accessibilityProps(accessibility)} style={[{ gap: 10 }, ...styleList(style), ...styleList(rootStyle)]}>
-          {label === undefined ? null : <RNText style={{ color: palette.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>{label}</RNText>}
-          {filterable === true ? <TextField value={query} onChangeText={setQuery} placeholder="Filter options" dark={dark} disabled={disabled} /> : null}
+        <View
+          accessibilityRole={multiple ? undefined : 'radiogroup'}
+          {...accessibilityProps(accessibility)}
+          style={[{ gap: 10 }, ...styleList(style), ...styleList(rootStyle)]}
+        >
+          {label === undefined ? null : (
+            <RNText style={{ color: palette.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>{label}</RNText>
+          )}
+          {filterable === true ? (
+            <TextField value={query} onChangeText={setQuery} placeholder="Filter options" dark={dark} disabled={disabled} />
+          ) : null}
           <View style={containerStyle(chips, direction)}>
             {shown.map((option) => {
-              const view: OptionViewProps = { option, selected: selected.includes(option.value), disabled: disabled || option.disabled === true, palette, onPick: pick };
+              const view: OptionViewProps = {
+                option,
+                selected: selected.includes(option.value),
+                disabled: disabled || option.disabled === true,
+                palette,
+                onPick: pick,
+              };
               return chips ? <Chip key={option.value} {...view} /> : <OptionRow key={option.value} {...view} multiple={multiple} />;
             })}
           </View>

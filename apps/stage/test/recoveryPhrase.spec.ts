@@ -1,7 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import { english } from 'viem/accounts';
 import {
-  acceptTypedChar, applyCompletion, currentToken, normalizePastedPhrase, replaceWordAt, suggestWords, typePhrase, visibleSuggestions, wordAt,
+  acceptTypedChar,
+  applyCompletion,
+  currentToken,
+  normalizePastedPhrase,
+  replaceWordAt,
+  suggestWords,
+  typePhrase,
+  visibleSuggestions,
+  wordAt,
 } from '../components/onboarding/RecoveryPhrase.model';
 
 describe('BIP-39 wordlist shape', () => {
@@ -144,6 +152,9 @@ describe('editing a word in the middle', () => {
   });
 
   test('a letter typed in the middle is kept exactly, with no fill or cleanup', () => {
-    expect(typePhrase({ text: 'weekend pal soda ', pending: '' }, 'weekend palm soda ')).toEqual({ text: 'weekend palm soda ', pending: '' });
+    expect(typePhrase({ text: 'weekend pal soda ', pending: '' }, 'weekend palm soda ')).toEqual({
+      text: 'weekend palm soda ',
+      pending: '',
+    });
   });
 });

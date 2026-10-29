@@ -1,8 +1,18 @@
 import { ed25519 } from '@noble/curves/ed25519';
 import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import {
-  A2UI_MESSAGE_VERSION, FRAME_ACTION_MAX_CHARS, FRAME_MAX_COMPONENTS, FRAME_MAX_MESSAGES, frameContentSchema, frameMessageSchema,
-  messageComponentCount, nodeReplyMessageSchema, nodeReplyMessagesSchema, rendererMessageSchema, type FrameContent, type FrameMessage,
+  A2UI_MESSAGE_VERSION,
+  FRAME_ACTION_MAX_CHARS,
+  FRAME_MAX_COMPONENTS,
+  FRAME_MAX_MESSAGES,
+  frameContentSchema,
+  frameMessageSchema,
+  messageComponentCount,
+  nodeReplyMessageSchema,
+  nodeReplyMessagesSchema,
+  rendererMessageSchema,
+  type FrameContent,
+  type FrameMessage,
 } from '../xmtp/frame.schema';
 import { NODE_REPLY_MAX_BYTES } from './hosting';
 import { base64url, nodeSigningText } from './signing';
@@ -11,7 +21,14 @@ const MAX_URL_CHARS = 2048;
 const NODE_TIMEOUT_MS = 10_000;
 const LOCAL_SUFFIXES = ['.localhost', '.local', '.localdomain', '.internal', '.lan', '.home.arpa'];
 const PRIVATE_V4: readonly (readonly [number, number, number])[] = [
-  [0, 0, 255], [10, 0, 255], [127, 0, 255], [169, 254, 254], [172, 16, 31], [192, 168, 168], [100, 64, 127], [198, 18, 19],
+  [0, 0, 255],
+  [10, 0, 255],
+  [127, 0, 255],
+  [169, 254, 254],
+  [172, 16, 31],
+  [192, 168, 168],
+  [100, 64, 127],
+  [198, 18, 19],
 ];
 const PRIVATE_V6 = /^(?:f[c-f]|64:ff9b:|2002:|::ffff:0:)/;
 const NUMERIC_LABEL = /^(?:\d+|0x[0-9a-f]*)$/;
@@ -23,7 +40,10 @@ export type NodeUrlProblem = 'invalid' | 'insecure' | 'credentials' | 'local';
 
 export type NodeUrl = { ok: true; url: string; host: string } | { ok: false; problem: NodeUrlProblem };
 
-export interface NodeRequest { message: Record<string, unknown>; dataModel?: Record<string, unknown> }
+export interface NodeRequest {
+  message: Record<string, unknown>;
+  dataModel?: Record<string, unknown>;
+}
 
 interface NodeCallOptions {
   capabilities?: Record<string, unknown>;
@@ -47,9 +67,9 @@ type Push = (value: unknown) => boolean;
 
 function v4Octets(host: string): number[] | null {
   const parts = host.split('.');
-  if (parts.length !== 4 || parts.some(part => !/^\d{1,3}$/.test(part))) return null;
+  if (parts.length !== 4 || parts.some((part) => !/^\d{1,3}$/.test(part))) return null;
   const octets = parts.map(Number);
-  return octets.every(octet => octet <= 255) ? octets : null;
+  return octets.every((octet) => octet <= 255) ? octets : null;
 }
 
 function privateV4([a, b]: readonly number[]): boolean {
@@ -77,7 +97,7 @@ function isPublicHost(host: string): boolean {
   if (host.includes(':')) return !privateV6(host);
   const v4 = v4Octets(host);
   if (v4 !== null || NUMERIC_LABEL.test(host.slice(host.lastIndexOf('.') + 1))) return v4 !== null && !privateV4(v4);
-  return host.includes('.') && !LOCAL_SUFFIXES.some(suffix => host.endsWith(suffix));
+  return host.includes('.') && !LOCAL_SUFFIXES.some((suffix) => host.endsWith(suffix));
 }
 
 function canonicalPart(part: string): string {
@@ -102,7 +122,10 @@ export function nodeUrlOf(raw: string): NodeUrl {
   if (url === null || /[^\x21-\x7e]/.test(url.host)) return { ok: false, problem: 'invalid' };
   if (url.protocol !== 'https:') return { ok: false, problem: 'insecure' };
   if (url.username !== '' || url.password !== '') return { ok: false, problem: 'credentials' };
-  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.+$/, '');
+  const host = url.hostname
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+    .replace(/\.+$/, '');
   if (!isPublicHost(host)) return { ok: false, problem: 'local' };
   const href = `https://${url.host}${canonicalPart(url.pathname)}${canonicalPart(url.search)}`;
   return href.length > MAX_URL_CHARS ? { ok: false, problem: 'invalid' } : { ok: true, url: href, host: url.host };
@@ -181,7 +204,12 @@ function parsedJson(text: string): unknown {
   const whole = jsonValue(text);
   if (whole !== null) return whole.value;
   const lines: unknown[] = [];
-  return pushLines(text, (value) => { lines.push(value); return true; }) ? lines : null;
+  return pushLines(text, (value) => {
+    lines.push(value);
+    return true;
+  })
+    ? lines
+    : null;
 }
 
 function gateOf(schema: typeof frameMessageSchema, onMessage: (message: FrameMessage) => void): Push {
@@ -237,7 +265,13 @@ function replyMessages(reply: NodeReply): FrameMessage[] {
 
 async function pushWhole(response: Response, load: boolean, push: Push): Promise<ReadEnd> {
   let text = '';
-  const read = response.body === null ? 'done' : await eachChunk(response.body, (chunk) => { text += chunk; return true; });
+  const read =
+    response.body === null
+      ? 'done'
+      : await eachChunk(response.body, (chunk) => {
+          text += chunk;
+          return true;
+        });
   if (read !== 'done') return read;
   const reply = load ? loadReplyOf(parsedJson(text)) : messageReplyOf(parsedJson(text));
   return chunkEnd(reply !== null && replyMessages(reply).every(push));
@@ -247,15 +281,18 @@ async function readMessages(response: Response, load: boolean, onMessage: (messa
   if (!response.ok) return { ok: false, problem: 'status', status: response.status };
   if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return { ok: false, problem: 'too-large' };
   const push = gateOf(load ? frameMessageSchema : nodeReplyMessageSchema, onMessage);
-  const end = response.body !== null && STREAM_TYPES.test(response.headers.get('content-type') ?? '')
-    ? await streamLines(response.body, push)
-    : await pushWhole(response, load, push);
+  const end =
+    response.body !== null && STREAM_TYPES.test(response.headers.get('content-type') ?? '')
+      ? await streamLines(response.body, push)
+      : await pushWhole(response, load, push);
   return end === 'done' ? { ok: true, reply: { kind: 'streamed', load } } : { ok: false, problem: end };
 }
 
 async function collectedReply(response: Response, load: boolean): Promise<NodeResult> {
   const collected: FrameMessage[] = [];
-  const result = await readMessages(response, load, (message) => { collected.push(message); });
+  const result = await readMessages(response, load, (message) => {
+    collected.push(message);
+  });
   if (!result.ok) return result;
   const reply = load ? loadReplyOf(collected) : messageReplyOf(collected);
   return reply === null ? { ok: false, problem: 'invalid' } : { ok: true, reply };
@@ -271,8 +308,13 @@ async function callNode(method: 'GET' | 'POST', rawUrl: string, key: string, bod
   if (capabilities !== undefined) headers[CAPABILITIES_HEADER] = JSON.stringify(capabilities);
   try {
     const response = await fetch(node.url, {
-      method, headers, body: method === 'POST' ? body : undefined,
-      credentials: 'omit', redirect: 'error', cache: 'no-store', referrerPolicy: 'no-referrer',
+      method,
+      headers,
+      body: method === 'POST' ? body : undefined,
+      credentials: 'omit',
+      redirect: 'error',
+      cache: 'no-store',
+      referrerPolicy: 'no-referrer',
       signal: signal === undefined ? timeout : AbortSignal.any([signal, timeout]),
     });
     const load = method === 'GET';

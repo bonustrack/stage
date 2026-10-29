@@ -2,8 +2,10 @@ import type { Client } from '@xmtp/browser-sdk';
 
 type ClientReads = Pick<Client<unknown>, 'canMessage' | 'fetchInboxIdByIdentifier' | 'fetchKeyPackageStatuses'>;
 type ClientSigning = Pick<Client<unknown>, 'signWithInstallationKey' | 'verifySignedWithInstallationKey'>;
-type PreferenceReads = Pick<Client<unknown>['preferences'],
-  'sync' | 'inboxState' | 'fetchInboxState' | 'getInboxStates' | 'fetchInboxStates' | 'setConsentStates' | 'getConsentState'>;
+type PreferenceReads = Pick<
+  Client<unknown>['preferences'],
+  'sync' | 'inboxState' | 'fetchInboxState' | 'getInboxStates' | 'fetchInboxStates' | 'setConsentStates' | 'getConsentState'
+>;
 type ConversationReads = Pick<Client<unknown>['conversations'], 'fetchDmByIdentifier'>;
 type AccessClient = ClientReads & ClientSigning & { preferences: PreferenceReads; conversations: ConversationReads };
 
@@ -13,14 +15,16 @@ const guarded = new WeakSet<object>();
 function makeAccess(): { read: Access; write: Access } {
   let writer: Promise<unknown> = Promise.resolve();
   const readers = new Set<Promise<unknown>>();
-  const read: Access = run => {
+  const read: Access = (run) => {
     const pending = writer.then(run);
     readers.add(pending);
-    const release = (): void => { readers.delete(pending); };
+    const release = (): void => {
+      readers.delete(pending);
+    };
     void pending.then(release, release);
     return pending;
   };
-  const write: Access = run => {
+  const write: Access = (run) => {
     const pending = Promise.allSettled([writer, ...readers]).then(run);
     writer = Promise.allSettled([pending]);
     return pending;

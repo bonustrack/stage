@@ -1,4 +1,3 @@
-
 import { isErc6492Signature, isHex, parseErc6492Signature, type Hex } from 'viem';
 import type { AccountRecord } from './types';
 

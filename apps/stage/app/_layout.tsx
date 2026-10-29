@@ -9,9 +9,7 @@ import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform, Text, TextInput } from 'react-native';
-import {
-  RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore,
-} from '../lib/navigation';
+import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore } from '../lib/navigation';
 import { usePathname } from 'expo-router';
 import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
@@ -51,7 +49,9 @@ installPlainTextCopy();
 installAlertShim();
 void loadAsync(KIT_FONTS).catch(reported('boot.fonts'));
 if (Platform.OS === 'web' && location.protocol !== 'chrome-extension:' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
-  void ensureActiveAccount().then(() => getOrCreateXmtpClient('production')).catch(ignored(undefined, 'optional'));
+  void ensureActiveAccount()
+    .then(() => getOrCreateXmtpClient('production'))
+    .catch(ignored(undefined, 'optional'));
 }
 
 (function applyDefaultFont(): void {
@@ -109,7 +109,9 @@ function RootLayoutInner(): React.ReactElement {
   const { bg, toolbarBg } = usePalette();
 
   const barStyle: 'light' | 'dark' = isDarkBg(toolbarBg) ? 'light' : 'dark';
-  useEffect(() => { setStatusBarStyle(barStyle, true); }, [barStyle]);
+  useEffect(() => {
+    setStatusBarStyle(barStyle, true);
+  }, [barStyle]);
 
   useDeepLinks();
   useDocumentScrollRestore();
@@ -127,7 +129,9 @@ function RootLayoutInner(): React.ReactElement {
       .then(() => (isOnboardingRoute(pathname) ? undefined : getOrCreateXmtpClient('production')))
       .catch(reported('boot.client'));
   }, [onboarding.hasAccount]);
-  useEffect(() => { ensureMessagingStreamSync(); }, []);
+  useEffect(() => {
+    ensureMessagingStreamSync();
+  }, []);
   useOwnMailKey(onboarding.hasAccount);
 
   const [loaded] = useFonts(KIT_FONTS);
@@ -138,31 +142,31 @@ function RootLayoutInner(): React.ReactElement {
 
   return (
     <QueryClientProvider client={queryClient}>
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <KeyboardProvider>
-      <KeyboardResync/>
-      <StatusBar style={barStyle}/>
-      <WebContentFrame>
-      <RootStack detachInactiveScreens screenOptions={rootStackScreenOptions(bg)}>
-        <RootStack.Screen name="(tabs)" options={TABS_SCREEN_OPTIONS}/>
-      </RootStack>
-      </WebContentFrame>
-      <SplitSidebar visible={shell.sidebarVisible}/>
-      {!gatesOpen || routing ? (
-        <Column surface="surface" align="center" justify="center" style={viewportFill()}>
-          <Spinner size={28} color={dark ? '#ffffff' : '#000000'}/>
-        </Column>
-      ) : null}
-      <TopChrome decorated={gatesOpen && !shell.showOnboarding} />
-      <ToastHost />
-      <AlertHost />
-      <TooltipHost />
-      <AddMembersHost />
-      <ShareHost active={shell.sidebarVisible} />
-      <CallHost active={shell.sidebarVisible} />
-      <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
-      </KeyboardProvider>
-    </GestureHandlerRootView>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <KeyboardProvider>
+          <KeyboardResync />
+          <StatusBar style={barStyle} />
+          <WebContentFrame>
+            <RootStack detachInactiveScreens screenOptions={rootStackScreenOptions(bg)}>
+              <RootStack.Screen name="(tabs)" options={TABS_SCREEN_OPTIONS} />
+            </RootStack>
+          </WebContentFrame>
+          <SplitSidebar visible={shell.sidebarVisible} />
+          {!gatesOpen || routing ? (
+            <Column surface="surface" align="center" justify="center" style={viewportFill()}>
+              <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
+            </Column>
+          ) : null}
+          <TopChrome decorated={gatesOpen && !shell.showOnboarding} />
+          <ToastHost />
+          <AlertHost />
+          <TooltipHost />
+          <AddMembersHost />
+          <ShareHost active={shell.sidebarVisible} />
+          <CallHost active={shell.sidebarVisible} />
+          <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
+        </KeyboardProvider>
+      </GestureHandlerRootView>
     </QueryClientProvider>
   );
 }

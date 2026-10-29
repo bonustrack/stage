@@ -17,7 +17,14 @@ export const CHANNEL_FIELDS: readonly { id: ChannelField; label: string; icon?: 
 ];
 
 const defaultFields: ChannelFields = {
-  members: false, assignees: false, category: false, status: false, labels: false, priority: false, avatar: false, lastMessage: true,
+  members: false,
+  assignees: false,
+  category: false,
+  status: false,
+  labels: false,
+  priority: false,
+  avatar: false,
+  lastMessage: true,
 };
 
 export const DEFAULT_CHANNEL_FIELDS: ChannelFieldPreferences = {
@@ -44,22 +51,20 @@ function parseFields(value: unknown, defaults: ChannelFields): ChannelFields {
 }
 
 export function parseChannelFields(raw: string, chatsAvatarDefault = true): ChannelFieldPreferences {
-  const defaults = {
-    ...DEFAULT_CHANNEL_FIELDS,
-    chats: { ...DEFAULT_CHANNEL_FIELDS.chats, avatar: chatsAvatarDefault },
-  };
+  const defaults = { ...DEFAULT_CHANNEL_FIELDS, chats: { ...DEFAULT_CHANNEL_FIELDS.chats, avatar: chatsAvatarDefault } };
   try {
     const value: unknown = JSON.parse(raw);
     if (!isRecord(value)) return defaults;
-    return {
-      chats: parseFields(value.chats, defaults.chats),
-      board: parseFields(value.board, defaults.board),
-    };
-  } catch { return defaults; }
+    return { chats: parseFields(value.chats, defaults.chats), board: parseFields(value.board, defaults.board) };
+  } catch {
+    return defaults;
+  }
 }
 
 export function toggleChannelFieldIn(
-  current: ChannelFieldPreferences, view: ChannelFieldView, field: ChannelField,
+  current: ChannelFieldPreferences,
+  view: ChannelFieldView,
+  field: ChannelField,
 ): ChannelFieldPreferences {
   return { ...current, [view]: { ...current[view], [field]: !current[view][field] } };
 }

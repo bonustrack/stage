@@ -20,8 +20,12 @@ type ScanError = typeof CAMERA_ERROR | typeof LOAD_ERROR;
 type FrameReader = (video: HTMLVideoElement) => Promise<string | null>;
 type Decode = typeof import('jsqr').default;
 
-interface DetectedBarcode { rawValue: string }
-interface BarcodeDetectorLike { detect(source: HTMLVideoElement): Promise<DetectedBarcode[]> }
+interface DetectedBarcode {
+  rawValue: string;
+}
+interface BarcodeDetectorLike {
+  detect(source: HTMLVideoElement): Promise<DetectedBarcode[]>;
+}
 type BarcodeDetectorCtor = new (options: { formats: string[] }) => BarcodeDetectorLike;
 
 function nativeDetector(): BarcodeDetectorLike | null {
@@ -83,16 +87,17 @@ function stopStream(video: HTMLVideoElement): void {
   video.remove();
 }
 
-function useCameraScan(
-  host: HTMLElement | null, onScan: (text: string) => void,
-): { error: ScanError | null; retry: () => void } {
+function useCameraScan(host: HTMLElement | null, onScan: (text: string) => void): { error: ScanError | null; retry: () => void } {
   const [error, setError] = useState<ScanError | null>(null);
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
   useEffect(() => {
     if (host === null) return;
     const media = navigator.mediaDevices;
-    if (typeof media?.getUserMedia !== 'function') { setError(CAMERA_ERROR); return; }
+    if (typeof media?.getUserMedia !== 'function') {
+      setError(CAMERA_ERROR);
+      return;
+    }
     const video = attachVideo(host);
     let done = false;
     let timer: ReturnType<typeof setInterval> | null = null;
@@ -101,7 +106,12 @@ function useCameraScan(
       if (timer !== null) clearInterval(timer);
       stopStream(video);
     };
-    const fail = (message: ScanError): void => { if (!done) { stop(); setError(message); } };
+    const fail = (message: ScanError): void => {
+      if (!done) {
+        stop();
+        setError(message);
+      }
+    };
     const start = (read: FrameReader): void => {
       let reading = false;
       const tick = async (): Promise<void> => {
@@ -118,23 +128,39 @@ function useCameraScan(
           reading = false;
         }
       };
-      timer = setInterval(() => { void tick(); }, SCAN_INTERVAL_MS);
+      timer = setInterval(() => {
+        void tick();
+      }, SCAN_INTERVAL_MS);
     };
     const reader = loadFrameReader().catch(recover<FrameReader | null>('qrScanner.load', null));
-    media.getUserMedia({ video: { facingMode: 'environment' } })
+    media
+      .getUserMedia({ video: { facingMode: 'environment' } })
       .then(async (stream) => {
-        if (done) { for (const track of stream.getTracks()) track.stop(); return; }
+        if (done) {
+          for (const track of stream.getTracks()) track.stop();
+          return;
+        }
         video.srcObject = stream;
         await video.play();
         const read = await reader;
         if (done) return;
-        if (read === null) { fail(LOAD_ERROR); return; }
+        if (read === null) {
+          fail(LOAD_ERROR);
+          return;
+        }
         start(read);
       })
-      .catch(() => { fail(CAMERA_ERROR); });
+      .catch(() => {
+        fail(CAMERA_ERROR);
+      });
     return stop;
   }, [host]);
-  return { error, retry: () => { setError(null); } };
+  return {
+    error,
+    retry: () => {
+      setError(null);
+    },
+  };
 }
 
 export function QrScanner({ onScan, dark }: QrScannerProps): React.ReactElement {
@@ -143,7 +169,9 @@ export function QrScanner({ onScan, dark }: QrScannerProps): React.ReactElement 
   if (error !== null) {
     return (
       <Column gap={10} align="center" padding={{ y: 16 }}>
-        <Text size="2xs" color="secondary" textAlign="center">{error}</Text>
+        <Text size="2xs" color="secondary" textAlign="center">
+          {error}
+        </Text>
         {error === LOAD_ERROR ? (
           <Button dark={dark} variant="soft" color="primary" label="Try again" onPress={retry} style={{ alignSelf: 'center' }} />
         ) : null}
@@ -152,7 +180,9 @@ export function QrScanner({ onScan, dark }: QrScannerProps): React.ReactElement 
   }
   return (
     <View
-      ref={(node) => { setHost(node as unknown as HTMLElement | null); }}
+      ref={(node) => {
+        setHost(node as unknown as HTMLElement | null);
+      }}
       style={{ height: SCANNER_HEIGHT, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000000' }}
     />
   );

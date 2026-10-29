@@ -9,7 +9,9 @@ mock.module('../platform/storage', () => ({
   secureStorage: {},
   appStorage: {
     get: async (key: string): Promise<string | null> => values.get(key) ?? null,
-    set: async (key: string, value: string): Promise<void> => { values.set(key, value); },
+    set: async (key: string, value: string): Promise<void> => {
+      values.set(key, value);
+    },
   },
 }));
 mock.module('../lib/accounts', () => ({
@@ -18,10 +20,16 @@ mock.module('../lib/accounts', () => ({
 }));
 const { applyRemoteHomeView, loadHomeView, onHomeViewChanged, setHomeView } = await import('../lib/homeView');
 
-const view = (v: HomeViewContent['view'], groupBy: HomeViewContent['groupBy'], at: number): HomeViewContent => (
-  { view: v, groupBy, columnBy: 'label', at }
-);
-const settle = (): Promise<void> => new Promise(resolve => { setTimeout(resolve, 0); });
+const view = (v: HomeViewContent['view'], groupBy: HomeViewContent['groupBy'], at: number): HomeViewContent => ({
+  view: v,
+  groupBy,
+  columnBy: 'label',
+  at,
+});
+const settle = (): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 const stored = (account: string): unknown => JSON.parse(values.get(`home.view.${account}`) ?? 'null');
 
 describe('home view model', () => {
@@ -60,10 +68,12 @@ describe('home view sorting', () => {
   });
 
   test('catch-up replay restores sorts before advancing past a legacy grouping edit', async () => {
-    const log = [
-      { ...view('chats', 'none', 10), chatsSort, boardSort },
-      view('chats', 'category', 11),
-    ].map((content, i) => ({ content, contentTypeId: 'stage.box/homeView:1.0', senderInboxId: 'self', sentNs: i + 1 }));
+    const log = [{ ...view('chats', 'none', 10), chatsSort, boardSort }, view('chats', 'category', 11)].map((content, i) => ({
+      content,
+      contentTypeId: 'stage.box/homeView:1.0',
+      senderInboxId: 'self',
+      sentNs: i + 1,
+    }));
     const incoming = collectSyncReplay(log, 0, { inboxId: 'self', nowMs: 100 }).latest.homeView;
     expect(incoming).not.toBeNull();
     if (incoming === null) throw new Error('Missing home view replay');
@@ -102,7 +112,9 @@ describe('home view store', () => {
 
   test('the view type is saved per account, kept after a reload and never sent', async () => {
     const sent: HomeViewContent[] = [];
-    const stop = onHomeViewChanged(change => { sent.push(change.state); });
+    const stop = onHomeViewChanged((change) => {
+      sent.push(change.state);
+    });
 
     setHomeView({ view: 'board' });
     await settle();
@@ -112,7 +124,7 @@ describe('home view store', () => {
 
     setHomeView({ columnBy: 'category' });
     await settle();
-    expect(sent.map(s => [s.view, s.columnBy])).toEqual([['chats', 'category']]);
+    expect(sent.map((s) => [s.view, s.columnBy])).toEqual([['chats', 'category']]);
     expect(stored('alice')).toMatchObject({ view: 'board', columnBy: 'category' });
     expect((await loadHomeView('alice'))?.view).toBe('chats');
 

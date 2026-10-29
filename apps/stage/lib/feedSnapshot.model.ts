@@ -50,7 +50,7 @@ export function snapshotEntries(slice: readonly HistoryEntry[], messages = SNAPS
 }
 
 export function withLine(snapshot: FeedSnapshot, line: string, entries: HistoryEntry[], at: number): FeedSnapshot {
-  const others = snapshot.lines.filter(l => l.line !== line);
+  const others = snapshot.lines.filter((l) => l.line !== line);
   const lines = entries.length === 0 ? others : [{ line, at, entries }, ...others];
   return { ...snapshot, lines: lines.slice(0, SNAPSHOT_LINES) };
 }
@@ -60,7 +60,7 @@ export function withSelf(snapshot: FeedSnapshot, self: string): FeedSnapshot {
 }
 
 export function lineEntries(snapshot: FeedSnapshot, line: string): HistoryEntry[] | null {
-  return snapshot.lines.find(l => l.line === line)?.entries ?? null;
+  return snapshot.lines.find((l) => l.line === line)?.entries ?? null;
 }
 
 function encodeValue(_key: string, value: unknown): unknown {

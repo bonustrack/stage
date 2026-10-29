@@ -1,7 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  FEED_MAX_FIRST_PAINT, FEED_MIN_BATCH, feedDistanceFromNewest,
-  planUprightRestore, shouldPageOlder, uprightFirstBatch, uprightScrollOffset,
+  FEED_MAX_FIRST_PAINT,
+  FEED_MIN_BATCH,
+  feedDistanceFromNewest,
+  planUprightRestore,
+  shouldPageOlder,
+  uprightFirstBatch,
+  uprightScrollOffset,
 } from '../components/conversation/feed-helpers';
 
 const CONTENT = 3000;
@@ -48,9 +53,8 @@ describe('a saved distance restores to the same place in an upright list', () =>
   });
 });
 
-const restore = (over: Partial<Parameters<typeof planUprightRestore>[0]> = {}) => planUprightRestore({
-  loaded: true, restoredSaved: false, savedDistance: 0, userDragged: false, atNewest: true, ...over,
-});
+const restore = (over: Partial<Parameters<typeof planUprightRestore>[0]> = {}) =>
+  planUprightRestore({ loaded: true, restoredSaved: false, savedDistance: 0, userDragged: false, atNewest: true, ...over });
 
 describe('an upright feed lands on the newest message and stays put once the reader takes over', () => {
   test('opening a conversation pins to the newest message as content renders in', () => {

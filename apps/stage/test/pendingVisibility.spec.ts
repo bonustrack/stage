@@ -12,12 +12,22 @@ async function advance(ms: number): Promise<void> {
   for (let i = 0; i < 12; i += 1) await Promise.resolve();
 }
 
-beforeEach(() => { activeId = 'a'; jest.useFakeTimers(); });
-afterEach(() => { jest.clearAllTimers(); jest.useRealTimers(); });
+beforeEach(() => {
+  activeId = 'a';
+  jest.useFakeTimers();
+});
+afterEach(() => {
+  jest.clearAllTimers();
+  jest.useRealTimers();
+});
 
 test('dirty visibility retries without another foreground or account event', async () => {
   let calls = 0;
-  const queue = createVisibilityPublisher(async () => { calls += 1; if (calls === 1) throw new Error('offline'); return true; });
+  const queue = createVisibilityPublisher(async () => {
+    calls += 1;
+    if (calls === 1) throw new Error('offline');
+    return true;
+  });
   queue('a');
   await advance(800);
   expect(calls).toBe(1);
@@ -30,7 +40,10 @@ test('dirty visibility retries without another foreground or account event', asy
 test('old-account completion cannot cancel the new account timer', async () => {
   const release = Promise.withResolvers<boolean>();
   const sent: string[] = [];
-  const queue = createVisibilityPublisher(async id => { sent.push(id); return id === 'a' ? release.promise : true; });
+  const queue = createVisibilityPublisher(async (id) => {
+    sent.push(id);
+    return id === 'a' ? release.promise : true;
+  });
   queue('a');
   await advance(800);
   activeId = 'b';
@@ -43,7 +56,10 @@ test('old-account completion cannot cancel the new account timer', async () => {
 test('a newer revision during an in-flight send remains dirty', async () => {
   const release = Promise.withResolvers<boolean>();
   let calls = 0;
-  const queue = createVisibilityPublisher(async () => { calls += 1; return calls === 1 ? release.promise : true; });
+  const queue = createVisibilityPublisher(async () => {
+    calls += 1;
+    return calls === 1 ? release.promise : true;
+  });
   queue('a');
   await advance(800);
   queue('a');
@@ -57,7 +73,10 @@ test('a newer revision during an in-flight send remains dirty', async () => {
 
 test('an inactive account is not published through the current client', async () => {
   const sent: string[] = [];
-  const queue = createVisibilityPublisher(async id => { sent.push(id); return true; });
+  const queue = createVisibilityPublisher(async (id) => {
+    sent.push(id);
+    return true;
+  });
   queue('b');
   await advance(800);
   await advance(60_000);
@@ -70,7 +89,10 @@ test('an inactive account is not published through the current client', async ()
 
 test('rate limiting stops retries for the session, including later automatic requests', async () => {
   let calls = 0;
-  const queue = createVisibilityPublisher(async () => { calls += 1; throw new Error('RESOURCE_EXHAUSTED: rate limit 429'); });
+  const queue = createVisibilityPublisher(async () => {
+    calls += 1;
+    throw new Error('RESOURCE_EXHAUSTED: rate limit 429');
+  });
   queue('a');
   await advance(800);
   await advance(600_000);

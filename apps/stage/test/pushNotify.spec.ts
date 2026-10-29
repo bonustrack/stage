@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  convIdOfNotificationData, javaStringHash, nativeCardIdentifier, notificationIdsForConv,
-} from '../lib/pushNotify.model';
+import { convIdOfNotificationData, javaStringHash, nativeCardIdentifier, notificationIdsForConv } from '../lib/pushNotify.model';
 
 const CONV = '0123456789abcdef0123456789abcdef';
 
@@ -15,8 +13,7 @@ describe('the Android card id matches Kotlin String.hashCode', () => {
   });
 
   test('builds the expo identifier of the card StageFcmService posts', () => {
-    expect(nativeCardIdentifier(CONV.toUpperCase()))
-      .toBe(`expo-notifications://foreign_notifications?id=${javaStringHash(CONV)}`);
+    expect(nativeCardIdentifier(CONV.toUpperCase())).toBe(`expo-notifications://foreign_notifications?id=${javaStringHash(CONV)}`);
   });
 });
 

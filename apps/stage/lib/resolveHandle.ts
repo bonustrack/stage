@@ -20,11 +20,16 @@ async function resolveStageName(name: string): Promise<string | null> {
 
 function resolveParsed(parsed: ParsedHandle): Promise<string | null> {
   switch (parsed.kind) {
-    case 'address': return Promise.resolve(parsed.value);
-    case 'stage': return resolveStageName(parsed.value);
-    case 'basename': return stageLabelOf(parsed.value) === null ? basenameAddress(parsed.value) : resolveStageName(parsed.value);
-    case 'ens': return resolveEnsName(parsed.value).then((a) => a?.toLowerCase() ?? null);
-    default: return Promise.resolve(null);
+    case 'address':
+      return Promise.resolve(parsed.value);
+    case 'stage':
+      return resolveStageName(parsed.value);
+    case 'basename':
+      return stageLabelOf(parsed.value) === null ? basenameAddress(parsed.value) : resolveStageName(parsed.value);
+    case 'ens':
+      return resolveEnsName(parsed.value).then((a) => a?.toLowerCase() ?? null);
+    default:
+      return Promise.resolve(null);
   }
 }
 
@@ -43,13 +48,17 @@ export function resolveHandleToAddress(raw: string | null | undefined): Promise<
   return getQueryClient().fetchQuery(handleQuery(parsed));
 }
 
-export interface ResolvedHandle { address: string | null; resolving: boolean; kind: ParsedHandle['kind'] }
+export interface ResolvedHandle {
+  address: string | null;
+  resolving: boolean;
+  kind: ParsedHandle['kind'];
+}
 
 export function useResolvedHandle(raw: string | null | undefined): ResolvedHandle {
   const parsed = parseHandle(raw);
   const lookup = parsed.kind !== 'address' && parsed.kind !== 'invalid';
   const q = useQuery({ ...handleQuery(parsed), enabled: lookup });
   if (parsed.kind === 'address') return { address: parsed.value, resolving: false, kind: parsed.kind };
-  const address = lookup ? q.data ?? null : null;
+  const address = lookup ? (q.data ?? null) : null;
   return { address, resolving: lookup && address === null && q.isFetching, kind: parsed.kind };
 }

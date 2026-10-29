@@ -11,8 +11,17 @@ const photo: Attachment = { id: 'photo', url: 'file:///photo.jpg', kind: 'image'
 
 function senders() {
   return {
-    text: mock(async () => 'text-id'), reply: mock(async () => 'reply-id'),
-    attachments: mock<(line: string, files: LocalAttachmentInput[], onUploaded?: OnAttachmentsUploaded, beforeSend?: () => Promise<void>, replyTo?: string) => Promise<string>>(async () => 'file-id'),
+    text: mock(async () => 'text-id'),
+    reply: mock(async () => 'reply-id'),
+    attachments: mock<
+      (
+        line: string,
+        files: LocalAttachmentInput[],
+        onUploaded?: OnAttachmentsUploaded,
+        beforeSend?: () => Promise<void>,
+        replyTo?: string,
+      ) => Promise<string>
+    >(async () => 'file-id'),
   };
 }
 
@@ -33,7 +42,13 @@ describe('large composer text becomes a UTF-8 attachment', () => {
     expect(textAttachment('a'.repeat(4095), mint)).toBeNull();
     expect(textAttachment('a'.repeat(4096), mint)).toBeNull();
     expect(mint).not.toHaveBeenCalled();
-    expect(textAttachment('a'.repeat(4097), mint)).toMatchObject({ id: 'text-file', size: 4097, name: 'message.txt', mime: 'text/plain', kind: 'file' });
+    expect(textAttachment('a'.repeat(4097), mint)).toMatchObject({
+      id: 'text-file',
+      size: 4097,
+      name: 'message.txt',
+      mime: 'text/plain',
+      kind: 'file',
+    });
   });
 
   test('the limit counts UTF-8 bytes, not UTF-16 units or glyphs', () => {
@@ -64,7 +79,7 @@ describe('large composer text becomes a UTF-8 attachment', () => {
 
   test('short text keeps its existing trimming, caption and reply behavior', async () => {
     const { ports, steps } = planner('  caption\n', [photo], 'original');
-    expect(steps.map(s => s.text)).toEqual(['caption', '']);
+    expect(steps.map((s) => s.text)).toEqual(['caption', '']);
     for (const step of steps) await step.run();
     expect(ports.reply).toHaveBeenCalledWith('line', 'original', 'caption');
     expect(ports.attachments).toHaveBeenCalledWith('line', [{ fileUri: photo.url, mimeType: photo.mime, filename: photo.name }], undefined);
@@ -73,7 +88,7 @@ describe('large composer text becomes a UTF-8 attachment', () => {
   test('the generated file replaces the caption step without reordering picked files or a location', async () => {
     const location = locationAttachment(1, 2, 'location');
     const { ports, steps } = planner(longText, [photo, location]);
-    expect(steps.map(s => s.localId)).toEqual(['local-0', 'local-1', 'local-2']);
+    expect(steps.map((s) => s.localId)).toEqual(['local-0', 'local-1', 'local-2']);
     expect(steps[0]?.attachments[0]?.name).toBe('message.txt');
     expect(steps[1]?.attachments).toEqual([photo]);
     expect(steps[2]?.location).toEqual(location);
@@ -86,8 +101,18 @@ describe('large composer text becomes a UTF-8 attachment', () => {
     const { ports, steps } = planner(longText, [photo], 'reference');
     const generated = steps[0]?.attachments[0];
     for (const step of steps) await step.run();
-    expect(ports.attachments.mock.calls[0]).toEqual(['line', [{ fileUri: generated?.url, mimeType: 'text/plain', filename: 'message.txt' }], undefined, undefined, 'reference']);
-    expect(ports.attachments.mock.calls[1]).toEqual(['line', [{ fileUri: photo.url, mimeType: photo.mime, filename: photo.name }], undefined]);
+    expect(ports.attachments.mock.calls[0]).toEqual([
+      'line',
+      [{ fileUri: generated?.url, mimeType: 'text/plain', filename: 'message.txt' }],
+      undefined,
+      undefined,
+      'reference',
+    ]);
+    expect(ports.attachments.mock.calls[1]).toEqual([
+      'line',
+      [{ fileUri: photo.url, mimeType: photo.mime, filename: photo.name }],
+      undefined,
+    ]);
     expect(ports.reply).not.toHaveBeenCalled();
   });
 

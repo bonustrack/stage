@@ -13,7 +13,9 @@ const frames = makeLiveFrames({
   send: (url, key, request, onMessage) => sendNodeMessage(url, key, request, { capabilities: RENDERER_CAPABILITIES, onMessage }),
   newKey: newNodeKey,
   now: () => Date.now(),
-  toast: (message) => { capabilities.toast(message); },
+  toast: (message) => {
+    capabilities.toast(message);
+  },
 });
 
 subscribeAccountEpoch(() => {

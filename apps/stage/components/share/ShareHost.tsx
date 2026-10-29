@@ -26,12 +26,20 @@ function useIncomingShare() {
     }
   }, []);
   useEffect(() => {
-    const unsubscribe = incomingShare.subscribe(() => { void refresh(); });
+    const unsubscribe = incomingShare.subscribe(() => {
+      void refresh();
+    });
     void refresh();
-    return () => { generation.current += 1; unsubscribe(); };
+    return () => {
+      generation.current += 1;
+      unsubscribe();
+    };
   }, [refresh]);
   const dismiss = async (keepFiles: boolean): Promise<void> => {
-    if (pending === null) { setError(null); return; }
+    if (pending === null) {
+      setError(null);
+      return;
+    }
     generation.current += 1;
     await incomingShare.dismiss(pending.id, keepFiles);
     await refresh();
@@ -46,16 +54,39 @@ export function ShareHost({ active }: { active: boolean }): React.ReactElement {
   const close = (): void => {
     if (closing) return;
     setClosing(true);
-    void dismiss(false).finally(() => { setClosing(false); }).catch(() => { void refresh(); });
+    void dismiss(false)
+      .finally(() => {
+        setClosing(false);
+      })
+      .catch(() => {
+        void refresh();
+      });
   };
-  if (pending?.status === 'ready') return <ShareSession key={pending.id} share={pending} active={active} onDismiss={dismiss}/>;
+  if (pending?.status === 'ready') return <ShareSession key={pending.id} share={pending} active={active} onDismiss={dismiss} />;
   return (
     <AppModal visible={active && (pending !== null || error !== null)} title="Share to Stage" onClose={close} dismissable={!closing}>
       <Column gap={12}>
-        {pending?.status === 'loading' ? <><Spinner/><Text>Copying shared files privately on this device…</Text></> : null}
+        {pending?.status === 'loading' ? (
+          <>
+            <Spinner />
+            <Text>Copying shared files privately on this device…</Text>
+          </>
+        ) : null}
         {pending?.status === 'error' ? <Text>{shareError(pending.error)}</Text> : null}
-        {error === null ? null : <><Text color="danger">{error}</Text><Button dark={dark} label="Try again" variant="soft" onPress={() => { void refresh(); }}/></>}
-        <Button dark={dark} label="Cancel share" variant="soft" color="secondary" loading={closing} onPress={close}/>
+        {error === null ? null : (
+          <>
+            <Text color="danger">{error}</Text>
+            <Button
+              dark={dark}
+              label="Try again"
+              variant="soft"
+              onPress={() => {
+                void refresh();
+              }}
+            />
+          </>
+        )}
+        <Button dark={dark} label="Cancel share" variant="soft" color="secondary" loading={closing} onPress={close} />
       </Column>
     </AppModal>
   );

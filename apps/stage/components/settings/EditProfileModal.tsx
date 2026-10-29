@@ -19,8 +19,16 @@ function pictureChanges(picture: PictureChoice): Pick<ProfileChanges, 'image' | 
   return {};
 }
 
-function EditProfileSection({ address, name, picture, onSaved }: {
-  address: string; name: string; picture: PictureChoice; onSaved: () => void;
+function EditProfileSection({
+  address,
+  name,
+  picture,
+  onSaved,
+}: {
+  address: string;
+  name: string;
+  picture: PictureChoice;
+  onSaved: () => void;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const current = { displayName: getPeerDisplayName(address), description: getPeerDescription(address) };
@@ -28,14 +36,19 @@ function EditProfileSection({ address, name, picture, onSaved }: {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  useEffect(() => { setDraft(draftFrom(current)); }, [current.displayName, current.description]);
+  useEffect(() => {
+    setDraft(draftFrom(current));
+  }, [current.displayName, current.description]);
 
   const problem = draftProblem(draft);
   const dirty = hasChanges(current, draft, picture.kind !== 'keep');
 
   const save = (): void => {
     if (busy || problem) return;
-    if (!dirty) { setStatus('Nothing changed yet.'); return; }
+    if (!dirty) {
+      setStatus('Nothing changed yet.');
+      return;
+    }
     setBusy(true);
     setStatus('Uploading and sending the transaction…');
     void saveBasenameProfile(address, name, { ...changedFields(current, draft), ...pictureChanges(picture) })
@@ -44,20 +57,49 @@ function EditProfileSection({ address, name, picture, onSaved }: {
         setStatus(hash ? `Saved onchain (${hash.slice(0, 10)}…). It can take a minute to appear everywhere.` : 'Nothing to save.');
         capabilities.toast('Profile saved.');
       })
-      .catch((err: unknown) => { setStatus(`Could not save: ${errorLine(err)}`); })
-      .finally(() => { setBusy(false); });
+      .catch((err: unknown) => {
+        setStatus(`Could not save: ${errorLine(err)}`);
+      })
+      .finally(() => {
+        setBusy(false);
+      });
   };
 
   return (
     <Column gap={8}>
       <Column gap={8}>
-        <FormField label="Display name" placeholder="How people see you" value={draft.displayName} onChangeText={(v) => { setDraft({ ...draft, displayName: v }); }} disabled={busy} />
-        <FormField label="About" placeholder="A few words about you" multiline value={draft.description} onChangeText={(v) => { setDraft({ ...draft, description: v }); }} disabled={busy} />
+        <FormField
+          label="Display name"
+          placeholder="How people see you"
+          value={draft.displayName}
+          onChangeText={(v) => {
+            setDraft({ ...draft, displayName: v });
+          }}
+          disabled={busy}
+        />
+        <FormField
+          label="About"
+          placeholder="A few words about you"
+          multiline
+          value={draft.description}
+          onChangeText={(v) => {
+            setDraft({ ...draft, description: v });
+          }}
+          disabled={busy}
+        />
       </Column>
-      {problem ?? status ? <Text text={problem ?? status ?? ''} size="xs" color="secondary" /> : null}
+      {(problem ?? status) ? <Text text={problem ?? status ?? ''} size="xs" color="secondary" /> : null}
       <Column padding={{ top: 8 }}>
-        <Button label={busy ? 'Saving…' : 'Save'} block size="lg" color="primary" variant="solid" dark={dark}
-          disabled={busy || problem !== null} onPress={save} />
+        <Button
+          label={busy ? 'Saving…' : 'Save'}
+          block
+          size="lg"
+          color="primary"
+          variant="solid"
+          dark={dark}
+          disabled={busy || problem !== null}
+          onPress={save}
+        />
       </Column>
     </Column>
   );
@@ -68,19 +110,37 @@ function profileAvatar(address: string, picture: PictureChoice): React.ReactElem
   return <Avatar address={picture.kind === 'remove' ? null : address} size={96} />;
 }
 
-export function EditProfileModal({ visible, onClose, address, handle }: {
-  visible: boolean; onClose: () => void; address: string; handle: string;
+export function EditProfileModal({
+  visible,
+  onClose,
+  address,
+  handle,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  address: string;
+  handle: string;
 }): React.ReactElement {
   const [picture, setPicture] = useState<PictureChoice>({ kind: 'keep' });
-  const close = (): void => { setPicture({ kind: 'keep' }); onClose(); };
+  const close = (): void => {
+    setPicture({ kind: 'keep' });
+    onClose();
+  };
   const removable = picture.kind === 'new' || (picture.kind === 'keep' && getPeerAvatar(address) !== undefined);
   return (
     <AppModal visible={visible} onClose={close} title="Edit profile">
       <Column align="center" padding={{ bottom: 16 }}>
         <PictureEditor avatar={profileAvatar(address, picture)} editable removable={removable} onChange={setPicture} />
       </Column>
-      <EditProfileSection address={address} name={handle} picture={picture}
-        onSaved={() => { invalidatePeerProfile(address); close(); }} />
+      <EditProfileSection
+        address={address}
+        name={handle}
+        picture={picture}
+        onSaved={() => {
+          invalidatePeerProfile(address);
+          close();
+        }}
+      />
     </AppModal>
   );
 }

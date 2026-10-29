@@ -33,11 +33,16 @@ export function a2uiSnapshot(messages: readonly unknown[]): A2uiSnapshot {
       const { code, message: text, surfaceId, path } = message.error;
       diagnostics.push({ code, message: path === undefined ? text : `${path}: ${text}`, surfaceId });
     },
-    onDiagnostic: (diagnostic) => { diagnostics.push(diagnostic); },
+    onDiagnostic: (diagnostic) => {
+      diagnostics.push(diagnostic);
+    },
   });
   for (const message of messages) if (isJsonObject(message)) client.receive(message);
   const out = snapshotOfClient(client);
   const surfaceIds = out.map((m) => ('createSurface' in m ? m.createSurface.surfaceId : ''));
-  const fits = surfaceIds.every((id) => { const surface = client.surface(id); return surface !== undefined && fitsRenderLimits(surface, client.registry); });
+  const fits = surfaceIds.every((id) => {
+    const surface = client.surface(id);
+    return surface !== undefined && fitsRenderLimits(surface, client.registry);
+  });
   return { messages: out, surfaceIds, diagnostics, fits };
 }

@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  DEFAULT_EDGE_THRESHOLD, distanceFromEnd, distanceFromStart, endOffset, itemTranslate, nearEnd, nearStart,
+  DEFAULT_EDGE_THRESHOLD,
+  distanceFromEnd,
+  distanceFromStart,
+  endOffset,
+  itemTranslate,
+  nearEnd,
+  nearStart,
 } from '../components/layout/VirtualList.model';
 
 const metrics = (offset: number, contentHeight = 4000, viewportHeight = 800) => ({ offset, contentHeight, viewportHeight });
@@ -20,7 +26,7 @@ describe('edge distances', () => {
     expect(nearEnd(metrics(2799), 0.5)).toBe(false);
   });
 
-  test('falls back to FlatList\'s default threshold when none is given', () => {
+  test("falls back to FlatList's default threshold when none is given", () => {
     expect(DEFAULT_EDGE_THRESHOLD).toBe(2);
     expect(nearStart(metrics(1600), undefined)).toBe(true);
     expect(nearStart(metrics(1601), null)).toBe(false);

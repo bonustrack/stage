@@ -8,7 +8,7 @@ export function TabsPager(): React.ReactElement {
   const Body = PAGES[name];
   return (
     <Column weight={1}>
-      <Body/>
+      <Body />
     </Column>
   );
 }

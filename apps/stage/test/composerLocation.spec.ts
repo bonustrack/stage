@@ -8,7 +8,11 @@ describe('share location adds a pending attachment', () => {
   test('a location attachment carries the Google Maps link', () => {
     const location = locationAttachment(12.3456, -65.4321, 'loc');
     expect(location).toEqual({
-      id: 'loc', kind: 'location', mime: '', size: 0, name: 'Location',
+      id: 'loc',
+      kind: 'location',
+      mime: '',
+      size: 0,
+      name: 'Location',
       url: 'https://www.google.com/maps/search/?api=1&query=12.3456,-65.4321',
     });
     expect(isLocation(location)).toBe(true);

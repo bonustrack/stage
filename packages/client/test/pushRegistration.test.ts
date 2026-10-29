@@ -1,8 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createHmac } from 'node:crypto';
-import {
-  makePushRegistrar, type PushRegistrationInput,
-} from '../src/xmtp/pushRegistration';
+import { makePushRegistrar, type PushRegistrationInput } from '../src/xmtp/pushRegistration';
 import type { PushSubscriptionJson } from '../src/xmtp/pushServer';
 
 const GROUP = '/xmtp/mls/1/g-abcdef/proto';
@@ -35,10 +33,21 @@ function fixture(timeoutMs?: number) {
   let beforeRead: () => void = () => undefined;
   const { register, unregister } = makePushRegistrar({
     timeoutMs,
-    cacheError: error => { cacheErrors.push(error); },
-    remove: async id => { stored.delete(id); },
-    read: async id => { beforeRead(); if (failRead) throw new Error('disk unavailable'); return stored.get(id) ?? null; },
-    write: async (id, value) => { if (failWrite) throw new Error('quota exceeded'); stored.set(id, value); },
+    cacheError: (error) => {
+      cacheErrors.push(error);
+    },
+    remove: async (id) => {
+      stored.delete(id);
+    },
+    read: async (id) => {
+      beforeRead();
+      if (failRead) throw new Error('disk unavailable');
+      return stored.get(id) ?? null;
+    },
+    write: async (id, value) => {
+      if (failWrite) throw new Error('quota exceeded');
+      stored.set(id, value);
+    },
     post: async (url, body) => {
       await beforePost();
       if (failPost) throw new Error('offline');
@@ -50,40 +59,90 @@ function fixture(timeoutMs?: number) {
       if (url === 'DeleteInstallation') subscriptions.delete((body as { installationId: string }).installationId);
     },
     now: () => now,
-    status: status => { statuses.push(status); },
+    status: (status) => {
+      statuses.push(status);
+    },
   });
   const input: PushRegistrationInput = {
-    installationId: 'mobile', platform: 'android', current: () => current, signal: controller.signal,
-    rpcUrl: method => method, getToken: async () => token,
-    syncPreferences: async () => { if (failSync) throw new Error('sync failed'); await sync(); },
+    installationId: 'mobile',
+    platform: 'android',
+    current: () => current,
+    signal: controller.signal,
+    rpcUrl: (method) => method,
+    getToken: async () => token,
+    syncPreferences: async () => {
+      if (failSync) throw new Error('sync failed');
+      await sync();
+    },
     collectTopics: async () => ({
       topics: [GROUP, DM, WELCOME],
-      hmacKeys: Object.fromEntries([GROUP, DM].map(topic => [topic, [{ thirtyDayPeriodsSinceEpoch: period, hmacKey: key }]])),
+      hmacKeys: Object.fromEntries([GROUP, DM].map((topic) => [topic, [{ thirtyDayPeriodsSinceEpoch: period, hmacKey: key }]])),
     }),
   };
   const delivers = (installationId: string, topic: string, senderKey: Uint8Array): boolean => {
-    const sub = subscriptions.get(installationId)?.find(item => item.topic === topic);
-    const own = sub?.hmacKeys.find(item => item.thirtyDayPeriodsSinceEpoch === period);
+    const sub = subscriptions.get(installationId)?.find((item) => item.topic === topic);
+    const own = sub?.hmacKeys.find((item) => item.thirtyDayPeriodsSinceEpoch === period);
     if (!own) return true;
     const expected = createHmac('sha256', Buffer.from(own.key, 'base64')).update(ENVELOPE).digest();
     return !expected.equals(createHmac('sha256', senderKey).update(ENVELOPE).digest());
   };
   return {
-    input, register, unregister, calls, statuses, stored, subscriptions, delivers, cacheErrors,
-    abort: () => { controller.abort(); }, setWriteFailure: (value: boolean) => { failWrite = value; },
-    setKey: (value: Uint8Array) => { key = value; }, setPeriod: (value: number) => { period = value; },
-    setToken: (value: string) => { token = value; }, setNow: (value: number) => { now = value; },
-    setCurrent: (value: boolean) => { current = value; }, setPostFailure: (value: boolean) => { failPost = value; },
-    setReadFailure: (value: boolean) => { failRead = value; }, setSyncFailure: (value: boolean) => { failSync = value; },
-    onSync: (value: () => Promise<void>) => { sync = value; },
-    onPost: (value: () => Promise<void>) => { beforePost = value; },
-    onRead: (value: () => void) => { beforeRead = value; },
+    input,
+    register,
+    unregister,
+    calls,
+    statuses,
+    stored,
+    subscriptions,
+    delivers,
+    cacheErrors,
+    abort: () => {
+      controller.abort();
+    },
+    setWriteFailure: (value: boolean) => {
+      failWrite = value;
+    },
+    setKey: (value: Uint8Array) => {
+      key = value;
+    },
+    setPeriod: (value: number) => {
+      period = value;
+    },
+    setToken: (value: string) => {
+      token = value;
+    },
+    setNow: (value: number) => {
+      now = value;
+    },
+    setCurrent: (value: boolean) => {
+      current = value;
+    },
+    setPostFailure: (value: boolean) => {
+      failPost = value;
+    },
+    setReadFailure: (value: boolean) => {
+      failRead = value;
+    },
+    setSyncFailure: (value: boolean) => {
+      failSync = value;
+    },
+    onSync: (value: () => Promise<void>) => {
+      sync = value;
+    },
+    onPost: (value: () => Promise<void>) => {
+      beforePost = value;
+    },
+    onRead: (value: () => void) => {
+      beforeRead = value;
+    },
   };
 }
 
 function deferred() {
   let release = (): void => undefined;
-  const promise = new Promise<void>(resolve => { release = resolve; });
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
   return { promise, release };
 }
 
@@ -99,13 +158,15 @@ describe('inbox sender-filter registration', () => {
       expect(f.delivers('mobile', topic, OWNER_KEY)).toBe(false);
       expect(f.delivers('mobile', topic, OTHER_KEY)).toBe(true);
     }
-    expect(f.subscriptions.get('mobile')?.find(sub => sub.topic === WELCOME)).toEqual({ topic: WELCOME, hmacKeys: [], isSilent: true });
+    expect(f.subscriptions.get('mobile')?.find((sub) => sub.topic === WELCOME)).toEqual({ topic: WELCOME, hmacKeys: [], isSilent: true });
     expect(f.stored.get('mobile')).not.toContain(Buffer.from(OWNER_KEY).toString('base64'));
   });
 
   test('syncs the inbox preferences before reading keys on cold registration', async () => {
     const f = fixture();
-    f.onSync(async () => { f.setKey(OWNER_KEY); });
+    f.onSync(async () => {
+      f.setKey(OWNER_KEY);
+    });
     await f.register(f.input);
     expect(f.delivers('mobile', GROUP, OWNER_KEY)).toBe(false);
   });
@@ -141,9 +202,11 @@ describe('inbox sender-filter registration', () => {
       { thirtyDayPeriodsSinceEpoch: PERIOD + 1, hmacKey: OTHER_KEY },
     ];
     await f.register({ ...f.input, collectTopics: async () => first });
-    const reversed = { ...first, topics: [...first.topics].reverse(), hmacKeys: {
-      ...first.hmacKeys, [GROUP]: [...(first.hmacKeys[GROUP] ?? [])].reverse(),
-    } };
+    const reversed = {
+      ...first,
+      topics: [...first.topics].reverse(),
+      hmacKeys: { ...first.hmacKeys, [GROUP]: [...(first.hmacKeys[GROUP] ?? [])].reverse() },
+    };
     await f.register({ ...f.input, collectTopics: async () => reversed });
     expect(f.calls).toHaveLength(2);
     expect(reversed.hmacKeys[GROUP][0]?.thirtyDayPeriodsSinceEpoch).toBe(PERIOD + 1);
@@ -190,10 +253,24 @@ describe('inbox sender-filter registration', () => {
     for (const phase of ['token', 'sync', 'topics', 'storage']) {
       const f = fixture();
       const input = { ...f.input };
-      if (phase === 'token') input.getToken = async () => { f.setCurrent(false); return 'token'; };
-      if (phase === 'sync') f.onSync(async () => { f.setCurrent(false); });
-      if (phase === 'topics') input.collectTopics = async () => { f.setCurrent(false); return { topics: [], hmacKeys: {} }; };
-      if (phase === 'storage') f.onRead(() => { f.setCurrent(false); });
+      if (phase === 'token')
+        input.getToken = async () => {
+          f.setCurrent(false);
+          return 'token';
+        };
+      if (phase === 'sync')
+        f.onSync(async () => {
+          f.setCurrent(false);
+        });
+      if (phase === 'topics')
+        input.collectTopics = async () => {
+          f.setCurrent(false);
+          return { topics: [], hmacKeys: {} };
+        };
+      if (phase === 'storage')
+        f.onRead(() => {
+          f.setCurrent(false);
+        });
       expect(await f.register(input)).toBe(false);
       expect(f.calls).toEqual([]);
       expect(f.stored.size).toBe(0);
@@ -202,7 +279,9 @@ describe('inbox sender-filter registration', () => {
 
   test('a switch during HTTP never saves an outdated registration or reports it as ready', async () => {
     const f = fixture();
-    f.onPost(async () => { f.setCurrent(false); });
+    f.onPost(async () => {
+      f.setCurrent(false);
+    });
     expect(await f.register(f.input)).toBe(false);
     expect(f.calls).toEqual(['RegisterInstallation']);
     expect(f.stored.size).toBe(0);
@@ -228,7 +307,10 @@ describe('inbox sender-filter registration', () => {
     const f = fixture();
     const gate = deferred();
     const entered = deferred();
-    f.onPost(async () => { entered.release(); await gate.promise; });
+    f.onPost(async () => {
+      entered.release();
+      await gate.promise;
+    });
     const first = f.register(f.input);
     await entered.promise;
     f.setKey(OWNER_KEY);
@@ -243,7 +325,10 @@ describe('inbox sender-filter registration', () => {
     const f = fixture();
     const gate = deferred();
     const entered = deferred();
-    f.onSync(async () => { entered.release(); await gate.promise; });
+    f.onSync(async () => {
+      entered.release();
+      await gate.promise;
+    });
     const first = f.register(f.input);
     await entered.promise;
     const second = f.register(f.input);
@@ -256,7 +341,10 @@ describe('inbox sender-filter registration', () => {
   test('a closed worker cannot block the same installation on the replacement session', async () => {
     const f = fixture();
     const entered = deferred();
-    f.onSync(() => { entered.release(); return new Promise(() => undefined); });
+    f.onSync(() => {
+      entered.release();
+      return new Promise(() => undefined);
+    });
     const abandoned = f.register(f.input);
     await entered.promise;
     f.abort();
@@ -277,12 +365,17 @@ describe('inbox sender-filter registration', () => {
     const f = fixture();
     const entered = deferred();
     const gate = deferred();
-    f.onPost(async () => { if (f.calls.length === 1) { entered.release(); await gate.promise; } });
+    f.onPost(async () => {
+      if (f.calls.length === 1) {
+        entered.release();
+        await gate.promise;
+      }
+    });
     const registering = f.register(f.input);
     await entered.promise;
     expect(f.stored.size).toBe(0);
     f.setCurrent(false);
-    const removing = f.unregister('mobile', method => method);
+    const removing = f.unregister('mobile', (method) => method);
     gate.release();
     expect(await registering).toBe(false);
     await removing;

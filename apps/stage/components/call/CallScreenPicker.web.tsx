@@ -1,1 +1,3 @@
-export function CallScreenPicker(): null { return null; }
+export function CallScreenPicker(): null {
+  return null;
+}

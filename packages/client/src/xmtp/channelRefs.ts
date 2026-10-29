@@ -7,9 +7,7 @@ export interface ChannelRef {
   convId: string;
 }
 
-export type ChannelRefSegment =
-  | { type: 'text'; text: string }
-  | { type: 'channel'; convId: string; label: string };
+export type ChannelRefSegment = { type: 'text'; text: string } | { type: 'channel'; convId: string; label: string };
 
 const CHANNEL_URL_PREFIX = shareUrlFor('/channel/');
 
@@ -18,7 +16,11 @@ const ESCAPED_PREFIX = CHANNEL_URL_PREFIX.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'
 const CHANNEL_REF_RE = new RegExp(`\\[#([^\\]\\n]+)\\]\\(${ESCAPED_PREFIX}([^\\s/?#()]+)\\)`, 'g');
 
 export function channelRefLabel(name: string): string {
-  const label = name.replace(/[[\]()]/g, '').replace(/\s+/g, ' ').trim().replace(/^#+\s*/, '');
+  const label = name
+    .replace(/[[\]()]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^#+\s*/, '');
   return label === '' ? 'channel' : label;
 }
 
@@ -27,12 +29,7 @@ export function channelRefToken(convId: string, name: string): string {
 }
 
 export function channelRefsOf(text: string): ChannelRef[] {
-  return [...text.matchAll(CHANNEL_REF_RE)].map(m => ({
-    index: m.index,
-    wire: m[0],
-    label: m[1] ?? '',
-    convId: m[2] ?? '',
-  }));
+  return [...text.matchAll(CHANNEL_REF_RE)].map((m) => ({ index: m.index, wire: m[0], label: m[1] ?? '', convId: m[2] ?? '' }));
 }
 
 export function splitChannelRefs(text: string): ChannelRefSegment[] {

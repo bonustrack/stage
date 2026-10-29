@@ -10,7 +10,11 @@ import { usePalette } from '../../lib/theme';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
 import { Column, Row } from '../layout';
 
-export function RecipientRow({ address, label, onPress }: {
+export function RecipientRow({
+  address,
+  label,
+  onPress,
+}: {
   address: string;
   label?: string | null;
   onPress?: () => void;
@@ -22,11 +26,7 @@ export function RecipientRow({ address, label, onPress }: {
 
   const inner = (
     <>
-      <Avatar
-        address={address}
-        size="md"
-        style={{ backgroundColor: border }}
-/>
+      <Avatar address={address} size="md" style={{ backgroundColor: border }} />
       <Column minWidth={0} weight={1}>
         <Text fontWeight="semibold" size="xs" color={head} numberOfLines={1}>
           {name}
@@ -51,17 +51,25 @@ export function RecipientRow({ address, label, onPress }: {
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        flexDirection: 'row', alignItems: 'center', gap: 12,
-        backgroundColor: pressed ? border : 'transparent', borderRadius: 12,
-        paddingHorizontal: 14, paddingVertical: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: pressed ? border : 'transparent',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
       })}
->
+    >
       {inner}
     </Pressable>
   );
 }
 
-export function ContactsModal({ visible, onClose, onPick }: {
+export function ContactsModal({
+  visible,
+  onClose,
+  onPick,
+}: {
   visible: boolean;
   onClose: () => void;
   onPick: (address: string) => void;
@@ -79,28 +87,32 @@ export function ContactsModal({ visible, onClose, onPick }: {
           <RecipientRow
             key={c.address}
             address={c.address}
-            onPress={() => { onPick(c.address); onClose(); }}
-/>
+            onPress={() => {
+              onPick(c.address);
+              onClose();
+            }}
+          />
         ))
       )}
     </AppModal>
   );
 }
 
-export function ContactsButton({ color, border, onPress }: {
-  color: string; border: string; onPress: () => void;
-}): React.ReactElement {
+export function ContactsButton({ color, border, onPress }: { color: string; border: string; onPress: () => void }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
       hitSlop={8}
       style={({ pressed }) => ({
-        width: 40, height: 40, borderRadius: 12,
-        alignItems: 'center', justifyContent: 'center',
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: pressed ? border : 'transparent',
       })}
->
-      <Glyph icon={IconGroup1} size={20} color={color}/>
+    >
+      <Glyph icon={IconGroup1} size={20} color={color} />
     </Pressable>
   );
 }

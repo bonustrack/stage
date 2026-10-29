@@ -5,13 +5,13 @@ const NO_INBOX_RE = /inbox|identity|not.*regist|cannot.*find|address.*not found/
 const PERMISSION_RE = /permission|admin|not.*allow|denied|unauthor/i;
 
 export function validMemberAddresses(addresses: string[]): string[] {
-  return addresses
-    .map(a => a.trim())
-    .filter(a => MEMBER_ADDRESS_RE.test(a));
+  return addresses.map((a) => a.trim()).filter((a) => MEMBER_ADDRESS_RE.test(a));
 }
 
 export async function currentMemberAddresses(
-  addresses: string[], memberInboxIds: string[], resolveInboxId: (address: string) => Promise<string | undefined>,
+  addresses: string[],
+  memberInboxIds: string[],
+  resolveInboxId: (address: string) => Promise<string | undefined>,
 ): Promise<string[]> {
   const members = new Set(memberInboxIds);
   const inboxIds = await Promise.all(addresses.map(resolveInboxId));
@@ -61,14 +61,15 @@ function notOnXmtpError(addresses: string[]): Error {
   return new Error(`${who} ${addresses.length === 1 ? "isn't" : "aren't"} on XMTP yet, so they can't be added.`);
 }
 
-async function membersWithoutInbox(
-  addresses: string[], inboxIdOf: (address: string) => Promise<string | undefined>,
-): Promise<string[]> {
+async function membersWithoutInbox(addresses: string[], inboxIdOf: (address: string) => Promise<string | undefined>): Promise<string[]> {
   const inboxIds = await Promise.all(addresses.map(inboxIdOf));
   return addresses.filter((_, i) => !inboxIds[i]);
 }
 
-export interface CreateGroupResult { line: string; id: string }
+export interface CreateGroupResult {
+  line: string;
+  id: string;
+}
 
 export async function createGroupWith(
   addresses: string[],
@@ -77,7 +78,9 @@ export async function createGroupWith(
   inboxIdOf: (address: string) => Promise<string | undefined>,
 ): Promise<CreateGroupResult> {
   const members = requireValidMembers(addresses);
-  const missing = await membersWithoutInbox(members, inboxIdOf).catch((err: unknown) => { throw createFailed(err); });
+  const missing = await membersWithoutInbox(members, inboxIdOf).catch((err: unknown) => {
+    throw createFailed(err);
+  });
   if (missing.length > 0) throw notOnXmtpError(missing);
   try {
     const group = await create(members);
@@ -87,10 +90,7 @@ export async function createGroupWith(
   }
 }
 
-export async function addGroupMembersWith(
-  addresses: string[],
-  add: (members: string[]) => Promise<unknown>,
-): Promise<void> {
+export async function addGroupMembersWith(addresses: string[], add: (members: string[]) => Promise<unknown>): Promise<void> {
   const members = requireValidMembers(addresses);
   try {
     await add(members);
@@ -102,53 +102,73 @@ export async function addGroupMembersWith(
 export type GroupPolicyOption = 'allow' | 'deny' | 'admin' | 'superAdmin' | 'unknown';
 
 export interface GroupMetaPolicy {
-  name: GroupPolicyOption; description: GroupPolicyOption; image: GroupPolicyOption; appData: GroupPolicyOption;
-  addMember: GroupPolicyOption; removeMember: GroupPolicyOption;
+  name: GroupPolicyOption;
+  description: GroupPolicyOption;
+  image: GroupPolicyOption;
+  appData: GroupPolicyOption;
+  addMember: GroupPolicyOption;
+  removeMember: GroupPolicyOption;
 }
 
 export type GroupRole = 'owner' | 'admin' | 'member';
 
 export interface GroupEditRights {
-  name: boolean; description: boolean; image: boolean; appData: boolean; addMembers: boolean; removeMembers: boolean;
+  name: boolean;
+  description: boolean;
+  image: boolean;
+  appData: boolean;
+  addMembers: boolean;
+  removeMembers: boolean;
 }
 
 export const UNKNOWN_GROUP_POLICY: GroupMetaPolicy = {
-  name: 'unknown', description: 'unknown', image: 'unknown', appData: 'unknown', addMember: 'unknown', removeMember: 'unknown',
+  name: 'unknown',
+  description: 'unknown',
+  image: 'unknown',
+  appData: 'unknown',
+  addMember: 'unknown',
+  removeMember: 'unknown',
 };
 
 const ROLE_RANK: Record<GroupRole, number> = { member: 0, admin: 1, owner: 2 };
 
-const POLICY_RANK: Record<GroupPolicyOption, number> = {
-  allow: 0, unknown: 0, admin: 1, superAdmin: 2, deny: Number.POSITIVE_INFINITY,
-};
+const POLICY_RANK: Record<GroupPolicyOption, number> = { allow: 0, unknown: 0, admin: 1, superAdmin: 2, deny: Number.POSITIVE_INFINITY };
 
 export function groupMetaPolicyOfSet(set: {
-  updateGroupNamePolicy: GroupPolicyOption; updateGroupDescriptionPolicy: GroupPolicyOption; updateGroupImagePolicy: GroupPolicyOption;
-  updateAppDataPolicy: GroupPolicyOption; addMemberPolicy: GroupPolicyOption; removeMemberPolicy: GroupPolicyOption;
+  updateGroupNamePolicy: GroupPolicyOption;
+  updateGroupDescriptionPolicy: GroupPolicyOption;
+  updateGroupImagePolicy: GroupPolicyOption;
+  updateAppDataPolicy: GroupPolicyOption;
+  addMemberPolicy: GroupPolicyOption;
+  removeMemberPolicy: GroupPolicyOption;
 }): GroupMetaPolicy {
   return {
-    name: set.updateGroupNamePolicy, description: set.updateGroupDescriptionPolicy, image: set.updateGroupImagePolicy, appData: set.updateAppDataPolicy,
-    addMember: set.addMemberPolicy, removeMember: set.removeMemberPolicy,
+    name: set.updateGroupNamePolicy,
+    description: set.updateGroupDescriptionPolicy,
+    image: set.updateGroupImagePolicy,
+    appData: set.updateAppDataPolicy,
+    addMember: set.addMemberPolicy,
+    removeMember: set.removeMemberPolicy,
   };
 }
 
 export function groupRoleOf(inboxId: string, staff: { admins: string[]; superAdmins: string[] }): GroupRole {
   const id = inboxId.toLowerCase();
-  if (staff.superAdmins.some(s => s.toLowerCase() === id)) return 'owner';
-  if (staff.admins.some(a => a.toLowerCase() === id)) return 'admin';
+  if (staff.superAdmins.some((s) => s.toLowerCase() === id)) return 'owner';
+  if (staff.admins.some((a) => a.toLowerCase() === id)) return 'admin';
   return 'member';
 }
 
-export function superAdminInboxIds(
-  inboxToAddr: Readonly<Record<string, string>>, roles: Readonly<Record<string, GroupRole>>,
-): Set<string> {
-  const ids = Object.entries(inboxToAddr).filter(([, addr]) => roles[addr] === 'owner').map(([id]) => id.toLowerCase());
+export function superAdminInboxIds(inboxToAddr: Readonly<Record<string, string>>, roles: Readonly<Record<string, GroupRole>>): Set<string> {
+  const ids = Object.entries(inboxToAddr)
+    .filter(([, addr]) => roles[addr] === 'owner')
+    .map(([id]) => id.toLowerCase());
   return new Set(ids);
 }
 
 export function missingInstallationIds(expected: readonly string[], present: readonly string[]): string[] {
-  const have = new Set(present.map(id => id.toLowerCase()));
-  return expected.filter(id => !have.has(id.toLowerCase()));
+  const have = new Set(present.map((id) => id.toLowerCase()));
+  return expected.filter((id) => !have.has(id.toLowerCase()));
 }
 
 function allows(policy: GroupPolicyOption, role: GroupRole): boolean {
@@ -175,7 +195,11 @@ export function mapUpdateGroupError(err: unknown): Error {
   return new Error(isPermissionError(msg) ? "You don't have permission to edit this channel." : msg);
 }
 
-export interface GroupMetaPatch { name?: string; imageUrl?: string; description?: string }
+export interface GroupMetaPatch {
+  name?: string;
+  imageUrl?: string;
+  description?: string;
+}
 
 export interface GroupMetaWriters {
   updateName: (name: string) => Promise<unknown>;

@@ -10,7 +10,10 @@ const DEFAULT_SORT: Record<HomeViewContent['view'], HomeSort> = {
 };
 
 export const SORT_LABELS: Record<HomeSort['by'], string> = {
-  status: 'Status', created: 'Created', updated: 'Updated', priority: 'Priority',
+  status: 'Status',
+  created: 'Created',
+  updated: 'Updated',
+  priority: 'Priority',
 };
 
 export function homeSortOf(view: HomeViewContent): HomeSort {
@@ -21,8 +24,12 @@ export function homeSortEdit(view: HomeViewContent, id: string): HomeViewEdit | 
   const current = homeSortOf(view);
   const by = homeSortSchema.shape.by.safeParse(id.slice('sort:'.length));
   const direction = homeSortSchema.shape.direction.safeParse(id.slice('direction:'.length));
-  const sort = id.startsWith('sort:') && by.success ? { ...current, by: by.data }
-    : id.startsWith('direction:') && direction.success ? { ...current, direction: direction.data } : null;
+  const sort =
+    id.startsWith('sort:') && by.success
+      ? { ...current, by: by.data }
+      : id.startsWith('direction:') && direction.success
+        ? { ...current, direction: direction.data }
+        : null;
   return sort === null ? null : { [view.view === 'board' ? 'boardSort' : 'chatsSort']: sort };
 }
 
@@ -32,22 +39,25 @@ interface SortableRow extends ChannelListRow {
   priority?: string | null;
 }
 
-const timestamp = (value: number | null | undefined): number | null => (
-  typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
-);
+const timestamp = (value: number | null | undefined): number | null =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
 
 export function updatedTimestamp(row: { lastTs?: number | null; createdTs?: number | null }): number | null {
   return timestamp(row.lastTs) ?? timestamp(row.createdTs);
 }
 
 function statusRanks(rows: readonly SortableRow[], order: readonly string[]): Map<string, number> {
-  const statuses = [...new Set(rows.flatMap(row => {
-    const status = categoryOf(row.status);
-    return status === null ? [] : [status.toLowerCase()];
-  }))];
-  const saved = order.filter(key => key.startsWith('status:')).map(key => key.slice('status:'.length).toLowerCase());
+  const statuses = [
+    ...new Set(
+      rows.flatMap((row) => {
+        const status = categoryOf(row.status);
+        return status === null ? [] : [status.toLowerCase()];
+      }),
+    ),
+  ];
+  const saved = order.filter((key) => key.startsWith('status:')).map((key) => key.slice('status:'.length).toLowerCase());
   const compare = (a: string, b: string): number => compareNames(a, b) || (a < b ? -1 : a > b ? 1 : 0);
-  return new Map(savedFirst(statuses, saved, value => value, compare).map((status, index) => [status, index]));
+  return new Map(savedFirst(statuses, saved, (value) => value, compare).map((status, index) => [status, index]));
 }
 
 function valueOf(row: SortableRow, by: HomeSort['by'], statuses: ReadonlyMap<string, number>): number | null {
@@ -65,12 +75,19 @@ function compareValues(a: number | null, b: number | null, direction: HomeSort['
 }
 
 export function sortHomeRows<T extends SortableRow>(
-  rows: T[], pinned: readonly string[], sort: HomeSort = DEFAULT_SORT.chats, statusOrder: readonly string[] = [],
+  rows: T[],
+  pinned: readonly string[],
+  sort: HomeSort = DEFAULT_SORT.chats,
+  statusOrder: readonly string[] = [],
 ): T[] {
   const statuses = sort.by === 'status' ? statusRanks(rows, statusOrder) : new Map<string, number>();
-  return savedFirst(rows, pinned, row => row.convId, (a, b) => (
-    compareValues(valueOf(a, sort.by, statuses), valueOf(b, sort.by, statuses), sort.direction)
-    || compareValues(timestamp(a.lastTs), timestamp(b.lastTs), 'desc')
-    || a.convId.localeCompare(b.convId)
-  ));
+  return savedFirst(
+    rows,
+    pinned,
+    (row) => row.convId,
+    (a, b) =>
+      compareValues(valueOf(a, sort.by, statuses), valueOf(b, sort.by, statuses), sort.direction) ||
+      compareValues(timestamp(a.lastTs), timestamp(b.lastTs), 'desc') ||
+      a.convId.localeCompare(b.convId),
+  );
 }

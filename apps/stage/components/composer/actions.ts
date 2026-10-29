@@ -16,8 +16,7 @@ import { finishSend, showSend, startSend, type DraftArgs, type StartedSend } fro
 import { locationAttachment, withLocation } from './location.model';
 import { ignored } from '../../lib/errorPolicy';
 
-type ComposerActionsArgs = DraftArgs & PostHooks
-  & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
+type ComposerActionsArgs = DraftArgs & PostHooks & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
 
 const mintAttachmentId = (): string => `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
@@ -26,17 +25,28 @@ async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: strin
   try {
     const resolvedMime = mimeOf(mime, name ?? uri);
     const kind = attachmentKindOf({ mimeType: resolvedMime });
-    const size = await fetch(uri).then(r => r.blob()).then(b => b.size).catch(ignored(0, 'optional'));
+    const size = await fetch(uri)
+      .then((r) => r.blob())
+      .then((b) => b.size)
+      .catch(ignored(0, 'optional'));
     const attachment = { id: mintAttachmentId(), url: stashLocalAttachment(uri), kind, mime: resolvedMime, size, name };
-    a.setPending(prev => [...prev, attachment]);
+    a.setPending((prev) => [...prev, attachment]);
     prepareAttachments(fileInputs([attachment]));
-  } catch (e) { a.setErr((e as Error).message); }
-  finally { a.setUploading(false); }
+  } catch (e) {
+    a.setErr((e as Error).message);
+  } finally {
+    a.setUploading(false);
+  }
 }
 
 type Upload = (uri: string, mime: string, name?: string) => Promise<void>;
 
-interface ComposerPickedFile { uri: string; mime: string; name?: string; type?: 'image' | 'video' }
+interface ComposerPickedFile {
+  uri: string;
+  mime: string;
+  name?: string;
+  type?: 'image' | 'video';
+}
 
 async function uploadEach(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
   for (const file of files) {
@@ -53,7 +63,10 @@ async function onPickedImages(upload: Upload, files: ComposerPickedFile[]): Prom
 async function requestCameraPermission(a: ComposerActionsArgs): Promise<boolean> {
   a.setErr(null);
   const perm = await ImagePicker.requestCameraPermissionsAsync();
-  if (!perm.granted) { Alert.alert('Camera permission denied'); return false; }
+  if (!perm.granted) {
+    Alert.alert('Camera permission denied');
+    return false;
+  }
   return true;
 }
 
@@ -67,13 +80,18 @@ async function onPickedOne(upload: Upload, files: ComposerPickedFile[], label: '
 async function pickLocation(a: ComposerActionsArgs): Promise<void> {
   a.setErr(null);
   const perm = await Location.requestForegroundPermissionsAsync();
-  if (!perm.granted) { Alert.alert('Location permission denied'); return; }
+  if (!perm.granted) {
+    Alert.alert('Location permission denied');
+    return;
+  }
   try {
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     const location = locationAttachment(pos.coords.latitude, pos.coords.longitude, mintAttachmentId());
-    a.setPending(prev => withLocation(prev, location));
+    a.setPending((prev) => withLocation(prev, location));
     setLastAttachment('Location');
-  } catch (e) { a.setErr((e as Error).message); }
+  } catch (e) {
+    a.setErr((e as Error).message);
+  }
 }
 
 async function performSend(a: ComposerActionsArgs, current: () => ComposerActionsArgs): Promise<void> {
@@ -93,8 +111,13 @@ function adoptSend(a: ComposerActionsArgs, started: StartedSend, current: () => 
 const KEYBOARD_HIDE_WAIT_MS = 500;
 
 function afterKeyboardHides(open: () => void): void {
-  if (Platform.OS === 'web') { open(); return; }
-  const waited = new Promise<void>(done => { setTimeout(done, KEYBOARD_HIDE_WAIT_MS); });
+  if (Platform.OS === 'web') {
+    open();
+    return;
+  }
+  const waited = new Promise<void>((done) => {
+    setTimeout(done, KEYBOARD_HIDE_WAIT_MS);
+  });
   void Promise.race([KeyboardController.dismiss(), waited]).then(open);
 }
 
@@ -107,22 +130,43 @@ export function useComposerActions(a: ComposerActionsArgs) {
   const [fileNonce, setFileNonce] = useState(0);
 
   const takePhoto = async (): Promise<void> => {
-    if (await requestCameraPermission(a)) setCameraNonce(n => n + 1);
+    if (await requestCameraPermission(a)) setCameraNonce((n) => n + 1);
   };
 
   const voice = useVoiceRecorder({
-    upload: (uri, mime, name) => { setLastAttachment('Voice message'); return upload(uri, mime, name); },
-    setErr: a.setErr, setRecording: a.setRecording,
-    setRecordSecs: a.setRecordSecs, setLevels: a.setLevels,
+    upload: (uri, mime, name) => {
+      setLastAttachment('Voice message');
+      return upload(uri, mime, name);
+    },
+    setErr: a.setErr,
+    setRecording: a.setRecording,
+    setRecordSecs: a.setRecordSecs,
+    setLevels: a.setLevels,
   });
 
   return {
-    startRec: voice.startRec, cancelRec: voice.cancelRec, stopRec: voice.stopRec,
-    pickImage: () => { afterKeyboardHides(() => { setImageNonce(n => n + 1); }); },
-    takePhoto: () => { afterKeyboardHides(() => { void takePhoto(); }); },
-    pickFile: () => { afterKeyboardHides(() => { setFileNonce(n => n + 1); }); },
+    startRec: voice.startRec,
+    cancelRec: voice.cancelRec,
+    stopRec: voice.stopRec,
+    pickImage: () => {
+      afterKeyboardHides(() => {
+        setImageNonce((n) => n + 1);
+      });
+    },
+    takePhoto: () => {
+      afterKeyboardHides(() => {
+        void takePhoto();
+      });
+    },
+    pickFile: () => {
+      afterKeyboardHides(() => {
+        setFileNonce((n) => n + 1);
+      });
+    },
     pickLocation: () => pickLocation(a),
-    imageNonce, cameraNonce, fileNonce,
+    imageNonce,
+    cameraNonce,
+    fileNonce,
     onPickedImages: (files: ComposerPickedFile[]) => onPickedImages(upload, files),
     onPickedCamera: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'Camera'),
     onPickedFile: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'File'),

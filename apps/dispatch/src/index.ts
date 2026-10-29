@@ -5,8 +5,22 @@ export const REQUEST_MAX_BYTES = 64 * 1024;
 const NODE_TIMEOUT_MS = 10_000;
 const NULL_BODY = new Set([204, 205]);
 const CALLER_HEADERS = [
-  'cookie', 'cf-connecting-ip', 'cf-connecting-ipv6', 'true-client-ip', 'x-forwarded-for', 'x-real-ip', 'cf-ipcountry', 'cf-ipcity',
-  'cf-ipcontinent', 'cf-iplatitude', 'cf-iplongitude', 'cf-region', 'cf-region-code', 'cf-metro-code', 'cf-postal-code', 'cf-timezone',
+  'cookie',
+  'cf-connecting-ip',
+  'cf-connecting-ipv6',
+  'true-client-ip',
+  'x-forwarded-for',
+  'x-real-ip',
+  'cf-ipcountry',
+  'cf-ipcity',
+  'cf-ipcontinent',
+  'cf-iplatitude',
+  'cf-iplongitude',
+  'cf-region',
+  'cf-region-code',
+  'cf-metro-code',
+  'cf-postal-code',
+  'cf-timezone',
   'cf-ray',
 ];
 
@@ -51,7 +65,7 @@ async function over(limiter: RateLimit | undefined, key: string): Promise<boolea
 }
 
 async function limited(request: Request, id: string, deps: DispatchDeps): Promise<boolean> {
-  return await over(deps.limiter, clientRateKey(request.headers.get('cf-connecting-ip') ?? 'unknown')) || over(deps.nodeLimiter, id);
+  return (await over(deps.limiter, clientRateKey(request.headers.get('cf-connecting-ip') ?? 'unknown'))) || over(deps.nodeLimiter, id);
 }
 
 async function cappedBody(response: Response): Promise<Blob | null> {
@@ -96,7 +110,9 @@ async function runNode(nodes: DispatchNamespace, id: string, request: Request): 
 
 function withTimeout(work: Promise<Response>, ms: number): Promise<Response> {
   return new Promise((resolve) => {
-    const timer = setTimeout(() => { resolve(fail(504, 'node timed out')); }, ms);
+    const timer = setTimeout(() => {
+      resolve(fail(504, 'node timed out'));
+    }, ms);
     void work.then((response) => {
       clearTimeout(timer);
       resolve(response);
@@ -123,7 +139,6 @@ export async function dispatchNode(request: Request, deps: DispatchDeps): Promis
 }
 
 export default {
-  fetch: (request: Request, env: DispatchEnv): Promise<Response> => dispatchNode(request, {
-    nodes: env.NODES, limiter: env.NODE_REQUESTS, nodeLimiter: env.NODE_CALLS,
-  }),
+  fetch: (request: Request, env: DispatchEnv): Promise<Response> =>
+    dispatchNode(request, { nodes: env.NODES, limiter: env.NODE_REQUESTS, nodeLimiter: env.NODE_CALLS }),
 };

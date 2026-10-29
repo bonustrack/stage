@@ -28,10 +28,5 @@ export function profileView(state: ProfileState): ProfileView {
       claimVisible: false,
     };
   }
-  return {
-    title: state.name ?? '',
-    explanation: '',
-    canChangePicture: false,
-    claimVisible: true,
-  };
+  return { title: state.name ?? '', explanation: '', canChangePicture: false, claimVisible: true };
 }

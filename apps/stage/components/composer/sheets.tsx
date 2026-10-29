@@ -10,8 +10,13 @@ import { usePalette } from '../../lib/theme';
 import type { PostHooks } from './types';
 import type { ComposerState } from './state';
 import {
-  sendPoll, sendSignatureRequest, sendTxRequest, type PostCtx,
-  type PollDraft, type SignatureDraft, type PaymentDraft,
+  sendPoll,
+  sendSignatureRequest,
+  sendTxRequest,
+  type PostCtx,
+  type PollDraft,
+  type SignatureDraft,
+  type PaymentDraft,
 } from './builders';
 import { SIGNATURE_KINDS, canSendPayment, canSendPoll, canSendSignature } from './sheets.model';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
@@ -19,11 +24,31 @@ import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius
 import { CheckBox } from '@stage-labs/kit/react-native/check-box';
 import { Column, Row } from '../layout';
 
-interface SheetProps { open: boolean; onClose: () => void; dark: boolean; hooks: PostHooks }
+interface SheetProps {
+  open: boolean;
+  onClose: () => void;
+  dark: boolean;
+  hooks: PostHooks;
+}
 
-function SheetShell({ open, onClose, dark, title, onSend, submitLabel, canSend, children }: {
-  open: boolean; onClose: () => void; dark: boolean; title: string;
-  onSend: () => void; submitLabel: string; canSend: boolean; children: ReactNode;
+function SheetShell({
+  open,
+  onClose,
+  dark,
+  title,
+  onSend,
+  submitLabel,
+  canSend,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  dark: boolean;
+  title: string;
+  onSend: () => void;
+  submitLabel: string;
+  canSend: boolean;
+  children: ReactNode;
 }): React.ReactElement {
   const { primary, bg } = usePalette();
   return (
@@ -31,7 +56,17 @@ function SheetShell({ open, onClose, dark, title, onSend, submitLabel, canSend, 
       <Column gap={8}>
         {children}
         <Column padding={{ top: 8 }}>
-          <Button variant="primary" size="lg" fullWidth dark={dark} disabled={!canSend} onPress={onSend} label={submitLabel} tintBg={primary} tintFg={bg} />
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            dark={dark}
+            disabled={!canSend}
+            onPress={onSend}
+            label={submitLabel}
+            tintBg={primary}
+            tintFg={bg}
+          />
         </Column>
       </Column>
     </AppModal>
@@ -40,8 +75,20 @@ function SheetShell({ open, onClose, dark, title, onSend, submitLabel, canSend, 
 
 function useDraft<T>(initial: T, { onClose, hooks }: SheetProps): [T, (patch: Partial<T>) => void, PostCtx] {
   const [draft, setDraft] = useState(initial);
-  const patch = (p: Partial<T>): void => { setDraft(prev => ({ ...prev, ...p })); };
-  return [draft, patch, { ...hooks, close: () => { onClose(); setDraft(initial); } }];
+  const patch = (p: Partial<T>): void => {
+    setDraft((prev) => ({ ...prev, ...p }));
+  };
+  return [
+    draft,
+    patch,
+    {
+      ...hooks,
+      close: () => {
+        onClose();
+        setDraft(initial);
+      },
+    },
+  ];
 }
 
 const EMPTY_POLL: PollDraft = { question: '', header: '', options: ['', ''], multi: false };
@@ -49,26 +96,80 @@ const EMPTY_POLL: PollDraft = { question: '', header: '', options: ['', ''], mul
 function PollSheet(props: SheetProps): React.ReactElement {
   const { text: fg } = usePalette();
   const [d, patch, post] = useDraft(EMPTY_POLL, props);
-  const setOptions = (options: string[]): void => { patch({ options }); };
+  const setOptions = (options: string[]): void => {
+    patch({ options });
+  };
   return (
-    <SheetShell {...props} title="New poll" onSend={() => { void sendPoll(d, post); }} submitLabel="Send poll" canSend={canSendPoll(d)}>
-      <FormField label="Question" value={d.question} onChangeText={question => { patch({ question }); }} />
-      <FormField label="Header (optional)" placeholder="e.g. LUNCH" value={d.header} onChangeText={header => { patch({ header }); }}
-        inputProps={{ maxLength: 12, autoCapitalize: 'characters' }} />
+    <SheetShell
+      {...props}
+      title="New poll"
+      onSend={() => {
+        void sendPoll(d, post);
+      }}
+      submitLabel="Send poll"
+      canSend={canSendPoll(d)}
+    >
+      <FormField
+        label="Question"
+        value={d.question}
+        onChangeText={(question) => {
+          patch({ question });
+        }}
+      />
+      <FormField
+        label="Header (optional)"
+        placeholder="e.g. LUNCH"
+        value={d.header}
+        onChangeText={(header) => {
+          patch({ header });
+        }}
+        inputProps={{ maxLength: 12, autoCapitalize: 'characters' }}
+      />
       {d.options.map((opt, i) => (
-        <FormField key={i} label={`Option ${i + 1}`} value={opt}
-          onChangeText={t => { setOptions(d.options.map((o, j) => (j === i ? t : o))); }}
-          trailing={d.options.length > 2 ? (
-            <Pressable onPress={() => { setOptions(d.options.filter((_, j) => j !== i)); }} hitSlop={8}>
-              <Glyph icon={IconCrossMedium} size={18} color={fg}/>
-            </Pressable>
-          ) : undefined} />
+        <FormField
+          key={i}
+          label={`Option ${i + 1}`}
+          value={opt}
+          onChangeText={(t) => {
+            setOptions(d.options.map((o, j) => (j === i ? t : o)));
+          }}
+          trailing={
+            d.options.length > 2 ? (
+              <Pressable
+                onPress={() => {
+                  setOptions(d.options.filter((_, j) => j !== i));
+                }}
+                hitSlop={8}
+              >
+                <Glyph icon={IconCrossMedium} size={18} color={fg} />
+              </Pressable>
+            ) : undefined
+          }
+        />
       ))}
-      <Button variant="ghost" size="sm" dark={props.dark} onPress={() => { setOptions([...d.options, '']); }}
-        label="Add option" icon={<Glyph icon={IconPlusLarge} size={16} color={fg} />} />
+      <Button
+        variant="ghost"
+        size="sm"
+        dark={props.dark}
+        onPress={() => {
+          setOptions([...d.options, '']);
+        }}
+        label="Add option"
+        icon={<Glyph icon={IconPlusLarge} size={16} color={fg} />}
+      />
       <Row align="center" justify="spaceBetween" gap={12} padding={{ y: 4 }}>
-        <Text size="xs" color={fg}>Allow multiple choices</Text>
-        <CheckBox displayStyle="switch" name="Allow multiple choices" value={d.multi} dark={props.dark} onChange={multi => { patch({ multi }); }} />
+        <Text size="xs" color={fg}>
+          Allow multiple choices
+        </Text>
+        <CheckBox
+          displayStyle="switch"
+          name="Allow multiple choices"
+          value={d.multi}
+          dark={props.dark}
+          onChange={(multi) => {
+            patch({ multi });
+          }}
+        />
       </Row>
     </SheetShell>
   );
@@ -76,14 +177,24 @@ function PollSheet(props: SheetProps): React.ReactElement {
 
 const EMPTY_SIGNATURE: SignatureDraft = { kind: 'personal', desc: '', message: '', json: '' };
 
-function SignatureKindPicker({ kind, onChange }: {
-  kind: SignatureDraft['kind']; onChange: (kind: SignatureDraft['kind']) => void;
+function SignatureKindPicker({
+  kind,
+  onChange,
+}: {
+  kind: SignatureDraft['kind'];
+  onChange: (kind: SignatureDraft['kind']) => void;
 }): React.ReactElement {
   return (
     <Row gap={8}>
       {SIGNATURE_KINDS.map(({ value, label }) => (
-        <Pressable key={value} accessibilityRole="radio" accessibilityState={{ checked: kind === value }}
-          onPress={() => { onChange(value); }}>
+        <Pressable
+          key={value}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: kind === value }}
+          onPress={() => {
+            onChange(value);
+          }}
+        >
           <LabelChip label={label} selected={kind === value} />
         </Pressable>
       ))}
@@ -94,16 +205,51 @@ function SignatureKindPicker({ kind, onChange }: {
 function SignatureSheet(props: SheetProps): React.ReactElement {
   const [d, patch, post] = useDraft(EMPTY_SIGNATURE, props);
   return (
-    <SheetShell {...props} title="Request signature" onSend={() => { void sendSignatureRequest(d, post); }}
-      submitLabel="Send request" canSend={canSendSignature(d)}>
-      <SignatureKindPicker kind={d.kind} onChange={kind => { patch({ kind }); }} />
-      <FormField label="Description" placeholder="e.g. Sign in to dapp" value={d.desc} onChangeText={desc => { patch({ desc }); }} />
+    <SheetShell
+      {...props}
+      title="Request signature"
+      onSend={() => {
+        void sendSignatureRequest(d, post);
+      }}
+      submitLabel="Send request"
+      canSend={canSendSignature(d)}
+    >
+      <SignatureKindPicker
+        kind={d.kind}
+        onChange={(kind) => {
+          patch({ kind });
+        }}
+      />
+      <FormField
+        label="Description"
+        placeholder="e.g. Sign in to dapp"
+        value={d.desc}
+        onChangeText={(desc) => {
+          patch({ desc });
+        }}
+      />
       {d.kind === 'personal' ? (
-        <FormField label="Message to sign" multiline rows={3} value={d.message} onChangeText={message => { patch({ message }); }} />
+        <FormField
+          label="Message to sign"
+          multiline
+          rows={3}
+          value={d.message}
+          onChangeText={(message) => {
+            patch({ message });
+          }}
+        />
       ) : (
-        <FormField label="EIP-712 typed data" multiline rows={6} value={d.json} onChangeText={json => { patch({ json }); }}
+        <FormField
+          label="EIP-712 typed data"
+          multiline
+          rows={6}
+          value={d.json}
+          onChangeText={(json) => {
+            patch({ json });
+          }}
           placeholder={'{ "domain": {…}, "types": {…}, "primaryType": "…", "message": {…} }'}
-          inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
+          inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+        />
       )}
     </SheetShell>
   );
@@ -119,25 +265,84 @@ function PaymentSheet({ initialTo, ...props }: SheetProps & { initialTo?: string
     if (props.open && !d.to && initialTo !== undefined) patch({ to: initialTo });
   }
   return (
-    <SheetShell {...props} title="Request payment" onSend={() => { void sendTxRequest(d, post); }}
-      submitLabel="Send request" canSend={canSendPayment(d)}>
-      <FormField label="Recipient" placeholder="0x…" value={d.to} onChangeText={to => { patch({ to }); }}
-        inputProps={{ autoCapitalize: 'none', autoCorrect: false }} />
-      <FormField label="Amount (ETH)" placeholder="0.0" value={d.amount} onChangeText={amount => { patch({ amount }); }} variant="number"
-        inputProps={{ keyboardType: 'decimal-pad' }} />
-      <FormField label="Note (optional)" placeholder="What is it for?" value={d.note} onChangeText={note => { patch({ note }); }} />
+    <SheetShell
+      {...props}
+      title="Request payment"
+      onSend={() => {
+        void sendTxRequest(d, post);
+      }}
+      submitLabel="Send request"
+      canSend={canSendPayment(d)}
+    >
+      <FormField
+        label="Recipient"
+        placeholder="0x…"
+        value={d.to}
+        onChangeText={(to) => {
+          patch({ to });
+        }}
+        inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
+      />
+      <FormField
+        label="Amount (ETH)"
+        placeholder="0.0"
+        value={d.amount}
+        onChangeText={(amount) => {
+          patch({ amount });
+        }}
+        variant="number"
+        inputProps={{ keyboardType: 'decimal-pad' }}
+      />
+      <FormField
+        label="Note (optional)"
+        placeholder="What is it for?"
+        value={d.note}
+        onChangeText={(note) => {
+          patch({ note });
+        }}
+      />
     </SheetShell>
   );
 }
 
-export function ComposerSheets({ s, dark, hooks, initialTo }: {
-  s: ComposerState; dark: boolean; hooks: PostHooks; initialTo?: string;
+export function ComposerSheets({
+  s,
+  dark,
+  hooks,
+  initialTo,
+}: {
+  s: ComposerState;
+  dark: boolean;
+  hooks: PostHooks;
+  initialTo?: string;
 }): React.ReactElement {
   return (
     <>
-      <PollSheet open={s.pollOpen} onClose={() => { s.setPollOpen(false); }} dark={dark} hooks={hooks} />
-      <SignatureSheet open={s.sigOpen} onClose={() => { s.setSigOpen(false); }} dark={dark} hooks={hooks} />
-      <PaymentSheet open={s.txOpen} onClose={() => { s.setTxOpen(false); }} dark={dark} hooks={hooks} initialTo={initialTo} />
+      <PollSheet
+        open={s.pollOpen}
+        onClose={() => {
+          s.setPollOpen(false);
+        }}
+        dark={dark}
+        hooks={hooks}
+      />
+      <SignatureSheet
+        open={s.sigOpen}
+        onClose={() => {
+          s.setSigOpen(false);
+        }}
+        dark={dark}
+        hooks={hooks}
+      />
+      <PaymentSheet
+        open={s.txOpen}
+        onClose={() => {
+          s.setTxOpen(false);
+        }}
+        dark={dark}
+        hooks={hooks}
+        initialTo={initialTo}
+      />
     </>
   );
 }

@@ -9,11 +9,7 @@ export function appIcon(ref: AppIconRef): CentralIcon {
   return typeof ref === 'string' ? APP_ICONS[ref] : ref;
 }
 
-export function AppIcon({ name, color, size }: {
-  name: AppIconRef;
-  color?: string;
-  size: number;
-}): React.ReactElement {
+export function AppIcon({ name, color, size }: { name: AppIconRef; color?: string; size: number }): React.ReactElement {
   const scheme = useKitScheme();
   return (
     <Glyph

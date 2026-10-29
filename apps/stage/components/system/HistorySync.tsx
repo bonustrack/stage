@@ -12,7 +12,9 @@ export function MessagingSetupBanner(): React.ReactElement | null {
     <Column margin={{ x: PAGE_GUTTER, top: 8, bottom: 4 }} padding={{ x: 12, y: 10 }} surface="raised" style={{ borderRadius: 12 }}>
       <Row align="center" gap={10}>
         <Spinner size={16} color={text} />
-        <Column weight={1}><Text size="2xs">Setting up secure messaging on this device…</Text></Column>
+        <Column weight={1}>
+          <Text size="2xs">Setting up secure messaging on this device…</Text>
+        </Column>
       </Row>
     </Column>
   );

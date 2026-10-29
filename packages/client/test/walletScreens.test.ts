@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import {
-  parsePositiveAmount, tokenAmountFromInput, toggleAmountUnit, trimDecimalString,
-} from '../src/wallet/sendAmount';
-
+import { parsePositiveAmount, tokenAmountFromInput, toggleAmountUnit, trimDecimalString } from '../src/wallet/sendAmount';
 
 describe('sendAmount', () => {
   it('parsePositiveAmount guards empty / non-finite / non-positive', () => {

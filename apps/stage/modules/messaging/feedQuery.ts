@@ -4,9 +4,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { convOfLine, sdk } from '../../lib/xmtp.sdk';
 import { isControlBody } from '../../lib/xmtp.types';
 import { latestConvMessages, olderConvMessages } from '../../lib/xmtp.messages';
-import {
-  PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed, refreshLatestPage, syncInboxOnce,
-} from '../../lib/xmtp.resync';
+import { PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from '../../lib/xmtp.resync';
 import { feedCache, activeFeedLines } from '../../lib/xmtp.state.core';
 import { isFeedLoaded, markFeedLoaded, takeFreshFeed, trackFirstPageLoad } from '../../lib/feedLines';
 import { cachedFeed, rememberFeed } from '../../lib/feedSnapshot';
@@ -17,7 +15,7 @@ import { report, reported, recover, ignored } from '../../lib/errorPolicy';
 function feedLatest(line: string): HistoryEntry | undefined {
   const slice = feedCache.get(line);
   if (!slice) return undefined;
-  return slice.find(e => !isControlBody(e.text));
+  return slice.find((e) => !isControlBody(e.text));
 }
 
 function entryNs(e: HistoryEntry): number {
@@ -26,8 +24,11 @@ function entryNs(e: HistoryEntry): number {
 }
 
 function logReconcileHeal(
-  label: string, line: string, healedBy: string,
-  before: HistoryEntry | undefined, after: { id: string | null; ts: string | null },
+  label: string,
+  line: string,
+  healedBy: string,
+  before: HistoryEntry | undefined,
+  after: { id: string | null; ts: string | null },
 ): void {
   console.log(
     label,
@@ -61,9 +62,7 @@ async function reconcileOnOpen(line: string): Promise<void> {
   }
 }
 
-export async function reconcileOnArrival(
-  line: string, prevLatestNs: number, arrivingNs: number, arrivingId: string,
-): Promise<void> {
+export async function reconcileOnArrival(line: string, prevLatestNs: number, arrivingNs: number, arrivingId: string): Promise<void> {
   if (!activeFeedLines.has(line)) return;
   const latestNow = feedLatest(line);
   if (latestNow?.id === arrivingId && arrivingNs >= prevLatestNs) return;
@@ -78,10 +77,10 @@ async function healArrivalGap(line: string): Promise<void> {
     mergePageIntoFeed(line, page);
     const after = feedLatest(line);
     if (before?.id !== after?.id) {
-      logReconcileHeal(
-        '[feed-reconcile] arrival-gap heal', line, 'reconcileOnArrival',
-        before, { id: after?.id ?? null, ts: after?.ts ?? null },
-      );
+      logReconcileHeal('[feed-reconcile] arrival-gap heal', line, 'reconcileOnArrival', before, {
+        id: after?.id ?? null,
+        ts: after?.ts ?? null,
+      });
     }
   } catch (err) {
     report('feed.reconcileOnArrival', err);
@@ -171,7 +170,7 @@ async function showCachedFeed(line: string, generation: number): Promise<boolean
 export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
   const generation = feedCache.generation();
   const latest = trackFirstPageLoad(loadFirstPage(line, generation));
-  const cached = showCachedFeed(line, generation).then(shown => {
+  const cached = showCachedFeed(line, generation).then((shown) => {
     if (!shown) return latest;
     void latest.catch(reported('feed.firstPage'));
     return feedCache.get(line) ?? [];
@@ -181,11 +180,7 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
 
 export function prefetchFeed(line: string): void {
   void getQueryClient()
-    .prefetchQuery({
-      queryKey: messagingKeys.messages(getAccountEpoch(), line),
-      queryFn: () => loadFeedFirstPage(line),
-      staleTime: 2_000,
-    })
+    .prefetchQuery({ queryKey: messagingKeys.messages(getAccountEpoch(), line), queryFn: () => loadFeedFirstPage(line), staleTime: 2_000 })
     .catch(ignored(undefined, 'optional'));
 }
 

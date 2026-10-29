@@ -33,64 +33,66 @@ function child<K, V>(map: Map<K, V>, key: K, make: () => NoInfer<V>): V {
   return made;
 }
 
-const applyOptimisticVote = (
-  tally: Map<number, Set<string>>,
-  confirmed: Set<number>,
-  sel: Set<number>,
-  myUri: string,
-): void => {
+const applyOptimisticVote = (tally: Map<number, Set<string>>, confirmed: Set<number>, sel: Set<number>, myUri: string): void => {
   for (const idx of confirmed) if (!sel.has(idx)) tally.get(idx)?.delete(myUri);
   for (const idx of sel) child(tally, idx, () => new Set()).add(myUri);
 };
 
-function useOptimisticVotes(
-  activeLine: string,
-  votes: Votes,
-  ownVotes: Own,
-  pollsInFeed: PollsInFeed,
-  myUri: string,
-) {
+function useOptimisticVotes(activeLine: string, votes: Votes, ownVotes: Own, pollsInFeed: PollsInFeed, myUri: string) {
   const [optimistic, setOptimistic] = useState<Map<string, Set<number>>>(new Map());
 
-  const confirmedOwn = useCallback((pollId: string, q: number): Set<number> =>
-    ownVotes.get(pollId)?.get(q) ?? new Set<number>(), [ownVotes]);
+  const confirmedOwn = useCallback(
+    (pollId: string, q: number): Set<number> => ownVotes.get(pollId)?.get(q) ?? new Set<number>(),
+    [ownVotes],
+  );
 
   useEffect(() => {
-    setOptimistic(prev => {
+    setOptimistic((prev) => {
       if (prev.size === 0) return prev;
       let changed = false;
       const next = new Map<string, Set<number>>();
       for (const [key, sel] of prev) {
         const { pollId, q } = unCk(key);
         const conf = confirmedOwn(pollId, q);
-        const same = sel.size === conf.size && [...sel].every(i => conf.has(i));
-        if (same) { changed = true; continue; }
+        const same = sel.size === conf.size && [...sel].every((i) => conf.has(i));
+        if (same) {
+          changed = true;
+          continue;
+        }
         next.set(key, sel);
       }
       return changed ? next : prev;
     });
   }, [confirmedOwn]);
 
-  const displayOwnVotes = useReconciledMap(useMemo<Own>(() => {
-    if (optimistic.size === 0) return ownVotes;
-    const merged: Own = new Map([...ownVotes].map(([p, byQ]) => [p, new Map(byQ)]));
-    for (const [key, sel] of optimistic) {
-      const { pollId, q } = unCk(key);
-      child(merged, pollId, () => new Map()).set(q, sel);
-    }
-    return merged;
-  }, [ownVotes, optimistic]));
+  const displayOwnVotes = useReconciledMap(
+    useMemo<Own>(() => {
+      if (optimistic.size === 0) return ownVotes;
+      const merged: Own = new Map([...ownVotes].map(([p, byQ]) => [p, new Map(byQ)]));
+      for (const [key, sel] of optimistic) {
+        const { pollId, q } = unCk(key);
+        child(merged, pollId, () => new Map()).set(q, sel);
+      }
+      return merged;
+    }, [ownVotes, optimistic]),
+  );
 
-  const displayVotes = useReconciledMap(useMemo<Votes>(() => {
-    if (optimistic.size === 0) return votes;
-    const merged = cloneVotes(votes);
-    for (const [key, sel] of optimistic) {
-      const { pollId, q } = unCk(key);
-      const tally = child(child(merged, pollId, () => new Map()), q, () => new Map());
-      applyOptimisticVote(tally, confirmedOwn(pollId, q), sel, myUri);
-    }
-    return merged;
-  }, [votes, optimistic, confirmedOwn, myUri]));
+  const displayVotes = useReconciledMap(
+    useMemo<Votes>(() => {
+      if (optimistic.size === 0) return votes;
+      const merged = cloneVotes(votes);
+      for (const [key, sel] of optimistic) {
+        const { pollId, q } = unCk(key);
+        const tally = child(
+          child(merged, pollId, () => new Map()),
+          q,
+          () => new Map(),
+        );
+        applyOptimisticVote(tally, confirmedOwn(pollId, q), sel, myUri);
+      }
+      return merged;
+    }, [votes, optimistic, confirmedOwn, myUri]),
+  );
 
   const onVote = useStableCallback((pollId: string, q: number, optionIndex: number, action: 'added' | 'removed') => {
     const multi = pollsInFeed.get(pollId)?.[q]?.multiSelect === true;
@@ -99,20 +101,36 @@ function useOptimisticVotes(
     const next = new Set(current);
     if (action === 'removed') next.delete(optionIndex);
     else if (multi) next.add(optionIndex);
-    else { next.clear(); next.add(optionIndex); }
-    setOptimistic(prev => { const m = new Map(prev); m.set(key, next); return m; });
+    else {
+      next.clear();
+      next.add(optionIndex);
+    }
+    setOptimistic((prev) => {
+      const m = new Map(prev);
+      m.set(key, next);
+      return m;
+    });
 
-    const undo = (): void => { setOptimistic(prev => { const m = new Map(prev); m.delete(key); return m; }); };
+    const undo = (): void => {
+      setOptimistic((prev) => {
+        const m = new Map(prev);
+        m.delete(key);
+        return m;
+      });
+    };
     if (!multi && action === 'added') {
       for (const prevIdx of current) {
         if (prevIdx !== optionIndex) {
-          void xmtpVote(activeLine, pollId, prevIdx, 'removed', q)
-            .catch((e: unknown) => { console.warn('xmtp vote-retract failed', e); });
+          void xmtpVote(activeLine, pollId, prevIdx, 'removed', q).catch((e: unknown) => {
+            console.warn('xmtp vote-retract failed', e);
+          });
         }
       }
     }
-    void xmtpVote(activeLine, pollId, optionIndex, action, q)
-      .catch((e: unknown) => { console.warn('xmtp vote failed', e); undo(); });
+    void xmtpVote(activeLine, pollId, optionIndex, action, q).catch((e: unknown) => {
+      console.warn('xmtp vote failed', e);
+      undo();
+    });
   });
 
   return { displayVotes, displayOwnVotes, onVote };
@@ -122,43 +140,63 @@ function useOptimisticOpenAnswers(activeLine: string, openAnswers: OpenAnswers, 
   const [optimisticOpen, setOptimisticOpen] = useState<Map<string, { text: string; ts: string }>>(new Map());
 
   useEffect(() => {
-    setOptimisticOpen(prev => {
+    setOptimisticOpen((prev) => {
       if (prev.size === 0) return prev;
       let changed = false;
       const next = new Map(prev);
       for (const [key, pending] of prev) {
         const { pollId, q } = unCk(key);
         const conf = openAnswers.get(pollId)?.get(q)?.get(myUri)?.text ?? '';
-        if (conf === pending.text) { next.delete(key); changed = true; }
+        if (conf === pending.text) {
+          next.delete(key);
+          changed = true;
+        }
       }
       return changed ? next : prev;
     });
   }, [openAnswers, myUri]);
 
-  const displayOpenAnswers = useReconciledMap(useMemo<OpenAnswers>(() => {
-    if (optimisticOpen.size === 0) return openAnswers;
-    const merged: OpenAnswers = new Map(
-      [...openAnswers].map(([p, byQ]) => [p, new Map([...byQ].map(([qi, m]) => [qi, new Map(m)]))]),
-    );
-    for (const [key, pending] of optimisticOpen) {
-      const { pollId, q } = unCk(key);
-      const m = child(child(merged, pollId, () => new Map()), q, () => new Map());
-      if (pending.text) m.set(myUri, pending);
-      else m.delete(myUri);
-    }
-    return merged;
-  }, [openAnswers, optimisticOpen, myUri]));
+  const displayOpenAnswers = useReconciledMap(
+    useMemo<OpenAnswers>(() => {
+      if (optimisticOpen.size === 0) return openAnswers;
+      const merged: OpenAnswers = new Map([...openAnswers].map(([p, byQ]) => [p, new Map([...byQ].map(([qi, m]) => [qi, new Map(m)]))]));
+      for (const [key, pending] of optimisticOpen) {
+        const { pollId, q } = unCk(key);
+        const m = child(
+          child(merged, pollId, () => new Map()),
+          q,
+          () => new Map(),
+        );
+        if (pending.text) m.set(myUri, pending);
+        else m.delete(myUri);
+      }
+      return merged;
+    }, [openAnswers, optimisticOpen, myUri]),
+  );
 
-  const onOpenAnswer = useCallback((pollId: string, q: number, text: string) => {
-    const key = ck(pollId, q);
-    const trimmed = text.trim();
-    setOptimisticOpen(prev => {
-      const m = new Map(prev); m.set(key, { text: trimmed, ts: new Date().toISOString() }); return m;
-    });
-    const undo = (): void => { setOptimisticOpen(prev => { const m = new Map(prev); m.delete(key); return m; }); };
-    void xmtpOpenAnswer(activeLine, pollId, q, trimmed)
-      .catch((e: unknown) => { console.warn('xmtp open-answer failed', e); undo(); });
-  }, [activeLine]);
+  const onOpenAnswer = useCallback(
+    (pollId: string, q: number, text: string) => {
+      const key = ck(pollId, q);
+      const trimmed = text.trim();
+      setOptimisticOpen((prev) => {
+        const m = new Map(prev);
+        m.set(key, { text: trimmed, ts: new Date().toISOString() });
+        return m;
+      });
+      const undo = (): void => {
+        setOptimisticOpen((prev) => {
+          const m = new Map(prev);
+          m.delete(key);
+          return m;
+        });
+      };
+      void xmtpOpenAnswer(activeLine, pollId, q, trimmed).catch((e: unknown) => {
+        console.warn('xmtp open-answer failed', e);
+        undo();
+      });
+    },
+    [activeLine],
+  );
 
   return { displayOpenAnswers, onOpenAnswer };
 }
@@ -173,9 +211,7 @@ export function useVotesLayer(
 ) {
   const pollsInFeed = useMemo(() => pollQuestionsInFeed(events), [events]);
 
-  const { displayVotes, displayOwnVotes, onVote } = useOptimisticVotes(
-    activeLine, votes, ownVotes, pollsInFeed, myUri,
-  );
+  const { displayVotes, displayOwnVotes, onVote } = useOptimisticVotes(activeLine, votes, ownVotes, pollsInFeed, myUri);
   const { displayOpenAnswers, onOpenAnswer } = useOptimisticOpenAnswers(activeLine, openAnswers, myUri);
 
   return { displayVotes, displayOwnVotes, onVote, displayOpenAnswers, onOpenAnswer };

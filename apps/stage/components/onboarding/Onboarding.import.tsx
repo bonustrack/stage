@@ -11,13 +11,17 @@ import { usePalette, DANGER } from '../../lib/theme';
 import { QrScanner } from '../accounts/QrScanner';
 import { parseImportInput } from '../accounts/ImportAccountPanel.model';
 import {
-  replaceWordAt, typePhrase, wordAt, type PhraseTyping, invalidWords, looksLikePhrase, visibleSuggestions,
+  replaceWordAt,
+  typePhrase,
+  wordAt,
+  type PhraseTyping,
+  invalidWords,
+  looksLikePhrase,
+  visibleSuggestions,
 } from './RecoveryPhrase.model';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 
-function SuggestionChips({ words, onPick }: {
-  words: string[]; onPick: (word: string) => void;
-}): React.ReactElement | null {
+function SuggestionChips({ words, onPick }: { words: string[]; onPick: (word: string) => void }): React.ReactElement | null {
   const pal = usePalette();
   if (words.length === 0) return null;
   return (
@@ -25,15 +29,22 @@ function SuggestionChips({ words, onPick }: {
       {words.map((word) => (
         <Pressable
           key={word}
-          onPress={() => { onPick(word); }}
+          onPress={() => {
+            onPick(word);
+          }}
           hitSlop={6}
           style={({ pressed }) => ({
-            paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
-            borderWidth: 1, borderColor: pal.border,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 999,
+            borderWidth: 1,
+            borderColor: pal.border,
             backgroundColor: pressed ? pal.border : 'transparent',
           })}
         >
-          <Text size="2xs" color={pal.primary}>{word}</Text>
+          <Text size="2xs" color={pal.primary}>
+            {word}
+          </Text>
         </Pressable>
       ))}
     </Row>
@@ -45,7 +56,10 @@ function inputHint(text: string, err: string | null): { text: string; danger: bo
   if (!looksLikePhrase(text)) return null;
   const invalid = invalidWords(text);
   if (invalid.length > 0) return { text: `Not in the word list: ${invalid.join(', ')}`, danger: true };
-  const count = text.trim().split(/\s+/).filter((w) => w.length > 0).length;
+  const count = text
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w.length > 0).length;
   return count > 0 ? { text: `${count} of 12 to 24 words`, danger: false } : null;
 }
 
@@ -53,8 +67,13 @@ const IMPORT_ABOUT = 'Enter your 12-24 word recovery phrase, or scan the code sh
 
 const SCANNED_COPY = 'QR code scanned. Importing your account...';
 
-export function ImportStep({ dark, busy, onTransfer }: {
-  dark: boolean; busy: boolean;
+export function ImportStep({
+  dark,
+  busy,
+  onTransfer,
+}: {
+  dark: boolean;
+  busy: boolean;
   onTransfer: (transfer: AccountTransfer) => void;
 }): React.ReactElement {
   const pal = usePalette();
@@ -76,7 +95,10 @@ export function ImportStep({ dark, busy, onTransfer }: {
   const hint = inputHint(text, err);
   const submit = (raw: string): void => {
     const parsed = parseImportInput(raw);
-    if (!parsed.ok) { setErr(parsed.error); return; }
+    if (!parsed.ok) {
+      setErr(parsed.error);
+      return;
+    }
     setErr(null);
     onTransfer(parsed.transfer);
   };
@@ -87,40 +109,98 @@ export function ImportStep({ dark, busy, onTransfer }: {
   };
   const phraseField = (
     <>
-      <FormField label="Recovery phrase" placeholder="word1 word2 word3 ..." multiline rows={4} value={text}
-        onChangeText={(t) => { const next = typePhrase(typing, t); setTyping(next); if (t.startsWith(typing.text)) setCursor(next.text.length); setErr(null); }}
+      <FormField
+        label="Recovery phrase"
+        placeholder="word1 word2 word3 ..."
+        multiline
+        rows={4}
+        value={text}
+        onChangeText={(t) => {
+          const next = typePhrase(typing, t);
+          setTyping(next);
+          if (t.startsWith(typing.text)) setCursor(next.text.length);
+          setErr(null);
+        }}
         inputProps={{
-          autoCapitalize: 'none', autoCorrect: false,
-          onSelectionChange: (e) => { setCursor(e.nativeEvent.selection.end); setPlaceCursor(null); },
+          autoCapitalize: 'none',
+          autoCorrect: false,
+          onSelectionChange: (e) => {
+            setCursor(e.nativeEvent.selection.end);
+            setPlaceCursor(null);
+          },
           ...(placeCursor === null ? {} : { selection: { start: placeCursor, end: placeCursor } }),
-        }} />
+        }}
+      />
       <SuggestionChips words={suggestions} onPick={pickSuggestion} />
       {hint === null ? null : (
-        <Text size="3xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>{hint.text}</Text>
+        <Text size="3xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>
+          {hint.text}
+        </Text>
       )}
     </>
   );
   const footer = (
     <>
       {scanning ? (
-        <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth pill label="Stop scanning" disabled={busy}
-          onPress={() => { setScanning(false); }} />
+        <Button
+          dark={dark}
+          variant="soft"
+          color="primary"
+          size="lg"
+          fullWidth
+          pill
+          label="Stop scanning"
+          disabled={busy}
+          onPress={() => {
+            setScanning(false);
+          }}
+        />
       ) : (
         <>
-          <Button variant="primary" dark={dark} size="lg" fullWidth pill tintBg={pal.primary} tintFg={pal.bg}
-            label="Continue" disabled={busy || text.trim().length === 0} onPress={() => { submit(text); }} />
-          <Button dark={dark} variant="soft" color="primary" size="lg" fullWidth pill label="Scan QR code"
+          <Button
+            variant="primary"
+            dark={dark}
+            size="lg"
+            fullWidth
+            pill
+            tintBg={pal.primary}
+            tintFg={pal.bg}
+            label="Continue"
+            disabled={busy || text.trim().length === 0}
+            onPress={() => {
+              submit(text);
+            }}
+          />
+          <Button
+            dark={dark}
+            variant="soft"
+            color="primary"
+            size="lg"
+            fullWidth
+            pill
+            label="Scan QR code"
             iconStart={<Glyph icon={IconQrCode} size={20} color={pal.primary} />}
-            disabled={busy} onPress={() => { setScanned(false); setScanning(true); }} />
+            disabled={busy}
+            onPress={() => {
+              setScanned(false);
+              setScanning(true);
+            }}
+          />
         </>
       )}
     </>
   );
   return (
     <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
-      {scanning ? <QrScanner dark={dark} onScan={onScan} /> : scanned ? (
-        <Text size="xs" color={pal.sub} textAlign="center">{SCANNED_COPY}</Text>
-      ) : phraseField}
+      {scanning ? (
+        <QrScanner dark={dark} onScan={onScan} />
+      ) : scanned ? (
+        <Text size="xs" color={pal.sub} textAlign="center">
+          {SCANNED_COPY}
+        </Text>
+      ) : (
+        phraseField
+      )}
     </OnboardingCard>
   );
 }

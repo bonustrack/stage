@@ -28,15 +28,10 @@ async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promis
     const states = await Client.inboxStatesForInboxIds(env, [inboxId]);
     const installs = states[0]?.installations ?? [];
     if (installs.length === 0) return false;
-    const oldest = [...installs].sort(
-      (a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0),
-    )[0];
+    const oldest = [...installs].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))[0];
     if (!oldest?.id) return false;
     const signer = await signerForRecord(rec);
-    await Client.revokeInstallations(
-      env, signer, inboxId,
-      [oldest.id as Parameters<typeof Client.revokeInstallations>[3][number]],
-    );
+    await Client.revokeInstallations(env, signer, inboxId, [oldest.id as Parameters<typeof Client.revokeInstallations>[3][number]]);
     return true;
   } catch {
     return false;
@@ -46,7 +41,11 @@ async function tryFreeInstallationSlot(rec: AccountRecord, env: XmtpEnv): Promis
 export const finalizeClient = clientFinalizer<Client>({ discard: () => undefined });
 
 export async function createClientForAccount(
-  rec: AccountRecord, env: XmtpEnv, opts: CreateOpts, recovered = false, slotFreed = false,
+  rec: AccountRecord,
+  env: XmtpEnv,
+  opts: CreateOpts,
+  recovered = false,
+  slotFreed = false,
 ): Promise<Client> {
   const signer = await signerForRecord(rec);
   let created: Client;
@@ -60,7 +59,7 @@ export async function createClientForAccount(
       return createClientForAccount(rec, env, { ...opts, dbDirectory, dbEncryptionKey }, true, slotFreed);
     }
     if (!isInstallationLimit(e)) throw e;
-    if (!slotFreed && await tryFreeInstallationSlot(rec, env)) return createClientForAccount(rec, env, opts, recovered, true);
+    if (!slotFreed && (await tryFreeInstallationSlot(rec, env))) return createClientForAccount(rec, env, opts, recovered, true);
     throw new XmtpInstallationLimitError();
   }
   return finalizeClient(created, rec, env, { markRegistered: true });

@@ -45,7 +45,7 @@ import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import { type TextField } from '@stage-labs/kit/react-native/text-field';
 
 async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promise<void> {
-  if (!await capabilities.confirm(deleteConfirmOf(asAdmin))) return;
+  if (!(await capabilities.confirm(deleteConfirmOf(asAdmin)))) return;
   await markOwnDelete(messageId);
   try {
     await xmtpDeleteMessage(messageId);
@@ -85,23 +85,37 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
   const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
-  const back = (): void => { router.replace(homeRoute()); };
+  const back = (): void => {
+    router.replace(homeRoute());
+  };
   return (
     <ConvTopnavShell fg={fg} border={border} safeTop={insets.top} onBack={back}>
       <ConvTopnavIdentity
-        peerAddr={peerAddr} groupImage={groupImage} channelId={convId} isGroup={isGroup}
-        border={border} head={head} title={convTitle(c)}
+        peerAddr={peerAddr}
+        groupImage={groupImage}
+        channelId={convId}
+        isGroup={isGroup}
+        border={border}
+        head={head}
+        title={convTitle(c)}
         onPress={() => {
           if (isGroup) router.push(channelProfileLinkOf(convId));
           else if (peerAddr) router.push(profileLinkOf(peerAddr));
         }}
       />
       <Row align="center" gap={18} padding={{ right: PAGE_GUTTER }}>
-        <CallButtons convId={convId} isGroup={isGroup}/>
-        <ConversationSidebarToggle/>
+        <CallButtons convId={convId} isGroup={isGroup} />
+        <ConversationSidebarToggle />
         <HoverIconButton
-          icon={IconDotGrid1x3Vertical} label="More" color={fg} placement="below" role="button"
-          onPress={(e) => { setOverflowAnchor(menuPointOf(e)); setOverflowOpen(true); }}
+          icon={IconDotGrid1x3Vertical}
+          label="More"
+          color={fg}
+          placement="below"
+          role="button"
+          onPress={(e) => {
+            setOverflowAnchor(menuPointOf(e));
+            setOverflowOpen(true);
+          }}
         />
       </Row>
     </ConvTopnavShell>
@@ -112,8 +126,21 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
   const dark = useEffectiveColorScheme() === 'dark';
   const { border: rowBg } = usePalette();
   const {
-    showJump, setShowJump, scrollToNewest, markAtBottom, activeLine, mentionCandidates,
-    replyingTo, setReplyingTo, autoFocusNonce, jumpToMessage, onOptimistic, onSent, consent, consentKnown, markConsentAllowed,
+    showJump,
+    setShowJump,
+    scrollToNewest,
+    markAtBottom,
+    activeLine,
+    mentionCandidates,
+    replyingTo,
+    setReplyingTo,
+    autoFocusNonce,
+    jumpToMessage,
+    onOptimistic,
+    onSent,
+    consent,
+    consentKnown,
+    markConsentAllowed,
   } = c;
   const isGroup = c.peerAddr === null;
   const access = useGroupAccess(convId, isGroup);
@@ -123,19 +150,30 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
     <ComposerDock>
       {showJump ? (
         <Pressable
-          onPress={() => { markAtBottom(); scrollToNewest(); setShowJump(false); }}
-          style={{
-            position: 'absolute', alignSelf: 'center', bottom: '100%', marginBottom: 8, zIndex: 3,
-            width: 36, height: 36, borderRadius: 999,
-            backgroundColor: dark ? rowBg : '#000000',
-            alignItems: 'center', justifyContent: 'center',
+          onPress={() => {
+            markAtBottom();
+            scrollToNewest();
+            setShowJump(false);
           }}
->
-          <Glyph icon={IconArrowDown} size={18} color="#ffffff"/>
+          style={{
+            position: 'absolute',
+            alignSelf: 'center',
+            bottom: '100%',
+            marginBottom: 8,
+            zIndex: 3,
+            width: 36,
+            height: 36,
+            borderRadius: 999,
+            backgroundColor: dark ? rowBg : '#000000',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Glyph icon={IconArrowDown} size={18} color="#ffffff" />
         </Pressable>
       ) : null}
-      {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed}/> : null}
-      {access === 'waiting' || access === 'outside' ? <ChannelAccessNotice outside={access === 'outside'}/> : null}
+      {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed} /> : null}
+      {access === 'waiting' || access === 'outside' ? <ChannelAccessNotice outside={access === 'outside'} /> : null}
       {composerShown ? (
         <MessengerComposer
           dark={dark}
@@ -144,20 +182,31 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
           suggestContacts={c.peerAddr !== null}
           replyingTo={replyingTo ?? undefined}
           autoFocusNonce={autoFocusNonce}
-          onClearReply={() => { setReplyingTo(null); }}
-          onRestoreReply={() => { setReplyingTo(current => current ?? replyingTo); }}
+          onClearReply={() => {
+            setReplyingTo(null);
+          }}
+          onRestoreReply={() => {
+            setReplyingTo((current) => current ?? replyingTo);
+          }}
           onJumpToReply={jumpToMessage}
           onOptimistic={onOptimistic}
           onSent={onSent}
-/>
+        />
       ) : null}
     </ComposerDock>
   );
 }
 
-export function ConversationSearchTopnav({ searchInputRef, query, setQuery, onClose }: {
+export function ConversationSearchTopnav({
+  searchInputRef,
+  query,
+  setQuery,
+  onClose,
+}: {
   searchInputRef: React.RefObject<React.ComponentRef<typeof TextField> | null>;
-  query: string; setQuery: (s: string) => void; onClose: () => void;
+  query: string;
+  setQuery: (s: string) => void;
+  onClose: () => void;
 }): React.ReactElement {
   const { text: sub, link: head, border } = usePalette();
   const topInset = useSafeAreaInsets().top;
@@ -173,20 +222,38 @@ export function ConversationSearchTopnav({ searchInputRef, query, setQuery, onCl
         sub={sub}
         placeholder="Search this conversation"
         topInset={topInset}
-/>
+      />
     </Column>
   );
 }
 
-export function ConversationOverlays({ c, convId, onOpenSearch }: {
-  c: Conv; convId: string; onOpenSearch: () => void;
+export function ConversationOverlays({
+  c,
+  convId,
+  onOpenSearch,
+}: {
+  c: Conv;
+  convId: string;
+  onOpenSearch: () => void;
 }): React.ReactElement {
   const {
-    overflowOpen, setOverflowOpen, overflowAnchor, isGroup, peerAddr,
-    menuFor, setMenuFor, menuAnchor, onReact, setReplyTarget, senderEthOf, setSelectedForCopy, myUri, deletedIds,
+    overflowOpen,
+    setOverflowOpen,
+    overflowAnchor,
+    isGroup,
+    peerAddr,
+    menuFor,
+    setMenuFor,
+    menuAnchor,
+    onReact,
+    setReplyTarget,
+    senderEthOf,
+    setSelectedForCopy,
+    myUri,
+    deletedIds,
     isSuperAdmin,
   } = c;
-  const isUnread = (getCachedRows()?.find(r => r.convId === convId)?.unreadCount ?? 0) > 0;
+  const isUnread = (getCachedRows()?.find((r) => r.convId === convId)?.unreadCount ?? 0) > 0;
   const rights = useChannelEditRights(convId, isGroup);
   const [editOpen, setEditOpen] = useState(false);
   const canEdit = isGroup && canEditGroup(rights);
@@ -199,18 +266,34 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
         peerAddress={peerAddr}
         isUnread={isUnread}
         isPinned={convId ? isPinned(convId) : false}
-        onClose={() => { setOverflowOpen(false); }}
+        onClose={() => {
+          setOverflowOpen(false);
+        }}
         anchor={overflowAnchor}
         context="view"
         onSearch={onOpenSearch}
-        onEdit={canEdit ? () => { setEditOpen(true); } : undefined}
-        onAfterLeave={result => { capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden'); }}
-/>
+        onEdit={
+          canEdit
+            ? () => {
+                setEditOpen(true);
+              }
+            : undefined
+        }
+        onAfterLeave={(result) => {
+          capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden');
+        }}
+      />
       {canEdit ? (
         <EditChannelModal
           visible={editOpen}
-          onClose={() => { setEditOpen(false); }}
-          convId={convId} name={c.groupName} description={c.groupDescription} imageUrl={c.groupImage} rights={rights}
+          onClose={() => {
+            setEditOpen(false);
+          }}
+          convId={convId}
+          name={c.groupName}
+          description={c.groupDescription}
+          imageUrl={c.groupImage}
+          rights={rights}
           labels={c.groupLabels}
         />
       ) : null}
@@ -218,8 +301,13 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
         target={menuFor}
         anchor={menuAnchor}
         canDelete={canDeleteMessage(menuFor, { myUri, deleted: deletedIds, superAdmin: isSuperAdmin })}
-        onClose={() => { setMenuFor(null); }}
-        onReact={emoji => { if (menuFor) onReact(menuFor.id, emoji); setMenuFor(null); }}
+        onClose={() => {
+          setMenuFor(null);
+        }}
+        onReact={(emoji) => {
+          if (menuFor) onReact(menuFor.id, emoji);
+          setMenuFor(null);
+        }}
         onReply={() => {
           if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor), senderEthOf(menuFor.from));
           setMenuFor(null);
@@ -232,7 +320,9 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
           if (menuFor) setSelectedForCopy(menuFor.id);
           setMenuFor(null);
         }}
-        onAddToDashboard={frameAdder(convId, menuFor, () => { setMenuFor(null); })}
+        onAddToDashboard={frameAdder(convId, menuFor, () => {
+          setMenuFor(null);
+        })}
         onShareLink={() => {
           const path = conversationSharePath(convId, !isGroup ? peerAddr : null);
           if (menuFor) void Share.share({ message: `${shareUrlFor(path)}?m=${menuFor.id}` });
@@ -242,7 +332,7 @@ export function ConversationOverlays({ c, convId, onOpenSearch }: {
           if (menuFor) void confirmDeleteMessage(menuFor.id, isAdminDelete(menuFor, myUri));
           setMenuFor(null);
         }}
-/>
+      />
     </>
   );
 }

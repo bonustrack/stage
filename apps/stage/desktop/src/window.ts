@@ -16,8 +16,18 @@ function linkContextMenu(win: BrowserWindow): void {
   win.webContents.on('context-menu', (_event, { linkURL }) => {
     if (!WEB_URL.test(linkURL)) return;
     Menu.buildFromTemplate([
-      { label: 'Open link in browser', click: () => { openOutside(linkURL); } },
-      { label: 'Copy link', click: () => { void clipboard.writeText(linkURL); } },
+      {
+        label: 'Open link in browser',
+        click: () => {
+          openOutside(linkURL);
+        },
+      },
+      {
+        label: 'Copy link',
+        click: () => {
+          void clipboard.writeText(linkURL);
+        },
+      },
     ]).popup({ window: win });
   });
 }
@@ -48,11 +58,16 @@ export function createWindow(site: string, url: string): BrowserWindow {
     trafficLightPosition: { x: 12, y: 8 },
     ...(mac ? {} : { titleBarOverlay: { color: BACKGROUND, symbolColor: '#e4e4e7', height: TITLE_BAR_HEIGHT } }),
     webPreferences: {
-      contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: true,
+      contextIsolation: true,
+      sandbox: true,
+      nodeIntegration: false,
+      spellcheck: true,
       preload: path.join(__dirname, 'preload.cjs'),
     },
   });
-  win.once('ready-to-show', () => { win.show(); });
+  win.once('ready-to-show', () => {
+    win.show();
+  });
   guardNavigation(win, site);
   linkContextMenu(win);
   void win.loadURL(url);

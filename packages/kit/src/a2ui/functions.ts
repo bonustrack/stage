@@ -93,7 +93,8 @@ function length(args: FunctionArgs): ValidationResult {
 
 function numeric(args: FunctionArgs): ValidationResult {
   const n = Number(args.value);
-  if (args.value === null || args.value === undefined || args.value === '' || Number.isNaN(n)) return failure('Value must be a valid number.');
+  if (args.value === null || args.value === undefined || args.value === '' || Number.isNaN(n))
+    return failure('Value must be a valid number.');
   return withinBounds(n, args, 'value');
 }
 
@@ -108,7 +109,9 @@ function booleanList(args: FunctionArgs, name: string): unknown[] {
 }
 
 function formatStringImpl(args: FunctionArgs, context: FunctionContext): string {
-  return parseTemplate(coerceToString(args.value)).map((part) => coerceToString(typeof part === 'object' && part !== null ? context.resolve(part) : part)).join('');
+  return parseTemplate(coerceToString(args.value))
+    .map((part) => coerceToString(typeof part === 'object' && part !== null ? context.resolve(part) : part))
+    .join('');
 }
 
 export function checkedUrl(input: unknown, base?: string): string {
@@ -133,7 +136,8 @@ export function createBasicFunctions(localeInput?: string): Record<string, Funct
     email,
     formatString: formatStringImpl,
     formatNumber: (args) => formatNumber(Number(args.value), optionalNumber(args.decimals), args.grouping !== false, locale),
-    formatCurrency: (args) => formatCurrency(Number(args.value), args.currency, optionalNumber(args.decimals) ?? 2, args.grouping !== false, locale),
+    formatCurrency: (args) =>
+      formatCurrency(Number(args.value), args.currency, optionalNumber(args.decimals) ?? 2, args.grouping !== false, locale),
     formatDate: (args) => formatDate(args.value, args.format, locale),
     pluralize: (args) => pluralize(Number(args.value), args, locale),
     openUrl: (args, context) => {

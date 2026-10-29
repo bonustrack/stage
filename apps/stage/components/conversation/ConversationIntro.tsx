@@ -12,21 +12,23 @@ import { profileLinkOf } from '../../lib/links';
 import type { useConversationState } from './useConversationState';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
-function IntroLabelChips({ labels, fg, bg }: {
-  labels: string[]; fg: string; bg: string;
-}): React.ReactElement | null {
+function IntroLabelChips({ labels, fg, bg }: { labels: string[]; fg: string; bg: string }): React.ReactElement | null {
   if (labels.length === 0) return null;
   return (
     <Row margin={{ top: 8 }} align="center" gap={6} justify="start" style={{ flexWrap: 'wrap' }}>
-      {labels.map(label => (
-        <Badge key={label.toLowerCase()} label={label} textSize="xs" fontWeight="normal" color={fg} background={bg}/>
+      {labels.map((label) => (
+        <Badge key={label.toLowerCase()} label={label} textSize="xs" fontWeight="normal" color={fg} background={bg} />
       ))}
     </Row>
   );
 }
 
-export function ConversationIntro({ c, convId }: {
-  c: ReturnType<typeof useConversationState>; convId: string;
+export function ConversationIntro({
+  c,
+  convId,
+}: {
+  c: ReturnType<typeof useConversationState>;
+  convId: string;
 }): React.ReactElement | null {
   const { isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels } = c;
   const { text: fg, link: head, border, inputBg } = usePalette();
@@ -41,12 +43,15 @@ export function ConversationIntro({ c, convId }: {
           size="lg"
           square
           style={{ backgroundColor: border }}
-/>
+        />
         <TitleText
-          title={convTitle({ isGroup, groupName, peerAddr })} fontWeight="medium" size="2xl" color={head}
+          title={convTitle({ isGroup, groupName, peerAddr })}
+          fontWeight="medium"
+          size="2xl"
+          color={head}
           style={{ lineHeight: 30, marginTop: 12, textAlign: 'left', flexShrink: 1 }}
         />
-        <IntroLabelChips labels={groupLabels} fg={fg} bg={inputBg}/>
+        <IntroLabelChips labels={groupLabels} fg={fg} bg={inputBg} />
         {desc ? (
           <Text size="xl" color="secondary" style={{ marginTop: 10, textAlign: 'left', lineHeight: 23 }}>
             {desc}
@@ -59,12 +64,17 @@ export function ConversationIntro({ c, convId }: {
   if (!peerAddr) return null;
   return (
     <Pressable
-      onPress={() => { router.push(profileLinkOf(peerAddr)); }}
+      onPress={() => {
+        router.push(profileLinkOf(peerAddr));
+      }}
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: PAGE_GUTTER }}
     >
       <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />
       <TitleText
-        title={convTitle({ isGroup, groupName, peerAddr })} fontWeight="semibold" size="2xl" color={head}
+        title={convTitle({ isGroup, groupName, peerAddr })}
+        fontWeight="semibold"
+        size="2xl"
+        color={head}
         style={{ lineHeight: 30, marginTop: 12, flexShrink: 1 }}
       />
       <Text size="3xs" color="secondary" style={{ marginTop: 2 }} numberOfLines={1}>

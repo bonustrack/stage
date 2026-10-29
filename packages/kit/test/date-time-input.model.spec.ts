@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  dateTimeMode, dayInRange, formatWallClock, parseWallClock, wallClockLabel, wrapClock,
+  dateTimeMode,
+  dayInRange,
+  formatWallClock,
+  parseWallClock,
+  wallClockLabel,
+  wrapClock,
 } from '../src/react-native/date-time-input.model';
 
 describe('date time input model', () => {

@@ -1,11 +1,5 @@
-
 import { describe, expect, test } from 'bun:test';
-import {
-  parseMentions,
-  matchMembers,
-  computeMentionQuery,
-  MENTION_RE,
-} from '../src/xmtp/mentions';
+import { parseMentions, matchMembers, computeMentionQuery, MENTION_RE } from '../src/xmtp/mentions';
 
 const A = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
 const B = '0xabc0000000000000000000000000000000000def';
@@ -66,11 +60,11 @@ describe('matchMembers', () => {
       { address: hex('1'), name: 'Ann Dee' },
       { address: hex('2'), name: 'dana.stage.eth' },
     ];
-    expect(matchMembers(ranked, 'd').map(m => m.name)).toEqual(['Ann Dee', 'dana.stage.eth', '0xdddd…dddd', 'Eddie']);
+    expect(matchMembers(ranked, 'd').map((m) => m.name)).toEqual(['Ann Dee', 'dana.stage.eth', '0xdddd…dddd', 'Eddie']);
   });
 
   test('keeps a name match when address matches fill the limit', () => {
-    const crowd = [...'0123456'].map(d => ({ address: `0x${d.repeat(39)}d`, name: `user ${d}` }));
+    const crowd = [...'0123456'].map((d) => ({ address: `0x${d.repeat(39)}d`, name: `user ${d}` }));
     const dana = { address: A, name: 'Dana' };
     expect(matchMembers([...crowd, dana], 'd')[0]).toEqual(dana);
   });

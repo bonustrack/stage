@@ -163,11 +163,13 @@ function literalRun(scanner: Scanner): string {
 
 export function parseTemplate(input: string, depth = 0): DynamicValue[] {
   if (depth > MAX_EXPRESSION_DEPTH) throw new A2uiExpressionError('Max recursion depth reached in parse');
-  if (input.length > MAX_TEMPLATE_LENGTH) throw new A2uiExpressionError(`Expression template length (${input.length}) exceeds maximum limit (${MAX_TEMPLATE_LENGTH})`);
+  if (input.length > MAX_TEMPLATE_LENGTH)
+    throw new A2uiExpressionError(`Expression template length (${input.length}) exceeds maximum limit (${MAX_TEMPLATE_LENGTH})`);
   const parts: DynamicValue[] = [];
   const scanner = new Scanner(input);
   while (!scanner.atEnd()) {
-    if (parts.length >= MAX_TEMPLATE_PARTS) throw new A2uiExpressionError(`Expression parts count exceeds maximum limit (${MAX_TEMPLATE_PARTS})`);
+    if (parts.length >= MAX_TEMPLATE_PARTS)
+      throw new A2uiExpressionError(`Expression parts count exceeds maximum limit (${MAX_TEMPLATE_PARTS})`);
     if (scanner.startsWith('${')) {
       scanner.advance(2);
       parts.push(parseExpression(interpolationBody(scanner), depth + 1));

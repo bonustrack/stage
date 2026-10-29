@@ -3,5 +3,5 @@ export function errorMessage(e: unknown): string {
 }
 
 export function errorLine(e: unknown, fallback = String(e)): string {
-  return e instanceof Error ? e.message.split('\n')[0] ?? fallback : fallback;
+  return e instanceof Error ? (e.message.split('\n')[0] ?? fallback) : fallback;
 }

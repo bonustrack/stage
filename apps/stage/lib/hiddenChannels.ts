@@ -5,7 +5,12 @@ import type { XmtpConsent } from './xmtp.types';
 import { HIDDEN_CHANNELS_KEY, parseHiddenChannels } from './hiddenChannelsStorage';
 
 const prefs = createValueStore<HiddenChannels>({
-  key: HIDDEN_CHANNELS_KEY, default: {}, deserialize: parseHiddenChannels, serialize: JSON.stringify, perAccount: true, durable: true,
+  key: HIDDEN_CHANNELS_KEY,
+  default: {},
+  deserialize: parseHiddenChannels,
+  serialize: JSON.stringify,
+  perAccount: true,
+  durable: true,
 });
 const localChanges = makeListeners<string>();
 
@@ -24,9 +29,9 @@ export function channelConsent(convId: string, consent: XmtpConsent | null): Xmt
 }
 
 export async function setChannelHidden(accountId: string, convId: string, hidden: boolean): Promise<void> {
-  await prefs.updateFor(accountId, (current) => mergeHiddenChannels(current, {
-    [convId]: { hidden, at: Math.max(Date.now(), (current[convId]?.at ?? 0) + 1) },
-  }));
+  await prefs.updateFor(accountId, (current) =>
+    mergeHiddenChannels(current, { [convId]: { hidden, at: Math.max(Date.now(), (current[convId]?.at ?? 0) + 1) } }),
+  );
   localChanges.notify(accountId);
 }
 

@@ -19,7 +19,15 @@ export function profileSetupFrom(label: string, details: ProfileDetails): Profil
     label,
     ...(name === '' ? {} : { displayName: name }),
     ...(about === '' ? {} : { description: about }),
-    ...(details.image === null ? {} : { image: { uri: details.image.uri, mime: details.image.mime, ...(details.image.name === undefined ? {} : { name: details.image.name }) } }),
+    ...(details.image === null
+      ? {}
+      : {
+          image: {
+            uri: details.image.uri,
+            mime: details.image.mime,
+            ...(details.image.name === undefined ? {} : { name: details.image.name }),
+          },
+        }),
   };
 }
 

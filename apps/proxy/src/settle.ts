@@ -38,9 +38,7 @@ function paymentHeaders(req: SettleRequest): (url: string) => Record<string, str
 }
 
 export async function settleX402(req: SettleRequest): Promise<SettleResult> {
-  const { res } = await fetchPublic(req.url, {
-    maxRedirects: MAX_REDIRECTS, timeoutMs: TIMEOUT_MS, headers: paymentHeaders(req),
-  });
+  const { res } = await fetchPublic(req.url, { maxRedirects: MAX_REDIRECTS, timeoutMs: TIMEOUT_MS, headers: paymentHeaders(req) });
   if (res.status >= 300 && res.status < 400) return { status: res.status, ok: false };
   const body = ((await readCappedText(res, MAX_BODY_BYTES)) ?? '').slice(0, MAX_BODY_BYTES);
   return { status: res.status, ok: res.ok, body: body || undefined };

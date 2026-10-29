@@ -35,19 +35,22 @@ export function useChatFrame(frame: FrameContent | null, line: string, messageId
   const node = useMemo(() => (frame === null ? null : frameNodeOf(frame)), [frame]);
   const live = useLiveFrame(messageId);
   const sessionKey = useChatFrameKey(messageId);
-  const onMessage = useCallback<FrameMessageHandler>(async (out) => {
-    const { message } = out;
-    if (frame !== null && node !== null) {
-      if ('action' in message) engageFrameSession(sessionKey);
-      await sendToLiveFrame(messageId, frame, node.url, out);
-    } else if ('callAgentFunction' in message) rejectAgentCall(sessionKey, message.callAgentFunction.functionCallId);
-    else if ('error' in message) report('frame.a2ui', new Error(`${message.error.code}: ${message.error.message}`));
-    else if ('action' in message && await sendFrameActionToChat(line, messageId, out)) onSent?.();
-  }, [frame, node, line, messageId, onSent, sessionKey]);
+  const onMessage = useCallback<FrameMessageHandler>(
+    async (out) => {
+      const { message } = out;
+      if (frame !== null && node !== null) {
+        if ('action' in message) engageFrameSession(sessionKey);
+        await sendToLiveFrame(messageId, frame, node.url, out);
+      } else if ('callAgentFunction' in message) rejectAgentCall(sessionKey, message.callAgentFunction.functionCallId);
+      else if ('error' in message) report('frame.a2ui', new Error(`${message.error.code}: ${message.error.message}`));
+      else if ('action' in message && (await sendFrameActionToChat(line, messageId, out))) onSent?.();
+    },
+    [frame, node, line, messageId, onSent, sessionKey],
+  );
   const refresh = useCallback(() => {
     if (frame === null || node === null) return;
     engageFrameSession(sessionKey);
     void refreshLiveFrame(messageId, frame, node.url);
   }, [frame, node, messageId, sessionKey]);
-  return { frame: node === null ? frame : live ?? frame, node, sessionKey, onMessage, refresh };
+  return { frame: node === null ? frame : (live ?? frame), node, sessionKey, onMessage, refresh };
 }

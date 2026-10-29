@@ -20,13 +20,28 @@ describe('attachment send account capture', () => {
     for (const phase of ['upload', 'callback', 'find']) {
       let current = true;
       let sent = false;
-      await expect(sendPreparedAttachment({
-        assertCurrent: () => { if (!current) throw new Error('account changed'); },
-        uploaded: async () => { if (phase === 'upload') current = false; return ['encrypted attachment']; },
-        onUploaded: () => { if (phase === 'callback') current = false; },
-        find: async () => { if (phase === 'find') current = false; return 'shared group'; },
-        send: async () => { sent = true; return 'id'; },
-      })).rejects.toThrow('account changed');
+      await expect(
+        sendPreparedAttachment({
+          assertCurrent: () => {
+            if (!current) throw new Error('account changed');
+          },
+          uploaded: async () => {
+            if (phase === 'upload') current = false;
+            return ['encrypted attachment'];
+          },
+          onUploaded: () => {
+            if (phase === 'callback') current = false;
+          },
+          find: async () => {
+            if (phase === 'find') current = false;
+            return 'shared group';
+          },
+          send: async () => {
+            sent = true;
+            return 'id';
+          },
+        }),
+      ).rejects.toThrow('account changed');
       expect(sent).toBe(false);
     }
   });
@@ -35,13 +50,25 @@ describe('attachment send account capture', () => {
     for (const phase of ['upload', 'find']) {
       let accepted = true;
       const send = mock(async () => 'id');
-      await expect(sendPreparedAttachment({
-        assertCurrent: () => { return; },
-        uploaded: async () => { if (phase === 'upload') accepted = false; return ['encrypted']; },
-        find: async () => { if (phase === 'find') accepted = false; return 'conversation'; },
-        beforeSend: async () => { if (!accepted) throw new Error('destination changed'); },
-        send,
-      })).rejects.toThrow('destination changed');
+      await expect(
+        sendPreparedAttachment({
+          assertCurrent: () => {
+            return;
+          },
+          uploaded: async () => {
+            if (phase === 'upload') accepted = false;
+            return ['encrypted'];
+          },
+          find: async () => {
+            if (phase === 'find') accepted = false;
+            return 'conversation';
+          },
+          beforeSend: async () => {
+            if (!accepted) throw new Error('destination changed');
+          },
+          send,
+        }),
+      ).rejects.toThrow('destination changed');
       expect(send).not.toHaveBeenCalled();
     }
   });
@@ -49,22 +76,44 @@ describe('attachment send account capture', () => {
   test('rechecks the account after an asynchronous destination check', async () => {
     let current = true;
     const send = mock(async () => 'id');
-    await expect(sendPreparedAttachment({
-      assertCurrent: () => { if (!current) throw new Error('account changed'); },
-      uploaded: async () => ['encrypted'], find: async () => 'conversation',
-      beforeSend: async () => { current = false; }, send,
-    })).rejects.toThrow('account changed');
+    await expect(
+      sendPreparedAttachment({
+        assertCurrent: () => {
+          if (!current) throw new Error('account changed');
+        },
+        uploaded: async () => ['encrypted'],
+        find: async () => 'conversation',
+        beforeSend: async () => {
+          current = false;
+        },
+        send,
+      }),
+    ).rejects.toThrow('account changed');
     expect(send).not.toHaveBeenCalled();
   });
 
   test('uploads first, then performs just-in-time sender preparation under the initiating session', async () => {
     const order: string[] = [];
-    expect(await sendPreparedAttachment({
-      assertCurrent: () => { order.push('check'); },
-      uploaded: async () => { order.push('upload'); return ['encrypted attachment']; },
-      find: async () => { order.push('prepare'); return 'conversation'; },
-      send: async (_conv, infos) => { order.push('send'); expect(infos).toEqual(['encrypted attachment']); return 'id'; },
-    })).toBe('id');
+    expect(
+      await sendPreparedAttachment({
+        assertCurrent: () => {
+          order.push('check');
+        },
+        uploaded: async () => {
+          order.push('upload');
+          return ['encrypted attachment'];
+        },
+        find: async () => {
+          order.push('prepare');
+          return 'conversation';
+        },
+        send: async (_conv, infos) => {
+          order.push('send');
+          expect(infos).toEqual(['encrypted attachment']);
+          return 'id';
+        },
+      }),
+    ).toBe('id');
     expect(order).toEqual(['check', 'upload', 'check', 'check', 'prepare', 'check', 'send']);
   });
 });
@@ -117,14 +166,19 @@ describe('attachment prep', () => {
   test('at most two files are encrypted at the same time', async () => {
     let running = 0;
     let peak = 0;
-    const prep = makeAttachmentPrep(async (file: typeof photo) => {
-      running += 1;
-      peak = Math.max(peak, running);
-      await new Promise(done => { setTimeout(done, 5); });
-      running -= 1;
-      return file.filename;
-    }, async (encrypted: string) => encrypted);
-    const files = ['a', 'b', 'c', 'd'].map(n => ({ ...photo, fileUri: `blob:${n}`, filename: `${n}.png` }));
+    const prep = makeAttachmentPrep(
+      async (file: typeof photo) => {
+        running += 1;
+        peak = Math.max(peak, running);
+        await new Promise((done) => {
+          setTimeout(done, 5);
+        });
+        running -= 1;
+        return file.filename;
+      },
+      async (encrypted: string) => encrypted,
+    );
+    const files = ['a', 'b', 'c', 'd'].map((n) => ({ ...photo, fileUri: `blob:${n}`, filename: `${n}.png` }));
     expect(await prep.uploaded(files)).toEqual(['a.png', 'b.png', 'c.png', 'd.png']);
     expect(peak).toBe(2);
   });

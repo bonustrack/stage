@@ -39,12 +39,18 @@ const WAITING_LABEL = 'Waiting for your other device. Open Stage there on this a
 
 export function historySyncPhaseLabel(phase: HistorySyncPhase, problem?: string | null): string | null {
   switch (phase) {
-    case 'requesting': return 'Asking your other device for history…';
-    case 'waiting': return WAITING_LABEL;
-    case 'done': return 'History synced from your other device.';
-    case 'timeout': return 'No answer from your other device yet. Open Stage there and try again.';
-    case 'error': return problem ?? HISTORY_COPY.failed;
-    default: return null;
+    case 'requesting':
+      return 'Asking your other device for history…';
+    case 'waiting':
+      return WAITING_LABEL;
+    case 'done':
+      return 'History synced from your other device.';
+    case 'timeout':
+      return 'No answer from your other device yet. Open Stage there and try again.';
+    case 'error':
+      return problem ?? HISTORY_COPY.failed;
+    default:
+      return null;
   }
 }
 
@@ -57,12 +63,17 @@ export function settleBy<T>(work: Promise<T>, deadline: number, fallback: T, tic
   const expired = new Promise<T>((resolve) => {
     const check = (): void => {
       const left = deadline - Date.now();
-      if (left <= 0) { resolve(fallback); return; }
+      if (left <= 0) {
+        resolve(fallback);
+        return;
+      }
       timer = setTimeout(check, Math.min(tickMs, left));
     };
     check();
   });
-  return Promise.race([work, expired]).finally(() => { if (timer !== undefined) clearTimeout(timer); });
+  return Promise.race([work, expired]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
 }
 
 export function timeLeftLabel(msLeft: number): string {

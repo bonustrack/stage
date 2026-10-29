@@ -23,7 +23,7 @@ describe('file card', () => {
 });
 
 describe('resolved attachment kind', () => {
-  test.each(['audio/webm', 'audio/mp4'])('uses decrypted %s instead of a video filename guess', mime => {
+  test.each(['audio/webm', 'audio/mp4'])('uses decrypted %s instead of a video filename guess', (mime) => {
     expect(resolvedAttachmentKind({ kind: 'video', mime })).toBe('audio');
   });
 

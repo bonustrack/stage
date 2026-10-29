@@ -3,7 +3,15 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { utf8ToBytes } from '@noble/hashes/utils';
 import { base64ToBytes } from '../src/text/base64';
 import {
-  loadNode, loadReplyOf, messageReplyOf, newNodeKey, nodeHeaders, nodeKeyId, nodeRequestBody, nodeUrlOf, sendNodeMessage,
+  loadNode,
+  loadReplyOf,
+  messageReplyOf,
+  newNodeKey,
+  nodeHeaders,
+  nodeKeyId,
+  nodeRequestBody,
+  nodeUrlOf,
+  sendNodeMessage,
 } from '../src/nodes/protocol';
 import { nodeSigningText } from '../src/nodes/signing';
 
@@ -12,9 +20,17 @@ const RFC8032_PUBLIC = '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo';
 const URL_A = 'https://btc.example.com/';
 const NOW = 1_760_000_000_000;
 const KIT = 'https://kit.stage.box/a2ui/v1_0/catalog.json';
-const MESSAGES = [{ version: 'v1.0', createSurface: { surfaceId: 'main', catalogId: KIT, components: [{ id: 'root', component: 'Title', text: '$100' }] } }];
+const MESSAGES = [
+  { version: 'v1.0', createSurface: { surfaceId: 'main', catalogId: KIT, components: [{ id: 'root', component: 'Title', text: '$100' }] } },
+];
 const UPDATE = { version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/price', value: 101 } };
-const VOTE = { name: 'vote', surfaceId: 'main', sourceComponentId: 'yes', timestamp: '2026-10-26T00:00:00.000Z', context: { option: 'yes' } };
+const VOTE = {
+  name: 'vote',
+  surfaceId: 'main',
+  sourceComponentId: 'yes',
+  timestamp: '2026-10-26T00:00:00.000Z',
+  context: { option: 'yes' },
+};
 const VOTE_MESSAGE = { version: 'v1.0', action: VOTE };
 const CAPABILITIES = { 'v1.0': { supportedCatalogIds: [KIT] } };
 const realFetch = globalThis.fetch;
@@ -24,34 +40,50 @@ function bytesOf(base64url: string): Uint8Array {
   return base64ToBytes(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
 }
 
-interface Seen { url: string; init: RequestInit }
+interface Seen {
+  url: string;
+  init: RequestInit;
+}
 
 function stubFetch(respond: (seen: Seen) => Response | Promise<Response>): Seen[] {
   const seen: Seen[] = [];
-  globalThis.fetch = Object.assign(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const call = { url: String(input), init: init ?? {} };
-    seen.push(call);
-    return respond(call);
-  }, { preconnect: realFetch.preconnect });
+  globalThis.fetch = Object.assign(
+    async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const call = { url: String(input), init: init ?? {} };
+      seen.push(call);
+      return respond(call);
+    },
+    { preconnect: realFetch.preconnect },
+  );
   return seen;
 }
 
-afterEach(() => { globalThis.fetch = realFetch; });
+afterEach(() => {
+  globalThis.fetch = realFetch;
+});
 
 describe('node url safety', () => {
   test('accepts https public hosts and normalizes the url', () => {
     expect(nodeUrlOf(' https://BTC.example.com ')).toEqual({ ok: true, url: URL_A, host: 'btc.example.com' });
     expect(nodeUrlOf('https://node.example.com:8443/w?id=1#frag')).toEqual({
-      ok: true, url: 'https://node.example.com:8443/w?id=1', host: 'node.example.com:8443',
+      ok: true,
+      url: 'https://node.example.com:8443/w?id=1',
+      host: 'node.example.com:8443',
     });
     expect(nodeUrlOf('https://1.1.1.1/').ok).toBe(true);
     expect(nodeUrlOf('https://[2606:4700:4700::1111]/').ok).toBe(true);
-    expect(nodeUrlOf('https://bücher.example/')).toEqual({ ok: true, url: 'https://xn--bcher-kva.example/', host: 'xn--bcher-kva.example' });
+    expect(nodeUrlOf('https://bücher.example/')).toEqual({
+      ok: true,
+      url: 'https://xn--bcher-kva.example/',
+      host: 'xn--bcher-kva.example',
+    });
   });
 
   test('signs the url in the form a Cloudflare Worker sees it', () => {
     expect(nodeUrlOf('https://x.example.com/a%7eb/%2f?q=a|b^c&d=%41')).toEqual({
-      ok: true, url: 'https://x.example.com/a~b/%2F?q=a%7Cb%5Ec&d=A', host: 'x.example.com',
+      ok: true,
+      url: 'https://x.example.com/a~b/%2F?q=a%7Cb%5Ec&d=A',
+      host: 'x.example.com',
     });
     expect(nodeUrlOf(`https://x.example.com/a${' '.repeat(700)}b`)).toEqual({ ok: false, problem: 'invalid' });
   });
@@ -68,14 +100,44 @@ describe('node url safety', () => {
 
   test('blocks local names and private, loopback and link-local addresses', () => {
     const blocked = [
-      'https://localhost', 'https://localhost.', 'https://api.localhost', 'https://printer.local', 'https://db.internal',
-      'https://nas.lan', 'https://box.home.arpa', 'https://intranet', 'https://127.0.0.1', 'https://127.1', 'https://2130706433',
-      'https://0x7f.0.0.1', 'https://0.0.0.0', 'https://10.1.2.3', 'https://172.16.0.1', 'https://172.31.255.255',
-      'https://192.168.1.10', 'https://169.254.169.254', 'https://100.64.0.1', 'https://224.0.0.1', 'https://[::1]',
-      'https://[::]', 'https://[fe80::1]', 'https://[fd00::1]', 'https://[fc00::1]', 'https://[ff02::1]',
-      'https://[::ffff:127.0.0.1]', 'https://[::ffff:a9fe:a9fe]', 'https://[::ffff:192.168.0.1]', 'https://localhost.localdomain',
-      'https://198.18.0.1', 'https://[64:ff9b::7f00:1]', 'https://[2002:7f00:1::1]', 'https://[::ffff:0:a00:1]', 'https://１２７.０.０.１',
-      'https://localhost..', 'https://nas.local..', 'https://printer.local...',
+      'https://localhost',
+      'https://localhost.',
+      'https://api.localhost',
+      'https://printer.local',
+      'https://db.internal',
+      'https://nas.lan',
+      'https://box.home.arpa',
+      'https://intranet',
+      'https://127.0.0.1',
+      'https://127.1',
+      'https://2130706433',
+      'https://0x7f.0.0.1',
+      'https://0.0.0.0',
+      'https://10.1.2.3',
+      'https://172.16.0.1',
+      'https://172.31.255.255',
+      'https://192.168.1.10',
+      'https://169.254.169.254',
+      'https://100.64.0.1',
+      'https://224.0.0.1',
+      'https://[::1]',
+      'https://[::]',
+      'https://[fe80::1]',
+      'https://[fd00::1]',
+      'https://[fc00::1]',
+      'https://[ff02::1]',
+      'https://[::ffff:127.0.0.1]',
+      'https://[::ffff:a9fe:a9fe]',
+      'https://[::ffff:192.168.0.1]',
+      'https://localhost.localdomain',
+      'https://198.18.0.1',
+      'https://[64:ff9b::7f00:1]',
+      'https://[2002:7f00:1::1]',
+      'https://[::ffff:0:a00:1]',
+      'https://１２７.０.０.１',
+      'https://localhost..',
+      'https://nas.local..',
+      'https://printer.local...',
     ];
     for (const url of blocked) expect([url, nodeUrlOf(url)]).toEqual([url, { ok: false, problem: 'local' }]);
     expect(nodeUrlOf('https://172.32.0.1').ok).toBe(true);
@@ -99,9 +161,7 @@ describe('node request signing', () => {
     expect(text).toBe(
       'stage-node-v1\nGET\nhttps://btc.example.com/\n1760000000\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     );
-    expect(headers['Stage-Signature']).toBe(
-      'LZX_kFDKueYoejNdCwxJNrvgZTwUjbC5zhQQqmW5ZMddbw5aXhRfi0WHRilqi7ZW89G8eNza0AxVUde4iQu1CQ',
-    );
+    expect(headers['Stage-Signature']).toBe('LZX_kFDKueYoejNdCwxJNrvgZTwUjbC5zhQQqmW5ZMddbw5aXhRfi0WHRilqi7ZW89G8eNza0AxVUde4iQu1CQ');
     const signature = bytesOf(headers['Stage-Signature'] ?? '');
     expect(ed25519.verify(signature, utf8ToBytes(text), bytesOf(RFC8032_PUBLIC))).toBe(true);
     expect(ed25519.verify(signature, utf8ToBytes(text.replace('GET', 'POST')), bytesOf(RFC8032_PUBLIC))).toBe(false);
@@ -129,7 +189,10 @@ describe('node requests', () => {
 describe('node replies', () => {
   const frame = { kind: 'frame', frame: { messages: MESSAGES } };
   const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'main.1', value: 42 } };
-  const call = { version: 'v1.0', callRendererFunction: { functionCallId: 'f1', callFunction: { '@call': 'formatNumber', catalogId: KIT, args: { value: 1 } } } };
+  const call = {
+    version: 'v1.0',
+    callRendererFunction: { functionCallId: 'f1', callFunction: { '@call': 'formatNumber', catalogId: KIT, args: { value: 1 } } },
+  };
 
   test('a load answers A2UI messages as an array, a messages object or one message', () => {
     expect(loadReplyOf(MESSAGES)).toEqual(frame);
@@ -145,9 +208,19 @@ describe('node replies', () => {
 
   test('a load refuses anything but A2UI frame messages', () => {
     const refused = [
-      null, undefined, [], 'Card', {}, { price: 1 }, { type: 'Card', children: [] }, [{ version: 'v0.9', createSurface: { surfaceId: 'a' } }],
-      [{ version: 'v1.0', createSurface: { surfaceId: 'a' }, extra: 1 }], [answer], [call],
-      [{ version: 'v1.0', updateComponents: { components: [] } }], { messages: MESSAGES, title: 'x' },
+      null,
+      undefined,
+      [],
+      'Card',
+      {},
+      { price: 1 },
+      { type: 'Card', children: [] },
+      [{ version: 'v0.9', createSurface: { surfaceId: 'a' } }],
+      [{ version: 'v1.0', createSurface: { surfaceId: 'a' }, extra: 1 }],
+      [answer],
+      [call],
+      [{ version: 'v1.0', updateComponents: { components: [] } }],
+      { messages: MESSAGES, title: 'x' },
       [{ version: 'v1.0', createSurface: { surfaceId: 'a', note: 'x'.repeat(70_000) } }],
     ];
     for (const reply of refused) expect([reply, loadReplyOf(reply)]).toEqual([reply, null]);
@@ -155,8 +228,13 @@ describe('node replies', () => {
 
   test('a request refuses anything but A2UI agent messages', () => {
     const refused = [
-      null, 'Card', { price: 1 }, { updated_item: { type: 'widget' } }, [VOTE_MESSAGE],
-      [{ version: 'v1.0', agentFunctionResponse: { value: 1 } }], [{ version: 'v1.0', callRendererFunction: {} }],
+      null,
+      'Card',
+      { price: 1 },
+      { updated_item: { type: 'widget' } },
+      [VOTE_MESSAGE],
+      [{ version: 'v1.0', agentFunctionResponse: { value: 1 } }],
+      [{ version: 'v1.0', callRendererFunction: {} }],
     ];
     for (const reply of refused) expect([reply, messageReplyOf(reply)]).toEqual([reply, null]);
   });
@@ -165,10 +243,19 @@ describe('node replies', () => {
 describe('node calls', () => {
   test('loads with a signed GET, without cookies or redirects', async () => {
     const seen = stubFetch(() => Response.json(MESSAGES));
-    expect(await loadNode('https://BTC.example.com', RFC8032_KEY, { capabilities: CAPABILITIES })).toEqual({ ok: true, reply: { kind: 'frame', frame: { messages: MESSAGES } } });
+    expect(await loadNode('https://BTC.example.com', RFC8032_KEY, { capabilities: CAPABILITIES })).toEqual({
+      ok: true,
+      reply: { kind: 'frame', frame: { messages: MESSAGES } },
+    });
     const call = seen[0];
     expect(call?.url).toBe(URL_A);
-    expect(call?.init).toMatchObject({ method: 'GET', credentials: 'omit', redirect: 'error', cache: 'no-store', referrerPolicy: 'no-referrer' });
+    expect(call?.init).toMatchObject({
+      method: 'GET',
+      credentials: 'omit',
+      redirect: 'error',
+      cache: 'no-store',
+      referrerPolicy: 'no-referrer',
+    });
     const headers = call?.init.headers as Record<string, string>;
     expect(headers['Stage-Key']).toBe(RFC8032_PUBLIC);
     expect(JSON.parse(headers['Stage-A2UI-Capabilities'] ?? '')).toEqual(CAPABILITIES);
@@ -183,10 +270,16 @@ describe('node calls', () => {
     expect(seen[0]?.init.method).toBe('POST');
     expect((seen[0]?.init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
     expect(JSON.parse(String(seen[0]?.init.body)).action).toEqual(VOTE);
-    const call = { version: 'v1.0', callAgentFunction: { surfaceId: 'main', functionCallId: 'main.1', callFunction: { '@call': 'quote', catalogId: KIT } } };
+    const call = {
+      version: 'v1.0',
+      callAgentFunction: { surfaceId: 'main', functionCallId: 'main.1', callFunction: { '@call': 'quote', catalogId: KIT } },
+    };
     expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: call })).toMatchObject({ ok: true });
     expect(JSON.parse(String(seen[1]?.init.body))).toEqual(call);
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: { version: 'v1.0', createSurface: { surfaceId: 'x' } } })).toEqual({ ok: false, problem: 'invalid' });
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: { version: 'v1.0', createSurface: { surfaceId: 'x' } } })).toEqual({
+      ok: false,
+      problem: 'invalid',
+    });
     expect(seen).toHaveLength(2);
   });
 
@@ -205,7 +298,12 @@ describe('node calls', () => {
     stubFetch(() => new Response('x'.repeat(140 * 1024)));
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'too-large' });
     let pulled = 0;
-    const endless = new ReadableStream<Uint8Array>({ pull(controller) { pulled += 1; controller.enqueue(new Uint8Array(16 * 1024)); } });
+    const endless = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new Uint8Array(16 * 1024));
+      },
+    });
     stubFetch(() => new Response(endless));
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'too-large' });
     expect(pulled).toBeLessThan(12);
@@ -226,13 +324,17 @@ describe('node calls', () => {
 
   test('refuses an action payload that is too large', async () => {
     const seen = stubFetch(() => Response.json(MESSAGES));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: { version: 'v1.0', action: { ...VOTE, context: { text: 'x'.repeat(17_000) } } } })).toEqual({ ok: false, problem: 'too-large' });
+    expect(
+      await sendNodeMessage(URL_A, RFC8032_KEY, {
+        message: { version: 'v1.0', action: { ...VOTE, context: { text: 'x'.repeat(17_000) } } },
+      }),
+    ).toEqual({ ok: false, problem: 'too-large' });
     expect(seen).toHaveLength(0);
   });
 });
 
 describe('streamed node replies', () => {
-  const jsonl = (messages: unknown[]): string => messages.map(m => JSON.stringify(m)).join('\n');
+  const jsonl = (messages: unknown[]): string => messages.map((m) => JSON.stringify(m)).join('\n');
   const PRICE = (value: number) => ({ version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/price', value } });
 
   test('a JSON Lines reply delivers each message as soon as its line arrives', async () => {
@@ -248,9 +350,17 @@ describe('streamed node replies', () => {
     });
     stubFetch(() => new Response(body, { headers: { 'content-type': 'application/jsonl' } }));
     const seen: unknown[] = [];
-    const pending = sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, {
-      onMessage: (message) => { seen.push(message); if (seen.length === 1) second.resolve(undefined); },
-    });
+    const pending = sendNodeMessage(
+      URL_A,
+      RFC8032_KEY,
+      { message: VOTE_MESSAGE },
+      {
+        onMessage: (message) => {
+          seen.push(message);
+          if (seen.length === 1) second.resolve(undefined);
+        },
+      },
+    );
     expect(await pending).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     expect(seen).toEqual([PRICE(1), PRICE(2)]);
   });
@@ -258,9 +368,23 @@ describe('streamed node replies', () => {
   test('a load streams frame messages only, and stops at the first bad line', async () => {
     const seen: unknown[] = [];
     stubFetch(() => new Response(jsonl([...MESSAGES, PRICE(3)]), { headers: { 'content-type': 'application/x-ndjson' } }));
-    expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: true, reply: { kind: 'streamed', load: true } });
-    stubFetch(() => new Response(`${jsonl(MESSAGES)}\n{nope\n${JSON.stringify(PRICE(4))}`, { headers: { 'content-type': 'application/jsonl' } }));
-    expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: false, problem: 'invalid' });
+    expect(
+      await loadNode(URL_A, RFC8032_KEY, {
+        onMessage: (m) => {
+          seen.push(m);
+        },
+      }),
+    ).toEqual({ ok: true, reply: { kind: 'streamed', load: true } });
+    stubFetch(
+      () => new Response(`${jsonl(MESSAGES)}\n{nope\n${JSON.stringify(PRICE(4))}`, { headers: { 'content-type': 'application/jsonl' } }),
+    );
+    expect(
+      await loadNode(URL_A, RFC8032_KEY, {
+        onMessage: (m) => {
+          seen.push(m);
+        },
+      }),
+    ).toEqual({ ok: false, problem: 'invalid' });
     const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'f', value: 1 } };
     stubFetch(() => new Response(jsonl([answer]), { headers: { 'content-type': 'application/jsonl' } }));
     expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: () => undefined })).toEqual({ ok: false, problem: 'invalid' });
@@ -270,27 +394,65 @@ describe('streamed node replies', () => {
   test('a plain JSON reply is delivered the same way, and an empty one delivers nothing', async () => {
     const seen: unknown[] = [];
     stubFetch(() => Response.json([PRICE(5)]));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: (m) => { seen.push(m); } }))
-      .toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
+    expect(
+      await sendNodeMessage(
+        URL_A,
+        RFC8032_KEY,
+        { message: VOTE_MESSAGE },
+        {
+          onMessage: (m) => {
+            seen.push(m);
+          },
+        },
+      ),
+    ).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     stubFetch(() => new Response(null, { status: 204 }));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: (m) => { seen.push(m); } }))
-      .toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
+    expect(
+      await sendNodeMessage(
+        URL_A,
+        RFC8032_KEY,
+        { message: VOTE_MESSAGE },
+        {
+          onMessage: (m) => {
+            seen.push(m);
+          },
+        },
+      ),
+    ).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     expect(seen).toEqual([PRICE(5)]);
   });
 
   test('a plain JSON reply is checked whole first, so a bad message applies nothing', async () => {
     const seen: unknown[] = [];
     stubFetch(() => Response.json([PRICE(6), { version: 'v1.0', updateDataModel: {} }]));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: (m) => { seen.push(m); } })).toEqual({ ok: false, problem: 'invalid' });
+    expect(
+      await sendNodeMessage(
+        URL_A,
+        RFC8032_KEY,
+        { message: VOTE_MESSAGE },
+        {
+          onMessage: (m) => {
+            seen.push(m);
+          },
+        },
+      ),
+    ).toEqual({ ok: false, problem: 'invalid' });
     expect(seen).toEqual([]);
   });
 
   test('a stream past the size or message limits stops', async () => {
-    stubFetch(() => new Response(jsonl(Array.from({ length: 201 }, (_, i) => PRICE(i))), { headers: { 'content-type': 'application/jsonl' } }));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: () => undefined })).toEqual({ ok: false, problem: 'invalid' });
+    stubFetch(
+      () => new Response(jsonl(Array.from({ length: 201 }, (_, i) => PRICE(i))), { headers: { 'content-type': 'application/jsonl' } }),
+    );
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: () => undefined })).toEqual({
+      ok: false,
+      problem: 'invalid',
+    });
     const big = { version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/x', value: 'x'.repeat(140 * 1024) } };
     stubFetch(() => new Response(jsonl([big]), { headers: { 'content-type': 'application/jsonl' } }));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: () => undefined })).toEqual({ ok: false, problem: 'too-large' });
+    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: () => undefined })).toEqual({
+      ok: false,
+      problem: 'too-large',
+    });
   });
 });
-

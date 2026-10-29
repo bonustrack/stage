@@ -22,7 +22,10 @@ const owners = new Map<string, Hex>();
 const boxes = new Map<string, MemoryStorage>();
 const failing = { issue: false, mailbox: 0 };
 
-const signer = (account: PrivateKeyAccount) => (message: string): Promise<Hex> => account.signMessage({ message });
+const signer =
+  (account: PrivateKeyAccount) =>
+  (message: string): Promise<Hex> =>
+    account.signMessage({ message });
 
 function mailbox(label: string): { fetch(input: string, init?: RequestInit): Promise<Response> } {
   return {
@@ -53,12 +56,18 @@ function memoryNames(): NamesDeps['store'] {
   const data = new Map<string, string>();
   return {
     get: (key) => Promise.resolve(data.get(key) ?? null),
-    put: (key, value) => { data.set(key, value); return Promise.resolve(); },
+    put: (key, value) => {
+      data.set(key, value);
+      return Promise.resolve();
+    },
   };
 }
 
 const mailDeps: MailDeps = {
-  mailbox, chain: { owner: chain.subnameOwner, verify: chain.verifyClaim }, clientIp: '203.0.113.7', now: () => NOW,
+  mailbox,
+  chain: { owner: chain.subnameOwner, verify: chain.verifyClaim },
+  clientIp: '203.0.113.7',
+  now: () => NOW,
 };
 
 async function mailKeyOf(account: PrivateKeyAccount, label = LABEL): Promise<Hex> {
@@ -68,7 +77,9 @@ async function mailKeyOf(account: PrivateKeyAccount, label = LABEL): Promise<Hex
 async function claim(fields: { signedKey?: Hex; sentKey?: Hex; account?: PrivateKeyAccount }): Promise<Response> {
   const account = fields.account ?? ALICE;
   const issuedAt = NOW - 1000;
-  const signature = await account.signMessage({ message: claimMessage({ label: LABEL, address: account.address, issuedAt, mailKey: fields.signedKey }) });
+  const signature = await account.signMessage({
+    message: claimMessage({ label: LABEL, address: account.address, issuedAt, mailKey: fields.signedKey }),
+  });
   const body = { label: LABEL, address: account.address, issuedAt, signature, mailKey: fields.sentKey ?? fields.signedKey };
   const request = new Request(`${BASE}/names/claim`, { method: 'POST', body: JSON.stringify(body) });
   return handleNames(request, { chain, store: memoryNames(), mailbox, now: () => NOW });
@@ -78,14 +89,24 @@ async function deliver(to: string): Promise<string[]> {
   const bytes = new TextEncoder().encode('Subject: hi\r\n\r\nhello');
   const rejected: string[] = [];
   const message: IncomingMail = {
-    from: 'ann@example.com', to, rawSize: bytes.byteLength, raw: new Blob([bytes]).stream(),
-    headers: new Headers({ subject: 'hi' }), setReject: (reason) => { rejected.push(reason); },
+    from: 'ann@example.com',
+    to,
+    rawSize: bytes.byteLength,
+    raw: new Blob([bytes]).stream(),
+    headers: new Headers({ subject: 'hi' }),
+    setReject: (reason) => {
+      rejected.push(reason);
+    },
   };
   await receiveMail(message, mailDeps);
   return rejected;
 }
 
-interface KeyStatus { address: string; owner: string; publicKey: string | null }
+interface KeyStatus {
+  address: string;
+  owner: string;
+  publicKey: string | null;
+}
 
 async function keyStatus(): Promise<KeyStatus> {
   return (await (await handleMail(new Request(`${BASE}/mail/key?label=${LABEL}`), mailDeps)).json()) as KeyStatus;

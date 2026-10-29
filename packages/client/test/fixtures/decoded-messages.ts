@@ -1,4 +1,3 @@
-
 import type { DecodedMessageView } from '../../src/xmtp/envelope';
 
 const NS = 1_717_000_000_000 * 1_000_000;
@@ -32,6 +31,8 @@ export const throwingCodec: DecodedMessageView = {
   senderInboxId: 'inbox-carol',
   sentNs: NS,
   contentTypeId: 'example.com/somethingNew:9.9',
-  content: () => { throw new Error('codec not registered'); },
+  content: () => {
+    throw new Error('codec not registered');
+  },
   fallback: 'fallback text',
 };

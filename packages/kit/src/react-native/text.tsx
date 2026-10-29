@@ -4,8 +4,15 @@ import RNMarkdown, { MarkdownIt } from 'react-native-markdown-display';
 import { markdownStyles } from '../markdown.styles';
 import { FONT_SIZE, resolvePaletteColor, type ColorToken } from '../tokens';
 import {
-  TEXT_ALIGN_MAP, resolveTextSize, textDefaultColor, textFontFamily,
-  type TextAlign, type TextFontFamily, type TextSizeToken, type TextVariant, type TextWeight,
+  TEXT_ALIGN_MAP,
+  resolveTextSize,
+  textDefaultColor,
+  textFontFamily,
+  type TextAlign,
+  type TextFontFamily,
+  type TextSizeToken,
+  type TextVariant,
+  type TextWeight,
 } from '../text.styles';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useContentColor } from './content-color';
@@ -36,7 +43,10 @@ export interface TextProps extends Omit<RNTextProps, 'style' | 'role'>, A2uiComm
 
 export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize';
 
-type StyleProps = Pick<TextProps, 'variant' | 'size' | 'fontWeight' | 'textAlign' | 'italic' | 'lineThrough' | 'fontFamily' | 'letterSpacing' | 'textTransform' | 'weight'>;
+type StyleProps = Pick<
+  TextProps,
+  'variant' | 'size' | 'fontWeight' | 'textAlign' | 'italic' | 'lineThrough' | 'fontFamily' | 'letterSpacing' | 'textTransform' | 'weight'
+>;
 
 function baseStyle(p: StyleProps, color: string): TextStyle {
   const base: TextStyle = {
@@ -60,11 +70,35 @@ function useTextColor(color: TextProps['color'], variant: TextVariant | undefine
 
 const PLAIN_LINE_HEIGHT = 1.22;
 const MARKDOWN_BLOCK_GAP = 8;
-const FLOW_BLOCKS = ['paragraph', 'bullet_list', 'ordered_list', 'blockquote', 'fence', 'code_block', 'table', 'heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'] as const;
+const FLOW_BLOCKS = [
+  'paragraph',
+  'bullet_list',
+  'ordered_list',
+  'blockquote',
+  'fence',
+  'code_block',
+  'table',
+  'heading1',
+  'heading2',
+  'heading3',
+  'heading4',
+  'heading5',
+  'heading6',
+] as const;
 
 const A2UI_MARKDOWN = MarkdownIt({ html: false, linkify: false, typographer: false }).disable(['image', 'link', 'autolink']);
 
-function MarkdownText({ value, color, base, style }: { value: string; color: string; base: TextStyle; style: TextProps['style'] }): React.ReactElement {
+function MarkdownText({
+  value,
+  color,
+  base,
+  style,
+}: {
+  value: string;
+  color: string;
+  base: TextStyle;
+  style: TextProps['style'];
+}): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   const styles = useMemo(() => {
     const fontSize = base.fontSize ?? FONT_SIZE.md;
@@ -73,16 +107,40 @@ function MarkdownText({ value, color, base, style }: { value: string; color: str
     sheet.body = { ...sheet.body, ...base, ...StyleSheet.flatten(style), gap: MARKDOWN_BLOCK_GAP };
     return sheet;
   }, [base, color, dark, style]);
-  return <RNMarkdown markdownit={A2UI_MARKDOWN} style={styles}>{value}</RNMarkdown>;
+  return (
+    <RNMarkdown markdownit={A2UI_MARKDOWN} style={styles}>
+      {value}
+    </RNMarkdown>
+  );
 }
 
 export function Text(props: TextProps): React.ReactElement {
   const {
-    text, variant, size, fontWeight, color, textAlign, italic, lineThrough, truncate = false, maxLines,
-    fontFamily, letterSpacing, textTransform, markdown = false, weight, accessibility, style, children, ...rest
+    text,
+    variant,
+    size,
+    fontWeight,
+    color,
+    textAlign,
+    italic,
+    lineThrough,
+    truncate = false,
+    maxLines,
+    fontFamily,
+    letterSpacing,
+    textTransform,
+    markdown = false,
+    weight,
+    accessibility,
+    style,
+    children,
+    ...rest
   } = props;
   const resolved = useTextColor(color, variant);
-  const base = baseStyle({ variant, size, fontWeight, textAlign, italic, lineThrough, fontFamily, letterSpacing, textTransform, weight }, resolved);
+  const base = baseStyle(
+    { variant, size, fontWeight, textAlign, italic, lineThrough, fontFamily, letterSpacing, textTransform, weight },
+    resolved,
+  );
   if (markdown && text !== undefined) return <MarkdownText value={text} color={resolved} base={base} style={style} />;
   return (
     <RNText style={style ? [base, style] : base} numberOfLines={truncate ? 1 : maxLines} {...accessibilityProps(accessibility)} {...rest}>

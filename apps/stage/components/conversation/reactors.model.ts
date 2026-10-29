@@ -6,9 +6,7 @@ export const SELF_NAME = 'You';
 
 export type ReactorNamer = (uri: string) => string;
 
-export function reactorNamer(
-  addressOf: (uri: string) => string | null, peerName: (address: string) => string | undefined,
-): ReactorNamer {
+export function reactorNamer(addressOf: (uri: string) => string | null, peerName: (address: string) => string | undefined): ReactorNamer {
   return (uri) => {
     const address = addressOf(uri);
     if (!address) return shortAddress(uri.slice(uri.lastIndexOf('/') + 1));
@@ -17,12 +15,14 @@ export function reactorNamer(
 }
 
 export function reactorNames(reactors: readonly string[], myUri: string, nameOf: ReactorNamer): string[] {
-  const others = reactors.filter(uri => uri !== myUri).map(nameOf);
+  const others = reactors.filter((uri) => uri !== myUri).map(nameOf);
   return reactors.includes(myUri) ? [SELF_NAME, ...others] : others;
 }
 
 export function reactorNamesByMessage(
-  reactions: Map<string, Map<string, string[]>>, myUri: string, nameOf: ReactorNamer,
+  reactions: Map<string, Map<string, string[]>>,
+  myUri: string,
+  nameOf: ReactorNamer,
 ): Map<string, Map<string, string[]>> {
   const out = new Map<string, Map<string, string[]>>();
   for (const [msgId, byEmoji] of reactions) {

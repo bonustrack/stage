@@ -1,4 +1,3 @@
-
 import type { HistoryEntry } from '../types';
 import { votesByPoll, ownVotes, openAnswersByPoll, type VoteEvent } from './poll-tally';
 import { normalizeQuestions, type PollContent, type PollQuestion } from './poll';
@@ -20,10 +19,7 @@ export function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
   for (const e of events) {
     const p = e.payload as VotePayload | undefined;
     if (p?.schema !== 'custom' || !p.reactTo || p.emoji === undefined) continue;
-    out.push({
-      reference: p.reactTo, content: p.emoji, schema: 'custom',
-      removed: !!p.removed, voter: e.from, ts: e.ts,
-    });
+    out.push({ reference: p.reactTo, content: p.emoji, schema: 'custom', removed: !!p.removed, voter: e.from, ts: e.ts });
   }
   return out;
 }
@@ -75,8 +71,6 @@ export function ownVotesByMessage(events: HistoryEntry[], myUri: string): Map<st
   return byPollQuestion(events, (votes, pollId, q, qi) => ownVotes(votes, myUri, pollId, q.multiSelect === true, qi));
 }
 
-export function openAnswersByMessage(
-  events: HistoryEntry[],
-): Map<string, Map<number, Map<string, { text: string; ts: string }>>> {
+export function openAnswersByMessage(events: HistoryEntry[]): Map<string, Map<number, Map<string, { text: string; ts: string }>>> {
   return byPollQuestion(events, (votes, pollId, q, qi) => (q.open ? openAnswersByPoll(votes, pollId, qi) : undefined));
 }

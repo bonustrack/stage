@@ -8,28 +8,22 @@ import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import { isHash } from 'viem';
 import { recover } from './errorPolicy';
 
-export function tokenLogoUrl(
-  chainId: number, token: string | null | undefined, displayPx: number,
-): string {
+export function tokenLogoUrl(chainId: number, token: string | null | undefined, displayPx: number): string {
   const { chainId: c, contract } = tokenStampArgs(chainId, token);
   return stampTokenUrl(c, contract, displayPx);
 }
 
-export function useUsdValue(
-  chainId: number, token: string | null | undefined, amount: string | undefined,
-): string | null {
+export function useUsdValue(chainId: number, token: string | null | undefined, amount: string | undefined): string | null {
   const id = priceIdFor(chainId, token);
-  const { data: usd } = useQuery({
-    queryKey: ['usdPrice', id],
-    queryFn: () => fetchUsdPrice(id),
-    enabled: !!id,
-  });
+  const { data: usd } = useQuery({ queryKey: ['usdPrice', id], queryFn: () => fetchUsdPrice(id), enabled: !!id });
   if (!amount) return null;
   return fmtUsdValue(amount, usd ?? null);
 }
 
 export function useDecodedCall(
-  to: string | undefined, data: string | undefined, chainId: number,
+  to: string | undefined,
+  data: string | undefined,
+  chainId: number,
 ): { call: DecodedCall | null; pending: boolean } {
   const hasData = !!data && data !== '0x' && data.length > 2;
   const { data: call, isPending } = useQuery({

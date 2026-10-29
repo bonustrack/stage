@@ -9,7 +9,7 @@ type DesktopOpen = (name: string, bytes: Uint8Array) => Promise<boolean>;
 
 function desktopOpen(): DesktopOpen | undefined {
   const bridge = (globalThis as { stageDesktop?: { openFile?: unknown } }).stageDesktop;
-  return typeof bridge?.openFile === 'function' ? bridge.openFile as DesktopOpen : undefined;
+  return typeof bridge?.openFile === 'function' ? (bridge.openFile as DesktopOpen) : undefined;
 }
 
 async function openOnDesktop(open: DesktopOpen, file: OpenableFile): Promise<void> {

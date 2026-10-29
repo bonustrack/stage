@@ -34,13 +34,27 @@ class PreviewBoundary extends Component<{ children: ReactNode }, { failed: boole
   }
 }
 
-function ExampleCard({ story, onOpen, compact }: { story: StoryEntry; onOpen: (id: string) => void; compact: boolean }): React.ReactElement {
+function ExampleCard({
+  story,
+  onOpen,
+  compact,
+}: {
+  story: StoryEntry;
+  onOpen: (id: string) => void;
+  compact: boolean;
+}): React.ReactElement {
   const pal = useKitPalette();
   const Render = story.render;
   const side = { width: 1, color: pal.border };
   return (
     <Column width={compact ? '100%' : CARD_WIDTH} radius="lg" border={{ top: side, right: side, bottom: side, left: side }} style={CLIP}>
-      <Pressable onPress={() => { onOpen(story.id); }} accessibilityRole="link" accessibilityLabel={`Open ${story.component}`}>
+      <Pressable
+        onPress={() => {
+          onOpen(story.id);
+        }}
+        accessibilityRole="link"
+        accessibilityLabel={`Open ${story.component}`}
+      >
         <Row align="center" justify="spaceBetween" padding={{ x: 16, y: 12 }} surface="toolbar" border={{ bottom: side }}>
           <Text size="sm" fontWeight="semibold" text={story.component} />
           <Glyph icon={IconArrowRight} size={16} color={pal.sub} />
@@ -57,18 +71,32 @@ function ExampleCard({ story, onOpen, compact }: { story: StoryEntry; onOpen: (i
   );
 }
 
-export function Home({ stories, onOpen, scroll, compact }: {
-  stories: StoryEntry[]; onOpen: (id: string) => void; scroll: boolean; compact: boolean;
+export function Home({
+  stories,
+  onOpen,
+  scroll,
+  compact,
+}: {
+  stories: StoryEntry[];
+  onOpen: (id: string) => void;
+  scroll: boolean;
+  compact: boolean;
 }): React.ReactElement {
   const examples = homeExamples(stories);
   return (
     <Column weight={scroll ? 1 : undefined} gap={24} padding={compact ? 16 : 24} style={scroll ? SCROLL_Y : undefined}>
       <Column gap={6}>
         <Text fontWeight="semibold" size="2xl" text="Stage Kit" />
-        <Text size="md" color="secondary" text={`One example of each of the ${examples.length} components. Open one to see all its stories and controls.`} />
+        <Text
+          size="md"
+          color="secondary"
+          text={`One example of each of the ${examples.length} components. Open one to see all its stories and controls.`}
+        />
       </Column>
       <Row gap={16} wrap>
-        {examples.map((story) => <ExampleCard key={story.componentId} story={story} onOpen={onOpen} compact={compact} />)}
+        {examples.map((story) => (
+          <ExampleCard key={story.componentId} story={story} onOpen={onOpen} compact={compact} />
+        ))}
       </Row>
     </Column>
   );

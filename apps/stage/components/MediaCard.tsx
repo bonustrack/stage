@@ -30,21 +30,34 @@ export function MediaCard({ onPress, url, aspectRatio = 1, children }: Props): R
   return (
     <Column width="100%" maxWidth={mediaMaxWidth(aspectRatio)}>
       {press ? (
-        <Pressable
-          {...press}
-          style={({ pressed }) => [style, { opacity: pressed ? 0.85 : 1 }]}
-        >
+        <Pressable {...press} style={({ pressed }) => [style, { opacity: pressed ? 0.85 : 1 }]}>
           {children}
         </Pressable>
-      ) : <Column style={style}>{children}</Column>}
+      ) : (
+        <Column style={style}>{children}</Column>
+      )}
     </Column>
   );
 }
 
 const TABULAR_NUMS = { fontVariant: ['tabular-nums' as const] };
 
-export function IconTileRow({ icon, title, titleColor, subtitle, tabular = false, testID, children }: {
-  icon: ReactNode; title: string; titleColor: string; subtitle?: string; tabular?: boolean; testID?: string; children?: ReactNode;
+export function IconTileRow({
+  icon,
+  title,
+  titleColor,
+  subtitle,
+  tabular = false,
+  testID,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  titleColor: string;
+  subtitle?: string;
+  tabular?: boolean;
+  testID?: string;
+  children?: ReactNode;
 }): React.ReactElement {
   return (
     <Row testID={testID} align="center" gap={12}>
@@ -52,8 +65,14 @@ export function IconTileRow({ icon, title, titleColor, subtitle, tabular = false
         {icon}
       </Column>
       <Column weight={1} minWidth={0} gap={2}>
-        <Text size="xs" fontWeight="semibold" color={titleColor} numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text size="2xs" color="secondary" numberOfLines={1} style={tabular ? TABULAR_NUMS : undefined}>{subtitle}</Text> : null}
+        <Text size="xs" fontWeight="semibold" color={titleColor} numberOfLines={1}>
+          {title}
+        </Text>
+        {subtitle ? (
+          <Text size="2xs" color="secondary" numberOfLines={1} style={tabular ? TABULAR_NUMS : undefined}>
+            {subtitle}
+          </Text>
+        ) : null}
       </Column>
       {children}
     </Row>

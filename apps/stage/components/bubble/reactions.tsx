@@ -5,17 +5,21 @@ import { reactionPills } from './reactions.model';
 import { ReactionTooltip } from './ReactionTooltip';
 import { Column, Row } from '../layout';
 
-function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
-  emoji: string; count: number; own: boolean; pillBg: string; ownBorderColor: string;
+function ReactionPill({
+  emoji,
+  count,
+  own,
+  pillBg,
+  ownBorderColor,
+}: {
+  emoji: string;
+  count: number;
+  own: boolean;
+  pillBg: string;
+  ownBorderColor: string;
 }): React.ReactElement {
   return (
-    <Row
-      align="center"
-      gap={4}
-      padding={{ x: 8, y: 2 }}
-      radius="full"
-      background={pillBg}
-    >
+    <Row align="center" gap={4} padding={{ x: 8, y: 2 }} radius="full" background={pillBg}>
       <Text text={emoji} size="3xs" />
       <Text text={String(count)} size="3xs" color="secondary" />
       {own ? (
@@ -38,7 +42,12 @@ function ReactionPill({ emoji, count, own, pillBg, ownBorderColor }: {
 }
 
 export function ReactionsRow({
-  reactions, pendingReactions, pendingRemovals, ownEmojis, pillBg, onReact,
+  reactions,
+  pendingReactions,
+  pendingRemovals,
+  ownEmojis,
+  pillBg,
+  onReact,
 }: {
   reactions?: Map<string, string[]>;
   pendingReactions?: string[];
@@ -49,8 +58,8 @@ export function ReactionsRow({
 }): React.ReactElement | null {
   const { link } = usePalette();
   const pills = reactionPills(reactions, ownEmojis, pendingReactions, pendingRemovals);
-  const confirmedPills = pills.filter(p => !p.pending);
-  const pendingPills = pills.filter(p => p.pending);
+  const confirmedPills = pills.filter((p) => !p.pending);
+  const pendingPills = pills.filter((p) => p.pending);
   if (pills.length === 0) return null;
 
   return (
@@ -59,23 +68,25 @@ export function ReactionsRow({
         <Row gap={4} wrap align="center">
           {confirmedPills.map(({ emoji, names, own }) => (
             <ReactionTooltip key={emoji} label={reactorsLabel(names)} emoji={emoji} onReact={onReact}>
-              <ReactionPill
-                emoji={emoji}
-                count={names.length}
-                own={own}
-                pillBg={pillBg}
-                ownBorderColor={link}
-              />
+              <ReactionPill emoji={emoji} count={names.length} own={own} pillBg={pillBg} ownBorderColor={link} />
             </ReactionTooltip>
           ))}
         </Row>
       ) : null}
       {pendingPills.map(({ emoji }) => (
-        <Row padding={{ x: 8, y: 2 }} key={`pending-${emoji}`} align="center" gap={4} radius="full" background={pillBg} style={{
-          opacity: 0.45,
-        }}>
+        <Row
+          padding={{ x: 8, y: 2 }}
+          key={`pending-${emoji}`}
+          align="center"
+          gap={4}
+          radius="full"
+          background={pillBg}
+          style={{ opacity: 0.45 }}
+        >
           <Text size="3xs">{emoji}</Text>
-          <Text color="secondary" size="3xs">1</Text>
+          <Text color="secondary" size="3xs">
+            1
+          </Text>
         </Row>
       ))}
     </Row>

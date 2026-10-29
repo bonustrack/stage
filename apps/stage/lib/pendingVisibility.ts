@@ -9,10 +9,13 @@ export function createVisibilityPublisher(send: (accountId: string) => Promise<b
 
   function schedule(accountId: string, delay: number): void {
     clearTimeout(timers.get(accountId));
-    timers.set(accountId, setTimeout(() => {
-      timers.delete(accountId);
-      void flush(accountId, delay);
-    }, delay));
+    timers.set(
+      accountId,
+      setTimeout(() => {
+        timers.delete(accountId);
+        void flush(accountId, delay);
+      }, delay),
+    );
   }
 
   function settle(accountId: string, revision: number | undefined, sent: boolean, delay: number): void {

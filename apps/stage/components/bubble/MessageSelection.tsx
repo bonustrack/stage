@@ -6,8 +6,16 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { FormField } from '../FormField';
 import { Column, Row } from '../layout';
 
-export function MessageSelection({ text, fg, input, onClose }: {
-  text: string; fg: string; input: boolean; onClose: () => void;
+export function MessageSelection({
+  text,
+  fg,
+  input,
+  onClose,
+}: {
+  text: string;
+  fg: string;
+  input: boolean;
+  onClose: () => void;
 }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   useEffect(() => {
@@ -15,19 +23,30 @@ export function MessageSelection({ text, fg, input, onClose }: {
       onClose();
       return true;
     });
-    return () => { listener.remove(); };
+    return () => {
+      listener.remove();
+    };
   }, [onClose]);
   return (
     <Column gap={8}>
       <Row align="center" justify="spaceBetween" gap={8}>
-        <Text size="sm" color="secondary" selectable={false} style={{ flex: 1 }}>Touch and hold text to select</Text>
+        <Text size="sm" color="secondary" selectable={false} style={{ flex: 1 }}>
+          Touch and hold text to select
+        </Text>
         <Button label="Done" accessibilityLabel="Done selecting text" color="secondary" variant="ghost" dark={dark} onPress={onClose} />
       </Row>
       {input ? (
-        <FormField value={text} onChangeText={() => undefined} multiline rows={1}
-          inputProps={{ readOnly: true, showSoftInputOnFocus: false, accessibilityLabel: 'Message text', scrollEnabled: false }} />
+        <FormField
+          value={text}
+          onChangeText={() => undefined}
+          multiline
+          rows={1}
+          inputProps={{ readOnly: true, showSoftInputOnFocus: false, accessibilityLabel: 'Message text', scrollEnabled: false }}
+        />
       ) : (
-        <Text size="lg" color={fg} selectable style={{ lineHeight: 23 }}>{text}</Text>
+        <Text size="lg" color={fg} selectable style={{ lineHeight: 23 }}>
+          {text}
+        </Text>
       )}
     </Column>
   );

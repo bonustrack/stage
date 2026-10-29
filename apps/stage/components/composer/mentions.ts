@@ -7,13 +7,26 @@ import { getActiveAccountIdSync, getCachedRows } from '../../lib/channelsCache';
 import { mentionAddresses } from '@stage-labs/client/xmtp/messageBody';
 import { mentionLabelOf as labelOf } from '../conversation/convTitle';
 import {
-  activeSuggestIndex, applyDisplayEdit, displayOf, insertMention, insertToken, mentionKeyAction, mentionQuery, piecesOf,
-  toDisplay, withContactCandidates, type Piece,
+  activeSuggestIndex,
+  applyDisplayEdit,
+  displayOf,
+  insertMention,
+  insertToken,
+  mentionKeyAction,
+  mentionQuery,
+  piecesOf,
+  toDisplay,
+  withContactCandidates,
+  type Piece,
 } from './mentions.model';
 import { channelCandidatesOf, channelQuery, matchChannels, type ChannelCandidate } from './channels.model';
 import type { ComposerState } from './state';
 
-export interface SuggestAvatar { address: string | null; imageUri?: string | null; square?: boolean }
+export interface SuggestAvatar {
+  address: string | null;
+  imageUri?: string | null;
+  square?: boolean;
+}
 
 export interface Suggest<T> {
   matches: T[];
@@ -60,8 +73,15 @@ function useSuggest<T>(s: ComposerState, config: SuggestConfig<T>): Suggest<T> &
   };
 
   return {
-    matches: shown, active: index, pick, onKey, idOf, avatarOf: config.avatarOf,
-    undismiss: () => { setDismissed(null); },
+    matches: shown,
+    active: index,
+    pick,
+    onKey,
+    idOf,
+    avatarOf: config.avatarOf,
+    undismiss: () => {
+      setDismissed(null);
+    },
   };
 }
 
@@ -72,7 +92,10 @@ export type MentionEditor = Suggest<MentionCandidate> & {
 };
 
 function useCandidatePool(
-  pieces: Piece[], cursor: number, candidates: MentionCandidate[] | undefined, suggestContacts: boolean,
+  pieces: Piece[],
+  cursor: number,
+  candidates: MentionCandidate[] | undefined,
+  suggestContacts: boolean,
 ): MentionCandidate[] | undefined {
   const typing = suggestContacts && mentionQuery(pieces, cursor, candidates).range !== null;
   const contacts = useContactList(typing);
@@ -83,9 +106,7 @@ function useCandidatePool(
 const mentionIdOf = (candidate: MentionCandidate): string => candidate.address;
 const mentionAvatarOf = (candidate: MentionCandidate): SuggestAvatar => ({ address: candidate.address });
 
-export function useMentionEditor(
-  s: ComposerState, candidates: MentionCandidate[] | undefined, suggestContacts: boolean,
-): MentionEditor {
+export function useMentionEditor(s: ComposerState, candidates: MentionCandidate[] | undefined, suggestContacts: boolean): MentionEditor {
   usePeerProfiles(mentionAddresses(s.text));
   const pieces = piecesOf(s.text, labelOf);
   const display = displayOf(pieces);
@@ -116,9 +137,11 @@ export function useMentionEditor(
 }
 
 const channelIdOf = (candidate: ChannelCandidate): string => candidate.convId;
-const channelAvatarOf = (candidate: ChannelCandidate): SuggestAvatar => (
-  { address: candidate.avatarAddress, imageUri: candidate.avatarUri, square: true }
-);
+const channelAvatarOf = (candidate: ChannelCandidate): SuggestAvatar => ({
+  address: candidate.avatarAddress,
+  imageUri: candidate.avatarUri,
+  square: true,
+});
 
 export function useChannelSuggest(s: ComposerState, convId: string): Suggest<ChannelCandidate> {
   const pieces = piecesOf(s.text, labelOf);
@@ -126,9 +149,7 @@ export function useChannelSuggest(s: ComposerState, convId: string): Suggest<Cha
   return useSuggest(s, {
     key: query ? `${query.range.start}:${query.text}` : '',
     matchesOf: () => (query ? matchChannels(channelCandidatesOf(getCachedRows(), convId), query.text) : []),
-    insert: (candidate) => (
-      query ? insertToken(pieces, query.range, channelRefToken(candidate.convId, candidate.name), labelOf) : null
-    ),
+    insert: (candidate) => (query ? insertToken(pieces, query.range, channelRefToken(candidate.convId, candidate.name), labelOf) : null),
     idOf: channelIdOf,
     avatarOf: channelAvatarOf,
   });

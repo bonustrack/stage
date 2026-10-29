@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import {
-  ensurePeerProfiles, getPeerName, isPeerResolved, peerProfileEntries,
-  seedPeerProfiles, subscribePeerProfiles,
+  ensurePeerProfiles,
+  getPeerName,
+  isPeerResolved,
+  peerProfileEntries,
+  seedPeerProfiles,
+  subscribePeerProfiles,
 } from '../src/identity/peerProfiles';
 
 const TONY = '0x0000000000000000000000000000000000000001';
@@ -24,11 +28,17 @@ beforeEach(() => {
   }) as unknown as typeof fetch;
 });
 
-afterEach(() => { globalThis.fetch = realFetch; });
+afterEach(() => {
+  globalThis.fetch = realFetch;
+});
 
 async function settled(): Promise<void> {
-  await new Promise(resolve => { setTimeout(resolve, 0); });
-  await new Promise(resolve => { setTimeout(resolve, 0); });
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
 }
 
 describe('seeded profiles are usable before the network answers', () => {
@@ -61,7 +71,9 @@ describe('a seeded profile is still refreshed from the network', () => {
     seedPeerProfiles({ [TONY]: 'Tony' });
     answer = { [TONY]: 'Tony' };
     let notified = 0;
-    const unsubscribe = subscribePeerProfiles(() => { notified += 1; });
+    const unsubscribe = subscribePeerProfiles(() => {
+      notified += 1;
+    });
     ensurePeerProfiles([TONY]);
     await settled();
     unsubscribe();
@@ -73,14 +85,16 @@ describe('a seeded profile is still refreshed from the network', () => {
   test('a refreshed address is not looked up twice', async () => {
     ensurePeerProfiles([TONY]);
     await settled();
-    expect(lookups.flat().filter(a => a === TONY)).toHaveLength(0);
+    expect(lookups.flat().filter((a) => a === TONY)).toHaveLength(0);
   });
 
   test('a changed name notifies subscribers', async () => {
     seedPeerProfiles({ [RENAMED]: 'Before' });
     answer = { [RENAMED]: 'After' };
     let notified = 0;
-    const unsubscribe = subscribePeerProfiles(() => { notified += 1; });
+    const unsubscribe = subscribePeerProfiles(() => {
+      notified += 1;
+    });
     ensurePeerProfiles([RENAMED]);
     await settled();
     unsubscribe();

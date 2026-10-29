@@ -46,10 +46,12 @@ async function prepareExtensionAssets(directory) {
 }
 
 async function directoryBytes(directory) {
-  const sizes = await Promise.all((await readdir(directory, { withFileTypes: true })).map(async entry => {
-    const file = path.join(directory, entry.name);
-    return entry.isDirectory() ? directoryBytes(file) : (await stat(file)).size;
-  }));
+  const sizes = await Promise.all(
+    (await readdir(directory, { withFileTypes: true })).map(async (entry) => {
+      const file = path.join(directory, entry.name);
+      return entry.isDirectory() ? directoryBytes(file) : (await stat(file)).size;
+    }),
+  );
   return sizes.reduce((total, size) => total + size, 0);
 }
 
@@ -58,7 +60,10 @@ try {
   run('bunx', ['--no-install', 'expo', 'export', '--platform', 'web', '--output-dir', temporary]);
   const prepared = prepareExtensionHtml(await readFile(path.join(temporary, 'index.html'), 'utf8'));
   const manifest = JSON.parse(await readFile(path.join(shell, 'manifest.json'), 'utf8'));
-  await writeFile(path.join(output, 'manifest.json'), `${JSON.stringify({ ...manifest, version, version_name: `${version} beta` }, null, 2)}\n`);
+  await writeFile(
+    path.join(output, 'manifest.json'),
+    `${JSON.stringify({ ...manifest, version, version_name: `${version} beta` }, null, 2)}\n`,
+  );
   await writeFile(path.join(output, 'index.html'), prepared.html);
   for (const script of prepared.scripts) await writeFile(path.join(output, script.name), script.content);
   for (const resource of ['_expo', 'assets', 'wasm', 'favicon.ico', 'favicon.svg']) {

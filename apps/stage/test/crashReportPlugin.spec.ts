@@ -15,8 +15,11 @@ async function apply(manifest: AndroidManifest): Promise<AndroidManifest> {
     modRawConfig: base,
     modResults: manifest,
     modRequest: {
-      projectRoot: '/unused', platformProjectRoot: '/unused/android',
-      platform: 'android', modName: 'manifest', introspect: true,
+      projectRoot: '/unused',
+      platformProjectRoot: '/unused/android',
+      platform: 'android',
+      modName: 'manifest',
+      introspect: true,
     },
   });
   return result.modResults;
@@ -26,17 +29,23 @@ function manifest(factory = 'androidx.core.app.CoreComponentFactory'): AndroidMa
   return {
     manifest: {
       $: { 'xmlns:android': 'http://schemas.android.com/apk/res/android' },
-      application: [{
-        $: { 'android:name': '.MainApplication', 'android:appComponentFactory': factory, 'tools:replace': 'android:allowBackup' },
-        activity: [{
-          $: { 'android:name': '.MainActivity', 'android:exported': 'true' },
-          'intent-filter': [{
-            action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
-            category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }],
-          }],
-        }],
-        provider: [{ $: { 'android:name': 'ExistingProvider', 'android:authorities': 'box.metro.monitor.provider' } }],
-      }],
+      application: [
+        {
+          $: { 'android:name': '.MainApplication', 'android:appComponentFactory': factory, 'tools:replace': 'android:allowBackup' },
+          activity: [
+            {
+              $: { 'android:name': '.MainActivity', 'android:exported': 'true' },
+              'intent-filter': [
+                {
+                  action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
+                  category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }],
+                },
+              ],
+            },
+          ],
+          provider: [{ $: { 'android:name': 'ExistingProvider', 'android:authorities': 'box.metro.monitor.provider' } }],
+        },
+      ],
     },
   };
 }

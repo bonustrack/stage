@@ -1,16 +1,9 @@
 {
-  "extends": [
-    "expo/tsconfig.base",
-    "@stage-labs/config/tsconfig/react-native.json"
-  ],
+  "extends": ["expo/tsconfig.base", "@stage-labs/config/tsconfig/react-native.json"],
   "compilerOptions": {
     "paths": {
-      "react-native-svg": [
-        "./node_modules/react-native-svg"
-      ],
-      "react-native-markdown-display": [
-        "./node_modules/react-native-markdown-display"
-      ]
+      "react-native-svg": ["./node_modules/react-native-svg"],
+      "react-native-markdown-display": ["./node_modules/react-native-markdown-display"]
     }
   },
   "include": [

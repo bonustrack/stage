@@ -2,20 +2,31 @@ import { channelRefsOf } from '@stage-labs/client/xmtp/channelRefs';
 import { MENTION_RE, computeMentionQuery, mentionToken, type MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 import { uniqueBy } from '@stage-labs/client/collections';
 
-export interface Span { start: number; end: number }
+export interface Span {
+  start: number;
+  end: number;
+}
 
 export type LabelOf = (address: string) => string;
 
-interface Part { wire: string; display: string; mention: boolean }
+interface Part {
+  wire: string;
+  display: string;
+  mention: boolean;
+}
 
-export interface Piece extends Part { wireStart: number; displayStart: number }
+export interface Piece extends Part {
+  wireStart: number;
+  displayStart: number;
+}
 
-export interface DisplayEdit { wire: string; display: string; caret: number }
+export interface DisplayEdit {
+  wire: string;
+  display: string;
+  caret: number;
+}
 
-export type MentionKeyAction =
-  | { kind: 'move'; index: number }
-  | { kind: 'pick' }
-  | { kind: 'dismiss' };
+export type MentionKeyAction = { kind: 'move'; index: number } | { kind: 'pick' } | { kind: 'dismiss' };
 
 function plain(text: string): Part {
   return { wire: text, display: text, mention: false };
@@ -32,12 +43,18 @@ function place(parts: Part[]): Piece[] {
   });
 }
 
-interface Token { index: number; wire: string; display: string }
+interface Token {
+  index: number;
+  wire: string;
+  display: string;
+}
 
 function tokensOf(wire: string, labelOf: LabelOf): Token[] {
-  const refs = channelRefsOf(wire).map(r => ({ index: r.index, wire: r.wire, display: `#${r.label}` }));
-  const mentions = [...wire.matchAll(MENTION_RE)].map(m => ({
-    index: m.index, wire: m[0], display: labelOf((m[1] ?? m[0]).toLowerCase()),
+  const refs = channelRefsOf(wire).map((r) => ({ index: r.index, wire: r.wire, display: `#${r.label}` }));
+  const mentions = [...wire.matchAll(MENTION_RE)].map((m) => ({
+    index: m.index,
+    wire: m[0],
+    display: labelOf((m[1] ?? m[0]).toLowerCase()),
   }));
   return [...refs, ...mentions].sort((a, b) => a.index - b.index);
 }
@@ -56,11 +73,11 @@ export function piecesOf(wire: string, labelOf: LabelOf): Piece[] {
 }
 
 export function displayOf(pieces: Part[]): string {
-  return pieces.map(p => p.display).join('');
+  return pieces.map((p) => p.display).join('');
 }
 
 function wireOf(parts: Part[]): string {
-  return parts.map(p => p.wire).join('');
+  return parts.map((p) => p.wire).join('');
 }
 
 export function toDisplay(wire: string, labelOf: LabelOf): string {
@@ -89,7 +106,7 @@ export function editRegion(prev: string, next: string, hint: Span, clean: (span:
   const shrink = prev.length - next.length;
   const tries: Span[] = [{ start: a, end: b }];
   if (a === b && shrink > 0) tries.push({ start: a - shrink, end: a }, { start: a, end: a + shrink });
-  const fitting = tries.filter(t => fits(prev, next, t.start, t.end));
+  const fitting = tries.filter((t) => fits(prev, next, t.start, t.end));
   return fitting.find(clean) ?? fitting[0] ?? diffRegion(prev, next);
 }
 
@@ -118,9 +135,9 @@ export function applyDisplayEdit(shown: Piece[], next: string, labelOf: LabelOf,
   const wire = wireOf(shown);
   const prev = displayOf(shown);
   if (next === prev) return { wire, display: prev, caret: Math.min(hint.end, prev.length) };
-  const region = editRegion(prev, next, hint, span => !shown.some(p => touches(p, span)));
+  const region = editRegion(prev, next, hint, (span) => !shown.some((p) => touches(p, span)));
   const inserted = next.slice(region.start, next.length - (prev.length - region.end));
-  const kept = place(shown.map(p => (touches(p, region) ? plain(p.display) : p)));
+  const kept = place(shown.map((p) => (touches(p, region) ? plain(p.display) : p)));
   const head = sliceParts(kept, 0, region.start);
   const parts = unglue([...head, plain(inserted), ...sliceParts(kept, region.end, prev.length)]);
   const nextWire = wireOf(parts);
@@ -148,17 +165,13 @@ export function mentionQuery(
 ): { matches: MentionCandidate[]; range: Span | null } {
   const { matches, range } = computeMentionQuery(displayOf(pieces), cursor, candidates);
   if (!range) return { matches: [], range: null };
-  const inside = pieces.some(p => p.mention && range.start >= p.displayStart && range.start < p.displayStart + p.display.length);
+  const inside = pieces.some((p) => p.mention && range.start >= p.displayStart && range.start < p.displayStart + p.display.length);
   return inside ? { matches: [], range: null } : { matches, range };
 }
 
-export function withContactCandidates(
-  first: MentionCandidate[],
-  contacts: MentionCandidate[],
-  self: string,
-): MentionCandidate[] {
-  const seen = new Set([self, ...first.map(c => c.address)].map(a => a.toLowerCase()));
-  const extra = uniqueBy(contacts, c => c.address.toLowerCase(), seen);
+export function withContactCandidates(first: MentionCandidate[], contacts: MentionCandidate[], self: string): MentionCandidate[] {
+  const seen = new Set([self, ...first.map((c) => c.address)].map((a) => a.toLowerCase()));
+  const extra = uniqueBy(contacts, (c) => c.address.toLowerCase(), seen);
   return [...first, ...extra];
 }
 
@@ -169,7 +182,10 @@ export function activeSuggestIndex<T>(
   idOf: (candidate: T) => string,
 ): number {
   if (active.key !== key) return 0;
-  return Math.max(0, shown.findIndex(c => idOf(c) === active.id));
+  return Math.max(
+    0,
+    shown.findIndex((c) => idOf(c) === active.id),
+  );
 }
 
 export function mentionKeyAction(key: string, shift: boolean, count: number, active: number): MentionKeyAction | null {

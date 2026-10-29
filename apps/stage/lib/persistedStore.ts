@@ -32,7 +32,9 @@ export interface ValueStore<T> {
 }
 
 function durableWriter<T>(
-  read: (id: string) => Promise<T>, write: (id: string, value: T) => Promise<void>, publish: (id: string, value: T) => void,
+  read: (id: string) => Promise<T>,
+  write: (id: string, value: T) => Promise<void>,
+  publish: (id: string, value: T) => void,
 ) {
   let pending = Promise.resolve();
   return {
@@ -57,11 +59,17 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   let accountId: string | null | undefined;
   let accountEpoch: number | undefined;
   const { notify, subscribe } = makeListeners();
-  const durable = durableWriter(storedFor, (id, value) => storage.set(opts.key + id, serialize(value)), (id, value) => {
-    if (id === accountId && serialize(cache) !== serialize(value)) commit(value);
-  });
+  const durable = durableWriter(
+    storedFor,
+    (id, value) => storage.set(opts.key + id, serialize(value)),
+    (id, value) => {
+      if (id === accountId && serialize(cache) !== serialize(value)) commit(value);
+    },
+  );
 
-  function storageKey(): string | null { return opts.perAccount ? (typeof accountId === 'string' ? opts.key + accountId : null) : opts.key; }
+  function storageKey(): string | null {
+    return opts.perAccount ? (typeof accountId === 'string' ? opts.key + accountId : null) : opts.key;
+  }
 
   function parse(raw: string | null): T | undefined {
     return raw == null ? undefined : opts.deserialize(raw);
@@ -78,12 +86,18 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     if (!opts.perAccount) return apply(await storage.get(opts.key));
     const epoch = getAccountEpoch();
     const id = (await getActiveAccount())?.id ?? null;
-    if (id === accountId) { const changed = accountEpoch !== epoch; accountEpoch = epoch; return changed; }
+    if (id === accountId) {
+      const changed = accountEpoch !== epoch;
+      accountEpoch = epoch;
+      return changed;
+    }
     await durable.ready();
     const raw = id === null ? null : await storage.get(opts.key + id);
     if (epoch !== getAccountEpoch()) return read();
     if (!opts.restore || accountId !== undefined) cache = opts.default;
-    accountId = id; accountEpoch = epoch; apply(raw);
+    accountId = id;
+    accountEpoch = epoch;
+    apply(raw);
     return true;
   }
 
@@ -114,7 +128,9 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     void reload().catch(reported(`store.${opts.key}`));
   }
 
-  function get(): T { return cache; }
+  function get(): T {
+    return cache;
+  }
 
   function commit(value: T): void {
     cache = value;
@@ -134,7 +150,10 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     void write();
   }
 
-  async function setAsync(value: T): Promise<void> { commit(value); await write(); }
+  async function setAsync(value: T): Promise<void> {
+    commit(value);
+    await write();
+  }
 
   async function change(next: (current: T) => T): Promise<void> {
     const value = next(cache);
@@ -146,7 +165,9 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     if (onlyFor === undefined || onlyFor === accountId) await change(next);
   }
 
-  async function storedFor(id: string): Promise<T> { return parse(await storage.get(opts.key + id)) ?? opts.default; }
+  async function storedFor(id: string): Promise<T> {
+    return parse(await storage.get(opts.key + id)) ?? opts.default;
+  }
 
   async function loadFor(id: string): Promise<T> {
     await load();
@@ -163,10 +184,25 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     if (value !== stored) await storage.set(opts.key + id, serialize(value));
   }
 
-  if (opts.perAccount) subscribeAccountEpoch(() => { void reload().catch(reported(`store.${opts.key}`)); });
+  if (opts.perAccount)
+    subscribeAccountEpoch(() => {
+      void reload().catch(reported(`store.${opts.key}`));
+    });
 
   const use = (): T => useStoreValue(subscribe, get, loadAsync);
 
-  return { load, loadAsync, get, set, setAsync, update, loadFor, updateFor, accountId: () => accountId ?? null,
-    isCurrentAccount: () => !opts.perAccount || accountEpoch === getAccountEpoch(), subscribe, use };
+  return {
+    load,
+    loadAsync,
+    get,
+    set,
+    setAsync,
+    update,
+    loadFor,
+    updateFor,
+    accountId: () => accountId ?? null,
+    isCurrentAccount: () => !opts.perAccount || accountEpoch === getAccountEpoch(),
+    subscribe,
+    use,
+  };
 }

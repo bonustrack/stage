@@ -8,21 +8,39 @@ function be(value: number, length: number): number[] {
 
 function png(width: number, height: number, bitDepth = 8): Uint8Array {
   const ihdr = [...be(width, 4), ...be(height, 4), bitDepth, 6, 0, 0, 0];
-  return Uint8Array.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-    ...be(13, 4), 0x49, 0x48, 0x44, 0x52, ...ihdr, 0, 0, 0, 0,
-  ]);
+  return Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, ...be(13, 4), 0x49, 0x48, 0x44, 0x52, ...ihdr, 0, 0, 0, 0]);
 }
 
 function jpeg(width: number, height: number, frameMarker = 0xc0): Uint8Array {
   const exif = new Array<number>(3000).fill(0x2a);
   return Uint8Array.from([
-    0xff, 0xd8,
-    0xff, 0xe0, ...be(16, 2), ...new Array<number>(14).fill(0),
-    0xff, 0xe1, ...be(exif.length + 2, 2), ...exif,
-    0xff, 0xdb, ...be(4, 2), 0, 0,
-    0xff, frameMarker, ...be(17, 2), 8, ...be(height, 2), ...be(width, 2), 3, ...new Array<number>(9).fill(0),
-    0xff, 0xda, 0, 0,
+    0xff,
+    0xd8,
+    0xff,
+    0xe0,
+    ...be(16, 2),
+    ...new Array<number>(14).fill(0),
+    0xff,
+    0xe1,
+    ...be(exif.length + 2, 2),
+    ...exif,
+    0xff,
+    0xdb,
+    ...be(4, 2),
+    0,
+    0,
+    0xff,
+    frameMarker,
+    ...be(17, 2),
+    8,
+    ...be(height, 2),
+    ...be(width, 2),
+    3,
+    ...new Array<number>(9).fill(0),
+    0xff,
+    0xda,
+    0,
+    0,
   ]);
 }
 

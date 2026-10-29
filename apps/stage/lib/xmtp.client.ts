@@ -1,7 +1,5 @@
 import { Client, PublicIdentity } from '@xmtp/react-native-sdk';
-import {
-  getActiveAccount, loadAccounts, setActiveAccountId, removeAccount, type AccountRecord,
-} from './accounts';
+import { getActiveAccount, loadAccounts, setActiveAccountId, removeAccount, type AccountRecord } from './accounts';
 import { bumpAccountEpoch } from './accountEpoch';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
 import { getCachedXmtpClient, resetClientScopedState, getOrCreateCachedClient } from './xmtp.state';
@@ -28,7 +26,11 @@ async function openClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<C
     try {
       built = await Promise.race<Client | null>([
         Client.build(new PublicIdentity(rec.address, 'ETHEREUM'), opts),
-        new Promise<null>((resolve) => setTimeout(() => { resolve(null); }, REGISTERED_BUILD_TIMEOUT_MS)),
+        new Promise<null>((resolve) =>
+          setTimeout(() => {
+            resolve(null);
+          }, REGISTERED_BUILD_TIMEOUT_MS),
+        ),
       ]);
     } catch (e) {
       if (isStoreCorruption(e)) {
@@ -53,8 +55,16 @@ function forgetAccountStore(accountId: string): Promise<void> {
 }
 
 export const {
-  getOrCreateXmtpClient, xmtpClient, switchToAccount, deleteAccount, resetActiveXmtpStore,
-  cachedSelfEthAddress, selfEthAddress, syncPreferences, listXmtpInstallations, revokeXmtpInstallation,
+  getOrCreateXmtpClient,
+  xmtpClient,
+  switchToAccount,
+  deleteAccount,
+  resetActiveXmtpStore,
+  cachedSelfEthAddress,
+  selfEthAddress,
+  syncPreferences,
+  listXmtpInstallations,
+  revokeXmtpInstallation,
 } = makeClientLifecycle<Client>({
   accounts: { active: getActiveAccount, list: loadAccounts, setActive: setActiveAccountId, remove: removeAccount },
   store: { deleteFiles: deleteDbFiles, deleteKey: forgetAccountStore, wipe: wipeXmtpStore, forgetSaved: forgetStorageIndex },
@@ -66,8 +76,8 @@ export const {
     dispose: resetClientScopedState,
     selfAddressOf: (client) => client.publicIdentity.identifier,
     syncPreferences: (client) => client.preferences.sync(),
-    installations: async (client) => (await client.inboxState(true)).installations
-      .map(i => ({ id: i.id, createdAt: nativeInstallationCreatedAtMs(i.createdAt) })),
+    installations: async (client) =>
+      (await client.inboxState(true)).installations.map((i) => ({ id: i.id, createdAt: nativeInstallationCreatedAtMs(i.createdAt) })),
     installationIdOf: (client) => client.installationId,
     revoke: async (client, account, installationId) => {
       const signer = await signerForRecord(account);

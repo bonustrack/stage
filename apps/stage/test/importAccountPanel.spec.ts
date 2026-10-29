@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  IMPORT_EMPTY, IMPORT_INVALID, parseImportInput, transferWarning,
-} from '../components/accounts/ImportAccountPanel.model';
+import { IMPORT_EMPTY, IMPORT_INVALID, parseImportInput, transferWarning } from '../components/accounts/ImportAccountPanel.model';
 
 const PK = '0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01a3f362318';
 

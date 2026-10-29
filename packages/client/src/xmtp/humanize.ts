@@ -3,14 +3,23 @@ import { describeAppDataChange } from './appDataChange';
 import { withChannelLabels } from './channelRefs';
 import { MENTION_RE } from './mentions';
 import {
-  DELETED_MESSAGE_TEXT, DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, STAGE_DELETE_TYPE_ID, deletedByOfContent,
-  deletedTextOf, shortTypeId,
+  DELETED_MESSAGE_TEXT,
+  DELETED_MESSAGE_TYPE_ID,
+  DELETE_MESSAGE_TYPE_ID,
+  STAGE_DELETE_TYPE_ID,
+  deletedByOfContent,
+  deletedTextOf,
+  shortTypeId,
 } from './deleteMessage';
 import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
 import { parseOpenVote, parseVoteKey } from './poll-tally';
 import { paymentRequestPreview, receiptTitle, type TransactionReferenceContent, type WalletSendCallsContent } from './tx';
 import { frameActionText } from './frame';
-interface FieldChange { fieldName: string; oldValue?: string; newValue?: string }
+interface FieldChange {
+  fieldName: string;
+  oldValue?: string;
+  newValue?: string;
+}
 export interface GroupUpdatedContent {
   initiatedByInboxId?: string;
   membersAdded?: { inboxId: string }[];
@@ -46,7 +55,7 @@ const MAX_NAMED_MEMBERS = 3;
 
 function namedList(names: string[], total: number): string {
   if (names.length === total && total <= MAX_NAMED_MEMBERS) {
-    return total === 1 ? names[0] ?? '' : `${names.slice(0, -1).join(', ')} and ${names.at(-1) ?? ''}`;
+    return total === 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names.at(-1) ?? ''}`;
   }
   const shown = names.slice(0, MAX_NAMED_MEMBERS - 1);
   const others = total - shown.length;
@@ -54,7 +63,7 @@ function namedList(names: string[], total: number): string {
 }
 
 function membersPhrase(members: { inboxId: string }[], nameOf?: InboxNamer): string {
-  const names = nameOf ? members.map(m => nameOf(m.inboxId)).filter((n): n is string => !!n) : [];
+  const names = nameOf ? members.map((m) => nameOf(m.inboxId)).filter((n): n is string => !!n) : [];
   if (names.length > 0) return namedList(names, members.length);
   return `${members.length} member${members.length === 1 ? '' : 's'}`;
 }
@@ -76,7 +85,7 @@ function removedOf(g: GroupUpdatedContent): { inboxId: string }[] {
 }
 
 export function groupUpdateInboxIds(g: GroupUpdatedContent): string[] {
-  return [...addedOf(g), ...removedOf(g), ...(g.leftInboxes ?? [])].map(m => m.inboxId);
+  return [...addedOf(g), ...removedOf(g), ...(g.leftInboxes ?? [])].map((m) => m.inboxId);
 }
 
 function changeClauses(g: GroupUpdatedContent, nameOf?: InboxNamer): string[] {
@@ -134,7 +143,7 @@ function stringOf(value: unknown): string | undefined {
 }
 
 function recordOf(value: unknown): Record<string, unknown> {
-  return typeof value === 'object' && value !== null ? value as Record<string, unknown> : {};
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
 }
 
 function previewFrameAction(decoded: unknown): string {
@@ -148,8 +157,8 @@ function previewFrameAction(decoded: unknown): string {
 }
 
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
-  group_updated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
-  groupUpdated: decoded => humanizeGroupUpdated(decoded as GroupUpdatedContent),
+  group_updated: (decoded) => humanizeGroupUpdated(decoded as GroupUpdatedContent),
+  groupUpdated: (decoded) => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   [LEAVE_REQUEST_TYPE_ID]: () => LEFT_CHANNEL_TEXT,
   reaction: previewReaction,
   poll: previewPoll,
@@ -165,8 +174,8 @@ const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
   [STAGE_DELETE_TYPE_ID]: () => DELETED_MESSAGE_TEXT,
   [CALL_INVITE_CONTENT_TYPE.typeId]: callPreviewText,
   [CALL_SIGNAL_CONTENT_TYPE.typeId]: callPreviewText,
-  walletSendCalls: decoded => paymentRequestPreview(decoded as WalletSendCallsContent | null),
-  transactionReference: decoded => receiptTitle(decoded as TransactionReferenceContent | null),
+  walletSendCalls: (decoded) => paymentRequestPreview(decoded as WalletSendCallsContent | null),
+  transactionReference: (decoded) => receiptTitle(decoded as TransactionReferenceContent | null),
   signatureRequest: () => 'Signature request',
   signatureReference: () => 'Signed',
 };
@@ -180,7 +189,10 @@ export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | u
 
 export type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
 
-export interface AttachmentMeta { mimeType?: string | null; filename?: string | null }
+export interface AttachmentMeta {
+  mimeType?: string | null;
+  filename?: string | null;
+}
 
 export function attachmentKindOf(a: AttachmentMeta): AttachmentKind {
   const ext = a.filename?.split('.').pop()?.toLowerCase() ?? '';
@@ -208,7 +220,7 @@ export function attachmentsPreview(items: readonly AttachmentMeta[]): string {
   const [first, ...rest] = items.map(attachmentKindOf);
   if (!first) return 'Sent an attachment';
   if (rest.length === 0) return `Sent ${KIND_NOUNS[first].one}`;
-  const noun = rest.every(k => k === first) ? KIND_NOUNS[first].many : 'attachments';
+  const noun = rest.every((k) => k === first) ? KIND_NOUNS[first].many : 'attachments';
   return `Sent ${rest.length + 1} ${noun}`;
 }
 

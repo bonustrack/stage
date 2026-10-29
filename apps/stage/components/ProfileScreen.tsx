@@ -31,9 +31,25 @@ function EditProfileButton({ background }: { background: string }): React.ReactE
   };
   return (
     <>
-      <Button label="Edit profile" color="secondary" variant="solid" dark={dark} tintBg={background} tintPressedBg={background} style={{ ...CENTERED, borderColor: background }} onPress={onEdit} />
+      <Button
+        label="Edit profile"
+        color="secondary"
+        variant="solid"
+        dark={dark}
+        tintBg={background}
+        tintPressedBg={background}
+        style={{ ...CENTERED, borderColor: background }}
+        onPress={onEdit}
+      />
       {address && handle ? (
-        <EditProfileModal visible={editing} onClose={() => { setEditing(false); }} address={address} handle={handle} />
+        <EditProfileModal
+          visible={editing}
+          onClose={() => {
+            setEditing(false);
+          }}
+          address={address}
+          handle={handle}
+        />
       ) : null}
     </>
   );
@@ -45,11 +61,30 @@ function ProfileMenu({ isSelf, onSelect }: { isSelf: boolean; onSelect: (id: str
   return <ProfileCoverMenu items={PEER_PROFILE_MENU} onSelect={onSelect} />;
 }
 
-function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle, about, onAvatar, onMessage, onSend }: {
-  addr: string; isSelf: boolean; dark: boolean;
-  c: Palette; insetTop: number;
-  displayName: string; handle?: string; about?: string; onAvatar: (uri: string | null) => void;
-  onMessage: () => void; onSend: () => void;
+function ProfileIdentity({
+  addr,
+  isSelf,
+  dark,
+  c,
+  insetTop,
+  displayName,
+  handle,
+  about,
+  onAvatar,
+  onMessage,
+  onSend,
+}: {
+  addr: string;
+  isSelf: boolean;
+  dark: boolean;
+  c: Palette;
+  insetTop: number;
+  displayName: string;
+  handle?: string;
+  about?: string;
+  onAvatar: (uri: string | null) => void;
+  onMessage: () => void;
+  onSend: () => void;
 }): React.ReactElement {
   return (
     <ProfileCover
@@ -72,7 +107,12 @@ function ProfileIdentity({ addr, isSelf, dark, c, insetTop, displayName, handle,
           </Column>
         </Column>
         <Column margin={{ top: 2 }}>
-          <GesturePressable hitSlop={8} onPress={() => { capabilities.copy('Address', addr); }}>
+          <GesturePressable
+            hitSlop={8}
+            onPress={() => {
+              capabilities.copy('Address', addr);
+            }}
+          >
             <Text text={shortAddress(addr)} size="xs" color={c.text} />
           </GesturePressable>
         </Column>
@@ -94,25 +134,50 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
 
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
-  const onMessage = (): void => { router.replace({ pathname: '/[convId]', params: { convId: addr } }); };
+  const onMessage = (): void => {
+    router.replace({ pathname: '/[convId]', params: { convId: addr } });
+  };
 
-  const onSend = (): void => { router.push({ pathname: '/wallet/send', params: { to: addr } }); };
+  const onSend = (): void => {
+    router.push({ pathname: '/wallet/send', params: { to: addr } });
+  };
   const menuActions: Record<string, () => void> = {
-    message: onMessage, send: onSend, 'copy-address': () => { capabilities.copy('Address', addr); },
+    message: onMessage,
+    send: onSend,
+    'copy-address': () => {
+      capabilities.copy('Address', addr);
+    },
   };
 
   const displayName = profileDisplayName(addr, getPeerName(addr), shortAddress(addr));
 
   return (
     <Column weight={1} surface="surface">
-      <ProfileCoverBar insetTop={insets.top} trailing={<ProfileMenu isSelf={isSelf} onSelect={(id) => { menuActions[id]?.(); }} />} />
+      <ProfileCoverBar
+        insetTop={insets.top}
+        trailing={
+          <ProfileMenu
+            isSelf={isSelf}
+            onSelect={(id) => {
+              menuActions[id]?.();
+            }}
+          />
+        }
+      />
 
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
         <ProfileIdentity
-          addr={addr} isSelf={isSelf} dark={dark} c={c}
-          insetTop={insets.top} displayName={displayName}
-          handle={getPeerHandle(addr)} about={getPeerDescription(addr)}
-          onAvatar={uri => { if (uri) setViewerUri(uri); }}
+          addr={addr}
+          isSelf={isSelf}
+          dark={dark}
+          c={c}
+          insetTop={insets.top}
+          displayName={displayName}
+          handle={getPeerHandle(addr)}
+          about={getPeerDescription(addr)}
+          onAvatar={(uri) => {
+            if (uri) setViewerUri(uri);
+          }}
           onMessage={onMessage}
           onSend={onSend}
         />
@@ -120,7 +185,13 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
         {isSelf ? null : <CommonChannels peerAddress={addr} c={c} />}
       </ScreenScroll>
 
-      <ImageViewer uri={viewerUri ?? ''} visible={viewerUri !== null} onClose={() => { setViewerUri(null); }}/>
+      <ImageViewer
+        uri={viewerUri ?? ''}
+        visible={viewerUri !== null}
+        onClose={() => {
+          setViewerUri(null);
+        }}
+      />
     </Column>
   );
 }

@@ -1,4 +1,3 @@
-
 import type { Hex, Chain } from 'viem';
 import { mainnet, sepolia, base } from 'viem/chains';
 
@@ -20,18 +19,65 @@ export const ETH_PRICE_ID = 'ethereum:0x0000000000000000000000000000000000000000
 const USDC_PRICE_ID = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 
 export const ASSETS: Asset[] = [
-  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, chainId: 1,        address: null, logoAddress: NATIVE_TOKEN_SENTINEL, priceId: ETH_PRICE_ID },
-  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 1,        address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', priceId: USDC_PRICE_ID },
-  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, chainId: 11155111, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, priceId: ETH_PRICE_ID },
-  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 11155111, address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', priceId: USDC_PRICE_ID },
-  { symbol: 'ETH',  name: 'Ethereum',  decimals: 18, chainId: 8453, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, priceId: ETH_PRICE_ID },
-  { symbol: 'USDC', name: 'USD Coin',  decimals: 6,  chainId: 8453, address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', priceId: 'base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913' },
-  { symbol: 'STAGE', name: 'Stage', decimals: 18, chainId: 11155111, address: '0x7a49F33AD000220a764ED303f9911cB08422d138', logoAddress: '0x7a49F33AD000220a764ED303f9911cB08422d138' },
+  { symbol: 'ETH', name: 'Ethereum', decimals: 18, chainId: 1, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, priceId: ETH_PRICE_ID },
+  {
+    symbol: 'USDC',
+    name: 'USD Coin',
+    decimals: 6,
+    chainId: 1,
+    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    priceId: USDC_PRICE_ID,
+  },
+  {
+    symbol: 'ETH',
+    name: 'Ethereum',
+    decimals: 18,
+    chainId: 11155111,
+    address: null,
+    logoAddress: NATIVE_TOKEN_SENTINEL,
+    priceId: ETH_PRICE_ID,
+  },
+  {
+    symbol: 'USDC',
+    name: 'USD Coin',
+    decimals: 6,
+    chainId: 11155111,
+    address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+    logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    priceId: USDC_PRICE_ID,
+  },
+  {
+    symbol: 'ETH',
+    name: 'Ethereum',
+    decimals: 18,
+    chainId: 8453,
+    address: null,
+    logoAddress: NATIVE_TOKEN_SENTINEL,
+    priceId: ETH_PRICE_ID,
+  },
+  {
+    symbol: 'USDC',
+    name: 'USD Coin',
+    decimals: 6,
+    chainId: 8453,
+    address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    priceId: 'base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+  },
+  {
+    symbol: 'STAGE',
+    name: 'Stage',
+    decimals: 18,
+    chainId: 11155111,
+    address: '0x7a49F33AD000220a764ED303f9911cB08422d138',
+    logoAddress: '0x7a49F33AD000220a764ED303f9911cB08422d138',
+  },
 ];
 
 export const WALLET_CHAIN_ID = base.id;
 
-export const WALLET_ASSETS = ASSETS.filter(a => a.chainId === WALLET_CHAIN_ID);
+export const WALLET_ASSETS = ASSETS.filter((a) => a.chainId === WALLET_CHAIN_ID);
 
 export const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
 const SEPOLIA_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreif5b7trz7plh4mpfbnom2wqc6yogux6sgzwau6znwu7pbq6qeu63e';
@@ -45,17 +91,25 @@ export const NETWORK_LOGO: Record<number, string> = {
 
 export const VIEM_CHAINS: Record<number, Chain> = { 1: mainnet, 8453: base, 11155111: sepolia };
 
-export const erc20Abi = [{
-  name: 'balanceOf', type: 'function', stateMutability: 'view',
-  inputs: [{ name: 'a', type: 'address' }],
-  outputs: [{ name: 'b', type: 'uint256' }],
-}] as const;
+export const erc20Abi = [
+  {
+    name: 'balanceOf',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'a', type: 'address' }],
+    outputs: [{ name: 'b', type: 'uint256' }],
+  },
+] as const;
 
-export const multicall3Abi = [{
-  name: 'getEthBalance', type: 'function', stateMutability: 'view',
-  inputs: [{ name: 'a', type: 'address' }],
-  outputs: [{ name: 'b', type: 'uint256' }],
-}] as const;
+export const multicall3Abi = [
+  {
+    name: 'getEthBalance',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'a', type: 'address' }],
+    outputs: [{ name: 'b', type: 'uint256' }],
+  },
+] as const;
 
 export interface AssetRow {
   symbol: string;

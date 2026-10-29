@@ -3,24 +3,24 @@ import { handlePush, parsePushRoute } from '../src/pushProxy.ts';
 
 describe('parsePushRoute', () => {
   test('maps the three XMTP notification RPCs to the push server', () => {
-    expect(parsePushRoute('/xmtp-push/RegisterInstallation', 'POST'))
-      .toBe('https://push.stage.box/notifications.v1.Notifications/RegisterInstallation');
-    expect(parsePushRoute('/xmtp-push/SubscribeWithMetadata', 'POST'))
-      .toBe('https://push.stage.box/notifications.v1.Notifications/SubscribeWithMetadata');
-    expect(parsePushRoute('/xmtp-push/DeleteInstallation', 'POST'))
-      .toBe('https://push.stage.box/notifications.v1.Notifications/DeleteInstallation');
+    expect(parsePushRoute('/xmtp-push/RegisterInstallation', 'POST')).toBe(
+      'https://push.stage.box/notifications.v1.Notifications/RegisterInstallation',
+    );
+    expect(parsePushRoute('/xmtp-push/SubscribeWithMetadata', 'POST')).toBe(
+      'https://push.stage.box/notifications.v1.Notifications/SubscribeWithMetadata',
+    );
+    expect(parsePushRoute('/xmtp-push/DeleteInstallation', 'POST')).toBe(
+      'https://push.stage.box/notifications.v1.Notifications/DeleteInstallation',
+    );
   });
 
   test('maps the two Stage device group RPCs to their own service', () => {
-    expect(parsePushRoute('/xmtp-push/JoinDeviceGroup', 'POST'))
-      .toBe('https://push.stage.box/stage.v1.Push/JoinDeviceGroup');
-    expect(parsePushRoute('/xmtp-push/ClearConversation', 'POST'))
-      .toBe('https://push.stage.box/stage.v1.Push/ClearConversation');
+    expect(parsePushRoute('/xmtp-push/JoinDeviceGroup', 'POST')).toBe('https://push.stage.box/stage.v1.Push/JoinDeviceGroup');
+    expect(parsePushRoute('/xmtp-push/ClearConversation', 'POST')).toBe('https://push.stage.box/stage.v1.Push/ClearConversation');
   });
 
   test('only forwards signed sender publication through the Stage POST route', () => {
-    expect(parsePushRoute('/xmtp-push/PublishSenderFilters', 'POST'))
-      .toBe('https://push.stage.box/stage.v1.Push/PublishSenderFilters');
+    expect(parsePushRoute('/xmtp-push/PublishSenderFilters', 'POST')).toBe('https://push.stage.box/stage.v1.Push/PublishSenderFilters');
     expect(parsePushRoute('/xmtp-push/PublishSenderFilters', 'GET')).toBeNull();
     expect(parsePushRoute('/xmtp-push/PublishSenderFilters/extra', 'POST')).toBeNull();
     expect(parsePushRoute('/xmtp-push/SenderFilterVersion', 'POST')).toBeNull();

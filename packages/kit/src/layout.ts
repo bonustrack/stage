@@ -1,4 +1,3 @@
-
 import { colors, resolveBoxRadius, type ColorToken, type RadiusValue } from './tokens';
 
 export type { RadiusValue };
@@ -54,17 +53,9 @@ export interface BoxBaseProps {
   border?: ResolvedBoxBorder;
 }
 
-export const FLEX_ALIGN = {
-  start: 'flex-start',
-  center: 'center',
-  end: 'flex-end',
-} as const;
+export const FLEX_ALIGN = { start: 'flex-start', center: 'center', end: 'flex-end' } as const;
 
-const ALIGN: Record<Align, string> = {
-  ...FLEX_ALIGN,
-  stretch: 'stretch',
-  baseline: 'baseline',
-};
+const ALIGN: Record<Align, string> = { ...FLEX_ALIGN, stretch: 'stretch', baseline: 'baseline' };
 
 const JUSTIFY: Record<Justify, string> = {
   start: 'flex-start',
@@ -82,11 +73,7 @@ export function resolveBg(bg: string): string {
 
 export type BoxStyleEntries = Record<string, string | number>;
 
-function applySpacing(
-  s: BoxStyleEntries,
-  prefix: 'padding' | 'margin',
-  value: number | string | Spacing | undefined,
-): void {
+function applySpacing(s: BoxStyleEntries, prefix: 'padding' | 'margin', value: number | string | Spacing | undefined): void {
   if (value === undefined) return;
   const Top = `${prefix}Top`;
   const Right = `${prefix}Right`;
@@ -144,12 +131,7 @@ function applySizing(s: BoxStyleEntries, props: BoxBaseProps): void {
   setIf(s, 'aspectRatio', props.aspectRatio);
 }
 
-function applyBorderSide(
-  s: BoxStyleEntries,
-  side: ResolvedBoxBorderSide | undefined,
-  widthKey: string,
-  colorKey: string,
-): void {
+function applyBorderSide(s: BoxStyleEntries, side: ResolvedBoxBorderSide | undefined, widthKey: string, colorKey: string): void {
   if (side === undefined) return;
   setIf(s, widthKey, side.width);
   setIf(s, colorKey, side.color);
@@ -161,26 +143,17 @@ function applyBorder(s: BoxStyleEntries, border: ResolvedBoxBorder | undefined):
   applyBorderSide(s, border.right, 'borderRightWidth', 'borderRightColor');
   applyBorderSide(s, border.bottom, 'borderBottomWidth', 'borderBottomColor');
   applyBorderSide(s, border.left, 'borderLeftWidth', 'borderLeftColor');
-  const style =
-    border.top?.style ??
-    border.right?.style ??
-    border.bottom?.style ??
-    border.left?.style;
+  const style = border.top?.style ?? border.right?.style ?? border.bottom?.style ?? border.left?.style;
   setIf(s, 'borderStyle', style);
 }
 
-export function spacingEntries(
-  prefix: 'padding' | 'margin',
-  value: SpacingValue | undefined,
-): BoxStyleEntries {
+export function spacingEntries(prefix: 'padding' | 'margin', value: SpacingValue | undefined): BoxStyleEntries {
   const s: BoxStyleEntries = {};
   applySpacing(s, prefix, value);
   return s;
 }
 
-export function borderStyleEntries(
-  border: ResolvedBoxBorder | undefined,
-): BoxStyleEntries {
+export function borderStyleEntries(border: ResolvedBoxBorder | undefined): BoxStyleEntries {
   const s: BoxStyleEntries = {};
   applyBorder(s, border);
   return s;
@@ -209,7 +182,13 @@ export interface SurfacePalette {
   toolbarBg: string;
 }
 
-const SURFACE_COLOR: Record<Surface, keyof SurfacePalette | undefined> = { none: undefined, surface: 'bg', raised: 'inputBg', sunken: 'bg', toolbar: 'toolbarBg' };
+const SURFACE_COLOR: Record<Surface, keyof SurfacePalette | undefined> = {
+  none: undefined,
+  surface: 'bg',
+  raised: 'inputBg',
+  sunken: 'bg',
+  toolbar: 'toolbarBg',
+};
 
 export function surfaceColor(surface: Surface, palette: SurfacePalette): string | undefined {
   const key = SURFACE_COLOR[surface];

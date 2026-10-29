@@ -29,8 +29,13 @@ function useDownload(uri: string, name: string, mime?: string): () => void {
     if (saving) return;
     setSaving(true);
     void downloadFile(uri, name, mime)
-      .catch((e: unknown) => { report('audio.download', e); capabilities.toast('Download failed'); })
-      .finally(() => { setSaving(false); });
+      .catch((e: unknown) => {
+        report('audio.download', e);
+        capabilities.toast('Download failed');
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   };
 }
 
@@ -47,13 +52,25 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
     <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}>
       <Column testID="audio-card" gap={8}>
         <IconTileRow
-          title={model.title} titleColor={pal.text} subtitle={model.subtitle}
-          icon={<Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={pal.text}/>}
+          title={model.title}
+          titleColor={pal.text}
+          subtitle={model.subtitle}
+          icon={<Glyph icon={model.voice ? IconMicrophone : IconAudio} size={24} color={pal.text} />}
         >
-          <HoverIconButton icon={IconCloudDownload} label="Download" color={pal.sub} size={20} role="button" onPress={download}/>
+          <HoverIconButton icon={IconCloudDownload} label="Download" color={pal.sub} size={20} role="button" onPress={download} />
         </IconTileRow>
         <Row align="center" gap={12}>
-          <HoverIconButton icon={playing ? IconPause : IconPlay} label={playing ? 'Pause' : 'Play'} color={pal.text} size={20} role="button" onPress={() => { if (callOwnsAudio()) capabilities.toast('Leave the call before playing audio.'); else void toggle(); }}/>
+          <HoverIconButton
+            icon={playing ? IconPause : IconPlay}
+            label={playing ? 'Pause' : 'Play'}
+            color={pal.text}
+            size={20}
+            role="button"
+            onPress={() => {
+              if (callOwnsAudio()) capabilities.toast('Leave the call before playing audio.');
+              else void toggle();
+            }}
+          />
           <AudioSeekBar
             progress={model.progress}
             enabled={duration > 0}
@@ -62,7 +79,9 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
             onScrub={setScrub}
             onSeek={seek}
           />
-          <Text size="2xs" color="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>{model.time}</Text>
+          <Text size="2xs" color="secondary" numberOfLines={1} style={{ fontVariant: ['tabular-nums'] }}>
+            {model.time}
+          </Text>
         </Row>
       </Column>
     </Card>

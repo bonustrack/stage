@@ -41,8 +41,8 @@ let pushResyncTimer: ReturnType<typeof setTimeout> | null = null;
 let lastForcedPushSyncAt = 0;
 
 async function resyncAfterPush(status: StreamStatus, now: number): Promise<void> {
-  const streamDead = !status.live() || (now - status.lastCloseAt()) < STREAM_DEAD_GRACE_MS;
-  const streamFresh = (now - status.lastMessageAt()) < STREAM_FRESH_MS;
+  const streamDead = !status.live() || now - status.lastCloseAt() < STREAM_DEAD_GRACE_MS;
+  const streamFresh = now - status.lastMessageAt() < STREAM_FRESH_MS;
   if (streamDead || (!streamFresh && now - lastForcedPushSyncAt >= MIN_FORCED_SYNC_SPACING_MS)) {
     lastForcedPushSyncAt = now;
     await syncInboxOnce(0);
@@ -81,11 +81,22 @@ export const foregroundWatch = {
     });
   },
   detach(): void {
-    if (pushResyncTimer) { clearTimeout(pushResyncTimer); pushResyncTimer = null; }
+    if (pushResyncTimer) {
+      clearTimeout(pushResyncTimer);
+      pushResyncTimer = null;
+    }
     lastForcedPushSyncAt = 0;
-    if (pushSub) { attempt(pushSub, 'cleanup'); pushSub = null; }
+    if (pushSub) {
+      attempt(pushSub, 'cleanup');
+      pushSub = null;
+    }
     const sub = appStateSub;
-    if (sub) { attempt(() => { sub.remove(); }, 'cleanup'); appStateSub = null; }
+    if (sub) {
+      attempt(() => {
+        sub.remove();
+      }, 'cleanup');
+      appStateSub = null;
+    }
     setAppForeground(false);
   },
 };

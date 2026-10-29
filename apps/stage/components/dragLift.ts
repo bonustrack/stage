@@ -51,5 +51,7 @@ function swallowClick(event: Event): void {
 export function suppressNextClick(): void {
   if (typeof document === 'undefined') return;
   document.addEventListener('click', swallowClick, { capture: true, once: true });
-  setTimeout(() => { document.removeEventListener('click', swallowClick, { capture: true }); }, CLICK_GRACE_MS);
+  setTimeout(() => {
+    document.removeEventListener('click', swallowClick, { capture: true });
+  }, CLICK_GRACE_MS);
 }

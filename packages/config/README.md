@@ -1,6 +1,6 @@
 # @stage-labs/config
 
-Shared lint, TypeScript, knip and madge presets and the `stage` CLI. Generic and repo-agnostic, so any repo can use the same rules and `tsconfig` bases.
+Shared lint, Prettier (`bun fmt`), TypeScript, knip and madge presets and the `stage` CLI. Generic and repo-agnostic, so any repo can use the same rules and `tsconfig` bases.
 
 It ships the **generic building blocks only**. Repo-specific topology (monorepo scoping, knip workspaces, per-app/per-package rules) stays in the consuming repo, in its `stage.config.js` and `.oxlintrc.json`.
 
@@ -32,12 +32,22 @@ bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 
 Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It runs `bun check` (Bun 1.4.4 or later, the built-in TypeScript 7 checker). `stage typecheck --tsc` runs `tsc --noEmit` instead. Other flags go to the checker.
 
+## Formatting
+
+`@stage-labs/config/prettier` is a Prettier config for `bun fmt` (and for Prettier itself, or an editor's Prettier extension): Prettier's defaults (semicolons, trailing commas, arrow parentheses) with single quotes, a 140 character line width and short objects kept on one line (`objectWrap: collapse`). Point the root `package.json` at it:
+
+```json
+{ "prettier": "@stage-labs/config/prettier" }
+```
+
+Then `bun fmt` formats the repo and `bun fmt --check` fails when a file needs formatting (use it in CI). List vendored or generated files in `.prettierignore`.
+
 ## madge
 
 Shared options for the circular-dependency check:
 
 ```js
-import { madgeConfig } from "@stage-labs/config/madge";
+import { madgeConfig } from '@stage-labs/config/madge';
 ```
 
 ## TypeScript

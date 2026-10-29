@@ -6,7 +6,9 @@ import type { SpeechBridge, SpeechEvent } from '../lib/speech.types';
 
 type Host = Parameters<typeof makeDictation>[1];
 const cleanups: (() => Promise<void>)[] = [];
-afterEach(async () => { await Promise.all(cleanups.splice(0).map(cleanup => cleanup())); });
+afterEach(async () => {
+  await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+});
 
 function harness(overrides: Partial<SpeechBridge> = {}, callbacks: Partial<Host> = {}, timers?: [number, number]) {
   const events: string[] = [];
@@ -17,32 +19,76 @@ function harness(overrides: Partial<SpeechBridge> = {}, callbacks: Partial<Host>
   let id = '';
   const bridge: SpeechBridge = {
     availability: async () => ({ available: true, download: false, locale: 'en-US' }),
-    requestPermission: async () => { events.push('speech-permission'); return true; },
-    downloadModel: async () => { events.push('download'); },
-    start: async value => { id = value; events.push('start'); listener({ sessionId: id, state: 'listening' }); },
-    stop: async () => { events.push('stop'); },
-    cancel: async value => { events.push(`cancel:${value}`); },
-    subscribe: next => { listener = next; return () => { events.push('unsubscribe'); }; },
+    requestPermission: async () => {
+      events.push('speech-permission');
+      return true;
+    },
+    downloadModel: async () => {
+      events.push('download');
+    },
+    start: async (value) => {
+      id = value;
+      events.push('start');
+      listener({ sessionId: id, state: 'listening' });
+    },
+    stop: async () => {
+      events.push('stop');
+    },
+    cancel: async (value) => {
+      events.push(`cancel:${value}`);
+    },
+    subscribe: (next) => {
+      listener = next;
+      return () => {
+        events.push('unsubscribe');
+      };
+    },
     ...overrides,
   };
-  const control = makeDictation(bridge, {
-    read: () => draft,
-    apply: next => { draft = next; },
-    phase: value => { phases.push(value); },
-    error: message => { errors.push(message); },
-    microphoneGranted: async () => false,
-    permission: async () => { events.push('mic-permission'); return true; },
-    confirmDownload: async locale => { events.push(`confirm:${locale}`); return true; },
-    blocked: () => false,
-    cleanupError: () => { events.push('cleanup-error'); },
-    ...callbacks,
-  }, ...(timers ?? []));
+  const control = makeDictation(
+    bridge,
+    {
+      read: () => draft,
+      apply: (next) => {
+        draft = next;
+      },
+      phase: (value) => {
+        phases.push(value);
+      },
+      error: (message) => {
+        errors.push(message);
+      },
+      microphoneGranted: async () => false,
+      permission: async () => {
+        events.push('mic-permission');
+        return true;
+      },
+      confirmDownload: async (locale) => {
+        events.push(`confirm:${locale}`);
+        return true;
+      },
+      blocked: () => false,
+      cleanupError: () => {
+        events.push('cleanup-error');
+      },
+      ...callbacks,
+    },
+    ...(timers ?? []),
+  );
   cleanups.push(control.dispose);
   return {
-    control, events, errors, phases,
+    control,
+    events,
+    errors,
+    phases,
     draft: () => draft,
-    edit: (text: string) => { draft = { text, selection: { start: text.length, end: text.length } }; control.edited(); },
-    event: (event: Omit<SpeechEvent, 'sessionId'>, sessionId = id) => { listener({ sessionId, ...event }); },
+    edit: (text: string) => {
+      draft = { text, selection: { start: text.length, end: text.length } };
+      control.edited();
+    },
+    event: (event: Omit<SpeechEvent, 'sessionId'>, sessionId = id) => {
+      listener({ sessionId, ...event });
+    },
     id: () => id,
   };
 }
@@ -50,7 +96,8 @@ function harness(overrides: Partial<SpeechBridge> = {}, callbacks: Partial<Host>
 describe('dictation draft insertion', () => {
   it('inserts at the selection while preserving existing text', () => {
     expect(dictationDraft({ text: 'Meet here tomorrow', selection: { start: 5, end: 9 } }, 'there')).toEqual({
-      text: 'Meet there tomorrow', selection: { start: 10, end: 10 },
+      text: 'Meet there tomorrow',
+      selection: { start: 10, end: 10 },
     });
     expect(dictationDraft({ text: 'Hello!', selection: { start: 5, end: 5 } }, 'world').text).toBe('Hello world!');
     expect(dictationDraft({ text: 'Hello', selection: { start: 5, end: 5 } }, '.').text).toBe('Hello.');
@@ -103,7 +150,7 @@ describe('dictation speech bridge', () => {
     h.event({ text: 'world!', state: 'ended' });
     await h.control.cancel();
     expect(h.draft().text).toBe('Hello everyone');
-    expect(h.events.filter(event => event.startsWith('cancel:'))).toHaveLength(1);
+    expect(h.events.filter((event) => event.startsWith('cancel:'))).toHaveLength(1);
   });
 
   it('ignores stale events from previous sessions', async () => {
@@ -129,7 +176,15 @@ describe('dictation speech bridge', () => {
   it('does not overlap starts and cancels pending microphone permission on leaving', async () => {
     const permission = Promise.withResolvers<boolean>();
     const entered = Promise.withResolvers<undefined>();
-    const h = harness({}, { permission: () => { entered.resolve(undefined); return permission.promise; } });
+    const h = harness(
+      {},
+      {
+        permission: () => {
+          entered.resolve(undefined);
+          return permission.promise;
+        },
+      },
+    );
     const starting = h.control.start();
     await entered.promise;
     await h.control.start();
@@ -137,14 +192,23 @@ describe('dictation speech bridge', () => {
     permission.resolve(true);
     await starting;
     expect(h.events).not.toContain('start');
-    expect(h.phases.filter(value => value === 'preparing')).toHaveLength(1);
+    expect(h.phases.filter((value) => value === 'preparing')).toHaveLength(1);
   });
 
   it('does not start after a permission grant races call takeover', async () => {
     const permission = Promise.withResolvers<boolean>();
     const entered = Promise.withResolvers<undefined>();
     let blocked = false;
-    const h = harness({}, { permission: () => { entered.resolve(undefined); return permission.promise; }, blocked: () => blocked });
+    const h = harness(
+      {},
+      {
+        permission: () => {
+          entered.resolve(undefined);
+          return permission.promise;
+        },
+        blocked: () => blocked,
+      },
+    );
     const starting = h.control.start();
     await entered.promise;
     blocked = true;
@@ -195,7 +259,15 @@ describe('dictation speech bridge', () => {
     expect(declined.events).not.toContain('download');
     const answer = Promise.withResolvers<boolean>();
     const entered = Promise.withResolvers<undefined>();
-    const gone = harness({ availability }, { confirmDownload: () => { entered.resolve(undefined); return answer.promise; } });
+    const gone = harness(
+      { availability },
+      {
+        confirmDownload: () => {
+          entered.resolve(undefined);
+          return answer.promise;
+        },
+      },
+    );
     const starting = gone.control.start();
     await entered.promise;
     await gone.control.dispose();
@@ -211,7 +283,7 @@ describe('dictation speech bridge', () => {
     h.event({ state: 'finishing' });
     h.event({ state: 'finishing' });
     await h.control.stop();
-    expect(h.events.filter(event => event === 'stop')).toHaveLength(0);
+    expect(h.events.filter((event) => event === 'stop')).toHaveLength(0);
     h.event({ text: 'final', state: 'ended' });
     expect(h.draft().text).toBe('Hello final');
   });
@@ -224,7 +296,7 @@ describe('dictation speech bridge', () => {
     await h.control.start();
     expect(h.errors).toContain('Language model unavailable');
     expect(h.draft().text).toBe('Hello draft');
-    expect(h.events.filter(event => event === 'start')).toHaveLength(2);
+    expect(h.events.filter((event) => event === 'start')).toHaveLength(2);
   });
 
   it('bounds listening and finalization even when the recognizer never ends', async () => {
@@ -233,7 +305,7 @@ describe('dictation speech bridge', () => {
     h.event({ text: 'kept' });
     await Bun.sleep(40);
     expect(h.events).toContain('stop');
-    expect(h.events.some(event => event.startsWith('cancel:'))).toBe(true);
+    expect(h.events.some((event) => event.startsWith('cancel:'))).toBe(true);
     expect(h.phases.at(-1)).toBe('idle');
     expect(h.draft().text).toBe('Hello kept');
   });
@@ -241,7 +313,12 @@ describe('dictation speech bridge', () => {
   it('honors cancellation while the native speech authorization dialog is open', async () => {
     const permission = Promise.withResolvers<boolean>();
     const entered = Promise.withResolvers<undefined>();
-    const h = harness({ requestPermission: () => { entered.resolve(undefined); return permission.promise; } });
+    const h = harness({
+      requestPermission: () => {
+        entered.resolve(undefined);
+        return permission.promise;
+      },
+    });
     const starting = h.control.start();
     await entered.promise;
     await h.control.cancel();
@@ -257,11 +334,11 @@ describe('dictation speech bridge', () => {
     const cancelling = h.control.cancel();
     const starting = h.control.start();
     await Bun.sleep(1);
-    expect(h.events.filter(event => event === 'start')).toHaveLength(1);
+    expect(h.events.filter((event) => event === 'start')).toHaveLength(1);
     cleaned.resolve(undefined);
     await cancelling;
     await starting;
-    expect(h.events.filter(event => event === 'start')).toHaveLength(2);
+    expect(h.events.filter((event) => event === 'start')).toHaveLength(2);
   });
 
   it('hands audio to voice recording without allowing dictation during voice preparation', async () => {
@@ -271,33 +348,42 @@ describe('dictation speech bridge', () => {
     await h.control.start();
     h.event({ text: 'kept' });
     const recording = h.control.recordVoice(() => {
-      expect(h.events.some(event => event.startsWith('cancel:'))).toBe(true);
+      expect(h.events.some((event) => event.startsWith('cancel:'))).toBe(true);
       entered.resolve(undefined);
       return preparing.promise;
     });
     await entered.promise;
     await h.control.start();
-    expect(h.events.filter(event => event === 'start')).toHaveLength(1);
+    expect(h.events.filter((event) => event === 'start')).toHaveLength(1);
     expect(h.draft().text).toBe('Hello kept');
     preparing.resolve(undefined);
     await recording;
     await h.control.start();
-    expect(h.events.filter(event => event === 'start')).toHaveLength(2);
+    expect(h.events.filter((event) => event === 'start')).toHaveLength(2);
   });
 
   it('rejects failed cleanup and blocks voice handoff until a successful retry', async () => {
-    let failing = true, recorded = false;
-    const h = harness({ cancel: async () => { if (failing) throw new Error('restore failed'); } });
+    let failing = true,
+      recorded = false;
+    const h = harness({
+      cancel: async () => {
+        if (failing) throw new Error('restore failed');
+      },
+    });
     await h.control.start();
     h.event({ text: 'kept' });
     await expect(h.control.cancel()).rejects.toThrow('restore failed');
-    await h.control.recordVoice(async () => { recorded = true; });
+    await h.control.recordVoice(async () => {
+      recorded = true;
+    });
     expect(recorded).toBe(false);
     expect(h.errors.at(-1)).toContain('Could not release dictation audio');
     expect(h.events).toContain('cleanup-error');
     expect(h.draft().text).toBe('Hello kept');
     failing = false;
-    await h.control.recordVoice(async () => { recorded = true; });
+    await h.control.recordVoice(async () => {
+      recorded = true;
+    });
     expect(recorded).toBe(true);
   });
 
@@ -305,16 +391,23 @@ describe('dictation speech bridge', () => {
     const entered = Promise.withResolvers<undefined>();
     const started = Promise.withResolvers<undefined>();
     let recorded = false;
-    const h = harness({ start: async () => { entered.resolve(undefined); await started.promise; } });
+    const h = harness({
+      start: async () => {
+        entered.resolve(undefined);
+        await started.promise;
+      },
+    });
     const starting = h.control.start();
     await entered.promise;
-    const handoff = h.control.recordVoice(async () => { recorded = true; });
+    const handoff = h.control.recordVoice(async () => {
+      recorded = true;
+    });
     await Bun.sleep(1);
     expect(recorded).toBe(false);
-    expect(h.events.filter(event => event.startsWith('cancel:'))).toHaveLength(1);
+    expect(h.events.filter((event) => event.startsWith('cancel:'))).toHaveLength(1);
     started.resolve(undefined);
     await Promise.all([starting, handoff]);
-    expect(h.events.filter(event => event.startsWith('cancel:'))).toHaveLength(2);
+    expect(h.events.filter((event) => event.startsWith('cancel:'))).toHaveLength(2);
     expect(recorded).toBe(true);
   });
 
@@ -322,7 +415,14 @@ describe('dictation speech bridge', () => {
     const entered = Promise.withResolvers<undefined>();
     const started = Promise.withResolvers<undefined>();
     let id = '';
-    const h = harness({ start: async value => { id = value; entered.resolve(undefined); await started.promise; throw new Error('start rejected'); } });
+    const h = harness({
+      start: async (value) => {
+        id = value;
+        entered.resolve(undefined);
+        await started.promise;
+        throw new Error('start rejected');
+      },
+    });
     const starting = h.control.start();
     await entered.promise;
     h.event({ error: 'Microphone activation failed', state: 'ended' }, id);
@@ -335,7 +435,15 @@ describe('dictation speech bridge', () => {
   it('stops inactive listening but does not cancel its own permission prompt', async () => {
     const permission = Promise.withResolvers<boolean>();
     const entered = Promise.withResolvers<undefined>();
-    const h = harness({}, { permission: () => { entered.resolve(undefined); return permission.promise; } });
+    const h = harness(
+      {},
+      {
+        permission: () => {
+          entered.resolve(undefined);
+          return permission.promise;
+        },
+      },
+    );
     const starting = h.control.start();
     await entered.promise;
     h.control.inactive();
@@ -353,13 +461,19 @@ describe('dictation speech bridge', () => {
   it('explains blocked voice recording instead of silently ignoring the action', async () => {
     const h = harness({}, { blocked: () => true });
     let recorded = false;
-    await h.control.recordVoice(async () => { recorded = true; });
+    await h.control.recordVoice(async () => {
+      recorded = true;
+    });
     expect(recorded).toBe(false);
     expect(h.errors.at(-1)).toContain('Stop the call');
   });
 
   it('keeps text if native stop fails', async () => {
-    const h = harness({ stop: async () => { throw new Error('failed'); } });
+    const h = harness({
+      stop: async () => {
+        throw new Error('failed');
+      },
+    });
     await h.control.start();
     h.event({ text: 'kept' });
     await h.control.stop();

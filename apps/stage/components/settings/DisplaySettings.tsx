@@ -1,11 +1,6 @@
-import {
-  setThemePreference, setCustomTheme, useCustomTheme,
-  useThemePreference,
-} from '../../lib/theme';
+import { setThemePreference, setCustomTheme, useCustomTheme, useThemePreference } from '../../lib/theme';
 import { ColorTokens } from '../system/ColorTokens';
-import {
-  SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow, THEME_OPTIONS,
-} from './SettingsPage';
+import { SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow, THEME_OPTIONS } from './SettingsPage';
 import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColorSwatch';
 import { Column, PAGE_GUTTER } from '../layout';
 
@@ -32,7 +27,9 @@ export function DisplaySettings(): React.ReactElement {
           label="Custom"
           iconName={IconColorSwatch}
           selected={custom}
-          onPress={() => { setCustomTheme(true); }}
+          onPress={() => {
+            setCustomTheme(true);
+          }}
         />
       </SettingsGroup>
 
@@ -40,7 +37,7 @@ export function DisplaySettings(): React.ReactElement {
         <>
           <SettingsSectionLabel>Custom colors</SettingsSectionLabel>
           <Column padding={{ x: PAGE_GUTTER }}>
-            <ColorTokens/>
+            <ColorTokens />
           </Column>
         </>
       ) : null}

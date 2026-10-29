@@ -30,14 +30,31 @@ function ProjectButton({ value, onPress }: { value: string | null; onPress: (poi
   const { hovered, hoverProps } = useHover();
   const color = hovered ? link : value === null ? sub : text;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={value === null ? TITLE : `${TITLE}: ${value}`}
-      onPress={e => { onPress(menuPointAbove(e)); }} {...hoverProps}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={value === null ? TITLE : `${TITLE}: ${value}`}
+      onPress={(e) => {
+        onPress(menuPointAbove(e));
+      }}
+      {...hoverProps}
       style={{
-        flexDirection: 'row', alignItems: 'center', gap: 4, height: BUTTON_HEIGHT, paddingHorizontal: TEXT_INSET, borderRadius: 999,
-        backgroundColor: 'transparent', flexShrink: 1, minWidth: 0,
-      }}>
-      <Text size="md" color={color} truncate style={{ maxWidth: VALUE_MAX_WIDTH, flexShrink: 1, minWidth: 0 }}>{value ?? TITLE}</Text>
-      <Column style={NO_SHRINK}><Glyph icon={IconChevronDownSmall} size={16} color={color}/></Column>
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        height: BUTTON_HEIGHT,
+        paddingHorizontal: TEXT_INSET,
+        borderRadius: 999,
+        backgroundColor: 'transparent',
+        flexShrink: 1,
+        minWidth: 0,
+      }}
+    >
+      <Text size="md" color={color} truncate style={{ maxWidth: VALUE_MAX_WIDTH, flexShrink: 1, minWidth: 0 }}>
+        {value ?? TITLE}
+      </Text>
+      <Column style={NO_SHRINK}>
+        <Glyph icon={IconChevronDownSmall} size={16} color={color} />
+      </Column>
     </Pressable>
   );
 }
@@ -47,25 +64,51 @@ function ProjectMenu({ value, pick }: { value: string | null; pick: (next: strin
   const [query, setQuery] = useState('');
   const current = value === null ? [] : [value];
   const { shown, typed, creatable } = tagSearch(query, projects, current);
-  const create = (): void => { if (creatable) pick(typed); };
+  const create = (): void => {
+    if (creatable) pick(typed);
+  };
   return (
     <>
-      <PickerSearch value={query} onChangeText={setQuery} placeholder="Search or create" onSubmit={create}/>
+      <PickerSearch value={query} onChangeText={setQuery} placeholder="Search or create" onSubmit={create} />
       <PickerList>
-        {shown.map(project => {
+        {shown.map((project) => {
           const selected = includesKey(current, project);
-          return <MenuRow key={project.toLowerCase()} label={project} selected={selected} onPress={() => { pick(selected ? null : project); }}/>;
+          return (
+            <MenuRow
+              key={project.toLowerCase()}
+              label={project}
+              selected={selected}
+              onPress={() => {
+                pick(selected ? null : project);
+              }}
+            />
+          );
         })}
-        {creatable ? <MenuRow icon={IconPlusLarge} label={`Create "${typed}"`} onPress={create}/> : null}
-        {shown.length === 0 && !creatable ? <PickerNote text={`Type to create a ${NOUN}.`}/> : null}
+        {creatable ? <MenuRow icon={IconPlusLarge} label={`Create "${typed}"`} onPress={create} /> : null}
+        {shown.length === 0 && !creatable ? <PickerNote text={`Type to create a ${NOUN}.`} /> : null}
       </PickerList>
-      {value === null ? null : <MenuRow divider icon={IconCrossMedium} label={`Clear ${NOUN}`} onPress={() => { pick(null); }}/>}
+      {value === null ? null : (
+        <MenuRow
+          divider
+          icon={IconCrossMedium}
+          label={`Clear ${NOUN}`}
+          onPress={() => {
+            pick(null);
+          }}
+        />
+      )}
     </>
   );
 }
 
-export function NewChatProject({ value, onChange, flush }: {
-  value: string | null; onChange: (next: string | null) => void; flush?: boolean;
+export function NewChatProject({
+  value,
+  onChange,
+  flush,
+}: {
+  value: string | null;
+  onChange: (next: string | null) => void;
+  flush?: boolean;
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
@@ -76,11 +119,20 @@ export function NewChatProject({ value, onChange, flush }: {
   return (
     <>
       <Row padding={{ left: flush === true ? 0 : PAGE_GUTTER - TEXT_INSET }}>
-        <ProjectButton value={value} onPress={setAnchor}/>
+        <ProjectButton value={value} onPress={setAnchor} />
       </Row>
       {anchor === null ? null : (
-        <AnchoredMenu visible anchor={anchor} onClose={() => { setAnchor(null); }} avoidKeyboard>
-          <Column width={anchored ? PICKER_WIDTH : undefined}><ProjectMenu value={value} pick={pick}/></Column>
+        <AnchoredMenu
+          visible
+          anchor={anchor}
+          onClose={() => {
+            setAnchor(null);
+          }}
+          avoidKeyboard
+        >
+          <Column width={anchored ? PICKER_WIDTH : undefined}>
+            <ProjectMenu value={value} pick={pick} />
+          </Column>
         </AnchoredMenu>
       )}
     </>

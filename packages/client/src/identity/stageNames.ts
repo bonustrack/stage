@@ -16,9 +16,12 @@ export function validateStageLabel(label: string): LabelProblem | null {
 
 export function describeLabelProblem(problem: LabelProblem): string {
   switch (problem) {
-    case 'too-short': return `At least ${STAGE_NAME_MIN_LENGTH} characters.`;
-    case 'too-long': return `At most ${STAGE_NAME_MAX_LENGTH} characters.`;
-    case 'characters': return 'Only a-z, 0-9 and single inner hyphens.';
+    case 'too-short':
+      return `At least ${STAGE_NAME_MIN_LENGTH} characters.`;
+    case 'too-long':
+      return `At most ${STAGE_NAME_MAX_LENGTH} characters.`;
+    case 'characters':
+      return 'Only a-z, 0-9 and single inner hyphens.';
   }
 }
 
@@ -68,20 +71,96 @@ export async function fetchIssuedAddress(proxyBase: string, label: string): Prom
   return nonEmptyString((await namesGet(proxyBase, `resolve?label=${encodeURIComponent(label)}`))?.address);
 }
 
-export interface UsernameWords { adjective: string; noun: string; digits: string }
+export interface UsernameWords {
+  adjective: string;
+  noun: string;
+  digits: string;
+}
 
 const ADJECTIVES = [
-  'brave', 'calm', 'bright', 'swift', 'quiet', 'bold', 'clever', 'gentle', 'happy', 'lucky',
-  'mellow', 'nimble', 'proud', 'rapid', 'shiny', 'silent', 'sunny', 'witty', 'zesty', 'cosmic',
-  'golden', 'silver', 'crimson', 'amber', 'misty', 'rustic', 'frosty', 'breezy', 'cozy', 'daring',
-  'eager', 'fancy', 'fuzzy', 'jolly', 'keen', 'lively', 'merry', 'noble', 'plucky', 'spry',
+  'brave',
+  'calm',
+  'bright',
+  'swift',
+  'quiet',
+  'bold',
+  'clever',
+  'gentle',
+  'happy',
+  'lucky',
+  'mellow',
+  'nimble',
+  'proud',
+  'rapid',
+  'shiny',
+  'silent',
+  'sunny',
+  'witty',
+  'zesty',
+  'cosmic',
+  'golden',
+  'silver',
+  'crimson',
+  'amber',
+  'misty',
+  'rustic',
+  'frosty',
+  'breezy',
+  'cozy',
+  'daring',
+  'eager',
+  'fancy',
+  'fuzzy',
+  'jolly',
+  'keen',
+  'lively',
+  'merry',
+  'noble',
+  'plucky',
+  'spry',
 ];
 
 const NOUNS = [
-  'otter', 'falcon', 'maple', 'river', 'comet', 'panda', 'tiger', 'harbor', 'meadow', 'pebble',
-  'badger', 'cedar', 'dolphin', 'ember', 'fox', 'glacier', 'heron', 'island', 'jaguar', 'koala',
-  'lantern', 'magpie', 'nebula', 'orchid', 'parrot', 'quartz', 'raven', 'sparrow', 'thunder', 'walrus',
-  'willow', 'yak', 'zebra', 'canyon', 'breeze', 'lynx', 'moose', 'puffin', 'summit', 'violet',
+  'otter',
+  'falcon',
+  'maple',
+  'river',
+  'comet',
+  'panda',
+  'tiger',
+  'harbor',
+  'meadow',
+  'pebble',
+  'badger',
+  'cedar',
+  'dolphin',
+  'ember',
+  'fox',
+  'glacier',
+  'heron',
+  'island',
+  'jaguar',
+  'koala',
+  'lantern',
+  'magpie',
+  'nebula',
+  'orchid',
+  'parrot',
+  'quartz',
+  'raven',
+  'sparrow',
+  'thunder',
+  'walrus',
+  'willow',
+  'yak',
+  'zebra',
+  'canyon',
+  'breeze',
+  'lynx',
+  'moose',
+  'puffin',
+  'summit',
+  'violet',
 ];
 
 function clean(word: string): string {

@@ -31,7 +31,11 @@ async function settlePayment(resource: string, paymentHeader: string): Promise<X
   };
 }
 
-export async function payX402Exact({ resource, accept, x402Version }: {
+export async function payX402Exact({
+  resource,
+  accept,
+  x402Version,
+}: {
   resource: string;
   accept: X402Accept;
   x402Version?: number;

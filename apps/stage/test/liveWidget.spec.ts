@@ -2,8 +2,21 @@ import { describe, expect, test } from 'bun:test';
 import { newNodeKey, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import { ownNodeUrl } from '@stage-labs/client/nodes/publish';
 import {
-  EMPTY_LIVE, LIVE_REFRESH_MS, NODE_URL_HINTS, liveConfirmOf, livePreviewOf, liveProblemText, liveRefetchInterval, liveRefreshDelay,
-  liveSnapshotJson, liveSnapshotOf, liveStateAfter, liveStatusText, ownsHostedNode, publishProblemText, type LiveState,
+  EMPTY_LIVE,
+  LIVE_REFRESH_MS,
+  NODE_URL_HINTS,
+  liveConfirmOf,
+  livePreviewOf,
+  liveProblemText,
+  liveRefetchInterval,
+  liveRefreshDelay,
+  liveSnapshotJson,
+  liveSnapshotOf,
+  liveStateAfter,
+  liveStatusText,
+  ownsHostedNode,
+  publishProblemText,
+  type LiveState,
 } from '../components/dashboard/liveWidget.model';
 import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
 import { REFUSED_MESSAGES, titleMessages } from './frameFixtures';
@@ -18,18 +31,36 @@ describe('live widget state', () => {
   test('a node frame replaces the shown frame and clears any problem', () => {
     expect(liveStateAfter(EMPTY_LIVE, frameReply(CARD), 1_000)).toEqual(shown);
     const failing = { ...shown, problem: 'timeout' as const, failures: 3 };
-    expect(liveStateAfter(failing, frameReply(NEXT), 2_000)).toEqual({ frame: { messages: NEXT }, at: 2_000, problem: null, status: null, failures: 0 });
+    expect(liveStateAfter(failing, frameReply(NEXT), 2_000)).toEqual({
+      frame: { messages: NEXT },
+      at: 2_000,
+      problem: null,
+      status: null,
+      failures: 0,
+    });
   });
 
   test('a failure keeps the last good frame and its time, and counts the failures', () => {
     const once = liveStateAfter(shown, { ok: false, problem: 'unreachable' }, 2_000);
     expect(once).toEqual({ ...shown, problem: 'unreachable', failures: 1 });
-    expect(liveStateAfter(once, { ok: false, problem: 'status', status: 503 }, 3_000)).toEqual({ ...shown, problem: 'status', status: 503, failures: 2 });
+    expect(liveStateAfter(once, { ok: false, problem: 'status', status: 503 }, 3_000)).toEqual({
+      ...shown,
+      problem: 'status',
+      status: 503,
+      failures: 2,
+    });
   });
 
   test('an unchanged reply confirms the shown frame, and is a problem when nothing is shown yet', () => {
-    expect(liveStateAfter({ ...shown, problem: 'timeout', failures: 2 }, { ok: true, reply: { kind: 'unchanged' } }, 5_000)).toEqual({ ...shown, at: 5_000 });
-    expect(liveStateAfter(EMPTY_LIVE, { ok: true, reply: { kind: 'unchanged' } }, 5_000)).toEqual({ ...EMPTY_LIVE, problem: 'empty', failures: 1 });
+    expect(liveStateAfter({ ...shown, problem: 'timeout', failures: 2 }, { ok: true, reply: { kind: 'unchanged' } }, 5_000)).toEqual({
+      ...shown,
+      at: 5_000,
+    });
+    expect(liveStateAfter(EMPTY_LIVE, { ok: true, reply: { kind: 'unchanged' } }, 5_000)).toEqual({
+      ...EMPTY_LIVE,
+      problem: 'empty',
+      failures: 1,
+    });
   });
 
   test('a frame the renderer refuses counts as an invalid reply', () => {
@@ -37,7 +68,10 @@ describe('live widget state', () => {
   });
 
   test('a reply of A2UI messages goes to the live client, and is a problem when nothing is shown yet', () => {
-    const update = { version: 'v1.0', updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$105' }] } };
+    const update = {
+      version: 'v1.0',
+      updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$105' }] },
+    };
     const reply = { ok: true, reply: { kind: 'messages', messages: [update] } } as const;
     const next = { messages: titleMessages('$105') };
     expect(liveStateAfter(shown, reply, 3_000, { kind: 'frame', frame: next })).toEqual({ ...shown, frame: next, at: 3_000 });
@@ -51,7 +85,9 @@ describe('live widget refresh', () => {
   test('refreshes every minute while active, backs off after failures up to 5 minutes, and never while hidden', () => {
     expect(LIVE_REFRESH_MS).toBe(60_000);
     expect(liveRefreshDelay(undefined)).toBe(60_000);
-    expect([0, 1, 2, 3, 9].map(failures => liveRefreshDelay({ ...shown, failures }))).toEqual([60_000, 120_000, 240_000, 300_000, 300_000]);
+    expect([0, 1, 2, 3, 9].map((failures) => liveRefreshDelay({ ...shown, failures }))).toEqual([
+      60_000, 120_000, 240_000, 300_000, 300_000,
+    ]);
     expect(liveRefetchInterval(true, shown)).toBe(60_000);
     expect(liveRefetchInterval(false, shown)).toBe(false);
     expect(liveRefetchInterval(false, undefined)).toBe(false);
@@ -117,13 +153,15 @@ describe('hosted nodes', () => {
     expect(publishProblemText('not-ready')).toBe('Node hosting is not set up yet');
     expect(publishProblemText('too-large')).toBe('The code is over 64 KB');
     expect(publishProblemText('refused')).toBe('The code was refused');
-    expect(publishProblemText('refused', 'Uncaught SyntaxError: Unexpected token')).toBe('Code error: Uncaught SyntaxError: Unexpected token');
+    expect(publishProblemText('refused', 'Uncaught SyntaxError: Unexpected token')).toBe(
+      'Code error: Uncaught SyntaxError: Unexpected token',
+    );
   });
 
   test('adding a hosted node from a chat says its code does not see the account and its images see the IP address', () => {
     expect(liveConfirmOf('nodes.stage.box').message).toBe(
-      'It runs code a Stage user put on nodes.stage.box, every minute while your Dashboard is open. That code does not see your account. '
-      + 'Images it shows load from their own sites, which see your IP address.',
+      'It runs code a Stage user put on nodes.stage.box, every minute while your Dashboard is open. That code does not see your account. ' +
+        'Images it shows load from their own sites, which see your IP address.',
     );
   });
 

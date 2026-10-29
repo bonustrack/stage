@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  setupHint, setupLinks, setupStages, setupTitle, stageLabel, stageState,
-} from '../components/onboarding/Onboarding.setup.model';
+import { setupHint, setupLinks, setupStages, setupTitle, stageLabel, stageState } from '../components/onboarding/Onboarding.setup.model';
 
 describe('setupStages', () => {
   test('creates an account with wallet, messaging and optional profile', () => {

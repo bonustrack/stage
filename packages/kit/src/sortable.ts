@@ -1,6 +1,11 @@
 export type SortDirection = 'vertical' | 'horizontal';
 
-export interface SortRect { x: number; y: number; width: number; height: number }
+export interface SortRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export interface SortMove {
   itemId: string;
@@ -12,7 +17,10 @@ export interface SortMove {
   afterId: string | null;
 }
 
-export interface SortItemLayout { id: string; rect: SortRect }
+export interface SortItemLayout {
+  id: string;
+  rect: SortRect;
+}
 
 export interface SortListLayout {
   listId: string;
@@ -22,20 +30,31 @@ export interface SortListLayout {
   items: readonly SortItemLayout[];
 }
 
-export interface SortOrigin { itemId: string; listId: string; index: number }
+export interface SortOrigin {
+  itemId: string;
+  listId: string;
+  index: number;
+}
 
-export interface SortTarget { listId: string; index: number }
+export interface SortTarget {
+  listId: string;
+  index: number;
+}
 
 export type SortStep = 'backward' | 'forward' | 'previousList' | 'nextList';
 
-export interface SortSlot { listId: string; beforeId: string | null; afterId: string | null }
+export interface SortSlot {
+  listId: string;
+  beforeId: string | null;
+  afterId: string | null;
+}
 
 export function rectContains(rect: SortRect, x: number, y: number): boolean {
   return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
 }
 
 export function listAt(lists: readonly SortListLayout[], x: number, y: number): SortListLayout | undefined {
-  const hits = lists.filter(list => rectContains(list.rect, x, y));
+  const hits = lists.filter((list) => rectContains(list.rect, x, y));
   return hits.sort((a, b) => a.rect.width * a.rect.height - b.rect.width * b.rect.height)[0];
 }
 
@@ -44,29 +63,28 @@ function gapTo(start: number, size: number, point: number): number {
 }
 
 export function nearestList(lists: readonly SortListLayout[], x: number, y: number, maxGap = Infinity): SortListLayout | undefined {
-  const across = lists.filter(({ direction, rect }) => (
-    direction === 'vertical' ? x >= rect.x && x <= rect.x + rect.width : y >= rect.y && y <= rect.y + rect.height
-  ));
-  const distance = ({ direction, rect }: SortListLayout): number => (
-    direction === 'vertical' ? gapTo(rect.y, rect.height, y) : gapTo(rect.x, rect.width, x)
+  const across = lists.filter(({ direction, rect }) =>
+    direction === 'vertical' ? x >= rect.x && x <= rect.x + rect.width : y >= rect.y && y <= rect.y + rect.height,
   );
-  return across.filter(list => distance(list) <= maxGap).sort((a, b) => distance(a) - distance(b))[0];
+  const distance = ({ direction, rect }: SortListLayout): number =>
+    direction === 'vertical' ? gapTo(rect.y, rect.height, y) : gapTo(rect.x, rect.width, x);
+  return across.filter((list) => distance(list) <= maxGap).sort((a, b) => distance(a) - distance(b))[0];
 }
 
 export function unionRect(rects: readonly (SortRect | null)[]): SortRect | null {
   const known = rects.filter((rect): rect is SortRect => rect !== null);
   if (known.length === 0) return null;
-  const x = Math.min(...known.map(r => r.x));
-  const y = Math.min(...known.map(r => r.y));
-  return { x, y, width: Math.max(...known.map(r => r.x + r.width)) - x, height: Math.max(...known.map(r => r.y + r.height)) - y };
+  const x = Math.min(...known.map((r) => r.x));
+  const y = Math.min(...known.map((r) => r.y));
+  return { x, y, width: Math.max(...known.map((r) => r.x + r.width)) - x, height: Math.max(...known.map((r) => r.y + r.height)) - y };
 }
 
 function others(list: SortListLayout, itemId: string): readonly SortItemLayout[] {
-  return list.items.filter(item => item.id !== itemId);
+  return list.items.filter((item) => item.id !== itemId);
 }
 
 function otherIds(list: SortListLayout, itemId: string): readonly string[] {
-  return list.ids.filter(id => id !== itemId);
+  return list.ids.filter((id) => id !== itemId);
 }
 
 function middleOf(list: SortListLayout, rect: SortRect): number {
@@ -76,8 +94,8 @@ function middleOf(list: SortListLayout, rect: SortRect): number {
 export function insertionIndex(list: SortListLayout, itemId: string, x: number, y: number): number {
   const point = list.direction === 'vertical' ? y : x;
   const ids = otherIds(list, itemId);
-  const measured = others(list, itemId).filter(item => ids.includes(item.id));
-  const before = measured.filter(item => middleOf(list, item.rect) < point).pop();
+  const measured = others(list, itemId).filter((item) => ids.includes(item.id));
+  const before = measured.filter((item) => middleOf(list, item.rect) < point).pop();
   if (before !== undefined) return ids.indexOf(before.id) + 1;
   const after = measured[0];
   return after === undefined ? 0 : ids.indexOf(after.id);
@@ -85,11 +103,19 @@ export function insertionIndex(list: SortListLayout, itemId: string, x: number, 
 
 export function sortMove(origin: SortOrigin, target: SortListLayout, index: number): SortMove {
   const { beforeId, afterId } = slotAt(target.listId, target.ids, origin.itemId, index);
-  return { itemId: origin.itemId, fromListId: origin.listId, toListId: target.listId, fromIndex: origin.index, toIndex: index, beforeId, afterId };
+  return {
+    itemId: origin.itemId,
+    fromListId: origin.listId,
+    toListId: target.listId,
+    fromIndex: origin.index,
+    toIndex: index,
+    beforeId,
+    afterId,
+  };
 }
 
 export function slotAt(listId: string, ids: readonly string[], itemId: string, index: number): SortSlot {
-  const rest = ids.filter(id => id !== itemId);
+  const rest = ids.filter((id) => id !== itemId);
   return { listId, beforeId: rest[index - 1] ?? null, afterId: rest[index] ?? null };
 }
 
@@ -101,10 +127,8 @@ export function isNoMove(move: SortMove): boolean {
   return move.fromListId === move.toListId && move.fromIndex === move.toIndex;
 }
 
-export function stepTarget(
-  lists: readonly SortListLayout[], itemId: string, current: SortTarget, step: SortStep,
-): SortTarget {
-  const at = lists.findIndex(list => list.listId === current.listId);
+export function stepTarget(lists: readonly SortListLayout[], itemId: string, current: SortTarget, step: SortStep): SortTarget {
+  const at = lists.findIndex((list) => list.listId === current.listId);
   const list = lists[at];
   if (list === undefined) return current;
   if (step === 'backward' || step === 'forward') {
@@ -118,7 +142,7 @@ export function stepTarget(
 }
 
 function rectOf(list: SortListLayout, id: string | undefined): SortRect | undefined {
-  return id === undefined ? undefined : list.items.find(item => item.id === id)?.rect;
+  return id === undefined ? undefined : list.items.find((item) => item.id === id)?.rect;
 }
 
 export function indicatorRect(list: SortListLayout, itemId: string, index: number, thickness: number): SortRect {
@@ -134,7 +158,7 @@ export function indicatorRect(list: SortListLayout, itemId: string, index: numbe
   };
   const low = edge(before, true);
   const high = edge(after, false);
-  const middle = low !== undefined && high !== undefined ? (low + high) / 2 : low ?? high ?? start;
+  const middle = low !== undefined && high !== undefined ? (low + high) / 2 : (low ?? high ?? start);
   const size = vertical ? list.rect.height : list.rect.width;
   const offset = Math.max(0, Math.min(size - thickness, middle - start - thickness / 2));
   return vertical
@@ -143,7 +167,10 @@ export function indicatorRect(list: SortListLayout, itemId: string, index: numbe
 }
 
 export function movedItems<T>(
-  source: readonly T[], target: readonly T[] | null, fromIndex: number, toIndex: number,
+  source: readonly T[],
+  target: readonly T[] | null,
+  fromIndex: number,
+  toIndex: number,
 ): { source: T[]; target: T[] } {
   const item = source[fromIndex];
   const rest = source.filter((_, index) => index !== fromIndex);

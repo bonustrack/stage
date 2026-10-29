@@ -38,10 +38,10 @@ async function persist(list: AccountRecord[]): Promise<void> {
 }
 
 async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
-  if (!list.some(a => a.type === 'smart' && a.phraseId === undefined)) return list;
+  if (!list.some((a) => a.type === 'smart' && a.phraseId === undefined)) return list;
   const primary = await primaryPhraseId().catch(recover('accounts.phraseIds', null));
   if (!primary) return list;
-  const next = list.map(a => (a.type === 'smart' && a.phraseId === undefined ? { ...a, phraseId: primary } : a));
+  const next = list.map((a) => (a.type === 'smart' && a.phraseId === undefined ? { ...a, phraseId: primary } : a));
   await persist(next);
   return next;
 }
@@ -49,7 +49,7 @@ async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
 function parseStoredList(raw: string): AccountRecord[] | null {
   try {
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as AccountRecord[]).filter(a => ACCOUNT_TYPES.includes(a.type)) : null;
+    return Array.isArray(parsed) ? (parsed as AccountRecord[]).filter((a) => ACCOUNT_TYPES.includes(a.type)) : null;
   } catch {
     return null;
   }
@@ -73,11 +73,13 @@ async function loadList(strict: boolean): Promise<AccountRecord[]> {
     return cache;
   }
   const adopted = await adoptLegacyKey();
-  if (!adopted) { cache = []; return cache; }
-  const list: AccountRecord[] = [{
-    id: adopted.id, address: adopted.address, type: 'generated',
-    dbDir: LEGACY_DB_DIR, registered: true, createdAt: Date.now(),
-  }];
+  if (!adopted) {
+    cache = [];
+    return cache;
+  }
+  const list: AccountRecord[] = [
+    { id: adopted.id, address: adopted.address, type: 'generated', dbDir: LEGACY_DB_DIR, registered: true, createdAt: Date.now() },
+  ];
   await secureStorage.set(ACTIVE_KEY, adopted.id);
   await persist(list);
   return list;
@@ -118,8 +120,12 @@ async function activeAccount(strict: boolean): Promise<AccountRecord | null> {
   return resolveActiveAccount(list, id);
 }
 
-export function getActiveAccount(): Promise<AccountRecord | null> { return activeAccount(false); }
-export function getActiveAccountStrict(): Promise<AccountRecord | null> { return activeAccount(true); }
+export function getActiveAccount(): Promise<AccountRecord | null> {
+  return activeAccount(false);
+}
+export function getActiveAccountStrict(): Promise<AccountRecord | null> {
+  return activeAccount(true);
+}
 
 export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> {
   const rec = await getActiveAccount();
@@ -130,9 +136,9 @@ export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> 
 export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord> {
   const id = rec.id.toLowerCase();
   const list = await loadAccountsForWrite();
-  const existing = list.find(a => a.id === id);
+  const existing = list.find((a) => a.id === id);
   const record = { ...existing, ...rec, id };
-  await persist(existing ? list.map(a => (a.id === id ? record : a)) : [...list, record]);
+  await persist(existing ? list.map((a) => (a.id === id ? record : a)) : [...list, record]);
   await setActiveAccountId(id);
   return record;
 }
@@ -148,20 +154,20 @@ export async function addPrivateKeyAccount(pk: Hex): Promise<AccountRecord> {
 
 export async function nextSmartHdIndex(phraseId: string): Promise<number> {
   const list = await loadAccountsForWrite();
-  const used = list.flatMap(a => (a.type === 'smart' && a.phraseId === phraseId && a.hdIndex !== undefined ? [a.hdIndex] : []));
+  const used = list.flatMap((a) => (a.type === 'smart' && a.phraseId === phraseId && a.hdIndex !== undefined ? [a.hdIndex] : []));
   return nextHdIndex(used, await readSmartHdIndexHighWater(phraseId));
 }
 
 export async function markRegistered(id: string): Promise<void> {
   const list = await loadAccountsForWrite();
-  const rec = list.find(a => a.id === id);
-  if (rec && !rec.registered) await persist(list.map(a => (a.id === id ? { ...a, registered: true } : a)));
+  const rec = list.find((a) => a.id === id);
+  if (rec && !rec.registered) await persist(list.map((a) => (a.id === id ? { ...a, registered: true } : a)));
 }
 
 export async function removeAccount(id: string): Promise<AccountRecord[]> {
   const list = await loadAccountsForWrite();
-  const rec = list.find(a => a.id === id);
-  const next = list.filter(a => a.id !== id);
+  const rec = list.find((a) => a.id === id);
+  const next = list.filter((a) => a.id !== id);
   try {
     await deleteKey(id);
     await persist(next);
@@ -172,7 +178,7 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
       else await secureStorage.delete(ACTIVE_KEY).catch(ignored(undefined, 'cleanup'));
     }
     const removedPhrase = rec?.type === 'smart' ? rec.phraseId : undefined;
-    const stillUsed = new Set(next.flatMap(a => (a.type === 'smart' && a.phraseId ? [a.phraseId] : [])));
+    const stillUsed = new Set(next.flatMap((a) => (a.type === 'smart' && a.phraseId ? [a.phraseId] : [])));
     if (removedPhrase && !stillUsed.has(removedPhrase)) {
       await deletePhrase(removedPhrase, [...stillUsed][0] ?? null);
     }

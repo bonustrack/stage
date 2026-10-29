@@ -7,7 +7,8 @@ export default { title: 'Card' };
 
 export const Controls: Story<CardProps & { statusText: string; withActions: boolean }> = ({ statusText, withActions, ...args }) => (
   <Card
-    {...args} dark={useDark()}
+    {...args}
+    dark={useDark()}
     status={statusText ? { text: statusText } : undefined}
     confirm={withActions ? { label: 'Confirm', onPress: () => undefined } : undefined}
     cancel={withActions ? { label: 'Cancel', onPress: () => undefined } : undefined}
@@ -16,4 +17,12 @@ export const Controls: Story<CardProps & { statusText: string; withActions: bool
   </Card>
 );
 Controls.args = { size: 'md', collapsed: false, statusText: 'Status line', withActions: true };
-Controls.argTypes = { size: select(['sm', 'md', 'lg']), padding: number, background: color, collapsed: bool, statusText: text, withActions: bool, weight: number };
+Controls.argTypes = {
+  size: select(['sm', 'md', 'lg']),
+  padding: number,
+  background: color,
+  collapsed: bool,
+  statusText: text,
+  withActions: bool,
+  weight: number,
+};

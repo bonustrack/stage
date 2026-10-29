@@ -1,5 +1,9 @@
 type Fetch = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
-interface Reply { response: Response; ok: boolean; controller: AbortController }
+interface Reply {
+  response: Response;
+  ok: boolean;
+  controller: AbortController;
+}
 
 const METHODS = new Set([
   '/xmtp.identity.api.v1.IdentityApi/GetIdentityUpdates',
@@ -27,7 +31,11 @@ async function readReply(response: Response, controller: AbortController): Promi
   if (!response.ok || (header !== null && header !== '0') || !binary) return { response, controller, ok: false };
   const body = await response.arrayBuffer();
   return {
-    response: new Response(body.byteLength ? body : null, { status: response.status, statusText: response.statusText, headers: response.headers }),
+    response: new Response(body.byteLength ? body : null, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    }),
     controller,
     ok: statusFromFrames(body, header) === '0',
   };
@@ -38,18 +46,28 @@ async function hedge(request: Request, fetch: Fetch, delayMs: number): Promise<R
   const backup = new AbortController();
   let winner: AbortController | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const run = (controller: AbortController) => fetch(request.clone(), {
-    signal: AbortSignal.any([request.signal, controller.signal]),
-  }).then((response) => readReply(response, controller));
+  const run = (controller: AbortController) =>
+    fetch(request.clone(), { signal: AbortSignal.any([request.signal, controller.signal]) }).then((response) =>
+      readReply(response, controller),
+    );
   try {
     request.signal.throwIfAborted();
     const first = run(original);
-    const elapsed = new Promise<null>((resolve) => { timer = setTimeout(() => { resolve(null); }, delayMs); });
+    const elapsed = new Promise<null>((resolve) => {
+      timer = setTimeout(() => {
+        resolve(null);
+      }, delayMs);
+    });
     const early = await Promise.race([first, elapsed]);
-    const result = early ?? await Promise.race([
-      first,
-      run(backup).then((reply) => reply.ok ? reply : first, () => first),
-    ]);
+    const result =
+      early ??
+      (await Promise.race([
+        first,
+        run(backup).then(
+          (reply) => (reply.ok ? reply : first),
+          () => first,
+        ),
+      ]));
     request.signal.throwIfAborted();
     winner = result.controller;
     return result.response;
@@ -66,16 +84,25 @@ export function createXmtpSendFetch(fetch: Fetch, delayMs = 300) {
   return {
     async send<T>(run: () => Promise<T>): Promise<T> {
       sends++;
-      try { return await run(); } finally { sends--; }
+      try {
+        return await run();
+      } finally {
+        sends--;
+      }
     },
     async fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
       if (!sends) return fetch(input, init);
       const url = new URL(input instanceof Request ? input.url : String(input));
-      if (url.protocol !== 'https:' || !HOSTS.has(url.host) || !METHODS.has(url.pathname) || inFlight.has(url.pathname)) return fetch(input, init);
+      if (url.protocol !== 'https:' || !HOSTS.has(url.host) || !METHODS.has(url.pathname) || inFlight.has(url.pathname))
+        return fetch(input, init);
       const request = new Request(input, init);
       if (request.method !== 'POST' || request.headers.get('content-type') !== 'application/grpc-web+proto') return fetch(request);
       inFlight.add(url.pathname);
-      try { return await hedge(request, fetch, delayMs); } finally { inFlight.delete(url.pathname); }
+      try {
+        return await hedge(request, fetch, delayMs);
+      } finally {
+        inFlight.delete(url.pathname);
+      }
     },
   };
 }

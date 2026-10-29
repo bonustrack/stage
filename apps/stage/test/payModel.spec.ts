@@ -5,8 +5,9 @@ const BASE = 8453;
 
 describe('paymentBlocker', () => {
   test('a smart account refuses to pay on any chain but Base instead of rerouting', () => {
-    expect(paymentBlocker({ callCount: 1, chainId: 1, chainName: 'Ethereum', smartAccount: true }))
-      .toBe('This payment is on Ethereum. Your Stage wallet pays on Base only.');
+    expect(paymentBlocker({ callCount: 1, chainId: 1, chainName: 'Ethereum', smartAccount: true })).toBe(
+      'This payment is on Ethereum. Your Stage wallet pays on Base only.',
+    );
     expect(paymentBlocker({ callCount: 1, chainId: BASE, chainName: 'Base', smartAccount: true })).toBeNull();
   });
 

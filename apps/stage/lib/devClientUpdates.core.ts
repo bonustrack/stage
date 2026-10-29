@@ -1,12 +1,23 @@
 import {
-  compatibleMainUrl, freshUrl, parsePreviewManifest, previewFromStatus, statusUrl,
-  type MainUpdate, type PreviewManifest,
+  compatibleMainUrl,
+  freshUrl,
+  parsePreviewManifest,
+  previewFromStatus,
+  statusUrl,
+  type MainUpdate,
+  type PreviewManifest,
 } from '../components/settings/DevClientUpdate.model';
 
 export type UpdateRequest = (url: string, headers: Record<string, string>) => Promise<{ body: string; contentType: string }>;
 
-export async function findCompatibleMainUpdate(request: UpdateRequest, runtime: string, platform: string, stamp: number): Promise<MainUpdate> {
-  if (!runtime || (platform !== 'android' && platform !== 'ios')) throw new Error('This dev client has no known native runtime. Nothing was loaded.');
+export async function findCompatibleMainUpdate(
+  request: UpdateRequest,
+  runtime: string,
+  platform: string,
+  stamp: number,
+): Promise<MainUpdate> {
+  if (!runtime || (platform !== 'android' && platform !== 'ios'))
+    throw new Error('This dev client has no known native runtime. Nothing was loaded.');
   const manifestHeaders = {
     Accept: 'multipart/mixed',
     'Expo-Protocol-Version': '1',
@@ -34,11 +45,17 @@ export async function findCompatibleMainUpdate(request: UpdateRequest, runtime: 
 
 function verifyChannelManifest(compatible: PreviewManifest, latest: PreviewManifest, runtime: string): void {
   if (compatible.runtime !== runtime) throw new Error('The main update is incompatible with this APK. Install a matching dev-client APK.');
-  if (latest.runtime === runtime && compatible.id !== latest.id) throw new Error('The main deployment changed during the check. Please try again.');
+  if (latest.runtime === runtime && compatible.id !== latest.id)
+    throw new Error('The main deployment changed during the check. Please try again.');
 }
 
 function verifyPinnedManifest(pinned: PreviewManifest, compatible: PreviewManifest, selectedHash: string, runtime: string): void {
-  if (selectedHash !== compatible.gitHash || pinned.id !== compatible.id || pinned.gitHash !== compatible.gitHash || pinned.runtime !== runtime) {
+  if (
+    selectedHash !== compatible.gitHash ||
+    pinned.id !== compatible.id ||
+    pinned.gitHash !== compatible.gitHash ||
+    pinned.runtime !== runtime
+  ) {
     throw new Error('Could not verify an immutable compatible main update. Nothing was loaded.');
   }
 }

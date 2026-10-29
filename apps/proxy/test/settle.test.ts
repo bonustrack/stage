@@ -25,12 +25,15 @@ void test('parseSettleBody rejects non-objects', () => {
   assert.equal(parseSettleBody(42), null);
 });
 
+interface FetchCall {
+  url: string;
+  payment: string | null;
+}
 
-interface FetchCall { url: string; payment: string | null; }
-
-function withFakeFetch(
-  responder: (url: string) => { status: number; location?: string; body?: string },
-): { calls: FetchCall[]; restore: () => void } {
+function withFakeFetch(responder: (url: string) => { status: number; location?: string; body?: string }): {
+  calls: FetchCall[];
+  restore: () => void;
+} {
   const calls: FetchCall[] = [];
   const orig = globalThis.fetch;
   const shim = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -51,14 +54,17 @@ function withFakeFetch(
     return Promise.resolve(fake as unknown as Response);
   };
   globalThis.fetch = shim;
-  return { calls, restore: () => { globalThis.fetch = orig; } };
+  return {
+    calls,
+    restore: () => {
+      globalThis.fetch = orig;
+    },
+  };
 }
 
 void test('SEC6: does NOT replay X-PAYMENT across a cross-origin redirect', async () => {
   const { calls, restore } = withFakeFetch((url) =>
-    url.startsWith('https://api.example.com')
-      ? { status: 302, location: 'https://evil.attacker.com/grab' }
-      : { status: 200, body: 'ok' },
+    url.startsWith('https://api.example.com') ? { status: 302, location: 'https://evil.attacker.com/grab' } : { status: 200, body: 'ok' },
   );
   try {
     await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
@@ -76,9 +82,7 @@ void test('SEC6: does NOT replay X-PAYMENT across a cross-origin redirect', asyn
 
 void test('same-origin redirect still carries the header (legit paid-content hop)', async () => {
   const { calls, restore } = withFakeFetch((url) =>
-    url.endsWith('/paid')
-      ? { status: 302, location: 'https://api.example.com/content' }
-      : { status: 200, body: 'paid content' },
+    url.endsWith('/paid') ? { status: 302, location: 'https://api.example.com/content' } : { status: 200, body: 'paid content' },
   );
   try {
     const res = await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });

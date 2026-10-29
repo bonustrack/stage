@@ -24,8 +24,14 @@ const PICKER_WIDTH = 300;
 const ADD_LABEL = 'Add people';
 const PICK_RIGHTS = { add: true, remove: true };
 
-function RecipientAvatar({ address, picked, onToggle }: {
-  address: string; picked: boolean; onToggle: (address: string) => void;
+function RecipientAvatar({
+  address,
+  picked,
+  onToggle,
+}: {
+  address: string;
+  picked: boolean;
+  onToggle: (address: string) => void;
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
@@ -33,17 +39,22 @@ function RecipientAvatar({ address, picked, onToggle }: {
   return (
     <HoverTooltip label={name} placement="above">
       <Pressable
-        onPress={() => { onToggle(address); }}
+        onPress={() => {
+          onToggle(address);
+        }}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: picked }}
         accessibilityLabel={name}
         {...hoverProps}
         style={{
-          borderRadius: AVATAR_PX, outlineStyle: 'solid', outlineWidth: picked ? PICKED_BORDER : 0, outlineColor: link,
+          borderRadius: AVATAR_PX,
+          outlineStyle: 'solid',
+          outlineWidth: picked ? PICKED_BORDER : 0,
+          outlineColor: link,
           opacity: picked ? 1 : hovered ? HOVER_OPACITY : UNPICKED_OPACITY,
         }}
       >
-        <Avatar address={address} size={AVATAR_PX}/>
+        <Avatar address={address} size={AVATAR_PX} />
       </Pressable>
     </HoverTooltip>
   );
@@ -54,16 +65,36 @@ function AddPeopleButton({ onPress }: { onPress: (event: GestureResponderEvent) 
   const { hovered, hoverProps } = useHover();
   return (
     <HoverTooltip label={ADD_LABEL} placement="above">
-      <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={ADD_LABEL} {...hoverProps}
-        style={{ width: AVATAR_PX, height: AVATAR_PX, borderRadius: AVATAR_PX, alignItems: 'center', justifyContent: 'center', backgroundColor: border }}>
-        <Glyph icon={IconPlusLarge} size={16} color={hovered ? link : text}/>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={ADD_LABEL}
+        {...hoverProps}
+        style={{
+          width: AVATAR_PX,
+          height: AVATAR_PX,
+          borderRadius: AVATAR_PX,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: border,
+        }}
+      >
+        <Glyph icon={IconPlusLarge} size={16} color={hovered ? link : text} />
       </Pressable>
     </HoverTooltip>
   );
 }
 
-export function RecipientBar({ shown, picked, onToggle, onAvatarPress }: {
-  shown: readonly string[]; picked: readonly string[]; onToggle: (address: string) => void; onAvatarPress?: () => void;
+export function RecipientBar({
+  shown,
+  picked,
+  onToggle,
+  onAvatarPress,
+}: {
+  shown: readonly string[];
+  picked: readonly string[];
+  onToggle: (address: string) => void;
+  onAvatarPress?: () => void;
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
@@ -72,17 +103,35 @@ export function RecipientBar({ shown, picked, onToggle, onAvatarPress }: {
     <Column padding={{ bottom: 10 - PICKED_BORDER }}>
       <List direction="horizontal" showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Row align="center" gap={AVATAR_GAP} padding={{ x: PAGE_GUTTER, y: PICKED_BORDER }}>
-          {shown.map(address => (
-            <RecipientAvatar key={address} address={address} picked={includesKey(picked, address)}
-              onToggle={(a) => { onToggle(a); onAvatarPress?.(); }}/>
+          {shown.map((address) => (
+            <RecipientAvatar
+              key={address}
+              address={address}
+              picked={includesKey(picked, address)}
+              onToggle={(a) => {
+                onToggle(a);
+                onAvatarPress?.();
+              }}
+            />
           ))}
-          <AddPeopleButton onPress={(event) => { setAnchor(menuPointAbove(event)); setOpen(true); }}/>
+          <AddPeopleButton
+            onPress={(event) => {
+              setAnchor(menuPointAbove(event));
+              setOpen(true);
+            }}
+          />
         </Row>
       </List>
       {open ? (
-        <AnchoredMenu visible onClose={() => { setOpen(false); }} anchor={anchor}>
+        <AnchoredMenu
+          visible
+          onClose={() => {
+            setOpen(false);
+          }}
+          anchor={anchor}
+        >
           <Column width={anchored ? PICKER_WIDTH : undefined}>
-            <MembersPicker draft={[...picked]} toggle={onToggle} entries={[]} self="" rights={PICK_RIGHTS}/>
+            <MembersPicker draft={[...picked]} toggle={onToggle} entries={[]} self="" rights={PICK_RIGHTS} />
           </Column>
         </AnchoredMenu>
       ) : null}

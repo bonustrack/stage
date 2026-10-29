@@ -1,12 +1,8 @@
-
 import 'react-native-get-random-values';
 
 import { Buffer as BufferPolyfill } from 'buffer';
 
-const G = globalThis as {
-  Buffer?: typeof BufferPolyfill;
-  crypto?: Crypto;
-};
+const G = globalThis as { Buffer?: typeof BufferPolyfill; crypto?: Crypto };
 
 if (typeof G.Buffer === 'undefined') {
   G.Buffer = BufferPolyfill;

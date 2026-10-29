@@ -1,7 +1,14 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  networkName, recipientAddress, recipientFor, recipientHint, recipientQuery, recipientSummary,
-  settleRecipient, startRecipient, RECIPIENT_HELP,
+  networkName,
+  recipientAddress,
+  recipientFor,
+  recipientHint,
+  recipientQuery,
+  recipientSummary,
+  settleRecipient,
+  startRecipient,
+  RECIPIENT_HELP,
 } from '../components/wallet/recipient.model';
 
 const ALICE = '0xa94Cb9AA3CB82880142ff98706320E1Fb9B31767';

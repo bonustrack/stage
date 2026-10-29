@@ -9,21 +9,28 @@ import { acceptedShareConsent, type ShareDestination } from '../components/share
 import { sdk } from './xmtp.sdk';
 
 export function assertShareAccount(accountId: string, epoch: number): void {
-  if (getAccountEpoch() !== epoch || knownActiveAccountId() !== accountId) throw new Error('Choose a channel again for the active account.');
+  if (getAccountEpoch() !== epoch || knownActiveAccountId() !== accountId)
+    throw new Error('Choose a channel again for the active account.');
 }
 
 async function shareConsent(accountId: string, conv: NonNullable<Awaited<ReturnType<typeof sdk.findConv>>>) {
   const preferences = () => Promise.all([loadClearedChats(accountId), loadHiddenChannels(accountId)]);
   await preferences();
   let changed = false;
-  const invalidate = (): void => { changed = true; };
+  const invalidate = (): void => {
+    changed = true;
+  };
   const stop = [subscribeClearedChats(invalidate), subscribeHiddenChannels(invalidate)];
   try {
     const [cleared, hidden] = await preferences();
     const consent = await sdk.consentOf(conv);
     if (changed) throw new Error('Channel preferences changed. Choose the channel again.');
     return { cleared, hidden, consent };
-  } finally { stop.forEach(unsubscribe => { unsubscribe(); }); }
+  } finally {
+    stop.forEach((unsubscribe) => {
+      unsubscribe();
+    });
+  }
 }
 
 export async function checkShareDestination(accountId: string, epoch: number, destination: ShareDestination): Promise<AccountClient> {
@@ -39,7 +46,8 @@ export async function checkShareDestination(accountId: string, epoch: number, de
   context.assertCurrent();
   assertShareAccount(accountId, epoch);
   const allowed = acceptedShareConsent(sdk.isGroup(conv), hidden[destination.convId]?.hidden, consent);
-  if (isRowCleared(cleared, { ...destination, lastTs: destination.lastBubbleTs })) throw new Error('This chat was deleted. Choose another channel.');
+  if (isRowCleared(cleared, { ...destination, lastTs: destination.lastBubbleTs }))
+    throw new Error('This chat was deleted. Choose another channel.');
   if (!allowed || internal || member !== 'member') throw new Error('You can only share to an accepted channel you belong to.');
   return context;
 }

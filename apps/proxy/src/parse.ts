@@ -22,10 +22,7 @@ function decodeEntities(s: string): string {
 }
 
 function metaContent(html: string, key: string): string | undefined {
-  const re = new RegExp(
-    `<meta[^>]*?(?:name|property)=["']${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*?>`,
-    'i',
-  );
+  const re = new RegExp(`<meta[^>]*?(?:name|property)=["']${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*?>`, 'i');
   const tag = re.exec(html);
   if (!tag) return undefined;
   const c = /content=["']([^"']*)["']/i.exec(tag[0]);
@@ -99,13 +96,7 @@ export function parseMeta(html: string, finalUrl: string): PreviewMeta {
 
   const title = firstMeta(head, ['og:title', 'twitter:title']) ?? titleTag(head);
   const description = firstMeta(head, ['og:description', 'twitter:description', 'description']);
-  const rawImage = firstMeta(head, [
-    'og:image:secure_url',
-    'og:image:url',
-    'og:image',
-    'twitter:image',
-    'twitter:image:src',
-  ]);
+  const rawImage = firstMeta(head, ['og:image:secure_url', 'og:image:url', 'og:image', 'twitter:image', 'twitter:image:src']);
   const siteName = firstMeta(head, ['og:site_name', 'application-name', 'twitter:site']);
   const canonical = sameHostUrl(firstMeta(head, ['og:url']), finalUrl);
   const host = hostOf(finalUrl);

@@ -33,7 +33,9 @@ export function measureNow(node: unknown): SortRect | null {
 export function measureLater(node: unknown): Promise<SortRect | null> {
   if (WEB || !isMeasurable(node)) return Promise.resolve(measureNow(node));
   return new Promise((resolve) => {
-    node.measureInWindow((x, y, width, height) => { resolve({ x, y, width, height }); });
+    node.measureInWindow((x, y, width, height) => {
+      resolve({ x, y, width, height });
+    });
   });
 }
 
@@ -47,7 +49,9 @@ export function liftToBody(node: unknown): () => void {
   if (el === null || home === null || home === undefined) return () => undefined;
   el.style.position = 'fixed';
   document.body.appendChild(el);
-  return () => { home.appendChild(el); };
+  return () => {
+    home.appendChild(el);
+  };
 }
 
 function blockTouchScroll(event: TouchEvent): void {
@@ -62,8 +66,7 @@ export function setPageDragging(on: boolean): void {
   if (on) {
     window.getSelection()?.removeAllRanges();
     document.addEventListener('touchmove', blockTouchScroll, { passive: false });
-  }
-  else {
+  } else {
     document.removeEventListener('touchmove', blockTouchScroll);
   }
 }
@@ -80,7 +83,9 @@ function swallowClick(event: Event): void {
 export function suppressNextClick(): void {
   if (!WEB || typeof document === 'undefined') return;
   document.addEventListener('click', swallowClick, { capture: true, once: true });
-  setTimeout(() => { document.removeEventListener('click', swallowClick, { capture: true }); }, CLICK_GRACE_MS);
+  setTimeout(() => {
+    document.removeEventListener('click', swallowClick, { capture: true });
+  }, CLICK_GRACE_MS);
 }
 
 function scrollStep(distance: number): number {
@@ -131,7 +136,9 @@ export function autoScroll(x: number, y: number): boolean {
 export function nextFrame(run: () => void): () => void {
   if (typeof requestAnimationFrame !== 'function') return () => undefined;
   const id = requestAnimationFrame(run);
-  return () => { cancelAnimationFrame(id); };
+  return () => {
+    cancelAnimationFrame(id);
+  };
 }
 
 export function listenKeys(node: unknown, onKey: (key: string) => boolean): () => void {
@@ -162,5 +169,7 @@ export function raiseWithin(node: unknown, container: unknown): () => void {
     raised.push(el);
     el.style.zIndex = '10';
   }
-  return () => { for (const el of raised) el.style.zIndex = ''; };
+  return () => {
+    for (const el of raised) el.style.zIndex = '';
+  };
 }

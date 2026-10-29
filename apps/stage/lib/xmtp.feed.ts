@@ -8,9 +8,7 @@ import { holdFeedLine, isFeedLoaded } from './feedLines';
 import { ensureGlobalStream } from './xmtp.stream';
 import { getQueryClient } from './queryClient';
 import { messagingKeys } from '../modules/messaging/queries';
-import {
-  ensureFeedQueryBridge, loadFeedFirstPage, loadFeedOlderPage,
-} from '../modules/messaging/feedQuery';
+import { ensureFeedQueryBridge, loadFeedFirstPage, loadFeedOlderPage } from '../modules/messaging/feedQuery';
 import type { XmtpFeedStatus } from './xmtp.types';
 import { report, reported } from './errorPolicy';
 import { feedStartId, useFeedStartId } from './feedStart';
@@ -25,9 +23,18 @@ function feedStatus(active: boolean, failed: boolean, ready: boolean): XmtpFeedS
   return ready ? 'open' : 'loading';
 }
 
-export function useXmtpFeed(line: string | null, enabled: boolean): {
-  events: HistoryEntry[]; status: XmtpFeedStatus; error: string | null; inboxId: string;
-  loadOlder: () => Promise<void>; hasMore: boolean; loadingOlder: boolean; retry: () => void;
+export function useXmtpFeed(
+  line: string | null,
+  enabled: boolean,
+): {
+  events: HistoryEntry[];
+  status: XmtpFeedStatus;
+  error: string | null;
+  inboxId: string;
+  loadOlder: () => Promise<void>;
+  hasMore: boolean;
+  loadingOlder: boolean;
+  retry: () => void;
 } {
   const accountEpoch = useAccountEpoch();
   const firstId = useFeedStartId(line);
@@ -50,12 +57,12 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     const generation = feedCache.generation();
     setInboxId('');
     void cachedSelfInboxId()
-      .then(id => {
-        if (!cancelled && generation === feedCache.generation() && id) setInboxId(prev => prev || id);
+      .then((id) => {
+        if (!cancelled && generation === feedCache.generation() && id) setInboxId((prev) => prev || id);
       })
       .catch(reported('feed.cachedSelf'));
     void getOrCreateXmtpClient('production')
-      .then(c => {
+      .then((c) => {
         if (cancelled || generation !== feedCache.generation()) return;
         rememberSelfInboxId(c.inboxId);
         setInboxId(c.inboxId);
@@ -64,7 +71,10 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     setLoadingOlder(false);
     loadingOlderRef.current = false;
     olderFailedRef.current = false;
-    return () => { cancelled = true; release(); };
+    return () => {
+      cancelled = true;
+      release();
+    };
   }, [line, enabled, accountEpoch]);
 
   const queryKey = messagingKeys.messages(accountEpoch, line ?? '');
@@ -72,7 +82,7 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
     queryKey,
     enabled: enabled && !!line,
     queryFn: () => loadFeedFirstPage(line ?? ''),
-    initialData: () => (line && isFeedLoaded(line) ? feedCache.get(line) ?? EMPTY : EMPTY),
+    initialData: () => (line && isFeedLoaded(line) ? (feedCache.get(line) ?? EMPTY) : EMPTY),
     staleTime: 0,
   });
   const events = query.data ?? EMPTY;
@@ -81,14 +91,14 @@ export function useXmtpFeed(line: string | null, enabled: boolean): {
   const status = feedStatus(enabled && !!line, query.isError, query.isFetched || events.length > 0);
   const error = query.error?.message ?? null;
   const { refetch } = query;
-  const retry = useCallback(() => { void refetch(); }, [refetch]);
+  const retry = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   const loadOlder = useCallback(async (): Promise<void> => {
     const ln = lineRef.current;
     if (loadingOlderRef.current || olderFailedRef.current || !ln) return;
-    const slice = getQueryClient().getQueryData<HistoryEntry[]>(
-      messagingKeys.messages(epochRef.current, ln),
-    ) ?? feedCache.get(ln) ?? EMPTY;
+    const slice = getQueryClient().getQueryData<HistoryEntry[]>(messagingKeys.messages(epochRef.current, ln)) ?? feedCache.get(ln) ?? EMPTY;
     const oldest = slice[slice.length - 1];
     if (!oldest || isAtFeedStart(oldest.id, feedStartId(ln))) return;
     loadingOlderRef.current = true;

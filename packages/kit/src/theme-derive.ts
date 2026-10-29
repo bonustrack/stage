@@ -1,4 +1,3 @@
-
 export type { Scheme } from './tokens';
 import { kitPalette, type KitPalette, type Scheme } from './tokens';
 import { hexToHsl, hslToHex } from './color-math';
@@ -41,7 +40,9 @@ const TINT_STEP = 0.01;
 const SHADE_STEP = 0.03;
 const ACCENT_MUTE_STEP = 0.18;
 
-function clamp255(n: number): number { return n < 0 ? 0 : n > 255 ? 255 : Math.round(n); }
+function clamp255(n: number): number {
+  return n < 0 ? 0 : n > 255 ? 255 : Math.round(n);
+}
 
 function clampRange(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(n))) || 0;
@@ -60,13 +61,10 @@ function toHex([r, g, b]: [number, number, number]): string {
 }
 
 export function mix(a: string, b: string, t: number): string {
-  const ca = parseHex(a); const cb = parseHex(b);
+  const ca = parseHex(a);
+  const cb = parseHex(b);
   if (!ca || !cb) return a;
-  return toHex([
-    ca[0] + (cb[0] - ca[0]) * t,
-    ca[1] + (cb[1] - ca[1]) * t,
-    ca[2] + (cb[2] - ca[2]) * t,
-  ]);
+  return toHex([ca[0] + (cb[0] - ca[0]) * t, ca[1] + (cb[1] - ca[1]) * t, ca[2] + (cb[2] - ca[2]) * t]);
 }
 
 export function grayscaleHex(g: GrayscaleOptions, scheme: Scheme): string {
@@ -111,11 +109,13 @@ function grayscaleEquals(a: GrayscaleOptions, b: GrayscaleOptions): boolean {
 }
 
 function seedEquals(a: ThemeSeed, b: ThemeSeed): boolean {
-  return a.accent.primary.toLowerCase() === b.accent.primary.toLowerCase()
-    && a.accent.level === b.accent.level
-    && grayscaleEquals(a.grayscale, b.grayscale)
-    && a.surface.background.toLowerCase() === b.surface.background.toLowerCase()
-    && a.surface.foreground.toLowerCase() === b.surface.foreground.toLowerCase();
+  return (
+    a.accent.primary.toLowerCase() === b.accent.primary.toLowerCase() &&
+    a.accent.level === b.accent.level &&
+    grayscaleEquals(a.grayscale, b.grayscale) &&
+    a.surface.background.toLowerCase() === b.surface.background.toLowerCase() &&
+    a.surface.foreground.toLowerCase() === b.surface.foreground.toLowerCase()
+  );
 }
 
 export function derivePalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {

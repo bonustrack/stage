@@ -3,7 +3,11 @@ import { Linking, Platform } from 'react-native';
 import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
 import { getOrCreateXmtpClient } from '../../lib/xmtp.client';
 import {
-  getPushPermission, isPushSupported, registerPushWithServer, requestPushPermission, unregisterPushFromServer,
+  getPushPermission,
+  isPushSupported,
+  registerPushWithServer,
+  requestPushPermission,
+  unregisterPushFromServer,
 } from '../../lib/pushRegister';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsToggleRow } from './SettingsPage';
@@ -39,7 +43,9 @@ function usePushToggle(): { enabled: boolean; perm: string; onToggle: (next: boo
     void getPushPermission().then(setPerm);
   }, []);
   const onToggle = (next: boolean): void => {
-    void applyPush(next).then(async () => { setPerm(await getPushPermission()); });
+    void applyPush(next).then(async () => {
+      setPerm(await getPushPermission());
+    });
   };
   return { enabled, perm, onToggle };
 }
@@ -50,7 +56,12 @@ export function NotificationsSettings(): React.ReactElement {
   const supported = isPushSupported();
   return (
     <SettingsPage title="Notifications">
-      <SettingsGroup title="Push" footnote={supported ? `${permissionLabel(perm)} ${describePushStatus(status)}` : 'Push notifications are unavailable in this browser.'}>
+      <SettingsGroup
+        title="Push"
+        footnote={
+          supported ? `${permissionLabel(perm)} ${describePushStatus(status)}` : 'Push notifications are unavailable in this browser.'
+        }
+      >
         <SettingsToggleRow
           label="Push notifications"
           name="push"
@@ -65,7 +76,9 @@ export function NotificationsSettings(): React.ReactElement {
           <SettingsButtonRow
             label="Open system settings"
             description="Allow notifications for Stage, then turn push off and on again."
-            onPress={() => { void Linking.openSettings(); }}
+            onPress={() => {
+              void Linking.openSettings();
+            }}
           />
         </SettingsGroup>
       ) : null}

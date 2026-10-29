@@ -13,7 +13,10 @@ describe('usernameFromWords', () => {
     expect(usernameFromWords({ adjective: "d'or", noun: 'café', digits: '7' })).toBe('dorcaf');
   });
   test('always yields a valid stage label', () => {
-    for (const words of [{ adjective: 'x', noun: 'y', digits: '1' }, { adjective: 'extraordinarily', noun: 'unbelievableness', digits: '99' }]) {
+    for (const words of [
+      { adjective: 'x', noun: 'y', digits: '1' },
+      { adjective: 'extraordinarily', noun: 'unbelievableness', digits: '99' },
+    ]) {
       expect(validateStageLabel(usernameFromWords(words))).toBeNull();
     }
   });

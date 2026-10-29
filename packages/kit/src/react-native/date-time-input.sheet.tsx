@@ -39,18 +39,23 @@ function DayCell(props: {
       accessibilityLabel={toISODate(d)}
       accessibilityState={{ selected: isSel, disabled: !enabled }}
       disabled={!enabled}
-      onPress={() => { onPick(d); }}
+      onPress={() => {
+        onPick(d);
+      }}
       style={{ width: `${100 / 7}%`, height: 40, alignItems: 'center', justifyContent: 'center' }}
     >
       <View
         style={{
-          width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: isSel ? colors.accent : 'transparent', opacity: enabled ? 1 : 0.3,
+          width: 34,
+          height: 34,
+          borderRadius: 17,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: isSel ? colors.accent : 'transparent',
+          opacity: enabled ? 1 : 0.3,
         }}
       >
-        <RNText style={{ color: isSel ? '#ffffff' : colors.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.sans }}>
-          {d.getDate()}
-        </RNText>
+        <RNText style={{ color: isSel ? '#ffffff' : colors.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.sans }}>{d.getDate()}</RNText>
       </View>
     </Pressable>
   );
@@ -60,20 +65,41 @@ function MonthHeader(props: { month: number; year: number; head: string; onShift
   const { month, year, head, onShift } = props;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Previous month" onPress={() => { onShift(-1); }} hitSlop={8}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Previous month"
+        onPress={() => {
+          onShift(-1);
+        }}
+        hitSlop={8}
+      >
         <Icon name="chevronLeft" size={20} color={head} />
       </Pressable>
       <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>
         {MONTHS[month]} {year}
       </RNText>
-      <Pressable accessibilityRole="button" accessibilityLabel="Next month" onPress={() => { onShift(1); }} hitSlop={8}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Next month"
+        onPress={() => {
+          onShift(1);
+        }}
+        hitSlop={8}
+      >
         <Icon name="chevronRight" size={20} color={head} />
       </Pressable>
     </View>
   );
 }
 
-function Calendar(props: { view: Date; selDate: Date | null; colors: SheetColors; inRange: (d: Date) => boolean; onPick: (d: Date) => void; onShift: (delta: number) => void }): React.ReactElement {
+function Calendar(props: {
+  view: Date;
+  selDate: Date | null;
+  colors: SheetColors;
+  inRange: (d: Date) => boolean;
+  onPick: (d: Date) => void;
+  onShift: (delta: number) => void;
+}): React.ReactElement {
   const { view, selDate, colors, inRange, onPick, onShift } = props;
   const cells = buildCells(view.getFullYear(), view.getMonth());
   return (
@@ -95,17 +121,40 @@ function Calendar(props: { view: Date; selDate: Date | null; colors: SheetColors
   );
 }
 
-function Stepper(props: { value: number; size: number; label: string; colors: SheetColors; onChange: (value: number) => void }): React.ReactElement {
+function Stepper(props: {
+  value: number;
+  size: number;
+  label: string;
+  colors: SheetColors;
+  onChange: (value: number) => void;
+}): React.ReactElement {
   const { value, size, label, colors, onChange } = props;
   return (
     <View style={{ alignItems: 'center', gap: 4 }}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Increase ${label}`} hitSlop={8} onPress={() => { onChange(wrapClock(value, 1, size)); }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Increase ${label}`}
+        hitSlop={8}
+        onPress={() => {
+          onChange(wrapClock(value, 1, size));
+        }}
+      >
         <Icon name="chevronUp" size={20} color={colors.head} />
       </Pressable>
-      <RNText accessibilityLabel={label} style={{ color: colors.head, fontSize: FONT_SIZE['2xl'], fontFamily: fontName.head, minWidth: 44, textAlign: 'center' }}>
+      <RNText
+        accessibilityLabel={label}
+        style={{ color: colors.head, fontSize: FONT_SIZE['2xl'], fontFamily: fontName.head, minWidth: 44, textAlign: 'center' }}
+      >
         {String(value).padStart(2, '0')}
       </RNText>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Decrease ${label}`} hitSlop={8} onPress={() => { onChange(wrapClock(value, -1, size)); }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Decrease ${label}`}
+        hitSlop={8}
+        onPress={() => {
+          onChange(wrapClock(value, -1, size));
+        }}
+      >
         <Icon name="chevronDown" size={20} color={colors.head} />
       </Pressable>
     </View>
@@ -117,14 +166,40 @@ export interface TimeDraft {
   minute: number;
 }
 
-function TimeRow(props: { draft: TimeDraft; colors: SheetColors; onChange: (draft: TimeDraft) => void; onDone: () => void }): React.ReactElement {
+function TimeRow(props: {
+  draft: TimeDraft;
+  colors: SheetColors;
+  onChange: (draft: TimeDraft) => void;
+  onDone: () => void;
+}): React.ReactElement {
   const { draft, colors, onChange, onDone } = props;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 12 }}>
-      <Stepper value={draft.hour} size={24} label="Hour" colors={colors} onChange={(hour) => { onChange({ ...draft, hour }); }} />
+      <Stepper
+        value={draft.hour}
+        size={24}
+        label="Hour"
+        colors={colors}
+        onChange={(hour) => {
+          onChange({ ...draft, hour });
+        }}
+      />
       <RNText style={{ color: colors.head, fontSize: FONT_SIZE['2xl'], fontFamily: fontName.head }}>:</RNText>
-      <Stepper value={draft.minute} size={60} label="Minute" colors={colors} onChange={(minute) => { onChange({ ...draft, minute }); }} />
-      <Pressable accessibilityRole="button" onPress={onDone} hitSlop={8} style={{ marginLeft: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.accent }}>
+      <Stepper
+        value={draft.minute}
+        size={60}
+        label="Minute"
+        colors={colors}
+        onChange={(minute) => {
+          onChange({ ...draft, minute });
+        }}
+      />
+      <Pressable
+        accessibilityRole="button"
+        onPress={onDone}
+        hitSlop={8}
+        style={{ marginLeft: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.accent }}
+      >
         <RNText style={{ color: '#ffffff', fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>Done</RNText>
       </Pressable>
     </View>
@@ -150,7 +225,16 @@ export function DateTimeSheet(props: DateTimeSheetProps): React.ReactElement {
   const { open, mode, colors, onClose } = props;
   return (
     <ControlSheet open={open} onClose={onClose} panelStyle={{ backgroundColor: colors.sheetBg, borderRadius: 16, padding: 16 }}>
-      {mode === 'time' ? null : <Calendar view={props.view} selDate={props.selDate} colors={colors} inRange={props.inRange} onPick={props.onPick} onShift={props.onShift} />}
+      {mode === 'time' ? null : (
+        <Calendar
+          view={props.view}
+          selDate={props.selDate}
+          colors={colors}
+          inRange={props.inRange}
+          onPick={props.onPick}
+          onShift={props.onShift}
+        />
+      )}
       {mode === 'date' ? null : <TimeRow draft={props.time} colors={colors} onChange={props.onTime} onDone={props.onDone} />}
     </ControlSheet>
   );
