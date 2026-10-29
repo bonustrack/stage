@@ -1,28 +1,27 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { expect, test } from 'bun:test';
 import { parseSettleBody, settleX402 } from '../src/settle.ts';
 
-void test('parseSettleBody accepts a valid body', () => {
+test('parseSettleBody accepts a valid body', () => {
   const r = parseSettleBody({ url: 'https://api.example.com/paid', paymentHeader: 'abc123' });
-  assert.deepEqual(r, { url: 'https://api.example.com/paid', paymentHeader: 'abc123' });
+  expect(r).toStrictEqual({ url: 'https://api.example.com/paid', paymentHeader: 'abc123' });
 });
 
-void test('parseSettleBody trims whitespace', () => {
+test('parseSettleBody trims whitespace', () => {
   const r = parseSettleBody({ url: '  https://x.com  ', paymentHeader: '  h  ' });
-  assert.deepEqual(r, { url: 'https://x.com', paymentHeader: 'h' });
+  expect(r).toStrictEqual({ url: 'https://x.com', paymentHeader: 'h' });
 });
 
-void test('parseSettleBody rejects missing fields', () => {
-  assert.equal(parseSettleBody({ url: 'https://x.com' }), null);
-  assert.equal(parseSettleBody({ paymentHeader: 'h' }), null);
-  assert.equal(parseSettleBody({ url: '', paymentHeader: 'h' }), null);
-  assert.equal(parseSettleBody({ url: 'https://x.com', paymentHeader: '' }), null);
+test('parseSettleBody rejects missing fields', () => {
+  expect(parseSettleBody({ url: 'https://x.com' })).toBe(null);
+  expect(parseSettleBody({ paymentHeader: 'h' })).toBe(null);
+  expect(parseSettleBody({ url: '', paymentHeader: 'h' })).toBe(null);
+  expect(parseSettleBody({ url: 'https://x.com', paymentHeader: '' })).toBe(null);
 });
 
-void test('parseSettleBody rejects non-objects', () => {
-  assert.equal(parseSettleBody(null), null);
-  assert.equal(parseSettleBody('str'), null);
-  assert.equal(parseSettleBody(42), null);
+test('parseSettleBody rejects non-objects', () => {
+  expect(parseSettleBody(null)).toBe(null);
+  expect(parseSettleBody('str')).toBe(null);
+  expect(parseSettleBody(42)).toBe(null);
 });
 
 interface FetchCall {
@@ -62,36 +61,36 @@ function withFakeFetch(responder: (url: string) => { status: number; location?: 
   };
 }
 
-void test('SEC6: does NOT replay X-PAYMENT across a cross-origin redirect', async () => {
+test('SEC6: does NOT replay X-PAYMENT across a cross-origin redirect', async () => {
   const { calls, restore } = withFakeFetch((url) =>
     url.startsWith('https://api.example.com') ? { status: 302, location: 'https://evil.attacker.com/grab' } : { status: 200, body: 'ok' },
   );
   try {
     await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
-    assert.equal(calls.length, 2);
+    expect(calls.length).toBe(2);
     const [first, second] = calls;
-    assert.ok(first);
-    assert.ok(second);
-    assert.equal(first.payment, 'SIGNED-HEADER');
-    assert.ok(second.url.startsWith('https://evil.attacker.com'));
-    assert.equal(second.payment, null);
+    expect(first).toBeTruthy();
+    expect(second).toBeTruthy();
+    expect(first.payment).toBe('SIGNED-HEADER');
+    expect(second.url.startsWith('https://evil.attacker.com')).toBeTruthy();
+    expect(second.payment).toBe(null);
   } finally {
     restore();
   }
 });
 
-void test('same-origin redirect still carries the header (legit paid-content hop)', async () => {
+test('same-origin redirect still carries the header (legit paid-content hop)', async () => {
   const { calls, restore } = withFakeFetch((url) =>
     url.endsWith('/paid') ? { status: 302, location: 'https://api.example.com/content' } : { status: 200, body: 'paid content' },
   );
   try {
     const res = await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
-    assert.equal(res.status, 200);
+    expect(res.status).toBe(200);
     const [first, second] = calls;
-    assert.ok(first);
-    assert.ok(second);
-    assert.equal(first.payment, 'SIGNED-HEADER');
-    assert.equal(second.payment, 'SIGNED-HEADER');
+    expect(first).toBeTruthy();
+    expect(second).toBeTruthy();
+    expect(first.payment).toBe('SIGNED-HEADER');
+    expect(second.payment).toBe('SIGNED-HEADER');
   } finally {
     restore();
   }

@@ -1,18 +1,17 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import { expect, test } from 'bun:test';
 import { branchFromPath, branchPath, channelKey } from '../src/branchChannel.ts';
 
 test('channelKey keeps plain branch names unchanged', () => {
-  assert.equal(channelKey('main'), 'main');
-  assert.equal(channelKey('served-main'), 'served-main');
-  assert.equal(channelKey('release-0.1.4'), 'release-0.1.4');
+  expect(channelKey('main')).toBe('main');
+  expect(channelKey('served-main')).toBe('served-main');
+  expect(channelKey('release-0.1.4')).toBe('release-0.1.4');
 });
 
 test('channelKey escapes every other byte as _ and two hex digits', () => {
-  assert.equal(channelKey('feat/native-calls'), 'feat_2fnative-calls');
-  assert.equal(channelKey('fix_menu'), 'fix_5fmenu');
-  assert.equal(channelKey('fix/café'), 'fix_2fcaf_c3_a9');
-  assert.match(channelKey('a b+c@{d}~e'), /^[A-Za-z0-9._-]+$/);
+  expect(channelKey('feat/native-calls')).toBe('feat_2fnative-calls');
+  expect(channelKey('fix_menu')).toBe('fix_5fmenu');
+  expect(channelKey('fix/café')).toBe('fix_2fcaf_c3_a9');
+  expect(channelKey('a b+c@{d}~e')).toMatch(/^[A-Za-z0-9._-]+$/);
 });
 
 test('channelKey never maps two branch names to one channel', () => {
@@ -27,31 +26,31 @@ test('channelKey never maps two branch names to one channel', () => {
     'Feat/foo',
     'feat/fóo',
   ];
-  assert.equal(new Set(branches.map(channelKey)).size, branches.length);
+  expect(new Set(branches.map(channelKey)).size).toBe(branches.length);
 });
 
 test('branchFromPath decodes percent escapes once', () => {
-  assert.equal(branchFromPath('/main'), 'main');
-  assert.equal(branchFromPath('/feat/native-calls'), 'feat/native-calls');
-  assert.equal(branchFromPath('/feat%2Fnative-calls'), 'feat/native-calls');
-  assert.equal(branchFromPath('/feat%252Fx'), 'feat%2Fx');
-  assert.equal(branchFromPath('/fix/caf%C3%A9'), 'fix/café');
-  assert.equal(branchFromPath('/chore/config-version-0.1.0-beta.2/'), 'chore/config-version-0.1.0-beta.2');
+  expect(branchFromPath('/main')).toBe('main');
+  expect(branchFromPath('/feat/native-calls')).toBe('feat/native-calls');
+  expect(branchFromPath('/feat%2Fnative-calls')).toBe('feat/native-calls');
+  expect(branchFromPath('/feat%252Fx')).toBe('feat%2Fx');
+  expect(branchFromPath('/fix/caf%C3%A9')).toBe('fix/café');
+  expect(branchFromPath('/chore/config-version-0.1.0-beta.2/')).toBe('chore/config-version-0.1.0-beta.2');
 });
 
 test('branchFromPath rejects paths that are not branch names', () => {
-  assert.equal(branchFromPath('/'), null);
-  assert.equal(branchFromPath(''), null);
-  assert.equal(branchFromPath('/feat//foo'), null);
-  assert.equal(branchFromPath('/feat%2F%2Ffoo'), null);
-  assert.equal(branchFromPath('/.well-known/acme-challenge/token'), null);
-  assert.equal(branchFromPath('/feat/.hidden'), null);
-  assert.equal(branchFromPath('/feat%E0%A4%A'), null);
+  expect(branchFromPath('/')).toBe(null);
+  expect(branchFromPath('')).toBe(null);
+  expect(branchFromPath('/feat//foo')).toBe(null);
+  expect(branchFromPath('/feat%2F%2Ffoo')).toBe(null);
+  expect(branchFromPath('/.well-known/acme-challenge/token')).toBe(null);
+  expect(branchFromPath('/feat/.hidden')).toBe(null);
+  expect(branchFromPath('/feat%E0%A4%A')).toBe(null);
 });
 
 test('branchPath round-trips through branchFromPath', () => {
   for (const branch of ['main', 'feat/native-calls', 'fix/café menu', 'chore/v0.1.0-beta.2', 'a%2Fb', 'x#y?z']) {
-    assert.equal(branchFromPath(branchPath(branch)), branch);
+    expect(branchFromPath(branchPath(branch))).toBe(branch);
   }
-  assert.equal(branchPath('feat/native-calls'), '/feat/native-calls');
+  expect(branchPath('feat/native-calls')).toBe('/feat/native-calls');
 });
