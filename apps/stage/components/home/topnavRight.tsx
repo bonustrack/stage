@@ -2,11 +2,19 @@ import { useRouter } from 'expo-router';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { PickerRow } from '../conversation/SidebarSection';
 import { AppIcon } from '../widgets';
-import { CHANNEL_FIELDS, visibleChannelFieldCount } from './fields.model';
+import { CHANNEL_FIELDS, visibleChannelFieldCount, type ChannelFields } from './fields.model';
 import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
-import { CHANNELS_OVERFLOW_ITEMS, homeActivityMenu, homeLayoutMenu, homeSortMenu, homeViewEdit, homeViewMenu } from './model';
+import {
+  CHANNELS_OVERFLOW_ITEMS,
+  homeActivityMenu,
+  homeLayoutMenu,
+  homeSortMenu,
+  homeViewEdit,
+  homeViewMenu,
+  type ViewMenuSection,
+} from './model';
 import { isLastActivity, lastActivityLabel } from './activity.model';
 import { setLastActivity, useLastActivity } from '../../lib/lastActivity';
 import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
@@ -134,56 +142,82 @@ function HomeViewMenu({
             </>
           )}
           {page === 'fields' ? (
-            <>
-              <MenuHeading text="Fields" />
-              {CHANNEL_FIELDS.map((field) => (
-                <PickerRow
-                  key={field.id}
-                  label={field.label}
-                  selected={fields[field.id]}
-                  leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link" />}
-                  onPress={() => {
-                    toggleChannelField(filter.scope, field.id);
-                  }}
-                />
-              ))}
-            </>
+            <FieldsPage scope={filter.scope} fields={fields} />
           ) : (
-            sections.map((section, index) => (
-              <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
-                {section.rows.map((row) =>
-                  picker ? (
-                    <PickerRow
-                      key={row.id}
-                      label={row.label}
-                      selected={row.selected}
-                      role={page === 'sorting' ? 'checkbox' : 'radio'}
-                      autoFocus={page !== 'sorting' && row.selected}
-                      leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link" />}
-                      onPress={() => {
-                        pick(row.id);
-                      }}
-                    />
-                  ) : (
-                    <MenuRow
-                      key={row.id}
-                      icon={row.icon}
-                      label={row.label}
-                      value={row.value}
-                      count={counts[row.id]}
-                      selected={row.selected}
-                      onPress={() => {
-                        pick(row.id);
-                      }}
-                    />
-                  ),
-                )}
-              </Section>
-            ))
+            <SectionsPage sections={sections} picker={picker} page={page} counts={counts} onPick={pick} />
           )}
         </>
       )}
     </AnchoredMenu>
+  );
+}
+
+function FieldsPage({ scope, fields }: { scope: FilterScope; fields: ChannelFields }): React.ReactElement {
+  return (
+    <>
+      <MenuHeading text="Fields" />
+      {CHANNEL_FIELDS.map((field) => (
+        <PickerRow
+          key={field.id}
+          label={field.label}
+          selected={fields[field.id]}
+          leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link" />}
+          onPress={() => {
+            toggleChannelField(scope, field.id);
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+function SectionsPage({
+  sections,
+  picker,
+  page,
+  counts,
+  onPick,
+}: {
+  sections: ViewMenuSection[];
+  picker: boolean;
+  page: string;
+  counts: Record<string, number | undefined>;
+  onPick: (id: string) => void;
+}): React.ReactElement {
+  return (
+    <>
+      {sections.map((section, index) => (
+        <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
+          {section.rows.map((row) =>
+            picker ? (
+              <PickerRow
+                key={row.id}
+                label={row.label}
+                selected={row.selected}
+                role={page === 'sorting' ? 'checkbox' : 'radio'}
+                autoFocus={page !== 'sorting' && row.selected}
+                leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link" />}
+                onPress={() => {
+                  onPick(row.id);
+                }}
+              />
+            ) : (
+              <MenuRow
+                key={row.id}
+                icon={row.icon}
+                label={row.label}
+                value={row.value}
+                count={counts[row.id]}
+                selected={row.selected}
+                onPress={() => {
+                  onPick(row.id);
+                }}
+              />
+            ),
+          )}
+        </Section>
+      ))}
+    </>
   );
 }
 

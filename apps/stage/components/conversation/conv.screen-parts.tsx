@@ -227,19 +227,8 @@ export function ConversationSearchTopnav({
   );
 }
 
-export function ConversationOverlays({
-  c,
-  convId,
-  onOpenSearch,
-}: {
-  c: Conv;
-  convId: string;
-  onOpenSearch: () => void;
-}): React.ReactElement {
+function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
   const {
-    overflowOpen,
-    setOverflowOpen,
-    overflowAnchor,
     isGroup,
     peerAddr,
     menuFor,
@@ -253,6 +242,56 @@ export function ConversationOverlays({
     deletedIds,
     isSuperAdmin,
   } = c;
+  return (
+    <BubbleActionMenu
+      target={menuFor}
+      anchor={menuAnchor}
+      canDelete={canDeleteMessage(menuFor, { myUri, deleted: deletedIds, superAdmin: isSuperAdmin })}
+      onClose={() => {
+        setMenuFor(null);
+      }}
+      onReact={(emoji) => {
+        if (menuFor) onReact(menuFor.id, emoji);
+        setMenuFor(null);
+      }}
+      onReply={() => {
+        if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor), senderEthOf(menuFor.from));
+        setMenuFor(null);
+      }}
+      onCopy={() => {
+        if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text);
+        setMenuFor(null);
+      }}
+      onSelect={() => {
+        if (menuFor) setSelectedForCopy(menuFor.id);
+        setMenuFor(null);
+      }}
+      onAddToDashboard={frameAdder(convId, menuFor, () => {
+        setMenuFor(null);
+      })}
+      onShareLink={() => {
+        const path = conversationSharePath(convId, !isGroup ? peerAddr : null);
+        if (menuFor) void Share.share({ message: `${shareUrlFor(path)}?m=${menuFor.id}` });
+        setMenuFor(null);
+      }}
+      onDelete={() => {
+        if (menuFor) void confirmDeleteMessage(menuFor.id, isAdminDelete(menuFor, myUri));
+        setMenuFor(null);
+      }}
+    />
+  );
+}
+
+export function ConversationOverlays({
+  c,
+  convId,
+  onOpenSearch,
+}: {
+  c: Conv;
+  convId: string;
+  onOpenSearch: () => void;
+}): React.ReactElement {
+  const { overflowOpen, setOverflowOpen, overflowAnchor, isGroup, peerAddr } = c;
   const isUnread = (getCachedRows()?.find((r) => r.convId === convId)?.unreadCount ?? 0) > 0;
   const rights = useChannelEditRights(convId, isGroup);
   const [editOpen, setEditOpen] = useState(false);
@@ -297,42 +336,7 @@ export function ConversationOverlays({
           labels={c.groupLabels}
         />
       ) : null}
-      <BubbleActionMenu
-        target={menuFor}
-        anchor={menuAnchor}
-        canDelete={canDeleteMessage(menuFor, { myUri, deleted: deletedIds, superAdmin: isSuperAdmin })}
-        onClose={() => {
-          setMenuFor(null);
-        }}
-        onReact={(emoji) => {
-          if (menuFor) onReact(menuFor.id, emoji);
-          setMenuFor(null);
-        }}
-        onReply={() => {
-          if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor), senderEthOf(menuFor.from));
-          setMenuFor(null);
-        }}
-        onCopy={() => {
-          if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text);
-          setMenuFor(null);
-        }}
-        onSelect={() => {
-          if (menuFor) setSelectedForCopy(menuFor.id);
-          setMenuFor(null);
-        }}
-        onAddToDashboard={frameAdder(convId, menuFor, () => {
-          setMenuFor(null);
-        })}
-        onShareLink={() => {
-          const path = conversationSharePath(convId, !isGroup ? peerAddr : null);
-          if (menuFor) void Share.share({ message: `${shareUrlFor(path)}?m=${menuFor.id}` });
-          setMenuFor(null);
-        }}
-        onDelete={() => {
-          if (menuFor) void confirmDeleteMessage(menuFor.id, isAdminDelete(menuFor, myUri));
-          setMenuFor(null);
-        }}
-      />
+      <ConversationMessageMenu c={c} convId={convId} />
     </>
   );
 }

@@ -51,7 +51,9 @@ function SuggestionChips({ words, onPick }: { words: string[]; onPick: (word: st
   );
 }
 
-function inputHint(text: string, err: string | null): { text: string; danger: boolean } | null {
+type InputHint = { text: string; danger: boolean } | null;
+
+function inputHint(text: string, err: string | null): InputHint {
   if (err !== null) return { text: err, danger: true };
   if (!looksLikePhrase(text)) return null;
   const invalid = invalidWords(text);
@@ -61,6 +63,114 @@ function inputHint(text: string, err: string | null): { text: string; danger: bo
     .split(/\s+/)
     .filter((w) => w.length > 0).length;
   return count > 0 ? { text: `${count} of 12 to 24 words`, danger: false } : null;
+}
+
+function PhraseField({
+  text,
+  placeCursor,
+  suggestions,
+  hint,
+  onPick,
+  onChangeText,
+  onSelectionEnd,
+}: {
+  text: string;
+  placeCursor: number | null;
+  suggestions: string[];
+  hint: InputHint;
+  onPick: (word: string) => void;
+  onChangeText: (text: string) => void;
+  onSelectionEnd: (end: number) => void;
+}): React.ReactElement {
+  const pal = usePalette();
+  return (
+    <>
+      <FormField
+        label="Recovery phrase"
+        placeholder="word1 word2 word3 ..."
+        multiline
+        rows={4}
+        value={text}
+        onChangeText={onChangeText}
+        inputProps={{
+          autoCapitalize: 'none',
+          autoCorrect: false,
+          onSelectionChange: (e) => {
+            onSelectionEnd(e.nativeEvent.selection.end);
+          },
+          ...(placeCursor === null ? {} : { selection: { start: placeCursor, end: placeCursor } }),
+        }}
+      />
+      <SuggestionChips words={suggestions} onPick={onPick} />
+      {hint === null ? null : (
+        <Text size="3xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>
+          {hint.text}
+        </Text>
+      )}
+    </>
+  );
+}
+
+function ImportFooter({
+  dark,
+  busy,
+  scanning,
+  text,
+  onContinue,
+  onStopScan,
+  onStartScan,
+}: {
+  dark: boolean;
+  busy: boolean;
+  scanning: boolean;
+  text: string;
+  onContinue: () => void;
+  onStopScan: () => void;
+  onStartScan: () => void;
+}): React.ReactElement {
+  const pal = usePalette();
+  if (scanning)
+    return (
+      <Button
+        dark={dark}
+        variant="soft"
+        color="primary"
+        size="lg"
+        fullWidth
+        pill
+        label="Stop scanning"
+        disabled={busy}
+        onPress={onStopScan}
+      />
+    );
+  return (
+    <>
+      <Button
+        variant="primary"
+        dark={dark}
+        size="lg"
+        fullWidth
+        pill
+        tintBg={pal.primary}
+        tintFg={pal.bg}
+        label="Continue"
+        disabled={busy || text.trim().length === 0}
+        onPress={onContinue}
+      />
+      <Button
+        dark={dark}
+        variant="soft"
+        color="primary"
+        size="lg"
+        fullWidth
+        pill
+        label="Scan QR code"
+        iconStart={<Glyph icon={IconQrCode} size={20} color={pal.primary} />}
+        disabled={busy}
+        onPress={onStartScan}
+      />
+    </>
+  );
 }
 
 const IMPORT_ABOUT = 'Enter your 12-24 word recovery phrase, or scan the code shown by Link a device on your other device.';
@@ -108,87 +218,41 @@ export function ImportStep({
     submit(code);
   };
   const phraseField = (
-    <>
-      <FormField
-        label="Recovery phrase"
-        placeholder="word1 word2 word3 ..."
-        multiline
-        rows={4}
-        value={text}
-        onChangeText={(t) => {
-          const next = typePhrase(typing, t);
-          setTyping(next);
-          if (t.startsWith(typing.text)) setCursor(next.text.length);
-          setErr(null);
-        }}
-        inputProps={{
-          autoCapitalize: 'none',
-          autoCorrect: false,
-          onSelectionChange: (e) => {
-            setCursor(e.nativeEvent.selection.end);
-            setPlaceCursor(null);
-          },
-          ...(placeCursor === null ? {} : { selection: { start: placeCursor, end: placeCursor } }),
-        }}
-      />
-      <SuggestionChips words={suggestions} onPick={pickSuggestion} />
-      {hint === null ? null : (
-        <Text size="3xs" color={hint.danger ? DANGER : pal.sub} style={{ marginTop: 8 }}>
-          {hint.text}
-        </Text>
-      )}
-    </>
+    <PhraseField
+      text={text}
+      placeCursor={placeCursor}
+      suggestions={suggestions}
+      hint={hint}
+      onPick={pickSuggestion}
+      onChangeText={(t) => {
+        const next = typePhrase(typing, t);
+        setTyping(next);
+        if (t.startsWith(typing.text)) setCursor(next.text.length);
+        setErr(null);
+      }}
+      onSelectionEnd={(end) => {
+        setCursor(end);
+        setPlaceCursor(null);
+      }}
+    />
   );
   const footer = (
-    <>
-      {scanning ? (
-        <Button
-          dark={dark}
-          variant="soft"
-          color="primary"
-          size="lg"
-          fullWidth
-          pill
-          label="Stop scanning"
-          disabled={busy}
-          onPress={() => {
-            setScanning(false);
-          }}
-        />
-      ) : (
-        <>
-          <Button
-            variant="primary"
-            dark={dark}
-            size="lg"
-            fullWidth
-            pill
-            tintBg={pal.primary}
-            tintFg={pal.bg}
-            label="Continue"
-            disabled={busy || text.trim().length === 0}
-            onPress={() => {
-              submit(text);
-            }}
-          />
-          <Button
-            dark={dark}
-            variant="soft"
-            color="primary"
-            size="lg"
-            fullWidth
-            pill
-            label="Scan QR code"
-            iconStart={<Glyph icon={IconQrCode} size={20} color={pal.primary} />}
-            disabled={busy}
-            onPress={() => {
-              setScanned(false);
-              setScanning(true);
-            }}
-          />
-        </>
-      )}
-    </>
+    <ImportFooter
+      dark={dark}
+      busy={busy}
+      scanning={scanning}
+      text={text}
+      onContinue={() => {
+        submit(text);
+      }}
+      onStopScan={() => {
+        setScanning(false);
+      }}
+      onStartScan={() => {
+        setScanned(false);
+        setScanning(true);
+      }}
+    />
   );
   return (
     <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>

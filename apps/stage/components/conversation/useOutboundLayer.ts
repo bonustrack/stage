@@ -34,28 +34,7 @@ function useStickyBottom(
   }, [allBubblesLength, atBottom]);
 }
 
-export function useOutboundLayer(
-  events: HistoryEntry[],
-  myUri: string,
-  convId: string | undefined,
-  activeLine: string,
-  isAtBottomRef: React.MutableRefObject<boolean>,
-  deletedIds: DeletedMessages,
-) {
-  const atBottom = useCallback(() => isAtBottomRef.current, [isAtBottomRef]);
-  const [showJump, setShowJump] = useState(false);
-  const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
-  const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const listRef = useRef<VirtualListHandle>(null);
-  const scrollToNewest = useStableCallback(() => {
-    requestAnimationFrame(() => {
-      attempt(() => {
-        if (Platform.OS === 'web') listRef.current?.scrollToEnd({ animated: false });
-        else listRef.current?.scrollToOffset({ offset: 0, animated: false });
-      }, 'ui');
-    });
-  });
-
+function useFeedBubbles(events: HistoryEntry[], myUri: string, deletedIds: DeletedMessages) {
   const [outbound, setOutbound] = useState<OutboundState>(() => ({ optimistic: [], confirmedIds: new Map() }));
 
   const deletedView = useMemo(deletedViewCache, []);
@@ -80,6 +59,32 @@ export function useOutboundLayer(
   }, [view, liveBubbles, myUri, uploaded]);
   const { localIdOf } = view;
   const rowKeyOf = useCallback((e: HistoryEntry): string => localIdOf.get(e.id) ?? e.id, [localIdOf]);
+  return { confirmedIds: outbound.confirmedIds, setOutbound, allBubbles, rowKeyOf };
+}
+
+export function useOutboundLayer(
+  events: HistoryEntry[],
+  myUri: string,
+  convId: string | undefined,
+  activeLine: string,
+  isAtBottomRef: React.MutableRefObject<boolean>,
+  deletedIds: DeletedMessages,
+) {
+  const atBottom = useCallback(() => isAtBottomRef.current, [isAtBottomRef]);
+  const [showJump, setShowJump] = useState(false);
+  const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
+  const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listRef = useRef<VirtualListHandle>(null);
+  const scrollToNewest = useStableCallback(() => {
+    requestAnimationFrame(() => {
+      attempt(() => {
+        if (Platform.OS === 'web') listRef.current?.scrollToEnd({ animated: false });
+        else listRef.current?.scrollToOffset({ offset: 0, animated: false });
+      }, 'ui');
+    });
+  });
+
+  const { confirmedIds, setOutbound, allBubbles, rowKeyOf } = useFeedBubbles(events, myUri, deletedIds);
   useStickyBottom(allBubbles.length, convId, atBottom, setShowJump, scrollToNewest);
   const jumpToMessage = useStableCallback((messageId: string) => {
     const idx = allBubbles.findIndex((b) => b.id === messageId);
@@ -138,7 +143,7 @@ export function useOutboundLayer(
     scrollToNewest,
     jumpHighlightId,
     listRef,
-    confirmedIds: outbound.confirmedIds,
+    confirmedIds,
     allBubbles,
     rowKeyOf,
     jumpToMessage,

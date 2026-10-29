@@ -1,4 +1,5 @@
 import { decodeEntities } from './htmlEntities';
+import { BLOCK_TAGS, HIDDEN_TAGS, RAW_TEXT_TAGS, VOID_TAGS, readTag, skipPast, skipRawText, type Tag } from './htmlTags';
 
 export interface MailSpan {
   text: string;
@@ -47,86 +48,12 @@ interface Builder {
   inline: ReadonlyMap<string, string>;
 }
 
-interface Tag {
-  name: string;
-  closing: boolean;
-  attrs: Map<string, string>;
-  end: number;
-}
-
 const MAX_HTML_CHARS = 2_000_000;
 const MAX_BLOCKS = 3000;
 const MAX_STACK = 256;
 const PIXEL_MAX = 2;
 const BULLET = '•';
-const SINGLE_QUOTE = "'";
 
-const BLOCK_TAGS: ReadonlySet<string> = new Set([
-  'address',
-  'article',
-  'aside',
-  'blockquote',
-  'body',
-  'center',
-  'dd',
-  'div',
-  'dl',
-  'dt',
-  'fieldset',
-  'figcaption',
-  'figure',
-  'footer',
-  'form',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'header',
-  'html',
-  'li',
-  'main',
-  'nav',
-  'ol',
-  'p',
-  'pre',
-  'section',
-  'table',
-  'tbody',
-  'tfoot',
-  'thead',
-  'tr',
-  'ul',
-]);
-const VOID_TAGS: ReadonlySet<string> = new Set([
-  'area',
-  'base',
-  'br',
-  'col',
-  'embed',
-  'hr',
-  'img',
-  'input',
-  'link',
-  'meta',
-  'param',
-  'source',
-  'track',
-  'wbr',
-]);
-const RAW_TEXT_TAGS: ReadonlySet<string> = new Set([
-  'iframe',
-  'noembed',
-  'noframes',
-  'noscript',
-  'script',
-  'style',
-  'textarea',
-  'title',
-  'xmp',
-]);
-const HIDDEN_TAGS: ReadonlySet<string> = new Set(['head', 'math', 'object', 'select', 'svg', 'template']);
 const STYLE_TAGS: Readonly<Record<string, StyleFlag>> = {
   b: 'bold',
   strong: 'bold',
@@ -151,62 +78,11 @@ const STYLE_TAGS: Readonly<Record<string, StyleFlag>> = {
 const HEADINGS: Readonly<Record<string, number>> = { h1: 1, h2: 2, h3: 3, h4: 4, h5: 5, h6: 6 };
 const HIDDEN_STYLE = /display\s*:\s*none|visibility\s*:\s*hidden|mso-hide\s*:\s*all/i;
 const INVISIBLE = /[\u00ad\u034f\u200b-\u200f\u2060\ufeff]/g;
-const TAG_NAME = /<(\/?)([a-zA-Z][a-zA-Z0-9:-]*)/y;
-const ATTR_NAME = /[^\s"'>/=]+/y;
-const UNQUOTED = /[^\s>]*/y;
-const SPACE = /\s*/y;
 const SAFE_HREF = /^(?:https?:\/\/|mailto:)/i;
 const DATA_IMAGE = /^data:image\/(?:png|gif|jpe?g|webp);base64,/i;
 
 function top(b: Builder): Frame | undefined {
   return b.stack[b.stack.length - 1];
-}
-
-function skipSpace(html: string, at: number): number {
-  SPACE.lastIndex = at;
-  SPACE.exec(html);
-  return SPACE.lastIndex;
-}
-
-function readValue(html: string, at: number): { text: string; end: number } {
-  const quote = html[at];
-  if (quote === '"' || quote === SINGLE_QUOTE) {
-    const close = html.indexOf(quote, at + 1);
-    const end = close === -1 ? html.length : close;
-    return { text: html.slice(at + 1, end), end: Math.min(end + 1, html.length) };
-  }
-  UNQUOTED.lastIndex = at;
-  const text = UNQUOTED.exec(html)?.[0] ?? '';
-  return { text, end: at + text.length };
-}
-
-function readAttr(html: string, at: number, attrs: Map<string, string>): number {
-  ATTR_NAME.lastIndex = at;
-  const match = ATTR_NAME.exec(html);
-  if (match === null) return at + 1;
-  const name = match[0].toLowerCase();
-  const after = skipSpace(html, ATTR_NAME.lastIndex);
-  if (html[after] !== '=') {
-    if (!attrs.has(name)) attrs.set(name, '');
-    return after;
-  }
-  const value = readValue(html, skipSpace(html, after + 1));
-  if (!attrs.has(name)) attrs.set(name, decodeEntities(value.text));
-  return value.end;
-}
-
-function readTag(html: string, at: number): Tag | null {
-  TAG_NAME.lastIndex = at;
-  const head = TAG_NAME.exec(html);
-  if (head === null) return null;
-  const tag: Tag = { name: (head[2] ?? '').toLowerCase(), closing: head[1] === '/', attrs: new Map(), end: html.length };
-  let pos = TAG_NAME.lastIndex;
-  while (pos < html.length) {
-    pos = skipSpace(html, pos);
-    if (html[pos] === '>') return { ...tag, end: pos + 1 };
-    pos = html[pos] === '/' ? pos + 1 : readAttr(html, pos, tag.attrs);
-  }
-  return tag;
 }
 
 function contextOf(stack: readonly Frame[]): { hidden: boolean; pre: boolean; quote: number; heading: number } {
@@ -352,18 +228,6 @@ function closeTag(b: Builder, name: string): void {
   if (at === -1) return;
   if (BLOCK_TAGS.has(name)) flush(b);
   b.stack.length = at;
-}
-
-function skipPast(html: string, at: number, marker: string): number {
-  const end = html.indexOf(marker, at);
-  return end === -1 ? html.length : end + marker.length;
-}
-
-function skipRawText(html: string, from: number, name: string): number {
-  const close = new RegExp(`</${name}[\\s/>]`, 'gi');
-  close.lastIndex = from;
-  const found = close.exec(html);
-  return found === null ? html.length : skipPast(html, found.index, '>');
 }
 
 function markup(b: Builder, html: string, at: number): number {

@@ -5,11 +5,8 @@ import {
   isSyncType,
   pickPublishGroup,
   shouldApplyReadState,
-  type BoardStateContent,
-  type LatestKind,
   type PinStateContent,
   type ReadStateContent,
-  type SyncContents,
   type SyncGroupState,
   type SyncOwner,
   type SyncReplay,
@@ -31,13 +28,9 @@ import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } fr
 import { onClearedChatsChanged } from './clearedChats';
 import { onHiddenChannelsChanged } from './hiddenChannels';
 import { applyRemoteChatVisibility, backfillHiddenChannels, loadChatVisibility } from './chatVisibility';
-import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type AccountOrderChange } from './boardOrder';
-import { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
-import { applyRemoteSearchState, loadSearchState, onSearchStateChanged } from './searchState';
-import { applyRemoteHomeView, loadHomeView, onHomeViewChanged } from './homeView';
-import { applyRemoteDashboard, loadDashboard, onDashboardChanged } from './dashboard';
-import { applyRemoteDeveloperMode, loadDeveloperMode, onDeveloperModeChanged } from './developerMode';
+import { adoptBoardCategoryOrder } from './channelGroups';
 import { createDeveloperModePublisher, replayDeveloperMode } from './developerModeSync';
+import { latestWinsSettings } from './readSyncSettings';
 import { rowIdOfConv } from './xmtp.conv';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { createVisibilityPublisher } from './pendingVisibility';
@@ -55,7 +48,6 @@ import { report, reported } from './errorPolicy';
 
 const CATCH_UP_GAP_MS = 10_000;
 const PUBLISH_DEBOUNCE_MS = 800;
-const SEARCH_DEBOUNCE_MS = 1000;
 
 let bootToken = 0;
 let replaying = false;
@@ -229,118 +221,14 @@ function publish<T>(codec: JsonCodec<T>, content: T, onlyFor?: string): void {
   void withGroup((target) => sendSyncState(target, codec, content), onlyFor).catch(reported('readSync.publish'));
 }
 
-function stampOrderState(key: string, order: readonly string[]): BoardStateContent {
-  const at = Date.now();
-  localAt.set(key, at);
-  return { order: [...order], at };
-}
-
-interface LatestWins {
-  start: () => void;
-  apply: (accountId: string, replay: SyncReplay) => Promise<void>;
-  publishTo: (target: SyncTarget, accountId: string) => Promise<void>;
-}
-
-function latestWins<K extends LatestKind>(
-  kind: K,
-  setting: {
-    onLocal: (send: (accountId: string, state: SyncContents[K]) => void) => void;
-    apply: (accountId: string, state: SyncContents[K]) => Promise<void>;
-    load: (accountId: string) => Promise<SyncContents[K] | null>;
-    delayMs?: number;
+const LATEST_WINS = latestWinsSettings({
+  localAt,
+  publish,
+  debounce,
+  publishDeveloperMode: (accountId) => {
+    queueDeveloperModePublish(accountId);
   },
-): LatestWins {
-  const codec = SYNC_CODECS[kind];
-  return {
-    start: () => {
-      setting.onLocal((accountId, state) => {
-        debounce(
-          kind,
-          () => {
-            publish(codec, state, accountId);
-          },
-          setting.delayMs,
-        );
-      });
-    },
-    apply: async (accountId, replay) => {
-      const state = replay.latest[kind];
-      if (state !== null) await setting.apply(accountId, state);
-    },
-    publishTo: async (target, accountId) => {
-      const state = await setting.load(accountId);
-      if (state !== null) await sendSyncState(target, codec, state);
-    },
-  };
-}
-
-function orderWins(
-  kind: 'board' | 'categoryOrder',
-  setting: {
-    onChanged: (cb: (change: AccountOrderChange) => void) => void;
-    apply: (accountId: string, order: readonly string[]) => Promise<void>;
-    load: (accountId: string) => Promise<readonly string[]>;
-  },
-): LatestWins {
-  return latestWins(kind, {
-    onLocal: (send) => {
-      setting.onChanged((change) => {
-        send(change.accountId, stampOrderState(kind, change.order));
-      });
-    },
-    apply: async (accountId, state) => {
-      if (!shouldApplyReadState(localAt.get(kind), state.at)) return;
-      localAt.set(kind, state.at);
-      await setting.apply(accountId, state.order);
-    },
-    load: async (accountId) => {
-      const order = await setting.load(accountId);
-      return order.length === 0 ? null : stampOrderState(kind, order);
-    },
-  });
-}
-
-const LATEST_WINS: readonly LatestWins[] = [
-  orderWins('board', { onChanged: onBoardOrderChanged, apply: applyRemoteBoardOrder, load: loadBoardOrder }),
-  orderWins('categoryOrder', { onChanged: onCategoryOrderChanged, apply: applyRemoteCategoryOrder, load: loadCategoryOrder }),
-  latestWins('search', {
-    onLocal: (send) => {
-      onSearchStateChanged((change) => {
-        send(change.accountId, change.state);
-      });
-    },
-    apply: applyRemoteSearchState,
-    load: loadSearchState,
-    delayMs: SEARCH_DEBOUNCE_MS,
-  }),
-  latestWins('homeView', {
-    onLocal: (send) => {
-      onHomeViewChanged((change) => {
-        send(change.accountId, change.state);
-      });
-    },
-    apply: applyRemoteHomeView,
-    load: loadHomeView,
-  }),
-  latestWins('dashboard', {
-    onLocal: (send) => {
-      onDashboardChanged((change) => {
-        send(change.accountId, change.state);
-      });
-    },
-    apply: applyRemoteDashboard,
-    load: loadDashboard,
-  }),
-  latestWins('developerMode', {
-    onLocal: () => {
-      onDeveloperModeChanged((change) => {
-        queueDeveloperModePublish(change.accountId);
-      });
-    },
-    apply: applyRemoteDeveloperMode,
-    load: loadDeveloperMode,
-  }),
-];
+});
 
 async function publishSnapshot(target: SyncTarget, accountId: string): Promise<void> {
   await sendSyncState(target, SYNC_CODECS.clear, await loadChatVisibility(accountId));

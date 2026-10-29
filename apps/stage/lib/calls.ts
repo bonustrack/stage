@@ -1,23 +1,14 @@
-import {
-  VIDEO_OFF_ABOVE,
-  isCallInviteType,
-  isCallSignalType,
-  parseCallInvite,
-  parseCallSignal,
-  type CallInvite,
-  type CallSignal,
-} from '@stage-labs/client/xmtp/call';
+import { VIDEO_OFF_ABOVE } from '@stage-labs/client/xmtp/call';
 import { EMPTY_CALLS, reduceCall, type CallEffect, type CallEndReason, type CallEvent } from '@stage-labs/client/xmtp/callMachine';
 import { subscribeAllMessages } from './xmtp.stream';
 import { xmtpSendJson } from './xmtp.messages';
-import { convOfLine, sdk } from './xmtp.sdk';
-import { afterFirstPages } from './feedLines';
+import { sdk } from './xmtp.sdk';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import type { StreamMsg } from './xmtp.types';
 import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
 import { capabilities } from './capabilities';
 import { NO_MEDIA, callView, setCallView, type CallMedia, type CallPeerView } from './calls.store';
 import { openPeer } from './calls.peer';
+import { makeCallInbound } from './calls.inbound';
 import { closePeer, sendMedia, type Peer } from './calls.peer.core';
 import { stopMedia, stopTrack, releaseStream, type CallTrack, type CapturedMedia, type Outgoing } from './calls.types';
 import {
@@ -34,8 +25,6 @@ import {
 } from './calls.media';
 import { ignore, report, reported } from './errorPolicy';
 
-const HISTORY_LIMIT = 100;
-const SEEN_MAX = 2_000;
 const END_TOASTS: Partial<Record<CallEndReason, string>> = {
   ended: 'Call ended',
   declined: 'Call declined',
@@ -43,22 +32,16 @@ const END_TOASTS: Partial<Record<CallEndReason, string>> = {
   missed: 'Missed call',
   full: 'This call is full',
 };
-interface CallContent {
-  invite: CallInvite | null;
-  signal: CallSignal | null;
-}
 const peers = new Map<string, Peer>();
-const seen = new Set<string>();
-const histories = new Map<string, Promise<void>>();
 let mic: CallTrack | null = null;
 let camera: CallTrack | null = null;
 let screen: CallTrack | null = null;
 let ticker: ReturnType<typeof setInterval> | null = null;
 let stopRing: (() => void) | null = null;
-let ingestQueue: Promise<void> = Promise.resolve();
 let busy = false;
 let generation = 0;
 let captureVersion = 0;
+const inbound = makeCallInbound({ generation: () => generation, selfInboxId, dispatch });
 
 function captureCurrent(epoch: { generation: number; captureVersion: number }): boolean {
   return epoch.generation === generation && epoch.captureVersion === captureVersion;
@@ -202,77 +185,16 @@ async function selfInboxId(epoch: number): Promise<string> {
   if (generation === epoch && callView().selfInboxId !== id) setCallView({ selfInboxId: id });
   return id;
 }
-async function convContext(convId: string): Promise<{ dm: boolean; allowed: boolean }> {
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) return { dm: false, allowed: false };
-  return { dm: !sdk.isGroup(conv), allowed: (await sdk.consentOf(conv)) === 'allowed' };
-}
-async function ingest(convId: string, m: StreamMsg['msg'], { invite, signal }: CallContent, epoch: number): Promise<void> {
-  const base = {
-    convId,
-    senderInboxId: m.senderInboxId,
-    selfInboxId: await selfInboxId(epoch),
-    sentMs: Math.floor(m.sentNs / 1_000_000),
-    nowMs: Date.now(),
-  };
-  if (generation !== epoch) return;
-  if (signal) dispatch({ ...base, type: 'signal', signal });
-  if (invite) {
-    const context = await convContext(convId);
-    if (generation === epoch) dispatch({ ...base, type: 'invite', invite, ...context });
-  }
-}
-function callContentOf(m: StreamMsg['msg']): CallContent | null {
-  const invite = isCallInviteType(m.contentTypeId) ? parseCallInvite(m.content) : null;
-  const signal = isCallSignalType(m.contentTypeId) ? parseCallSignal(m.content) : null;
-  return invite || signal ? { invite, signal } : null;
-}
-function firstSight(id: string): boolean {
-  if (seen.has(id)) return false;
-  seen.add(id);
-  if (seen.size > SEEN_MAX) {
-    const oldest = seen.values().next().value;
-    if (oldest !== undefined) seen.delete(oldest);
-  }
-  return true;
-}
-function enqueue(convId: string, m: StreamMsg['msg'], epoch: number): void {
-  const call = callContentOf(m);
-  if (generation !== epoch || !call || !firstSight(m.id)) return;
-  ingestQueue = ingestQueue.then(() => ingest(convId, m, call, epoch)).catch(reported('calls.ingest'));
-}
-async function replayHistory(convId: string, epoch: number): Promise<void> {
-  await afterFirstPages();
-  const conv = await convOfLine(lineOfConv(convId));
-  if (!conv) return;
-  const recent = await sdk.messages(conv, { limit: HISTORY_LIMIT, order: 'desc' });
-  for (const m of recent.reverse()) enqueue(convId, sdk.rowOf(m), epoch);
-}
-function historyOf(convId: string): Promise<void> {
-  const known = histories.get(convId);
-  if (known) return known;
-  const ready = replayHistory(convId, generation).catch(reported('calls.history'));
-  histories.set(convId, ready);
-  return ready;
-}
-function onMessage({ convId, msg }: StreamMsg): void {
-  if (!convId || !callContentOf(msg)) return;
-  const epoch = generation;
-  void historyOf(convId).then(() => {
-    enqueue(convId, msg, epoch);
-  });
-}
 function resetCalls(): void {
   generation += 1;
   releaseMedia();
-  seen.clear();
-  histories.clear();
+  inbound.reset();
   setCallView({ calls: EMPTY_CALLS, selfInboxId: null, preview: null, media: NO_MEDIA, peers: [] });
   syncTimers();
 }
 export function startCallService(): () => void {
   if (!callsSupported) return () => undefined;
-  const unsubscribe = subscribeAllMessages(onMessage);
+  const unsubscribe = subscribeAllMessages(inbound.onMessage);
   const unwatch = watchCallLifecycle(() => {
     if (joinedCallId() !== null) dispatch({ type: 'leave' });
   });
@@ -284,8 +206,7 @@ export function startCallService(): () => void {
 }
 export function loadCallHistory(convId: string): Promise<void> {
   if (!callsSupported) return Promise.resolve();
-  histories.delete(convId);
-  return historyOf(convId);
+  return inbound.reload(convId);
 }
 async function openMedia(video: boolean): Promise<CapturedMedia | null> {
   if (stopRing) {

@@ -48,11 +48,20 @@ interface Revision {
 type PublicationResult = 'retry' | 'yield' | 'unchanged' | 'done' | 'more';
 type SyncInput = Pick<SenderFilterInput, 'installationId' | 'syncPreferences'>;
 
+interface PublisherState {
+  now: () => number;
+  published: Map<string, Map<string, Published>>;
+  revisions: Map<string, Revision>;
+  preferences: PreferenceSync;
+}
+type PreferenceSync = ReturnType<typeof makePreferenceSync>;
+
 export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, syncFreshMs = 30_000) {
   const pending = new Map<string, Promise<PublicationResult>>();
   const published = new Map<string, Map<string, Published>>();
   const revisions = new Map<string, Revision>();
   const preferences = makePreferenceSync(now, syncFreshMs, revisions);
+  const state: PublisherState = { now, published, revisions, preferences };
   const foreground = makeForegroundPreparations();
   let epoch = 0;
 
@@ -62,56 +71,6 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     await preferences.sync(input, () => {
       if (capturedEpoch !== epoch || !input.current()) throw new Error('Sender filter account changed');
     });
-  }
-
-  async function prepare(input: SenderFilterInput, signal: AbortSignal, assertCurrent: () => void): Promise<Prepared> {
-    assertCurrent();
-    await timeSendPhase(input.timing, 'filter.preferences', () => preferences.sync(input, assertCurrent, signal));
-    const revision = revisionFor(revisions, input.installationId);
-    const version = revision.publication;
-    const imported = revision.preferences;
-    const collected = await timeSendPhase(input.timing, 'filter.keys', () => input.collectTopics(input.topic));
-    assertCurrent();
-    const selected = input.topic ? collected.topics.filter((topic) => topic === input.topic) : collected.topics;
-    const topics = senderFilterTopics(selected, collected.hmacKeys);
-    if (input.topic && topics.length === 0) throw new Error('Sender filter key is not ready');
-    const groupKey = await timeSendPhase(input.timing, 'filter.group_key', () => input.groupKey());
-    assertCurrent();
-    return { groupKey, topics, version, preferences: imported };
-  }
-
-  async function update(
-    input: SenderFilterInput,
-    prepared: Prepared,
-    signal: AbortSignal,
-    assertCurrent: () => void,
-  ): Promise<PublicationResult> {
-    assertCurrent();
-    const revision = revisionFor(revisions, input.installationId);
-    if (stalePreparation(prepared, revision)) return 'retry';
-    const { groupKey, topics } = prepared;
-    const cache = published.get(input.installationId) ?? new Map<string, Published>();
-    const dirty = topics.filter((topic) => {
-      const prev = cache.get(topic.topic);
-      return !prev || prev.signature !== fingerprint(groupKey, topic) || now() - prev.at >= 240_000;
-    });
-    const groupSignature = sha256(new TextEncoder().encode(groupKey));
-    if (dirty.length === 0 && cache.get('')?.signature === groupSignature) return 'unchanged';
-    const batch = dirty.slice(0, SENDER_FILTER_BATCH_SIZE);
-    const version = beginPublication(revision, groupKey, batch);
-    const body = await timeSendPhase(input.timing, 'filter.sign', () =>
-      signedSenderFilters(input.installationId, groupKey, batch, Math.floor(now() / 1_000), input.sign),
-    );
-    assertCurrent();
-    if (prepared.preferences !== revision.preferences) return 'retry';
-    await timeSendPhase(input.timing, 'filter.http', () => input.post(body, signal));
-    assertCurrent();
-    for (const topic of batch) cache.set(topic.topic, { signature: fingerprint(groupKey, topic), at: now() });
-    cache.set('', { signature: groupSignature, at: now() });
-    published.set(input.installationId, cache);
-    prepared.version = version;
-    if (prepared.preferences !== revision.preferences) return 'retry';
-    return dirty.length <= SENDER_FILTER_BATCH_SIZE ? 'done' : 'more';
   }
 
   async function publish(input: SenderFilterInput): Promise<void> {
@@ -130,7 +89,7 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
     }, timeoutMs);
     let releaseForeground: (() => void) | undefined;
     try {
-      let prepared = await abortable(prepare(input, controller.signal, assertCurrent), controller.signal);
+      let prepared = await abortable(preparePublication(state, input, controller.signal, assertCurrent), controller.signal);
       while (true) {
         const result = await queuePublication(pending, input, controller.signal, (waited) => {
           assertCurrent();
@@ -139,12 +98,12 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
             return Promise.resolve('retry');
           }
           if (!input.topic && foreground.blocked(input.installationId)) return Promise.resolve('yield');
-          return update(input, prepared, controller.signal, assertCurrent);
+          return updatePublication(state, input, prepared, controller.signal, assertCurrent);
         });
         if (result === 'done' || result === 'unchanged') return;
         if (result === 'retry') {
           try {
-            prepared = await abortable(prepare(input, controller.signal, assertCurrent), controller.signal);
+            prepared = await abortable(preparePublication(state, input, controller.signal, assertCurrent), controller.signal);
           } finally {
             releaseForeground?.();
             releaseForeground = undefined;
@@ -170,6 +129,64 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
       foreground.clear();
     },
   };
+}
+
+async function preparePublication(
+  state: PublisherState,
+  input: SenderFilterInput,
+  signal: AbortSignal,
+  assertCurrent: () => void,
+): Promise<Prepared> {
+  const { preferences, revisions } = state;
+  assertCurrent();
+  await timeSendPhase(input.timing, 'filter.preferences', () => preferences.sync(input, assertCurrent, signal));
+  const revision = revisionFor(revisions, input.installationId);
+  const version = revision.publication;
+  const imported = revision.preferences;
+  const collected = await timeSendPhase(input.timing, 'filter.keys', () => input.collectTopics(input.topic));
+  assertCurrent();
+  const selected = input.topic ? collected.topics.filter((topic) => topic === input.topic) : collected.topics;
+  const topics = senderFilterTopics(selected, collected.hmacKeys);
+  if (input.topic && topics.length === 0) throw new Error('Sender filter key is not ready');
+  const groupKey = await timeSendPhase(input.timing, 'filter.group_key', () => input.groupKey());
+  assertCurrent();
+  return { groupKey, topics, version, preferences: imported };
+}
+
+async function updatePublication(
+  state: PublisherState,
+  input: SenderFilterInput,
+  prepared: Prepared,
+  signal: AbortSignal,
+  assertCurrent: () => void,
+): Promise<PublicationResult> {
+  const { now, published, revisions } = state;
+  assertCurrent();
+  const revision = revisionFor(revisions, input.installationId);
+  if (stalePreparation(prepared, revision)) return 'retry';
+  const { groupKey, topics } = prepared;
+  const cache = published.get(input.installationId) ?? new Map<string, Published>();
+  const dirty = topics.filter((topic) => {
+    const prev = cache.get(topic.topic);
+    return !prev || prev.signature !== fingerprint(groupKey, topic) || now() - prev.at >= 240_000;
+  });
+  const groupSignature = sha256(new TextEncoder().encode(groupKey));
+  if (dirty.length === 0 && cache.get('')?.signature === groupSignature) return 'unchanged';
+  const batch = dirty.slice(0, SENDER_FILTER_BATCH_SIZE);
+  const version = beginPublication(revision, groupKey, batch);
+  const body = await timeSendPhase(input.timing, 'filter.sign', () =>
+    signedSenderFilters(input.installationId, groupKey, batch, Math.floor(now() / 1_000), input.sign),
+  );
+  assertCurrent();
+  if (prepared.preferences !== revision.preferences) return 'retry';
+  await timeSendPhase(input.timing, 'filter.http', () => input.post(body, signal));
+  assertCurrent();
+  for (const topic of batch) cache.set(topic.topic, { signature: fingerprint(groupKey, topic), at: now() });
+  cache.set('', { signature: groupSignature, at: now() });
+  published.set(input.installationId, cache);
+  prepared.version = version;
+  if (prepared.preferences !== revision.preferences) return 'retry';
+  return dirty.length <= SENDER_FILTER_BATCH_SIZE ? 'done' : 'more';
 }
 
 function makePreferenceSync(now: () => number, freshMs: number, revisions: Map<string, Revision>) {

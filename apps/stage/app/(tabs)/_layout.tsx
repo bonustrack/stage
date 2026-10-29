@@ -98,6 +98,22 @@ function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: numb
   };
 }
 
+function chatsTabBadge(pal: ReturnType<typeof usePalette>, unreadBadge: string | undefined) {
+  return {
+    tabBarBadge: unreadBadge,
+    tabBarBadgeStyle: {
+      ...TAB_BADGE_POSITION,
+      backgroundColor: pal.link,
+      color: pal.bg,
+      fontSize: FONT_SIZE['3xs'],
+      fontFamily: 'Calibre-Semibold',
+      minWidth: TAB_BADGE_SIZE,
+      height: TAB_BADGE_SIZE,
+      lineHeight: TAB_BADGE_SIZE,
+    },
+  };
+}
+
 export default function TabsLayout(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
@@ -148,21 +164,7 @@ export default function TabsLayout(): React.ReactElement {
               tabBarIcon: ({ focused }) => (
                 <Glyph icon={icon} size={24} color={focused || (name === 'index' && pathname === BOARD_ROUTE) ? active : inactive} />
               ),
-              ...(name === 'index'
-                ? {
-                    tabBarBadge: unreadBadge,
-                    tabBarBadgeStyle: {
-                      ...TAB_BADGE_POSITION,
-                      backgroundColor: pal.link,
-                      color: pal.bg,
-                      fontSize: FONT_SIZE['3xs'],
-                      fontFamily: 'Calibre-Semibold',
-                      minWidth: TAB_BADGE_SIZE,
-                      height: TAB_BADGE_SIZE,
-                      lineHeight: TAB_BADGE_SIZE,
-                    },
-                  }
-                : {}),
+              ...(name === 'index' ? chatsTabBadge(pal, unreadBadge) : {}),
             }}
           />
         ))}

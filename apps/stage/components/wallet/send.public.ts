@@ -7,7 +7,7 @@ import { getActiveAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev/client';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
-import { ASSETS, ETH_PRICE_ID } from '@stage-labs/client/wallet/assets';
+import { ASSETS, ETH_PRICE_ID, type Asset } from '@stage-labs/client/wallet/assets';
 import type { TokenChoice } from './screen/model';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import { recipientAddress, recipientFor, settleRecipient, startRecipient, type RecipientState } from './recipient.model';
@@ -69,6 +69,50 @@ interface PublicSend {
   onSubmit: () => void;
 }
 
+interface SendTx {
+  txState: SendTxState;
+  txHash: Hex | null;
+  txChainId: number;
+  txErr: string | null;
+  send: (asset: Asset, resolved: string, tokenAmountText: string) => Promise<void>;
+}
+
+function useSendTx(chainId: number): SendTx {
+  const [txState, setTxState] = useState<SendTxState>('idle');
+  const [txHash, setTxHash] = useState<Hex | null>(null);
+  const [txChainId, setTxChainId] = useState<number>(chainId);
+  const [txErr, setTxErr] = useState<string | null>(null);
+  const send = async (asset: Asset, resolved: string, tokenAmountText: string): Promise<void> => {
+    setTxErr(null);
+    setTxHash(null);
+    setTxState('submitting');
+    try {
+      const active = await getActiveAccount();
+      if (!active) {
+        setTxState('idle');
+        setTxErr('No active wallet');
+        return;
+      }
+
+      const isSmart = active.type === 'smart';
+      const receiptChainId = isSmart ? base.id : chainId;
+      const hash = isSmart
+        ? await sendSmart(active, asset, resolved, tokenAmountText, chainId)
+        : await sendNativeOrToken({ to: resolved, amount: tokenAmountText, asset, chainId });
+      setTxHash(hash);
+      setTxChainId(receiptChainId);
+      setTxState('pending');
+      const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
+      await pub.waitForTransactionReceipt({ hash });
+      setTxState('confirmed');
+    } catch (e) {
+      setTxState('idle');
+      setTxErr((e as Error).message ?? 'Transaction failed');
+    }
+  };
+  return { txState, txHash, txChainId, txErr, send };
+}
+
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
   const [to, setTo] = useState<string>(initialTo);
   const [amount, setAmount] = useState('');
@@ -77,10 +121,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const recipient = recipientFor(stored, to);
   const resolved = recipientAddress(recipient);
   const [ethPriceUsd, setEthPriceUsd] = useState<number | null>(null);
-  const [txState, setTxState] = useState<SendTxState>('idle');
-  const [txHash, setTxHash] = useState<Hex | null>(null);
-  const [txChainId, setTxChainId] = useState<number>(token.chainId);
-  const [txErr, setTxErr] = useState<string | null>(null);
+  const { txState, txHash, txChainId, txErr, send } = useSendTx(token.chainId);
 
   const asset = useMemo(() => ASSETS.find((a) => a.symbol === token.symbol && a.chainId === token.chainId), [token.symbol, token.chainId]);
 
@@ -134,34 +175,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
 
   const onSubmit = (): void => {
     if (!resolved || tokenAmount <= 0 || busy || !asset) return;
-    void (async (): Promise<void> => {
-      setTxErr(null);
-      setTxHash(null);
-      setTxState('submitting');
-      try {
-        const active = await getActiveAccount();
-        if (!active) {
-          setTxState('idle');
-          setTxErr('No active wallet');
-          return;
-        }
-
-        const isSmart = active.type === 'smart';
-        const receiptChainId = isSmart ? base.id : token.chainId;
-        const hash = isSmart
-          ? await sendSmart(active, asset, resolved, tokenAmountText, token.chainId)
-          : await sendNativeOrToken({ to: resolved, amount: tokenAmountText, asset, chainId: token.chainId });
-        setTxHash(hash);
-        setTxChainId(receiptChainId);
-        setTxState('pending');
-        const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
-        await pub.waitForTransactionReceipt({ hash });
-        setTxState('confirmed');
-      } catch (e) {
-        setTxState('idle');
-        setTxErr((e as Error).message ?? 'Transaction failed');
-      }
-    })();
+    void send(asset, resolved, tokenAmountText);
   };
 
   return {

@@ -185,6 +185,67 @@ function ComposerHeader(p: {
   );
 }
 
+function useVoiceAndAttach(
+  s: ComposerState,
+  mention: ReturnType<typeof useMentionEditor>,
+  actions: ReturnType<typeof useComposerActions>,
+  o: { draftKey: string | null; draftOnly: boolean; busy: boolean; quickAttach: boolean },
+) {
+  const dictation = useDictation({
+    key: o.draftKey,
+    text: mention.display,
+    selection: s.selection,
+    setText: mention.setDisplay,
+    setSelection: s.setSelection,
+    setErr: s.setErr,
+    recording: s.recording,
+    busy: o.busy,
+  });
+  const startRecording = (): Promise<void> =>
+    dictation.recordVoice(async () => {
+      s.bumpBlur();
+      await actions.startRec();
+    });
+  const attachActions = composerAttachActions(actions, s, o.draftOnly, startRecording);
+  const lastLabel = useLastAttachment();
+  const quick = quickAttachAction(attachActions, lastLabel, o.quickAttach);
+  return { dictation, startRecording, attachActions, quick };
+}
+
+function ComposerFilePickers({ actions }: { actions: ReturnType<typeof useComposerActions> }): React.ReactElement {
+  return (
+    <>
+      <FilePicker
+        openNonce={actions.imageNonce}
+        source="library"
+        mediaTypes={['images', 'videos']}
+        quality={0.5}
+        multiple
+        selectionLimit={10}
+        onPick={(files) => {
+          void actions.onPickedImages(files);
+        }}
+      />
+      <FilePicker
+        openNonce={actions.cameraNonce}
+        source="camera"
+        mediaTypes={['images']}
+        quality={0.5}
+        onPick={(files) => {
+          void actions.onPickedCamera(files);
+        }}
+      />
+      <FilePicker
+        openNonce={actions.fileNonce}
+        source="document"
+        onPick={(files) => {
+          void actions.onPickedFile(files);
+        }}
+      />
+    </>
+  );
+}
+
 export function MessengerComposer(props: Props): React.ReactElement {
   const { dark, mentionCandidates, replyingTo, autoFocusNonce, onClearReply, onJumpToReply } = props;
   const pal = usePalette();
@@ -214,24 +275,12 @@ export function MessengerComposer(props: Props): React.ReactElement {
   const channels = useChannelSuggest(s, convId ?? '');
 
   const hasContent = s.text.trim().length > 0 || s.pending.length > 0;
-  const dictation = useDictation({
-    key: draftKey,
-    text: mention.display,
-    selection: s.selection,
-    setText: mention.setDisplay,
-    setSelection: s.setSelection,
-    setErr: s.setErr,
-    recording: s.recording,
+  const { dictation, startRecording, attachActions, quick } = useVoiceAndAttach(s, mention, actions, {
+    draftKey,
+    draftOnly,
     busy: props.busy === true,
+    quickAttach: props.quickAttach !== false,
   });
-  const startRecording = (): Promise<void> =>
-    dictation.recordVoice(async () => {
-      s.bumpBlur();
-      await actions.startRec();
-    });
-  const attachActions = composerAttachActions(actions, s, draftOnly, startRecording);
-  const lastLabel = useLastAttachment();
-  const quick = quickAttachAction(attachActions, lastLabel, props.quickAttach !== false);
 
   return (
     <Column nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(props.rounded)}>
@@ -294,33 +343,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
           initialTo={loneCandidate(mentionCandidates)}
         />
       )}
-      <FilePicker
-        openNonce={actions.imageNonce}
-        source="library"
-        mediaTypes={['images', 'videos']}
-        quality={0.5}
-        multiple
-        selectionLimit={10}
-        onPick={(files) => {
-          void actions.onPickedImages(files);
-        }}
-      />
-      <FilePicker
-        openNonce={actions.cameraNonce}
-        source="camera"
-        mediaTypes={['images']}
-        quality={0.5}
-        onPick={(files) => {
-          void actions.onPickedCamera(files);
-        }}
-      />
-      <FilePicker
-        openNonce={actions.fileNonce}
-        source="document"
-        onPick={(files) => {
-          void actions.onPickedFile(files);
-        }}
-      />
+      <ComposerFilePickers actions={actions} />
       {drop.active ? <DropOverlay head={head} /> : null}
     </Column>
   );

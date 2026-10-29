@@ -218,12 +218,13 @@ function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr:
   }, [isGroup, memberAddrs, peerAddr, profilesVersion]);
 }
 
-export function useConversationState(convId: string | undefined, focus: string | undefined) {
+function useConvFeed(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
   const autoFocusNonce = useMemo(() => (focus || (Platform.OS === 'web' && !isCoarsePointer()) ? Date.now() : undefined), [focus, convId]);
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
-  const { peerAddr, memberAddrs, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = useConvFields(convId);
+  const fields = useConvFields(convId);
+  const { peerAddr } = fields;
   const clearedAt = useClearedChats()[peerAddr?.toLowerCase() ?? ''];
   const events = useMemo(
     () =>
@@ -241,7 +242,11 @@ export function useConversationState(convId: string | undefined, focus: string |
   useMarkReadWhileSeen(convId, countFromOthers(events, myUri));
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);
+  const feed = { activeLine, autoFocusNonce, events, loadOlder, hasMore, loadingOlder, retryFeed, status, myUri };
+  return { feed, inboxId: xmtpFeed.inboxId, fields };
+}
 
+function useConvMenus(convId: string | undefined) {
   const { replyingTo, setReplyingTo, setReplyTarget } = useReplyTarget();
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   const [selectedForCopy, setSelectedForCopy] = useState<string | null>(null);
@@ -256,10 +261,25 @@ export function useConversationState(convId: string | undefined, focus: string |
   const [menuAnchor, setMenuAnchor] = useState<MenuAnchor>({ y: 0, height: 0 });
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
-  const { consent, consentKnown, markAllowed: markConsentAllowed } = useConsentGate(convId);
-  const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
-  const groupLabels = useLiveChannelLabels(convId);
+  return {
+    replyingTo,
+    setReplyingTo,
+    setReplyTarget,
+    menuFor,
+    setMenuFor,
+    menuAnchor,
+    setMenuAnchor,
+    overflowOpen,
+    setOverflowOpen,
+    overflowAnchor,
+    setOverflowAnchor,
+    selectedForCopy,
+    setSelectedForCopy,
+  };
+}
 
+function useConvPeople(events: HistoryEntry[], fields: ReturnType<typeof useConvFields>, selfInboxId: string) {
+  const { peerAddr, memberAddrs, inboxToAddr, isGroup } = fields;
   const knownAddrs = useSystemLineAddresses(events, inboxToAddr);
   const senderEthOf = useCallback(
     (from: string): string | null => {
@@ -270,40 +290,34 @@ export function useConversationState(convId: string | undefined, focus: string |
     [knownAddrs],
   );
 
-  const selfAddr = xmtpFeed.inboxId ? (inboxToAddr[xmtpFeed.inboxId] ?? null) : null;
+  const selfAddr = selfInboxId ? (inboxToAddr[selfInboxId] ?? null) : null;
   const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);
   const mentionCandidates = useMentionCandidates(isGroup, memberAddrs, peerAddr, profilesVersion);
+  return { senderEthOf, profilesVersion, mentionCandidates };
+}
+
+export function useConversationState(convId: string | undefined, focus: string | undefined) {
+  const { feed, inboxId, fields } = useConvFeed(convId, focus);
+  const { activeLine, events, myUri } = feed;
+  const { peerAddr, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = fields;
+
+  const menus = useConvMenus(convId);
+  const { consent, consentKnown, markAllowed: markConsentAllowed } = useConsentGate(convId);
+  const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
+  const groupLabels = useLiveChannelLabels(convId);
+
+  const people = useConvPeople(events, fields, inboxId);
 
   const scroll = useConvScrollPersistence(convId);
   const { isAtBottomRef } = scroll;
 
   const { reactions, ownReactions, votes, ownVotes, openAnswers, callRecords } = useFeedDerivations(events, myUri, !isGroup);
-  const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, xmtpFeed.inboxId);
+  const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, inboxId);
 
-  const { optimisticReactions, optimisticRemovals, onReact } = useReactionsLayer(activeLine, ownReactions);
-  const { displayVotes, displayOwnVotes, onVote, displayOpenAnswers, onOpenAnswer } = useVotesLayer(
-    activeLine,
-    events,
-    votes,
-    ownVotes,
-    openAnswers,
-    myUri,
-  );
-  const { signingIds, onSign, payingIds, onPay } = useTxSignLayer(activeLine);
-
-  const {
-    showJump,
-    setShowJump,
-    scrollToNewest,
-    jumpHighlightId,
-    listRef,
-    confirmedIds,
-    allBubbles,
-    rowKeyOf,
-    jumpToMessage,
-    onOptimistic,
-    onSent,
-  } = useOutboundLayer(events, myUri, convId, activeLine, isAtBottomRef, deletedIds);
+  const reactionsLayer = useReactionsLayer(activeLine, ownReactions);
+  const votesLayer = useVotesLayer(activeLine, events, votes, ownVotes, openAnswers, myUri);
+  const txSignLayer = useTxSignLayer(activeLine);
+  const outbound = useOutboundLayer(events, myUri, convId, activeLine, isAtBottomRef, deletedIds);
 
   const markAtBottom = useCallback(() => {
     isAtBottomRef.current = true;
@@ -319,67 +333,26 @@ export function useConversationState(convId: string | undefined, focus: string |
   );
 
   return {
-    activeLine,
-    autoFocusNonce,
-    events,
-    loadOlder,
-    hasMore,
-    loadingOlder,
-    retryFeed,
-    status,
-    myUri,
-    showJump,
-    setShowJump,
-    scrollToNewest,
-    replyingTo,
-    setReplyingTo,
-    setReplyTarget,
-    jumpHighlightId,
-    menuFor,
-    setMenuFor,
-    menuAnchor,
-    setMenuAnchor,
-    overflowOpen,
-    setOverflowOpen,
-    overflowAnchor,
-    setOverflowAnchor,
-    selectedForCopy,
-    setSelectedForCopy,
-    confirmedIds,
-    optimisticReactions,
-    optimisticRemovals,
+    ...feed,
+    ...menus,
+    ...outbound,
+    ...reactionsLayer,
+    ...votesLayer,
+    ...txSignLayer,
+    ...people,
+    ...scroll,
     peerAddr,
     groupName,
     groupImage,
     groupDescription,
     groupLabels,
     isGroup,
-    senderEthOf,
-    profilesVersion,
-    mentionCandidates,
-    listRef,
-    ...scroll,
     reactions,
     ownReactions,
-    displayVotes,
-    displayOwnVotes,
-    displayOpenAnswers,
     callRecords,
     deletedIds,
     isSuperAdmin,
-    allBubbles,
-    rowKeyOf,
-    jumpToMessage,
-    onReact,
-    onSign,
-    signingIds,
-    onVote,
-    onOpenAnswer,
-    onPay,
-    payingIds,
     onAnswer,
-    onOptimistic,
-    onSent,
     markAtBottom,
     consent,
     consentKnown,

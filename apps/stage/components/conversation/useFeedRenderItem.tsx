@@ -61,55 +61,43 @@ function interactionsOf(deleted: boolean, live: () => BubbleInteractions): Bubbl
   return deleted ? {} : live();
 }
 
-export function useFeedRenderItem(
-  c: ConvState,
-  highlight?: string,
-): { renderItem: ({ item }: { item: Bubble }) => React.ReactElement; extraData: readonly unknown[] } {
+interface FeedLocals {
+  sub: string;
+  dark: boolean;
+  replyingToId: string | undefined;
+  menuForId: string | undefined;
+  reactorNames: Map<string, Map<string, string[]>>;
+  eventsById: Map<string, HistoryEntry>;
+  namedEntry: (item: Bubble) => Bubble;
+  endSelection: () => void;
+  onAvatarPress: (address: string) => void;
+  highlight: string | undefined;
+}
+
+type RenderItem = ({ item }: { item: Bubble }) => React.ReactElement;
+
+function useFeedExtraData(c: ConvState, l: Pick<FeedLocals, 'reactorNames' | 'replyingToId' | 'menuForId'>): readonly unknown[] {
   const {
-    events,
-    myUri,
-    replyingTo,
-    jumpHighlightId,
-    menuFor,
-    confirmedIds,
+    profilesVersion,
     optimisticReactions,
     optimisticRemovals,
-    groupDescription,
-    groupLabels,
-    senderEthOf,
-    profilesVersion,
-    reactions,
     ownReactions,
     displayVotes,
     displayOwnVotes,
     displayOpenAnswers,
     callRecords,
-    jumpToMessage,
-    onReact,
-    onSign,
-    signingIds,
-    onVote,
-    onOpenAnswer,
-    onPay,
-    payingIds,
-    onAnswer,
-    setMenuAnchor,
-    setMenuFor,
-    setReplyTarget,
+    confirmedIds,
     selectedForCopy,
-    setSelectedForCopy,
+    groupDescription,
+    groupLabels,
     consentAllowed,
+    signingIds,
+    payingIds,
+    jumpHighlightId,
     deletedIds,
   } = c;
-
-  const sub = usePalette().text;
-  const dark = useEffectiveColorScheme() === 'dark';
-  const router = useRouter();
-  const replyingToId = replyingTo?.id;
-  const menuForId = menuFor?.id;
-  const reactorNames = useReactorNames(reactions, myUri, senderEthOf, profilesVersion);
-
-  const extraData = useMemo(
+  const { reactorNames, replyingToId, menuForId } = l;
+  return useMemo(
     () => [
       profilesVersion,
       optimisticReactions,
@@ -155,6 +143,124 @@ export function useFeedRenderItem(
       deletedIds,
     ],
   );
+}
+
+function renderFeedBubble(item: Bubble, c: ConvState, l: FeedLocals): React.ReactElement {
+  const { deletedIds, myUri } = c;
+  const senderEthAddress = c.senderEthOf(item.from);
+  const deleted = deletedIds.has(item.id);
+  const target = item.replyTo;
+  return (
+    <BubbleErrorBoundary sub={l.sub} entry={item}>
+      <MessengerBubble
+        entry={l.namedEntry(item)}
+        dark={l.dark}
+        myUri={myUri}
+        senderEthAddress={senderEthAddress}
+        onAvatarPress={l.onAvatarPress}
+        pending={item.id.startsWith('tmp_') && !c.confirmedIds.has(item.id)}
+        replyTarget={l.replyingToId === item.id || c.jumpHighlightId === item.id || l.menuForId === item.id}
+        reactions={unlessDeleted(deleted, l.reactorNames, item.id)}
+        pendingReactions={unlessDeleted(deleted, c.optimisticReactions, item.id)}
+        pendingRemovals={unlessDeleted(deleted, c.optimisticRemovals, item.id)}
+        ownEmojis={unlessDeleted(deleted, c.ownReactions, item.id)}
+        {...interactionsOf(deleted, () => ({
+          replyPreview: replyQuoteOf(item, deletedIds, (id) => l.eventsById.get(id)),
+          onReplyPreviewPress: target
+            ? () => {
+                c.jumpToMessage(target);
+              }
+            : undefined,
+          onReact: (emoji) => {
+            c.onReact(item.id, emoji);
+          },
+          onReply: () => {
+            c.setReplyTarget(item.id, previewOf(item), senderEthAddress);
+          },
+          onOpenMenu: (anchor) => {
+            c.setMenuAnchor(anchor);
+            c.setMenuFor(item);
+          },
+        }))}
+        votes={c.displayVotes.get(item.id)}
+        ownVotes={c.displayOwnVotes.get(item.id)}
+        onVote={(qIdx, idx, action) => {
+          c.onVote(item.id, qIdx, idx, action);
+        }}
+        openAnswers={c.displayOpenAnswers.get(item.id)}
+        onOpenAnswer={(qIdx, text) => {
+          c.onOpenAnswer(item.id, qIdx, text);
+        }}
+        call={unlessDeleted(deleted, c.callRecords, item.id)}
+        signing={c.signingIds.has(item.id)}
+        consentAllowed={c.consentAllowed}
+        onSign={signHandlerOf(item, myUri, c.onSign)}
+        paying={c.payingIds.has(item.id)}
+        onPay={payHandlerOf(item, myUri, c.onPay)}
+        selectable={!deleted && c.selectedForCopy === item.id}
+        onEndSelection={l.endSelection}
+        onAnswer={(label) => {
+          c.onAnswer(item.id, label);
+        }}
+        highlight={l.highlight}
+      />
+    </BubbleErrorBoundary>
+  );
+}
+
+function useBubbleRenderer(c: ConvState, l: FeedLocals): RenderItem {
+  return useCallback(
+    ({ item }: { item: Bubble }) => renderFeedBubble(item, c, l),
+    [
+      l.dark,
+      c.myUri,
+      l.sub,
+      c.senderEthOf,
+      l.namedEntry,
+      c.deletedIds,
+      c.confirmedIds,
+      l.replyingToId,
+      c.jumpHighlightId,
+      l.menuForId,
+      l.reactorNames,
+      c.optimisticReactions,
+      c.optimisticRemovals,
+      c.ownReactions,
+      l.eventsById,
+      c.displayVotes,
+      c.displayOwnVotes,
+      c.displayOpenAnswers,
+      c.callRecords,
+      c.signingIds,
+      c.payingIds,
+      c.consentAllowed,
+      c.selectedForCopy,
+      l.endSelection,
+      l.highlight,
+      l.onAvatarPress,
+      c.jumpToMessage,
+      c.onVote,
+      c.onOpenAnswer,
+      c.onSign,
+      c.onPay,
+      c.onReact,
+      c.setReplyTarget,
+      c.setMenuAnchor,
+      c.setMenuFor,
+      c.onAnswer,
+    ],
+  );
+}
+
+export function useFeedRenderItem(c: ConvState, highlight?: string): { renderItem: RenderItem; extraData: readonly unknown[] } {
+  const { events, myUri, senderEthOf, profilesVersion, reactions, setSelectedForCopy } = c;
+  const sub = usePalette().text;
+  const dark = useEffectiveColorScheme() === 'dark';
+  const router = useRouter();
+  const replyingToId = c.replyingTo?.id;
+  const menuForId = c.menuFor?.id;
+  const reactorNames = useReactorNames(reactions, myUri, senderEthOf, profilesVersion);
+  const extraData = useFeedExtraData(c, { reactorNames, replyingToId, menuForId });
 
   const eventsById = useMemo(() => new Map(events.map((e) => [e.id, e])), [events]);
 
@@ -182,107 +288,18 @@ export function useFeedRenderItem(
     [router],
   );
 
-  const renderItem = useCallback(
-    ({ item }: { item: Bubble }) => {
-      const senderEthAddress = senderEthOf(item.from);
-      const deleted = deletedIds.has(item.id);
-      const target = item.replyTo;
-      return (
-        <BubbleErrorBoundary sub={sub} entry={item}>
-          <MessengerBubble
-            entry={namedEntry(item)}
-            dark={dark}
-            myUri={myUri}
-            senderEthAddress={senderEthAddress}
-            onAvatarPress={onAvatarPress}
-            pending={item.id.startsWith('tmp_') && !confirmedIds.has(item.id)}
-            replyTarget={replyingToId === item.id || jumpHighlightId === item.id || menuForId === item.id}
-            reactions={unlessDeleted(deleted, reactorNames, item.id)}
-            pendingReactions={unlessDeleted(deleted, optimisticReactions, item.id)}
-            pendingRemovals={unlessDeleted(deleted, optimisticRemovals, item.id)}
-            ownEmojis={unlessDeleted(deleted, ownReactions, item.id)}
-            {...interactionsOf(deleted, () => ({
-              replyPreview: replyQuoteOf(item, deletedIds, (id) => eventsById.get(id)),
-              onReplyPreviewPress: target
-                ? () => {
-                    jumpToMessage(target);
-                  }
-                : undefined,
-              onReact: (emoji) => {
-                onReact(item.id, emoji);
-              },
-              onReply: () => {
-                setReplyTarget(item.id, previewOf(item), senderEthAddress);
-              },
-              onOpenMenu: (anchor) => {
-                setMenuAnchor(anchor);
-                setMenuFor(item);
-              },
-            }))}
-            votes={displayVotes.get(item.id)}
-            ownVotes={displayOwnVotes.get(item.id)}
-            onVote={(qIdx, idx, action) => {
-              onVote(item.id, qIdx, idx, action);
-            }}
-            openAnswers={displayOpenAnswers.get(item.id)}
-            onOpenAnswer={(qIdx, text) => {
-              onOpenAnswer(item.id, qIdx, text);
-            }}
-            call={unlessDeleted(deleted, callRecords, item.id)}
-            signing={signingIds.has(item.id)}
-            consentAllowed={consentAllowed}
-            onSign={signHandlerOf(item, myUri, onSign)}
-            paying={payingIds.has(item.id)}
-            onPay={payHandlerOf(item, myUri, onPay)}
-            selectable={!deleted && selectedForCopy === item.id}
-            onEndSelection={endSelection}
-            onAnswer={(label) => {
-              onAnswer(item.id, label);
-            }}
-            highlight={highlight}
-          />
-        </BubbleErrorBoundary>
-      );
-    },
-    [
-      dark,
-      myUri,
-      sub,
-      senderEthOf,
-      namedEntry,
-      deletedIds,
-      confirmedIds,
-      replyingToId,
-      jumpHighlightId,
-      menuForId,
-      reactorNames,
-      optimisticReactions,
-      optimisticRemovals,
-      ownReactions,
-      eventsById,
-      displayVotes,
-      displayOwnVotes,
-      displayOpenAnswers,
-      callRecords,
-      signingIds,
-      payingIds,
-      consentAllowed,
-      selectedForCopy,
-      endSelection,
-      highlight,
-      onAvatarPress,
-      jumpToMessage,
-      onVote,
-      onOpenAnswer,
-      onSign,
-      onPay,
-      onReact,
-      setReplyTarget,
-      setMenuAnchor,
-      setMenuFor,
-      onAnswer,
-    ],
-  );
+  const renderItem = useBubbleRenderer(c, {
+    sub,
+    dark,
+    replyingToId,
+    menuForId,
+    reactorNames,
+    eventsById,
+    namedEntry,
+    endSelection,
+    onAvatarPress,
+    highlight,
+  });
 
   return { renderItem, extraData };
 }

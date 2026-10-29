@@ -15,7 +15,7 @@ import { ChannelsList } from './list';
 import { useChannelsSync } from './sync';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
 import { useHomeFilters } from './labelbar';
-import { searchBarLabels } from './model';
+import { searchBarLabels, type Row } from './model';
 import { isRowCleared } from '@stage-labs/client/xmtp/readState';
 import { parseSearchFilter, searchFilterSources, searchFilterValues, searchRowMatcher } from '../searchFilter.model';
 import { memberNamesOf } from '../FilterSearch';
@@ -57,6 +57,29 @@ export function BoardHome(): React.ReactElement | null {
   return here || opened ? <HomeScreen board /> : null;
 }
 
+interface ChannelSearch {
+  channelProfilesVersion: number;
+  draftsVersion: number;
+  search: ReturnType<typeof parseSearchFilter>;
+  matches: ReturnType<typeof searchRowMatcher>;
+}
+
+function useChannelSearch(rows: Row[] | null, query: string, assignees: boolean): ChannelSearch {
+  const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'chats').members : [];
+  const channelProfilesVersion = usePeerProfiles([
+    ...members,
+    ...(rows ?? []).flatMap((r) => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(assignees ? r.assigned : [])]),
+  ]);
+  const draftsVersion = useDraftsVersion();
+  const search = useMemo(() => parseSearchFilter(query), [query]);
+  const activityCutoff = useLastActivityCutoff('chats');
+  const matches = useMemo(
+    () => searchRowMatcher(search, memberNamesOf, getDraft, activityCutoff),
+    [search, channelProfilesVersion, draftsVersion, activityCutoff],
+  );
+  return { channelProfilesVersion, draftsVersion, search, matches };
+}
+
 function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane: boolean; menu: HomeMenuState }): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
@@ -70,18 +93,7 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const { groupBy } = view;
   const sort = homeSortOf(view);
   const boardOrder = useBoardOrder();
-  const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'chats').members : [];
-  const channelProfilesVersion = usePeerProfiles([
-    ...members,
-    ...(rows ?? []).flatMap((r) => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(groupBy === 'assignee' ? r.assigned : [])]),
-  ]);
-  const draftsVersion = useDraftsVersion();
-  const search = useMemo(() => parseSearchFilter(query), [query]);
-  const activityCutoff = useLastActivityCutoff('chats');
-  const matches = useMemo(
-    () => searchRowMatcher(search, memberNamesOf, getDraft, activityCutoff),
-    [search, channelProfilesVersion, draftsVersion, activityCutoff],
-  );
+  const { channelProfilesVersion, draftsVersion, search, matches } = useChannelSearch(rows, query, groupBy === 'assignee');
 
   const sortedRows = useMemo(
     () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned, sort, statusOrder: boardOrder }),

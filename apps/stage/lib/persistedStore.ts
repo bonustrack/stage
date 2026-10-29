@@ -31,6 +31,14 @@ export interface ValueStore<T> {
   use: () => T;
 }
 
+type StoreStorage = Pick<AppStorage, 'get' | 'set'>;
+
+interface StoreState<T> {
+  cache: T;
+  accountId: string | null | undefined;
+  accountEpoch: number | undefined;
+}
+
 function durableWriter<T>(
   read: (id: string) => Promise<T>,
   write: (id: string, value: T) => Promise<void>,
@@ -52,56 +60,44 @@ function durableWriter<T>(
   };
 }
 
-export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
-  const serialize = opts.serialize ?? ((v: T): string => String(v));
-  const storage = opts.storage ?? appStorage;
-  let cache: T = opts.default;
-  let accountId: string | null | undefined;
-  let accountEpoch: number | undefined;
-  const { notify, subscribe } = makeListeners();
-  const durable = durableWriter(
-    storedFor,
-    (id, value) => storage.set(opts.key + id, serialize(value)),
-    (id, value) => {
-      if (id === accountId && serialize(cache) !== serialize(value)) commit(value);
-    },
-  );
+function parseRaw<T>(opts: ValueStoreOptions<T>, raw: string | null): T | undefined {
+  return raw == null ? undefined : opts.deserialize(raw);
+}
 
-  function storageKey(): string | null {
-    return opts.perAccount ? (typeof accountId === 'string' ? opts.key + accountId : null) : opts.key;
+function applyRaw<T>(opts: ValueStoreOptions<T>, state: StoreState<T>, raw: string | null): boolean {
+  const parsed = parseRaw(opts, raw);
+  if (parsed === undefined) return false;
+  state.cache = opts.restore ? opts.restore(state.cache, parsed) : parsed;
+  return true;
+}
+
+async function readStored<T>(
+  opts: ValueStoreOptions<T>,
+  storage: StoreStorage,
+  state: StoreState<T>,
+  ready: () => Promise<void>,
+): Promise<boolean> {
+  if (!opts.perAccount) return applyRaw(opts, state, await storage.get(opts.key));
+  const epoch = getAccountEpoch();
+  const id = (await getActiveAccount())?.id ?? null;
+  if (id === state.accountId) {
+    const changed = state.accountEpoch !== epoch;
+    state.accountEpoch = epoch;
+    return changed;
   }
+  await ready();
+  const raw = id === null ? null : await storage.get(opts.key + id);
+  if (epoch !== getAccountEpoch()) return readStored(opts, storage, state, ready);
+  if (!opts.restore || state.accountId !== undefined) state.cache = opts.default;
+  state.accountId = id;
+  state.accountEpoch = epoch;
+  applyRaw(opts, state, raw);
+  return true;
+}
 
-  function parse(raw: string | null): T | undefined {
-    return raw == null ? undefined : opts.deserialize(raw);
-  }
-
-  function apply(raw: string | null): boolean {
-    const parsed = parse(raw);
-    if (parsed === undefined) return false;
-    cache = opts.restore ? opts.restore(cache, parsed) : parsed;
-    return true;
-  }
-
-  async function read(): Promise<boolean> {
-    if (!opts.perAccount) return apply(await storage.get(opts.key));
-    const epoch = getAccountEpoch();
-    const id = (await getActiveAccount())?.id ?? null;
-    if (id === accountId) {
-      const changed = accountEpoch !== epoch;
-      accountEpoch = epoch;
-      return changed;
-    }
-    await durable.ready();
-    const raw = id === null ? null : await storage.get(opts.key + id);
-    if (epoch !== getAccountEpoch()) return read();
-    if (!opts.restore || accountId !== undefined) cache = opts.default;
-    accountId = id;
-    accountEpoch = epoch;
-    apply(raw);
-    return true;
-  }
-
-  const hydration = hydrateOnce(async (): Promise<boolean> => {
+function storeHydration<T>(opts: ValueStoreOptions<T>, storage: StoreStorage, state: StoreState<T>, ready: () => Promise<void>) {
+  const read = (): Promise<boolean> => readStored(opts, storage, state, ready);
+  return hydrateOnce(async (): Promise<boolean> => {
     if (opts.perAccount) return read();
     try {
       return await read();
@@ -110,30 +106,49 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
       return false;
     }
   });
+}
+
+export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
+  const serialize = opts.serialize ?? ((v: T): string => String(v));
+  const storage = opts.storage ?? appStorage;
+  const state: StoreState<T> = { cache: opts.default, accountId: undefined, accountEpoch: undefined };
+  const { notify, subscribe } = makeListeners();
+  const durable = durableWriter(
+    storedFor,
+    (id, value) => storage.set(opts.key + id, serialize(value)),
+    (id, value) => {
+      if (id === state.accountId && serialize(state.cache) !== serialize(value)) commit(value);
+    },
+  );
+  const hydration = storeHydration(opts, storage, state, () => durable.ready());
+
+  function storageKey(): string | null {
+    return opts.perAccount ? (typeof state.accountId === 'string' ? opts.key + state.accountId : null) : opts.key;
+  }
 
   async function reload(): Promise<T> {
     if (await hydration.run()) notify();
-    return cache;
+    return state.cache;
   }
 
   async function load(): Promise<T> {
-    if (opts.perAccount ? accountId !== undefined : hydration.done()) return cache;
+    if (opts.perAccount ? state.accountId !== undefined : hydration.done()) return state.cache;
     if (opts.perAccount) return reload();
     await hydration.run();
-    return cache;
+    return state.cache;
   }
 
   function loadAsync(): void {
-    if (opts.perAccount ? accountId !== undefined : hydration.done()) return;
+    if (opts.perAccount ? state.accountId !== undefined : hydration.done()) return;
     void reload().catch(reported(`store.${opts.key}`));
   }
 
   function get(): T {
-    return cache;
+    return state.cache;
   }
 
   function commit(value: T): void {
-    cache = value;
+    state.cache = value;
     hydration.markDone();
     notify();
   }
@@ -141,11 +156,11 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   function write(): Promise<void> {
     const key = storageKey();
     if (key === null) return Promise.resolve();
-    return storage.set(key, serialize(cache)).catch(reported(`store.${opts.key}`));
+    return storage.set(key, serialize(state.cache)).catch(reported(`store.${opts.key}`));
   }
 
   function set(value: T): void {
-    if (value === cache) return;
+    if (value === state.cache) return;
     commit(value);
     void write();
   }
@@ -156,29 +171,29 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   async function change(next: (current: T) => T): Promise<void> {
-    const value = next(cache);
-    if (value !== cache) await setAsync(value);
+    const value = next(state.cache);
+    if (value !== state.cache) await setAsync(value);
   }
 
   async function update(next: (current: T) => T, onlyFor?: string): Promise<void> {
     await (opts.perAccount ? reload() : load());
-    if (onlyFor === undefined || onlyFor === accountId) await change(next);
+    if (onlyFor === undefined || onlyFor === state.accountId) await change(next);
   }
 
   async function storedFor(id: string): Promise<T> {
-    return parse(await storage.get(opts.key + id)) ?? opts.default;
+    return parseRaw(opts, await storage.get(opts.key + id)) ?? opts.default;
   }
 
   async function loadFor(id: string): Promise<T> {
     await load();
     await durable.ready();
-    return id === accountId ? cache : storedFor(id);
+    return id === state.accountId ? state.cache : storedFor(id);
   }
 
   async function updateFor(id: string, next: (current: T) => T): Promise<void> {
     await reload();
     if (opts.durable) return durable.update(id, next);
-    if (id === accountId) return change(next);
+    if (id === state.accountId) return change(next);
     const stored = await storedFor(id);
     const value = next(stored);
     if (value !== stored) await storage.set(opts.key + id, serialize(value));
@@ -200,8 +215,8 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     update,
     loadFor,
     updateFor,
-    accountId: () => accountId ?? null,
-    isCurrentAccount: () => !opts.perAccount || accountEpoch === getAccountEpoch(),
+    accountId: () => state.accountId ?? null,
+    isCurrentAccount: () => !opts.perAccount || state.accountEpoch === getAccountEpoch(),
     subscribe,
     use,
   };
