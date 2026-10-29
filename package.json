@@ -15,33 +15,29 @@
     "apps/stage/desktop"
   ],
   "scripts": {
-    "build": "turbo run build",
-    "test": "turbo run test",
-    "test:changed": "TURBO_SCM_BASE=origin/main turbo run test --affected",
-    "typecheck": "stage typecheck",
-    "typecheck:tsc": "stage typecheck --tsc",
+    "build": "bun run --workspaces --if-present build",
+    "test": "bun test --parallel",
+    "test:changed": "bun test --parallel --changed=origin/main",
     "lint": "stage lint",
     "lint:fix": "stage lint --fix",
     "lint:changed": "stage lint --changed",
-    "madge": "stage madge",
+    "fmt": "stage fmt",
+    "fmt:check": "stage fmt --check",
     "knip": "stage knip",
-    "check": "bun fmt --check && bun run lint && bun run typecheck"
+    "check": "stage check"
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
     "eslint": "^10.3.0",
     "knip": "^6.15.0",
-    "madge": "^8.0.0",
     "oxlint": "1.86.0",
     "oxlint-tsgolint": "7.0.2003",
-    "turbo": "^2.3.3",
     "typescript": "~5.9.2"
   },
   "trustedDependencies": [
     "electron"
   ],
   "packageManager": "bun@1.4.4",
-  "prettier": "@stage-labs/config/prettier",
   "engines": {
     "node": ">=22"
   },

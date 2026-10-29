@@ -1,7 +1,7 @@
 {
   "name": "@stage-labs/config",
-  "version": "0.1.0-beta.6",
-  "description": "Shared oxlint plugins, Prettier (bun fmt), TypeScript, knip and madge presets, and the stage CLI.",
+  "version": "0.1.0-beta.7",
+  "description": "Shared oxlint plugins, TypeScript and knip presets, and the stage CLI.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -12,16 +12,13 @@
   "files": [
     "bin",
     "knip",
-    "madge",
     "oxlint",
-    "prettier",
     "tsconfig",
     "define.js",
     "README.md"
   ],
   "bin": {
-    "stage": "./bin/stage.js",
-    "stage-madge": "./bin/stage-madge.js"
+    "stage": "./bin/stage.js"
   },
   "publishConfig": {
     "access": "public"
@@ -30,27 +27,21 @@
     ".": "./define.js",
     "./define": "./define.js",
     "./knip": "./knip/index.js",
-    "./madge": "./madge/index.js",
     "./oxlint/comments": "./oxlint/comments.js",
     "./oxlint/core": "./oxlint/core.js",
     "./oxlint/text": "./oxlint/text.js",
-    "./prettier": "./prettier/index.json",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json"
   },
   "peerDependencies": {
     "eslint": "*",
     "knip": "*",
-    "madge": "*",
     "oxlint": "*",
     "oxlint-tsgolint": "*",
     "typescript": ">=5.9"
   },
   "peerDependenciesMeta": {
     "knip": {
-      "optional": true
-    },
-    "madge": {
       "optional": true
     },
     "oxlint": {

@@ -13,10 +13,7 @@ compatibility_date = "2026-06-01"
 # per-branch URL; browsers on other paths fall through to the GitHub Pages
 # origin (dev hub + launcher), so its record stays a proxied CNAME to
 # bonustrack.github.io.
-routes = [
-  { pattern = "proxy.stage.box/*", zone_name = "stage.box" },
-  { pattern = "bundler.stage.box/*", zone_name = "stage.box" },
-]
+routes = [{ pattern = "proxy.stage.box/*", zone_name = "stage.box" }, { pattern = "bundler.stage.box/*", zone_name = "stage.box" }]
 
 # Records which address claimed which *.stage.base.eth name (one per address).
 # The operator key that creates the names lives in the NAMES_OPERATOR_KEY secret.

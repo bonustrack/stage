@@ -1,7 +1,6 @@
 node_modules
 .claude
 .netlify
-.turbo
 dist
 apps/stage/desktop/release
 apps/stage/desktop/web

@@ -6,17 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const COMMANDS = [
-  'fmt --no-script --check',
-  'run lint',
-  'run typecheck',
-  'run knip',
-  'run madge',
-  'run build',
-  'test scripts/test',
-  'test apps/stage/scripts/test/typographyLint.test.mjs',
-  'run test',
-];
+const COMMANDS = ['run fmt:check', 'run lint', 'run check', 'run knip', 'run build', 'run test'];
 
 function runChecks(failCommand = '') {
   const directory = mkdtempSync(join(tmpdir(), 'stage-source-checks-'));

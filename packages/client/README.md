@@ -70,10 +70,10 @@ Smart accounts are ZeroDev Kernel v3.1 on Base (EntryPoint 0.7).
 
 ## Scripts
 
-| Script              | Description                  |
-| ------------------- | ---------------------------- |
-| `bun run typecheck` | Type-check without emitting. |
-| `bun run test`      | Run the unit tests.          |
+| Script         | Description                  |
+| -------------- | ---------------------------- |
+| `bun check`    | Type-check without emitting. |
+| `bun run test` | Run the unit tests.          |
 
 Linting is centralised at the repo root (`bun run lint`).
 

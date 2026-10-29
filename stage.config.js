@@ -36,24 +36,6 @@ export default defineConfig({
       type: 'library',
       knip: { entry: ['stories/*.stories.tsx', 'src/**/*.native.ts'], project: ['src/**', 'stories/**', 'gallery/**'] },
     },
-    'packages/config': {
-      type: 'library',
-      knip: { entry: ['knip/*.js', 'oxlint/*.js', 'bin/*.js'], project: ['**/*.js'], ignoreDependencies: ['madge'] },
-    },
-  },
-  madge: {
-    roots: [
-      'apps/stage/desktop/src',
-      'apps/stage/app',
-      'apps/stage/components',
-      'apps/stage/lib',
-      'apps/stage/modules',
-      'apps/stage/platform',
-      'apps/proxy/src',
-      'apps/dispatch/src',
-      'packages/client/src',
-      'packages/config',
-      'packages/kit/src',
-    ],
+    'packages/config': { type: 'library', knip: { entry: ['knip/*.js', 'oxlint/*.js', 'bin/*.js'], project: ['**/*.js'] } },
   },
 });

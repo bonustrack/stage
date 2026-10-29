@@ -45,7 +45,7 @@ dispatch namespace `stage-nodes` (keep it untrusted, the default).
 
 GitHub Actions deploys both Workers (`.github/workflows/deploy-nodes.yml`) on
 every push to `main` that touches `apps/dispatch/`, `packages/client/`,
-`bun.lock` or the root `package.json`, and on demand: typecheck and tests,
+`bun.lock` or the root `package.json`, and on demand: `bun check` and tests,
 then `nodes-outbound` (`bunx wrangler deploy -c outbound.toml`), then
 `dispatch` (`bunx wrangler deploy`), which attaches the custom domain
 `nodes.stage.box`. It needs two repository secrets, else it skips the deploy

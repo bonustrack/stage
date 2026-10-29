@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -8,7 +8,7 @@ import { spawn, spawnSync } from 'node:child_process';
 
 const requireFromCwd = createRequire(join(process.cwd(), 'noop.js'));
 
-const SUBS = ['lint', 'knip', 'madge', 'typecheck'];
+const SUBS = ['lint', 'fmt', 'check', 'knip'];
 
 function usage(message) {
   if (message) process.stderr.write(`${message}\n`);
@@ -138,6 +138,15 @@ async function cmdLint(argv) {
   return run(localBin('oxlint'), ['--type-aware', ...oxlintTargets(paths, files), ...rest]);
 }
 
+function cmdFmt(argv) {
+  const bunfig = resolve(cwd, 'bunfig.toml');
+  if (!existsSync(bunfig) || !/^\[fmt\]/m.test(readFileSync(bunfig, 'utf8'))) {
+    process.stderr.write(`stage fmt: no [fmt] section in ${bunfig}\n`);
+    return 1;
+  }
+  return run('bun', ['fmt', '--no-script', ...argv]);
+}
+
 function cmdKnip(argv) {
   const native = ['knip.config.js', 'knip.config.ts', 'knip.config.json', 'knip.json'].find((name) => existsSync(resolve(cwd, name)));
   if (native) {
@@ -155,43 +164,7 @@ function cmdKnip(argv) {
   return run(localBin('knip'), ['--config', temp, ...argv]);
 }
 
-function globToDir(glob) {
-  return glob.split('*')[0].replace(/\/+$/, '') || '.';
-}
-
-function madgeRoots(stageConfig, argv) {
-  if (argv.length > 0) return argv;
-  const configured = stageConfig.madge?.roots;
-  if (Array.isArray(configured) && configured.length > 0) return configured;
-  return Object.entries(stageConfig.workspaces).flatMap(([path, workspace]) =>
-    Array.isArray(workspace.src) && workspace.src.length > 0
-      ? workspace.src.map((g) => prefixed(path, globToDir(g)))
-      : [path === '.' ? 'src' : `${path}/src`],
-  );
-}
-
-async function cmdMadge(stageConfig, argv) {
-  const { madgeConfig } = await import('@stage-labs/config/madge');
-  const { default: madge } = await import('madge');
-  const roots = madgeRoots(stageConfig, argv).filter((r) => existsSync(resolve(cwd, r)));
-  const res = await madge(roots, madgeConfig);
-  const circular = res.circular();
-  if (circular.length === 0) {
-    process.stdout.write(`madge: no circular dependencies found across ${roots.length} source ${roots.length === 1 ? 'root' : 'roots'}.\n`);
-    return 0;
-  }
-  process.stdout.write(`madge: ${circular.length} circular dependenc${circular.length === 1 ? 'y' : 'ies'} found:\n\n`);
-  for (const cycle of circular) process.stdout.write('  ' + cycle.join(' -> ') + '\n');
-  return 1;
-}
-
-function prefixed(path, dir) {
-  if (path === '.') return dir;
-  if (dir === '.') return path;
-  return `${path}/${dir}`;
-}
-
-const TYPECHECK_JOBS = 2;
+const CHECK_JOBS = 2;
 
 function spawnCaptured(bin, args) {
   return new Promise((done) => {
@@ -210,29 +183,22 @@ function spawnCaptured(bin, args) {
   });
 }
 
-function typecheckCommand(argv) {
-  const pretty = process.stdout.isTTY ? ['--pretty'] : [];
-  const flags = argv.filter((arg) => arg !== '--tsc');
-  if (argv.includes('--tsc')) return { name: 'tsc', run: (project) => [localBin('tsc'), ['--noEmit', '-p', project, ...pretty, ...flags]] };
-  return { name: 'bun check', run: (project) => ['bun', ['check', '--no-script', '-p', project, ...pretty, ...flags]] };
-}
-
-async function cmdTypecheck(stageConfig, argv) {
-  const command = typecheckCommand(argv);
+async function cmdCheck(stageConfig, argv) {
+  const flags = [...(process.stdout.isTTY ? ['--pretty'] : []), ...argv];
   const queue = Object.entries(stageConfig.workspaces)
     .map(([path]) => ({ path, project: path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json` }))
     .filter(({ project }) => existsSync(resolve(cwd, project)));
   const failures = [];
   const lane = async () => {
     for (let job = queue.shift(); job; job = queue.shift()) {
-      const { status, output } = await spawnCaptured(...command.run(job.project));
-      await new Promise((done) => process.stdout.write(`stage typecheck: ${job.path} (${command.name})\n${output}`, done));
+      const { status, output } = await spawnCaptured('bun', ['check', '--no-script', '-p', job.project, ...flags]);
+      await new Promise((done) => process.stdout.write(`stage check: ${job.path}\n${output}`, done));
       if (status !== 0) failures.push(job.path);
     }
   };
-  await Promise.all(Array.from({ length: Math.min(TYPECHECK_JOBS, queue.length) }, lane));
+  await Promise.all(Array.from({ length: Math.min(CHECK_JOBS, queue.length) }, lane));
   if (failures.length > 0) {
-    process.stderr.write(`stage typecheck: failed in ${failures.join(', ')}\n`);
+    process.stderr.write(`stage check: failed in ${failures.join(', ')}\n`);
     return 1;
   }
   return 0;
@@ -247,13 +213,13 @@ async function main() {
   if (sub === 'lint') {
     stageConfigPath();
     status = await cmdLint(argv);
+  } else if (sub === 'fmt') {
+    status = cmdFmt(argv);
   } else if (sub === 'knip') {
     stageConfigPath();
     status = cmdKnip(argv);
-  } else if (sub === 'madge') {
-    status = await cmdMadge(await loadStageConfig(), argv);
-  } else if (sub === 'typecheck') {
-    status = await cmdTypecheck(await loadStageConfig(), argv);
+  } else if (sub === 'check') {
+    status = await cmdCheck(await loadStageConfig(), argv);
   }
   process.exit(status);
 }

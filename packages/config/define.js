@@ -22,7 +22,7 @@ function resolveWorkspaces(config) {
     return { '.': config.root };
   }
   if (TYPES.includes(config.type)) {
-    const { workspaces: _w, madge: _m, knip: _k, ...ws } = config;
+    const { workspaces: _w, knip: _k, ...ws } = config;
     return { '.': ws };
   }
   throw new Error(
@@ -43,5 +43,5 @@ export function defineConfig(config) {
   for (const [path, raw] of entries) {
     workspaces[path] = normalizeWorkspace(path, raw);
   }
-  return Object.freeze({ workspaces: Object.freeze(workspaces), madge: config.madge ?? {}, knip: config.knip ?? {} });
+  return Object.freeze({ workspaces: Object.freeze(workspaces), knip: config.knip ?? {} });
 }

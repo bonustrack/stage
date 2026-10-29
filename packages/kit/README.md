@@ -232,7 +232,7 @@ The gallery opens on a Home page with one live example of each component (its `C
 
 | Script                    | Description                                                             |
 | ------------------------- | ----------------------------------------------------------------------- |
-| `bun run typecheck`       | Type-check without emitting.                                            |
+| `bun check`               | Type-check without emitting.                                            |
 | `bun run test`            | Unit, snapshot and A2UI conformance tests (`test/**/*.spec.ts`).        |
 | `bun run storybook`       | Gallery dev server with a story per component.                          |
 | `bun run storybook:build` | Static gallery build into `build/`, including `a2ui/v1_0/catalog.json`. |

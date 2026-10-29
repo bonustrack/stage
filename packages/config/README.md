@@ -1,6 +1,6 @@
 # @stage-labs/config
 
-Shared lint, Prettier (`bun fmt`), TypeScript, knip and madge presets and the `stage` CLI. Generic and repo-agnostic, so any repo can use the same rules and `tsconfig` bases.
+Shared lint, TypeScript and knip presets and the `stage` CLI. Generic and repo-agnostic, so any repo can use the same rules and `tsconfig` bases.
 
 It ships the **generic building blocks only**. Repo-specific topology (monorepo scoping, knip workspaces, per-app/per-package rules) stays in the consuming repo, in its `stage.config.js` and `.oxlintrc.json`.
 
@@ -28,27 +28,22 @@ bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 - `stage lint --changed`: only files changed since the upstream branch (or since HEAD when there is none), plus untracked ones. A type change can create findings in unchanged files, so keep the full lint in CI.
 - `stage lint <paths>`: only those paths.
 
-## `stage typecheck`
+## `stage check`
 
-Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It runs `bun check` (Bun 1.4.4 or later, the built-in TypeScript 7 checker). `stage typecheck --tsc` runs `tsc --noEmit` instead. Other flags go to the checker.
+Type-checks every workspace of `stage.config.js` that has a `tsconfig.json`, two projects at a time, and prints each project's output when it finishes. It runs `bun check` (Bun 1.4.4 or later, the built-in TypeScript 7 checker). Other flags go to `bun check`.
 
-## Formatting
+## `stage fmt`
 
-`@stage-labs/config/prettier` is a Prettier config for `bun fmt` (and for Prettier itself, or an editor's Prettier extension): Prettier's defaults (semicolons, trailing commas, arrow parentheses) with single quotes, a 140 character line width and short objects kept on one line (`objectWrap: collapse`). Point the root `package.json` at it:
+Runs Bun's built-in `bun fmt` with the other flags (`--check`, `--changed`, paths). It stops with an error when the root `bunfig.toml` has no `[fmt]` section, since `bun fmt` would otherwise fall back to 80 columns and double quotes. A `bunfig.toml` can't extend a package, so copy the section. Stage uses:
 
-```json
-{ "prettier": "@stage-labs/config/prettier" }
+```toml
+[fmt]
+printWidth = 140
+singleQuote = true
+objectWrap = "collapse"
 ```
 
-Then `bun fmt` formats the repo and `bun fmt --check` fails when a file needs formatting (use it in CI). List vendored or generated files in `.prettierignore`.
-
-## madge
-
-Shared options for the circular-dependency check:
-
-```js
-import { madgeConfig } from '@stage-labs/config/madge';
-```
+`stage fmt --check` fails when a file needs formatting (use it in CI). With root scripts `"fmt": "stage fmt"` and `"check": "stage check"`, plain `bun fmt` and `bun check` run them. Skip vendored or generated files with `ignorePatterns` in the same section.
 
 ## TypeScript
 

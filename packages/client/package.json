@@ -101,7 +101,6 @@
     "./zerodev/derive": "./src/zerodev/derive.ts"
   },
   "scripts": {
-    "typecheck": "bun check",
     "test": "bun test test/"
   },
   "dependencies": {

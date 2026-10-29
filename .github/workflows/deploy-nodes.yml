@@ -61,7 +61,7 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
       - name: Typecheck and test
         working-directory: apps/dispatch
-        run: bun run typecheck && bun run test
+        run: bun check && bun run test
       - name: Deploy nodes-outbound
         working-directory: apps/dispatch
         env:

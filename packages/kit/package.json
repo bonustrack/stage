@@ -112,7 +112,6 @@
     "expo-font": "*"
   },
   "scripts": {
-    "typecheck": "bun check",
     "test": "bun test test/",
     "storybook": "vite",
     "storybook:build": "vite build"

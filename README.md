@@ -32,7 +32,7 @@ packages/
               #   identity/names, wallet, accounts + zerodev, read-only APIs, x402)
   kit/        # @stage-labs/kit — design system: tokens, icons, theme contracts,
               #   and one React Native component family (renders on web via RNW)
-  config/     # @stage-labs/config — shared TS/knip/madge presets, oxlint JS plugins + the stage CLI
+  config/     # @stage-labs/config — shared TS/knip presets, oxlint JS plugins + the stage CLI
 ```
 
 Each workspace has its own README with details; `CLAUDE.md` is the
@@ -54,19 +54,16 @@ bun install
 Run from the repo root:
 
 ```sh
-bun run build       # turbo run build
-bun run test        # turbo run test
-bun run test:changed  # test only the packages changed since origin/main and their dependents
-bun run typecheck   # stage typecheck (bun check, per workspace)
-bun run typecheck:tsc  # the same with tsc from TypeScript 5.9 (fallback)
+bun run build       # bun run --workspaces --if-present build (only the desktop shell has one)
+bun run test        # bun test --parallel: every test file in the repo, one run
+bun run test:changed  # only the test files affected by changes since origin/main
+bun check           # stage check (bun check per workspace)
 bun run lint        # stage lint (oxlint with type-aware rules over the whole repo)
 bun run lint:fix    # stage lint --fix
 bun run lint:changed  # lint only the files changed since the upstream branch
-bun fmt             # format the repo (Prettier style, @stage-labs/config/prettier)
+bun fmt             # stage fmt (bun fmt with bunfig.toml [fmt])
 bun fmt --check     # fail when a file needs formatting (the first CI gate)
-bun run check       # format check + lint + typecheck
 bun run knip        # unused files / deps / exports
-bun run madge       # circular-dependency check
 ```
 
 `stage lint` runs `oxlint --type-aware` with the root `.oxlintrc.json`: the
@@ -92,11 +89,10 @@ and computed Markdown styles, test fixtures and standalone HTML support pages
 are outside this app rule. Existing Kit-specific lint rules still apply there.
 The CLI/config regression suite lives in `apps/stage/scripts/test`, separate
 from the app's pure-model `test` directory. Run it with
-`bun test apps/stage/scripts/test/typographyLint.test.mjs`; CI's Test step runs
-this suite before the workspace tests.
+`bun test apps/stage/scripts/test/typographyLint.test.mjs`; `bun run test` includes it.
 
-Tasks are orchestrated by [Turbo](https://turbo.build); see `turbo.json` for the
-pipeline (`build`, `test`, `typecheck`).
+Bun runs the workspace tasks itself (no Turbo): `bun run --workspaces` for scripts
+and one `bun test --parallel` for every test file.
 
 Per-app dev servers and builds:
 
@@ -151,13 +147,13 @@ restored if a later attachment fails.
   macOS / Windows / Linux installers and publishes them to the GitHub Release
   that the landing page links to. See `docs/desktop-release.md`.
 - **Chrome extension:** `bun scripts/build-extension.mjs` builds an unpacked beta. PR builds attach it as an Actions artifact, without publishing to the Chrome Web Store. See `docs/chrome-extension.md`.
-- **Proxy / dispatch / push:** the proxy Worker deploys through Cloudflare Workers Builds on push to `main` (typecheck and tests run first); `deploy-nodes.yml` deploys the dispatch and nodes-outbound Workers from GitHub Actions; `deploy-push-server.yml` deploys the push server.
+- **Proxy / dispatch / push:** the proxy Worker deploys through Cloudflare Workers Builds on push to `main` (`bun check` and tests run first); `deploy-nodes.yml` deploys the dispatch and nodes-outbound Workers from GitHub Actions; `deploy-push-server.yml` deploys the push server.
 
 ## CI / quality gates
 
 CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`).
 The gates, in
-order, are: **lint → typecheck → knip → madge → build → test**, all on Bun
+order, are: **format → lint → check → knip → build → test**, all on Bun
 `1.4.4` with a frozen lockfile.
 
 ## License

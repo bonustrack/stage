@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "react"],
+  "plugins": ["typescript", "react", "import"],
   "jsPlugins": [
     "@stage-labs/config/oxlint/comments",
     "@stage-labs/config/oxlint/text",
@@ -9,6 +9,7 @@
   ],
   "categories": { "correctness": "off" },
   "options": { "typeAware": true },
+  "rules": { "import/no-cycle": "error" },
   "ignorePatterns": [
     "**/.vite/**",
     "packages/kit/src/heroicons.data.ts",

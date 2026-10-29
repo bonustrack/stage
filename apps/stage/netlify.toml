@@ -10,29 +10,29 @@
 # imports, the root install files or the patches changed, and always when
 # there is no earlier build to compare with (exit 0 skips).
 [build]
-  command = 'bun install --frozen-lockfile && bash ../../scripts/check-source.sh && bun run build:web'
-  publish = "dist"
-  ignore = '[ -n "$CACHED_COMMIT_REF" ] && [ "$CACHED_COMMIT_REF" != "$COMMIT_REF" ] && git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- . ../../packages ../../patches ../../scripts ../../.github/workflows/ci.yml ../../.oxlintrc.json ../../stage.config.js ../../turbo.json ../../package.json ../../bun.lock ../../bunfig.toml'
+command = 'bun install --frozen-lockfile && bash ../../scripts/check-source.sh && bun run build:web'
+publish = "dist"
+ignore = '[ -n "$CACHED_COMMIT_REF" ] && [ "$CACHED_COMMIT_REF" != "$COMMIT_REF" ] && git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- . ../../packages ../../patches ../../scripts ../../.github/workflows/ci.yml ../../.oxlintrc.json ../../stage.config.js ../../package.json ../../bun.lock ../../bunfig.toml'
 
 # google-services*.json are Firebase ANDROID CLIENT configs: the AIza key in
 # them is a public client identifier that ships inside every APK (Google
 # documents committing it as safe). Netlify's secrets scanner flags it as a
 # likely secret and fails the build, so exempt exactly those files.
 [build.environment]
-  BUN_VERSION = "1.4.4"
-  NODE_VERSION = "22"
-  # Expo tree shaking for the web export. The @expo/metro-config patch keeps the
-  # two XMTP web workers in it; the desktop export-ui.mjs sets the same flags.
-  EXPO_UNSTABLE_METRO_OPTIMIZE_GRAPH = "1"
-  EXPO_UNSTABLE_TREE_SHAKING = "1"
-  SECRETS_SCAN_OMIT_PATHS = "google-services*.json,apps/stage/google-services*.json,lib/firebaseWeb.ts,apps/stage/lib/firebaseWeb.ts"
+BUN_VERSION = "1.4.4"
+NODE_VERSION = "22"
+# Expo tree shaking for the web export. The @expo/metro-config patch keeps the
+# two XMTP web workers in it; the desktop export-ui.mjs sets the same flags.
+EXPO_UNSTABLE_METRO_OPTIMIZE_GRAPH = "1"
+EXPO_UNSTABLE_TREE_SHAKING = "1"
+SECRETS_SCAN_OMIT_PATHS = "google-services*.json,apps/stage/google-services*.json,lib/firebaseWeb.ts,apps/stage/lib/firebaseWeb.ts"
 
 [[headers]]
-  for = "/*"
-  [headers.values]
-    Cross-Origin-Opener-Policy = "same-origin"
-    Cross-Origin-Embedder-Policy = "credentialless"
-    Content-Security-Policy = """\
+for = "/*"
+[headers.values]
+Cross-Origin-Opener-Policy = "same-origin"
+Cross-Origin-Embedder-Policy = "credentialless"
+Content-Security-Policy = """\
       default-src 'none'; \
       script-src 'self' 'wasm-unsafe-eval' 'sha256-cDvZqdnIlWVbafnDl0bEkebRwQDKRBqLwLWAgYQI4aI=' 'sha256-ucsOOU04elePji19W95Vpo0NKtGsPQrY53QQlGDB8mI='; \
       script-src-attr 'none'; \
@@ -49,31 +49,31 @@
       frame-ancestors 'none'"""
 
 [[headers]]
-  for = "/_expo/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+for = "/_expo/static/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+for = "/assets/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/wasm/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+for = "/wasm/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/.well-known/apple-app-site-association"
-  [headers.values]
-    Content-Type = "application/json"
+for = "/.well-known/apple-app-site-association"
+[headers.values]
+Content-Type = "application/json"
 
 [[headers]]
-  for = "/.well-known/assetlinks.json"
-  [headers.values]
-    Content-Type = "application/json"
+for = "/.well-known/assetlinks.json"
+[headers.values]
+Content-Type = "application/json"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+from = "/*"
+to = "/index.html"
+status = 200

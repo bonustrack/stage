@@ -8,12 +8,9 @@ check() {
   printf '::endgroup::\n'
 }
 
-check bun fmt --no-script --check
+check bun run fmt:check
 check bun run lint
-check bun run typecheck
+check bun run check
 check bun run knip
-check bun run madge
 check bun run build
-check bun test scripts/test
-check bun test apps/stage/scripts/test/typographyLint.test.mjs
 check bun run test
