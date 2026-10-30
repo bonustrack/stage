@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { canApproveConversation, canComposeConversation } from '../components/conversation/consent.model';
+import { canApproveConversation, canComposeConversation, composerAccess } from '../components/conversation/consent.model';
 
 test('a hidden channel opened by link offers approval after membership is confirmed', () => {
   expect(canApproveConversation('denied', true, 'member')).toBe(true);
@@ -22,4 +22,14 @@ test('incomplete membership and removed channels never offer a misleading approv
   expect(canApproveConversation('unknown', true, 'outside')).toBe(false);
   expect(canApproveConversation('denied', false, 'member')).toBe(false);
   expect(canApproveConversation('unknown', false, 'member')).toBe(true);
+});
+
+test('an allowed channel shows the composer while membership is still being checked', () => {
+  expect(composerAccess('checking', 'allowed')).toBe('member');
+  expect(canComposeConversation('allowed', true, composerAccess('checking', 'allowed'))).toBe(true);
+  expect(composerAccess('checking', 'unknown')).toBe('checking');
+  expect(composerAccess('checking', 'denied')).toBe('checking');
+  expect(composerAccess('checking', undefined)).toBe('checking');
+  expect(composerAccess('waiting', 'allowed')).toBe('waiting');
+  expect(composerAccess('outside', 'allowed')).toBe('outside');
 });

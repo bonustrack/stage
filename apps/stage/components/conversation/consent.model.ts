@@ -8,3 +8,7 @@ export function canComposeConversation(consent: XmtpConsent | null | undefined, 
 export function canApproveConversation(consent: XmtpConsent | null | undefined, isGroup: boolean, access: GroupAccess): boolean {
   return access === 'member' && (consent === 'unknown' || (isGroup && consent === 'denied'));
 }
+
+export function composerAccess(access: GroupAccess, consent: XmtpConsent | null | undefined): GroupAccess {
+  return access === 'checking' && consent === 'allowed' ? 'member' : access;
+}
