@@ -1,7 +1,6 @@
 import '../lib/jsPolyfills';
 import '../lib/cryptoShim';
 import { StatusBar, setStatusBarStyle } from 'expo-status-bar';
-import { loadAsync, useFonts } from 'expo-font';
 import { useEffect } from 'react';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TopChrome } from '../components/system/TopChrome';
@@ -14,7 +13,7 @@ import { usePathname } from 'expo-router';
 import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
-import { KIT_FONTS } from '@stage-labs/kit/react-native/fonts';
+import { bootKitFonts, useKitFontsLoaded } from '../lib/kitFonts';
 import { parseHex } from '@stage-labs/kit/theme-derive';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
@@ -47,7 +46,7 @@ const queryClient = getQueryClient();
 applyWebGlobalStyles();
 installPlainTextCopy();
 installAlertShim();
-void loadAsync(KIT_FONTS).catch(reported('boot.fonts'));
+bootKitFonts();
 if (Platform.OS === 'web' && location.protocol !== 'chrome-extension:' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
   void ensureActiveAccount()
     .then(() => getOrCreateXmtpClient('production'))
@@ -134,7 +133,7 @@ function RootLayoutInner(): React.ReactElement {
   }, []);
   useOwnMailKey(onboarding.hasAccount);
 
-  const [loaded] = useFonts(KIT_FONTS);
+  const loaded = useKitFontsLoaded();
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);

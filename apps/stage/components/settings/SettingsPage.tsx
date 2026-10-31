@@ -8,6 +8,7 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../../lib/safeArea';
 import { SETTINGS_ROUTE } from '../../lib/routes';
 import { useEffectiveColorScheme, usePalette, type ThemePreference } from '../../lib/theme';
+import type { FontPreviewScope } from '../../lib/fontChoice';
 import { StackHeader } from '../chrome/StackHeader';
 import { Eyebrow } from '../Eyebrow';
 import { AppIcon, type AppIconRef } from '../widgets';
@@ -123,14 +124,15 @@ export const THEME_OPTIONS: { value: ThemePreference; label: string; icon: AppIc
 
 export function SettingsThemeRow(props: {
   label: string;
-  iconName: AppIconRef;
+  iconName?: AppIconRef;
+  labelScope?: FontPreviewScope;
   selected: boolean;
   onPress: () => void;
 }): React.ReactElement {
   return (
     <SettingsItem onPress={props.onPress}>
-      <AppIcon name={props.iconName} color="link" size={24} />
-      <Column weight={1}>
+      {props.iconName ? <AppIcon name={props.iconName} color="link" size={24} /> : null}
+      <Column weight={1} {...props.labelScope}>
         <Text text={props.label} size="xs" color="link" truncate />
       </Column>
       {props.selected ? <AppIcon name={IconCheckmark1} color="link" size={24} /> : null}

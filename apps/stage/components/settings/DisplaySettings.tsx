@@ -1,4 +1,6 @@
 import { setThemePreference, setCustomTheme, useCustomTheme, useThemePreference } from '../../lib/theme';
+import { FONT_CHOICES, setFontChoice, useFontChoice } from '../../lib/fontChoice';
+import { useFontPreviews } from '../../lib/kitFonts';
 import { ColorTokens } from '../system/ColorTokens';
 import { SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow, THEME_OPTIONS } from './SettingsPage';
 import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColorSwatch';
@@ -7,6 +9,8 @@ import { Column, PAGE_GUTTER } from '../layout';
 export function DisplaySettings(): React.ReactElement {
   const pref = useThemePreference();
   const custom = useCustomTheme();
+  const font = useFontChoice();
+  const previewScope = useFontPreviews();
 
   return (
     <SettingsPage title="Appearance" keyboardShouldPersistTaps="handled">
@@ -40,6 +44,22 @@ export function DisplaySettings(): React.ReactElement {
             <ColorTokens />
           </Column>
         </>
+      ) : null}
+
+      {previewScope ? (
+        <SettingsGroup title="Font">
+          {FONT_CHOICES.map((choice) => (
+            <SettingsThemeRow
+              key={choice.id}
+              label={choice.label}
+              labelScope={previewScope(choice.id)}
+              selected={font === choice.id}
+              onPress={() => {
+                setFontChoice(choice.id);
+              }}
+            />
+          ))}
+        </SettingsGroup>
       ) : null}
     </SettingsPage>
   );
