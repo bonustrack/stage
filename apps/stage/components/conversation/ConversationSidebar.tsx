@@ -1,14 +1,10 @@
 import { MemberListSidebar } from './MemberListSidebar';
-import type { StyleProp, ViewStyle } from 'react-native';
-import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { createPaneWidth } from '../layout/paneWidth';
 import { rightPaneRule } from '../layout/webChrome';
 import { PaneResizeHandle } from '../layout/PaneResizeHandle';
-import { useMemberListOpen } from '../../lib/memberList';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { useWebTabRail } from '../layout/webLayout';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Avatar } from '../Avatar';
@@ -16,7 +12,7 @@ import { PROFILE_AVATAR_SIZE, ProfileCover } from '../profile/ProfileCover';
 import { profileDisplayName } from '../profile/ProfileScreen.model';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { Column, PANE_LEFT_PAD, RIGHT_PANE_PAD, pinnedEdges, viewportFill, PAGE_GUTTER } from '../layout';
+import { Column, pinnedEdges, PAGE_GUTTER } from '../layout';
 
 const sidebarWidth = createPaneWidth({
   key: 'web.memberListWidth',
@@ -26,27 +22,6 @@ const sidebarWidth = createPaneWidth({
   styleId: 'stage-right-pane',
   css: rightPaneRule,
 });
-
-export function useConversationSidebarShown(): boolean {
-  const open = useMemberListOpen();
-  const wide = useWebTabRail();
-  return wide && open;
-}
-
-export function useChatColumnFill(bottomInset: number): StyleProp<ViewStyle> {
-  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
-  const shown = useConversationSidebarShown();
-  return [viewportFill(), PANE_LEFT_PAD, shown ? RIGHT_PANE_PAD : null, { paddingTop: top, paddingBottom: bottomInset }];
-}
-
-export function ChatColumnSpinner({ bottomInset }: { bottomInset: number }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  return (
-    <Column surface="surface" weight={1} align="center" justify="center" style={useChatColumnFill(bottomInset)}>
-      <Spinner size={24} color={dark ? '#ffffff' : '#000000'} />
-    </Column>
-  );
-}
 
 function PeerProfileSidebar({ address }: { address: string }): React.ReactElement {
   const { bg, border, text } = usePalette();

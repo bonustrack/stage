@@ -8,7 +8,7 @@ import { usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { ChatGalleryProvider } from '../media/ChatGallery';
-import { useChatColumnFill } from './ConversationSidebar';
+import { useChatColumnFill } from './FooterDock';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { Column, VirtualList } from '../layout';
 

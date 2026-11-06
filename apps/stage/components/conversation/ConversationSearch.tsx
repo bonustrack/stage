@@ -7,6 +7,12 @@ import { searchLocalHistory, type SearchScanResult } from '../../lib/messaging/s
 import { usePalette } from '../../lib/theme';
 import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';
 
+const SEARCH_MIN_CHARS = 2;
+
+export function searchesFor(query: string): boolean {
+  return query.trim().length >= SEARCH_MIN_CHARS;
+}
+
 export function ConversationSearch({ line, query, bubbles }: { line: string; query: string; bubbles: BubbleFeed }): React.ReactElement {
   const { text: sub, bg } = usePalette();
   const [result, setResult] = useState<SearchScanResult>({ hits: [], truncated: false });
@@ -19,7 +25,7 @@ export function ConversationSearch({ line, query, bubbles }: { line: string; que
 
   useEffect(() => {
     const epoch = ++scanEpoch.current;
-    if (q.length < 2) {
+    if (!searchesFor(q)) {
       setResult({ hits: [], truncated: false });
       setScanning(false);
       return;
@@ -49,7 +55,7 @@ export function ConversationSearch({ line, query, bubbles }: { line: string; que
     [],
   );
 
-  const showEmpty = q.length >= 2 && !scanning && result.hits.length === 0;
+  const showEmpty = searchesFor(q) && !scanning && result.hits.length === 0;
 
   return (
     <VirtualList<HistoryEntry>

@@ -1,9 +1,52 @@
+import { useCallback, useState } from 'react';
 import { Platform, type StyleProp, type ViewStyle } from 'react-native';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
 import { useReportBottomChrome } from '../layout/bottomChrome';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { Column, RIGHT_PANE_INSET, pinnedBottom } from '../layout';
+import { useMemberListOpen } from '../../lib/memberList';
+import { useEffectiveColorScheme } from '../../lib/theme';
+import { useWebTabRail } from '../layout/webLayout';
+import { TOPNAV_HEIGHT } from '../Topnav';
+import { Column, PANE_LEFT_PAD, RIGHT_PANE_INSET, RIGHT_PANE_PAD, pinnedBottom, viewportFill } from '../layout';
+
+export function useConversationSidebarShown(): boolean {
+  const open = useMemberListOpen();
+  const wide = useWebTabRail();
+  return wide && open;
+}
+
+export function useChatColumnFill(bottomInset: number): StyleProp<ViewStyle> {
+  const top = useSafeAreaInsets().top + TOPNAV_HEIGHT;
+  const shown = useConversationSidebarShown();
+  return [viewportFill(), PANE_LEFT_PAD, shown ? RIGHT_PANE_PAD : null, { paddingTop: top, paddingBottom: bottomInset }];
+}
+
+export function ChatColumnSpinner({ bottomInset }: { bottomInset: number }): React.ReactElement {
+  const dark = useEffectiveColorScheme() === 'dark';
+  return (
+    <Column surface="surface" weight={1} align="center" justify="center" style={useChatColumnFill(bottomInset)}>
+      <Spinner size={24} color={dark ? '#ffffff' : '#000000'} />
+    </Column>
+  );
+}
+
+let measuredFooterHeight = 0;
+
+interface FooterHeight {
+  height: number;
+  onHeight: (height: number) => void;
+}
+
+export function useFooterHeight(): FooterHeight {
+  const [height, setHeight] = useState(measuredFooterHeight);
+  const onHeight = useCallback((measured: number) => {
+    measuredFooterHeight = measured;
+    setHeight(measured);
+  }, []);
+  return { height, onHeight };
+}
 
 export function ChatColumn({ style, children }: { style?: StyleProp<ViewStyle>; children?: React.ReactNode }): React.ReactElement {
   const insets = useSafeAreaInsets();
