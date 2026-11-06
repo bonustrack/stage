@@ -5,8 +5,8 @@ import { CentralIconBase, type CentralIconBaseProps } from '@central-icons-react
 import type { HomeView } from '../../lib/homeView';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
-import { CHANNELS_OVERFLOW_ITEMS } from './model';
-import { OverflowMenu } from '../MenuRows';
+import { CHANNELS_OVERFLOW_ITEMS, type HomeOverflowId } from './model';
+import { OverflowMenu, type MenuActions } from '../MenuRows';
 import { getActiveAccount } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
 import { profileLinkOf } from '../../lib/links';
@@ -36,7 +36,7 @@ function copyActiveAddress(): void {
 export function HomeTopnavRight({ head, view, menu }: { head: string; view: HomeView; menu: HomeMenuState }): React.ReactElement {
   const router = useRouter();
   const openCompose = useOpenNewChat();
-  const handlers: Record<string, (() => void) | undefined> = {
+  const actions: MenuActions<HomeOverflowId> = {
     'copy-address': copyActiveAddress,
     profile: () => {
       void getActiveAccount().then((acct) => {
@@ -59,14 +59,7 @@ export function HomeTopnavRight({ head, view, menu }: { head: string; view: Home
         onPress={openCompose}
       />
       <HomeViewOptions view={view} color={head} menu={menu} />
-      <OverflowMenu
-        color={head}
-        label="More"
-        items={CHANNELS_OVERFLOW_ITEMS}
-        onSelect={(id) => {
-          handlers[id]?.();
-        }}
-      />
+      <OverflowMenu color={head} label="More" items={CHANNELS_OVERFLOW_ITEMS} actions={actions} />
     </>
   );
 }

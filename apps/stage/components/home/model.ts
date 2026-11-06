@@ -4,24 +4,7 @@ import { COPY_ADDRESS_ITEM } from '../profile/ProfileScreen.model';
 import { orderedColumns } from './board/BoardScreen.model';
 import { groupKeyOf } from '../../lib/grouping.model';
 
-export const NO_MESSAGES_PREVIEW = '(no messages yet)';
 export type Row = ConversationView & Record<string, unknown>;
-
-const SELF_PREVIEW_PREFIX = 'You: ';
-
-interface RowPreviewModel {
-  preview: string | null | undefined;
-  dm: boolean;
-  fromSelf: boolean;
-  senderLabel: string | null;
-}
-
-export function rowPreviewText(m: RowPreviewModel): string {
-  if (!m.preview) return NO_MESSAGES_PREVIEW;
-  if (m.fromSelf) return `${SELF_PREVIEW_PREFIX}${m.preview}`;
-  if (m.dm || m.senderLabel === null) return m.preview;
-  return `${m.senderLabel}: ${m.preview}`;
-}
 
 interface LabelBarChip {
   value: string;
@@ -64,7 +47,9 @@ export function selectChannelsFilter(h: ChannelsFilterHandlers, value: string): 
   h.onToggleLabel(value);
 }
 
-export const CHANNELS_OVERFLOW_ITEMS: MenuItem[] = [
+export type HomeOverflowId = 'copy-address' | 'profile' | 'settings';
+
+export const CHANNELS_OVERFLOW_ITEMS: MenuItem<HomeOverflowId>[] = [
   COPY_ADDRESS_ITEM,
   { id: 'profile', label: 'Profile', icon: 'IconPeople' },
   { id: 'settings', label: 'Settings', icon: 'IconSettingsGear2' },

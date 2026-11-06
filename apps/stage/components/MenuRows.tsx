@@ -93,23 +93,29 @@ export function MenuHeading({ text }: { text: string }): React.ReactElement {
   );
 }
 
-export type OverflowMenuItem = MenuItem<string, AppIconRef>;
+export type OverflowMenuItem<Id extends string = string> = MenuItem<Id, AppIconRef>;
 
-type OverflowSelect = (id: string, anchor: MenuPoint) => void;
+export type MenuAction = (() => void) | { opensModal: true; run: () => void };
 
-function OverflowMenuItems({
-  anchor,
-  onClose,
+export type MenuActions<Id extends string> = Record<Id, MenuAction>;
+
+function runAfterClose(onClose: () => void, action: MenuAction): void {
+  onClose();
+  if (typeof action === 'function') action();
+  else setTimeout(action.run, 0);
+}
+
+export function MenuItems<Id extends string>({
   items,
-  onSelect,
+  actions,
+  onClose,
 }: {
-  anchor: MenuPoint | null;
+  items: readonly OverflowMenuItem<Id>[];
+  actions: MenuActions<Id>;
   onClose: () => void;
-  items: OverflowMenuItem[];
-  onSelect: OverflowSelect;
 }): React.ReactElement {
   return (
-    <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
+    <>
       {items.map((item, index) => (
         <MenuRow
           key={item.id}
@@ -119,11 +125,28 @@ function OverflowMenuItems({
           selected={item.selected}
           divider={item.danger === true && index > 0}
           onPress={() => {
-            onClose();
-            if (anchor !== null) onSelect(item.id, anchor);
+            runAfterClose(onClose, actions[item.id]);
           }}
         />
       ))}
+    </>
+  );
+}
+
+function OverflowMenuItems<Id extends string>({
+  anchor,
+  onClose,
+  items,
+  actions,
+}: {
+  anchor: MenuPoint | null;
+  onClose: () => void;
+  items: readonly OverflowMenuItem<Id>[];
+  actions: MenuActions<Id>;
+}): React.ReactElement {
+  return (
+    <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
+      <MenuItems items={items} actions={actions} onClose={onClose} />
     </AnchoredMenu>
   );
 }
@@ -152,16 +175,16 @@ export function OverflowButton({
   );
 }
 
-export function OverflowMenu({
+export function OverflowMenu<Id extends string>({
   color,
   items,
-  onSelect,
+  actions,
   label,
   size = 24,
 }: {
   color: string;
-  items: OverflowMenuItem[];
-  onSelect: OverflowSelect;
+  items: readonly OverflowMenuItem<Id>[];
+  actions: MenuActions<Id>;
   label?: string;
   size?: number;
 }): React.ReactElement {
@@ -182,20 +205,20 @@ export function OverflowMenu({
           setAnchor(null);
         }}
         items={items}
-        onSelect={onSelect}
+        actions={actions}
       />
     </>
   );
 }
 
-export function RoundOverflowMenu({
+export function RoundOverflowMenu<Id extends string>({
   items,
-  onSelect,
+  actions,
   loading,
   background,
 }: {
-  items: OverflowMenuItem[];
-  onSelect: (id: string) => void;
+  items: readonly OverflowMenuItem<Id>[];
+  actions: MenuActions<Id>;
   loading?: boolean;
   background?: string;
 }): React.ReactElement {
@@ -217,7 +240,7 @@ export function RoundOverflowMenu({
           setAnchor(null);
         }}
         items={items}
-        onSelect={onSelect}
+        actions={actions}
       />
     </>
   );

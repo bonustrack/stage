@@ -1,5 +1,9 @@
 import type { MenuItem } from '../appIcons';
 
+export type ChannelMenuId = 'search' | 'add-members' | 'toggle-read' | 'toggle-pin' | 'info' | 'sync' | 'edit' | 'leave' | 'delete';
+
+type ChannelMenuItem = MenuItem<ChannelMenuId>;
+
 export const EDIT_CHANNEL_ITEM: MenuItem<'edit'> = { id: 'edit', label: 'Edit channel', icon: 'IconPencil' };
 
 export const LEAVE_CHANNEL_ITEM: MenuItem<'leave'> = { id: 'leave', label: 'Leave channel', icon: 'IconArrowLeft', danger: true };
@@ -18,27 +22,27 @@ interface ChannelMenuState {
   isPinned?: boolean;
 }
 
-function infoItem(state: ChannelMenuState): MenuItem | null {
+function infoItem(state: ChannelMenuState): ChannelMenuItem | null {
   if (state.isGroup) return { id: 'info', label: 'Channel info', icon: 'IconGroup1' };
   if (state.hasPeer === true) return { id: 'info', label: 'Profile', icon: 'IconPeople' };
   return null;
 }
 
-function closingItems(state: ChannelMenuState, edit: boolean): (MenuItem | false)[] {
+function closingItems(state: ChannelMenuState, edit: boolean): (ChannelMenuItem | false)[] {
   if (state.isGroup) return [edit && EDIT_CHANNEL_ITEM, LEAVE_CHANNEL_ITEM];
   return [state.hasPeer === true && { id: 'delete', label: 'Delete chat', icon: 'IconTrashCan', danger: true }];
 }
 
-function syncItem(state: ChannelMenuState, enabled: boolean): MenuItem | null {
+function syncItem(state: ChannelMenuState, enabled: boolean): ChannelMenuItem | null {
   return enabled && (state.isGroup || state.hasPeer !== true) ? { id: 'sync', label: 'Check sync', icon: 'IconDevices' } : null;
 }
 
 export function channelMenuItems(
   state: ChannelMenuState,
   { search, edit = false, developerMode = false }: { search: boolean; edit?: boolean; developerMode?: boolean },
-): MenuItem[] {
+): ChannelMenuItem[] {
   const { isGroup, isUnread } = state;
-  const items: (MenuItem | null | false)[] = [
+  const items: (ChannelMenuItem | null | false)[] = [
     search && { id: 'search', label: 'Search', icon: 'IconMagnifyingGlass' },
     isGroup && { id: 'add-members', label: 'Add members', icon: 'IconPlusLarge' },
     { id: 'toggle-read', label: isUnread ? 'Mark as read' : 'Mark as unread', icon: isUnread ? 'IconCheckmark1' : 'IconEmail1' },
@@ -47,5 +51,5 @@ export function channelMenuItems(
     syncItem(state, developerMode),
     ...closingItems(state, edit),
   ];
-  return items.filter((item): item is MenuItem => item !== null && item !== false);
+  return items.filter((item): item is ChannelMenuItem => item !== null && item !== false);
 }

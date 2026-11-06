@@ -1,191 +1,81 @@
 import { useRouter } from 'expo-router';
-import { MenuRow } from '../MenuRows';
-import { LEAVE_CHANNEL_CONFIRM, channelMenuItems } from './ChannelMenu.model';
+import { MenuItems, type MenuActions } from '../MenuRows';
+import { channelMenuItems, type ChannelMenuId } from './ChannelMenu.model';
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { markConvRead, markConvUnread } from '../../lib/channelsCache';
-import { togglePin } from '../../lib/sync/pins';
-import { blockRequestConv, checkConvSync, unacceptConv } from '../../lib/xmtp.conv';
-import { leaveGroupConv } from '../../lib/xmtp.groups';
-import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { markChatCleared } from '../../lib/sync/clearedChats';
+import { markConvRead, markConvUnread, subscribeCachedRows } from '../../lib/channelsCache';
+import { togglePin, usePinnedOrder } from '../../lib/sync/pins';
 import { channelProfileLinkOf, profileLinkOf } from '../../lib/links';
 import { openAddMembers } from '../../lib/memberList';
-import { capabilities } from '../../lib/capabilities';
-import { homeRoute } from '../tabs/boardHome';
 import { useDeveloperMode } from '../../lib/developerMode';
+import { useConvRow } from '../../lib/messaging/queries';
+import { isGroupRow } from '../../lib/messaging/convRow.model';
+import { homeRowOf } from '../../lib/messaging/homeRows';
+import { useStoreValue } from '../../lib/storeCore';
+import { checkChannelSync, deleteChat, leaveChannel, type ChannelActionFrom } from '../channel/channelActions';
+import { isUnreadRow } from './chatRow.model';
 
 interface ChannelMenuProps {
   convId: string;
-  isGroup: boolean;
-  peerAddress?: string | null;
-  isUnread: boolean;
-  isPinned: boolean;
   visible: boolean;
   onClose: () => void;
   anchor?: MenuPoint | null;
-  context?: 'list' | 'view';
-  onAfterLeave?: (result: 'left' | 'hidden') => void;
+  from?: ChannelActionFrom;
   onSearch?: () => void;
   onEdit?: () => void;
 }
 
-function confirmLeaveChannel(
-  convId: string,
-  context: 'list' | 'view',
-  router: ReturnType<typeof useRouter>,
-  onClose: () => void,
-  onAfterLeave?: (result: 'left' | 'hidden') => void,
-): void {
-  onClose();
-  void capabilities.confirm(LEAVE_CHANNEL_CONFIRM).then(async (ok) => {
-    if (!ok) return;
-    try {
-      const result = await leaveGroupConv(lineOfConv(convId));
-      onAfterLeave?.(result);
-      if (context === 'view') router.replace(homeRoute());
-    } catch (e) {
-      capabilities.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
-    }
+function useIsUnread(convId: string): boolean {
+  return useStoreValue(subscribeCachedRows, () => {
+    const row = homeRowOf(convId);
+    return row !== undefined && isUnreadRow(row);
   });
 }
 
-async function checkSync(convId: string): Promise<void> {
-  capabilities.toast('Checking sync…');
-  try {
-    const { title, message } = await checkConvSync(convId);
-    capabilities.alert(title, message);
-  } catch (e) {
-    capabilities.alert('Couldn’t check sync', (e as Error).message ?? 'Unknown error');
-  }
-}
-
-const DELETE_CHAT_MESSAGE =
-  'The chat is removed from all your devices. If they write again, it comes back with only the new messages. Delete and block also stops their messages for good.';
-
-function confirmDeleteChat(
-  convId: string,
-  peerAddress: string,
-  context: 'list' | 'view',
-  router: ReturnType<typeof useRouter>,
-  onClose: () => void,
-): void {
-  onClose();
-  const remove = (block: boolean): void => {
-    void (async (): Promise<void> => {
-      try {
-        await markChatCleared(peerAddress, Date.now());
-        void markConvRead(convId);
-        if (context === 'view') router.replace(homeRoute());
-        await (block ? blockRequestConv(convId) : unacceptConv(convId));
-      } catch (e) {
-        capabilities.alert('Couldn’t delete', (e as Error).message ?? 'Unknown error');
-      }
-    })();
-  };
-  capabilities.alert('Delete chat', DELETE_CHAT_MESSAGE, [
-    { text: 'Cancel', style: 'cancel' },
-    {
-      text: 'Delete',
-      style: 'destructive',
-      onPress: () => {
-        remove(false);
-      },
-    },
-    {
-      text: 'Delete and block',
-      style: 'destructive',
-      onPress: () => {
-        remove(true);
-      },
-    },
-  ]);
-}
-
-export function ChannelMenu({
-  convId,
-  isGroup,
-  peerAddress,
-  isUnread,
-  isPinned,
-  visible,
-  onClose,
-  anchor,
-  context = 'list',
-  onAfterLeave,
-  onSearch,
-  onEdit,
-}: ChannelMenuProps): React.ReactElement {
+export function ChannelMenu({ convId, visible, onClose, anchor, from = 'list', onSearch, onEdit }: ChannelMenuProps): React.ReactElement {
   const router = useRouter();
-
-  const run = (fn: () => void): void => {
-    onClose();
-    fn();
-  };
-
-  const handlers: Record<string, () => void> = {
-    search: () => {
-      onClose();
-      setTimeout(() => onSearch?.(), 0);
-    },
-    'add-members': () => {
-      onClose();
-      setTimeout(() => {
-        openAddMembers(convId);
-      }, 0);
-    },
-    'toggle-read': () => {
-      run(() => {
-        void (isUnread ? markConvRead(convId) : markConvUnread(convId));
-      });
-    },
-    'toggle-pin': () => {
-      run(() => {
-        void togglePin(convId);
-      });
-    },
-    info: () => {
-      run(() => {
-        if (isGroup) router.push(channelProfileLinkOf(convId));
-        else if (peerAddress) router.push(profileLinkOf(peerAddress));
-      });
-    },
-    sync: () => {
-      run(() => {
-        void checkSync(convId);
-      });
-    },
-    edit: () => {
-      onClose();
-      setTimeout(() => onEdit?.(), 0);
-    },
-    leave: () => {
-      confirmLeaveChannel(convId, context, router, onClose, onAfterLeave);
-    },
-    delete: () => {
-      if (peerAddress) confirmDeleteChat(convId, peerAddress, context, router, onClose);
-    },
-  };
-
+  const row = useConvRow(convId);
+  const isGroup = isGroupRow(row);
+  const peerAddress = row?.peerAddress ?? null;
+  const isUnread = useIsUnread(convId);
+  const isPinned = usePinnedOrder().includes(convId);
   const developerMode = useDeveloperMode();
   const items = channelMenuItems(
     { isGroup, hasPeer: !!peerAddress, isUnread, isPinned },
     { search: !!onSearch, edit: !!onEdit, developerMode },
   );
-
+  const actions: MenuActions<ChannelMenuId> = {
+    search: { opensModal: true, run: () => onSearch?.() },
+    'add-members': {
+      opensModal: true,
+      run: () => {
+        openAddMembers(convId);
+      },
+    },
+    'toggle-read': () => {
+      void (isUnread ? markConvRead(convId) : markConvUnread(convId));
+    },
+    'toggle-pin': () => {
+      void togglePin(convId);
+    },
+    info: () => {
+      if (isGroup) router.push(channelProfileLinkOf(convId));
+      else if (peerAddress) router.push(profileLinkOf(peerAddress));
+    },
+    sync: () => {
+      void checkChannelSync(convId);
+    },
+    edit: { opensModal: true, run: () => onEdit?.() },
+    leave: () => {
+      void leaveChannel(convId, from, router);
+    },
+    delete: () => {
+      if (peerAddress) deleteChat(convId, peerAddress, from, router);
+    },
+  };
   return (
     <AnchoredMenu visible={visible} onClose={onClose} anchor={anchor}>
-      {items.map((item) => (
-        <MenuRow
-          key={item.id}
-          icon={item.icon}
-          label={item.label}
-          danger={item.danger}
-          onPress={() => {
-            handlers[item.id]?.();
-          }}
-        />
-      ))}
+      <MenuItems items={items} actions={actions} onClose={onClose} />
     </AnchoredMenu>
   );
 }

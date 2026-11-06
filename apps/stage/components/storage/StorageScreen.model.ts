@@ -124,14 +124,3 @@ export function storageStatusLabel(status: StorageStatus, hidden: ReadonlySet<st
   if (!status.failed || status.scanning) return summary;
   return [summary, 'Some chats could not be read'].filter(Boolean).join(' · ');
 }
-
-export function chatLabelOf(
-  chat: { peerAddress: string | null; groupName: string } | null | undefined,
-  peerName: string | undefined,
-  shortAddress: (address: string) => string,
-): string {
-  if (chat === null || chat === undefined) return '';
-  if (chat.peerAddress !== null) return peerName ?? shortAddress(chat.peerAddress);
-  const name = chat.groupName.trim();
-  return name === '' ? 'Unnamed channel' : name;
-}

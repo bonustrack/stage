@@ -1,7 +1,7 @@
 import { Platform, useWindowDimensions } from 'react-native';
 import type { DesktopBridgeGlobal } from '../../lib/desktopBridge';
+import { WEB_SIDEBAR_MIN_WIDTH } from './breakpoints';
 
-const WEB_SIDEBAR_MIN_WIDTH = 1100;
 const WEB_TOP_BAND = 12;
 
 export const WEB_TAB_RAIL_WIDTH = 72;

@@ -5,7 +5,6 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { shortAddress } from '@stage-labs/client/identity/format';
 import { IconAudio } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconAudio';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { IconFileText } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileText';
@@ -19,16 +18,15 @@ import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useOwnDeletes } from '../../lib/ownDeletes';
-import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
+import { useStoredChat } from '../chatRow/chatRow';
 import { MenuPage } from '../tabs/MenuPage';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { forgetStorageFile, retryStorage, storageChatOf, storageFileGone, useStorage, type StorageState } from '../../lib/storageIndex';
+import { forgetStorageFile, retryStorage, storageFileGone, useStorage, type StorageState } from '../../lib/storageIndex';
 import { fileKey, type StoredFile } from '../../lib/storageIndex.model';
 import { usePalette } from '../../lib/theme';
 import { FileUnavailableError, openStoredFile } from './storageOpen';
 import {
   STORAGE_FILTERS,
-  chatLabelOf,
   storageRows,
   storageStatusLabel,
   type StorageFilter,
@@ -47,21 +45,12 @@ const KIND_ICONS: Readonly<Record<StorageKind, typeof IconFileBend>> = {
   other: IconFileBend,
 };
 const ROW_PADDING = { paddingTop: 10, paddingBottom: 10, paddingLeft: PAGE_GUTTER, paddingRight: PAGE_GUTTER };
-const CHAT_STALE_MS = 5 * 60_000;
+
 const UNAVAILABLE = 'No longer available';
 const OPEN_FAILED = 'Could not open this file. It may no longer be available.';
 
 function useChatLabel(convId: string): string {
-  const epoch = useAccountEpoch();
-  const { data } = useQuery({
-    queryKey: ['storageChat', epoch, convId],
-    queryFn: () => storageChatOf(convId),
-    staleTime: CHAT_STALE_MS,
-    retry: false,
-  });
-  const peer = data?.peerAddress ?? null;
-  usePeerProfiles([peer]);
-  return chatLabelOf(data, peer === null ? undefined : getPeerName(peer), shortAddress);
+  return useStoredChat(convId)?.label ?? '';
 }
 
 function useGoneCheck(messageId: string): void {

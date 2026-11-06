@@ -5,7 +5,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
-import { useSelfAddress } from '../profile/ProfileScreen.parts';
+import { useSelfAddress } from '../../lib/messaging/account';
 import {
   assignedEntries,
   memberChanges,

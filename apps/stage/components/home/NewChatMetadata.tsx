@@ -5,7 +5,7 @@ import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 import { IconPeopleCircle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleCircle';
 import { IconCrossSmall } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossSmall';
-import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
+import { AnchoredMenu, PICKER_WIDTH, menuPointAbove } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
 import { FIELD_SECTIONS, LabelPicker } from '../channel/channel.labels';
@@ -13,7 +13,7 @@ import { toggleKey } from '@stage-labs/client/collections';
 import { peerLabel } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
 import type { NewChatMetadata as Metadata } from './newChatMetadata.model';
-import { Column, PAGE_GUTTER, Row } from '../layout';
+import { PAGE_GUTTER, Row } from '../layout';
 
 const METADATA_CHIP_STYLE = { maxWidth: '100%', paddingTop: 0, paddingRight: 0, paddingBottom: 0, paddingLeft: 0 } as const;
 
@@ -63,7 +63,6 @@ function MetadataChip({
 const isEmpty = (value: Metadata): boolean => value.status === null && value.labels.length === 0 && value.assigned.length === 0;
 
 export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange: (next: Metadata) => void }): React.ReactElement | null {
-  const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const toggle = (key: string): void => {
     const labels = toggleKey(value.labels, key);
@@ -112,13 +111,12 @@ export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange
         <AnchoredMenu
           visible
           anchor={anchor}
+          width={PICKER_WIDTH}
           onClose={() => {
             setAnchor(null);
           }}
         >
-          <Column width={anchored ? 300 : undefined}>
-            <LabelPicker draft={value.labels} current={value.labels} toggle={toggle} />
-          </Column>
+          <LabelPicker draft={value.labels} current={value.labels} toggle={toggle} />
         </AnchoredMenu>
       )}
     </>

@@ -1,15 +1,14 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
 import { ProfileCoverBar, ProfileCoverMenu, PROFILE_AVATAR_SIZE, ProfileCover } from '../profile/ProfileCover';
 import { ImageViewer } from '../media/ImageViewer';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { cachedSelfEthAddress, selfEthAddress } from '../../lib/xmtp.client';
+import { useSelfAddress } from '../../lib/messaging/account';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, DANGER, usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
-import { reported } from '../../lib/errorPolicy';
 import { channelProfileMenuItems, memberRowModel, type ChannelMemberRole, type MemberRowBadge } from './channel.parts.model';
 import { ChannelAssignees, ChannelMembersSection } from '../conversation/MemberListSidebar';
 import { EditChannelModal } from './EditChannelModal';
@@ -184,22 +183,9 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
   const dark = useEffectiveColorScheme() === 'dark';
   const g = useChannelDetail(convId);
   const labels = useLiveChannelLabels(convId);
-  const [selfAddress, setSelfAddress] = useState<string>('');
+  const selfAddress = useSelfAddress();
   const [viewerOpen, setViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-
-  useEffect(() => {
-    const cached = cachedSelfEthAddress();
-    if (cached) {
-      setSelfAddress(cached.toLowerCase());
-      return;
-    }
-    void selfEthAddress()
-      .then((addr) => {
-        if (addr) setSelfAddress(addr.toLowerCase());
-      })
-      .catch(reported('channel.selfAddress'));
-  }, []);
 
   return (
     <Column surface="surface" weight={1}>
@@ -209,9 +195,13 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
           <ProfileCoverMenu
             items={channelProfileMenuItems(canEditGroup(g.rights))}
             loading={g.leaving}
-            onSelect={(id) => {
-              if (id === 'edit') setEditOpen(true);
-              else void g.leaveChannel();
+            actions={{
+              edit: () => {
+                setEditOpen(true);
+              },
+              leave: () => {
+                void g.leaveChannel();
+              },
             }}
           />
         }

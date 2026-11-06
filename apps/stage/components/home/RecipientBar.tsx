@@ -5,7 +5,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
 import { useHover } from '../hover';
-import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
+import { AnchoredMenu, PICKER_WIDTH, menuPointAbove } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MembersPicker } from '../conversation/MemberListSidebar.pickers';
 import { includesKey } from '@stage-labs/client/collections';
@@ -20,7 +20,6 @@ const AVATAR_GAP = 8;
 const PICKED_BORDER = 2;
 const UNPICKED_OPACITY = 0.4;
 const HOVER_OPACITY = 0.7;
-const PICKER_WIDTH = 300;
 const ADD_LABEL = 'Add people';
 const PICK_RIGHTS = { add: true, remove: true };
 
@@ -96,7 +95,6 @@ export function RecipientBar({
   onToggle: (address: string) => void;
   onAvatarPress?: () => void;
 }): React.ReactElement {
-  const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const [open, setOpen] = useState(false);
   return (
@@ -129,10 +127,9 @@ export function RecipientBar({
             setOpen(false);
           }}
           anchor={anchor}
+          width={PICKER_WIDTH}
         >
-          <Column width={anchored ? PICKER_WIDTH : undefined}>
-            <MembersPicker draft={[...picked]} toggle={onToggle} entries={[]} self="" rights={PICK_RIGHTS} />
-          </Column>
+          <MembersPicker draft={[...picked]} toggle={onToggle} entries={[]} self="" rights={PICK_RIGHTS} />
         </AnchoredMenu>
       ) : null}
     </Column>

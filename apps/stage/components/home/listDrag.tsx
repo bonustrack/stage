@@ -7,7 +7,7 @@ import {
   useSortableTarget,
   type SortMove,
 } from '@stage-labs/kit/react-native/sortable';
-import { setChannelCategory } from '../channel/channel.labels';
+import { setChannelCategory } from '../channel/channelActions';
 import { moveCategory } from '../../lib/channelGroups';
 import { movePin } from '../../lib/sync/pins';
 import { usePalette } from '../../lib/theme';

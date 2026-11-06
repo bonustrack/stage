@@ -11,7 +11,7 @@ import { FORM_FIELD_RADIUS, useFieldColors } from '../../FormField';
 import { HoverTooltip } from '../../HoverTooltip';
 import { CountTag } from '../../CountTag';
 import { LabelText } from '../../LabelText';
-import { OverflowMenu, SMALL_OVERFLOW_ICON } from '../../MenuRows';
+import { OverflowMenu, SMALL_OVERFLOW_ICON, type OverflowMenuItem } from '../../MenuRows';
 import { HoverIconButton, useHover } from '../../hover';
 import { useEffectiveColorScheme, usePalette } from '../../../lib/theme';
 import {
@@ -100,11 +100,11 @@ export function ColumnFrame({
   );
 }
 
-const COLUMN_MENU = [{ id: 'delete', label: 'Delete column', icon: IconTrashCan, danger: true }];
+const COLUMN_MENU: OverflowMenuItem<'delete'>[] = [{ id: 'delete', label: 'Delete column', icon: IconTrashCan, danger: true }];
 
 export function ColumnMenu({ onDelete }: { onDelete: () => void }): React.ReactElement {
   const { text } = usePalette();
-  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} onSelect={onDelete} size={SMALL_OVERFLOW_ICON} />;
+  return <OverflowMenu color={text} label="Column menu" items={COLUMN_MENU} actions={{ delete: onDelete }} size={SMALL_OVERFLOW_ICON} />;
 }
 
 function TitleInput({ edit, placeholder }: { edit: TitleEditState; placeholder?: string }): React.ReactElement {

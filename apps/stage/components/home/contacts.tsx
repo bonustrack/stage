@@ -6,7 +6,7 @@ import { ChannelRow } from '../chatRow/ChannelRow';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { usePersonLookup } from '../../lib/resolveHandle';
 import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerName, peerLabel } from '../../lib/peerProfiles';
 import { dmLinkOf } from '../../lib/links';
 import type { HomeRow } from '../../lib/messaging/homeRows';
 import { uniqueBy } from '@stage-labs/client/collections';
@@ -58,12 +58,7 @@ function resolvedRow(resolved: ResolvedPeer): ResultRow {
 
 function peerRow(p: Peer): ResultRow {
   const name = getPeerName(p.address);
-  return {
-    address: p.address,
-    convId: p.convId,
-    title: name ?? shortAddress(p.address),
-    subtitle: name ? shortAddress(p.address) : undefined,
-  };
+  return { address: p.address, convId: p.convId, title: peerLabel(p.address), subtitle: name ? shortAddress(p.address) : undefined };
 }
 
 function openPeer(address: string, convId?: string): void {

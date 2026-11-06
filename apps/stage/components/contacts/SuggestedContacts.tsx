@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Eyebrow } from '../Eyebrow';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { getPeerDescription, usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
-import { useActiveAccountRecord } from '../../lib/messaging/account';
+import { useSelfAddress } from '../../lib/messaging/account';
 import { dmLinkOf } from '../../lib/links';
 import { SUGGESTED_HEADING, suggestedContacts, suggestedSubtitle } from './SuggestedContacts.model';
 import { Column, PAGE_GUTTER } from '../layout';
@@ -16,7 +16,7 @@ export function SuggestedContacts({
   headingTop?: number;
 }): React.ReactElement | null {
   const router = useRouter();
-  const self = useActiveAccountRecord()?.address ?? null;
+  const self = useSelfAddress() || null;
   const addresses = useMemo(() => suggestedContacts(known, self), [known, self]);
   usePeerProfiles(addresses);
   if (addresses.length === 0) return null;

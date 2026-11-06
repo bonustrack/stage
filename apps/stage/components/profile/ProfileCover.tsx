@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { RoundIconButton } from '../RoundIconButton';
-import { RoundOverflowMenu, type OverflowMenuItem } from '../MenuRows';
+import { RoundOverflowMenu, type MenuActions, type OverflowMenuItem } from '../MenuRows';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
@@ -55,15 +55,15 @@ export function ProfileCover({
   );
 }
 
-export function ProfileCoverMenu({
+export function ProfileCoverMenu<Id extends string>({
   items,
-  onSelect,
+  actions,
   loading,
 }: {
-  items: OverflowMenuItem[];
-  onSelect: (id: string) => void;
+  items: readonly OverflowMenuItem<Id>[];
+  actions: MenuActions<Id>;
   loading?: boolean;
 }): React.ReactElement {
   const { bg } = usePalette();
-  return <RoundOverflowMenu items={items} onSelect={onSelect} loading={loading} background={bg} />;
+  return <RoundOverflowMenu items={items} actions={actions} loading={loading} background={bg} />;
 }

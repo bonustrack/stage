@@ -8,8 +8,6 @@ import { MessengerComposer } from '../composer/MessengerComposer';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ChannelMenu } from '../chatRow/ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
-import { isPinned } from '../../lib/sync/pins';
-import { getCachedRows } from '../../lib/channelsCache';
 import { useGroupAccess } from '../../lib/messaging/useConvConsent';
 import { xmtpDeleteMessage } from '../../lib/xmtp.messages';
 import { ConversationSidebarToggle } from './ConversationSidebarToggle';
@@ -293,8 +291,7 @@ export function ConversationOverlays({
   convId: string;
   onOpenSearch: () => void;
 }): React.ReactElement {
-  const { overflowOpen, setOverflowOpen, overflowAnchor, isGroup, peerAddr } = c;
-  const isUnread = (getCachedRows()?.find((r) => r.convId === convId)?.unreadCount ?? 0) > 0;
+  const { overflowOpen, setOverflowOpen, overflowAnchor, isGroup } = c;
   const rights = useChannelEditRights(convId, isGroup);
   const [editOpen, setEditOpen] = useState(false);
   const canEdit = isGroup && canEditGroup(rights);
@@ -303,15 +300,11 @@ export function ConversationOverlays({
       <ChannelMenu
         visible={overflowOpen}
         convId={convId}
-        isGroup={isGroup}
-        peerAddress={peerAddr}
-        isUnread={isUnread}
-        isPinned={convId ? isPinned(convId) : false}
         onClose={() => {
           setOverflowOpen(false);
         }}
         anchor={overflowAnchor}
-        context="view"
+        from="chat"
         onSearch={onOpenSearch}
         onEdit={
           canEdit
@@ -320,9 +313,6 @@ export function ConversationOverlays({
               }
             : undefined
         }
-        onAfterLeave={(result) => {
-          capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden');
-        }}
       />
       {canEdit ? (
         <EditChannelModal

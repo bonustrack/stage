@@ -6,7 +6,7 @@ import { CHANNEL_FIELD_NOUNS } from '@stage-labs/client/xmtp/labels';
 import { IconChevronDownSmall } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronDownSmall';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
-import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
+import { AnchoredMenu, PICKER_WIDTH, menuPointAbove } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuRow } from '../MenuRows';
 import { useKnownFieldValues } from './listing';
@@ -23,7 +23,6 @@ const NOUN = CHANNEL_FIELD_NOUNS.category;
 const BUTTON_HEIGHT = 38;
 const TEXT_INSET = 10;
 const VALUE_MAX_WIDTH = 150;
-const PICKER_WIDTH = 300;
 const NO_SHRINK = { flexShrink: 0 } as const;
 
 function ProjectButton({ value, onPress }: { value: string | null; onPress: (point: MenuPoint) => void }): React.ReactElement {
@@ -111,7 +110,6 @@ export function NewChatProject({
   onChange: (next: string | null) => void;
   flush?: boolean;
 }): React.ReactElement {
-  const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const pick = (next: string | null): void => {
     onChange(next);
@@ -130,10 +128,9 @@ export function NewChatProject({
             setAnchor(null);
           }}
           avoidKeyboard
+          width={PICKER_WIDTH}
         >
-          <Column width={anchored ? PICKER_WIDTH : undefined}>
-            <ProjectMenu value={value} pick={pick} />
-          </Column>
+          <ProjectMenu value={value} pick={pick} />
         </AnchoredMenu>
       )}
     </>

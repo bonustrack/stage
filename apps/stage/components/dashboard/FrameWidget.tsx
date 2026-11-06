@@ -1,26 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { shortAddress } from '@stage-labs/client/identity/format';
 import { OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DashboardSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { FrameHeader } from '../frame/FrameHeader';
 import { FrameTile } from '../frame/FramePreview';
-import { chatLabelOf } from '../storage/StorageScreen.model';
-import { useAccountEpoch } from '../../lib/accountEpoch';
+import { useStoredChat } from '../chatRow/chatRow';
 import { capabilities } from '../../lib/capabilities';
 import { frameLocked } from '../../lib/frames/frame.model';
 import { useFrameMessage } from '../../lib/frames/frameMessage';
 import { conversationLinkOf } from '../../lib/links';
-import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { storageChatOf } from '../../lib/storageIndex';
 import { useConvConsentState, useGroupAccess } from '../../lib/messaging/useConvConsent';
 import { Unavailable, type WidgetGrip } from './widgetParts';
 import { Column } from '../layout';
 
-const CHAT_STALE_MS = 5 * 60_000;
 const CHAT_RECHECK_MS = 15_000;
 const FALLBACK_TITLE = 'Frame';
 const NOT_SYNCED = 'This frame is not on this device yet';
@@ -41,18 +35,9 @@ function toastSent(): void {
 
 function useWidgetChat(convId: string): WidgetChat {
   const router = useRouter();
-  const epoch = useAccountEpoch();
-  const { data } = useQuery({
-    queryKey: ['storageChat', epoch, convId],
-    queryFn: () => storageChatOf(convId),
-    staleTime: CHAT_STALE_MS,
-    retry: false,
-    refetchInterval: (query) => (query.state.data ? false : CHAT_RECHECK_MS),
-  });
-  const peer = data?.peerAddress ?? null;
-  usePeerProfiles([peer]);
-  if (data === null || data === undefined) return NO_CHAT;
-  const label = chatLabelOf(data, peer === null ? undefined : getPeerName(peer), shortAddress);
+  const chat = useStoredChat(convId, CHAT_RECHECK_MS);
+  if (chat === null) return NO_CHAT;
+  const { label, peerAddress: peer } = chat;
   return {
     title: label === '' ? FALLBACK_TITLE : label,
     isGroup: peer === null,

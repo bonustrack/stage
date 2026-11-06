@@ -1,22 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { Palette } from '../../lib/theme';
-import { cachedSelfEthAddress, selfEthAddress } from '../../lib/xmtp.client';
-import { IconBubbleAnnotation3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleAnnotation3';
-import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
-import { Column, Row } from '../layout';
 
-export function useSelfAddress(): string {
-  const { data } = useQuery({
-    queryKey: ['selfEthAddress'],
-    queryFn: async (): Promise<string> => (await selfEthAddress()) ?? '',
-    initialData: () => cachedSelfEthAddress() ?? undefined,
-    staleTime: Infinity,
-  });
-  return data ?? '';
-}
+import { appIcon } from '../widgets';
+import { PEER_PROFILE_ACTIONS, type PeerAction } from './ProfileScreen.model';
+import { Column, Row } from '../layout';
 
 function ProfileRoundAction({
   icon,
@@ -63,14 +52,19 @@ export function ProfileActions({
   onSend: () => void;
   c: Palette;
 }): React.ReactElement {
-  const actions = [
-    { icon: IconBubbleAnnotation3, label: 'Message', onPress: onMessage },
-    { icon: IconPaperPlane, label: 'Send', onPress: onSend },
-  ];
+  const press: Record<PeerAction, () => void> = { message: onMessage, send: onSend };
   return (
     <Row gap={12} justify="start" padding={{ top: 18 }}>
-      {actions.map((action) => (
-        <ProfileRoundAction key={action.label} {...action} border={c.border} fg={c.link} dark={dark} />
+      {PEER_PROFILE_ACTIONS.map((item) => (
+        <ProfileRoundAction
+          key={item.id}
+          icon={appIcon(item.icon)}
+          label={item.label}
+          onPress={press[item.id]}
+          border={c.border}
+          fg={c.link}
+          dark={dark}
+        />
       ))}
     </Row>
   );

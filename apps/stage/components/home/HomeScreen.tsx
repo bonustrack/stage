@@ -6,7 +6,8 @@ import { useAccountEpoch } from '../../lib/accountEpoch';
 import { peerLabel } from '../../lib/peerProfiles';
 import { NewChatScreen } from './NewChatScreen';
 import { useWebTabRail } from '../layout/webLayout';
-import { HomeError, HomeLoading, RowChannelMenu, useChannelRowRenderer } from './parts';
+import { HomeError, HomeLoading, useChannelRowRenderer } from './parts';
+import { RowChannelMenu } from '../chatRow/chatRow';
 import { ChannelsList } from './list';
 import { useChannelsSyncError } from '../../lib/messaging/channelsSync';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
@@ -67,14 +68,13 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const visibleRows = useMemo(() => listedRows(sortedRows, { matches, cleared }), [sortedRows, matches, cleared]);
   const list = useGroupedRows(visibleRows, searchText, groupBy, peerLabel, profilesVersion);
   const fields = useChannelFields('chats');
-  const hideAvatar = !fields.avatar;
   const error = useChannelsSyncError();
 
   const activePath = pane ? pathname : '';
   const menuConvId = rowMenu?.convId;
   const listExtraData = useMemo(
-    () => [profilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields] as const,
-    [profilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields],
+    () => [profilesVersion, draftsVersion, pinned, query, activePath, menuConvId, fields] as const,
+    [profilesVersion, draftsVersion, pinned, query, activePath, menuConvId, fields],
   );
   const visiblePinned = useMemo(
     () => (list.grouped ? [] : visibleRows.map((r) => r.convId).filter((id) => pinned.includes(id))),
@@ -90,7 +90,6 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     activePath,
     menuConvId,
     drag,
-    hideAvatar,
     fields,
     items: list.items,
   });
@@ -119,7 +118,6 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
       />
       <RowChannelMenu
         menu={rowMenu}
-        isPinned={rowMenu !== null && pinned.includes(rowMenu.convId)}
         onClose={() => {
           st.setRowMenu(null);
         }}

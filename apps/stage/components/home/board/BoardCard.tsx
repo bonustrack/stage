@@ -1,19 +1,14 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { List } from '@stage-labs/kit/react-native/list';
 import { SortableItem } from '@stage-labs/kit/react-native/sortable';
 import { ChannelRow } from '../../chatRow/ChannelRow';
-import { ChannelRowFields } from '../../chatRow/ChannelRowFields';
+import { RowChannelMenu, chatRowProps, rowMenuOpener, type RowMenu } from '../../chatRow/chatRow';
 import { useChannelFields } from '../../../lib/channelFields';
-import { RowChannelMenu, rowAvatarAddress, rowMenuOpener, rowPreview, rowTitle } from '../parts';
-import type { RowMenu } from '../state';
 import type { Row as ChannelRowData } from '../model';
-import { prefetchFeed } from '../../../lib/feed/load';
 import { getDraft } from '../../../lib/drafts';
 import { conversationLinkOf } from '../../../lib/links';
-import { channelTimestamp } from '../../../lib/format';
 import { usePalette } from '../../../lib/theme';
 import { capabilities } from '../../../lib/capabilities';
 import { useWebTabRail } from '../../layout/webLayout';
@@ -54,8 +49,7 @@ function BoardCard({
   const draftText = getDraft(item.convId);
   const fields = useChannelFields('board');
   const [menu, setMenu] = useState<RowMenu | null>(null);
-  const openMenu = rowMenuOpener(item, setMenu);
-  const title = rowTitle(item);
+  const openMenu = rowMenuOpener(item.convId, setMenu);
   return (
     <SortableItem itemId={item.convId} disabled={!editable} onHold={openMenu}>
       <Column
@@ -65,24 +59,8 @@ function BoardCard({
         style={{ overflow: 'hidden', borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : bg }}
       >
         <ChannelRow
-          title={title.text}
-          placeholderTitle={title.placeholder}
-          avatarUri={item.avatarUri}
-          avatarAddress={rowAvatarAddress(item)}
-          square={!item.peerAddress}
-          hideAvatar={!fields.avatar}
+          {...chatRowProps(item, { pinned, fields, draftText })}
           wrapTitle
-          lastPreview={rowPreview(item)}
-          showPreview={fields.lastMessage}
-          timestamp={channelTimestamp(item.lastTs)}
-          unreadCount={item.unreadCount}
-          markedUnread={item.markedUnread}
-          pinned={pinned}
-          draftText={draftText}
-          fields={<ChannelRowFields data={item} fields={fields} />}
-          onPressIn={() => {
-            prefetchFeed(lineOfConv(item.convId));
-          }}
           onPress={() => {
             if (!panel) {
               router.push(conversationLinkOf(item.convId, item.peerAddress));
@@ -101,7 +79,6 @@ function BoardCard({
         />
         <RowChannelMenu
           menu={menu}
-          isPinned={pinned}
           onClose={() => {
             setMenu(null);
           }}

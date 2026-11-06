@@ -19,12 +19,11 @@ import {
 import { selectedFirst, tagSearch, type ListEdits } from '../conversation/SidebarSection.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
-import { addGroupLabel, removeGroupLabel, setGroupCategory, setGroupField, suggestLabels } from '../../lib/xmtp.groups';
+import { addGroupLabel, removeGroupLabel, suggestLabels } from '../../lib/xmtp.groups';
 import {
   CHANNEL_FIELD_NOUNS,
   CHANNEL_PRIORITIES,
   channelFieldOf,
-  LabelPermissionError,
   MAX_LABEL_LEN,
   MAX_LABELS,
   type ChannelField,
@@ -33,6 +32,7 @@ import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useStoreValue } from '../../lib/storeCore';
 import { useChannelEditRights } from './channel.detail';
+import { setChannelField, toastLabelError } from './channelActions';
 import { useKnownFieldValues } from '../home/listing';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
@@ -41,17 +41,6 @@ import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/text-field';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const MAX_SUGGESTIONS = 8;
-
-export function toastLabelError(e: unknown, what = 'labels'): void {
-  if (e instanceof LabelPermissionError) capabilities.toast(e.message);
-  else capabilities.toast(`Could not update ${what}. Try again.`);
-}
-
-export function setChannelCategory(convId: string, category: string | null): void {
-  void setGroupCategory(lineOfConv(convId), category).catch((e: unknown) => {
-    toastLabelError(e, `the ${CHANNEL_FIELD_NOUNS.category}`);
-  });
-}
 
 const NO_LABELS: string[] = [];
 
@@ -329,9 +318,7 @@ function ChannelFieldSection({ convId, field }: { convId: string; field: Channel
   const current = value === null ? [] : [value];
   const noun = CHANNEL_FIELD_NOUNS[field];
   const commit = (edits: ListEdits): void => {
-    void setGroupField(lineOfConv(convId), field, edits.added[0] ?? null).catch((e: unknown) => {
-      toastLabelError(e, `the ${noun}`);
-    });
+    setChannelField(convId, field, edits.added[0] ?? null);
   };
   return (
     <SidebarSection

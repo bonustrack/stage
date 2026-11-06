@@ -7,3 +7,7 @@ export function useActiveAccountRecord(): AccountRecord | null {
   const { data } = useQuery({ queryKey: ['activeAccount', epoch], queryFn: () => getActiveAccount(), staleTime: Infinity });
   return data ?? null;
 }
+
+export function useSelfAddress(): string {
+  return (useActiveAccountRecord()?.address ?? '').toLowerCase();
+}

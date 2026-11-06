@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
-import { RoundOverflowMenu } from '../MenuRows';
+import { RoundOverflowMenu, type OverflowMenuItem } from '../MenuRows';
 import { RoundIconButton } from '../RoundIconButton';
 import { TooltipHost } from '../system/TooltipHost';
 import { downloadImage } from '../../lib/fileDownload';
@@ -18,7 +18,7 @@ import { capabilities } from '../../lib/capabilities';
 
 const FRAME = Platform.OS === 'web' ? { x: 18, y: 104 } : { x: 0, y: 0 };
 
-const VIEWER_MENU = [{ id: 'download', label: 'Download', icon: IconArrowInbox }];
+const VIEWER_MENU: OverflowMenuItem<'download'>[] = [{ id: 'download', label: 'Download', icon: IconArrowInbox }];
 
 export function ImageViewer({
   uri,
@@ -69,8 +69,10 @@ export function ImageViewer({
           <RoundOverflowMenu
             items={VIEWER_MENU}
             loading={saving}
-            onSelect={() => {
-              void onDownload();
+            actions={{
+              download: () => {
+                void onDownload();
+              },
             }}
           />
           <RoundIconButton icon={IconCrossMedium} label="Close" onPress={onClose} />

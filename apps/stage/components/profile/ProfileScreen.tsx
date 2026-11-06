@@ -9,10 +9,12 @@ import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from '../Avatar';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { PEER_PROFILE_MENU, profileDisplayName } from './ProfileScreen.model';
+import { PEER_PROFILE_MENU, profileDisplayName, type PeerProfileId } from './ProfileScreen.model';
+import type { MenuActions } from '../MenuRows';
 import { capabilities } from '../../lib/capabilities';
 import { ImageViewer } from '../media/ImageViewer';
-import { ProfileActions, useSelfAddress } from './ProfileScreen.parts';
+import { ProfileActions } from './ProfileScreen.parts';
+import { useSelfAddress } from '../../lib/messaging/account';
 import { PROFILE_AVATAR_SIZE, ProfileCover, ProfileCoverBar, ProfileCoverMenu } from './ProfileCover';
 import { CommonChannels } from './CommonChannels';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -40,10 +42,10 @@ function EditProfileButton({ background }: { background: string }): React.ReactE
   );
 }
 
-function ProfileMenu({ isSelf, onSelect }: { isSelf: boolean; onSelect: (id: string) => void }): React.ReactElement {
+function ProfileMenu({ isSelf, actions }: { isSelf: boolean; actions: MenuActions<PeerProfileId> }): React.ReactElement {
   const { bg } = usePalette();
   if (isSelf) return <EditProfileButton background={bg} />;
-  return <ProfileCoverMenu items={PEER_PROFILE_MENU} onSelect={onSelect} />;
+  return <ProfileCoverMenu items={PEER_PROFILE_MENU} actions={actions} />;
 }
 
 function ProfileIdentity({
@@ -126,7 +128,7 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
   const onSend = (): void => {
     router.push({ pathname: '/wallet/send', params: { to: addr } });
   };
-  const menuActions: Record<string, () => void> = {
+  const menuActions: MenuActions<PeerProfileId> = {
     message: onMessage,
     send: onSend,
     'copy-address': () => {
@@ -138,17 +140,7 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
 
   return (
     <Column weight={1} surface="surface">
-      <ProfileCoverBar
-        insetTop={insets.top}
-        trailing={
-          <ProfileMenu
-            isSelf={isSelf}
-            onSelect={(id) => {
-              menuActions[id]?.();
-            }}
-          />
-        }
-      />
+      <ProfileCoverBar insetTop={insets.top} trailing={<ProfileMenu isSelf={isSelf} actions={menuActions} />} />
 
       <ScreenScroll contentContainerStyle={{ paddingBottom: 32 }}>
         <ProfileIdentity

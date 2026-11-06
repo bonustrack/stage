@@ -6,14 +6,17 @@ import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '@stage-labs/kit/react-native/context-menu';
 import { documentScroll, isCoarsePointer, useWebTabRail } from './layout/webLayout';
 import { MENU_GAP } from './menuStyle';
+import { ANCHORED_MENU_MIN_WIDTH } from './layout/breakpoints';
+import { Column } from './layout';
 import { Overlay } from '@stage-labs/kit/react-native/modal';
 
-const DESKTOP_MIN_WIDTH = 900;
 export const MENU_WIDTH = 260;
+
+export const PICKER_WIDTH = 300;
 
 export function useAnchoredMenus(): boolean {
   const { width } = useWindowDimensions();
-  return Platform.OS === 'web' && width >= DESKTOP_MIN_WIDTH && !isCoarsePointer();
+  return Platform.OS === 'web' && width >= ANCHORED_MENU_MIN_WIDTH && !isCoarsePointer();
 }
 
 export function menuPointOf(event: GestureResponderEvent): MenuPoint {
@@ -84,6 +87,7 @@ export function AnchoredMenu({
   anchor,
   forceAnchor = false,
   avoidKeyboard,
+  width,
   children,
 }: {
   visible: boolean;
@@ -91,11 +95,14 @@ export function AnchoredMenu({
   anchor?: MenuPoint | null;
   forceAnchor?: boolean;
   avoidKeyboard?: boolean;
+  width?: number;
   children: ReactNode;
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
   const viewport = useWindowDimensions();
   const centered = useWebTabRail();
+  const sized = (shown: boolean): ReactNode =>
+    width === undefined ? children : <Column width={shown ? width : undefined}>{children}</Column>;
 
   if ((!anchored && !forceAnchor) || !anchor) {
     return (
@@ -106,7 +113,7 @@ export function AnchoredMenu({
         maxWidth={MENU_WIDTH}
         avoidKeyboard={avoidKeyboard}
       >
-        {children}
+        {sized(anchored)}
       </DropdownMenuSheet>
     );
   }
@@ -120,7 +127,7 @@ export function AnchoredMenu({
         }}
         style={{ position: 'absolute', ...position }}
       >
-        <DropdownMenu maxHeight={maxHeight}>{children}</DropdownMenu>
+        <DropdownMenu maxHeight={maxHeight}>{sized(anchored)}</DropdownMenu>
       </Pressable>
     </AnchoredOverlay>
   );

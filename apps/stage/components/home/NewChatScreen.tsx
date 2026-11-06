@@ -68,7 +68,7 @@ import { subscribeCachedRows } from '../../lib/channelsCache';
 import { uploadAttachments } from '../../lib/xmtp.attachments';
 import { schedulePushTopicRefresh, warmSenderFilters } from '../../lib/pushRegister';
 import { xmtpClient } from '../../lib/xmtp.client';
-import { useActiveAccountRecord } from '../../lib/messaging/account';
+import { useActiveAccountRecord, useSelfAddress } from '../../lib/messaging/account';
 import { mentionLabelOf } from '../conversation/convTitle';
 import { Column, PAGE_GUTTER, Row } from '../layout';
 
@@ -120,7 +120,7 @@ function useRequestPeers(peers: readonly DmPeer[]): ReadonlySet<string> {
 function useCandidates(): { candidates: string[]; remembered: string[] } {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const cleared = useClearedChats();
-  const self = useActiveAccountRecord()?.address ?? null;
+  const self = useSelfAddress() || null;
   const history = memberHistory.use();
   const peers = useMemo(
     () =>

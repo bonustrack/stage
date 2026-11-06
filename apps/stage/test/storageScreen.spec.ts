@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { StoredFile } from '../lib/storageIndex.model';
+import { chatLabelOf } from '../components/chatRow/chatRow.model';
 import {
-  chatLabelOf,
   extensionOf,
   scanProgressLabel,
   storageDateLabel,
@@ -63,10 +63,10 @@ describe('storage page model', () => {
 
   test('names the chat a file was sent in', () => {
     const short = (address: string): string => address.slice(0, 6);
-    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, 'Alice', short)).toBe('Alice');
-    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, undefined, short)).toBe('0xabcd');
-    expect(chatLabelOf({ peerAddress: null, groupName: ' Design ' }, undefined, short)).toBe('Design');
-    expect(chatLabelOf({ peerAddress: null, groupName: '' }, undefined, short)).toBe('Unnamed channel');
-    expect(chatLabelOf(null, undefined, short)).toBe('');
+    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, () => 'Alice')).toBe('Alice');
+    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, short)).toBe('0xabcd');
+    expect(chatLabelOf({ peerAddress: null, groupName: ' Design ' }, short)).toBe('Design');
+    expect(chatLabelOf({ peerAddress: null, groupName: '' }, short)).toBe('Unnamed channel');
+    expect(chatLabelOf(null, short)).toBe('');
   });
 });

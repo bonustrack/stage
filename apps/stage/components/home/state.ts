@@ -6,16 +6,8 @@ import { usePinnedOrder } from '../../lib/sync/pins';
 import { groupRows, rowsOf, type HomeListItem } from './groups.model';
 import type { NameOf } from './groupBy.model';
 import { CHANNELS_SCROLL_KEY } from '../../lib/scrollPos';
-import type { MenuPoint } from '../AnchoredMenu.model';
+import type { RowMenu } from '../chatRow/chatRow';
 import type { Row } from './model';
-
-export interface RowMenu {
-  convId: string;
-  isUnread: boolean;
-  isGroup: boolean;
-  peerAddress: string | null;
-  anchor?: MenuPoint;
-}
 
 interface HomeState {
   rowMenu: RowMenu | null;
