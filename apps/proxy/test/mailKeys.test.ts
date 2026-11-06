@@ -63,12 +63,7 @@ function memoryNames(): NamesDeps['store'] {
   };
 }
 
-const mailDeps: MailDeps = {
-  mailbox,
-  chain: { owner: chain.subnameOwner, verify: chain.verifyClaim },
-  clientIp: '203.0.113.7',
-  now: () => NOW,
-};
+const mailDeps: MailDeps = { mailbox, chain: { owner: chain.subnameOwner, verify: chain.verifyClaim }, now: () => NOW };
 
 async function mailKeyOf(account: PrivateKeyAccount, label = LABEL): Promise<Hex> {
   return mailPublicKeyHex(await deriveMailKey(label, signer(account)));

@@ -1,5 +1,5 @@
 import { PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
-import { corsHeaders, corsResponse, declaredLength, jsonResponse, type HeaderMap } from './respond.ts';
+import { corsHeaders, corsResponse, declaredLength, guarded, repliesWith, type HeaderMap } from './respond.ts';
 
 const ATTACHMENTS_PATH = PROXY_ROUTES.attachments;
 const ID_BYTES = 24;
@@ -7,6 +7,7 @@ const ATTACHMENT_ID = /^[A-Za-z0-9_-]{32}$/;
 const CONTENT_TYPE = 'application/octet-stream';
 const IMMUTABLE = 'public, max-age=31536000, immutable';
 const ATTACHMENT_CORS = corsHeaders('GET, HEAD, POST, OPTIONS');
+const { json, text } = repliesWith(ATTACHMENT_CORS);
 const KEY_PREFIX = 'attachments/';
 
 type AttachmentRoute = { kind: 'upload' } | { kind: 'file'; id: string };
@@ -43,10 +44,6 @@ export function r2AttachmentStore(bucket: R2Bucket): AttachmentStore {
   };
 }
 
-export function isAttachmentPath(pathname: string): boolean {
-  return pathname === ATTACHMENTS_PATH || pathname.startsWith(`${ATTACHMENTS_PATH}/`);
-}
-
 export function parseAttachmentRoute(pathname: string, method: string): AttachmentRoute | null {
   if (pathname === ATTACHMENTS_PATH) return method === 'POST' ? { kind: 'upload' } : null;
   if (!pathname.startsWith(`${ATTACHMENTS_PATH}/`)) return null;
@@ -62,10 +59,6 @@ export function newAttachmentId(): string {
     .replace(/\//g, '_');
 }
 
-function text(body: string | null, status: number): Response {
-  return corsResponse(ATTACHMENT_CORS, body, status, body === null ? null : 'text/plain');
-}
-
 async function upload(request: Request, store: AttachmentStore): Promise<Response> {
   const size = declaredLength(request);
   if (size === null) return text('content length required', 411);
@@ -73,7 +66,7 @@ async function upload(request: Request, store: AttachmentStore): Promise<Respons
   if (size < 1 || request.body === null) return text('empty attachment', 400);
   const id = newAttachmentId();
   await store.put(id, request.body);
-  return jsonResponse({ id }, 200, ATTACHMENT_CORS);
+  return json({ id });
 }
 
 function fileHeaders(meta: Pick<StoredAttachment, 'size' | 'etag'>): HeaderMap {
@@ -101,9 +94,8 @@ export async function handleAttachments(request: Request, store: AttachmentStore
   const route = parseAttachmentRoute(new URL(request.url).pathname, request.method);
   if (route === null) return text('not found', 404);
   if (store === undefined) return text('attachment storage is not configured', 503);
-  try {
-    return await (route.kind === 'upload' ? upload(request, store) : download(store, route.id, request.method));
-  } catch {
-    return text('attachment store error', 502);
-  }
+  return await guarded(
+    () => (route.kind === 'upload' ? upload(request, store) : download(store, route.id, request.method)),
+    () => text('attachment store error', 502),
+  );
 }

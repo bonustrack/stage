@@ -1,4 +1,5 @@
-import type { ArchiveNamespace, ArchiveStorage } from '../src/historyStore.ts';
+import type { ObjectNamespace } from '../src/durableChunks.ts';
+import type { ArchiveStorage } from '../src/historyStore.ts';
 import type { MailStorage } from '../src/mailBox.ts';
 
 export type MemoryStorage = ArchiveStorage & MailStorage & { alarm: number | null; data: Map<string, unknown> };
@@ -29,7 +30,7 @@ export function memoryStorage(): MemoryStorage {
   };
 }
 
-export function memoryNamespace(objectFetch: ObjectFetch, now: number): ArchiveNamespace<string> & { objects: Map<string, MemoryStorage> } {
+export function memoryNamespace(objectFetch: ObjectFetch, now: number): ObjectNamespace<string> & { objects: Map<string, MemoryStorage> } {
   const objects = new Map<string, MemoryStorage>();
   return {
     objects,

@@ -8,7 +8,7 @@ import {
   nodeScriptName,
 } from '@stage-labs/client/nodes/hosting';
 import { base64urlBytes, isStrongNodeKey, nodeSigningText } from '@stage-labs/client/nodes/signing';
-import { corsHeaders, corsResponse, declaredLength, jsonResponse } from './respond.ts';
+import { corsHeaders, declaredLength, repliesWith } from './respond.ts';
 
 export const NODES_NAMESPACE = 'stage-nodes';
 export const MAX_NODES = 1000;
@@ -39,8 +39,7 @@ interface NodesDeps {
   now?: () => number;
 }
 
-const reply = (body: unknown, status = 200): Response => jsonResponse(body, status, CORS);
-const fail = (status: number, error: string): Response => reply({ error }, status);
+const { json: reply, fail, text } = repliesWith(CORS);
 
 function firstError(json: unknown): string | null {
   const errors = (json as { errors?: unknown } | null)?.errors;
@@ -185,7 +184,7 @@ async function deleteNode(request: Request, api: NodesApi, nowMs: number): Promi
 }
 
 export async function handleNodes(request: Request, deps: NodesDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return corsResponse(CORS, null, 204);
+  if (request.method === 'OPTIONS') return text(null, 204);
   if (request.method !== 'PUT' && request.method !== 'DELETE') return fail(405, 'method not allowed');
   const { api } = deps;
   if (api === null) return fail(NODE_PUBLISH_STATUS['not-ready'], 'nodes are not set up');

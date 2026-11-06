@@ -8,7 +8,7 @@ import {
   sealMailPart,
   type MailIndex,
 } from '@stage-labs/client/mail/mailbox';
-import type { ArchiveStub } from './historyStore.ts';
+import type { ObjectStub } from './durableChunks.ts';
 import type { MailChain } from './mailApi.ts';
 import { readMailKey, storeMail, type MailKeyRecord } from './mailBox.ts';
 import { readCappedBytes } from '@stage-labs/client/net/cappedBody';
@@ -30,14 +30,14 @@ export interface IncomingMail {
 }
 
 interface ReceiveDeps {
-  mailbox: (label: string) => ArchiveStub;
+  mailbox: (label: string) => ObjectStub;
   chain: MailChain;
   now?: () => number;
 }
 
 interface Destination {
   label: string;
-  stub: ArchiveStub;
+  stub: ObjectStub;
   key: MailKeyRecord;
   publicKey: Uint8Array;
 }

@@ -1,5 +1,5 @@
 import type { Hex } from 'viem';
-import type { ArchiveStub } from './historyStore.ts';
+import type { ObjectStub } from './durableChunks.ts';
 
 export interface NamesChain {
   verifyClaim(address: Hex, message: string, signature: Hex): Promise<boolean>;
@@ -16,6 +16,6 @@ export interface NamesStore {
 export interface NamesDeps {
   chain: NamesChain;
   store: NamesStore;
-  mailbox?: (label: string) => ArchiveStub;
+  mailbox?: (label: string) => ObjectStub;
   now?: () => number;
 }

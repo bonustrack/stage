@@ -8,10 +8,10 @@ import {
   mailRegisterMessage,
   mailSessionMessage,
 } from '@stage-labs/client/mail/mailbox';
-import type { ArchiveStub } from './historyStore.ts';
-import { mailboxCall, readMailKey, saveMailKey } from './mailBox.ts';
+import type { ObjectStub } from './durableChunks.ts';
+import { mailboxCall, readMailKey, saveMailKey, stringOf } from './mailBox.ts';
 import { PROXY_ROUTES, type MailOp } from '@stage-labs/client/endpoints';
-import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
+import { corsHeaders, corsResponse, guarded, repliesWith } from './respond.ts';
 
 const MAIL_PREFIX = PROXY_ROUTES.mail;
 
@@ -23,29 +23,22 @@ export interface MailChain {
   verify(address: Hex, message: string, signature: Hex): Promise<boolean>;
 }
 
-interface RequestLimiter {
-  limit(options: { key: string }): Promise<{ success: boolean }>;
-}
-
 export interface MailDeps {
-  mailbox: (label: string) => ArchiveStub;
+  mailbox: (label: string) => ObjectStub;
   chain: MailChain;
-  limiter?: RequestLimiter;
-  clientIp: string;
+  limited?: () => Promise<boolean>;
   now?: () => number;
 }
 
 type Fields = Record<string, unknown>;
 type Handler = (request: Request, deps: MailDeps) => Promise<Response>;
 interface Access {
-  stub: ArchiveStub;
+  stub: ObjectStub;
   owner: string;
   id: string;
 }
 
-const reply = (body: unknown, status = 200): Response => jsonResponse(body, status, CORS);
-const fail = (status: number, error: string): Response => reply({ error }, status);
-const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+const { json: reply, fail, text: empty } = repliesWith(CORS);
 const isSignature = (value: string): value is Hex => SIGNATURE.test(value);
 
 async function readFields(request: Request): Promise<Fields> {
@@ -68,9 +61,9 @@ interface KeyClaim {
 }
 
 function parseKeyClaim(body: Fields): KeyClaim | null {
-  const label = text(body.label).toLowerCase();
-  const publicKey = text(body.publicKey).toLowerCase();
-  const signature = text(body.signature);
+  const label = stringOf(body.label).toLowerCase();
+  const publicKey = stringOf(body.publicKey).toLowerCase();
+  const signature = stringOf(body.signature);
   const { issuedAt } = body;
   if (!isMailboxLabel(label) || !isMailPublicKey(publicKey) || !isSignature(signature) || typeof issuedAt !== 'number') return null;
   return { label, publicKey, issuedAt, signature };
@@ -100,7 +93,7 @@ const keyStatus: Handler = async (request, deps) => {
 };
 
 const challenge: Handler = async (request, deps) => {
-  const label = text((await readFields(request)).label).toLowerCase();
+  const label = stringOf((await readFields(request)).label).toLowerCase();
   if (!isMailboxLabel(label)) return fail(400, 'label required');
   if ((await deps.chain.owner(label)) === null) return fail(404, 'no such name');
   const issued = await mailboxCall(deps.mailbox(label), 'challenge');
@@ -110,9 +103,9 @@ const challenge: Handler = async (request, deps) => {
 
 const openSession: Handler = async (request, deps) => {
   const body = await readFields(request);
-  const label = text(body.label).toLowerCase();
-  const nonce = text(body.nonce);
-  const signature = text(body.signature);
+  const label = stringOf(body.label).toLowerCase();
+  const nonce = stringOf(body.nonce);
+  const signature = stringOf(body.signature);
   if (!isMailboxLabel(label) || !isSignature(signature)) return fail(400, 'label, nonce and signature required');
   const stub = deps.mailbox(label);
   const [consumed, owner] = await Promise.all([mailboxCall(stub, 'consume', { nonce }), deps.chain.owner(label)]);
@@ -179,12 +172,12 @@ const readMail: Handler = async (request, deps) => {
 
 const deleteMail = withAccess(async ({ stub, owner, id }) => {
   const removed = await mailboxCall(stub, 'delete', { owner, id });
-  return removed.ok ? corsResponse(CORS, null, 204) : fail(404, 'no such mail');
+  return removed.ok ? empty(null, 204) : fail(404, 'no such mail');
 }, true);
 
 const closeBox = withAccess(async ({ stub, owner }) => {
   await mailboxCall(stub, 'close', { owner });
-  return corsResponse(CORS, null, 204);
+  return empty(null, 204);
 });
 
 const ROUTES: Readonly<Record<string, Handler | undefined>> = {
@@ -199,15 +192,12 @@ const ROUTES: Readonly<Record<string, Handler | undefined>> = {
 } satisfies Partial<Record<`${'GET' | 'POST' | 'DELETE'} ${MailOp}`, Handler>>;
 
 export async function handleMail(request: Request, deps: MailDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return corsResponse(CORS, null, 204);
+  if (request.method === 'OPTIONS') return empty(null, 204);
   const handler = ROUTES[`${request.method} ${new URL(request.url).pathname.slice(MAIL_PREFIX.length)}`];
   if (handler === undefined) return fail(404, 'not found');
-  if (deps.limiter !== undefined && !(await deps.limiter.limit({ key: deps.clientIp })).success) {
-    return fail(429, 'too many requests');
-  }
-  try {
-    return await handler(request, deps);
-  } catch {
-    return fail(502, 'mail service error');
-  }
+  if (deps.limited !== undefined && (await deps.limited())) return fail(429, 'too many requests');
+  return guarded(
+    () => handler(request, deps),
+    () => fail(502, 'mail service error'),
+  );
 }

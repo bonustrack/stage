@@ -6,7 +6,7 @@ import { mailboxStub, saveMailKey } from './mailBox.ts';
 import { NAME_TAKEN, makeNamesChain, NameTransactionRevertedError } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
-import { CLIENT_CORS as CORS, corsResponse, jsonResponse } from './respond.ts';
+import { CLIENT_CORS, guarded, repliesWith } from './respond.ts';
 import { sleep } from '@stage-labs/client/timing';
 import { PROXY_ROUTES, namesPath, type NamesOp } from '@stage-labs/client/endpoints';
 
@@ -24,9 +24,7 @@ const addressKey = (address: string): string => `addr:${address.toLowerCase()}`;
 const labelKey = (label: string): string => `label:${label}`;
 const pendingKey = (label: string): string => `pending:${label}`;
 
-function reply(body: unknown, status = 200): Response {
-  return jsonResponse(body, status, CORS);
-}
+const { json: reply, text } = repliesWith(CLIENT_CORS);
 
 async function status(url: URL, deps: NamesDeps): Promise<Response> {
   const address = url.searchParams.get('address') ?? '';
@@ -188,13 +186,14 @@ async function route(request: Request, deps: NamesDeps): Promise<Response> {
 }
 
 export async function handleNames(request: Request, deps: NamesDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return corsResponse(CORS, null, 204);
-  try {
-    return await route(request, deps);
-  } catch (err) {
-    const detail = err instanceof Error ? (err.message.split('\n')[0] ?? 'unknown error') : String(err);
-    return reply({ error: `name service error: ${detail}` }, 502);
-  }
+  if (request.method === 'OPTIONS') return text(null, 204);
+  return await guarded(
+    () => route(request, deps),
+    (err) => {
+      const detail = err instanceof Error ? (err.message.split('\n')[0] ?? 'unknown error') : String(err);
+      return reply({ error: `name service error: ${detail}` }, 502);
+    },
+  );
 }
 
 function kvStore(kv: KVNamespace): NamesStore {

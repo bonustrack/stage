@@ -49,7 +49,7 @@ function mailbox(label: string): { fetch(input: string, init?: RequestInit): Pro
   };
 }
 
-const deps: MailDeps = { mailbox, chain, clientIp: '203.0.113.7', now: () => clock.now };
+const deps: MailDeps = { mailbox, chain, now: () => clock.now };
 const signer =
   (account: PrivateKeyAccount) =>
   (message: string): Promise<Hex> =>
@@ -217,7 +217,7 @@ describe('st.box mail access', () => {
     await expect(registerMailKey(BASE, 'alice1', keys, signer(ALICE), clock.now - 11 * 60 * 1000)).rejects.toThrow('(400)');
     const limited = await handleMail(new Request(`${BASE}/mail/challenge`, { method: 'POST', body: '{}' }), {
       ...deps,
-      limiter: { limit: () => Promise.resolve({ success: false }) },
+      limited: () => Promise.resolve(true),
     });
     expect(limited.status).toBe(429);
   });
