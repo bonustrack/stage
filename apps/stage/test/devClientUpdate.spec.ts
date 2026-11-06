@@ -7,6 +7,7 @@ import {
   mainUpdateMessage,
   parsePreviewManifest,
   previewFromStatus,
+  previewsFromHistory,
 } from '../components/settings/DevClientUpdate.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from '../lib/devClientUpdates.core';
 
@@ -22,13 +23,12 @@ function manifest(gitHash = OLD_SHA, runtimeVersion = 'old-runtime', id = OLD_ID
   return JSON.stringify({ id, runtimeVersion, extra: { expoClient: { extra: { gitHash } } } });
 }
 
+function previewStatus(url: string, context = 'Preview'): { context: string; state: string; target_url: string } {
+  return { context, state: 'success', target_url: `https://bundler.stage.box/preview-launcher.html?u=${encodeURIComponent(url)}` };
+}
+
 function status(gitHash: string, url: string): string {
-  return JSON.stringify({
-    sha: gitHash,
-    statuses: [
-      { context: 'Preview', state: 'success', target_url: `https://bundler.stage.box/preview-launcher.html?u=${encodeURIComponent(url)}` },
-    ],
-  });
+  return JSON.stringify({ sha: gitHash, statuses: [previewStatus(url)] });
 }
 
 function fixture(
@@ -42,6 +42,7 @@ function fixture(
     let body = compatible;
     if (path.endsWith('/main/status')) body = status(NEW_SHA, NEW_GROUP);
     else if (path.endsWith(`/${OLD_SHA}/status`)) body = status(OLD_SHA, OLD_GROUP);
+    else if (path.endsWith('/statuses')) body = JSON.stringify([previewStatus(OLD_GROUP)]);
     else if (path.endsWith('/group/22222222-2222-2222-2222-222222222222')) body = manifest(NEW_SHA, newRuntime, NEW_ID);
     else if (path.includes('/group/')) body = manifest();
     return Promise.resolve({ body, contentType: 'application/expo+json' });
@@ -88,6 +89,16 @@ describe('main dev-client manifests', () => {
     expect(() => previewFromStatus({ sha: OLD_SHA, statuses: [{ context: 'Preview', state: 'pending' }] })).toThrow('not published');
   });
 
+  test('prefers the main-only status and validates historical immutable links', () => {
+    const value = { sha: OLD_SHA, statuses: [previewStatus(NEW_GROUP), previewStatus(OLD_GROUP, 'Main preview')] };
+    expect(previewFromStatus(value).url).toBe(OLD_GROUP);
+    expect(previewsFromHistory([previewStatus(OLD_GROUP), { context: 'Preview', state: 'pending' }], OLD_SHA)).toEqual([
+      { gitHash: OLD_SHA, url: OLD_GROUP },
+    ]);
+    expect(() => previewsFromHistory({}, OLD_SHA)).toThrow('history');
+    expect(() => previewsFromHistory([previewStatus(`${PROJECT}?channel-name=main`)], OLD_SHA)).toThrow('immutable');
+  });
+
   test('cache bust reaches EAS and retains runtime and channel', () => {
     const url = new URL(freshUrl(compatibleMainUrl('native-runtime', 'android'), 123));
     expect(url.origin).toBe('https://u.expo.dev');
@@ -129,6 +140,41 @@ describe('compatible main selection', () => {
     expect(mainUpdateMessage(update, OLD_SHA)).not.toContain('new dev-client APK');
   });
 
+  test('finds the exact main publication after another branch overwrites the same commit status', async () => {
+    const otherGroup = `${PROJECT}/group/55555555-5555-5555-5555-555555555555`;
+    const { request, calls } = fixture();
+    const collision: UpdateRequest = (url, headers) => {
+      const path = new URL(url).pathname;
+      if (path.endsWith(`/${OLD_SHA}/status`))
+        return Promise.resolve({ body: status(OLD_SHA, otherGroup), contentType: 'application/json' });
+      if (path.endsWith('/statuses'))
+        return Promise.resolve({
+          body: JSON.stringify([previewStatus(otherGroup), previewStatus(OLD_GROUP)]),
+          contentType: 'application/json',
+        });
+      if (url.startsWith(otherGroup))
+        return Promise.resolve({ body: manifest(OLD_SHA, 'old-runtime', NEW_ID), contentType: 'application/json' });
+      return request(url, headers);
+    };
+    const update = await findCompatibleMainUpdate(collision, 'old-runtime', 'android', 123);
+    expect(update).toMatchObject({ id: OLD_ID, gitHash: OLD_SHA, runtime: 'old-runtime', url: OLD_GROUP });
+    expect(calls.filter((call) => call.url.startsWith(OLD_GROUP))).toHaveLength(1);
+  });
+
+  test('resolves a same-runtime latest-main status collision without accepting a different update ID', async () => {
+    const { request } = fixture('old-runtime', manifest(NEW_SHA, 'old-runtime', OLD_ID));
+    const collision: UpdateRequest = (url, headers) => {
+      if (new URL(url).pathname.endsWith('/statuses'))
+        return Promise.resolve({ body: JSON.stringify([previewStatus(OLD_GROUP)]), contentType: 'application/json' });
+      if (url.startsWith(OLD_GROUP))
+        return Promise.resolve({ body: manifest(NEW_SHA, 'old-runtime', OLD_ID), contentType: 'application/json' });
+      return request(url, headers);
+    };
+    const update = await findCompatibleMainUpdate(collision, 'old-runtime', 'android', 123);
+    expect(update).toMatchObject({ id: OLD_ID, gitHash: NEW_SHA, runtime: 'old-runtime', url: OLD_GROUP });
+    expect(update.latest).toEqual({ id: OLD_ID, gitHash: NEW_SHA, runtime: 'old-runtime' });
+  });
+
   test('never accepts a incompatible channel response or unknown runtime', async () => {
     const { request } = fixture('new-runtime', manifest(NEW_SHA, 'new-runtime', NEW_ID));
     await expect(findCompatibleMainUpdate(request, 'old-runtime', 'android', 123)).rejects.toThrow('incompatible');
@@ -145,6 +191,70 @@ describe('compatible main selection', () => {
         ? Promise.resolve({ body: manifest(OLD_SHA, 'new-runtime'), contentType: 'application/json' })
         : older.request(url, headers);
     await expect(findCompatibleMainUpdate(wrongPinned, 'old-runtime', 'android', 123)).rejects.toThrow('immutable compatible');
+  });
+
+  test('bounds historical status pages and never substitutes another commit, runtime or update ID', async () => {
+    for (const pinned of [manifest(NEW_SHA), manifest(OLD_SHA, 'wrong-runtime'), manifest(OLD_SHA, 'old-runtime', NEW_ID)]) {
+      const { request } = fixture();
+      let pages = 0;
+      const mismatch: UpdateRequest = (url, headers) => {
+        if (new URL(url).pathname.endsWith('/statuses')) {
+          pages += 1;
+          return Promise.resolve({
+            body: JSON.stringify(Array.from({ length: 100 }, () => ({ context: 'Other', state: 'success' }))),
+            contentType: 'application/json',
+          });
+        }
+        if (url.startsWith(OLD_GROUP)) return Promise.resolve({ body: pinned, contentType: 'application/json' });
+        return request(url, headers);
+      };
+      await expect(findCompatibleMainUpdate(mismatch, 'old-runtime', 'android', 123)).rejects.toThrow('immutable compatible');
+      expect(pages).toBe(3);
+    }
+  });
+
+  test('continues past a full unrelated history page and deduplicates immutable candidates', async () => {
+    const { request } = fixture();
+    const mainGroup = `${PROJECT}/group/55555555-5555-5555-5555-555555555555`;
+    let manifests = 0;
+    const history: UpdateRequest = (url, headers) => {
+      const target = new URL(url);
+      if (target.pathname.endsWith('/statuses')) {
+        const entries =
+          target.searchParams.get('page') === '1'
+            ? Array.from({ length: 100 }, () => ({ context: 'Other', state: 'success' }))
+            : [previewStatus(OLD_GROUP), previewStatus(mainGroup)];
+        return Promise.resolve({ body: JSON.stringify(entries), contentType: 'application/json' });
+      }
+      if (url.startsWith(OLD_GROUP) || url.startsWith(mainGroup)) {
+        manifests += 1;
+        return Promise.resolve({ body: url.startsWith(mainGroup) ? manifest() : manifest(NEW_SHA), contentType: 'application/json' });
+      }
+      return request(url, headers);
+    };
+    const update = await findCompatibleMainUpdate(history, 'old-runtime', 'android', 123);
+    expect(update.url).toBe(mainGroup);
+    expect(manifests).toBe(2);
+  });
+
+  test('caps distinct manifest candidates even when a full history page contains more', async () => {
+    const { request } = fixture();
+    let manifests = 0;
+    const history: UpdateRequest = (url, headers) => {
+      if (new URL(url).pathname.endsWith('/statuses')) {
+        const entries = Array.from({ length: 100 }, (_, index) =>
+          previewStatus(`${PROJECT}/group/${String(index).padStart(8, '0')}-0000-0000-0000-000000000000`),
+        );
+        return Promise.resolve({ body: JSON.stringify(entries), contentType: 'application/json' });
+      }
+      if (url.includes('/group/') && !url.startsWith(NEW_GROUP)) {
+        manifests += 1;
+        return Promise.resolve({ body: manifest(NEW_SHA), contentType: 'application/json' });
+      }
+      return request(url, headers);
+    };
+    await expect(findCompatibleMainUpdate(history, 'old-runtime', 'android', 123)).rejects.toThrow('immutable compatible');
+    expect(manifests).toBe(10);
   });
 
   test('does not treat pending main or network failure as latest', async () => {

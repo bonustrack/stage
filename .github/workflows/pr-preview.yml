@@ -252,7 +252,7 @@ jobs:
               'https://bundler.stage.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
             const shortSha = `${{ steps.update.outputs.short_sha }}`;
             const description = `Open dev-client preview ${shortSha} (matching runtime APK required)`;
-            await github.rest.repos.createCommitStatus({
+            const status = {
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
@@ -260,7 +260,11 @@ jobs:
               context: 'Preview',
               target_url: target,
               description,
-            });
+            };
+            await github.rest.repos.createCommitStatus(status);
+            if (context.ref === 'refs/heads/main') {
+              await github.rest.repos.createCommitStatus({ ...status, context: 'Main preview' });
+            }
 
   # When a git branch is deleted, tear down its per-branch EAS preview so stale
   # channels/branches don't accumulate forever. Gated on the `delete` event and
