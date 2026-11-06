@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { app, BrowserWindow, desktopCapturer, session, systemPreferences } from 'electron';
-import { DEEP_LINK_SCHEME, deepLinkIn, desktopRouteUrl, sameSite, siteBaseFor } from './links';
+import { APP_SCHEME } from '@stage-labs/client/endpoints';
+import { deepLinkIn, desktopRouteUrl, sameSite, siteBaseFor } from './links';
 import { installMenu } from './menu';
 import { registerAppScheme, serveWebApp } from './serve';
 import { startUpdates } from './updates';
@@ -77,7 +78,7 @@ function allowScreenShare(): void {
 
 function start(): void {
   registerAppScheme();
-  if (app.isPackaged) app.setAsDefaultProtocolClient(DEEP_LINK_SCHEME);
+  if (app.isPackaged) app.setAsDefaultProtocolClient(APP_SCHEME);
   app.on('second-instance', (_event, argv) => {
     const link = deepLinkIn(argv);
     if (link !== null) openLink(link);

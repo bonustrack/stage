@@ -1,4 +1,5 @@
 import { Platform, useWindowDimensions } from 'react-native';
+import type { DesktopBridgeGlobal } from '../../lib/desktopBridge';
 
 const WEB_SIDEBAR_MIN_WIDTH = 1100;
 const WEB_TOP_BAND = 12;
@@ -7,7 +8,7 @@ export const WEB_TAB_RAIL_WIDTH = 72;
 
 export function desktopTitleBarInset(): number {
   if (Platform.OS !== 'web') return 0;
-  const inset = (globalThis as { stageDesktop?: { titleBarInset?: unknown } }).stageDesktop?.titleBarInset;
+  const inset = (globalThis as DesktopBridgeGlobal).stageDesktop?.titleBarInset;
   return typeof inset === 'number' && Number.isFinite(inset) && inset > 0 ? inset : 0;
 }
 

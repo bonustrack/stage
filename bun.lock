@@ -109,6 +109,7 @@
       "name": "stage-desktop",
       "version": "0.1.5",
       "devDependencies": {
+        "@stage-labs/client": "workspace:*",
         "@types/node": "^22.0.0",
         "electron": "44.3.0",
         "electron-builder": "26.15.3",

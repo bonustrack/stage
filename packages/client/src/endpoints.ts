@@ -3,6 +3,7 @@ export const PUSH_ORIGIN = 'https://push.stage.box';
 export const BUNDLER_HOST = 'bundler.stage.box';
 export const BUNDLER_ORIGIN = `https://${BUNDLER_HOST}`;
 export const PREVIEW_LAUNCHER_PATH = '/preview-launcher.html';
+export const APP_SCHEME = 'stage';
 export const EAS_PROJECT_ID = '1707f2db-c2b8-4c91-9341-27b1d57d355f';
 export const EAS_UPDATES_URL = `https://u.expo.dev/${EAS_PROJECT_ID}`;
 

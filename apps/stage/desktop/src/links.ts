@@ -1,18 +1,19 @@
+import { APP_SCHEME } from '@stage-labs/client/endpoints';
 import { APP_HOME } from './assets';
 
 export const WEBSITE = 'https://stage.box';
-export const DEEP_LINK_SCHEME = 'stage';
+const DEEP_LINK = new RegExp(`^${APP_SCHEME}://(.*)$`, 'i');
 
 export function siteBaseFor(override: string | undefined): string {
   return override !== undefined && override !== '' ? override : APP_HOME;
 }
 
 export function deepLinkIn(argv: readonly string[]): string | null {
-  return argv.find((arg) => arg.toLowerCase().startsWith(`${DEEP_LINK_SCHEME}://`)) ?? null;
+  return argv.find((arg) => arg.toLowerCase().startsWith(`${APP_SCHEME}://`)) ?? null;
 }
 
 export function desktopRouteUrl(base: string, link: string): string {
-  const match = /^stage:\/\/(.*)$/i.exec(link.trim());
+  const match = DEEP_LINK.exec(link.trim());
   const route = (match?.[1] ?? '').replace(/^\/+/, '');
   return route === '' ? base : `${base.replace(/\/+$/, '')}/#/${route}`;
 }

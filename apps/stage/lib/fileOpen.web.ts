@@ -4,6 +4,7 @@ import { reported } from './errorPolicy';
 import { downloadFile } from './fileDownload';
 import { nativeFileName } from '@stage-labs/client/files';
 import { fileOpenAction, type OpenableFile } from './fileOpen.model';
+import type { DesktopBridgeGlobal, StageDesktopBridge } from './desktopBridge';
 
 const openedUrls = new Map<string, string>();
 
@@ -12,11 +13,11 @@ function openInTab(url: string): void {
   else capabilities.openUrl(url);
 }
 
-type DesktopOpen = (name: string, bytes: Uint8Array) => Promise<boolean>;
+type DesktopOpen = StageDesktopBridge['openFile'];
 
 function desktopOpen(): DesktopOpen | undefined {
-  const bridge = (globalThis as { stageDesktop?: { openFile?: unknown } }).stageDesktop;
-  return typeof bridge?.openFile === 'function' ? (bridge.openFile as DesktopOpen) : undefined;
+  const open = (globalThis as DesktopBridgeGlobal).stageDesktop?.openFile;
+  return typeof open === 'function' ? open : undefined;
 }
 
 async function openOnDesktop(open: DesktopOpen, file: OpenableFile): Promise<void> {
