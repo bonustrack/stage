@@ -1,4 +1,4 @@
-import { Platform, type ViewStyle } from 'react-native';
+import { Platform, type View, type ViewStyle } from 'react-native';
 
 const WEB = Platform.OS === 'web';
 const PANE_LEFT = 'var(--stage-pane-left, 0px)';
@@ -66,4 +66,10 @@ export function viewportFill(zIndex?: number): ViewStyle {
 
 export function pinnedEdges(edges: { top?: number; bottom?: number; left?: number; right?: number }, zIndex: number): ViewStyle {
   return WEB ? css({ position: 'fixed', ...edges, zIndex }) : { position: 'absolute', ...edges, zIndex };
+}
+
+export type RenderedNode = View;
+
+export function isRendered(node: unknown): boolean {
+  return WEB && node instanceof HTMLElement && node.getClientRects().length > 0;
 }

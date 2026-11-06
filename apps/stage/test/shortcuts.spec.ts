@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { shortcutKey, shortcutOf, type ShortcutKeyEvent, type ShortcutTarget } from '../components/keys/shortcuts.model';
+import { shortcutKey, shortcutOf, type KeyEventLike, type KeyTarget } from '../components/keys/keys.model';
+
+type ShortcutKeyEvent = Omit<KeyEventLike, 'shiftKey'>;
 
 const press = (key: string, extra: Partial<ShortcutKeyEvent> = {}): ShortcutKeyEvent => ({
   key,
@@ -11,7 +13,7 @@ const press = (key: string, extra: Partial<ShortcutKeyEvent> = {}): ShortcutKeyE
   ...extra,
 });
 
-const on = (tagName: string, contentEditable = false): ShortcutTarget => ({ tagName, contentEditable });
+const on = (tagName: string, contentEditable = false): KeyTarget => ({ tagName, contentEditable, text: '' });
 
 describe('shortcutOf', () => {
   test('reads slash and c in both cases', () => {

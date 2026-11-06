@@ -23,8 +23,8 @@ import {
   revealScrollX,
   type BoardColumn,
 } from './BoardScreen.model';
-import { revealMarked, useArrowKeys } from '../../keys/arrowKeys';
-import { ALL_ARROWS } from '../../keys/arrowKeys.model';
+import { revealMarked, useArrowKeys } from '../../keys/keys';
+import { ALL_ARROWS } from '../../keys/keys.model';
 import { boardArrowMove } from './boardKeys.model';
 import { AddColumn, ColumnFrame, ColumnMenu, ColumnTitle, HEADER_PADDING, RenameHeading } from './BoardColumnEdit';
 import { ColumnCards, cardDataSet, showInPanel } from './BoardCard';

@@ -1,8 +1,8 @@
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/links';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { prefetchFeed } from '../../lib/feed/load';
-import { revealMarked, useArrowKeys } from '../keys/arrowKeys';
-import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../keys/arrowKeys.model';
+import { revealMarked, useArrowKeys } from '../keys/keys';
+import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../keys/keys.model';
 import type { VirtualListHandle } from '../layout';
 import type { HomeListItem } from './groups.model';
 import type { Row } from './model';

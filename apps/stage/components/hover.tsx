@@ -3,7 +3,8 @@ import type { GestureResponderEvent, LayoutChangeEvent, ViewStyle } from 'react-
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { HoverTooltip } from './HoverTooltip';
-import type { Shortcut } from './keys/shortcuts.model';
+import type { Shortcut } from './keys/keys.model';
+import { useShortcut } from './keys/keys';
 import { usePalette } from '../lib/theme';
 import { Column } from './layout';
 
@@ -74,8 +75,9 @@ export function HoverIconButton({
 }): React.ReactElement {
   const { link } = usePalette();
   const { hovered, hoverProps } = useHover();
+  const shortcutNode = useShortcut(shortcut, onShortcut);
   return (
-    <HoverTooltip label={label} placement={placement} shortcut={shortcut} onShortcut={onShortcut}>
+    <HoverTooltip label={label} placement={placement} shortcut={shortcut} nodeRef={shortcutNode}>
       <Pressable
         onPointerDown={onPointerDown}
         onPress={onPress}

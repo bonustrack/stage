@@ -6,6 +6,7 @@ import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radi
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
 import { FORM_FIELD_HEIGHT, FormField } from '../FormField';
 import { HoverTooltip } from '../HoverTooltip';
+import { useShortcut } from '../keys/keys';
 import { usePalette } from '../../lib/theme';
 import { useSearchInput } from './searchInput';
 import { Column, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from '../layout';
@@ -60,6 +61,7 @@ export const SearchField = forwardRef<React.ComponentRef<typeof TextField>, Sear
     ref,
   );
   const Frame = props.inline === true ? Fragment : StickyFrame;
+  const shortcutNode = useShortcut('/', props.onOpen);
   return (
     <Frame>
       <Row height={SEARCH_FIELD_HEIGHT} padding={{ x: PAGE_GUTTER, bottom: FIELD_GAP }} surface="toolbar" align="center">
@@ -72,7 +74,7 @@ export const SearchField = forwardRef<React.ComponentRef<typeof TextField>, Sear
             placeholder={props.placeholder ?? 'Search'}
             inputProps={{ accessibilityLabel: 'Search', ...search.inputProps }}
             leading={
-              <HoverTooltip label="Search" placement="below" shortcut="/" onShortcut={props.onOpen}>
+              <HoverTooltip label="Search" placement="below" shortcut="/" nodeRef={shortcutNode}>
                 <Glyph icon={IconMagnifyingGlass} size={20} color={search.color} />
               </HoverTooltip>
             }

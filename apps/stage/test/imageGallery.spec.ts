@@ -1,12 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  galleryItemsOf,
-  galleryKeyOf,
-  galleryKeyStep,
-  galleryStep,
-  isEditableTarget,
-  type GalleryKeyEvent,
-} from '../components/media/imageGallery.model';
+import { galleryItemsOf, galleryKeyOf, galleryKeyStep, galleryStep, type GalleryKeyEvent } from '../components/media/imageGallery.model';
+import { isEditableTarget } from '../components/keys/keys.model';
 
 interface Att {
   kind: string;

@@ -22,8 +22,6 @@ export interface GalleryKeyEvent {
   defaultPrevented: boolean;
 }
 
-const EDITABLE_TAGS: ReadonlySet<string> = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
-
 export function galleryKeyOf(entryId: string, index: number): string {
   return `${entryId}#${index}`;
 }
@@ -55,8 +53,4 @@ export function galleryKeyStep(event: GalleryKeyEvent, editableTarget: boolean):
   if (event.key === 'ArrowLeft') return -1;
   if (event.key === 'ArrowRight') return 1;
   return 0;
-}
-
-export function isEditableTarget(tagName: string | null, contentEditable: boolean): boolean {
-  return contentEditable || (tagName !== null && EDITABLE_TAGS.has(tagName));
 }

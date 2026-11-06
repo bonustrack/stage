@@ -9,7 +9,7 @@ import { Avatar } from '../Avatar';
 import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
 import { menuPointOf } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import type { MarkedNode } from '../keys/arrowKeys.model';
+import type { MarkedNode } from '../keys/keys.model';
 import { contextMenuProps } from '@stage-labs/kit/react-native/context-menu';
 import { HIGHLIGHT_BG } from '../../lib/uiColors';
 import { usePalette } from '../../lib/theme';

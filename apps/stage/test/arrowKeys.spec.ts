@@ -5,9 +5,11 @@ import {
   arrowKeyOf,
   revealScrollDelta,
   stepRow,
-  type ArrowKeyEvent,
-  type ArrowKeyTarget,
-} from '../components/keys/arrowKeys.model';
+  type KeyEventLike,
+  type KeyTarget,
+} from '../components/keys/keys.model';
+
+type ArrowKeyEvent = Omit<KeyEventLike, 'isComposing'>;
 
 const press = (key: string, extra: Partial<ArrowKeyEvent> = {}): ArrowKeyEvent => ({
   key,
@@ -19,7 +21,7 @@ const press = (key: string, extra: Partial<ArrowKeyEvent> = {}): ArrowKeyEvent =
   ...extra,
 });
 
-const field = (tagName: string, text: string, contentEditable = false): ArrowKeyTarget => ({ tagName, contentEditable, text });
+const field = (tagName: string, text: string, contentEditable = false): KeyTarget => ({ tagName, contentEditable, text });
 
 const rows = ['a', 'b', 'c'].map((convId) => ({ convId }));
 

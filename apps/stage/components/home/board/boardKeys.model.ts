@@ -1,4 +1,4 @@
-import { stepRow, type Arrow } from '../../keys/arrowKeys.model';
+import { stepRow, type Arrow } from '../../keys/keys.model';
 
 interface NavColumn {
   key: string;

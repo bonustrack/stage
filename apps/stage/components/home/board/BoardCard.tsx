@@ -15,7 +15,7 @@ import { useWebTabRail } from '../../layout/webLayout';
 import { channelRouteConvId } from '../../tabs/splitRoutes';
 import { PAGES } from '../../tabs/pages';
 import { boardCardPress, cardsRightPadding, type BoardColumn } from './BoardScreen.model';
-import type { MarkedNode } from '../../keys/arrowKeys.model';
+import type { MarkedNode } from '../../keys/keys.model';
 import { CARD_GAP, COLUMN_PADDING } from './BoardColumnEdit';
 import { Column, GUTTER_SCROLLBAR, gutterScrollbarWidth } from '../../layout';
 
