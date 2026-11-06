@@ -5,6 +5,7 @@ import { deletedByOf } from '@stage-labs/client/xmtp/entryPayload';
 import type { ConfirmOptions } from '../../lib/capabilities';
 import { previewOf } from './feed-helpers';
 import { isFrameActionEntry } from '../../lib/frames/frame.model';
+import { isLocalId } from '../composer/outbound';
 
 const DELETE_MESSAGE_CONFIRM: ConfirmOptions = {
   title: 'Delete message?',
@@ -31,7 +32,7 @@ export function isAdminDelete(entry: HistoryEntry, myUri: string): boolean {
 }
 
 export function canDeleteMessage(entry: HistoryEntry | null, { myUri, deleted, superAdmin }: DeleteAccess): boolean {
-  if (entry === null || entry.id.startsWith('tmp_') || !isDeletableEntry(entry) || deleted.has(entry.id)) return false;
+  if (entry === null || isLocalId(entry.id) || !isDeletableEntry(entry) || deleted.has(entry.id)) return false;
   return !isAdminDelete(entry, myUri) || superAdmin;
 }
 

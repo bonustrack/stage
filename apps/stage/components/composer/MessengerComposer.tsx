@@ -4,7 +4,7 @@ import { useDictation } from './dictation';
 import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { type Attachment, type OptimisticEntry } from './types';
 import { useComposerActions } from './actions';
-import { useHandedSend } from './handoff';
+import { useTakeHandedSend } from './handoff';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
 import type { DropZone } from './droppedFiles.model';
@@ -268,7 +268,7 @@ export function MessengerComposer(props: Props): React.ReactElement {
   });
   useComposerDrafts(draftKey, s, mention.restore);
   useWarmSendPath(props.xmtpLine, s);
-  useHandedSend(convId, (started) => {
+  useTakeHandedSend(convId, (started) => {
     void actions.adoptSend(started);
   });
   useComposerFocus(s.bumpFocus, s.bumpBlur, s.blurNonce, replyingTo?.id, replyingTo?.nonce, autoFocusNonce, caretToEnd);

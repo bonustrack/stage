@@ -1,8 +1,8 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { attachmentsPreview } from '@stage-labs/client/xmtp/humanize';
 import { attachmentsOf, hasAttachments } from '@stage-labs/client/xmtp/entryPayload';
 import { uploadedAttachmentKey } from '../../lib/localAttachmentCache.core';
 import type { UploadedAttachment } from '../../lib/xmtp.types';
+import { isLocalId } from '../composer/outbound';
 
 function uploadedRemote(remote: Record<string, unknown> | undefined): UploadedAttachment | undefined {
   return typeof remote?.url === 'string' && typeof remote.contentDigest === 'string'
@@ -73,7 +73,7 @@ export interface OutboundState {
 
 function stableRowKeys(state: OutboundState, confirmed: Map<string, string>, pending: HistoryEntry[]): Map<string, string> {
   const keys = new Map(state.rowKeys);
-  const used = new Set([...keys].filter(([id]) => !id.startsWith('tmp_')).map(([, key]) => key));
+  const used = new Set([...keys].filter(([id]) => !isLocalId(id)).map(([, key]) => key));
   const available = new Set([...state.optimistic.map((o) => o.id), ...keys.values()].filter((key) => !used.has(key)));
   const assign = (id: string, preferred: string): string => {
     const key = used.has(preferred) ? (available.values().next().value ?? id) : preferred;
@@ -125,8 +125,4 @@ export function recordSent(state: OutboundState, localId: string, sentId?: strin
   const confirmedIds = new Map([...state.confirmedIds].filter(([id, liveId]) => id === localId || liveId !== sentId));
   confirmedIds.set(localId, sentId);
   return { ...state, confirmedIds, sent: new Set(state.sent).add(localId) };
-}
-
-export function optimisticRowPreview(text: string, attachments: readonly { mime?: string; name?: string }[]): string {
-  return text.trim() || attachmentsPreview(attachments.map((a) => ({ mimeType: a.mime, filename: a.name })));
 }

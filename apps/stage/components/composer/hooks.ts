@@ -1,17 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AppState, Keyboard } from 'react-native';
-import { loadDrafts, getDraftValue, setDraft, setDraftValue } from '../../lib/drafts';
+import { loadDrafts, getDraftValue, setDraftValue } from '../../lib/drafts';
 import type { ComposerState } from './state';
-import type { Attachment } from './types';
-
-const keptAttachments = new Map<string, Attachment[]>();
+import { keepAttachmentsUntilSent, keptAttachmentsOf } from './handoff';
 
 const TEXT_SAVE_DELAY_MS = 300;
-
-export function clearComposerDraft(key: string): void {
-  setDraft(key, '');
-  keptAttachments.delete(key);
-}
 
 export function useCaretToEnd(text: string, setSelection: (range: { start: number; end: number }) => void): () => void {
   const textRef = useRef(text);
@@ -52,7 +45,7 @@ export function useComposerDrafts(
 ): void {
   const restoring = useRef(false);
   useEffect(() => {
-    const found = key === null ? undefined : keptAttachments.get(key);
+    const found = key === null ? undefined : keptAttachmentsOf(key);
     if (found === undefined) return;
     restoring.current = true;
     s.setPending(found);
@@ -63,8 +56,7 @@ export function useComposerDrafts(
       restoring.current = false;
       return;
     }
-    if (s.pending.length === 0) keptAttachments.delete(key);
-    else keptAttachments.set(key, s.pending);
+    keepAttachmentsUntilSent(key, s.pending);
   }, [key, s.pending]);
   useSavedDraft(
     key,

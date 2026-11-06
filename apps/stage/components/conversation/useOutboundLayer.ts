@@ -3,9 +3,9 @@ import { patchRowSent } from '../../lib/channelsCache';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import { isFeedBubble } from '@stage-labs/client/xmtp/visibility';
-import { attachmentsPayload } from '@stage-labs/client/xmtp/entryPayload';
 import { deletedViewCache } from './messageDeletion.model';
-import { optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
+import { outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
+import { optimisticEntryOf, optimisticRowPreview } from '../composer/outbound';
 import { useUploadedAttachments } from '../../lib/localAttachmentCache';
 import type { OptimisticEntry } from '../composer/types';
 
@@ -45,26 +45,10 @@ export function useOutboundLayer(
   followNewest: () => void,
 ) {
   const onOptimistic = useCallback(
-    ({ localId, text, attachments, replyTo, payload }: OptimisticEntry) => {
-      setOutbound((s) => ({
-        ...s,
-        optimistic: [
-          {
-            id: localId,
-            ts: new Date().toISOString(),
-            station: 'xmtp',
-            line: activeLine,
-            from: myUri,
-            to: activeLine,
-            text: text || undefined,
-            ...(replyTo ? { replyTo } : {}),
-            ...(payload ? { payload } : attachments.length ? { payload: attachmentsPayload(attachments) } : {}),
-          },
-          ...s.optimistic,
-        ],
-      }));
+    (sent: OptimisticEntry) => {
+      setOutbound((s) => ({ ...s, optimistic: [optimisticEntryOf(sent, activeLine, myUri), ...s.optimistic] }));
       followNewest();
-      if (convId) patchRowSent(convId, optimisticRowPreview(text, attachments));
+      if (convId) patchRowSent(convId, optimisticRowPreview(sent.text, sent.attachments));
     },
     [activeLine, myUri, convId, followNewest, setOutbound],
   );

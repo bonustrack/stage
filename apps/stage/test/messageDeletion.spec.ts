@@ -10,6 +10,7 @@ import {
 import { bubbleMenuItems } from '../components/conversation/bubbleMenu.model';
 import { mergeFeedEntries } from '../lib/feed/order.model';
 import { entry } from './helpers';
+import { mintLocalId } from '../components/composer/outbound';
 
 const ME = 'xmtp:me';
 const PEER = 'xmtp:peer';
@@ -35,7 +36,7 @@ describe('canDeleteMessage', () => {
   });
 
   test('never a message still sending or a channel update, even for a super admin', () => {
-    expect(canDeleteMessage(entry('tmp_1', { from: ME, text: 'sending' }), member)).toBe(false);
+    expect(canDeleteMessage(entry(mintLocalId(), { from: ME, text: 'sending' }), member)).toBe(false);
     const update = entry('g1', { from: PEER, text: 'renamed the channel', payload: { contentType: 'group_updated', system: true } });
     expect(canDeleteMessage(update, superAdmin)).toBe(false);
     expect(canDeleteMessage({ ...update, from: ME }, member)).toBe(false);

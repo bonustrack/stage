@@ -14,7 +14,7 @@ import { structuredPayload, type EntryPayload } from '@stage-labs/client/xmtp/en
 import { getActiveAccount } from '../../lib/accounts';
 import { setLastAttachment } from '../../lib/drafts';
 import type { PostHooks } from './types';
-import { mintLocalId } from './sendRun';
+import { mintLocalId } from './outbound';
 
 export interface PostCtx extends PostHooks {
   close: () => void;

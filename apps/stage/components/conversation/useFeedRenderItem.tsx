@@ -14,6 +14,7 @@ import { memberNamer, withMemberNames } from './systemNames.model';
 import { getPeerName } from '../../lib/peerProfiles';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import { reactorNamer, reactorNamesByMessage } from './reactors.model';
+import { isLocalId } from '../composer/outbound';
 
 type ConvState = ReturnType<typeof useConversationState>;
 type Bubble = ConvState['allBubbles'][number];
@@ -157,7 +158,7 @@ function renderFeedBubble(item: Bubble, c: ConvState, l: FeedLocals): React.Reac
         myUri={myUri}
         senderEthAddress={senderEthAddress}
         onAvatarPress={l.onAvatarPress}
-        pending={item.id.startsWith('tmp_') && !c.confirmedIds.has(item.id)}
+        pending={isLocalId(item.id) && !c.confirmedIds.has(item.id)}
         replyTarget={l.replyingToId === item.id || c.jumpHighlightId === item.id || l.menuForId === item.id}
         reactions={unlessDeleted(deleted, l.reactorNames, item.id)}
         pendingReactions={unlessDeleted(deleted, c.optimisticReactions, item.id)}

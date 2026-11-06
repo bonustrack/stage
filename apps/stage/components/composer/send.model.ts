@@ -29,6 +29,14 @@ interface ComposerSenders {
   ) => Promise<string>;
 }
 
+function sendGate(assertCurrent?: () => void, beforeSend?: () => Promise<void>): (() => Promise<void>) | undefined {
+  if (beforeSend === undefined) return undefined;
+  return async () => {
+    await beforeSend();
+    assertCurrent?.();
+  };
+}
+
 function fileStep(
   line: string,
   files: Attachment[],
@@ -44,17 +52,7 @@ function fileStep(
     attachments: files,
     run: (onUploaded) => {
       assertCurrent?.();
-      const validate =
-        beforeSend === undefined
-          ? undefined
-          : async (): Promise<void> => {
-              await beforeSend();
-              assertCurrent?.();
-            };
-      if (replyTo !== undefined) return senders.attachments(line, fileInputs(files), onUploaded, validate, replyTo);
-      return validate === undefined
-        ? senders.attachments(line, fileInputs(files), onUploaded)
-        : senders.attachments(line, fileInputs(files), onUploaded, validate);
+      return senders.attachments(line, fileInputs(files), onUploaded, sendGate(assertCurrent, beforeSend), replyTo);
     },
   };
 }
@@ -75,12 +73,8 @@ export function planSendSteps(
     return async () => {
       await beforeSend?.();
       assertCurrent?.();
-      if (beforeSend === undefined) return replying ? senders.reply(xmtpLine, replying, text) : senders.text(xmtpLine, text);
-      const validate = async (): Promise<void> => {
-        await beforeSend();
-        assertCurrent?.();
-      };
-      return replying ? senders.reply(xmtpLine, replying, text, validate) : senders.text(xmtpLine, text, validate);
+      const gate = sendGate(assertCurrent, beforeSend);
+      return replying ? senders.reply(xmtpLine, replying, text, gate) : senders.text(xmtpLine, text, gate);
     };
   };
   const textFile = textAttachment(body, mintLocalId);

@@ -7,10 +7,10 @@ import { errorMessage } from '@stage-labs/client/errors';
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
-import { handSendTo } from '../composer/handoff';
+import { discardComposerDraft, handOverSend } from '../composer/handoff';
 import { startSend } from '../composer/sendRun';
 import { fileInputs } from '../composer/send.model';
-import { clearComposerDraft, useSavedDraft } from '../composer/hooks';
+import { useSavedDraft } from '../composer/hooks';
 import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
@@ -94,7 +94,7 @@ const NEW_CHANNEL_PUSH_REFRESH_MS = 10_000;
 function clearNewChatDraft(draftKey: string | null): void {
   const membersKey = membersDraftKey(draftKey);
   if (draftKey === null || membersKey === null) return;
-  clearComposerDraft(draftKey);
+  discardComposerDraft(draftKey);
   setDraftValue(membersKey, undefined);
 }
 
@@ -197,7 +197,7 @@ function useStartChat(
       const convId = convIdOfLine(line);
       if (convId === null) return;
       void memberHistory.update((current) => startedChatWith(current, addresses, Date.now())).catch(reported('newChatMembers.save'));
-      handSendTo(convId, startSend(line, text, latest.current.pending));
+      handOverSend(convId, startSend(line, text, latest.current.pending));
       clearNewChatDraft(draftKey);
       draft.setText('');
       draft.setPending([]);

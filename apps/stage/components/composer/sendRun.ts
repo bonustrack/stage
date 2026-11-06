@@ -4,9 +4,7 @@ import { xmtpReply, xmtpSendText } from '../../lib/xmtp.messages';
 import { fileInputs, planSendSteps, unsentDraft, type SendStep } from './send.model';
 import type { ComposerState } from './state';
 import type { Attachment, PostHooks } from './types';
-
-let seq = 0;
-export const mintLocalId = (): string => `tmp_${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+import { mintLocalId } from './outbound';
 
 export type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'> &
   Pick<ComposerState, 'text' | 'pending' | 'setPending' | 'setText'> & {

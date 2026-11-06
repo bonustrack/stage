@@ -1,19 +1,36 @@
 import { useEffect } from 'react';
+import { setDraft } from '../../lib/drafts';
 import type { StartedSend } from './sendRun';
+import type { Attachment } from './types';
 
-const handed = new Map<string, StartedSend>();
+const handedSends = new Map<string, StartedSend>();
+const keptAttachments = new Map<string, Attachment[]>();
 
-export function handSendTo(convId: string, started: StartedSend): void {
-  handed.set(convId.toLowerCase(), started);
+export function handOverSend(convId: string, started: StartedSend): void {
+  handedSends.set(convId.toLowerCase(), started);
 }
 
-export function useHandedSend(convId: string | null, adopt: (started: StartedSend) => void): void {
+export function useTakeHandedSend(convId: string | null, take: (started: StartedSend) => void): void {
   useEffect(() => {
     if (convId === null) return;
     const key = convId.toLowerCase();
-    const started = handed.get(key);
+    const started = handedSends.get(key);
     if (started === undefined) return;
-    handed.delete(key);
-    adopt(started);
+    handedSends.delete(key);
+    take(started);
   }, [convId]);
+}
+
+export function keepAttachmentsUntilSent(draftKey: string, pending: Attachment[]): void {
+  if (pending.length === 0) keptAttachments.delete(draftKey);
+  else keptAttachments.set(draftKey, pending);
+}
+
+export function keptAttachmentsOf(draftKey: string): Attachment[] | undefined {
+  return keptAttachments.get(draftKey);
+}
+
+export function discardComposerDraft(draftKey: string): void {
+  setDraft(draftKey, '');
+  keptAttachments.delete(draftKey);
 }
