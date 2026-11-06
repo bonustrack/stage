@@ -1,6 +1,5 @@
-import type { HistoryEntry } from '@stage-labs/client/types';
 import { createAppDataWriter, type AppDataWriter } from '@stage-labs/client/xmtp/channelMeta';
-import { makeListeners, makeValue } from './storeCore';
+import { makeValue } from './storeCore';
 import { resetFeed } from './feed/cache';
 import { attempt } from './errorPolicy';
 import { sleep } from '@stage-labs/client/timing';

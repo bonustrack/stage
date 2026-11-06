@@ -1,4 +1,5 @@
-import { CHANNEL_FIELD_NOUNS, LabelPermissionError, type ChannelField } from '@stage-labs/client/xmtp/labels';
+import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_FIELD_NOUNS, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { capabilities } from '../../lib/capabilities';
 import { leaveGroupConv, setGroupCategory, setGroupField } from '../../lib/xmtp.groups';

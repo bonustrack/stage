@@ -19,7 +19,7 @@ import { subscribeAccountSelection, withAccountScope } from './accountSelection'
 import { isAppInFront } from './appInFront';
 import { onReadStateChanged } from './channelsCache';
 import { report, reported, ignored } from './errorPolicy';
-import { afterFirstPages } from './feedLines';
+import { afterFirstPages } from './feed/firstPages';
 import { PUSH_PLATFORM, dismissConvNotifications, pushRpcUrl, pushToken } from './pushNotify';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { makePushRetry } from './pushRetry.core';

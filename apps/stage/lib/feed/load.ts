@@ -1,7 +1,8 @@
 import { getQueryClient } from '../queryClient';
 import { getAccountEpoch } from '../accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { convOfLine, sdk } from '../xmtp.sdk';
+import { sdk } from '../xmtp.sdk';
+import { convOfLine } from '../xmtp.find';
 import { latestConvMessages, olderConvMessages } from '../xmtp.messages';
 import { PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed } from './merge';
 import { refreshLatestPage, syncInboxOnce } from './resync';

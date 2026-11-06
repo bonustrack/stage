@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
-import { ensureActiveAccount } from '../xmtp.recover.core';
-import { getOrCreateXmtpClient } from '../xmtp.client';
+import { getActiveAccount } from '../accounts';
+import { xmtpClient } from '../xmtp.client';
 import type { AccountGate } from '../accountGate';
 import { reported } from '../errorPolicy';
 import { useChannelsSync } from './channelsSync';
 import { ensureMessagingStreamSync } from './streamSync';
 
 export async function bootMessaging(openClient: boolean): Promise<void> {
-  await ensureActiveAccount();
-  if (openClient) await getOrCreateXmtpClient('production');
+  await getActiveAccount();
+  if (openClient) await xmtpClient();
 }
 
 export function useMessagingBoot(gate: AccountGate, openClient: boolean): void {

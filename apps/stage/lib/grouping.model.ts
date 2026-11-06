@@ -1,4 +1,4 @@
-import { CHANNEL_FIELD_NOUNS, type ChannelField } from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_FIELD_NOUNS, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 
 export type GroupingField = GroupKey | ChannelField;

@@ -1,6 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isShownInFeed } from '@stage-labs/client/xmtp/visibility';
-import { convOfLine } from '../xmtp.sdk';
+import { convOfLine } from '../xmtp.find';
 import { latestConvMessages } from '../xmtp.messages';
 import { feedCache, feedGeneration } from './cache';
 import { PAGE_SIZE, mergePageIntoFeed } from './merge';

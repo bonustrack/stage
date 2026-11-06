@@ -22,9 +22,9 @@ import type { ClientSdk, GroupName } from './xmtp.client.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import { guardClientAccess } from './xmtp.clientAccess.web';
 import { ignored } from './errorPolicy';
-import { afterFirstPages } from './feedLines';
+import { afterFirstPages } from './feed/firstPages';
 import { historyServerUrl } from './historyServer';
-import { forgetFeeds } from './feedSnapshot';
+import { forgetFeeds } from './feed/snapshot';
 import { forgetStorageIndex } from './storageIndexStore';
 
 export type XmtpClient = Client<unknown>;

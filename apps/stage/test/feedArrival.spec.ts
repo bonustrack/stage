@@ -19,7 +19,8 @@ mock.module('../platform/storage', () => ({
     },
   },
 }));
-mock.module('../lib/xmtp.sdk', () => ({ convOfLine: async () => null, sdk: {} }));
+mock.module('../lib/xmtp.sdk', () => ({ sdk: {} }));
+mock.module('../lib/xmtp.find', () => ({ convOfLine: async () => null }));
 mock.module('../lib/xmtp.messages', () => ({ latestConvMessages: async () => [] }));
 mock.module('../lib/feed/resync', () => ({
   syncInboxOnce: async () => undefined,

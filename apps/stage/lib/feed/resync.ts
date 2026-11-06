@@ -1,5 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { convOfLine, sdk } from '../xmtp.sdk';
+import { sdk } from '../xmtp.sdk';
+import { convOfLine } from '../xmtp.find';
 import { latestConvMessages } from '../xmtp.messages';
 import { openFeedLines } from './lines';
 import { PAGE_SIZE, mergePageIntoFeed } from './merge';
