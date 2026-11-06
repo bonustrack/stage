@@ -1,9 +1,8 @@
 import type { Hex } from 'viem';
 import { baseProfileClient, resolveBasenameProfile } from '@stage-labs/client/identity/onchainProfile';
-import { fetchIssuedName } from '@stage-labs/client/identity/stageNames';
+import { fetchIssuedName, stageLabelOf } from '@stage-labs/client/identity/stageNames';
 import { registerMailKey } from '@stage-labs/client/mail/api';
 import { deriveMailKey, isMailboxLabel, mailPublicKeyHex } from '@stage-labs/client/mail/mailbox';
-import { stageLabelOf } from '@stage-labs/client/routing/handles';
 import type { AccountRecord } from './accounts';
 import { linkProxyBase } from './linkProxy';
 import { signingKeyForRecord } from './xmtp.signing.core';

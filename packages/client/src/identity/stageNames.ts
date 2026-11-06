@@ -33,8 +33,14 @@ export function isStageName(name: string): boolean {
   return name.toLowerCase().endsWith(`.${STAGE_NAMES_PARENT}`);
 }
 
+export function stageLabelOf(handle: string | null | undefined): string | null {
+  if (!handle || !isStageName(handle)) return null;
+  return handle.slice(0, -(STAGE_NAMES_PARENT.length + 1)).toLowerCase();
+}
+
 export function displayHandle(name: string): string {
-  return isStageName(name) ? `@${name.slice(0, -(STAGE_NAMES_PARENT.length + 1)).toLowerCase()}` : name;
+  const label = stageLabelOf(name);
+  return label === null ? name : `@${label}`;
 }
 
 export interface ClaimRequest {

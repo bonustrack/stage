@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { isAddress } from 'viem';
 import { Eyebrow } from '../Eyebrow';
 import { EmptyState } from '../chrome/EmptyState';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { resolveHandleToAddress } from '../../lib/resolveHandle';
+import { usePersonLookup } from '../../lib/resolveHandle';
+import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { peopleLookup } from './contacts.model';
 import { homeRows } from './state';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
@@ -16,39 +16,16 @@ function getExistingPeers(): { address: string; convId: string }[] {
   return uniqueBy(peers, (p) => p.address.toLowerCase());
 }
 
-const LOOKUP_DEBOUNCE_MS = 300;
 const NO_MATCH_HINT = 'No matches. Try a username, a full address or a name.eth to start a chat.';
 
 interface ResolvedPeer {
   address: string;
-  title: string;
+  label: string | null;
 }
 
 function useResolvedPeer(q: string, enabled: boolean): ResolvedPeer | null {
-  const [resolved, setResolved] = useState<ResolvedPeer | null>(null);
-  const lookup = useMemo(() => (enabled ? peopleLookup(q) : null), [q, enabled]);
-  useEffect(() => {
-    if (!lookup) {
-      setResolved(null);
-      return;
-    }
-    if (isAddress(lookup.handle)) {
-      setResolved({ address: lookup.handle, title: lookup.title });
-      return;
-    }
-    let cancelled = false;
-    setResolved(null);
-    const t = setTimeout(() => {
-      void resolveHandleToAddress(lookup.handle).then((addr) => {
-        if (!cancelled && addr) setResolved({ address: addr.toLowerCase(), title: lookup.title });
-      });
-    }, LOOKUP_DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [lookup?.handle, enabled]);
-  return resolved;
+  const lookup = usePersonLookup(q, WITH_MAINNET_ENS, enabled);
+  return enabled && lookup.kind === 'resolved' ? { address: lookup.address, label: lookup.label } : null;
 }
 
 interface Peer {
@@ -74,7 +51,7 @@ function filterPeers(existing: Peer[], q: string): Peer[] {
 }
 
 function resolvedRow(resolved: ResolvedPeer): ResultRow {
-  const fallback = resolved.title === '' ? shortAddress(resolved.address) : resolved.title;
+  const fallback = resolved.label ?? shortAddress(resolved.address);
   return { address: resolved.address, convId: undefined, title: getPeerName(resolved.address) ?? fallback, subtitle: 'Start chat' };
 }
 

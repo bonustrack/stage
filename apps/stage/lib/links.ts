@@ -1,5 +1,6 @@
 import { getPeerHandle } from './peerProfiles';
-import { conversationPathFor, profileSlugFor, stageLabelOf } from '@stage-labs/client/routing/handles';
+import { conversationPathFor, profileSlugFor } from '@stage-labs/client/routing/handles';
+import { stageLabelOf } from '@stage-labs/client/identity/stageNames';
 
 export type ConversationLink =
   { pathname: '/[convId]'; params: { convId: string } } | { pathname: '/channel/[convId]'; params: { convId: string } };

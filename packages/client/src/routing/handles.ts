@@ -1,4 +1,4 @@
-import { STAGE_NAMES_PARENT, isStageName } from '../identity/stageNames';
+import { STAGE_NAMES_PARENT, isStageName, stageLabelOf } from '../identity/stageNames';
 
 export type HandleKind = 'address' | 'conversation' | 'stage' | 'basename' | 'ens' | 'invalid';
 
@@ -52,14 +52,10 @@ export function parseHandle(raw: string | null | undefined): ParsedHandle {
   const lower = value.toLowerCase();
   if (LABEL_RE.test(lower)) return { kind: 'stage', value: `${lower}.${STAGE_NAMES_PARENT}` };
   if (!NAME_RE.test(lower)) return { kind: 'invalid', value };
+  if (isStageName(lower)) return { kind: 'stage', value: lower };
   if (lower.endsWith('.base.eth')) return { kind: 'basename', value: lower };
   if (lower.endsWith('.eth')) return { kind: 'ens', value: lower };
   return { kind: 'invalid', value };
-}
-
-export function stageLabelOf(handle: string | null | undefined): string | null {
-  if (!handle || !isStageName(handle)) return null;
-  return handle.slice(0, -(STAGE_NAMES_PARENT.length + 1)).toLowerCase();
 }
 
 export function profileSlugFor(address: string, handle?: string | null): string {

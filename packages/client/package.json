@@ -72,6 +72,7 @@
     "./identity/onchainProfile": "./src/identity/onchainProfile.ts",
     "./identity/basenameWrite": "./src/identity/basenameWrite.ts",
     "./identity/stageNames": "./src/identity/stageNames.ts",
+    "./identity/personLookup": "./src/identity/personLookup.ts",
     "./nodes/protocol": "./src/nodes/protocol.ts",
     "./nodes/signing": "./src/nodes/signing.ts",
     "./nodes/hosting": "./src/nodes/hosting.ts",
