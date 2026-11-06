@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { conversationPathFor, isPeerHandleSegment, parseHandle, profileSlugFor, shareUrlFor } from '../src/routing/handles';
+import { conversationPathFor, isPeerHandleSegment, parseHandle, profileSlugFor } from '../src/routing/handles';
+import { APP_ROUTE_SEGMENTS } from '../src/routing/routes';
+import { shareUrlFor } from '../src/routing/stageLinks';
 import { stageLabelOf } from '../src/identity/stageNames';
 
 const ADDR = '0xEAe6aa1802e2938F510ecDc6Ae18f538be6ED9e1';
@@ -29,14 +31,11 @@ describe('isPeerHandleSegment', () => {
     expect(isPeerHandleSegment('boorger')).toBe(true);
     expect(isPeerHandleSegment('fabien.eth')).toBe(true);
     expect(isPeerHandleSegment(ADDR)).toBe(true);
-    expect(isPeerHandleSegment('requests')).toBe(false);
-    expect(isPeerHandleSegment('new-group')).toBe(false);
-    expect(isPeerHandleSegment('new')).toBe(false);
-    expect(isPeerHandleSegment('settings')).toBe(false);
-    expect(isPeerHandleSegment('board')).toBe(false);
-    expect(isPeerHandleSegment('dashboard')).toBe(false);
-    expect(isPeerHandleSegment('storage')).toBe(false);
-    expect(isPeerHandleSegment('inbox')).toBe(false);
+    for (const segment of APP_ROUTE_SEGMENTS) expect(isPeerHandleSegment(segment)).toBe(false);
+    for (const segment of ['channels', 'xmtp', 'requests', 'new-group', 'accounts', 'group', 'user', 'embed']) {
+      expect(isPeerHandleSegment(segment)).toBe(false);
+    }
+    expect(isPeerHandleSegment('Signup')).toBe(false);
     expect(isPeerHandleSegment(CONV)).toBe(false);
     expect(isPeerHandleSegment('')).toBe(false);
   });
@@ -44,7 +43,7 @@ describe('isPeerHandleSegment', () => {
 
 describe('paths', () => {
   test('reserved page names use addresses for chat links but keep their profile slugs', () => {
-    for (const label of ['contacts', 'dashboard', 'storage', 'inbox']) {
+    for (const label of ['contacts', 'dashboard', 'storage', 'inbox', 'signup', 'import', 'account']) {
       const handle = `${label}.stage.base.eth`;
       expect(conversationPathFor(ADDR, handle)).toBe(`/${ADDR.toLowerCase()}`);
       expect(profileSlugFor(ADDR, handle)).toBe(label);

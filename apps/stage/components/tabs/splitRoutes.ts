@@ -16,6 +16,8 @@ const SPLIT_PREFIXES = [
   '/wallet',
   '/add-members',
   '/frame',
+  '/scan',
+  '/account',
   ...MENU_PAGES.map((page) => page.href),
 ];
 

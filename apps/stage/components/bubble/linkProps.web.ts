@@ -1,5 +1,6 @@
 import { NEW_TAB, isPlainClick } from '@stage-labs/kit/link';
-import { internalLinkPath, isAllowedLinkScheme } from '../../lib/safeOpenLink';
+import { internalLinkPath } from '@stage-labs/client/routing/deepLinks';
+import { isAllowedLinkScheme, isStageSchemeUrl, shareUrlFor } from '@stage-labs/client/routing/stageLinks';
 import type { BubbleLinkProps, LinkPress } from './helpers';
 
 function stopPropagation(event: Event): void {
@@ -20,7 +21,7 @@ export function bubbleLinkProps(url: string, onLinkPress: LinkPress): BubbleLink
   const path = internalLinkPath(url);
   if (!path) return { href: url, hrefAttrs: NEW_TAB, accessibilityRole: 'link', onPress: undefined, ref: keepBrowserContextMenu };
   return {
-    href: /^(?:metro|stage):\/\//i.test(url.trim()) ? `https://stage.box/#${path}` : url,
+    href: isStageSchemeUrl(url) ? shareUrlFor(path) : url,
     hrefAttrs: undefined,
     accessibilityRole: 'link',
     onPress: (event) => {

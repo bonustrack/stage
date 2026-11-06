@@ -1,6 +1,7 @@
 import { splitChannelRefs, withChannelLabels } from './channelRefs';
 import { parseMentions, type MentionSegment } from './mentions';
 import { stageChannelIdOf } from './line';
+import { trimTrailingPunctuation } from '../routing/stageLinks';
 import { channelFallbackLabel, MARKDOWN_LINK_RE } from './channelLinks';
 
 export type BodyView = 'plain' | 'namedPlain' | 'mention' | 'markdown';
@@ -92,7 +93,7 @@ function markdownLinkSpans(text: string, findLinks: LinkFinder, plain: boolean):
 
 function bareLinkSpans(text: string, findLinks: LinkFinder): Span[] {
   return (findLinks(text) ?? []).map((m): Span => {
-    const clean = m.url.replace(/[.,;:!?)\]}'"`>]+$/, '');
+    const clean = trimTrailingPunctuation(m.url);
     const url = stageChannelIdOf(clean) ? clean : m.url;
     const lastIndex = m.lastIndex - (m.url.length - url.length);
     return { index: m.index, lastIndex, segment: linkSegment(url, text.slice(m.index, lastIndex)) };

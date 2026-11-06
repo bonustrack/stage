@@ -1,4 +1,6 @@
 import { isPeerHandleSegment } from './handles';
+import type { AppRouteSegment } from './routes';
+import { STAGE_HOST, hashPath, hashRoute, isLaunchPath, toStageWebUrl } from './stageLinks';
 
 export type ParsedRoute =
   | { pathname: '/[convId]'; params: { convId: string; m?: string; focus?: string } }
@@ -23,10 +25,8 @@ function stripAuthority(work: string): string {
 }
 
 function extractRoute(url: string): { segments: string[]; query: URLSearchParams } {
-  let work = url.trim();
-
-  const hashIdx = work.indexOf('#');
-  work = hashIdx !== -1 ? work.slice(hashIdx + 1) : stripAuthority(work);
+  const trimmed = url.trim();
+  const work = hashRoute(trimmed) ?? stripAuthority(trimmed);
 
   const qIdx = work.indexOf('?');
   const pathPart = qIdx === -1 ? work : work.slice(0, qIdx);
@@ -51,15 +51,15 @@ function conversationRoute(
   return { pathname, params: { convId, ...(m ? { m } : {}), ...(focus ? { focus } : {}) } };
 }
 
-const STATIC_ROUTES: Record<string, ParsedRoute> = {
-  channels: { pathname: '/(tabs)' },
-  settings: { pathname: '/(tabs)/settings' },
-  contacts: { pathname: '/contacts' },
-  dashboard: { pathname: '/dashboard' },
-  storage: { pathname: '/storage' },
-  inbox: { pathname: '/inbox' },
-  board: { pathname: '/board' },
-};
+const STATIC_ROUTES: ReadonlyMap<string, ParsedRoute> = new Map<AppRouteSegment | 'channels', ParsedRoute>([
+  ['channels', { pathname: '/(tabs)' }],
+  ['settings', { pathname: '/(tabs)/settings' }],
+  ['contacts', { pathname: '/contacts' }],
+  ['dashboard', { pathname: '/dashboard' }],
+  ['storage', { pathname: '/storage' }],
+  ['inbox', { pathname: '/inbox' }],
+  ['board', { pathname: '/board' }],
+]);
 
 const CONVERSATION_HEADS = new Set(['xmtp', 'channel']);
 
@@ -81,7 +81,7 @@ function headRoute(segments: string[], query: URLSearchParams): ParsedRoute | nu
   }
   const entity = entityRoute(head, second, query);
   if (entity !== undefined) return entity;
-  const fixed = STATIC_ROUTES[head];
+  const fixed = STATIC_ROUTES.get(head);
   if (fixed) return fixed;
   return isPeerHandleSegment(head) ? conversationRoute('/[convId]', head, query) : null;
 }
@@ -94,4 +94,47 @@ export function routeForUrl(url: string): ParsedRoute | null {
 
 export function shouldHandleDeepLink(url: string): boolean {
   return url.includes('#');
+}
+
+function appPath(path: string): string {
+  const target = routeForUrl(path);
+  if (!target) return path;
+  const queryAt = path.indexOf('?');
+  const pathname = queryAt === -1 ? path : path.slice(0, queryAt);
+  const segments = pathname.split('/').filter(Boolean);
+  const params: Record<string, string | undefined> = target.params ?? {};
+  const entity = params.convId ?? params.id;
+  if (entity ? decodeURIComponent(segments.at(-1) ?? '') !== entity : segments.length > 1) return path;
+  const canonical = target.pathname
+    .replace(/\/\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]/g, (_, key: string) => encodeURIComponent(params[key] ?? ''));
+  return (canonical || '/') + (queryAt === -1 ? '' : path.slice(queryAt));
+}
+
+function stageUrlOf(href: string): URL | null {
+  try {
+    const parsed = new URL(href);
+    return /^https?:$/.test(parsed.protocol) && parsed.host === STAGE_HOST && !parsed.username && !parsed.password ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function internalRoute(url: string): string | null {
+  const href = toStageWebUrl(url);
+  if (/[\s<>\\]/.test(href)) return null;
+  const parsed = stageUrlOf(href);
+  if (parsed === null) return null;
+  const route = hashPath(parsed.hash) ?? parsed.pathname + parsed.search;
+  return /[#]/.test(route) || isLaunchPath(route) ? null : route;
+}
+
+export function internalLinkPath(url: string): string | null {
+  const route = internalRoute(url);
+  if (route === null) return null;
+  try {
+    return appPath(route);
+  } catch {
+    return null;
+  }
 }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { internalLinkPath, isAllowedLinkScheme } from '../lib/safeOpenLink';
+import { internalLinkPath } from '@stage-labs/client/routing/deepLinks';
+import { isAllowedLinkScheme } from '@stage-labs/client/routing/stageLinks';
 
 describe('isAllowedLinkScheme', () => {
   test('allows web + mailto + our app schemes', () => {

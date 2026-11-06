@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 import { appStorage } from '../platform/storage';
 import { loadAccounts } from './accounts';
 import { ignore, ignored } from './errorPolicy';
-import { hashRoute } from './routes';
+import { hashRoute } from '@stage-labs/client/routing/stageLinks';
 
 const STORAGE_KEY = 'stage:lastRoute:v1';
 

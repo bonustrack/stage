@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { getAddress } from 'viem';
-import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
+import { internalLinkPath, routeForUrl } from '@stage-labs/client/routing/deepLinks';
 import { contactQrValue, contactScanResult, parseContactQr } from '../components/contacts/ContactQr.model';
-import { internalLinkPath } from '../lib/safeOpenLink';
 import { redirectSystemPath } from '../app/+native-intent';
 
 const ALICE = getAddress('0x42e167e6bff0a3a701d8fa14f96a0f840eb939df');

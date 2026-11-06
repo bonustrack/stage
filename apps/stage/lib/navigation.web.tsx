@@ -17,7 +17,7 @@ import {
 } from 'expo-router/react-navigation';
 import { useEffect, useLayoutEffect } from 'react';
 import { usePathname, withLayoutContext } from 'expo-router';
-import { hashPath } from './routes';
+import { hashPath } from '@stage-labs/client/routing/stageLinks';
 import { Column } from '@stage-labs/kit/react-native/column';
 
 type FlowScreenOptions = Record<string, unknown>;

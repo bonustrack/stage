@@ -66,6 +66,8 @@
     "./xmtp/commonChannels": "./src/xmtp/commonChannels.ts",
     "./routing/deepLinks": "./src/routing/deepLinks.ts",
     "./routing/handles": "./src/routing/handles.ts",
+    "./routing/routes": "./src/routing/routes.ts",
+    "./routing/stageLinks": "./src/routing/stageLinks.ts",
     "./xmtp/mentions": "./src/xmtp/mentions.ts",
     "./xmtp/channelRefs": "./src/xmtp/channelRefs.ts",
     "./xmtp/channelLinks": "./src/xmtp/channelLinks.ts",

@@ -39,8 +39,9 @@ describe('isSplitRoute', () => {
     expect(isSplitRoute('/inbox/mail')).toBe(true);
   });
 
-  test('add members keeps the sidebar', () => {
+  test('add members and the contact scanner keep the sidebar', () => {
     expect(isSplitRoute('/add-members')).toBe(true);
+    expect(isSplitRoute('/scan')).toBe(true);
   });
 
   test('other stack routes stay single-column', () => {

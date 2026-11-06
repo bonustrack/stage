@@ -1,4 +1,5 @@
 import { STAGE_NAMES_PARENT, isStageName, stageLabelOf } from '../identity/stageNames';
+import { RESERVED_ROOT_SEGMENTS } from './routes';
 
 export type HandleKind = 'address' | 'conversation' | 'stage' | 'basename' | 'ens' | 'invalid';
 
@@ -11,30 +12,6 @@ const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 const CONVERSATION_ID_RE = /^(0x)?(?:[0-9a-fA-F]{32}|[0-9a-fA-F]{64})$/;
 const LABEL_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const NAME_RE = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
-
-const STAGE_ORIGIN = 'https://stage.box';
-
-const RESERVED_ROOT_SEGMENTS = new Set([
-  'channels',
-  'channel',
-  'group',
-  'profile',
-  'user',
-  'settings',
-  'contacts',
-  'wallet',
-  'accounts',
-  'requests',
-  'new',
-  'new-group',
-  'add-members',
-  'embed',
-  'xmtp',
-  'board',
-  'dashboard',
-  'storage',
-  'inbox',
-]);
 
 const PEER_KINDS = new Set<HandleKind>(['address', 'stage', 'basename', 'ens']);
 
@@ -62,11 +39,11 @@ export function profileSlugFor(address: string, handle?: string | null): string 
   return stageLabelOf(handle) ?? address.toLowerCase();
 }
 
-export function conversationPathFor(peerAddress: string, handle?: string | null): string {
+export function conversationSlugFor(peerAddress: string, handle?: string | null): string {
   const slug = profileSlugFor(peerAddress, handle);
-  return `/${isPeerHandleSegment(slug) ? slug : peerAddress.toLowerCase()}`;
+  return isPeerHandleSegment(slug) ? slug : peerAddress.toLowerCase();
 }
 
-export function shareUrlFor(path: string): string {
-  return `${STAGE_ORIGIN}/#${path}`;
+export function conversationPathFor(peerAddress: string, handle?: string | null): string {
+  return `/${conversationSlugFor(peerAddress, handle)}`;
 }

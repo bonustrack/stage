@@ -1,4 +1,5 @@
-import { shareUrlFor } from '../routing/handles';
+import { channelPath } from '../routing/routes';
+import { shareUrlFor } from '../routing/stageLinks';
 
 export interface ChannelRef {
   index: number;
@@ -9,7 +10,7 @@ export interface ChannelRef {
 
 export type ChannelRefSegment = { type: 'text'; text: string } | { type: 'channel'; convId: string; label: string };
 
-const CHANNEL_URL_PREFIX = shareUrlFor('/channel/');
+const CHANNEL_URL_PREFIX = shareUrlFor(channelPath(''));
 
 const ESCAPED_PREFIX = CHANNEL_URL_PREFIX.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 

@@ -2,7 +2,8 @@ import * as Clipboard from 'expo-clipboard';
 import { router, type Href } from 'expo-router';
 import { Linking, type AlertButton } from 'react-native';
 import { reported } from './errorPolicy';
-import { internalLinkPath, isAllowedLinkScheme } from './safeOpenLink';
+import { internalLinkPath } from '@stage-labs/client/routing/deepLinks';
+import { isAllowedLinkScheme } from '@stage-labs/client/routing/stageLinks';
 
 export interface ConfirmOptions {
   title: string;

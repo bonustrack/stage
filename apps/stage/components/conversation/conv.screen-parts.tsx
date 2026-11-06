@@ -29,7 +29,7 @@ import { channelProfileLinkOf, conversationSharePath, profileLinkOf } from '../.
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
 import { EditChannelModal } from '../channel/EditChannelModal';
 import { useChannelEditRights } from '../channel/channel.detail';
-import { shareUrlFor } from '@stage-labs/client/routing/handles';
+import { shareUrlFor } from '@stage-labs/client/routing/stageLinks';
 import { HoverIconButton } from '../hover';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';

@@ -1,6 +1,8 @@
 import { getAddress, isAddress, zeroAddress } from 'viem';
+import { profilePath } from '@stage-labs/client/routing/routes';
+import { appUrlFor } from '@stage-labs/client/routing/stageLinks';
 
-const CONTACT_PREFIX = 'stage://profile/';
+const CONTACT_PREFIX = appUrlFor(profilePath(''));
 
 function publicAddress(value: string): string | null {
   return isAddress(value) && value.toLowerCase() !== zeroAddress ? getAddress(value) : null;
