@@ -4,7 +4,7 @@ import { sdk } from '../xmtp.sdk';
 import { convOfLine } from '../xmtp.find';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { rowMessagesOf, type ConvHandle } from '../xmtp.messages';
-import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
+import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/channelMeta';
 import type { XmtpConsent } from '../xmtp.types';
 import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { isRowCandidate, isSystemMessage, onlyHiddenMessages, revivesRow } from '@stage-labs/client/xmtp/visibility';

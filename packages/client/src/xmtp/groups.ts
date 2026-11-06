@@ -2,7 +2,7 @@ import { shortAddress } from '../identity/format';
 
 const MEMBER_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 const NO_INBOX_RE = /inbox|identity|not.*regist|cannot.*find|address.*not found/i;
-const PERMISSION_RE = /permission|admin|not.*allow|denied|unauthor/i;
+const PERMISSION_RE = /permission|admin|not.*allow|not authori[sz]ed|denied|unauthor/i;
 
 export function validMemberAddresses(addresses: string[]): string[] {
   return addresses.map((a) => a.trim()).filter((a) => MEMBER_ADDRESS_RE.test(a));

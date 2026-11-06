@@ -2,7 +2,7 @@ import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { sdk } from '../xmtp.sdk';
 import { convOfLine } from '../xmtp.find';
 import { groupRoleOf, superAdminInboxIds, type GroupRole } from '@stage-labs/client/xmtp/groups';
-import { groupAssignedOf } from '@stage-labs/client/xmtp/labels';
+import { groupAssignedOf } from '@stage-labs/client/xmtp/channelMeta';
 import { recover } from '../errorPolicy';
 import { NO_DETAILS, type ConvDetails } from './convRow.model';
 

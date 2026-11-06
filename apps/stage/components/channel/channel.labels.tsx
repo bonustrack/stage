@@ -13,14 +13,8 @@ import { selectedFirst, tagSearch, type ListEdits } from '../conversation/Sideba
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { addGroupLabel, removeGroupLabel, suggestLabels } from '../../lib/xmtp.groups';
-import {
-  CHANNEL_FIELD_NOUNS,
-  CHANNEL_PRIORITIES,
-  channelFieldOf,
-  MAX_LABEL_LEN,
-  MAX_LABELS,
-  type ChannelField,
-} from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_PRIORITIES, MAX_LABEL_LEN, MAX_LABELS } from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_FIELD_NOUNS, channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useStoreValue } from '../../lib/storeCore';

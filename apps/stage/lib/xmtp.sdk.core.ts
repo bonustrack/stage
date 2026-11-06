@@ -2,7 +2,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { GroupMetaPolicy, GroupMetaWriters } from '@stage-labs/client/xmtp/groups';
-import type { AppDataGroup } from '@stage-labs/client/xmtp/labels';
+import type { AppDataGroup } from '@stage-labs/client/xmtp/channelMeta';
 import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 import type { XmtpConsent } from './xmtp.types';
 

@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { categoryOf, groupTagsOf, LabelPermissionError, writeChannelField, writeLabels, type AppDataGroup } from '../src/xmtp/labels';
+import { categoryOf, LabelPermissionError } from '../src/xmtp/labels';
+import { createAppDataWriter, groupTagsOf, type AppDataGroup } from '../src/xmtp/channelMeta';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { appDataGroup } from './helpers';
+
+const { writeChannelField, writeLabels } = createAppDataWriter();
 
 const blob = (value: Record<string, unknown>): string => JSON.stringify({ v: 1, ...value });
 

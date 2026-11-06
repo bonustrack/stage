@@ -1,5 +1,6 @@
-import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
-import { makeValue } from './storeCore';
+import type { HistoryEntry } from '@stage-labs/client/types';
+import { createAppDataWriter, type AppDataWriter } from '@stage-labs/client/xmtp/channelMeta';
+import { makeListeners, makeValue } from './storeCore';
 import { resetFeed } from './feed/cache';
 import { attempt } from './errorPolicy';
 import { sleep } from '@stage-labs/client/timing';
@@ -38,8 +39,15 @@ export function registerGlobalStreamTeardown(fn: () => void): void {
   globalStreamTeardown = fn;
 }
 
+let appDataWriter = createAppDataWriter();
+
+export function channelMetaWriter(): AppDataWriter {
+  return appDataWriter;
+}
+
 export function resetSharedXmtpState(): void {
-  clearAppDataWrites();
+  appDataWriter.close();
+  appDataWriter = createAppDataWriter();
   globalStreamTeardown?.();
   resetFeed();
   inboxEthCache.clear();

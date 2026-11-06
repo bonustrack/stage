@@ -1,4 +1,4 @@
-import { channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/labels';
+import { channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { uniqueKeys } from '@stage-labs/client/collections';
 import { groupValueOf } from '../../lib/grouping.model';
 

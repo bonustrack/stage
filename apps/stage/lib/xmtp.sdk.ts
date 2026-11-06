@@ -14,7 +14,7 @@ import { buildReply } from '@stage-labs/client/xmtp/builders';
 import { envelopeOf } from '@stage-labs/client/xmtp/envelope';
 import { convIdFromTopic, isMissingMlsState, pickNativeErrors } from '@stage-labs/client/xmtp/clientErrors';
 import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
-import type { AppDataGroup } from '@stage-labs/client/xmtp/labels';
+import type { AppDataGroup } from '@stage-labs/client/xmtp/channelMeta';
 import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
 import { nativeGroupMetaPolicy, nativeMessageOf } from './xmtp.sdk.native.shapes';
 import { xmtpClient } from './xmtp.client';

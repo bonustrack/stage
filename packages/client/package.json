@@ -77,6 +77,7 @@
     "./xmtp/channelLinks": "./src/xmtp/channelLinks.ts",
     "./xmtp/messageBody": "./src/xmtp/messageBody.ts",
     "./xmtp/labels": "./src/xmtp/labels.ts",
+    "./xmtp/channelMeta": "./src/xmtp/channelMeta.ts",
     "./embed/detect": "./src/embed/detect.ts",
     "./embed/cardLinks": "./src/embed/cardLinks.ts",
     "./x402": "./src/x402/challenge.ts",

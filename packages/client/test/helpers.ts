@@ -1,5 +1,5 @@
 import type { HistoryEntry } from '../src/types';
-import type { AppDataGroup } from '../src/xmtp/labels';
+import type { AppDataGroup } from '../src/xmtp/channelMeta';
 
 export function entry(id: string, fields: Partial<HistoryEntry> = {}): HistoryEntry {
   return { id, ts: '2026-09-30T00:00:00.000Z', station: 'xmtp', line: 'stage://xmtp/c', from: 'u', to: 'c', ...fields };

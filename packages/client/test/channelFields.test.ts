@@ -1,19 +1,20 @@
 import { describe, expect, test } from 'bun:test';
+import { CHANNEL_PRIORITIES, LabelPermissionError, priorityOf } from '../src/xmtp/labels';
 import {
-  CHANNEL_PRIORITIES,
+  CHANNEL_FIELD_NOUNS,
   channelFieldOf,
+  createAppDataWriter,
   groupTagsOf,
-  LabelPermissionError,
   NO_TAGS,
-  priorityOf,
-  writeAssigned,
-  writeChannelField,
-  writeLabels,
-  type ChannelField,
+  sameGroupTags,
   type AppDataGroup,
-} from '../src/xmtp/labels';
+  type ChannelField,
+} from '../src/xmtp/channelMeta';
+import { GROUP_KEYS } from '../src/xmtp/sync/homeView';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { appDataGroup } from './helpers';
+
+const { writeAssigned, writeChannelField, writeLabels } = createAppDataWriter();
 
 const address = '0x1111111111111111111111111111111111111111';
 const kept = {
@@ -25,6 +26,23 @@ const kept = {
   custom: { value: 7 },
 };
 const fields: ChannelField[] = ['status', 'priority'];
+
+describe('channel metadata table', () => {
+  test('derives the empty tags, field nouns and group keys from one field list', () => {
+    expect(NO_TAGS).toEqual({ labels: [], category: null, status: null, priority: null, assigned: [] });
+    expect(Object.keys(NO_TAGS)).toEqual(['labels', 'category', 'status', 'priority', 'assigned']);
+    expect(CHANNEL_FIELD_NOUNS).toEqual({ category: 'project', status: 'status', priority: 'priority' });
+    expect(GROUP_KEYS).toEqual(['assignee', 'category', 'label', 'status']);
+  });
+
+  test('compares cached rows field by field, treating missing assignees as none', () => {
+    const tags = { ...NO_TAGS, labels: ['Todo'], status: 'Doing' };
+    expect(sameGroupTags({ labels: ['Todo'], status: 'Doing' }, tags)).toBe(true);
+    expect(sameGroupTags({ status: 'Doing' }, tags)).toBe(false);
+    expect(sameGroupTags({ labels: ['Todo'], status: 'Done' }, tags)).toBe(false);
+    expect(sameGroupTags({ labels: ['Todo'], status: 'Doing', assigned: [address] }, tags)).toBe(false);
+  });
+});
 
 describe('channel status and priority', () => {
   test('normalizes status like category and uses the exact priority options', () => {

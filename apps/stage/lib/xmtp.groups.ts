@@ -11,20 +11,8 @@ import {
   type GroupMetaPatch,
 } from '@stage-labs/client/xmtp/groups';
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
-import {
-  addLabel,
-  assignedAddresses,
-  channelFieldOf,
-  moveLabel,
-  removeLabel,
-  renameLabels,
-  stringList,
-  writeAssigned,
-  writeChannelField,
-  writeLabels,
-  type AppDataGroup,
-  type ChannelField,
-} from '@stage-labs/client/xmtp/labels';
+import { addLabel, assignedAddresses, moveLabel, removeLabel, renameLabels, stringList } from '@stage-labs/client/xmtp/labels';
+import { channelFieldOf, type AppDataGroup, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { getCachedRows, setCachedRows, type CachedRow } from './channelsCache';
@@ -38,6 +26,7 @@ import { setChannelHidden } from './sync/hiddenChannels';
 import { forgetChannelAccess } from './channelAccess';
 import { reconcileHiddenConsent, rememberOwnGroup } from './channelVisibility';
 import { markFreshFeed } from './feed/lines';
+import { channelMetaWriter } from './xmtp.state.core';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -120,7 +109,7 @@ export async function updateGroupAssigned(convId: string, assigned: string[]): P
   try {
     const conv = await requireGroup(lineOfConv(convId));
     const group = sdk.appDataGroup(conv) ?? notAGroup();
-    return await writeAssigned(group, assigned, async () => {
+    return await channelMetaWriter().writeAssigned(group, assigned, async () => {
       const client = await sdk.client();
       const members = await conv.members();
       return currentMemberAddresses(
@@ -216,7 +205,7 @@ async function writeRowLabels(line: string, next: (labels: string[]) => string[]
   const writes = startLabelWrite(convId);
   patchRowLabels(convId, next);
   try {
-    const written = await writeLabels(await groupOfLine(line), next);
+    const written = await channelMetaWriter().writeLabels(await groupOfLine(line), next);
     if (writes) writes.base = written;
     return written;
   } catch (err) {
@@ -253,7 +242,7 @@ export async function setGroupField(
   const convId = convIdOfLine(line);
   if (expected === undefined) patchRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
   try {
-    return await writeChannelField(await groupOfLine(line), field, value, expected);
+    return await channelMetaWriter().writeChannelField(await groupOfLine(line), field, value, expected);
   } finally {
     refreshGroupRow(convId);
   }

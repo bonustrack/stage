@@ -1,6 +1,7 @@
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { rowMatchesQuery, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
-import { CHANNEL_PRIORITIES, channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_PRIORITIES } from '@stage-labs/client/xmtp/labels';
+import { channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { matchesLastActivity } from '../activity.model';
 import type { HomeView } from '../../../lib/homeView';
 

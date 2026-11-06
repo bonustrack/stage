@@ -1,5 +1,5 @@
 import { channelRowTitle, ROW_PREVIEW_MAX_CHARS } from './summarizeRow';
-import type { GroupTags } from './labels';
+import { sameGroupTags, type GroupTags } from './channelMeta';
 
 export interface ChannelRow extends GroupTags {
   convId: string;
@@ -112,10 +112,6 @@ export interface GroupRowMeta extends GroupTags {
   inboxToAddr?: Record<string, string>;
 }
 
-function sameLabels(cur: unknown, next: readonly string[]): boolean {
-  return Array.isArray(cur) && cur.length === next.length && cur.every((l, i) => l === next[i]);
-}
-
 function sameMembers(cur: unknown, next: Record<string, string> | undefined): boolean {
   if (next === undefined) return true;
   if (cur === null || typeof cur !== 'object') return false;
@@ -129,9 +125,7 @@ function sameGroupMeta(cur: ChannelRow, meta: GroupRowMeta): boolean {
     cur.groupName === meta.groupName &&
     cur.avatarUri === meta.avatarUri &&
     cur.avatarAddress === meta.avatarAddress &&
-    sameLabels(cur.labels, meta.labels) &&
-    (['category', 'status', 'priority'] as const).every((field) => (cur[field] ?? null) === meta[field]) &&
-    sameLabels(cur.assigned ?? [], meta.assigned) &&
+    sameGroupTags(cur, meta) &&
     sameMembers(cur.inboxToAddr, meta.inboxToAddr)
   );
 }

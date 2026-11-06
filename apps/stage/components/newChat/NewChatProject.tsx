@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { CHANNEL_FIELD_NOUNS } from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_FIELD_NOUNS } from '@stage-labs/client/xmtp/channelMeta';
 import { IconChevronDownSmall } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronDownSmall';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';

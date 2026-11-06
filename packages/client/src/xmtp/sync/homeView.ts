@@ -1,9 +1,16 @@
 import { z } from 'zod';
 import { defineSyncKind, inTime } from './kind';
+import { CHANNEL_GROUP_KEYS, type ChannelGroupKey } from '../channelMeta';
 
-export const GROUP_KEYS = ['assignee', 'category', 'label', 'status'] as const;
+function nonEmpty<T>(values: readonly T[]): readonly [T, ...T[]] {
+  const [first, ...rest] = values;
+  if (first === undefined) throw new Error('Channels need at least one group key');
+  return [first, ...rest];
+}
 
-export type GroupKey = (typeof GROUP_KEYS)[number];
+export const GROUP_KEYS = nonEmpty(CHANNEL_GROUP_KEYS);
+
+export type GroupKey = ChannelGroupKey;
 
 export const homeSortSchema = z.object({ by: z.enum(['status', 'created', 'updated', 'priority']), direction: z.enum(['asc', 'desc']) });
 

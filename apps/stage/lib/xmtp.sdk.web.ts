@@ -21,7 +21,7 @@ import {
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { envelopeOf } from '@stage-labs/client/xmtp/envelope';
-import type { AppDataGroup } from '@stage-labs/client/xmtp/labels';
+import type { AppDataGroup } from '@stage-labs/client/xmtp/channelMeta';
 import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { encodeDeleteMessage } from '@stage-labs/client/xmtp/deleteMessage';
 import { xmtpClient } from './xmtp.client.web';
