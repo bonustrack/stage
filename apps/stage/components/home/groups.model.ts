@@ -4,7 +4,8 @@ import { compareNames } from '../../lib/format';
 import { categorySectionOrderWith } from '../../lib/channelGroups.model';
 import { DM_SECTION, NO_SECTION, groupHeaderId, sectionKeyOf } from '../../lib/grouping.model';
 import { noGroupTitle, bucketRows, type Bucket, type NameOf } from './groupBy.model';
-import { unreadRowCount, type Row } from './model';
+import type { Row } from './model';
+import { unreadRowCount } from './listing.model';
 
 export interface ChannelGroupHeader {
   key: string;

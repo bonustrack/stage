@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
 import { matchesLastActivity } from '../components/home/activity.model';
 import { DEFAULT_LAST_ACTIVITY, LAST_ACTIVITY_WINDOWS, lastActivityCutoff, lastActivitySchema } from '../lib/lastActivity.model';
 import { jsonWith } from '../lib/storeCore';
-import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
-import { deriveSortedRows } from '../components/home/model';
+import { boardColumns } from '../components/home/board/BoardScreen.model';
+import { sortedListing } from '../components/home/listing.model';
 import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
-import { group } from './searchFixtures';
+import { group, searched } from './searchFixtures';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
 import { selectAccount, selectedAccount } from './activeAccount';
 
@@ -103,10 +103,10 @@ describe('Last activity windows', () => {
       () => '',
       cutoff,
     );
-    const listed = deriveSortedRows({ rows, enabledLabels: new Set(['bug']), unreadOnly: false, pinned: ['old'] });
+    const listed = sortedListing({ rows, enabledLabels: new Set(['bug']), unreadOnly: false, pinned: ['old'] });
     expect(listed.filter(matches).map((row) => row.convId)).toEqual(['recent']);
     const columns = boardColumns(rows, ['old'], ['status:Todo', 'status:Done', 'status:Blocked'], 'status');
-    const shown = searchedColumns(
+    const shown = searched(
       columns,
       'category:Stage',
       () => [],
@@ -118,7 +118,7 @@ describe('Last activity windows', () => {
     expect(shown.find((column) => column.key === 'status:Blocked')?.rows).toEqual([]);
     expect(shown.flatMap((column) => column.rows).map((row) => row.convId)).toEqual(['recent']);
     expect(
-      searchedColumns(
+      searched(
         columns,
         '',
         () => [],

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { HomeView } from '../../../lib/homeView';
 import { IconCircleMinus } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleMinus';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
@@ -10,7 +11,7 @@ import { MenuHeading, MenuRow } from '../../MenuRows';
 import { PickerNote, PickerRow, PickerSearch } from '../../conversation/SidebarSection';
 import { peerLabel, usePeerProfiles } from '../../../lib/peerProfiles';
 import { GROUPING_FIELDS } from '../../../lib/grouping.model';
-import { memberNamesOf, useSearchFilterSources } from './FilterSearch';
+import { memberNamesOf, useKnownFieldValues } from '../listing';
 import {
   FILTER_FIELDS,
   HAS_OPTIONS,
@@ -27,7 +28,6 @@ import {
   type FilterField,
   type FilterOption,
   type FilterOptions,
-  type FilterScope,
 } from './searchFilter.model';
 
 const { category, status, priority, label } = GROUPING_FIELDS;
@@ -49,8 +49,8 @@ const FIELD_ICONS: Record<FilterField, AppIconName> = {
 };
 const valueOption = (value: string): FilterOption => ({ key: value, label: value, value });
 
-function useFilterOptions(scope: FilterScope): FilterOptions {
-  const sources = useSearchFilterSources(scope);
+function useFilterOptions(scope: HomeView): FilterOptions {
+  const sources = useKnownFieldValues(scope);
   usePeerProfiles(sources.members);
   return {
     has: HAS_OPTIONS,
@@ -161,7 +161,7 @@ export function SearchFilterMenu({
 }: {
   query: string;
   setQuery: (query: string) => void;
-  scope: FilterScope;
+  scope: HomeView;
   onBack: () => void;
   children?: React.ReactNode;
 }): React.ReactElement {

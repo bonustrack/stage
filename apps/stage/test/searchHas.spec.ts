@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
+import { searched } from './searchFixtures';
+import { boardColumns } from '../components/home/board/BoardScreen.model';
 import {
   HAS_OPTIONS,
   parseSearchFilter,
@@ -87,13 +88,13 @@ describe('has channel filters', () => {
   test('board filtering passes local drafts through and keeps empty columns', () => {
     const columns = boardColumns(rows, [], [], 'label');
     expect(
-      searchedColumns(columns, 'has:draft', namesOf, draftOf).map((column) => [column.label, column.rows.map((item) => item.convId)]),
+      searched(columns, 'has:draft', namesOf, draftOf).map((column) => [column.label, column.rows.map((item) => item.convId)]),
     ).toEqual([
       ['Bug', ['both']],
       ['Todo', ['both']],
     ]);
-    expect(searchedColumns(columns, 'has:draft', namesOf).map((column) => column.rows)).toEqual([[], []]);
-    expect(searchedColumns(columns, 'has:label', namesOf).map((column) => column.rows)).toEqual(columns.map((column) => column.rows));
+    expect(searched(columns, 'has:draft', namesOf).map((column) => column.rows)).toEqual([[], []]);
+    expect(searched(columns, 'has:label', namesOf).map((column) => column.rows)).toEqual(columns.map((column) => column.rows));
   });
 });
 

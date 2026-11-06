@@ -2,10 +2,9 @@ import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { rowMatchesQuery, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { CHANNEL_PRIORITIES, channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/labels';
 import { matchesLastActivity } from '../activity.model';
+import type { HomeView } from '../../../lib/homeView';
 
 export type FilterField = 'label' | 'member' | 'has' | ChannelField;
-
-export type FilterScope = 'board' | 'chats';
 
 export const FILTER_FIELDS: readonly FilterField[] = ['member', 'category', 'status', 'priority', 'label', 'has'];
 
@@ -290,11 +289,11 @@ export function searchRowMatcher(
     matchesLastActivity(row, activityCutoff) && FILTER_FIELDS.every((field) => kept(row, field)) && rowMatchesQuery(row, text);
 }
 
-const IN_SCOPE: Record<FilterScope, (row: FilterRow) => boolean> = { board: (row) => !row.peerAddress, chats: () => true };
+const IN_SCOPE: Record<HomeView, (row: FilterRow) => boolean> = { board: (row) => !row.peerAddress, chats: () => true };
 
 const sortedValues = (values: ReadonlyMap<string, string>): string[] => [...values.values()].sort((a, b) => a.localeCompare(b));
 
-export function searchFilterSources(rows: readonly FilterRow[], scope: FilterScope): Omit<FilterValues, 'has' | 'priorities'> {
+export function searchFilterSources(rows: readonly FilterRow[], scope: HomeView): Omit<FilterValues, 'has' | 'priorities'> {
   const labels = new Map<string, string>();
   const fields = { category: new Map<string, string>(), status: new Map<string, string>() };
   const members = new Set<string>();

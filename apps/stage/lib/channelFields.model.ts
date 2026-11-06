@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { jsonWith } from './storeCore';
+import type { HomeView } from './homeView';
 
 export const CHANNEL_FIELD_IDS = ['members', 'assignees', 'category', 'status', 'labels', 'priority', 'avatar', 'lastMessage'] as const;
 export type ChannelField = (typeof CHANNEL_FIELD_IDS)[number];
 export type ChannelFields = Record<ChannelField, boolean>;
-export type ChannelFieldView = 'chats' | 'board';
-export type ChannelFieldPreferences = Record<ChannelFieldView, ChannelFields>;
+export type ChannelFieldPreferences = Record<HomeView, ChannelFields>;
 
 const defaultFields: ChannelFields = {
   members: false,
@@ -48,10 +48,6 @@ export function parseChannelFields(raw: string, chatsAvatarDefault = true): Chan
   return jsonWith(channelFieldsSchema(defaults))(raw) ?? defaults;
 }
 
-export function toggleChannelFieldIn(
-  current: ChannelFieldPreferences,
-  view: ChannelFieldView,
-  field: ChannelField,
-): ChannelFieldPreferences {
+export function toggleChannelFieldIn(current: ChannelFieldPreferences, view: HomeView, field: ChannelField): ChannelFieldPreferences {
   return { ...current, [view]: { ...current[view], [field]: !current[view][field] } };
 }

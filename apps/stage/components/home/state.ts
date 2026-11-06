@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import type { HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { usePersistedScroll, type PersistedScroll } from '../layout';
-import { useHomeRows } from '../../lib/messaging/homeRows';
 import { useChannelGroups } from '../../lib/channelGroups';
 import { usePinnedOrder } from '../../lib/sync/pins';
 import { groupRows, rowsOf, type HomeListItem } from './groups.model';
@@ -19,7 +18,6 @@ export interface RowMenu {
 }
 
 interface HomeState {
-  rows: Row[] | null;
   rowMenu: RowMenu | null;
   setRowMenu: React.Dispatch<React.SetStateAction<RowMenu | null>>;
   pinned: readonly string[];
@@ -27,13 +25,12 @@ interface HomeState {
 }
 
 export function useHomeState(): HomeState {
-  const rows = useHomeRows();
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
   const pinned = usePinnedOrder();
 
   const scroll = usePersistedScroll(CHANNELS_SCROLL_KEY);
 
-  return { rows, rowMenu, setRowMenu, pinned, scroll };
+  return { rowMenu, setRowMenu, pinned, scroll };
 }
 
 interface GroupedRows {

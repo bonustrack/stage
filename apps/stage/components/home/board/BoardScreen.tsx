@@ -1,29 +1,18 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../../Topnav';
-import { FilterSearch, memberNamesOf } from '../search/FilterSearch';
-import { searchFilterSources, searchFilterValues } from '../search/searchFilter.model';
+import { FilterSearch } from '../search/FilterSearch';
+import { resetBoardQuery, useHomeListing, useHomeQuery } from '../listing';
 import { useHomeTopnav, useSearchOpen } from '../list';
 import type { HomeMenuState } from '../topnavRight';
-import { useLastActivityCutoff } from '../../../lib/lastActivity';
 import { HomeError, HomeSpinner } from '../parts';
-import { homeRows } from '../../../lib/messaging/homeRows';
 import { useChannelsSyncError } from '../../../lib/messaging/channelsSync';
-import type { Row as ChannelRowData } from '../model';
-import { subscribeCachedRows } from '../../../lib/channelsCache';
-import { useStoreValue } from '../../../lib/storeCore';
-import { usePinnedOrder } from '../../../lib/sync/pins';
-import { useClearedChats } from '../../../lib/sync/clearedChats';
-import { usePeerProfiles, peerLabel } from '../../../lib/peerProfiles';
-import { getDraft, useDraftsVersion } from '../../../lib/drafts';
+import { peerLabel } from '../../../lib/peerProfiles';
 import { useEffectiveColorScheme, usePalette } from '../../../lib/theme';
 import { reported } from '../../../lib/errorPolicy';
-import { useGroupingOrders } from '../../../lib/groupingOrder';
 import { groupingOrderOf } from '../../../lib/grouping.model';
-import { useHomeViewOf } from '../../../lib/homeView';
-import { useBoardQuery } from './boardQuery';
-import { homeSortOf, sortHomeRows } from '../sort.model';
+import { sortHomeRows } from '../sort.model';
 import { useBottomChromeHeight } from '../../layout/bottomChrome';
 import { useWebTabRail } from '../../layout/webLayout';
 import { boardColumns, cardLanding, columnsEditable, orderedColumns, searchedColumns } from './BoardScreen.model';
@@ -31,39 +20,23 @@ import { addBoardColumn, deleteBoardColumn, dropCard, dropColumn, renameBoardCol
 import { BoardLanes, type ColumnActions } from './BoardLanes';
 import { Column, ScreenScroll } from '../../layout';
 
-function useMemberProfiles(rows: ChannelRowData[] | null, query: string, assignees: boolean): number {
-  const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'board').members : [];
-  const assigned = assignees ? (rows ?? []).flatMap((r) => r.assigned) : [];
-  return usePeerProfiles([...(rows ?? []).map((r) => r.lastSenderAddress), ...members, ...assigned]);
-}
-function BoardBody({ query, filtering }: { query: string; filtering: boolean }): React.ReactElement {
+function BoardBody({ filtering }: { filtering: boolean }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
-  const rows = useStoreValue(subscribeCachedRows, homeRows);
-  const pinned = usePinnedOrder();
-  const cleared = useClearedChats();
-  const orders = useGroupingOrders();
-  const view = useHomeViewOf('board');
+  const { rows, pinned, cleared, orders, view, sort, matches, profilesVersion } = useHomeListing('board');
   const { columnBy } = view;
-  const sort = homeSortOf(view);
   const order = groupingOrderOf(columnBy, orders);
   const statusOrder = groupingOrderOf('status', orders);
   const error = useChannelsSyncError();
-  const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
-  const draftsVersion = useDraftsVersion();
   const columns = useMemo(
     () =>
       orderedColumns(
         boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, (r) => isRowCleared(cleared, r), sort, statusOrder),
         order,
       ),
-    [rows, cleared, pinned, order, columnBy, profiles, sort, statusOrder],
+    [rows, cleared, pinned, order, columnBy, profilesVersion, sort, statusOrder],
   );
-  const activityCutoff = useLastActivityCutoff('board');
-  const shown = useMemo(
-    () => searchedColumns(columns, query, memberNamesOf, getDraft, activityCutoff),
-    [columns, query, profiles, draftsVersion, activityCutoff],
-  );
+  const shown = useMemo(() => searchedColumns(columns, matches), [columns, matches]);
   if (error) return <HomeError error={error} dark={dark} fg={fg} />;
   if (!rows) return <HomeSpinner head={head} />;
   const actions: ColumnActions = {
@@ -155,14 +128,15 @@ function useBoardHeight(): number | undefined {
   return height - TOPNAV_HEIGHT - chrome;
 }
 export function BoardScreen({ pane, menu }: { pane: boolean; menu: HomeMenuState }): React.ReactElement {
-  const [query, setQuery] = useBoardQuery();
+  const [query, setQuery] = useHomeQuery('board');
+  useEffect(() => resetBoardQuery, []);
   const [filtering, setFiltering] = useState(false);
   const height = useBoardHeight();
   const windowHeight = !pane && height !== undefined;
   return (
     <Column weight={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
       <BoardFrame pane={pane} query={query} setQuery={setQuery} onFilterMenu={setFiltering} menu={menu}>
-        <BoardBody query={query} filtering={filtering} />
+        <BoardBody filtering={filtering} />
       </BoardFrame>
     </Column>
   );

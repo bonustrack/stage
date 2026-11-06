@@ -3,10 +3,10 @@ import {
   lastActivityCutoff,
   lastActivitySchema,
   type ActivityPreferences,
-  type ActivityView,
   type LastActivity,
 } from './lastActivity.model';
 import { subscribeAccountEpoch } from './accountEpoch';
+import type { HomeView } from './homeView';
 import { accountScope } from './accountSelection';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { reported } from './errorPolicy';
@@ -29,15 +29,15 @@ function subscribePreferences(onChange: () => void): () => void {
   };
 }
 
-export function getLastActivity(view: ActivityView): LastActivity {
+export function getLastActivity(view: HomeView): LastActivity {
   return prefs.isCurrentAccount() ? prefs.get()[view] : 'all';
 }
 
-export function useLastActivity(view: ActivityView): LastActivity {
+export function useLastActivity(view: HomeView): LastActivity {
   return useStoreValue(subscribePreferences, () => getLastActivity(view), prefs.loadAsync);
 }
 
-export function setLastActivity(view: ActivityView, window: LastActivity): void {
+export function setLastActivity(view: HomeView, window: LastActivity): void {
   const scope = accountScope();
   void prefs.update((current) => (scope.current() ? { ...current, [view]: window } : current)).catch(reported('lastActivity.save'));
 }
@@ -62,7 +62,7 @@ const subscribeClock = (onChange: () => void): (() => void) => clock(undefined, 
 const noClock = (): (() => void) => () => undefined;
 const clockNow = (): number => now;
 
-export function useLastActivityCutoff(view: ActivityView): number | null {
+export function useLastActivityCutoff(view: HomeView): number | null {
   const window = useLastActivity(view);
   const current = useStoreValue(window === 'all' ? noClock : subscribeClock, clockNow);
   return lastActivityCutoff(window, current);

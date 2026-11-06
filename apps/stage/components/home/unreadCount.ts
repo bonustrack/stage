@@ -1,14 +1,13 @@
 import { subscribePeerProfiles } from '../../lib/peerProfiles';
 import { subscribeCachedRows } from '../../lib/channelsCache';
 import { getClearedChats, primeClearedChats, subscribeClearedChats } from '../../lib/sync/clearedChats';
-import { getDraft, loadDrafts, subscribeDrafts } from '../../lib/drafts';
+import { loadDrafts, subscribeDrafts } from '../../lib/drafts';
 import { getSearchState, primeSearchState, subscribeSearchState } from '../../lib/searchState';
 import { useStoreValue } from '../../lib/storeCore';
-import { memberNamesOf } from './search/FilterSearch';
-import { parseSearchFilter, searchRowMatcher } from './search/searchFilter.model';
-import { visibleUnreadCount } from './model';
 import { homeRows } from '../../lib/messaging/homeRows';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
+import { listingMatcher } from './listing';
+import { listedUnreadCount } from './listing.model';
 
 function subscribeSources(onChange: () => void): () => void {
   const offs = [
@@ -31,11 +30,11 @@ function primeSources(): void {
 
 function chatsUnreadCount(activityCutoff: number | null): number {
   const search = getSearchState();
-  return visibleUnreadCount({
+  return listedUnreadCount({
     rows: homeRows(),
     enabledLabels: new Set(search.labels),
     unreadOnly: search.unreadOnly,
-    matches: searchRowMatcher(parseSearchFilter(search.query), memberNamesOf, getDraft, activityCutoff),
+    matches: listingMatcher(search.query, activityCutoff),
     cleared: getClearedChats(),
   });
 }

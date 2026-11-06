@@ -8,12 +8,12 @@ import { usePersonLookup } from '../../lib/resolveHandle';
 import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { dmLinkOf } from '../../lib/links';
-import { homeRows } from '../../lib/messaging/homeRows';
+import type { HomeRow } from '../../lib/messaging/homeRows';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
 
-function getExistingPeers(): { address: string; convId: string }[] {
-  const peers = (homeRows() ?? []).flatMap(({ peerAddress: address, convId }) => (address && convId ? [{ address, convId }] : []));
+function existingPeers(rows: readonly HomeRow[] | null): { address: string; convId: string }[] {
+  const peers = (rows ?? []).flatMap(({ peerAddress: address, convId }) => (address && convId ? [{ address, convId }] : []));
   return uniqueBy(peers, (p) => p.address.toLowerCase());
 }
 
@@ -95,9 +95,17 @@ function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): Rea
   );
 }
 
-export function HomeContactResults({ query, noChannels }: { query: string; noChannels: boolean }): React.ReactElement | null {
+export function HomeContactResults({
+  query,
+  noChannels,
+  rows: chats,
+}: {
+  query: string;
+  noChannels: boolean;
+  rows: readonly HomeRow[] | null;
+}): React.ReactElement | null {
   const q = query.trim();
-  const existing = useMemo(() => getExistingPeers(), []);
+  const existing = useMemo(() => existingPeers(chats), [chats]);
   const filtered = useMemo(() => filterPeers(existing, q), [existing, q]);
   const resolved = useResolvedPeer(q, filtered.length === 0);
   usePeerProfiles([resolved?.address, ...existing.map((p) => p.address)]);

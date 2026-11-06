@@ -1,9 +1,11 @@
 import { describe, expect, test } from 'bun:test';
+import { searched } from './searchFixtures';
 import { applyGroupMeta, applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { DEFAULT_HOME_VIEW, type HomeSort } from '@stage-labs/client/xmtp/sync/homeView';
-import { boardColumns, orderedColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
+import { boardColumns, orderedColumns } from '../components/home/board/BoardScreen.model';
 import { groupRows, isGroupHeader } from '../components/home/groups.model';
-import { deriveSortedRows, type Row } from '../components/home/model';
+import type { Row } from '../components/home/model';
+import { sortedListing } from '../components/home/listing.model';
 import { homeSortOf, sortHomeRows } from '../components/home/sort.model';
 
 function row(convId: string, fields: Partial<Row> = {}): Row {
@@ -53,7 +55,7 @@ for (const by of ['status', 'created', 'updated', 'priority'] as const) {
     const sort = { by, direction };
     const expected = direction === 'asc' ? ascending[by] : [...ascending[by]].reverse();
     test(`Chats and Board sort ${by} ${direction} without changing inputs`, () => {
-      expect(ids(deriveSortedRows({ rows, enabledLabels: new Set(), unreadOnly: false, pinned: [], sort, statusOrder: order }))).toEqual(
+      expect(ids(sortedListing({ rows, enabledLabels: new Set(), unreadOnly: false, pinned: [], sort, statusOrder: order }))).toEqual(
         expected,
       );
       const board = boardColumns(rows, [], order, 'label', undefined, undefined, sort);
@@ -126,16 +128,16 @@ describe('sorting defaults and boundaries', () => {
 
   test('filters, DMs, multiple labels, empty columns, and collapsed groups retain their semantics', () => {
     const input = [...rows, row('dm', { peerAddress: '0xpeer', lastTs: 100, labels: ['Work'] })];
-    const chats = deriveSortedRows({ rows: input, enabledLabels: new Set(['other']), unreadOnly: false, pinned: [] });
+    const chats = sortedListing({ rows: input, enabledLabels: new Set(['other']), unreadOnly: false, pinned: [] });
     expect(ids(chats)).toEqual(['a']);
-    expect(deriveSortedRows({ rows: input, enabledLabels: new Set(), unreadOnly: true, pinned: [] })).toEqual([]);
+    expect(sortedListing({ rows: input, enabledLabels: new Set(), unreadOnly: true, pinned: [] })).toEqual([]);
     const board = boardColumns(input, [], ['label:Empty'], 'label', undefined, (r) => r.convId === 'c');
     expect(board.map((c) => [c.label, ids(c.rows)])).toEqual([
       ['Other', ['a']],
       ['Work', ['b', 'a']],
       ['Empty', []],
     ]);
-    expect(searchedColumns(board, 'a').map((c) => [c.label, ids(c.rows)])).toEqual([
+    expect(searched(board, 'a').map((c) => [c.label, ids(c.rows)])).toEqual([
       ['Other', ['a']],
       ['Work', ['a']],
       ['Empty', []],

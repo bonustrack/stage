@@ -7,8 +7,8 @@ import {
   searchRowMatcher,
   type FilterRow,
 } from '../components/home/search/searchFilter.model';
-import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
-import { ALICE, BOB, NAMES, SELF, group } from './searchFixtures';
+import { boardColumns } from '../components/home/board/BoardScreen.model';
+import { ALICE, BOB, NAMES, SELF, group, searched } from './searchFixtures';
 
 const namesOf = (address: string): string[] => NAMES[address] ?? [];
 
@@ -78,7 +78,7 @@ describe('matching board cards', () => {
   });
 
   test('searched columns keep every column and filter their cards', () => {
-    const shown = searchedColumns(boardColumns(rows, [], [], 'label'), 'member:bob.base.eth', namesOf);
+    const shown = searched(boardColumns(rows, [], [], 'label'), 'member:bob.base.eth', namesOf);
     expect(shown.map((c) => [c.label, c.rows.map((r) => r.convId)])).toEqual([
       ['🚧 In progress', ['ship']],
       ['Bug', ['ship']],

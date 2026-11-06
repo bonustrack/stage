@@ -7,7 +7,7 @@ import { homeSortOf, sortHomeRows } from '../sort.model';
 import { noGroupTitle, bucketRows, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf } from '../groupBy.model';
 import { GROUPING_FIELDS, groupKeyOf, groupValueOf, isGroupKeyOf, isNamedGroupKey } from '../../../lib/grouping.model';
 import { compareNames } from '../../../lib/format';
-import { parseSearchFilter, searchRowMatcher, type FilterRow, type MemberNames } from '../search/searchFilter.model';
+import type { FilterRow } from '../search/searchFilter.model';
 
 export const BOARD_GAP = 12;
 export const BOARD_COLUMN_WIDTH = 340;
@@ -75,14 +75,7 @@ export function boardColumns<T extends ChannelListRow & GroupableRow>(
   return [...columns, ...rememberedColumns(order, new Set(columns.map((column) => column.key.toLowerCase())), by, nameOf)];
 }
 
-export function searchedColumns<T extends FilterRow>(
-  columns: BoardColumn<T>[],
-  query: string,
-  namesOf: MemberNames = () => [],
-  draftOf: (convId: string) => string = () => '',
-  activityCutoff: number | null = null,
-): BoardColumn<T>[] {
-  const matches = searchRowMatcher(parseSearchFilter(query), namesOf, draftOf, activityCutoff);
+export function searchedColumns<T extends FilterRow>(columns: BoardColumn<T>[], matches: (row: T) => boolean): BoardColumn<T>[] {
   return columns.map((column) => ({ ...column, rows: column.rows.filter(matches) }));
 }
 

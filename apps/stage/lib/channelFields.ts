@@ -5,11 +5,11 @@ import {
   toggleChannelFieldIn,
   type ChannelField,
   type ChannelFields,
-  type ChannelFieldView,
 } from './channelFields.model';
 import { appStorage } from '../platform/storage';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
+import type { HomeView } from './homeView';
 
 const prefs = createValueStore({
   key: 'home.fields.',
@@ -26,10 +26,10 @@ const prefs = createValueStore({
   },
 });
 
-export function useChannelFields(view: ChannelFieldView): ChannelFields {
+export function useChannelFields(view: HomeView): ChannelFields {
   return prefs.use()[view];
 }
 
-export function toggleChannelField(view: ChannelFieldView, field: ChannelField): void {
+export function toggleChannelField(view: HomeView, field: ChannelField): void {
   void prefs.update((current) => toggleChannelFieldIn(current, view, field)).catch(reported('channelFields.save'));
 }

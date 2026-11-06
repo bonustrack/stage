@@ -1,9 +1,7 @@
 import { isPeerHandleSegment } from '@stage-labs/client/routing/handles';
 import { isAppRouteSegment, isPathUnder, pathSegments, type AppRootHref, type AppRouteSegment } from '@stage-labs/client/routing/routes';
-import type { HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
+import type { HomeView } from '../../lib/homeView';
 import type { AppIconName } from '../appIcons';
-
-export type HomeView = HomeViewContent['view'];
 
 type Renderer = 'pager' | 'route';
 

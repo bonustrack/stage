@@ -1,5 +1,6 @@
 import { channelPath } from '@stage-labs/client/routing/routes';
-import { PAGES, pageList, splitAt, tabPageAt, type HomeView } from './pages';
+import type { HomeView } from '../../lib/homeView';
+import { PAGES, pageList, splitAt, tabPageAt } from './pages';
 
 const CHANNEL_PREFIX = channelPath('');
 

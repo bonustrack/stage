@@ -1,6 +1,4 @@
-import { filterChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../lib/messaging/conversation';
-import { isRowCleared, type ClearableRow, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import {
   GROUP_KEYS,
   homeSortSchema,
@@ -12,7 +10,7 @@ import {
 import type { AppIconName, MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../profile/ProfileScreen.model';
 import { groupByLabel } from './groupBy.model';
-import { homeSortEdit, homeSortOf, SORT_LABELS, sortHomeRows } from './sort.model';
+import { homeSortEdit, homeSortOf, SORT_LABELS } from './sort.model';
 import { orderedColumns } from './board/BoardScreen.model';
 import { GROUPING_FIELDS, groupKeyOf } from '../../lib/grouping.model';
 import { lastActivityLabel } from './activity.model';
@@ -208,42 +206,6 @@ export function homeViewEdit(current: HomeViewContent, id: string): HomeViewEdit
   }
   const group = homeViewSchema.shape.groupBy.safeParse(value);
   return group.success ? { groupBy: group.data } : null;
-}
-
-interface SortInputs {
-  rows: Row[] | null;
-  enabledLabels: Set<string>;
-  unreadOnly: boolean;
-  pinned: readonly string[];
-  sort?: HomeSort;
-  statusOrder?: readonly string[];
-}
-
-export function deriveSortedRows(i: SortInputs): Row[] {
-  const filtered = filterChannelRows(i.rows ?? [], { enabledLabels: i.enabledLabels, unreadOnly: i.unreadOnly });
-  return sortHomeRows(filtered, i.pinned, i.sort, i.statusOrder);
-}
-
-interface UnreadRow {
-  unreadCount: number;
-  markedUnread?: boolean;
-}
-
-export function unreadRowCount(rows: readonly UnreadRow[]): number {
-  return rows.filter((row) => row.unreadCount > 0 || row.markedUnread === true).length;
-}
-
-interface VisibleUnreadInputs<R> {
-  rows: R[] | null;
-  enabledLabels: Set<string>;
-  unreadOnly: boolean;
-  matches: (row: R) => boolean;
-  cleared: ClearedChats;
-}
-
-export function visibleUnreadCount<R extends ChannelListRow & ClearableRow>(i: VisibleUnreadInputs<R>): number {
-  const listed = filterChannelRows(i.rows ?? [], { enabledLabels: i.enabledLabels, unreadOnly: i.unreadOnly });
-  return unreadRowCount(listed.filter((row) => !isRowCleared(i.cleared, row) && i.matches(row)));
 }
 
 export function searchBarLabels(matching: string[], enabled: ReadonlySet<string>, boardOrder: readonly string[]): string[] {

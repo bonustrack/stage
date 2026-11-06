@@ -1,4 +1,11 @@
-import { memberNames, type FilterRow } from '../components/home/search/searchFilter.model';
+import {
+  memberNames,
+  parseSearchFilter,
+  searchRowMatcher,
+  type FilterRow,
+  type MemberNames,
+} from '../components/home/search/searchFilter.model';
+import { searchedColumns, type BoardColumn } from '../components/home/board/BoardScreen.model';
 
 export const SELF = '0xself';
 export const ALICE = '0xa11ce00000000000000000000000000000000001';
@@ -13,3 +20,13 @@ export const NAMES: Record<string, string[]> = {
   [ALICE]: memberNames('alice123.stage.base.eth', 'Alice Doe'),
   [BOB]: memberNames('bob.base.eth', undefined),
 };
+
+export function searched<T extends FilterRow>(
+  columns: BoardColumn<T>[],
+  query: string,
+  namesOf: MemberNames = () => [],
+  draftOf: (convId: string) => string = () => '',
+  activityCutoff: number | null = null,
+): BoardColumn<T>[] {
+  return searchedColumns(columns, searchRowMatcher(parseSearchFilter(query), namesOf, draftOf, activityCutoff));
+}

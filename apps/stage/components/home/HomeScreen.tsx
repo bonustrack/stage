@@ -5,33 +5,25 @@ import type { SimultaneousRefs } from '../layout/simultaneousRefs';
 import { usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
-import { getDraft, useDraftsVersion } from '../../lib/drafts';
+import { peerLabel } from '../../lib/peerProfiles';
 import { NewChatScreen } from './NewChatScreen';
 import { useWebTabRail } from '../layout/webLayout';
-import { HomeError, RowChannelMenu, useChannelRowRenderer } from './parts';
-import { Spinner } from '@stage-labs/kit/react-native/spinner';
+import { HomeError, HomeLoading, RowChannelMenu, useChannelRowRenderer } from './parts';
 import { ChannelsList } from './list';
 import { useChannelsSyncError } from '../../lib/messaging/channelsSync';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
 import { useHomeFilters } from './labelbar';
-import { searchBarLabels, type Row } from './model';
-import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
-import { parseSearchFilter, searchFilterSources, searchFilterValues, searchRowMatcher } from './search/searchFilter.model';
-import { memberNamesOf } from './search/FilterSearch';
-import { useClearedChats } from '../../lib/sync/clearedChats';
-import { useBoardOrder } from '../../lib/boardOrder';
-import { useHomeViewOf } from '../../lib/homeView';
+import { searchBarLabels } from './model';
 import { BoardScreen } from './board/BoardScreen';
-import { deriveSortedRows } from './model';
-import { homeSortOf } from './sort.model';
+import { useHomeListing } from './listing';
+import { listedRows, sortedListing } from './listing.model';
+import { groupingOrderOf } from '../../lib/grouping.model';
 import { useGroupedRows, useHomeState } from './state';
 import { HomeDragLists, useHomeDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { useChannelFields } from '../../lib/channelFields';
 import { useTabFocused } from '../tabs/useWalletFocused';
 import { PAGES } from '../tabs/pages';
-import { useLastActivityCutoff } from '../../lib/lastActivity';
 import { Column } from '../layout';
 
 export function HomeScreen({
@@ -57,55 +49,31 @@ export function BoardHome(): React.ReactElement | null {
   return here || opened ? <HomeScreen board /> : null;
 }
 
-interface ChannelSearch {
-  channelProfilesVersion: number;
-  draftsVersion: number;
-  search: ReturnType<typeof parseSearchFilter>;
-  matches: ReturnType<typeof searchRowMatcher>;
-}
-
-function useChannelSearch(rows: Row[] | null, query: string, assignees: boolean): ChannelSearch {
-  const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], 'chats').members : [];
-  const channelProfilesVersion = usePeerProfiles([
-    ...members,
-    ...(rows ?? []).flatMap((r) => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(assignees ? r.assigned : [])]),
-  ]);
-  const draftsVersion = useDraftsVersion();
-  const search = useMemo(() => parseSearchFilter(query), [query]);
-  const activityCutoff = useLastActivityCutoff('chats');
-  const matches = useMemo(
-    () => searchRowMatcher(search, memberNamesOf, getDraft, activityCutoff),
-    [search, channelProfilesVersion, draftsVersion, activityCutoff],
-  );
-  return { channelProfilesVersion, draftsVersion, search, matches };
-}
-
 function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane: boolean; menu: HomeMenuState }): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
   const st = useHomeState();
-  const { rows, pinned, rowMenu } = st;
-  const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters, query, setQuery } = useHomeFilters();
+  const { pinned, rowMenu } = st;
+  const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
   const [filtering, setFiltering] = useState(false);
-  const view = useHomeViewOf('chats');
-  const { groupBy } = view;
-  const sort = homeSortOf(view);
-  const boardOrder = useBoardOrder();
-  const { channelProfilesVersion, draftsVersion, search, matches } = useChannelSearch(rows, query, groupBy === 'assignee');
+  const listing = useHomeListing('chats');
+  const { rows, query, setQuery, searchText, matches, cleared, sort, orders, profilesVersion, draftsVersion } = listing;
+  const { groupBy } = listing.view;
+  const statusOrder = groupingOrderOf('status', orders);
+  const labelOrder = groupingOrderOf('label', orders);
 
   const sortedRows = useMemo(
-    () => deriveSortedRows({ rows, enabledLabels, unreadOnly, pinned, sort, statusOrder: boardOrder }),
-    [rows, pinned, enabledLabels, unreadOnly, sort, boardOrder],
+    () => sortedListing({ rows, enabledLabels, unreadOnly, pinned, sort, statusOrder }),
+    [rows, pinned, enabledLabels, unreadOnly, sort, statusOrder],
   );
   const barLabels = useMemo(
-    () => searchBarLabels(deriveBarLabels((rows ?? []).filter(matches)), enabledLabels, boardOrder),
-    [rows, matches, enabledLabels, boardOrder],
+    () => searchBarLabels(deriveBarLabels((rows ?? []).filter(matches)), enabledLabels, labelOrder),
+    [rows, matches, enabledLabels, labelOrder],
   );
-  const cleared = useClearedChats();
-  const visibleRows = useMemo(() => sortedRows.filter((r) => matches(r) && !isRowCleared(cleared, r)), [sortedRows, matches, cleared]);
-  const list = useGroupedRows(visibleRows, search.text, groupBy, peerLabel, channelProfilesVersion);
+  const visibleRows = useMemo(() => listedRows(sortedRows, { matches, cleared }), [sortedRows, matches, cleared]);
+  const list = useGroupedRows(visibleRows, searchText, groupBy, peerLabel, profilesVersion);
   const fields = useChannelFields('chats');
   const hideAvatar = !fields.avatar;
   const error = useChannelsSyncError();
@@ -113,8 +81,8 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const activePath = pane ? pathname : '';
   const menuConvId = rowMenu?.convId;
   const listExtraData = useMemo(
-    () => [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields] as const,
-    [channelProfilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields],
+    () => [profilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields] as const,
+    [profilesVersion, draftsVersion, pinned, query, activePath, menuConvId, hideAvatar, fields],
   );
   const visiblePinned = useMemo(
     () => (list.grouped ? [] : visibleRows.map((r) => r.convId).filter((id) => pinned.includes(id))),
@@ -123,10 +91,10 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const drag = useHomeDrag(list.items, groupBy === 'category', pinned, visiblePinned);
   useRowArrows({ rows: list.rows, items: list.items, activePath, router, listRef: st.scroll.listRef, paused: filtering });
   const renderRow = useChannelRowRenderer(router, st.setRowMenu, {
-    channelProfilesVersion,
+    channelProfilesVersion: profilesVersion,
     draftsVersion,
     pinned,
-    query: search.text,
+    query: searchText,
     activePath,
     menuConvId,
     drag,
@@ -135,19 +103,14 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     items: list.items,
   });
 
-  const placeholder = error ? (
-    <HomeError error={error} dark={dark} fg={fg} />
-  ) : !rows ? (
-    <Column weight={1} align="center" justify="center">
-      <Spinner size={28} color={head} />
-    </Column>
-  ) : null;
+  const placeholder = error ? <HomeError error={error} dark={dark} fg={fg} /> : !rows ? <HomeLoading head={head} /> : null;
 
   return (
     <Column weight={1} surface="surface">
       <ChannelsList
         panRef={panRef}
         items={list.items}
+        rows={rows}
         barLabels={barLabels}
         placeholder={placeholder}
         enabledLabels={enabledLabels}

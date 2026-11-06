@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
-import { deriveSortedRows, unreadRowCount, visibleUnreadCount, type Row } from '../components/home/model';
+import type { ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
+import type { Row } from '../components/home/model';
+import { homeListing, listedUnreadCount, unreadRowCount } from '../components/home/listing.model';
 import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
 import { ALICE, NAMES, SELF } from './searchFixtures';
 
@@ -51,7 +52,7 @@ interface View {
 }
 
 const count = (v: View = {}): number =>
-  visibleUnreadCount({
+  listedUnreadCount({
     rows,
     enabledLabels: new Set(v.labels ?? []),
     unreadOnly: v.unreadOnly ?? false,
@@ -62,7 +63,7 @@ const count = (v: View = {}): number =>
 describe('the chats badge counts what the chat list shows', () => {
   test('counts unread chats, not messages, and a chat marked unread once', () => {
     expect(count()).toBe(5);
-    expect(visibleUnreadCount({ rows: null, enabledLabels: new Set(), unreadOnly: false, matches: () => true, cleared: {} })).toBe(0);
+    expect(listedUnreadCount({ rows: null, enabledLabels: new Set(), unreadOnly: false, matches: () => true, cleared: {} })).toBe(0);
   });
 
   test('follows the chat list chips and search filters', () => {
@@ -79,10 +80,16 @@ describe('the chats badge counts what the chat list shows', () => {
   test('Last activity keeps the badge and visible list consistent, including pinned chats', () => {
     const recent = rows.map((row, index) => ({ ...row, lastTs: index < 2 ? 100 : 1 }));
     const matches = searchRowMatcher(parseSearchFilter(''), namesOf, () => '', 50);
-    const listed = deriveSortedRows({ rows: recent, enabledLabels: new Set(['stage']), unreadOnly: false, pinned: ['c'] });
-    const visible = listed.filter(matches);
+    const visible = homeListing({
+      rows: recent,
+      enabledLabels: new Set(['stage']),
+      unreadOnly: false,
+      pinned: ['c'],
+      matches,
+      cleared: {},
+    });
     expect(visible.map((row) => row.convId)).toEqual(['a']);
-    expect(visibleUnreadCount({ rows: recent, enabledLabels: new Set(['stage']), unreadOnly: false, matches, cleared: {} })).toBe(
+    expect(listedUnreadCount({ rows: recent, enabledLabels: new Set(['stage']), unreadOnly: false, matches, cleared: {} })).toBe(
       unreadRowCount(visible),
     );
   });
@@ -94,11 +101,10 @@ describe('the chats badge counts what the chat list shows', () => {
 
   test('matches the rows the chat list renders', () => {
     const cleared = { '0xpeer': 20 };
-    const hidden = (r: Row): boolean => isRowCleared(cleared, r);
     for (const query of ['', 'status:Todo', '-label:Stage', 'member:alice123', 'b']) {
       const matches = searchRowMatcher(parseSearchFilter(query), namesOf);
-      const listed = deriveSortedRows({ rows, enabledLabels: new Set(['stage']), unreadOnly: false, pinned: [] });
-      expect(count({ query, labels: ['stage'], cleared })).toBe(unreadRowCount(listed.filter((r) => matches(r) && !hidden(r))));
+      const listed = homeListing({ rows, enabledLabels: new Set(['stage']), unreadOnly: false, pinned: [], matches, cleared });
+      expect(count({ query, labels: ['stage'], cleared })).toBe(unreadRowCount(listed));
     }
   });
 });

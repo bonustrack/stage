@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import type { HomeView } from '../../lib/homeView';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { PickerRow } from '../conversation/SidebarSection';
 import { AppIcon } from '../widgets';
@@ -30,7 +31,7 @@ import { profileLinkOf } from '../../lib/links';
 import { PAGES } from '../tabs/pages';
 import { memo, useEffect, useState } from 'react';
 import { SearchFilterMenu } from './search/SearchFilterMenu';
-import { searchFilterCount, type FilterScope } from './search/searchFilter.model';
+import { searchFilterCount } from './search/searchFilter.model';
 import { Path } from 'react-native-svg';
 import { CentralIconBase, type CentralIconBaseProps } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/CentralIconBase';
 import { IconSettingsSliderVer } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSettingsSliderVer';
@@ -64,7 +65,7 @@ export interface HomeMenuState {
 interface HomeFilterProps {
   query: string;
   setQuery: (query: string) => void;
-  scope: FilterScope;
+  scope: HomeView;
   onFilterMenu: (open: boolean) => void;
 }
 
@@ -155,7 +156,7 @@ function HomeViewMenu({
   );
 }
 
-function FieldsPage({ scope, fields }: { scope: FilterScope; fields: ChannelFields }): React.ReactElement {
+function FieldsPage({ scope, fields }: { scope: HomeView; fields: ChannelFields }): React.ReactElement {
   return (
     <>
       <MenuHeading text="Fields" />

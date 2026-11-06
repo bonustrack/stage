@@ -1,8 +1,9 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { HomeView } from '../../lib/homeView';
 import { MessagingSetupBanner } from './MessagingSetupBanner';
 import { LabelFilterBar } from './labelbar';
 import { FilterSearch } from './search/FilterSearch';
-import { parseSearchFilter, setSearchQueryText, type FilterScope } from './search/searchFilter.model';
+import { parseSearchFilter, setSearchQueryText } from './search/searchFilter.model';
 import { HomeContactResults } from './contacts';
 import { HomeTopnavRight, type HomeMenuState } from './topnavRight';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
@@ -10,7 +11,6 @@ import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { useBoardHome } from '../tabs/boardHome';
 import { SuggestedContacts } from '../contacts/SuggestedContacts';
 import { usePalette } from '../../lib/theme';
-import { homeRows } from '../../lib/messaging/homeRows';
 import { listKeyOf, type HomeListItem } from './groups.model';
 import type { Row } from './model';
 import { useWebTabRail } from '../layout/webLayout';
@@ -29,6 +29,7 @@ const HEADER_LAYER = { zIndex: 1 };
 interface ChannelsListProps {
   panRef?: import('../layout/simultaneousRefs').SimultaneousRefs;
   items: HomeListItem[];
+  rows: readonly Row[] | null;
   barLabels: string[];
   placeholder?: React.ReactElement | null;
   enabledLabels: Set<string>;
@@ -99,14 +100,16 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
 function ListFooter({
   query,
   noChannels,
+  rows,
   knownPeers,
 }: {
   query: string;
   noChannels: boolean;
+  rows: readonly Row[] | null;
   knownPeers: string[];
 }): React.ReactElement | null {
   const text = parseSearchFilter(query).text;
-  if (text !== '') return <HomeContactResults query={text} noChannels={noChannels} />;
+  if (text !== '') return <HomeContactResults query={text} noChannels={noChannels} rows={rows} />;
   return query.trim() === '' ? <SuggestedContacts known={knownPeers} /> : null;
 }
 
@@ -132,7 +135,7 @@ export function useSearchOpen(query: string, setQuery: (query: string) => void):
 }
 
 interface HomeTopnavProps {
-  scope: FilterScope;
+  scope: HomeView;
   pane: boolean;
   query: string;
   setQuery: (query: string) => void;
@@ -191,7 +194,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const wide = useWebTabRail();
   const search = useSearchOpen(query, setQuery);
   const slot = useHomeTopnav({ ...props, scope: 'chats' }, search, wide);
-  const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [items]);
+  const knownPeers = useMemo(() => knownPeerAddresses(props.rows), [props.rows]);
   useScrollTopOnFilter(props);
 
   return (
@@ -223,7 +226,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
               keyboardShouldPersistTaps="handled"
               ListHeaderComponentStyle={wide ? undefined : HEADER_LAYER}
               ListHeaderComponent={<ChannelsListHeader p={props} search={search} />}
-              ListFooterComponent={<ListFooter query={query} noChannels={items.length === 0} knownPeers={knownPeers} />}
+              ListFooterComponent={<ListFooter query={query} noChannels={items.length === 0} rows={props.rows} knownPeers={knownPeers} />}
               renderItem={renderRow}
             />,
           )

@@ -9,7 +9,7 @@ import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius
 import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuRow } from '../MenuRows';
-import { useSearchFilterSources } from './search/FilterSearch';
+import { useKnownFieldValues } from './listing';
 import { FIELD_SECTIONS } from '../channel/channel.labels';
 import { PickerList, PickerNote, PickerSearch } from '../conversation/SidebarSection';
 import { tagSearch } from '../conversation/SidebarSection.model';
@@ -61,7 +61,7 @@ function ProjectButton({ value, onPress }: { value: string | null; onPress: (poi
 }
 
 function ProjectMenu({ value, pick }: { value: string | null; pick: (next: string | null) => void }): React.ReactElement {
-  const projects = useSearchFilterSources('chats').categories;
+  const projects = useKnownFieldValues('chats').categories;
   const [query, setQuery] = useState('');
   const current = value === null ? [] : [value];
   const { shown, typed, creatable } = tagSearch(query, projects, current);

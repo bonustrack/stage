@@ -293,13 +293,19 @@ export function HomeError({ error, dark, fg }: { error: string; dark: boolean; f
   );
 }
 
+export function HomeLoading({ head }: { head: string }): React.ReactElement {
+  return (
+    <Column weight={1} align="center" justify="center">
+      <Spinner size={28} color={head} />
+    </Column>
+  );
+}
+
 export function HomeSpinner({ head }: { head: string }): React.ReactElement {
   return (
     <Column weight={1} surface="surface">
       <MessagingSetupBanner />
-      <Column weight={1} align="center" justify="center">
-        <Spinner size={28} color={head} />
-      </Column>
+      <HomeLoading head={head} />
     </Column>
   );
 }

@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { searched } from './searchFixtures';
 import {
   addedColumnOrder,
   boardColumns,
@@ -11,7 +12,6 @@ import {
   orderedColumns,
   renamedColumnOrder,
   renameTarget,
-  searchedColumns,
 } from '../components/home/board/BoardScreen.model';
 import { configuredFieldOptions } from '../components/channel/channelFieldOptions.model';
 import { searchFilterSources } from '../components/home/search/searchFilter.model';
@@ -50,7 +50,7 @@ describe('configured category board columns', () => {
       ['fde', 0],
       ['stage', 0],
     ]);
-    expect(searchedColumns(columns, 'category:fde').map((column) => [column.label, column.rows.length])).toEqual([
+    expect(searched(columns, 'category:fde').map((column) => [column.label, column.rows.length])).toEqual([
       ['Metro', 0],
       ['fde', 0],
       ['Stage', 0],

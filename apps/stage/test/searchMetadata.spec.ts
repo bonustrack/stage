@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
+import { boardColumns } from '../components/home/board/BoardScreen.model';
 import {
   FILTER_FIELDS,
   PRIORITY_OPTIONS,
@@ -10,7 +10,7 @@ import {
   searchRowMatcher,
   type FilterRow,
 } from '../components/home/search/searchFilter.model';
-import { ALICE, BOB, NAMES, group } from './searchFixtures';
+import { ALICE, BOB, NAMES, group, searched } from './searchFixtures';
 
 const rows: FilterRow[] = [
   { ...group('build', ['Bug'], [ALICE]), category: 'Stage', status: 'Backlog', priority: 'High' },
@@ -102,7 +102,7 @@ describe('channel metadata search filters', () => {
   test('board columns use the same combined filter in each supported metadata grouping', () => {
     for (const by of ['status', 'category', 'label'] as const) {
       const columns = boardColumns(rows, [], [], by);
-      const shown = searchedColumns(columns, 'category:Stage status:Backlog priority:High label:Bug member:alice123', namesOf);
+      const shown = searched(columns, 'category:Stage status:Backlog priority:High label:Bug member:alice123', namesOf);
       expect(shown.map((column) => column.key)).toEqual(columns.map((column) => column.key));
       expect(shown.flatMap((column) => column.rows.map((row) => row.convId))).toEqual(['build']);
     }

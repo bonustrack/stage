@@ -3,9 +3,10 @@ import { CHANNEL_PRIORITIES, categoryOf, priorityOf } from '@stage-labs/client/x
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { homeSortSchema, type HomeSort, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
 import { compareNames } from '../../lib/format';
+import type { HomeView } from '../../lib/homeView';
 import { GROUPING_FIELDS, groupValueOf } from '../../lib/grouping.model';
 
-const DEFAULT_SORT: Record<HomeViewContent['view'], HomeSort> = {
+const DEFAULT_SORT: Record<HomeView, HomeSort> = {
   chats: { by: 'updated', direction: 'desc' },
   board: { by: 'priority', direction: 'desc' },
 };

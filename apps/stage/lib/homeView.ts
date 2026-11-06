@@ -10,13 +10,15 @@ const homeView = syncedSetting<HomeViewContent>(
 );
 const { prefs } = homeView;
 
+export type HomeView = HomeViewContent['view'];
+
 export const homeViewSync = homeView.sync;
 
 export const useHomeView = prefs.use;
 
 export const getHomeView = prefs.get;
 
-export function useHomeViewOf(view: HomeViewContent['view']): HomeViewContent {
+export function useHomeViewOf(view: HomeView): HomeViewContent {
   const stored = prefs.use();
   return useMemo(() => (stored.view === view ? stored : { ...stored, view }), [stored, view]);
 }

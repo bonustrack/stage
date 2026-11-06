@@ -33,7 +33,7 @@ import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useStoreValue } from '../../lib/storeCore';
 import { useChannelEditRights } from './channel.detail';
-import { useSearchFilterSources } from '../home/search/FilterSearch';
+import { useKnownFieldValues } from '../home/listing';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
@@ -259,7 +259,7 @@ export function LabelPicker({ draft, toggle, current }: SectionDraft & { current
 }
 
 function FieldPicker({ draft, toggle, field }: SectionDraft & { field: ChannelField }): React.ReactElement {
-  const sources = useSearchFilterSources('chats');
+  const sources = useKnownFieldValues('chats');
   if (field === 'priority')
     return (
       <PickerList>
