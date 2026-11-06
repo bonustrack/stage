@@ -1,5 +1,6 @@
 import type { Hex } from 'viem';
-import { getViemAccount, type AccountRecord } from './accounts';
+import { getViemAccount } from './zerodev/keyring';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 
 interface SigningKey {
   kind: 'EOA' | 'SCW';

@@ -3,9 +3,9 @@ import { baseProfileClient, resolveBasenameProfile } from '@stage-labs/client/id
 import { fetchIssuedName, stageLabelOf } from '@stage-labs/client/identity/stageNames';
 import { registerMailKey } from '@stage-labs/client/mail/api';
 import { deriveMailKey, isMailboxLabel, mailPublicKeyHex } from '@stage-labs/client/mail/mailbox';
-import type { AccountRecord } from './accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { linkProxyBase } from './linkProxy';
-import { signingKeyForRecord } from './xmtp.signing.core';
+import { signingKeyForRecord } from './accountSigning';
 
 export async function claimMailKey(rec: AccountRecord, label: string): Promise<Hex | undefined> {
   if (!isMailboxLabel(label)) return undefined;

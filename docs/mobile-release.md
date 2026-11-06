@@ -69,7 +69,7 @@ None of these identifiers are committed. The `ios` job writes them into the `sub
 
 ### How push works on iOS
 
-1. The app registers its APNs token (`getDevicePushTokenAsync`) and its conversation topics with `push.stage.box`, exactly like Android (`lib/pushRegister*.ts`).
+1. The app registers its APNs token (`getDevicePushTokenAsync`) and its conversation topics with `push.stage.box`, exactly like Android (`lib/pushRegister.ts`).
 2. The push server sends each envelope as an APNs alert with `mutable-content: 1` and the ciphertext in `encryptedMessage` (welcome topics go out as silent `content-available` pushes).
 3. iOS hands the alert to `StageNotificationService` (Swift, `plugins/notificationService/NotificationService.swift`). It reads the account list from `stage-push-accounts.json` in the app group container, reads that account's XMTP database key from the shared keychain group, opens the account's XMTP database in the app group container with the XMTP iOS SDK (`Client.build(..., inboxId:)`, offline, device sync off), finds the conversation by topic and runs `processMessage`. A text message becomes the notification body; anything else, a failure or the 30 second budget running out falls back to "New message". The title is "Stage", the thread is the conversation, and `body.convId` makes a tap open the conversation through the existing `usePushDeepLinks` handler.
 4. `processMessage` writes into the same database the app uses, so the MLS state advances once and the app does not reprocess the message.

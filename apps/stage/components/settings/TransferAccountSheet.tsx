@@ -6,7 +6,7 @@ import { AppModal } from '../AppModal';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { capabilities } from '../../lib/capabilities';
 import { DANGER } from '../../lib/theme';
-import type { AccountRecord } from '../../lib/accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { transferKindFor, transferPayloadFor } from '../../lib/accountTransfer';
 import { TRANSFER_HOW_TO, transferWarning } from '../onboarding/importInput.model';
 import { Column } from '../layout';

@@ -6,7 +6,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { KERNEL_VERSION, ENTRY_POINT_VERSION } from '@stage-labs/client/zerodev/account';
 import { WALLET_CHAIN_ID } from '@stage-labs/client/wallet/chains';
 import { walletAccountRows, walletDeployLabel, type WalletDeployState } from './WalletSettings.model';
-import type { AccountRecord } from '../../lib/accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { makePublicClient } from '../../lib/zerodev/client';
 import { usePalette } from '../../lib/theme';

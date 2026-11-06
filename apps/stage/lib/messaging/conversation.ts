@@ -1,10 +1,9 @@
-import type { Conversation } from '@xmtp/react-native-sdk';
 import { convMembers, type ConvMembers } from '../xmtp.identity';
 import { getCachedRows, getLastReadNs, getMarkedUnread } from '../channelsCache';
 import { sdk } from '../xmtp.sdk';
 import { convOfLine } from '../xmtp.find';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { rowMessagesOf } from '../xmtp.messages';
+import { rowMessagesOf, type ConvHandle } from '../xmtp.messages';
 import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
 import type { XmtpConsent } from '../xmtp.types';
 import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
@@ -41,7 +40,7 @@ function pickLastMessage(msgs: StreamedMessage[], dm: boolean): StreamedMessage 
 
 const ROW_LOOKBACK = 20;
 
-async function recentRowMessages(conv: Conversation, dm: boolean): Promise<StreamedMessage[]> {
+async function recentRowMessages(conv: ConvHandle, dm: boolean): Promise<StreamedMessage[]> {
   const limit = dm ? 6 : 2;
   const msgs = await rowMessagesOf(conv, limit).catch(recover('conversation.rowMessages', []));
   const onlyHidden = msgs.length === limit && onlyHiddenMessages(msgs);
@@ -54,7 +53,7 @@ function lastBubbleTsOf(msgs: RowMessage[], dm: boolean): number | null {
 }
 
 function rowDeleteRights(
-  conv: Conversation,
+  conv: ConvHandle,
   dm: boolean,
   msgs: StreamedMessage[],
   inboxToAddr: Record<string, string>,
@@ -77,7 +76,7 @@ interface GroupRowData {
   tags: GroupTags;
 }
 
-async function gatherGroupRowData(conv: Conversation, members: ConvMembers): Promise<GroupRowData> {
+async function gatherGroupRowData(conv: ConvHandle, members: ConvMembers): Promise<GroupRowData> {
   if (members.peerAddress) {
     return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, tags: NO_TAGS };
   }
@@ -86,7 +85,7 @@ async function gatherGroupRowData(conv: Conversation, members: ConvMembers): Pro
 }
 
 function rowAvatar(
-  conv: Conversation,
+  conv: ConvHandle,
   peerAddress: string | null,
   groupImageUrl: string,
 ): { avatarUri: string | null; avatarAddress: string | null } {
@@ -95,12 +94,12 @@ function rowAvatar(
   return { avatarUri, avatarAddress };
 }
 
-function rowMetaOf(conv: Conversation, peerAddress: string | null, data: GroupRowData): GroupRowMeta {
+function rowMetaOf(conv: ConvHandle, peerAddress: string | null, data: GroupRowData): GroupRowMeta {
   const title = channelRowTitle({ peerAddress, groupName: data.groupMeta.name, memberCount: data.memberAddresses.length });
   return { title, groupName: data.groupMeta.name, ...rowAvatar(conv, peerAddress, data.groupMeta.imageUrl), ...data.tags };
 }
 
-export async function groupRowMeta(conv: Conversation): Promise<GroupRowMeta> {
+export async function groupRowMeta(conv: ConvHandle): Promise<GroupRowMeta> {
   const members = await convMembers(conv);
   return { ...rowMetaOf(conv, null, await gatherGroupRowData(conv, members)), inboxToAddr: members.inboxToAddr };
 }
@@ -123,7 +122,7 @@ async function resolveMarkedUnread(convId: string, inputs: Parameters<typeof ini
   return initialMarkedUnread(inputs);
 }
 
-function createdTsOf(conv: Conversation, convId: string): Promise<number | null> {
+function createdTsOf(conv: ConvHandle, convId: string): Promise<number | null> {
   return rowCreatedTs(
     conv,
     convId,
@@ -136,7 +135,7 @@ function createdTsOf(conv: Conversation, convId: string): Promise<number | null>
 const NO_KNOWN_DMS: ReadonlyMap<string, string> = new Map();
 
 export async function summarizeConversation(
-  conv: Conversation,
+  conv: ConvHandle,
   selfInboxId: string,
   alreadySynced: boolean,
   knownDmIds = NO_KNOWN_DMS,

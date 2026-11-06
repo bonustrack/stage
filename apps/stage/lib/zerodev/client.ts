@@ -6,7 +6,7 @@ import type { KernelSmartAccountImplementation } from '@zerodev/sdk';
 import type { SmartAccount } from 'viem/account-abstraction';
 import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
 import { WALLET_CHAIN_ID } from '@stage-labs/client/wallet/chains';
-import type { AccountRecord } from '../accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { smartOwnerSigner } from './keyring';
 import { envString } from '../env';
 

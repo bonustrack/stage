@@ -22,7 +22,8 @@ import {
   inspectNameSetup,
 } from '@stage-labs/client/identity/onchainProfile';
 import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
-import { getSelectedAccount, type AccountRecord } from './accounts';
+import { getSelectedAccount } from './accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { selectionScope } from './accountSelection';
 import { linkProxyBase } from './linkProxy';
 import { invalidatePeerProfile } from './peerProfiles';

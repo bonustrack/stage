@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { fetchGroupRoles, messagingKeys, refreshConv, useConvDetails, useConvRow } from '../../lib/messaging/queries';
+import { messagingKeys, refreshConv, useConvDetails, useConvRow } from '../../lib/messaging/queries';
+import { fetchGroupRoles } from '../../lib/messaging/groupDetails';
 import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { groupEditRights, removeGroupMembers } from '../../lib/xmtp.groups';
 import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';

@@ -2,7 +2,7 @@ import { errorMessage } from '@stage-labs/client/errors';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { removeAccountFromDevice, resetXmtpDatabase, useXmtpIdentity } from '../../lib/deviceAccount';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import type { AccountRecord } from '../../lib/accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';

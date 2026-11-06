@@ -3,7 +3,9 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
-import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
+import { canExportPrivateKey } from '@stage-labs/client/accounts/registry';
+import { revealPrivateKey } from '../../lib/zerodev/keyring';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
 import { RecoveryPhraseRow } from './RecoveryPhraseRow';
@@ -30,7 +32,7 @@ function confirmExport(rec: AccountRecord, setRevealed: (key: RevealedKey) => vo
     })
     .then(async (ok) => {
       if (!ok) return;
-      const pk = await getPrivateKey(rec.id);
+      const pk = await revealPrivateKey(rec.id);
       if (!pk) {
         capabilities.alert('No key', 'This account has no exportable private key.');
         return;

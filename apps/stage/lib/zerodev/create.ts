@@ -1,6 +1,7 @@
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
-import { addSmartAccount, loadAccounts, loadAccountsForWrite, nextSmartHdIndex, setActiveAccountId, type AccountRecord } from '../accounts';
+import { addSmartAccount, loadAccounts, loadAccountsForWrite, nextSmartHdIndex, setActiveAccountId } from '../accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { clientSdk } from '../xmtp.clientSdk';
 import { ensurePrimaryPhrase, smartOwnerSigner } from './keyring';
 import { reserveSmartHdIndex } from './hdIndexStore';

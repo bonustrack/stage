@@ -3,7 +3,7 @@ import { useFocusEffect } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import type { AccountRecord } from '../../lib/accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { capabilities } from '../../lib/capabilities';
 import { revealActiveRecoveryPhrase } from '../../lib/zerodev/keyring';
 import { markWalletBackedUp } from '../../lib/walletBackup';

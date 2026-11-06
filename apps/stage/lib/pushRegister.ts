@@ -26,7 +26,7 @@ import { makePushRetry } from './pushRetry.core';
 import { setPushStatus } from './pushStatus';
 import { memoized } from './storeCore';
 import { clientSdk, type XmtpClient } from './xmtp.clientSdk';
-import { signingKeyForRecord } from './xmtp.signing.core';
+import { signingKeyForRecord } from './accountSigning';
 import { getCachedXmtpClient } from './xmtp.state';
 
 const CLEAR_DEBOUNCE_MS = 1_500;

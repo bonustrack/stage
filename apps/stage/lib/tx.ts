@@ -2,7 +2,8 @@ import { createPublicClient, createWalletClient, type Hex, type TypedDataDefinit
 import type { Eip712TypedData } from '@stage-labs/client/xmtp/sign';
 import { VIEM_CHAINS, WALLET_CHAIN_ID, WALLET_CHAIN_ONLY } from '@stage-labs/client/wallet/chains';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
-import { getViemAccount, type AccountRecord } from './accounts';
+import { getViemAccount } from './zerodev/keyring';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { kernelClientForRecord } from './zerodev/client';
 
 export interface TxCall {

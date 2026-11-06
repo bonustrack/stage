@@ -10,8 +10,8 @@ import {
   type Signer,
 } from '@xmtp/react-native-sdk';
 import { stageCodecsFor } from '@stage-labs/client/xmtp/contentTypes';
-import type { AccountRecord } from './accounts';
-import { signingKeyForRecord } from './xmtp.signing.core';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { signingKeyForRecord } from './accountSigning';
 
 export const XMTP_CODECS = [
   new ReactionCodec(),

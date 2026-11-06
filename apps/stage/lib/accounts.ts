@@ -12,10 +12,6 @@ import { capabilities } from './capabilities';
 import { jsonWith } from './storeCore';
 import { z } from 'zod';
 
-export { canExportPrivateKey } from '@stage-labs/client/accounts/registry';
-export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
-export type { AccountRecord } from '@stage-labs/client/accounts/types';
-
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
 

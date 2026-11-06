@@ -1,8 +1,8 @@
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes } from 'viem';
 import { stageCodecsFor } from '@stage-labs/client/xmtp/contentTypes';
-import type { AccountRecord } from './accounts';
-import { lazySigningKeyForRecord } from './xmtp.signing.core';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { lazySigningKeyForRecord } from './accountSigning';
 
 export const XMTP_CODECS = stageCodecsFor('web');
 

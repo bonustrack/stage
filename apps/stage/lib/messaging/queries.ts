@@ -5,7 +5,7 @@ import { getCachedRows, subscribeCachedRows } from '../channelsCache';
 import { refreshGroupRow } from '../xmtp.groups';
 import { useStoreValue } from '../storeCore';
 import { fetchConvRow } from './conversation';
-import { fetchConvDetails, fetchGroupRoles } from './groupDetails';
+import { fetchConvDetails } from './groupDetails';
 import { NO_DETAILS, isGroupRow, listedConvRow, sameConvRow, type ConvDetails, type ConvRow } from './convRow.model';
 
 export const messagingKeys = {
@@ -16,8 +16,6 @@ export const messagingKeys = {
   groupRoles: (convId: string | null | undefined, inboxIds: readonly string[]) =>
     ['xmtp', 'conv', convId ?? '', 'roles', [...inboxIds].sort().join(',')] as const,
 } as const;
-
-export { fetchGroupRoles };
 
 const STALE_MS = 5 * 60_000;
 

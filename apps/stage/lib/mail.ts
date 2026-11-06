@@ -10,7 +10,7 @@ import { mailReadKey, mailboxKey, makeMailAccess, parseReadKeys, withReadKey, ty
 import { createValueStore } from './persistedStore';
 import { getQueryClient } from './queryClient';
 import { reported } from './errorPolicy';
-import { lazySigningKeyForRecord, signingKeyForRecord } from './xmtp.signing.core';
+import { lazySigningKeyForRecord, signingKeyForRecord } from './accountSigning';
 
 export type { InboxState, Mailbox } from './mail.core';
 
