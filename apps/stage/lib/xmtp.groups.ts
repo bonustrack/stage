@@ -34,8 +34,9 @@ import { notAGroup } from './xmtp.sdk.core';
 import { groupRowMeta } from './messaging/conversation';
 import { report, reported } from './errorPolicy';
 import { accountClient } from './xmtp.account';
-import { setChannelHidden } from './hiddenChannels';
-import { forgetChannelAccess, reconcileHiddenConsent, rememberChannelMember } from './channelVisibility';
+import { setChannelHidden } from './sync/hiddenChannels';
+import { forgetChannelAccess } from './channelAccess';
+import { reconcileHiddenConsent, rememberOwnGroup } from './channelVisibility';
 import { markFreshFeed } from './feedLines';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
@@ -83,7 +84,7 @@ export async function createGroup(addresses: string[], appData?: string, name?: 
     (address) => sdk.inboxIdOfAddress(client, address),
   );
   markFreshFeed(created.line);
-  rememberChannelMember(context, created.id);
+  rememberOwnGroup(context, created.id);
   return created;
 }
 

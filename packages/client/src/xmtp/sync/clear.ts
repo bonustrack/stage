@@ -27,6 +27,15 @@ export function mergeHiddenChannels(local: HiddenChannels, incoming: HiddenChann
   return merged;
 }
 
+export function isHiddenChannel(hidden: HiddenChannels, convId: string | null | undefined): boolean {
+  return convId != null && hidden[convId]?.hidden === true;
+}
+
+export function hiddenConsent<C>(state: { hidden: boolean } | undefined, consent: C): C | 'denied' | 'allowed' {
+  if (state === undefined) return consent;
+  return state.hidden ? 'denied' : 'allowed';
+}
+
 export function mergeClearedChats(local: ClearedChats, incoming: ClearedChats): ClearedChats {
   const merged: ClearedChats = {};
   for (const [peer, at] of [...Object.entries(local), ...Object.entries(incoming)]) {

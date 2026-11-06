@@ -37,7 +37,7 @@ import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/
 import { revivesClearedChat } from '@stage-labs/client/xmtp/sync/clear';
 import { isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
 import { isCallSignalType } from '@stage-labs/client/xmtp/call';
-import { isChannelHidden, loadHiddenChannels, subscribeHiddenChannels } from '../../lib/hiddenChannels';
+import { isChannelHidden, loadHiddenChannels, subscribeHiddenChannels } from '../../lib/sync/hiddenChannels';
 import { getActiveAccount } from '../../lib/accounts';
 
 function makeSeenOnce(limit: number): (id: string) => boolean {

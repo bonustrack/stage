@@ -13,7 +13,7 @@ mock.module('../lib/cache', () => ({
   },
 }));
 const { PersistentStore } = await import('../lib/cache.shared');
-const { visibleCachedRows } = await import('../lib/hiddenChannelsStorage');
+const { visibleCachedRows } = await import('../lib/sync/hiddenChannels');
 const { getCachedRows, hydrateCachedRows, setCachedRows } = await import('../lib/channelsCache');
 const { rememberActiveAccountId } = await import('../lib/accountSelection');
 const { filterChannelRows } = await import('@stage-labs/client/xmtp/channelsFilter');

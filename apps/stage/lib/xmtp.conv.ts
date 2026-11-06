@@ -1,10 +1,10 @@
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import { convOfLine, sdk } from './xmtp.sdk';
-import { channelConsent, loadHiddenChannels, setChannelHidden } from './hiddenChannels';
+import { setChannelHidden } from './sync/hiddenChannels';
 import { accountClient, type AccountClient } from './xmtp.account';
-import { channelAccess, checkChannelAccess, reconcileHiddenConsent, syncVisibleChannels, type GroupAccess } from './channelVisibility';
-export type { GroupAccess } from './channelVisibility';
+import { channelAccess, checkChannelAccess, type GroupAccess } from './channelAccess';
+import { channelConsent, hiddenChannelFilter, reconcileHiddenConsent, syncVisibleChannels } from './channelVisibility';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DmUnreachableReason, XmtpConsent } from './xmtp.types';
@@ -117,11 +117,11 @@ async function withoutDepartedGroups(context: AccountClient, convs: Conv[]): Pro
 export async function listVisibleConversations(): Promise<Conv[]> {
   const context = await accountClient();
   await reconcileHiddenConsent(context);
-  const hidden = await loadHiddenChannels(context.account.id);
+  const isHidden = await hiddenChannelFilter(context.account.id);
   const visible = await sdk.listConvs(context.client, VISIBLE_CONSENT);
   return withoutDepartedGroups(
     context,
-    visible.filter((c) => !sdk.isGroup(c) || !hidden[c.id]?.hidden),
+    visible.filter((c) => !sdk.isGroup(c) || !isHidden(c.id)),
   );
 }
 
@@ -156,7 +156,7 @@ export async function getConvConsentState(convId: string): Promise<XmtpConsent |
   if (!conv) return null;
   try {
     const consent = await sdk.consentOf(conv);
-    return sdk.isGroup(conv) ? channelConsent(convId, consent) : consent;
+    return channelConsent(convId, sdk.isGroup(conv), consent);
   } catch (err) {
     report('xmtp.consentOf', err);
     return null;

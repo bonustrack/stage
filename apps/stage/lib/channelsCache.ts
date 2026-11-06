@@ -10,7 +10,7 @@ import {
 } from '@stage-labs/client/xmtp/channelsCache';
 import { attempt, ignored } from './errorPolicy';
 import type { XmtpConsent } from './xmtp.types';
-import { visibleCachedRows } from './hiddenChannelsStorage';
+import { visibleCachedRows } from './sync/hiddenChannels';
 import { knownActiveAccountId, subscribeActiveAccountId } from './accountSelection';
 
 export type CachedRow = CachedChannelRow;

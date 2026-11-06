@@ -63,7 +63,6 @@ import { useTopChromeInset, useWebTabRail } from '../layout/webLayout';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { createGroup } from '../../lib/xmtp.groups';
 import { getConvConsentState } from '../../lib/xmtp.conv';
-import { rememberOwnGroup } from '../../lib/messaging/useConvConsent';
 import { subscribeCachedRows } from '../../lib/channelsCache';
 import { uploadAttachments } from '../../lib/xmtp.attachments';
 import { schedulePushTopicRefresh, warmSenderFilters } from '../../lib/pushRegister';
@@ -197,7 +196,6 @@ function useStartChat(
       const { line } = await createGroup([...addresses], newChatAppData(metadata), firstMessageChannelName(text, mentionLabelOf));
       const convId = convIdOfLine(line);
       if (convId === null) return;
-      rememberOwnGroup(convId);
       void memberHistory.update((current) => startedChatWith(current, addresses, Date.now())).catch(reported('newChatMembers.save'));
       handSendTo(convId, startSend(line, text, latest.current.pending));
       clearNewChatDraft(draftKey);

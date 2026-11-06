@@ -1,23 +1,15 @@
 import { useEffect, useState } from 'react';
-import { getConvConsentState, groupAccessOf, streamConvConsent, type GroupAccess } from '../xmtp.conv';
+import { hiddenConsent } from '@stage-labs/client/xmtp/sync/clear';
+import { getConvConsentState, groupAccessOf, streamConvConsent } from '../xmtp.conv';
 import type { XmtpConsent } from '../xmtp.types';
 import { getCachedRows, patchRowConsent, subscribeCachedRows } from '../channelsCache';
 import { useStoreValue } from '../storeCore';
 import type { ConversationView } from './conversation';
 import { useAccountEpoch } from '../accountEpoch';
 import { report, recover, attempt } from '../errorPolicy';
-import { useHiddenChannels } from '../hiddenChannels';
-import { cachedChannelAccess, subscribeChannelAccess } from '../channelVisibility';
-
-const knownConsent = new Map<string, XmtpConsent | null>();
-
-export function rememberOwnGroup(convId: string): void {
-  knownConsent.set(convId, 'allowed');
-}
-
-function lastKnownConsent(convId: string | undefined): XmtpConsent | null | undefined {
-  return convId ? knownConsent.get(convId) : undefined;
-}
+import { useHiddenChannels } from '../sync/hiddenChannels';
+import { cachedChannelAccess, subscribeChannelAccess, type GroupAccess } from '../channelAccess';
+import { knownConsentOf, rememberConsent } from '../channelVisibility';
 
 function listedConsent(convId: string | undefined): XmtpConsent | undefined {
   const rows = getCachedRows() as ConversationView[] | null;
@@ -27,14 +19,14 @@ function listedConsent(convId: string | undefined): XmtpConsent | undefined {
 export function useConvConsentState(convId: string | undefined): XmtpConsent | null | undefined {
   const hidden = useHiddenChannels()[convId ?? ''];
   const listed = useStoreValue(subscribeCachedRows, () => listedConsent(convId));
-  const [checked, setChecked] = useState<XmtpConsent | null | undefined>(() => lastKnownConsent(convId));
+  const [checked, setChecked] = useState<XmtpConsent | null | undefined>(() => knownConsentOf(convId));
   useEffect(() => {
-    setChecked(lastKnownConsent(convId));
+    setChecked(knownConsentOf(convId));
     if (!convId) return;
     let cancelled = false;
     const resolve = async (): Promise<void> => {
       const state = await getConvConsentState(convId).catch(recover('conversation.consent', null));
-      knownConsent.set(convId, state);
+      rememberConsent(convId, state);
       if (state) patchRowConsent(convId, state);
       if (!cancelled) setChecked(state);
     };
@@ -52,7 +44,7 @@ export function useConvConsentState(convId: string | undefined): XmtpConsent | n
       if (cancelConsent) attempt(cancelConsent, 'cleanup');
     };
   }, [convId]);
-  return hidden === undefined ? (checked ?? listed ?? checked) : hidden.hidden ? 'denied' : 'allowed';
+  return hiddenConsent(hidden, checked ?? listed ?? checked);
 }
 
 const RECHECK_MS = 10_000;

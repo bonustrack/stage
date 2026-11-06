@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { mergeHiddenChannels, type HiddenChannels } from '../src/xmtp/sync/clear';
+import { hiddenConsent, isHiddenChannel, mergeHiddenChannels, type HiddenChannels } from '../src/xmtp/sync/clear';
 import type { SyncMessage } from '../src/xmtp/sync/kind';
 import { collectSyncReplay, parseSyncState } from '../src/xmtp/sync/registry';
 import { SYNC_CODECS } from '../src/xmtp/jsonCodecs';
@@ -31,6 +31,16 @@ describe('hidden channel sync', () => {
     const replay = collectSyncReplay([message(state(true, 100), 2), message(state(false, 50), 4), oldClient], 0, trust);
     expect(replay.clear.hidden).toEqual(state(true, 100));
     expect(replay.clear.cleared).toEqual({ peer: 10 });
+  });
+
+  test('hidden state wins over transport consent, shown means allowed, no state keeps the transport consent', () => {
+    expect(hiddenConsent({ hidden: true }, 'allowed')).toBe('denied');
+    expect(hiddenConsent({ hidden: false }, 'denied')).toBe('allowed');
+    expect(hiddenConsent(undefined, 'unknown')).toBe('unknown');
+    expect(hiddenConsent(undefined, null)).toBeNull();
+    expect(isHiddenChannel(state(true, 1), 'group')).toBe(true);
+    expect(isHiddenChannel(state(false, 1), 'group')).toBe(false);
+    expect(isHiddenChannel(state(true, 1), null)).toBe(false);
   });
 
   test('legacy backfill cannot overwrite an explicit approval', () => {

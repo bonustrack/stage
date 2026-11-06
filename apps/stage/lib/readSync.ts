@@ -19,8 +19,9 @@ import {
 } from './channelsCache';
 import { applyRemotePinState, loadPinnedOrder, onPinChanged, type PinChange } from './pins';
 import { onClearedChatsChanged } from './clearedChats';
-import { onHiddenChannelsChanged } from './hiddenChannels';
-import { applyRemoteChatVisibility, backfillHiddenChannels, loadChatVisibility } from './chatVisibility';
+import { onHiddenChannelsChanged } from './sync/hiddenChannels';
+import { backfillHiddenChannels } from './channelVisibility';
+import { applyRemoteChatVisibility, loadChatVisibility } from './chatVisibility';
 import { adoptBoardCategoryOrder } from './channelGroups';
 import { createDeveloperModePublisher, replayDeveloperMode } from './developerModeSync';
 import { latestWinsSettings } from './readSyncSettings';

@@ -26,7 +26,7 @@ import { rowCreatedTs, type ConvRow } from './convRow.model';
 import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../dmRoutes';
 import { reported, recover } from '../errorPolicy';
-import { channelConsent } from '../hiddenChannels';
+import { channelConsent } from '../channelVisibility';
 export interface ConversationView extends ConvRow, GroupTags {
   convId: string;
   title: string;
@@ -220,6 +220,6 @@ export async function summarizeConversation(
     status,
     priority,
     assigned,
-    consent: dm ? await consent : channelConsent(conv.id, await consent),
+    consent: channelConsent(conv.id, !dm, await consent),
   };
 }

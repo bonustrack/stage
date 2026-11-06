@@ -3,9 +3,10 @@ import { appStorage } from '../platform/storage';
 import { sdk } from './xmtp.sdk';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { ignored } from './errorPolicy';
-import { loadHiddenChannels } from './hiddenChannels';
+import { loadHiddenChannels } from './sync/hiddenChannels';
+import { isHiddenChannel } from '@stage-labs/client/xmtp/sync/clear';
 import { accountClient, type AccountClient } from './xmtp.account';
-import { channelAccess } from './channelVisibility';
+import { channelAccess } from './channelAccess';
 import { sleep } from '@stage-labs/client/timing';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof sdk.findConv>>>;
@@ -20,7 +21,7 @@ async function repairConversation(context: AccountClient, conv: Conv, devices: s
   if ((await channelAccess(context, conv)) !== 'member') return;
   const hidden = await loadHiddenChannels(context.account.id);
   context.assertCurrent();
-  if (hidden[conv.id]?.hidden) return;
+  if (isHiddenChannel(hidden, conv.id)) return;
   await conv.sync();
   await sleep(SPACING_MS);
 }

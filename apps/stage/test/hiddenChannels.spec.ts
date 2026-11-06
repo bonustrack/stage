@@ -120,13 +120,14 @@ mock.module('../lib/xmtp.sdk', () => ({
 const { bumpAccountEpoch } = await import('../lib/accountEpoch');
 const { rememberActiveAccountId } = await import('../lib/accountSelection');
 rememberActiveAccountId(activeId);
-const { isChannelHidden, loadHiddenChannels, applyRemoteHiddenChannels, onHiddenChannelsChanged } = await import('../lib/hiddenChannels');
-const { applyRemoteChatVisibility, backfillHiddenChannels, loadChatVisibility } = await import('../lib/chatVisibility');
+const { isChannelHidden, loadHiddenChannels, applyRemoteHiddenChannels, onHiddenChannelsChanged } =
+  await import('../lib/sync/hiddenChannels');
+const { applyRemoteChatVisibility, loadChatVisibility } = await import('../lib/chatVisibility');
 const { leaveGroupConv } = await import('../lib/xmtp.groups');
 const { listVisibleConversations, acceptRequestConv, getConvConsentState, groupAccessOf } = await import('../lib/xmtp.conv');
-const { syncVisibleChannels, reconcileHiddenConsent, cachedChannelAccess, subscribeChannelAccess } =
-  await import('../lib/channelVisibility');
-const { visibleCachedRows } = await import('../lib/hiddenChannelsStorage');
+const { syncVisibleChannels, reconcileHiddenConsent, backfillHiddenChannels } = await import('../lib/channelVisibility');
+const { cachedChannelAccess, subscribeChannelAccess } = await import('../lib/channelAccess');
+const { visibleCachedRows } = await import('../lib/sync/hiddenChannels');
 const { accountClient } = await import('../lib/xmtp.account');
 const { replaySyncGroups } = await import('../lib/readSyncReplay');
 const { syncTarget, sendSyncState } = await import('../lib/syncTarget');

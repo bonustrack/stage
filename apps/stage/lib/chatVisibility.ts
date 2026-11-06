@@ -1,9 +1,6 @@
-import type { HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import type { SyncContents, SyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { applyRemoteClearedChats, loadClearedChats } from './clearedChats';
-import { applyRemoteHiddenChannels, loadHiddenChannels } from './hiddenChannels';
-import { sdk } from './xmtp.sdk';
+import { applyRemoteHiddenChannels, loadHiddenChannels } from './sync/hiddenChannels';
 import { accountClient } from './xmtp.account';
 import { getActiveAccount } from './accounts';
 import { reconcileHiddenConsent } from './channelVisibility';
@@ -17,18 +14,4 @@ export async function applyRemoteChatVisibility(accountId: string, replay: SyncR
   if (replay.clear.cleared !== null) await applyRemoteClearedChats(accountId, replay.clear.cleared);
   if (replay.clear.hidden !== null) await applyRemoteHiddenChannels(accountId, replay.clear.hidden);
   if ((await getActiveAccount())?.id === accountId) await reconcileHiddenConsent(await accountClient(accountId));
-}
-
-export async function backfillHiddenChannels(accountId: string): Promise<void> {
-  const context = await accountClient(accountId);
-  await context.client.preferences.sync();
-  context.assertCurrent();
-  const hidden: HiddenChannels = {};
-  for (const conv of await sdk.listConvs(context.client, ['denied'])) {
-    if (!sdk.isGroup(conv) || isSyncGroupName(await sdk.groupName(conv))) continue;
-    hidden[conv.id] = { hidden: true, at: 0 };
-  }
-  context.assertCurrent();
-  await applyRemoteHiddenChannels(accountId, hidden);
-  await reconcileHiddenConsent(context);
 }

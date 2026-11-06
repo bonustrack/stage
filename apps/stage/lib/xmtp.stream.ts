@@ -1,7 +1,7 @@
 import { isControlBody, type StreamMsg, type StreamStatus } from './xmtp.types';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { sdk } from './xmtp.sdk';
-import { activeFeedLines, feedCache, isHiddenConv, registerGlobalStreamTeardown } from './xmtp.state.core';
+import { activeFeedLines, feedCache, registerGlobalStreamTeardown } from './xmtp.state.core';
 import type { MessageDeletion } from './xmtp.sdk.core';
 import { mergeIntoFeed, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
@@ -10,8 +10,8 @@ import { afterFirstPages } from './feedLines';
 import { reconcileOnArrival, feedLatestNs } from './messaging/feedQuery';
 import { report, reported } from './errorPolicy';
 import { accountClient, type AccountClient } from './xmtp.account';
-import { reconcileHiddenConsent } from './channelVisibility';
-import { isChannelHidden, subscribeHiddenChannels } from './hiddenChannels';
+import { isHiddenFromFeeds, reconcileHiddenConsent } from './channelVisibility';
+import { subscribeHiddenChannels } from './sync/hiddenChannels';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { subscribeAccountSelection } from './accountSelection';
 import { makeGlobalStream, openAccountStreams } from './xmtp.stream.core';
@@ -49,7 +49,7 @@ export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: Subscr
 function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable<StreamMessage>): void {
   if (streamSubscribers.size === 0) return;
   const normalized = sdk.rowOf(msg);
-  const hidden = isHiddenConv(convId) || isChannelHidden(convId);
+  const hidden = isHiddenFromFeeds(convId);
   for (const [cb, includeHidden] of streamSubscribers) {
     if (hidden && !includeHidden) continue;
     try {
@@ -87,7 +87,7 @@ function handleStreamMessage(msg: StreamMessage): void {
     if (activeFeedLines.size > 0) void resyncActiveFeeds();
     return;
   }
-  if (!isHiddenConv(convId) && !isChannelHidden(convId)) routeMessageToFeed(convId, msg);
+  if (!isHiddenFromFeeds(convId)) routeMessageToFeed(convId, msg);
 }
 
 async function applyDeletion(context: AccountClient, line: string, messageId: string): Promise<void> {

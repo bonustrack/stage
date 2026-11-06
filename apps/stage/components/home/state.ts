@@ -10,7 +10,7 @@ import { useStoreValue } from '../../lib/storeCore';
 import { CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { Row } from './model';
-import { isChannelHidden } from '../../lib/hiddenChannels';
+import { isChannelHidden } from '../../lib/sync/hiddenChannels';
 
 export interface RowMenu {
   convId: string;
