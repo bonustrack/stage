@@ -1,4 +1,5 @@
-import { NO_ROUTES, dmRowId, isImportReplay, routeOf, withRoute, type ConvRoutes } from '@stage-labs/client/xmtp/dmRoutes';
+import { NO_ROUTES, dmRowId, routeOf, withRoute, type ConvRoutes } from '@stage-labs/client/xmtp/dmRoutes';
+import { isImportReplay } from '@stage-labs/client/xmtp/historyImport';
 import { createValueStore } from './persistedStore';
 import { reported } from './errorPolicy';
 import { storedRecordOf } from './storeCore';

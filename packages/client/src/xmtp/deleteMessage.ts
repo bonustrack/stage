@@ -24,7 +24,7 @@ export const DELETED_MESSAGE_TYPE_ID = 'deletedMessage';
 
 export const DELETED_MESSAGE_TEXT = 'Message deleted';
 
-export const DELETED_BY_ADMIN_TEXT = 'Message deleted by an admin';
+const DELETED_BY_ADMIN_TEXT = 'Message deleted by an admin';
 
 export type DeletedBy = 'sender' | 'admin';
 

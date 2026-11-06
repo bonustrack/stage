@@ -63,6 +63,7 @@
     "./xmtp/sendFetch": "./src/xmtp/sendFetch.ts",
     "./xmtp/clientErrors": "./src/xmtp/clientErrors.ts",
     "./xmtp/dmRoutes": "./src/xmtp/dmRoutes.ts",
+    "./xmtp/historyImport": "./src/xmtp/historyImport.ts",
     "./xmtp/channelsFilter": "./src/xmtp/channelsFilter.ts",
     "./xmtp/summarizeRow": "./src/xmtp/summarizeRow.ts",
     "./xmtp/deleteMessage": "./src/xmtp/deleteMessage.ts",

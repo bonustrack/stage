@@ -90,7 +90,3 @@ export async function fetchMail(session: MailSession, id: string): Promise<Uint8
 export async function deleteMail(session: MailSession, id: string): Promise<void> {
   await sessionCall(session, 'DELETE', 'message', id);
 }
-
-export async function closeMailbox(session: MailSession): Promise<void> {
-  await sessionCall(session, 'DELETE', 'box');
-}

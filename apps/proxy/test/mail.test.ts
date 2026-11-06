@@ -1,15 +1,8 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import { verifyMessage, type Hex } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
-import {
-  closeMailbox,
-  deleteMail,
-  fetchMail,
-  listMail,
-  openMailSession,
-  registerMailKey,
-  type MailSession,
-} from '@stage-labs/client/mail/api';
+import { mailPath } from '@stage-labs/client/endpoints';
+import { deleteMail, fetchMail, listMail, openMailSession, registerMailKey, type MailSession } from '@stage-labs/client/mail/api';
 import {
   MAIL_MAX_BYTES,
   deriveMailKey,
@@ -24,6 +17,15 @@ import { REJECT_INACTIVE, REJECT_TOO_LARGE, REJECT_UNKNOWN, receiveMail, type In
 import { memoryStorage, type MemoryStorage } from './memoryArchive.ts';
 
 const BASE = 'https://proxy.stage.box';
+
+async function closeMailbox(session: MailSession): Promise<void> {
+  const query = `?label=${encodeURIComponent(session.label)}`;
+  const res = await fetch(`${session.proxyBase}${mailPath('box')}${query}`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${session.token}` },
+  });
+  expect(res.ok).toBe(true);
+}
 const ALICE = privateKeyToAccount('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d');
 const BOB = privateKeyToAccount('0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a');
 const MALLORY = privateKeyToAccount('0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6');

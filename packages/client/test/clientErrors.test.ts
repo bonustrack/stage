@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'bun:test';
 import {
-  CHANNEL_WAITING_NOTICE,
   INACTIVE_SEND_MESSAGE,
   classifyKeyPackageStatuses,
   isGroupInactive,
@@ -28,10 +27,6 @@ describe('inactive conversations', () => {
     const other = new Error('boom');
     expect(readableSendError(other)).toBe(other);
     expect(readableSendError('plain').message).toBe('plain');
-  });
-
-  test('the waiting notice says how the device gets added', () => {
-    expect(CHANNEL_WAITING_NOTICE).toContain('sends a message');
   });
 });
 

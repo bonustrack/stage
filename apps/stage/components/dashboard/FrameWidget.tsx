@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
+import { OUTSIDE_CHANNEL_NOTICE } from '../channel/accessNotices';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DashboardSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';

@@ -25,7 +25,7 @@ export const REGISTRY_ABI = [
   },
 ] as const;
 
-export const L2_RESOLVER_ABI = [
+const L2_RESOLVER_ABI = [
   {
     name: 'name',
     type: 'function',

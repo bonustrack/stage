@@ -37,7 +37,7 @@ import { useAddChatFrameToDashboard, type AddChatFrame } from '../../lib/frames/
 import { frameOf } from '../../lib/frames/frame.model';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
+import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '../channel/accessNotices';
 import { homeRoute } from '../tabs/boardHome';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import { type TextField } from '@stage-labs/kit/react-native/text-field';

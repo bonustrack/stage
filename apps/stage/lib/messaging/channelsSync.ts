@@ -26,7 +26,8 @@ import { getPeerName } from '../peerProfiles';
 import { hydratePeerProfiles } from '../peerProfileCache';
 import { perfLog, perfTime } from '../perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
-import { dmIdsByPeer, uniqueByConvId } from '@stage-labs/client/xmtp/dmRoutes';
+import { dmIdsByPeer } from '@stage-labs/client/xmtp/dmRoutes';
+import { uniqueBy } from '@stage-labs/client/collections';
 import { hasHomeRows, homeRows, updateHomeRows, type HomeRow as Row } from './homeRows';
 import { mergePaintedRows, visibleRowsDiff } from './channelsSync.model';
 import { schedulePushTopicRefresh } from '../pushRegister';
@@ -210,7 +211,13 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
       await Promise.all(convs.map((c) => summarize(c, selfInboxId, true).catch(() => previous.get(c.id) ?? null)))
     ).filter((r): r is Row => r !== null);
     if (run.cancelled) return false;
-    updateHomeRows((prev) => mergePaintedRows(beforeIds, prev, uniqueByConvId(summarized)));
+    updateHomeRows((prev) =>
+      mergePaintedRows(
+        beforeIds,
+        prev,
+        uniqueBy(summarized, (row) => row.convId),
+      ),
+    );
     lastRefreshAt = Date.now();
     clearTimeout(run.initTimer);
     return true;
@@ -253,7 +260,7 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
         )
       ).filter((r): r is Row => r !== null);
       if (run.cancelled) return;
-      updateHomeRows((prev) => uniqueByConvId([...fresh, ...(prev ?? []).filter((r) => !gone.includes(r.convId))]));
+      updateHomeRows((prev) => uniqueBy([...fresh, ...(prev ?? []).filter((r) => !gone.includes(r.convId))], (row) => row.convId));
     } catch (err) {
       report('home.reconcile', err);
     }
