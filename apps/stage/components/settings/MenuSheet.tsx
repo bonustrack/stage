@@ -3,14 +3,12 @@ import { useRouter } from 'expo-router';
 import { errorMessage } from '@stage-labs/client/errors';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { DROPDOWN_MENU, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
+import { DROPDOWN_MENU, DropdownMenuItem, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
 import { AnchoredMenu } from '../AnchoredMenu';
 import { MenuRow } from '../MenuRows';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { useHover } from '../hover';
-import { usePalette, withAlpha } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { switchToAccount } from '../../lib/xmtp.client';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -23,6 +21,9 @@ import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-
 import { Column } from '../layout';
 import { capabilities } from '../../lib/capabilities';
 
+const ACCOUNT_ROW_GAP = 10;
+const FIXED_ROW_PADDING = { paddingVertical: DROPDOWN_MENU.itemPadY };
+
 function AccountSwitchRow({
   account,
   active,
@@ -33,39 +34,29 @@ function AccountSwitchRow({
   onSwitch: (id: string) => void;
 }): React.ReactElement {
   const { link: head, text, border } = usePalette();
-  const { hovered, hoverProps } = useHover();
   const menuText = useDropdownMenuText();
+  const name = getPeerName(account.address) ?? account.label ?? shortAddress(account.address);
+  const address = shortAddress(account.address);
   return (
-    <Pressable
+    <DropdownMenuItem
+      label={`${name} ${address}`}
+      gap={ACCOUNT_ROW_GAP}
+      style={FIXED_ROW_PADDING}
+      leading={<Avatar address={account.address} size={26} style={{ backgroundColor: border }} />}
+      trailing={active ? <Glyph icon={IconCheckmark1} size={16} color={head} /> : null}
       onPress={() => {
         onSwitch(account.id);
       }}
-      accessibilityRole="menuitem"
-      {...hoverProps}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-        paddingHorizontal: DROPDOWN_MENU.itemPadX,
-        paddingVertical: DROPDOWN_MENU.itemPadY,
-        backgroundColor: pressed
-          ? withAlpha(head, DROPDOWN_MENU.pressedAlpha)
-          : hovered
-            ? withAlpha(head, DROPDOWN_MENU.hoverAlpha)
-            : 'transparent',
-      })}
     >
-      <Avatar address={account.address} size={26} style={{ backgroundColor: border }} />
-      <Column minWidth={0} weight={1}>
+      <Column minWidth={0}>
         <Text {...menuText} fontWeight="semibold" numberOfLines={1} color={head}>
-          {getPeerName(account.address) ?? account.label ?? shortAddress(account.address)}
+          {name}
         </Text>
         <Text size="3xs" numberOfLines={1} color={text} style={{ marginTop: 1 }}>
-          {shortAddress(account.address)}
+          {address}
         </Text>
       </Column>
-      {active ? <Glyph icon={IconCheckmark1} size={16} color={head} /> : null}
-    </Pressable>
+    </DropdownMenuItem>
   );
 }
 

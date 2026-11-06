@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
+import { DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
 import { useSelfAddress } from '../profile/ProfileScreen.parts';
@@ -28,7 +27,7 @@ import { errorLine } from '@stage-labs/client/errors';
 import { capabilities } from '../../lib/capabilities';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { profileLinkOf } from '../../lib/links';
-import { usePalette, withAlpha } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { IconCrown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrown';
 import { IconShield } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShield';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
@@ -37,6 +36,8 @@ import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';
 
 const ROW_HEIGHT = 44;
 const ROW_INSET = 8;
+const ROW_GAP = 12;
+const ROW_BOX = { height: ROW_HEIGHT, paddingHorizontal: PAGE_GUTTER - ROW_INSET, paddingVertical: 0, borderRadius: 8 };
 const ADMIN_ICONS = { superAdmin: IconCrown, admin: IconShield } as const;
 
 function AdminMark({ mark, color }: { mark: MemberAdminMark; color: string }): React.ReactElement {
@@ -50,31 +51,25 @@ function AdminMark({ mark, color }: { mark: MemberAdminMark; color: string }): R
 }
 
 function MemberListRow({ entry, onPress }: { entry: MemberListEntry; onPress: () => void }): React.ReactElement {
-  const { link, border, sub } = usePalette();
+  const { border, sub } = usePalette();
   return (
     <Column padding={{ x: ROW_INSET }}>
-      <Pressable
-        onPress={onPress}
+      <DropdownMenuItem
+        label={entry.admin === undefined ? entry.name : `${entry.name}, ${entry.admin.label}`}
         accessibilityRole="button"
-        accessibilityLabel={entry.admin === undefined ? entry.name : `${entry.name}, ${entry.admin.label}`}
-        style={({ pressed }) => ({
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: 12,
-          height: ROW_HEIGHT,
-          paddingHorizontal: PAGE_GUTTER - ROW_INSET,
-          borderRadius: 8,
-          backgroundColor: pressed ? withAlpha(link, DROPDOWN_MENU.pressedAlpha) : 'transparent',
-        })}
+        gap={ROW_GAP}
+        hoverBackground="transparent"
+        style={ROW_BOX}
+        leading={<Avatar address={entry.address} size="md" style={{ backgroundColor: border }} />}
+        onPress={onPress}
       >
-        <Avatar address={entry.address} size="md" style={{ backgroundColor: border }} />
-        <Row align="center" gap={6} weight={1}>
+        <Row align="center" gap={6}>
           <Text size="sm" fontWeight="medium" numberOfLines={1} style={{ flexShrink: 1 }}>
             {entry.name}
           </Text>
           {entry.admin === undefined ? null : <AdminMark mark={entry.admin} color={sub} />}
         </Row>
-      </Pressable>
+      </DropdownMenuItem>
     </Column>
   );
 }

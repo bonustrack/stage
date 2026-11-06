@@ -3,13 +3,13 @@ import { Platform, useWindowDimensions, type GestureResponderEvent, type LayoutC
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { DROPDOWN_MENU, DropdownMenuSeparator, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
+import { DROPDOWN_MENU, DropdownMenuItem, DropdownMenuSeparator, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { CountTag } from '../CountTag';
 import { Eyebrow } from '../Eyebrow';
 import { FormField } from '../FormField';
 import { AnchoredMenu, anchorRect, useAnchoredMenus } from '../AnchoredMenu';
 import { useHover } from '../hover';
-import { usePalette, withAlpha } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { isCoarsePointer } from '../layout/webLayout';
 import { hasListEdits, listEdits, pickerAnchorOf, pickerWidth, toggleKey, type ListEdits, type PickerAnchor } from './SidebarSection.model';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
@@ -21,6 +21,7 @@ import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const PICKER_LIST_MAX_HEIGHT = 320;
 const PICKER_ROW_MIN_HEIGHT = 40;
+const FIXED_ROW_PADDING = { paddingVertical: DROPDOWN_MENU.itemPadY };
 const TITLE_SIZE = '2xs';
 const TITLE_ICON_SIZE = 15;
 
@@ -212,10 +213,10 @@ export function PickerRow({
   autoFocus?: boolean;
 }): React.ReactElement {
   const { link } = usePalette();
-  const { hovered, hoverProps } = useHover();
   const menuText = useDropdownMenuText();
   return (
-    <Pressable
+    <DropdownMenuItem
+      label={count === undefined ? label : `${label} (${count})`}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole={role}
@@ -223,27 +224,13 @@ export function PickerRow({
       accessibilityState={{ checked: selected, disabled }}
       aria-checked={selected}
       aria-disabled={disabled}
-      accessibilityLabel={count === undefined ? label : `${label} (${count})`}
       {...checkboxKeys(onPress, disabled)}
-      {...hoverProps}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: DROPDOWN_MENU.itemGap,
-        minHeight: PICKER_ROW_MIN_HEIGHT,
-        paddingHorizontal: DROPDOWN_MENU.itemPadX,
-        paddingVertical: DROPDOWN_MENU.itemPadY,
-        opacity: disabled ? 0.5 : 1,
-        backgroundColor:
-          pressed && !disabled
-            ? withAlpha(link, DROPDOWN_MENU.pressedAlpha)
-            : hovered && !disabled
-              ? withAlpha(link, DROPDOWN_MENU.hoverAlpha)
-              : 'transparent',
-      })}
+      minHeight={PICKER_ROW_MIN_HEIGHT}
+      style={FIXED_ROW_PADDING}
+      leading={leading}
+      trailing={selected ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={link} /> : <Column width={DROPDOWN_MENU.icon} />}
     >
-      {leading}
-      <Column weight={1} style={{ minWidth: 0 }}>
+      <Column style={{ minWidth: 0 }}>
         {children ?? (
           <Row align="center" gap={DROPDOWN_MENU.itemGap}>
             <Column style={{ flexShrink: 1, minWidth: 0 }}>
@@ -255,8 +242,7 @@ export function PickerRow({
           </Row>
         )}
       </Column>
-      {selected ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={link} /> : <Column width={DROPDOWN_MENU.icon} />}
-    </Pressable>
+    </DropdownMenuItem>
   );
 }
 
