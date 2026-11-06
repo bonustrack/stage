@@ -10,7 +10,7 @@ import { useAccountEpoch } from '../../lib/accountEpoch';
 import { prefetchFeed } from '../../lib/feed/load';
 import { channelTimestamp } from '../../lib/format';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import type { ConvTitle } from '../conversation/convTitle';
+import type { ConvTitle } from '../TitleText.model';
 import { ChannelMenu } from './ChannelMenu';
 import { ChannelRowFields } from './ChannelRowFields';
 import type { ChannelRow } from './ChannelRow';
