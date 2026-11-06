@@ -1,37 +1,19 @@
-import { spawnSync } from 'node:child_process';
 import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { prepareExtensionAssetPaths, prepareExtensionHtml } from '../apps/stage/extension/package.mjs';
+import { exportWeb } from '../scripts/exportWeb.mjs';
+import { prepareExtensionAssetPaths, prepareExtensionHtml } from './package.mjs';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const stage = path.join(root, 'apps/stage');
-const shell = path.join(stage, 'extension');
+const shell = path.dirname(fileURLToPath(import.meta.url));
 const output = path.resolve(process.argv[2] ?? path.join(shell, 'dist'));
 const require = createRequire(import.meta.url);
-const version = require('../apps/stage/app.config.js').expo.version;
+const version = require('../app.config.js').expo.version;
 
 await mkdir(output, { recursive: true });
 if ((await readdir(output)).length) throw new Error('Choose an empty output directory.');
 const temporary = await mkdtemp(path.join(tmpdir(), 'stage-extension-'));
-const env = {
-  ...process.env,
-  APP_VARIANT: 'prod',
-  STAGE_EXTENSION: '1',
-  BROWSER: 'none',
-  EXPO_NO_TELEMETRY: '1',
-  EXPO_UNSTABLE_METRO_OPTIMIZE_GRAPH: '1',
-  EXPO_UNSTABLE_TREE_SHAKING: '1',
-};
-
-function run(command, args) {
-  const result = spawnSync(command, args, { cwd: stage, env, stdio: 'inherit', shell: process.platform === 'win32' });
-  if (result.error) throw result.error;
-  if (result.status !== 0) throw new Error(`${command} failed (${result.status}).`);
-}
-
 async function prepareExtensionAssets(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const file = path.join(directory, entry.name);
@@ -56,8 +38,7 @@ async function directoryBytes(directory) {
 }
 
 try {
-  run('node', ['scripts/copy-xmtp-wasm.js']);
-  run('bunx', ['--no-install', 'expo', 'export', '--platform', 'web', '--output-dir', temporary]);
+  exportWeb(temporary, { STAGE_EXTENSION: '1', BROWSER: 'none' });
   const prepared = prepareExtensionHtml(await readFile(path.join(temporary, 'index.html'), 'utf8'));
   const manifest = JSON.parse(await readFile(path.join(shell, 'manifest.json'), 'utf8'));
   await writeFile(

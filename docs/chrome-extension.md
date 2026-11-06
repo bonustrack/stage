@@ -8,7 +8,7 @@ Use Bun 1.4.4 and Node 22 or later, from the repository root:
 
 ```sh
 bun install --frozen-lockfile
-BROWSER=none bun scripts/build-extension.mjs /absolute/path/to/stage-extension
+BROWSER=none bun apps/stage/extension/build.mjs /absolute/path/to/stage-extension
 ```
 
 Choose an empty output directory. Use the same public `EXPO_PUBLIC_*` build configuration as the web app. In particular, `EXPO_PUBLIC_ZERODEV_PROJECT_ID` (or `EXPO_PUBLIC_ZERODEV_RPC`) is required for smart-account setup. It is a client-side value, not a private wallet key. Never put a recovery phrase, private key, or server-only secret in build variables.

@@ -146,7 +146,7 @@ restored if a later attachment fails.
 - **Desktop:** the same version bump runs `release-desktop.yml`, which builds the
   macOS / Windows / Linux installers and publishes them to the GitHub Release
   that the landing page links to. See `docs/desktop-release.md`.
-- **Chrome extension:** `bun scripts/build-extension.mjs` builds an unpacked beta. PR builds attach it as an Actions artifact, without publishing to the Chrome Web Store. See `docs/chrome-extension.md`.
+- **Chrome extension:** `bun apps/stage/extension/build.mjs` builds an unpacked beta. PR builds attach it as an Actions artifact, without publishing to the Chrome Web Store. See `docs/chrome-extension.md`.
 - **Proxy / dispatch / push:** the proxy Worker deploys through Cloudflare Workers Builds on push to `main` (`bun check` and tests run first); `deploy-nodes.yml` deploys the dispatch and nodes-outbound Workers from GitHub Actions; `deploy-push-server.yml` deploys the push server.
 
 ## CI / quality gates

@@ -23,6 +23,7 @@ export default defineConfig({
           'extension/background.js',
           'extension/asyncRequire.js',
           'extension/package.mjs',
+          'extension/build.mjs',
         ],
         project: ['app/**', 'components/**', 'lib/**', 'modules/**', 'platform/**'],
         ignoreDependencies: ['buffer', 'events', 'babel-preset-expo', 'expo-system-ui', '@types/markdown-it'],
