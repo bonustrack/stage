@@ -6,7 +6,7 @@ import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '@stage-labs/kit/react-native/context-menu';
 import { documentScroll, isCoarsePointer, useWebTabRail } from './layout/webLayout';
 import { MENU_GAP } from './menuStyle';
-import { Modal } from '@stage-labs/kit/react-native/modal';
+import { Overlay } from '@stage-labs/kit/react-native/modal';
 
 const DESKTOP_MIN_WIDTH = 900;
 export const MENU_WIDTH = 260;
@@ -70,11 +70,11 @@ export function AnchoredOverlay({
   children: ReactNode;
 }): React.ReactElement {
   return (
-    <Modal open={open} onClose={onClose} animationType="none" backdropColor="transparent" fullBleedPanel>
+    <Overlay open={open} onClose={onClose} animationType="none" backdropColor="transparent">
       <Pressable onPress={onClose} style={StyleSheet.absoluteFill} {...dismissContextMenuProps(onClose)}>
         {children}
       </Pressable>
-    </Modal>
+    </Overlay>
   );
 }
 

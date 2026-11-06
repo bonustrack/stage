@@ -12,7 +12,7 @@ import { isCoarsePointer, lockDocumentScroll } from '../layout/webLayout';
 import { ZoomableImage } from './ZoomableImage';
 import { IconArrowInbox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowInbox';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
-import { Modal } from '@stage-labs/kit/react-native/modal';
+import { Overlay } from '@stage-labs/kit/react-native/modal';
 import { Column, PAGE_GUTTER, Row } from '../layout';
 import { capabilities } from '../../lib/capabilities';
 
@@ -52,7 +52,7 @@ export function ImageViewer({
   };
 
   return (
-    <Modal open={visible} onClose={onClose} animationType="fade" backdrop={false} fullBleedPanel gestureRoot>
+    <Overlay open={visible} onClose={onClose} animationType="fade" backdrop={false} gestureRoot>
       <Column background={'rgba(0,0,0,0.97)'} weight={1}>
         {(uri || onStep) && isCoarsePointer() ? (
           <ZoomableImage key={uri} uri={uri} frame={FRAME} onTap={onClose} onStep={onStep} />
@@ -77,6 +77,6 @@ export function ImageViewer({
         </Row>
         <TooltipHost />
       </Column>
-    </Modal>
+    </Overlay>
   );
 }

@@ -235,19 +235,29 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
   );
 }
 
-function FullBleedPanel({ props, open, close }: PanelProps): React.ReactElement {
+function ModalScope({ close, children }: { close: () => void; children: ReactNode }): React.ReactElement {
   return (
-    <Dialog
-      open={open}
-      onClose={close}
-      animationType={props.animationType}
-      backdrop={props.backdrop}
-      backdropColor={props.backdropColor}
-      dismissable={props.dismissable}
-      gestureRoot={props.gestureRoot}
-      fullBleedPanel
-    >
-      {props.children}
+    <TriggerContext.Provider value={null}>
+      <ModalCloseContext.Provider value={close}>{children}</ModalCloseContext.Provider>
+    </TriggerContext.Provider>
+  );
+}
+
+export interface OverlayProps {
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  animationType?: 'slide' | 'fade' | 'none';
+  backdrop?: boolean;
+  backdropColor?: Color;
+  dismissable?: boolean;
+  gestureRoot?: boolean;
+}
+
+export function Overlay({ open, onClose, children, ...dialog }: OverlayProps): React.ReactElement {
+  return (
+    <Dialog open={open} onClose={onClose} {...dialog} fullBleedPanel>
+      <ModalScope close={onClose}>{children}</ModalScope>
     </Dialog>
   );
 }
@@ -260,23 +270,25 @@ export function Modal(props: ModalProps): React.ReactElement {
     if (controlled === undefined) setInternal(false);
     onClose?.();
   };
-  const content = {
-    ...props,
-    children: (
-      <TriggerContext.Provider value={null}>
-        <ModalCloseContext.Provider value={close}>{props.children}</ModalCloseContext.Provider>
-      </TriggerContext.Provider>
-    ),
-  };
   const show = (): void => {
     if (controlled === undefined) setInternal(true);
     onOpen?.();
   };
   const panel =
     fullBleedPanel === true ? (
-      <FullBleedPanel props={content} open={open} close={close} />
+      <Overlay
+        open={open}
+        onClose={close}
+        animationType={props.animationType}
+        backdrop={props.backdrop}
+        backdropColor={props.backdropColor}
+        dismissable={props.dismissable}
+        gestureRoot={props.gestureRoot}
+      >
+        {props.children}
+      </Overlay>
     ) : (
-      <StagePanel props={content} open={open} close={close} />
+      <StagePanel props={{ ...props, children: <ModalScope close={close}>{props.children}</ModalScope> }} open={open} close={close} />
     );
   if (trigger === undefined) return panel;
   return (

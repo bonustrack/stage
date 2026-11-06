@@ -22,7 +22,7 @@ import { useHover } from '../hover';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { TitleText } from '../TitleText';
 import type { ConvTitle } from './convTitle';
-import { Modal } from '@stage-labs/kit/react-native/modal';
+import { MODAL, Overlay } from '@stage-labs/kit/react-native/modal';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 
 interface HeaderAvatarProps {
@@ -254,7 +254,7 @@ export function BubbleActionMenu({
   }
 
   return (
-    <Modal open={!!target} onClose={onClose} animationType="none" backdropColor="rgba(0,0,0,0.45)" fullBleedPanel>
+    <Overlay open={!!target} onClose={onClose} animationType="none" backdropColor={MODAL.backdrop}>
       <Column
         align="start"
         pointerEvents="box-none"
@@ -275,6 +275,6 @@ export function BubbleActionMenu({
           </>
         )}
       </Column>
-    </Modal>
+    </Overlay>
   );
 }
