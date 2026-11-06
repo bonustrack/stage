@@ -7,7 +7,7 @@ import type { ChannelFields } from '../../lib/channelFields.model';
 import { getPeerName, isPeerResolved, peerLabel, usePeerProfiles } from '../../lib/peerProfiles';
 import { storageChatOf } from '../../lib/storageIndex';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { prefetchFeed } from '../../lib/messaging/feedQuery';
+import { prefetchFeed } from '../../lib/feed/load';
 import { channelTimestamp } from '../../lib/format';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { ConvTitle } from '../conversation/convTitle';

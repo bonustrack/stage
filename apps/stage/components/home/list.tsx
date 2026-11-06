@@ -1,5 +1,4 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import type { HomeView } from '../../lib/homeView';
 import { MessagingSetupBanner } from './MessagingSetupBanner';
 import { LabelFilterBar } from './labelbar';
 import { parseSearchFilter } from './search/searchFilter.model';
