@@ -30,7 +30,8 @@ function scale(values: number[], domain: ChartDomain = DOMAIN): ReturnType<typeo
 
 describe('Chart yAxis.domain', () => {
   test('keeps only the official finite domain tuple', () => {
-    for (const domain of [DOMAIN, [0, 'auto'], ['auto', 'dataMax'], [-100, 100], [1, 1], ['dataMin', 0]]) {
+    const kept: ChartDomain[] = [DOMAIN, [0, 'auto'], ['auto', 'dataMax'], [-100, 100], [1, 1], ['dataMin', 0]];
+    for (const domain of kept) {
       expect(chartDomain(domain)).toEqual(domain);
     }
     for (const domain of [

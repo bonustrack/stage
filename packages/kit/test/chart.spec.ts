@@ -267,7 +267,8 @@ describe('chartGeometry', () => {
       { d: 'f', v: 6 },
     ];
     const g = chartGeometry({ data, xAxis: 'd', width: 320, height: 240, series: [{ type: 'line', dataKey: 'v' }] });
-    expect(g.shapes[0]?.dots.map((p) => p[0])).toEqual([g.categories[0]?.x, g.categories[5]?.x]);
+    const lonely = g.categories.filter((_, index) => index === 0 || index === 5).map((category) => category.x);
+    expect(g.shapes[0]?.dots.map((p) => p[0])).toEqual(lonely);
   });
 
   test('makes room for the y axis and the legend', () => {

@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test';
-import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { KitThemeProvider, useKitColors, type KitColors, type KitPaletteMode } from '../src/react-native/theme-context';
 import { colors, kitPalette, schemePalette, type KitPalette } from '../src/tokens';
@@ -12,7 +11,11 @@ function colorsFor(dark: boolean | undefined, mode: KitPaletteMode): KitColors {
     box.value = useKitColors(dark, mode);
     return null;
   }
-  renderToStaticMarkup(createElement(KitThemeProvider, { value: CUSTOM, scheme: 'dark' }, createElement(Probe)));
+  renderToStaticMarkup(
+    <KitThemeProvider value={CUSTOM} scheme="dark">
+      <Probe />
+    </KitThemeProvider>,
+  );
   if (box.value === undefined) throw new Error('the hook returned nothing');
   return box.value;
 }
