@@ -1,5 +1,7 @@
-import { parseHex } from './theme-derive';
+import { withAlpha } from './color-math';
 import { FONT_SIZE, readableForeground, resolveColor, type Color, type Scheme } from './tokens';
+
+export { withAlpha };
 
 export type BadgeColor = 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'discovery';
 
@@ -45,11 +47,6 @@ export interface ResolvedBadgeStyle {
   foreground: string;
   fontSize: number;
   borderColor?: string;
-}
-
-export function withAlpha(hex: string, alpha: number): string {
-  const rgb = parseHex(hex);
-  return rgb === null ? hex : `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
 }
 
 function tonedStyle(tone: string, variant: BadgeVariant, fontSize: number): ResolvedBadgeStyle {

@@ -1,3 +1,5 @@
+import { luminance, parseHex } from './color-math';
+
 export const colors = {
   'bg-dark': '#0e0f10',
   'bg-light': '#ffffff',
@@ -112,15 +114,9 @@ export function resolveOptionalColor(value: Color | undefined, scheme: Scheme): 
 }
 
 export function readableForeground(hex: string): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  const group = m?.[1];
-  if (group === undefined) return '#ffffff';
-  const n = Number.parseInt(group, 16);
-  const r = (n >> 16) & 0xff;
-  const g = (n >> 8) & 0xff;
-  const b = n & 0xff;
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.6 ? '#000000' : '#ffffff';
+  const rgb = parseHex(hex, { bare: true });
+  if (rgb === null) return '#ffffff';
+  return luminance(rgb) > 0.6 ? '#000000' : '#ffffff';
 }
 
 export type ColorToken = 'text' | 'secondary' | 'muted' | 'link' | 'primary' | 'danger' | 'success' | 'border' | 'surface';

@@ -1,11 +1,58 @@
+export type Rgb = [number, number, number];
+
+export interface HexParseOptions {
+  short?: boolean;
+  bare?: boolean;
+}
+
+export const LUMA_REC601: Readonly<Rgb> = [0.299, 0.587, 0.114];
+export const LUMA_REC709: Readonly<Rgb> = [0.2126, 0.7152, 0.0722];
+
+const HEX_RRGGBB = /^#([0-9a-fA-F]{6})$/;
+const HEX_RGB_OR_RRGGBB = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
 }
 
-function toByte(n: number): string {
-  return Math.round(clamp01(n) * 255)
-    .toString(16)
-    .padStart(2, '0');
+function byteHex(n: number): string {
+  const byte = n < 0 ? 0 : n > 255 ? 255 : Math.round(n);
+  return byte.toString(16).padStart(2, '0');
+}
+
+export function parseHex(hex: string, options: HexParseOptions = {}): Rgb | null {
+  const trimmed = hex.trim();
+  const value = options.bare === true && !trimmed.startsWith('#') ? `#${trimmed}` : trimmed;
+  const digits = (options.short === true ? HEX_RGB_OR_RRGGBB : HEX_RRGGBB).exec(value)?.[1];
+  if (digits === undefined) return null;
+  const full = digits.length === 3 ? Array.from(digits, (c) => c + c).join('') : digits;
+  const n = Number.parseInt(full, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+export function formatHex([r, g, b]: Readonly<Rgb>): string {
+  return `#${byteHex(r)}${byteHex(g)}${byteHex(b)}`;
+}
+
+export function formatRgba([r, g, b]: Readonly<Rgb>, alpha: number): string {
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export function withAlpha(hex: string, alpha: number): string {
+  const rgb = parseHex(hex);
+  return rgb === null ? hex : formatRgba(rgb, alpha);
+}
+
+export function luminance([r, g, b]: Readonly<Rgb>, [wr, wg, wb]: Readonly<Rgb> = LUMA_REC601): number {
+  return (wr * r + wg * g + wb * b) / 255;
+}
+
+export function isHexColor(v: string): boolean {
+  return parseHex(v) !== null;
+}
+
+function unitHex(r: number, g: number, b: number): string {
+  return formatHex([clamp01(r) * 255, clamp01(g) * 255, clamp01(b) * 255]);
 }
 
 export function hsvToHex(h: number, s: number, v: number): string {
@@ -35,20 +82,7 @@ export function hsvToHex(h: number, s: number, v: number): string {
     r = c;
     b = x;
   }
-  return `#${toByte(r + m)}${toByte(g + m)}${toByte(b + m)}`;
-}
-
-function normalizeHexDigits(hex: string): string | null {
-  const t = hex.trim();
-  const six = /^#?([0-9a-f]{6})$/i.exec(t);
-  if (six?.[1] !== undefined) return six[1];
-  const short = /^#?([0-9a-f]{3})$/i.exec(t);
-  if (short?.[1] !== undefined)
-    return short[1]
-      .split('')
-      .map((c) => c + c)
-      .join('');
-  return null;
+  return unitHex(r + m, g + m, b + m);
 }
 
 function rgbToHue(r: number, g: number, b: number, max: number, d: number): number {
@@ -71,12 +105,11 @@ interface RgbStats {
 }
 
 function hexToRgbStats(hex: string): RgbStats | null {
-  const digits = normalizeHexDigits(hex);
-  if (digits == null) return null;
-  const int = parseInt(digits, 16);
-  const r = ((int >> 16) & 255) / 255;
-  const g = ((int >> 8) & 255) / 255;
-  const b = (int & 255) / 255;
+  const rgb = parseHex(hex, { short: true, bare: true });
+  if (rgb === null) return null;
+  const r = rgb[0] / 255;
+  const g = rgb[1] / 255;
+  const b = rgb[2] / 255;
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
   return { r, g, b, max, min, d: max - min };
@@ -86,12 +119,6 @@ export function hexToHsv(hex: string): { h: number; s: number; v: number } {
   const c = hexToRgbStats(hex);
   if (c == null) return { h: 0, s: 0, v: 0 };
   return { h: rgbToHue(c.r, c.g, c.b, c.max, c.d), s: c.max === 0 ? 0 : c.d / c.max, v: c.max };
-}
-
-const HEX_RE = /^#([0-9a-fA-F]{6})$/;
-
-export function isHexColor(v: string): boolean {
-  return HEX_RE.test(v.trim());
 }
 
 const HSL_SECTORS: readonly (readonly [number, number, number])[] = [
@@ -117,7 +144,7 @@ export function hslToHex(h: number, s: number, l: number): string {
   const x = c * (1 - Math.abs((hh % 2) - 1));
   const m = li - c / 2;
   const [r, g, b] = sectorChannels(hh, c, x);
-  return `#${toByte(r + m)}${toByte(g + m)}${toByte(b + m)}`;
+  return unitHex(r + m, g + m, b + m);
 }
 
 export function hexToHsl(hex: string): { h: number; s: number; l: number } {

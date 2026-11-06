@@ -12,6 +12,7 @@ import {
   type BaseSize,
 } from '@stage-labs/kit/tokens';
 import { derivePalette, type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint } from '@stage-labs/kit/theme-derive';
+import { formatRgba, parseHex } from '@stage-labs/kit/color-math';
 import { createValueStore } from './persistedStore';
 import { cloneSeed, defaultSeeds, migrateSeeds, withSeedColor, type SeedColorKey, type ThemeSeeds } from './colorOverrides.model';
 
@@ -46,17 +47,8 @@ export type Palette = KitPalette;
 
 export function withAlpha(color: string, alpha: number): string {
   const a = Math.max(0, Math.min(1, alpha));
-  const hex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(color.trim());
-  if (hex) {
-    let h = hex[1] ?? '';
-    if (h.length === 3) {
-      h = Array.from(h, (ch) => ch + ch).join('');
-    }
-    const r = parseInt(h.slice(0, 2), 16);
-    const g = parseInt(h.slice(2, 4), 16);
-    const b = parseInt(h.slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${a})`;
-  }
+  const hex = parseHex(color, { short: true });
+  if (hex) return formatRgba(hex, a);
   const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(color.trim());
   if (rgb) return `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${a})`;
   return color;

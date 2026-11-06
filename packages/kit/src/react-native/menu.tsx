@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
-import { withAlpha } from '../badge';
+import { withAlpha } from '../color-math';
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { Glyph, type CentralIcon } from './glyph';
 import { Text, type TextProps } from './text';

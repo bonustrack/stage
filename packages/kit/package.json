@@ -37,6 +37,7 @@
     "./avatar": "./src/avatar.ts",
     "./badge": "./src/badge.ts",
     "./chart": "./src/chart.ts",
+    "./color-math": "./src/color-math.ts",
     "./icons": "./src/icons.ts",
     "./icons-a2ui": "./src/icons.a2ui.ts",
     "./layout": "./src/layout.ts",

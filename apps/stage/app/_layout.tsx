@@ -15,7 +15,7 @@ import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { bootKitFonts, useKitFontsLoaded } from '../lib/kitFonts';
-import { parseHex } from '@stage-labs/kit/theme-derive';
+import { LUMA_REC709, luminance, parseHex } from '@stage-labs/kit/color-math';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/pushRegister';
@@ -63,10 +63,8 @@ if (Platform.OS === 'web' && !isBrowserExtension() && !isOnboardingRoute(current
 })();
 
 function isDarkBg(hex: string): boolean {
-  const rgb = parseHex(hex.trim().replace(/^#?/, '#'));
-  if (rgb === null) return true;
-  const [r, g, b] = rgb;
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+  const rgb = parseHex(hex, { bare: true });
+  return rgb === null || luminance(rgb, LUMA_REC709) < 0.5;
 }
 
 function WebContentFrame({ children }: { children: React.ReactNode }): React.ReactElement {

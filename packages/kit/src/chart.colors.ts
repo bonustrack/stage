@@ -1,3 +1,4 @@
+import { withAlpha } from './color-math';
 import { isColorToken, resolveColorToken, type Scheme, type ThemeColor } from './tokens';
 
 export const CHART_COLORS = ['blue', 'purple', 'orange', 'green', 'red', 'yellow', 'pink'] as const;
@@ -200,9 +201,8 @@ export function isChartColorName(value: string): value is ChartColorName {
   return (CHART_COLORS as readonly string[]).includes(value);
 }
 
-function withAlpha(hex: string, alpha: number): string {
-  const n = Number.parseInt(hex.slice(1), 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${Math.min(1, alpha)})`;
+function tinted(hex: string, alpha: number): string {
+  return withAlpha(hex, Math.min(1, alpha));
 }
 
 function hueShade(name: ChartColorName, shade: number): string {
@@ -214,7 +214,7 @@ function rampColor(name: string, step: string, scheme: Scheme): string | undefin
   if (name === 'gray') return GRAY_RAMPS[scheme][GRAY_SHADES.indexOf(Number(step))];
   if (!isChartColorName(name)) return undefined;
   const tint = Object.hasOwn(HUE_TINTS, step) ? HUE_TINTS[step] : undefined;
-  if (tint !== undefined) return withAlpha(hueShade(name, DEFAULT_SHADE), tint);
+  if (tint !== undefined) return tinted(hueShade(name, DEFAULT_SHADE), tint);
   return HUE_SHADES.includes(Number(step)) ? hueShade(name, Number(step)) : undefined;
 }
 
@@ -223,7 +223,7 @@ export function chartPrimitiveColor(token: string, scheme: Scheme): string | und
   if (token === 'white') return '#ffffff';
   if (token === 'black') return '#000000';
   const [name = '', step = ''] = token.split('-');
-  if (name === 'alpha') return withAlpha(ALPHA_BASE[scheme], Number(step) / 100);
+  if (name === 'alpha') return tinted(ALPHA_BASE[scheme], Number(step) / 100);
   return rampColor(name, step, scheme);
 }
 

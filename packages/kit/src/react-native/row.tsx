@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, View, type ViewProps, type ViewStyle } from 'react-native';
 import { boxStyleEntries, surfaceColor, type Align, type BoxBaseProps, type Justify, type Surface } from '../layout';
-import { withAlpha } from '../badge';
+import { withAlpha } from '../color-math';
 import { resolvePaletteColor } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { useKitPalette } from './theme-context';
