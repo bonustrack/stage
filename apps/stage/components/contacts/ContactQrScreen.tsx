@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { QrCode } from '@stage-labs/kit/react-native/qr-code';
+import { QrPanel } from '../qr/QrPanel';
 import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
@@ -30,9 +30,7 @@ function MyQr({ address }: { address: string }): React.ReactElement {
       </Text>
       {value === null ? null : (
         <>
-          <Column padding={16} background="#ffffff" radius="lg" accessibilityLabel="Your Stage contact QR code">
-            <QrCode value={value} size={224} color="#000000" background="#ffffff" />
-          </Column>
+          <QrPanel value={value} size={224} padding={16} radius="lg" accessibilityLabel="Your Stage contact QR code" />
           <Text size="xs" textAlign="center" selectable style={{ alignSelf: 'stretch' }}>
             {address}
           </Text>

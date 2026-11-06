@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { QrCode } from '@stage-labs/kit/react-native/qr-code';
+import { QR_INK, QrPanel } from '../qr/QrPanel';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { AppModal } from '../AppModal';
@@ -38,17 +38,19 @@ function usePayload(rec: AccountRecord | null, onClose: () => void): string | nu
   return payload;
 }
 
-function QrPanel({ payload }: { payload: string | null }): React.ReactElement {
+function TransferQr({ payload }: { payload: string | null }): React.ReactElement {
   return (
-    <Column padding={12} background="#ffffff" style={{ borderRadius: 12 }}>
-      {payload === null ? (
+    <QrPanel
+      value={payload}
+      size={QR_SIZE}
+      padding={12}
+      radius="lg"
+      placeholder={
         <Column width={QR_SIZE} height={QR_SIZE} align="center" justify="center">
-          <Spinner size={24} color="#000000" />
+          <Spinner size={24} color={QR_INK} />
         </Column>
-      ) : (
-        <QrCode value={payload} size={QR_SIZE} />
-      )}
-    </Column>
+      }
+    />
   );
 }
 
@@ -75,7 +77,7 @@ export function TransferAccountSheet({
             {transferWarning(kind)}
           </Text>
         ) : null}
-        <QrPanel payload={payload} />
+        <TransferQr payload={payload} />
         <Text size="2xs" color="secondary" textAlign="center">
           {TRANSFER_HOW_TO}
         </Text>

@@ -4,13 +4,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { View } from 'react-native';
 import { ignored, recover } from '../../lib/errorPolicy';
 import { Column } from '../layout';
-
-interface QrScannerProps {
-  onScan: (text: string) => void;
-  dark: boolean;
-}
-
-const SCANNER_HEIGHT = 260;
+import { SCANNER_HEIGHT, type QrScannerProps } from './QrScanner.types';
 
 const SCAN_INTERVAL_MS = 250;
 const CAMERA_ERROR = 'Could not open the camera. Allow camera access for this site, or paste the code below.';

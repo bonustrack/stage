@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
-import { QrCode } from '@stage-labs/kit/react-native/qr-code';
+import { QrPanel } from '../../qr/QrPanel';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../../lib/capabilities';
 import { Eyebrow } from '../../Eyebrow';
@@ -16,8 +16,7 @@ const ADDRESS_LABEL = 'Wallet address (tap to copy)';
 const ADDRESS_HINT =
   'Scan or share this address to receive ETH or tokens on Base. Funds sent on another network will not show up in your Stage wallet.';
 
-const QR_FIXED_FOREGROUND = '#000000';
-const QR_FIXED_BACKGROUND = '#ffffff';
+const QR_SIZE = 240;
 const QR_PLACEHOLDER_BACKGROUND = '#f4f4f5';
 
 function AddressCard({ address, onCopy }: { address: string; onCopy: () => void }): React.ReactElement {
@@ -36,23 +35,16 @@ function AddressCard({ address, onCopy }: { address: string; onCopy: () => void 
   );
 }
 
-function QrPanel({ address, border }: { address: string; border: string }): React.ReactElement {
-  const side = { width: 1, color: border };
+function AddressQr({ address, border }: { address: string; border: string }): React.ReactElement {
   return (
-    <Column
-      background={QR_FIXED_BACKGROUND}
-      radius="xl"
+    <QrPanel
+      value={address || null}
+      size={QR_SIZE}
       padding={16}
-      align="center"
-      justify="center"
-      border={{ top: side, right: side, bottom: side, left: side }}
-    >
-      {address ? (
-        <QrCode value={address} size={240} color={QR_FIXED_FOREGROUND} background={QR_FIXED_BACKGROUND} />
-      ) : (
-        <Column width={240} height={240} background={QR_PLACEHOLDER_BACKGROUND} />
-      )}
-    </Column>
+      radius="xl"
+      border={border}
+      placeholder={<Column width={QR_SIZE} height={QR_SIZE} background={QR_PLACEHOLDER_BACKGROUND} />}
+    />
   );
 }
 
@@ -73,7 +65,7 @@ export function ReceiveScreen(): React.ReactElement {
 
       <ScreenScroll contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <Column width="100%" align="center" gap={16}>
-          <QrPanel address={address} border={border} />
+          <AddressQr address={address} border={border} />
           <AddressCard address={address} onCopy={onCopy} />
         </Column>
       </ScreenScroll>
