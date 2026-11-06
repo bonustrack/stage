@@ -102,10 +102,13 @@ export function mergeShareRows<T extends { convId: string }>(previous: readonly 
   return [...rows.values()];
 }
 
-export function shareDestinations(rows: readonly CachedRow[] | null, cleared: ClearedChats, query: string): ShareDestination[] {
-  return (rows ?? [])
-    .map((row) => destinationOf(row, cleared))
-    .filter((row): row is ShareDestination => row !== null && row.title.toLowerCase().includes(query.trim().toLowerCase()));
+export function shareDestinations(rows: readonly CachedRow[] | null, cleared: ClearedChats): ShareDestination[] {
+  return (rows ?? []).map((row) => destinationOf(row, cleared)).filter((row): row is ShareDestination => row !== null);
+}
+
+export function matchingDestinations(rows: readonly ShareDestination[], query: string): ShareDestination[] {
+  const needle = query.trim().toLowerCase();
+  return rows.filter((row) => row.title.toLowerCase().includes(needle));
 }
 
 export function shareError(error: string): string {

@@ -42,7 +42,6 @@ interface EditorProps {
   recording: boolean;
   levels: number[];
   recordSecs: number;
-  slideThresholdPx?: number;
   text: string;
   setText: (v: string) => void;
   selection: { start: number; end: number };
@@ -290,7 +289,6 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         recording={p.recording}
         levels={p.levels}
         recordSecs={p.recordSecs}
-        slideThresholdPx={p.slideThresholdPx}
         fg={p.fg}
         head={p.head}
         sub={p.sub}

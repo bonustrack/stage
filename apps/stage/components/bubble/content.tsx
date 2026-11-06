@@ -15,8 +15,7 @@ import {
   walletSendCallsOf,
   type MessageKind,
 } from '@stage-labs/client/xmtp/entryPayload';
-import { attachmentsOf, mdParser, markdownStyles, questionOf, pollOf } from './helpers';
-import { QuestionView } from './question';
+import { attachmentsOf, mdParser, markdownStyles, pollOf } from './helpers';
 import { PollView } from './poll';
 import { TxRequestCard, TxReceiptCard } from './cards';
 import { SigRequestCard, SigReferenceCard } from './cards.sig';
@@ -43,7 +42,6 @@ function descriptorsOf(entry: HistoryEntry) {
   return {
     kind: messageKindOf(entry),
     atts: attachmentsOf(entry),
-    question: questionOf(entry),
     poll: pollOf(entry),
     sigReq: signatureRequestOf(entry),
     sigRef: signatureReferenceOf(entry),
@@ -62,7 +60,6 @@ type BubbleContentProps = Pick<
   | 'pending'
   | 'replyPreview'
   | 'onReplyPreviewPress'
-  | 'onAnswer'
   | 'votes'
   | 'ownVotes'
   | 'onVote'
@@ -115,7 +112,6 @@ function BubbleMain({
 function BubbleCards({ d, p }: { d: Descriptors; p: BubbleContentProps }): React.ReactElement {
   return (
     <>
-      {d.question && p.onAnswer ? <QuestionView question={d.question} dark={p.dark} onAnswer={p.onAnswer} /> : null}
       {d.poll && p.onVote ? (
         <PollView
           poll={d.poll}

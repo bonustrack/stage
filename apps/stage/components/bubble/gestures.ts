@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import { Platform, Vibration, type View } from 'react-native';
+import { Vibration, type View } from 'react-native';
 import { Gesture, type GestureType } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from 'expo-router/js-stack';
 import { initialMenuAnchor, type MenuAnchor } from './props';
@@ -23,7 +23,6 @@ function keepsFeedScrollable<T extends GestureType>(gesture: T): T {
 }
 
 const THRESHOLD = -64;
-const SWIPE_TO_REPLY = Platform.OS !== 'web';
 
 export function useBubbleGestures(input: BubbleGestureInput) {
   const { pending, onReply, onReact, onOpenMenu } = input;
@@ -101,10 +100,7 @@ export function useBubbleGestures(input: BubbleGestureInput) {
         }),
     [openMenu],
   );
-  const tapGestures = useMemo(() => {
-    const menuOrReact = Gesture.Exclusive(longPress, doubleTap);
-    return SWIPE_TO_REPLY ? Gesture.Race(replyPan, menuOrReact) : menuOrReact;
-  }, [replyPan, longPress, doubleTap]);
+  const tapGestures = useMemo(() => Gesture.Race(replyPan, Gesture.Exclusive(longPress, doubleTap)), [replyPan, longPress, doubleTap]);
 
   const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
   const replyHintStyle = useAnimatedStyle(() => ({

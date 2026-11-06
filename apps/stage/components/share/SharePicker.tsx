@@ -5,6 +5,7 @@ import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { FormField } from '../FormField';
 import type { ShareDestination } from '../../lib/shareDestination.model';
+import { matchingDestinations } from './share.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { Column } from '../layout';
 
@@ -27,7 +28,7 @@ export function SharePicker({
 }): React.ReactElement {
   const [query, setQuery] = useState('');
   const dark = useEffectiveColorScheme() === 'dark';
-  const listed = rows.filter((row) => row.title.toLowerCase().includes(query.trim().toLowerCase()));
+  const listed = matchingDestinations(rows, query);
   return (
     <Column gap={12}>
       <Text size="sm" color="secondary">

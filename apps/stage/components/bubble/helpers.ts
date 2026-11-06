@@ -69,23 +69,6 @@ export function markdownStyles(fg: string, dark: boolean, size: FontSizeName): R
   };
 }
 
-interface QuestionOption {
-  label: string;
-  description?: string;
-}
-export interface Question {
-  header?: string;
-  options: QuestionOption[];
-  multiSelect?: boolean;
-  allowOther?: boolean;
-}
-
-export function questionOf(entry: HistoryEntry): Question | undefined {
-  const p = entry.payload as { question?: Question } | undefined;
-  if (!p?.question || !Array.isArray(p.question.options)) return undefined;
-  return p.question;
-}
-
 export interface Poll {
   question?: string;
   questions: PollQuestion[];

@@ -1,5 +1,12 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { mergeShareRows, parseIncomingShare, sharedAttachments, shareDestinations, shareError } from '../components/share/share.model';
+import {
+  matchingDestinations,
+  mergeShareRows,
+  parseIncomingShare,
+  sharedAttachments,
+  shareDestinations,
+  shareError,
+} from '../components/share/share.model';
 import { acceptedShareConsent } from '../lib/shareDestination.model';
 import { currentShareDraft, makeShareSender } from '../components/share/shareSend.model';
 import { planSendSteps } from '../components/composer/send.model';
@@ -127,11 +134,18 @@ describe('incoming share boundary', () => {
       { ...base, convId: 'sync', groupName: 'stage.sync:owner' },
       { ...base, convId: 'deleted', peerAddress: '0xpeer', lastBubbleTs: 10 },
     ];
-    expect(shareDestinations(rows, { '0xpeer': 11 }, 'DES')).toEqual([
+    expect(shareDestinations(rows, { '0xpeer': 11 })).toEqual([
       { convId: 'channel', title: 'Design', peerAddress: null, avatarUri: null, lastBubbleTs: null },
     ]);
-    expect(shareDestinations(null, {}, '')).toEqual([]);
-    expect(shareDestinations(rows, {}, 'missing')).toEqual([]);
+    expect(shareDestinations(null, {})).toEqual([]);
+  });
+
+  test('the picker lists the destinations whose title matches the search, ignoring case and spaces', () => {
+    const design = { convId: 'channel', title: 'Design', peerAddress: null, avatarUri: null, lastBubbleTs: null };
+    const team = { ...design, convId: 'team', title: 'Team' };
+    expect(matchingDestinations([design, team], ' DES ')).toEqual([design]);
+    expect(matchingDestinations([design, team], '')).toEqual([design, team]);
+    expect(matchingDestinations([design, team], 'missing')).toEqual([]);
   });
 });
 

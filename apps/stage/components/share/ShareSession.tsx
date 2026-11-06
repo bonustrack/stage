@@ -133,7 +133,7 @@ export function ShareSession({
         }}
         picker={
           <SharePicker
-            rows={shareDestinations(list.rows, cleared, '')}
+            rows={shareDestinations(list.rows, cleared)}
             loading={list.loading || accountReady === null}
             checking={checking}
             error={list.error}

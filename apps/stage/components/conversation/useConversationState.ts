@@ -4,7 +4,6 @@ import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { inboxIdOfUri, lineOfConv, userUriOf } from '@stage-labs/client/xmtp/line';
 import { useXmtpFeed } from '../../lib/feed/useXmtpFeed';
-import { xmtpReply } from '../../lib/xmtp.messages';
 import { useConvDetails, useConvRow } from '../../lib/messaging/queries';
 import { isGroupRow, memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { markConvRead } from '../../lib/channelsCache';
@@ -274,14 +273,6 @@ export function useConversationState(convId: string | undefined, focus: string |
   const { confirmedIds, setOutbound, allBubbles, rowKeyOf } = useFeedBubbles(events, myUri, deletedIds);
   const scroll = useFeedScroll(convId, allBubbles, feed.loadOlder);
   const outbound = useOutboundLayer(setOutbound, myUri, convId, activeLine, scroll.followNewest);
-  const onAnswer = useCallback(
-    (messageId: string, label: string) => {
-      void xmtpReply(activeLine, messageId, label).catch((e: unknown) => {
-        console.warn('xmtp answer failed', e);
-      });
-    },
-    [activeLine],
-  );
 
   return {
     ...feed,
@@ -306,7 +297,6 @@ export function useConversationState(convId: string | undefined, focus: string |
     callRecords,
     deletedIds,
     isSuperAdmin,
-    onAnswer,
     consent,
     consentKnown,
     consentAllowed,

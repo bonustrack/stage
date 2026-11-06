@@ -9,14 +9,10 @@ function contentTypeOf(entry: FallbackEntry): string | undefined {
 }
 
 export function bubbleFallbackText(entry: FallbackEntry): string {
-  try {
-    const text = typeof entry.text === 'string' ? entry.text.trim() : '';
-    if (text) return text;
-    const ct = contentTypeOf(entry);
-    return ct ? `Unsupported message (${ct})` : 'Unsupported message';
-  } catch {
-    return 'Unsupported message';
-  }
+  const text = typeof entry.text === 'string' ? entry.text.trim() : '';
+  if (text) return text;
+  const ct = contentTypeOf(entry);
+  return ct ? `Unsupported message (${ct})` : 'Unsupported message';
 }
 
 export function bubbleFallbackShape(entry: FallbackEntry): { contentType: string | undefined; hasText: boolean; textLength: number } {

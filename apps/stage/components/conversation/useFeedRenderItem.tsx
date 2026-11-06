@@ -198,9 +198,6 @@ function renderFeedBubble(item: Bubble, c: ConvState, l: FeedLocals): React.Reac
         onPay={payHandlerOf(item, myUri, c.onPay)}
         selectable={!deleted && c.selectedForCopy === item.id}
         onEndSelection={l.endSelection}
-        onAnswer={(label) => {
-          c.onAnswer(item.id, label);
-        }}
         highlight={l.highlight}
       />
     </BubbleErrorBoundary>
@@ -246,7 +243,6 @@ function useBubbleRenderer(c: ConvState, l: FeedLocals): RenderItem {
       c.setReplyTarget,
       c.setMenuAnchor,
       c.setMenuFor,
-      c.onAnswer,
     ],
   );
 }
