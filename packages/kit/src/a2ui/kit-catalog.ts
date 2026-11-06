@@ -212,21 +212,41 @@ const KIT_COMPONENTS: Record<string, JsonObject> = {
   ),
 };
 
-export const KIT_CATALOG: JsonObject = {
-  $schema: 'https://json-schema.org/draft/2020-12/schema',
-  $id: KIT_CATALOG_ID,
-  protocolVersion: A2UI_PROTOCOL_VERSION,
+export interface CatalogDocument {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  components: JsonObject;
+  functions: JsonObject;
+}
+
+export function catalogDocument({ id, title, description, instructions, components, functions }: CatalogDocument): JsonObject {
+  return {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    $id: id,
+    protocolVersion: A2UI_PROTOCOL_VERSION,
+    title,
+    description,
+    catalogId: id,
+    instructions,
+    components,
+    functions,
+    $defs: {
+      anyComponent: {
+        oneOf: Object.keys(components).map((name) => ({ $ref: `#/components/${name}` })),
+        discriminator: { propertyName: 'component' },
+      },
+      anyFunction: { oneOf: Object.keys(functions).map((name) => ({ $ref: `#/functions/${name}` })) },
+    },
+  };
+}
+
+export const KIT_CATALOG: JsonObject = catalogDocument({
+  id: KIT_CATALOG_ID,
   title: 'Stage Kit Catalog',
   description: 'The A2UI basic catalog extended with the Stage Kit design system: extra props, tokens, icons and components.',
-  catalogId: KIT_CATALOG_ID,
   instructions: INSTRUCTIONS,
   components: KIT_COMPONENTS,
   functions: KIT_FUNCTIONS,
-  $defs: {
-    anyComponent: {
-      oneOf: Object.keys(KIT_COMPONENTS).map((name) => ({ $ref: `#/components/${name}` })),
-      discriminator: { propertyName: 'component' },
-    },
-    anyFunction: { oneOf: Object.keys(KIT_FUNCTIONS).map((name) => ({ $ref: `#/functions/${name}` })) },
-  },
-};
+});

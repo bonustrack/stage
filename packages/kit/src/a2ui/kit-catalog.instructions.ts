@@ -1,3 +1,12 @@
+import { AGENT_CALLABLE_FUNCTIONS } from './kit-catalog.functions';
+
+function sentenceList(items: readonly string[]): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1) ?? ''}`;
+}
+
+const FUNCTIONS_NOTE =
+  'Every basic catalog function is available, plus `equals` ({ value, other }, both bindable), which returns a boolean, so `not` can wrap it: a Save button whose check is `not(equals(field, saved))` stays disabled until the field changes.';
+
 export const KIT_INSTRUCTIONS = [
   'This catalog is the A2UI basic catalog rendered with the Stage Kit design system. Every basic catalog component is available with the same props, plus optional Kit props.',
   '',
@@ -35,7 +44,7 @@ export const KIT_INSTRUCTIONS = [
   '',
   '## Functions',
   '',
-  'Every basic catalog function is available, plus `equals` ({ value, other }, both bindable), which returns a boolean, so `not` can wrap it: a Save button whose check is `not(equals(field, saved))` stays disabled until the field changes. In this catalog the agent may also call formatString, formatNumber, formatCurrency, formatDate, pluralize and equals with callRendererFunction.',
+  `${FUNCTIONS_NOTE} In this catalog the agent may also call ${sentenceList(AGENT_CALLABLE_FUNCTIONS)} with callRendererFunction.`,
   '',
   '## Reordering',
   '',

@@ -1,6 +1,9 @@
+import type { FunctionImpl } from './functions';
 import { entriesOf, isJsonObject, type JsonObject, type JsonValue } from './protocol';
 import { basic, common } from './kit-catalog.props';
 import { BASIC_CATALOG } from './schemas';
+
+export type SurfaceNav = { kind: 'open'; surfaceId: string } | { kind: 'close' };
 
 const AGENT_CALLABLE = new Set(['formatString', 'formatNumber', 'formatCurrency', 'formatDate', 'pluralize']);
 
@@ -71,3 +74,24 @@ export const KIT_FUNCTIONS: Record<string, JsonObject> = {
     required: ['@call'],
   },
 };
+
+export const AGENT_CALLABLE_FUNCTIONS: readonly string[] = Object.entries(KIT_FUNCTIONS)
+  .filter(([, definition]) => definition.allowedCallers === 'rendererOrAgent')
+  .map(([name]) => name);
+
+export function kitFunctionImpls(
+  basicImpls: Record<string, FunctionImpl>,
+  navigate?: (nav: SurfaceNav) => void,
+): Record<string, FunctionImpl> {
+  return {
+    ...basicImpls,
+    openSurface: (args) => {
+      if (typeof args.surfaceId !== 'string' || args.surfaceId === '') throw new Error('openSurface needs a surfaceId.');
+      navigate?.({ kind: 'open', surfaceId: args.surfaceId });
+    },
+    closeSurface: () => {
+      navigate?.({ kind: 'close' });
+    },
+    equals: (args) => JSON.stringify(args.value ?? null) === JSON.stringify(args.other ?? null),
+  };
+}
