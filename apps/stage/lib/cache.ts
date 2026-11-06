@@ -34,13 +34,6 @@ export const persistenceBackend = {
   },
 };
 
-interface SealedCache {
-  read(name: string): Promise<string | null>;
-  write(name: string, text: string | null): Promise<void>;
-}
-
-export const sealedCache: SealedCache | null = null;
-
 export interface RecordStore {
   read(name: string): Promise<string | null>;
   write(name: string, text: () => string | Promise<string>): void;

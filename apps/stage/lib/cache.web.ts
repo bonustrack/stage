@@ -141,8 +141,6 @@ async function sealedWrite(name: string, text: string | null): Promise<void> {
   await idbWrite(name, { iv, data } satisfies Sealed);
 }
 
-export const sealedCache = { read: sealedRead, write: sealedWrite };
-
 export interface RecordStore {
   read(name: string): Promise<string | null>;
   write(name: string, text: () => string | Promise<string>): void;
