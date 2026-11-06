@@ -7,7 +7,7 @@ import { memberNames, searchFilterSources, searchQueryText, setSearchQueryText, 
 import { homeRows } from '../state';
 import { subscribeCachedRows } from '../../../lib/channelsCache';
 import { useStoreValue } from '../../../lib/storeCore';
-import { useClearedChats } from '../../../lib/clearedChats';
+import { useClearedChats } from '../../../lib/sync/clearedChats';
 import { useBoardOrder } from '../../../lib/boardOrder';
 import { useChannelGroups } from '../../../lib/channelGroups';
 import { configuredFieldOptions } from '../../channel/channelFieldOptions.model';

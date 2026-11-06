@@ -8,9 +8,9 @@ import {
   type ChannelGroupsPrefs,
 } from './channelGroups.model';
 import { reported } from './errorPolicy';
-import { loadBoardOrder, type AccountOrderChange } from './boardOrder';
+import { loadBoardOrder } from './boardOrder';
 import { createValueStore } from './persistedStore';
-import { makeListeners } from './storeCore';
+import { settingChanges, type SyncedSetting } from './sync/setting';
 
 const prefs = createValueStore<ChannelGroupsPrefs>({
   key: 'channels.groups.',
@@ -21,8 +21,7 @@ const prefs = createValueStore<ChannelGroupsPrefs>({
 
 export const useChannelGroups = prefs.use;
 
-const categoryOrderChanges = makeListeners<AccountOrderChange>();
-export const onCategoryOrderChanged = categoryOrderChanges.subscribe;
+const categoryOrderChanges = settingChanges<readonly string[]>();
 
 function save(next: (current: ChannelGroupsPrefs) => ChannelGroupsPrefs, onlyFor?: string): Promise<void> {
   return prefs.update(next, onlyFor).catch(reported('channelGroups.save'));
@@ -44,7 +43,7 @@ function changeCategoryOrder(next: (order: string[]) => string[]): void {
   const accountId = prefs.accountId();
   if (accountId === null) return;
   void save((current) => withOrder(current, next(current.order)), accountId).then(() => {
-    if (prefs.accountId() === accountId) categoryOrderChanges.notify({ accountId, order: prefs.get().order });
+    if (prefs.accountId() === accountId) categoryOrderChanges.notify({ accountId, state: prefs.get().order });
   });
 }
 
@@ -56,17 +55,19 @@ export function moveCategory(key: string, targetKey: string, visible: readonly s
   changeCategoryOrder((order) => movedCategoryOrder(order, visible, key, targetKey));
 }
 
-export async function applyRemoteCategoryOrder(forAccount: string, order: readonly string[]): Promise<void> {
-  await save((current) => withOrder(current, [...order]), forAccount);
-}
-
 export async function adoptBoardCategoryOrder(forAccount: string): Promise<void> {
   const order = categoryKeysOf(await loadBoardOrder(forAccount));
   if (order.length > 0)
     await save((current) => (current.order.length === 0 && !current.orderConfigured ? withOrder(current, order) : current), forAccount);
 }
 
-export async function loadCategoryOrder(forAccount: string): Promise<readonly string[]> {
+async function loadCategoryOrder(forAccount: string): Promise<readonly string[]> {
   await prefs.load();
   return prefs.accountId() === forAccount ? prefs.get().order : [];
 }
+
+export const categoryOrderSync: SyncedSetting<readonly string[]> = {
+  onLocalChange: categoryOrderChanges.subscribe,
+  load: loadCategoryOrder,
+  applyRemote: (forAccount, order) => save((current) => withOrder(current, [...order]), forAccount),
+};

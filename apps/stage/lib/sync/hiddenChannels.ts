@@ -1,6 +1,6 @@
 import { hiddenChannelsSchema, isHiddenChannel, mergeHiddenChannels, type HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
 import { createValueStore } from '../persistedStore';
-import { makeListeners } from '../storeCore';
+import { keepUnlessChanged, makeListeners } from '../storeCore';
 
 const prefs = createValueStore<HiddenChannels>({
   key: 'channels.hidden.',
@@ -29,10 +29,7 @@ export async function setChannelHidden(accountId: string, convId: string, hidden
 }
 
 export function applyRemoteHiddenChannels(accountId: string, incoming: HiddenChannels): Promise<void> {
-  return prefs.updateFor(accountId, (current) => {
-    const next = mergeHiddenChannels(current, incoming);
-    return JSON.stringify(next) === JSON.stringify(current) ? current : next;
-  });
+  return prefs.updateFor(accountId, (current) => keepUnlessChanged(current, mergeHiddenChannels(current, incoming)));
 }
 
 export async function visibleCachedRows<T extends { convId: string; peerAddress?: unknown }>(accountId: string, rows: T[]): Promise<T[]> {

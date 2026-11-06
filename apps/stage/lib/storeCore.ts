@@ -25,6 +25,10 @@ export function jsonWith<T>(schema: StoredSchema<T>): (raw: string) => T | undef
   };
 }
 
+export function keepUnlessChanged<T>(current: T, next: T): T {
+  return JSON.stringify(next) === JSON.stringify(current) ? current : next;
+}
+
 export function useStoreValue<T>(subscribe: (cb: () => void) => () => void, get: () => T, prime?: () => void): T {
   const subscribeAndPrime = useCallback(
     (cb: () => void): (() => void) => {

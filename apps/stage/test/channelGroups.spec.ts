@@ -20,9 +20,8 @@ mock.module('../platform/storage', () => ({
     },
   },
 }));
-const { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, moveCategory, onCategoryOrderChanged, setCategoryOrder } =
-  await import('../lib/channelGroups');
-const { applyRemoteBoardOrder } = await import('../lib/boardOrder');
+const { adoptBoardCategoryOrder, categoryOrderSync, moveCategory, setCategoryOrder } = await import('../lib/channelGroups');
+const { boardOrderSync } = await import('../lib/boardOrder');
 
 function row(convId: string, extra: Partial<Row> = {}): Row {
   return {
@@ -232,8 +231,8 @@ describe('one category order for the chat list and the board', () => {
       setTimeout(resolve, 0);
     });
   const sent: string[][] = [];
-  onCategoryOrderChanged((change) => {
-    sent.push([...change.order]);
+  categoryOrderSync.onLocalChange((change) => {
+    sent.push([...change.state]);
   });
 
   test('the same order drives the chat sections and the board columns, no category last in both', () => {
@@ -251,11 +250,11 @@ describe('one category order for the chat list and the board', () => {
   });
 
   test('a board column drag reorders the chat sections and goes out to the other devices', async () => {
-    expect(await loadCategoryOrder('ann')).toEqual([]);
+    expect(await categoryOrderSync.load('ann')).toEqual([]);
     const board = orderedColumns(boardColumns(rows, [], [], 'category', nameOf), []).map((column) => column.key);
     moveCategory('category:Work', 'category:Alpha', board);
     await settle();
-    const order = await loadCategoryOrder('ann');
+    const order = await categoryOrderSync.load('ann');
     expect(order).toEqual(['dm', 'category:Work', 'category:Alpha', 'category:Ops', 'none']);
     expect(sent).toEqual([order]);
     expect(sections(order)).toEqual(['Direct messages', 'Work', 'Alpha', 'Ops', 'No project']);
@@ -263,11 +262,14 @@ describe('one category order for the chat list and the board', () => {
 
   test('a chat section drag reorders the board columns', async () => {
     const visible = [
-      ...homeDragModel(groupRows(rows, 'category', new Set(), false, nameOf, await loadCategoryOrder('ann')), true).sectionKeys.values(),
+      ...homeDragModel(
+        groupRows(rows, 'category', new Set(), false, nameOf, await categoryOrderSync.load('ann')),
+        true,
+      ).sectionKeys.values(),
     ];
     moveCategory('category:ops', 'category:work', visible);
     await settle();
-    expect(columns(await loadCategoryOrder('ann'))).toEqual(['Ops', 'Work', 'Alpha', 'No project']);
+    expect(columns(await categoryOrderSync.load('ann'))).toEqual(['Ops', 'Work', 'Alpha', 'No project']);
   });
 
   test('no category stays last on the board: it is not dragged and takes no column', () => {
@@ -286,10 +288,10 @@ describe('one category order for the chat list and the board', () => {
     selectAccount('carol');
     values.set('board.columnOrder.carol', JSON.stringify(['label:Todo', 'category:Ops', 'category:', 'assignee:0xbob', 'category:Work']));
     await adoptBoardCategoryOrder('carol');
-    expect(await loadCategoryOrder('carol')).toEqual(['category:Ops', 'category:Work']);
-    await applyRemoteBoardOrder('carol', ['category:Work', 'category:Ops']);
+    expect(await categoryOrderSync.load('carol')).toEqual(['category:Ops', 'category:Work']);
+    await boardOrderSync.applyRemote('carol', ['category:Work', 'category:Ops']);
     await adoptBoardCategoryOrder('carol');
-    expect(await loadCategoryOrder('carol')).toEqual(['category:Ops', 'category:Work']);
+    expect(await categoryOrderSync.load('carol')).toEqual(['category:Ops', 'category:Work']);
     expect(sent).toEqual([]);
   });
 
@@ -299,12 +301,12 @@ describe('one category order for the chat list and the board', () => {
       'channels.groups.edited',
       JSON.stringify({ collapsed: ['category:work'], order: ['dm', 'category:fde', 'none', 'category:work'] }),
     );
-    await applyRemoteCategoryOrder('edited', ['dm', 'category:fde', 'none', 'category:work']);
+    await categoryOrderSync.applyRemote('edited', ['dm', 'category:fde', 'none', 'category:work']);
     sent.length = 0;
     setCategoryOrder(['dm', 'category:FDE Team', 'none', 'category:Work', 'category:WORK', 'category:', 'label:Todo']);
     await settle();
     const order = ['dm', 'category:FDE Team', 'none', 'category:Work'];
-    expect(await loadCategoryOrder('edited')).toEqual(order);
+    expect(await categoryOrderSync.load('edited')).toEqual(order);
     expect(JSON.parse(values.get('channels.groups.edited') ?? '{}')).toEqual({
       collapsed: ['category:work'],
       order,
@@ -313,14 +315,14 @@ describe('one category order for the chat list and the board', () => {
     expect(sent).toEqual([order]);
     moveCategory('category:work', 'category:fde team', ['category:work', 'category:FDE Team']);
     await settle();
-    expect(await loadCategoryOrder('edited')).toEqual(['dm', 'category:Work', 'category:FDE Team', 'none']);
+    expect(await categoryOrderSync.load('edited')).toEqual(['dm', 'category:Work', 'category:FDE Team', 'none']);
     expect(sections(['category:Ops', 'category:Work'])).toEqual(['Direct messages', 'Ops', 'Work', 'Alpha', 'No project']);
     setCategoryOrder(['dm', 'category:Work', 'none']);
     await settle();
-    expect(await loadCategoryOrder('edited')).toEqual(['dm', 'category:Work', 'none']);
+    expect(await categoryOrderSync.load('edited')).toEqual(['dm', 'category:Work', 'none']);
     sent.length = 0;
-    await applyRemoteCategoryOrder('edited', ['none', 'category:Remote', 'dm', 'category:Work']);
-    expect(await loadCategoryOrder('edited')).toEqual(['none', 'category:Remote', 'dm', 'category:Work']);
+    await categoryOrderSync.applyRemote('edited', ['none', 'category:Remote', 'dm', 'category:Work']);
+    expect(await categoryOrderSync.load('edited')).toEqual(['none', 'category:Remote', 'dm', 'category:Work']);
     expect(sent).toEqual([]);
   });
 
@@ -333,12 +335,12 @@ describe('one category order for the chat list and the board', () => {
     const stored = parseChannelGroupsPrefs(values.get('channels.groups.empty') ?? '{}');
     expect(stored).toEqual({ collapsed: [], order: [], orderConfigured: true });
     await adoptBoardCategoryOrder('empty');
-    expect(await loadCategoryOrder('empty')).toEqual([]);
+    expect(await categoryOrderSync.load('empty')).toEqual([]);
     selectAccount('other');
-    await applyRemoteCategoryOrder('other', ['category:Other']);
+    await categoryOrderSync.applyRemote('other', ['category:Other']);
     selectAccount('empty');
     await adoptBoardCategoryOrder('empty');
-    expect(await loadCategoryOrder('empty')).toEqual([]);
+    expect(await categoryOrderSync.load('empty')).toEqual([]);
   });
 
   test('a synced chat order is kept over the board order', async () => {
@@ -346,6 +348,6 @@ describe('one category order for the chat list and the board', () => {
     values.set('channels.groups.dave', JSON.stringify({ collapsed: [], order: ['category:work'] }));
     values.set('board.columnOrder.dave', JSON.stringify(['category:Ops', 'category:Work']));
     await adoptBoardCategoryOrder('dave');
-    expect(await loadCategoryOrder('dave')).toEqual(['category:work']);
+    expect(await categoryOrderSync.load('dave')).toEqual(['category:work']);
   });
 });

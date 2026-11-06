@@ -19,7 +19,7 @@ import { searchBarLabels, type Row } from './model';
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
 import { parseSearchFilter, searchFilterSources, searchFilterValues, searchRowMatcher } from './search/searchFilter.model';
 import { memberNamesOf } from './search/FilterSearch';
-import { useClearedChats } from '../../lib/clearedChats';
+import { useClearedChats } from '../../lib/sync/clearedChats';
 import { useBoardOrder } from '../../lib/boardOrder';
 import { useHomeViewOf } from '../../lib/homeView';
 import { BoardScreen } from './board/BoardScreen';

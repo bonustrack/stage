@@ -5,7 +5,7 @@ import { getAccountEpoch } from './accountEpoch';
 import { channelAccess } from './channelAccess';
 import { loadHiddenChannels, subscribeHiddenChannels } from './sync/hiddenChannels';
 import { knownActiveAccountId } from './accountSelection';
-import { loadClearedChats, subscribeClearedChats } from './clearedChats';
+import { loadClearedChats, subscribeClearedChats } from './sync/clearedChats';
 import { acceptedShareConsent, type ShareDestination } from './shareDestination.model';
 import { sdk } from './xmtp.sdk';
 

@@ -1,6 +1,6 @@
 import { subscribePeerProfiles } from '../../lib/peerProfiles';
 import { subscribeCachedRows } from '../../lib/channelsCache';
-import { getClearedChats, primeClearedChats, subscribeClearedChats } from '../../lib/clearedChats';
+import { getClearedChats, primeClearedChats, subscribeClearedChats } from '../../lib/sync/clearedChats';
 import { getDraft, loadDrafts, subscribeDrafts } from '../../lib/drafts';
 import { getSearchState, primeSearchState, subscribeSearchState } from '../../lib/searchState';
 import { useStoreValue } from '../../lib/storeCore';

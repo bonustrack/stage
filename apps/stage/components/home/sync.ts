@@ -2,7 +2,8 @@ import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { AppState, Platform } from 'react-native';
 import { getOrCreateXmtpClient, syncPreferences } from '../../lib/xmtp.client';
 import { NoAccountError } from '../../lib/accountSelection';
-import { getXmtpBootstrapPhase, isActiveConv, registerHiddenConv } from '../../lib/xmtp.state.core';
+import { getXmtpBootstrapPhase, isActiveConv } from '../../lib/xmtp.state.core';
+import { isSyncConv } from '../../lib/sync/group';
 import { primeConversationMembers } from '../../lib/xmtp.identity';
 import { subscribeAllMessages } from '../../lib/xmtp.stream';
 import {
@@ -10,7 +11,6 @@ import {
   syncConversationsFromNetwork,
   streamNewConversations,
   streamConvConsent,
-  conversationIsSyncGroup,
   getConvConsentState,
   createdBySelf,
   groupAccessOf,
@@ -275,10 +275,7 @@ function makeRefreshers(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>
 
 async function onNewConversation(conv: Conversation, selfInboxId: string, run: SyncRun): Promise<void> {
   schedulePushTopicRefresh();
-  if (await conversationIsSyncGroup(conv).catch(recover('home.newConversation', false))) {
-    registerHiddenConv(conv.id);
-    return;
-  }
+  if (await isSyncConv(conv).catch(recover('home.newConversation', false))) return;
   if ((await getConvConsentState(conv.id).catch(recover('home.newConversation', null))) === 'denied') return;
   if ((await groupAccessOf(conv.id).catch(recover('home.newConversationAccess', 'waiting'))) === 'outside') return;
   const row = await summarize(conv, selfInboxId, createdBySelf(conv, selfInboxId)).catch(recover('home.newConversation', null));

@@ -3,7 +3,7 @@ import type { HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import type { VirtualListHandle } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { useChannelGroups } from '../../lib/channelGroups';
-import { usePinnedOrder } from '../../lib/pins';
+import { usePinnedOrder } from '../../lib/sync/pins';
 import { groupRows, rowsOf, type HomeListItem } from './groups.model';
 import type { NameOf } from './groupBy.model';
 import { useStoreValue } from '../../lib/storeCore';

@@ -40,7 +40,7 @@ import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { makeSeenCheck } from './markRead.model';
 import { useOutboundLayer } from './useOutboundLayer';
-import { useClearedChats } from '../../lib/clearedChats';
+import { useClearedChats } from '../../lib/sync/clearedChats';
 import { entriesAfterClear, feedReachedClear, countFromOthers } from './feed-helpers';
 import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
 import { pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage } from '@stage-labs/client/xmtp/poll-feed';

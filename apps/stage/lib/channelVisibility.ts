@@ -4,7 +4,7 @@ import { sdk } from './xmtp.sdk';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { applyRemoteHiddenChannels, hiddenChannelsNow, isChannelHidden, loadHiddenChannels } from './sync/hiddenChannels';
 import { channelAccess, rememberChannelMember } from './channelAccess';
-import { isHiddenConv } from './xmtp.state.core';
+import { isKnownSyncConv } from './sync/group';
 import { report } from './errorPolicy';
 import { AccountChangedError } from './accountSelection';
 import type { XmtpConsent } from './xmtp.types';
@@ -22,7 +22,7 @@ export function channelConsent<C extends XmtpConsent | null | undefined>(
 }
 
 export function isHiddenFromFeeds(convId: string | null | undefined): boolean {
-  return isHiddenConv(convId) || isChannelHidden(convId);
+  return isKnownSyncConv(convId) || isChannelHidden(convId);
 }
 
 export async function hiddenChannelFilter(accountId: string): Promise<(convId: string) => boolean> {

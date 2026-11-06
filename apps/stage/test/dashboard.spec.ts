@@ -45,8 +45,7 @@ mock.module('../platform/storage', () => ({
     },
   },
 }));
-const { addFrameToDashboard, addLiveToDashboard, applyRemoteDashboard, changeDashboard, loadDashboard, onDashboardChanged } =
-  await import('../lib/dashboard');
+const { addFrameToDashboard, addLiveToDashboard, dashboardSync, changeDashboard } = await import('../lib/dashboard');
 
 const widget = (id: string, w: DashboardWidth = 'half', h: DashboardHeight = 1): DashboardWidget => ({
   id,
@@ -316,41 +315,41 @@ describe('dashboard sync state', () => {
 describe('dashboard store', () => {
   test('edits are saved per account under a versioned key and announced for sync', async () => {
     const sent: DashboardContent[] = [];
-    const stop = onDashboardChanged((change) => {
+    const stop = dashboardSync.onLocalChange((change) => {
       sent.push(change.state);
     });
-    expect(await loadDashboard('alice')).toBeNull();
+    expect(await dashboardSync.load('alice')).toBeNull();
     changeDashboard((list) => [...list, widget('a')]);
     changeDashboard((list) => resizeWidget(list, 'a', { w: 'full', h: 2 }));
     changeDashboard((list) => removeWidget(list, 'missing'));
     await settle();
     expect(stored('alice')).toMatchObject({ widgets: [widget('a', 'full', 2)] });
     expect(sent.map((state) => state.widgets)).toEqual([[widget('a')], [widget('a', 'full', 2)]]);
-    expect(await loadDashboard('alice')).toMatchObject({ widgets: [widget('a', 'full', 2)] });
-    expect(await loadDashboard('bob')).toBeNull();
+    expect(await dashboardSync.load('alice')).toMatchObject({ widgets: [widget('a', 'full', 2)] });
+    expect(await dashboardSync.load('bob')).toBeNull();
     stop();
   });
 
   test('a remote layout applies only when newer, for the account it belongs to', async () => {
-    const before = await loadDashboard('alice');
+    const before = await dashboardSync.load('alice');
     if (before === null) throw new Error('Missing local dashboard');
-    await applyRemoteDashboard('alice', { widgets: [widget('old')], at: before.at - 1 });
+    await dashboardSync.applyRemote('alice', { widgets: [widget('old')], at: before.at - 1 });
     expect(stored('alice')).toEqual(before);
-    await applyRemoteDashboard('alice', { widgets: [widget('new', 'quarter', 3)], at: before.at + 1 });
+    await dashboardSync.applyRemote('alice', { widgets: [widget('new', 'quarter', 3)], at: before.at + 1 });
     expect(stored('alice')).toEqual({ widgets: [widget('new', 'quarter', 3)], at: before.at + 1 });
-    await applyRemoteDashboard('carol', { widgets: [widget('c')], at: 7 });
+    await dashboardSync.applyRemote('carol', { widgets: [widget('c')], at: 7 });
     expect(stored('carol')).toEqual({ widgets: [widget('c')], at: 7 });
   });
 
   test('adding a frame saves a frame widget once and announces it for sync', async () => {
     const sent: DashboardContent[] = [];
-    const stop = onDashboardChanged((change) => {
+    const stop = dashboardSync.onLocalChange((change) => {
       sent.push(change.state);
     });
     expect(await addFrameToDashboard(source, 'full')).toBe('added');
     expect(await addFrameToDashboard(source, 'half')).toBe('exists');
     await settle();
-    const saved = await loadDashboard('alice');
+    const saved = await dashboardSync.load('alice');
     const added = saved?.widgets.at(-1);
     expect(added).toMatchObject({ w: 'full', h: 3, kind: 'frame', source });
     expect(added?.id).toMatch(/^[0-9a-f]{16}$/);
@@ -361,7 +360,7 @@ describe('dashboard store', () => {
 
   test('adding a live widget saves it once with its key and announces it for sync', async () => {
     const sent: DashboardContent[] = [];
-    const stop = onDashboardChanged((change) => {
+    const stop = dashboardSync.onLocalChange((change) => {
       sent.push(change.state);
     });
     const live = { url: 'https://btc.example.com/', key: 'ef'.repeat(32) };
@@ -369,7 +368,7 @@ describe('dashboard store', () => {
     expect(first.outcome).toBe('added');
     expect((await addLiveToDashboard({ ...live, key: '01'.repeat(32) }, 'full')).outcome).toBe('exists');
     await settle();
-    const added = (await loadDashboard('alice'))?.widgets.find((item) => item.id === first.id);
+    const added = (await dashboardSync.load('alice'))?.widgets.find((item) => item.id === first.id);
     expect(added).toEqual({ id: first.id, w: 'half', h: 3, kind: 'live', source: { url: live.url }, key: live.key });
     expect(sent).toHaveLength(1);
     stop();
@@ -384,8 +383,8 @@ describe('dashboard store', () => {
     await settle();
     expect(values.has(`liveFrame.v1.alice.${one.id}`)).toBe(false);
     expect(values.has(`liveFrame.v1.alice.${two.id}`)).toBe(true);
-    const current = (await loadDashboard('alice'))?.widgets ?? [];
-    await applyRemoteDashboard('alice', { widgets: current.filter((item) => item.id !== two.id), at: Date.now() + 60_000 });
+    const current = (await dashboardSync.load('alice'))?.widgets ?? [];
+    await dashboardSync.applyRemote('alice', { widgets: current.filter((item) => item.id !== two.id), at: Date.now() + 60_000 });
     await settle();
     expect(values.has(`liveFrame.v1.alice.${two.id}`)).toBe(false);
   });
@@ -393,8 +392,8 @@ describe('dashboard store', () => {
   test('missing or broken saved data loads as an empty dashboard', async () => {
     values.set('dashboard.v1.dave', '{not json');
     values.set('dashboard.v1.erin', JSON.stringify({ widgets: [{ id: '', w: 'half', h: 1 }, { w: 'half', h: 1 }, 7], at: 3 }));
-    expect(await loadDashboard('dave')).toBeNull();
-    expect(await loadDashboard('erin')).toEqual({ widgets: [], at: 3 });
+    expect(await dashboardSync.load('dave')).toBeNull();
+    expect(await dashboardSync.load('erin')).toEqual({ widgets: [], at: 3 });
     expect(EMPTY_DASHBOARD).toEqual({ widgets: [], at: 0 });
   });
 });

@@ -16,33 +16,29 @@ import {
   type FrameWidgetAdd,
 } from '../components/dashboard/dashboard.model';
 import { forgetLiveSnapshots } from './liveSnapshots';
-import { createValueStore } from './persistedStore';
-import { makeListeners, useStoreValue } from './storeCore';
+import { syncedSetting } from './sync/setting';
 import { editDashboard, receiveDashboard } from './syncedSettings.model';
 import { randomHex } from '@stage-labs/client/ids';
 
-const prefs = createValueStore<DashboardContent>({
-  key: 'dashboard.v1.',
-  default: EMPTY_DASHBOARD,
-  schema: dashboardSchema,
-  perAccount: true,
-});
+function receiveForgetting(current: DashboardContent, incoming: DashboardContent, accountId: string): DashboardContent {
+  const next = receiveDashboard(current, incoming);
+  forgetLiveSnapshots(accountId, removedLiveIds(current.widgets, next.widgets));
+  return next;
+}
+
+const dashboard = syncedSetting<DashboardContent>(
+  { key: 'dashboard.v1.', default: EMPTY_DASHBOARD, schema: dashboardSchema, perAccount: true },
+  { receive: receiveForgetting },
+);
+const { prefs } = dashboard;
+
+export const dashboardSync = dashboard.sync;
 
 export const useDashboard = prefs.use;
 
 export const dashboardAccountId = (): string | null => prefs.accountId();
 
-const dashboardLoaded = (): boolean => dashboardAccountId() !== null;
-
-export const useDashboardLoaded = (): boolean => useStoreValue(prefs.subscribe, dashboardLoaded, prefs.loadAsync);
-
-export interface DashboardChange {
-  accountId: string;
-  state: DashboardContent;
-}
-
-const localChanges = makeListeners<DashboardChange>();
-export const onDashboardChanged = localChanges.subscribe;
+export const useDashboardLoaded = dashboard.useLoaded;
 
 export function changeDashboard(change: (widgets: DashboardWidget[]) => DashboardWidget[]): void {
   const accountId = prefs.accountId();
@@ -52,7 +48,7 @@ export function changeDashboard(change: (widgets: DashboardWidget[]) => Dashboar
   if (next === current) return;
   prefs.set(next);
   forgetLiveSnapshots(accountId, removedLiveIds(current.widgets, next.widgets));
-  localChanges.notify({ accountId, state: next });
+  dashboard.changedLocally(accountId, next);
 }
 
 interface WidgetAdded {
@@ -86,17 +82,4 @@ export function addLiveToDashboard(source: LiveSource, width: DashboardWidth): P
     (widgets) => liveWidgetAdd(widgets, source.url),
     (widgets, id) => addLiveWidget(widgets, id, source, width),
   );
-}
-
-export async function loadDashboard(forAccount: string): Promise<DashboardContent | null> {
-  const state = await prefs.loadFor(forAccount);
-  return state.at > 0 ? state : null;
-}
-
-export function applyRemoteDashboard(forAccount: string, incoming: DashboardContent): Promise<void> {
-  return prefs.updateFor(forAccount, (current) => {
-    const next = receiveDashboard(current, incoming);
-    forgetLiveSnapshots(forAccount, removedLiveIds(current.widgets, next.widgets));
-    return next;
-  });
 }

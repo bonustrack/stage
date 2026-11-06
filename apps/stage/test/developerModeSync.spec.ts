@@ -7,12 +7,15 @@ const values = new Map<string, string>();
 const states = new Map<string, DeveloperModeContent>();
 const messages: RowMessage[] = [];
 const queries: { afterNs?: number; beforeNs?: number; limit: number }[] = [];
+const sentStates: unknown[] = [];
 let failRead = false;
 let failWrite = false;
 let failApply = false;
+let failSend: Error | null = null;
 let beforeMessages: (() => void) | undefined;
 const client = { inboxId: 'owner' };
 mock.module('../platform/storage', () => ({
+  secureStorage: {},
   appStorage: {
     get: async (key: string): Promise<string | null> => {
       if (failRead) throw new Error('read unavailable');
@@ -30,10 +33,13 @@ mock.module('../lib/accounts', () => ({
 }));
 mock.module('../lib/xmtp.client', () => ({ cachedSelfEthAddress: () => activeId }));
 mock.module('../lib/developerMode', () => ({
-  loadDeveloperMode: async (id: string) => states.get(id) ?? null,
-  applyRemoteDeveloperMode: async (id: string, incoming: DeveloperModeContent) => {
-    if (failApply) throw new Error('preference write unavailable');
-    states.set(id, mergeDeveloperMode(states.get(id) ?? DEFAULT_DEVELOPER_MODE, incoming));
+  developerModeSync: {
+    onLocalChange: () => () => undefined,
+    load: async (id: string) => states.get(id) ?? null,
+    applyRemote: async (id: string, incoming: DeveloperModeContent) => {
+      if (failApply) throw new Error('preference write unavailable');
+      states.set(id, mergeDeveloperMode(states.get(id) ?? DEFAULT_DEVELOPER_MODE, incoming));
+    },
   },
 }));
 mock.module('../lib/xmtp.sdk', () => ({
@@ -51,13 +57,39 @@ mock.module('../lib/xmtp.sdk', () => ({
         .slice(0, opts.limit);
     },
     rowOf: (message: RowMessage) => message,
+    send: {
+      json: async (_conv: unknown, _codec: unknown, content: unknown) => {
+        if (failSend) throw failSend;
+        sentStates.push(content);
+        return 'sent';
+      },
+    },
   },
 }));
+const { rememberActiveAccountId } = await import('../lib/accountSelection');
 const { accountClient } = await import('../lib/xmtp.account');
-const { createDeveloperModePublisher, replayDeveloperMode } = await import('../lib/developerModeSync');
+const { SETTING_KINDS } = await import('../lib/sync/settings');
+const { createSyncPublisher } = await import('../lib/sync/publisher');
+const { replaySyncHistory } = await import('../lib/sync/replay');
+const developerMode = SETTING_KINDS.find((kind) => kind.kind === 'developerMode');
+if (!developerMode) throw new Error('Developer mode is not a synced kind');
 const groups = [{ id: 'sync', active: true, createdAtNs: 1 }];
 const cursorKey = 'developerMode.cursor.v1.a.sync';
-const replay = async (): Promise<void> => replayDeveloperMode(await accountClient(), groups);
+const replay = async (): Promise<void> => {
+  const context = await accountClient();
+  await replaySyncHistory(context, groups, developerMode.cursor, (state) => developerMode.apply(context.account.id, state));
+};
+function sinkFor() {
+  const target = { context: { assertCurrent: () => undefined }, conv: { id: 'sync' } } as unknown as Parameters<
+    typeof developerMode.snapshot
+  >[0];
+  return {
+    publish: createSyncPublisher(),
+    withGroup: async (send: (t: typeof target) => Promise<unknown>) => {
+      await send(target);
+    },
+  };
+}
 const stateMessage = (sentNs: number, enabled: boolean, at: number): RowMessage => ({
   contentTypeId: 'stage.box/developerMode:1.0',
   senderInboxId: 'owner',
@@ -68,16 +100,22 @@ async function advance(ms: number): Promise<void> {
   jest.advanceTimersByTime(ms);
   for (let i = 0; i < 20; i += 1) await Promise.resolve();
 }
+function select(id: string): void {
+  activeId = id;
+  rememberActiveAccountId(id);
+}
 
 beforeEach(() => {
-  activeId = 'a';
+  select('a');
   values.clear();
   states.clear();
   messages.length = 0;
   queries.length = 0;
+  sentStates.length = 0;
   failRead = false;
   failWrite = false;
   failApply = false;
+  failSend = null;
   beforeMessages = undefined;
   jest.useFakeTimers();
 });
@@ -88,75 +126,69 @@ afterEach(() => {
 
 describe('durable Developer mode publication', () => {
   test('loads the latest durable state after debounce and retries an offline send', async () => {
-    jest.useFakeTimers();
-    const sent: DeveloperModeContent[] = [];
-    let offline = true;
-    const queue = createDeveloperModePublisher(async (_id, state) => {
-      if (offline) throw new Error('offline');
-      sent.push(state);
-      return true;
-    });
+    const sink = sinkFor();
+    failSend = new Error('offline');
     states.set('a', { enabled: true, at: 1 });
-    queue('a');
+    developerMode.republish(sink, 'a');
     await advance(800);
-    expect(sent).toEqual([]);
+    expect(sentStates).toEqual([]);
     states.set('a', { enabled: false, at: 2 });
-    offline = false;
+    failSend = null;
     await advance(5000);
-    expect(sent).toEqual([{ enabled: false, at: 2 }]);
+    expect(sentStates).toEqual([{ enabled: false, at: 2 }]);
     await advance(60_000);
-    expect(sent).toHaveLength(1);
+    expect(sentStates).toHaveLength(1);
   });
 
   test('account queues cannot cancel each other and returning to an account recovers its saved edit', async () => {
-    jest.useFakeTimers();
-    const sent: string[] = [];
+    const sink = sinkFor();
     states.set('a', { enabled: true, at: 1 });
     states.set('b', { enabled: false, at: 2 });
-    const queue = createDeveloperModePublisher(async (id, state) => {
-      sent.push(`${id}:${state.enabled}`);
-      return true;
-    });
-    queue('a');
-    activeId = 'b';
-    queue('b');
+    developerMode.republish(sink, 'a');
+    select('b');
+    developerMode.republish(sink, 'b');
     await advance(800);
-    expect(sent).toEqual(['b:false']);
-    activeId = 'a';
-    queue('a');
+    expect(sentStates).toEqual([{ enabled: false, at: 2 }]);
+    select('a');
+    developerMode.republish(sink, 'a');
     await advance(800);
-    expect(sent).toEqual(['b:false', 'a:true']);
+    expect(sentStates).toEqual([
+      { enabled: false, at: 2 },
+      { enabled: true, at: 1 },
+    ]);
   });
 
   test('a recreated publisher recovers durable OFF after restart and leaves unset accounts silent', async () => {
-    jest.useFakeTimers();
+    const sink = sinkFor();
     states.set('a', { enabled: false, at: 20 });
-    const sent: DeveloperModeContent[] = [];
-    const restored = createDeveloperModePublisher(async (_id, state) => {
-      sent.push(state);
-      return true;
-    });
-    restored('a');
+    developerMode.republish(sink, 'a');
     await advance(800);
-    expect(sent).toEqual([{ enabled: false, at: 20 }]);
+    expect(sentStates).toEqual([{ enabled: false, at: 20 }]);
     states.delete('a');
-    restored('a');
+    developerMode.republish(sink, 'a');
     await advance(800);
-    expect(sent).toHaveLength(1);
+    expect(sentStates).toHaveLength(1);
   });
 
   test('rate limiting stops automatic Developer mode retries for this session', async () => {
-    jest.useFakeTimers();
+    const sink = sinkFor();
     states.set('a', { enabled: true, at: 1 });
+    failSend = new Error('429 resource exhausted');
     let calls = 0;
-    const queue = createDeveloperModePublisher(async () => {
-      calls += 1;
-      throw new Error('429 resource exhausted');
-    });
-    queue('a');
+    const publish = sink.publish;
+    sink.publish = (job) => {
+      publish({
+        ...job,
+        send: () => {
+          calls += 1;
+          return job.send();
+        },
+      });
+    };
+    developerMode.republish(sink, 'a');
     await advance(800);
     await advance(600_000);
-    queue('a');
+    developerMode.republish(sink, 'a');
     await advance(800);
     expect(calls).toBe(1);
   });

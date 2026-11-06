@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { useCommonChannels } from '../../lib/useCommonChannels';
 import { getDraft } from '../../lib/drafts';
-import { isPinned } from '../../lib/pins';
+import { isPinned } from '../../lib/sync/pins';
 import type { Palette } from '../../lib/theme';
 import { channelTimestamp } from '../../lib/format';
 import { peerLabel } from '../../lib/peerProfiles';

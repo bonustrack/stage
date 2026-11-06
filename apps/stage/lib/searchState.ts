@@ -1,6 +1,5 @@
 import { searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/sync/search';
-import { createValueStore } from './persistedStore';
-import { makeListeners } from './storeCore';
+import { syncedSetting } from './sync/setting';
 import {
   EMPTY_SEARCH,
   editFilters,
@@ -11,13 +10,13 @@ import {
   type FilterEdit,
 } from './syncedSettings.model';
 
-const prefs = createValueStore<SearchStateContent>({
-  key: 'channels.search.',
-  default: EMPTY_SEARCH,
-  schema: searchStateSchema,
-  perAccount: true,
-  restore: restoreSearch,
-});
+const search = syncedSetting<SearchStateContent>(
+  { key: 'channels.search.', default: EMPTY_SEARCH, schema: searchStateSchema, perAccount: true, restore: restoreSearch },
+  { receive: receiveSearch, synced: syncedSearch },
+);
+const { prefs } = search;
+
+export const searchStateSync = search.sync;
 
 export const useSearchState = prefs.use;
 
@@ -27,18 +26,10 @@ export const subscribeSearchState = prefs.subscribe;
 
 export const primeSearchState = prefs.loadAsync;
 
-export interface SearchStateChange {
-  accountId: string;
-  state: SearchStateContent;
-}
-
-const localChanges = makeListeners<SearchStateChange>();
-export const onSearchStateChanged = localChanges.subscribe;
-
 function editSynced(change: FilterEdit): void {
   prefs.set(editFilters(prefs.get(), change, Date.now()));
   const accountId = prefs.accountId();
-  if (accountId !== null) localChanges.notify({ accountId, state: syncedSearch(prefs.get()) });
+  if (accountId !== null) search.changedLocally(accountId, prefs.get());
 }
 
 export function setSearchQuery(query: string): void {
@@ -57,13 +48,4 @@ export function toggleSearchUnread(): void {
 export function clearSearchFilters(): void {
   const current = prefs.get();
   if (current.labels.length > 0 || current.unreadOnly) editSynced({ labels: [], unreadOnly: false });
-}
-
-export function applyRemoteSearchState(forAccount: string, incoming: SearchStateContent): Promise<void> {
-  return prefs.updateFor(forAccount, (current) => receiveSearch(current, incoming));
-}
-
-export async function loadSearchState(forAccount: string): Promise<SearchStateContent | null> {
-  const state = await prefs.loadFor(forAccount);
-  return state.at === 0 ? null : syncedSearch(state);
 }

@@ -2,7 +2,7 @@ import { flushDmOutbox } from '../dmOutbox';
 import { subscribeChannelUpdates } from '../xmtp.resync';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { refreshConv } from './queries';
-import { startReadSync } from '../readSync';
+import { startReadSync } from '../sync/readSync';
 import { startPushClear } from '../pushRegister';
 
 const OUTBOX_FLUSH_INTERVAL_MS = 5 * 60 * 1000;

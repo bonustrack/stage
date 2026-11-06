@@ -3,7 +3,7 @@ import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage'
 import { sdk } from './xmtp.sdk';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { AccountChangedError, NoAccountError } from './accountSelection';
-import { conversationIsSyncGroup } from './xmtp.conv';
+import { isSyncConv } from './sync/group';
 import { subscribeAllMessages } from './xmtp.stream';
 import type { StreamMsg, XmtpConsent } from './xmtp.types';
 import { currentAccountId } from './accounts';
@@ -121,7 +121,7 @@ function sourceFor(context: AccountClient, live: () => boolean): ScanSource<Conv
   return {
     idOf: (conv) => conv.id,
     page: async (conv, query) => (await sdk.messages(conv, query)).map((m) => ({ ...sdk.rowOf(m), convId: conv.id })),
-    skip: async (conv) => sdk.isGroup(conv) && (await conversationIsSyncGroup(conv)),
+    skip: async (conv) => sdk.isGroup(conv) && (await isSyncConv(conv)),
     superAdmins: async (conv) => new Set((await sdk.groupAdmins(conv)).superAdmins.map((id) => id.toLowerCase())),
     current: () => live() && context.current(),
     failed: reported('storage.scanChat'),

@@ -1,6 +1,6 @@
 import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
-import { createValueStore } from './persistedStore';
-import { makeListeners, storedRecordOf } from './storeCore';
+import { createValueStore } from '../persistedStore';
+import { keepUnlessChanged, makeListeners, storedRecordOf } from '../storeCore';
 
 const EMPTY: ClearedChats = {};
 
@@ -13,7 +13,7 @@ const prefs = createValueStore<ClearedChats>({
   perAccount: true,
 });
 
-const localChanges = makeListeners();
+const localChanges = makeListeners<string>();
 export const onClearedChatsChanged = localChanges.subscribe;
 
 export const getClearedChats = prefs.get;
@@ -28,12 +28,10 @@ export const loadClearedChats = prefs.loadFor;
 
 export async function markChatCleared(peerAddress: string, atMs: number): Promise<void> {
   await prefs.update((cleared) => mergeClearedChats(cleared, { [peerAddress]: atMs }));
-  localChanges.notify();
+  const accountId = prefs.accountId();
+  if (accountId !== null) localChanges.notify(accountId);
 }
 
 export function applyRemoteClearedChats(forAccount: string, incoming: ClearedChats): Promise<void> {
-  return prefs.updateFor(forAccount, (cleared) => {
-    const next = mergeClearedChats(cleared, incoming);
-    return JSON.stringify(next) === JSON.stringify(cleared) ? cleared : next;
-  });
+  return prefs.updateFor(forAccount, (cleared) => keepUnlessChanged(cleared, mergeClearedChats(cleared, incoming)));
 }

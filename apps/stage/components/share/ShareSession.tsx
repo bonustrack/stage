@@ -8,7 +8,7 @@ import { prepareAttachments, forgetAttachments } from '../../lib/xmtp.attachment
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { knownActiveAccountId, subscribeActiveAccountId } from '../../lib/accountSelection';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
-import { useClearedChats } from '../../lib/clearedChats';
+import { useClearedChats } from '../../lib/sync/clearedChats';
 import { useStoreValue } from '../../lib/storeCore';
 import { checkShareDestination } from '../../lib/shareDestination';
 import type { IncomingShare } from '../../lib/incomingShare.types';

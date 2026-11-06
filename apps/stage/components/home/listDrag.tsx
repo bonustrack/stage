@@ -9,7 +9,7 @@ import {
 } from '@stage-labs/kit/react-native/sortable';
 import { setChannelCategory } from '../channel/channel.labels';
 import { moveCategory } from '../../lib/channelGroups';
-import { movePin } from '../../lib/pins';
+import { movePin } from '../../lib/sync/pins';
 import { usePalette } from '../../lib/theme';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { HomeListItem } from './groups.model';

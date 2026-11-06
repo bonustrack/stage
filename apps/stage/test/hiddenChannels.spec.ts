@@ -122,15 +122,15 @@ const { rememberActiveAccountId } = await import('../lib/accountSelection');
 rememberActiveAccountId(activeId);
 const { isChannelHidden, loadHiddenChannels, applyRemoteHiddenChannels, onHiddenChannelsChanged } =
   await import('../lib/sync/hiddenChannels');
-const { applyRemoteChatVisibility, loadChatVisibility } = await import('../lib/chatVisibility');
+const { applyChatVisibility, loadChatVisibility } = await import('../lib/sync/chatVisibility');
 const { leaveGroupConv } = await import('../lib/xmtp.groups');
 const { listVisibleConversations, acceptRequestConv, getConvConsentState, groupAccessOf } = await import('../lib/xmtp.conv');
 const { syncVisibleChannels, reconcileHiddenConsent, backfillHiddenChannels } = await import('../lib/channelVisibility');
 const { cachedChannelAccess, subscribeChannelAccess } = await import('../lib/channelAccess');
 const { visibleCachedRows } = await import('../lib/sync/hiddenChannels');
 const { accountClient } = await import('../lib/xmtp.account');
-const { replaySyncGroups } = await import('../lib/readSyncReplay');
-const { syncTarget, sendSyncState } = await import('../lib/syncTarget');
+const { replaySyncHistory, SHARED_CURSOR } = await import('../lib/sync/replay');
+const { syncTarget, sendSyncState } = await import('../lib/sync/group');
 const { addOwnInstallationsToChats } = await import('../lib/ownInstallations');
 
 async function switchAccount(id: string): Promise<void> {
@@ -183,7 +183,7 @@ describe('departed channels across devices', () => {
       0,
       { inboxId: client.inboxId, nowMs: Date.now() },
     );
-    await applyRemoteChatVisibility('phone', replay);
+    await applyChatVisibility('phone', replay.clear);
     expect(await visible()).toEqual(['legitimate-archive']);
     expect(await getConvConsentState(group.id)).toBe('denied');
     group.active = false;
@@ -474,14 +474,8 @@ describe('departed channels across devices', () => {
     });
     const context = await accountClient();
     const groups = [{ id: 'replay-group', active: true, createdAtNs: 1 }];
-    const replay = (): Promise<void> =>
-      replaySyncGroups(
-        context,
-        'replay-group',
-        groups,
-        (state) => applyRemoteChatVisibility('phone', state),
-        () => undefined,
-      );
+    const replay = (): Promise<string[]> =>
+      replaySyncHistory(context, groups, SHARED_CURSOR, (state) => applyChatVisibility('phone', state.clear));
     storageFails = true;
     await expect(replay()).rejects.toThrow('disk full');
     expect(values.has('readSync.cursor.v4.phone.replay-group')).toBe(false);
@@ -499,15 +493,9 @@ describe('departed channels across devices', () => {
     messages.push({ contentTypeId: 'stage.box/dashboardLayout:1.0', senderInboxId: 'owner', sentNs: 200, content: layout });
     const context = await accountClient();
     let replayed: unknown = null;
-    await replaySyncGroups(
-      context,
-      'dash-group',
-      [{ id: 'dash-group', active: true, createdAtNs: 1 }],
-      async (state) => {
-        replayed = state.dashboard;
-      },
-      () => undefined,
-    );
+    await replaySyncHistory(context, [{ id: 'dash-group', active: true, createdAtNs: 1 }], SHARED_CURSOR, async (state) => {
+      replayed = state.dashboard;
+    });
     expect(replayed).toEqual(layout);
     expect(values.get('readSync.cursor.v4.phone.dash-group')).toBe('200');
     messages.length = 0;

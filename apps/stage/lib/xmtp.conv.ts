@@ -1,5 +1,4 @@
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { setChannelHidden } from './sync/hiddenChannels';
 import { accountClient, type AccountClient } from './xmtp.account';
@@ -8,7 +7,7 @@ import { channelConsent, hiddenChannelFilter, reconcileHiddenConsent, syncVisibl
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DmUnreachableReason, XmtpConsent } from './xmtp.types';
-import { registerHiddenConv } from './xmtp.state.core';
+import { isSyncConv } from './sync/group';
 import { patchRowConsent } from './channelsCache';
 import { registerDmRoute, routeConvId } from './dmRoutes';
 import { makeSharedSource } from './storeCore';
@@ -29,10 +28,6 @@ export async function isFreshOwnGroup(convId: string, selfInboxId: string): Prom
   if (!conv || !sdk.isGroup(conv) || !createdBySelf(conv, selfInboxId)) return false;
   if (Date.now() - sdk.createdAtNs(conv) / 1_000_000 > OWN_GROUP_FRESH_MS) return false;
   return (await getConvConsentState(convId)) === 'allowed';
-}
-
-export async function conversationIsSyncGroup(conv: Conv): Promise<boolean> {
-  return isSyncGroupName(await sdk.groupName(conv));
 }
 
 async function shownDmId(client: ConvClient, dmId: string): Promise<string> {
@@ -103,10 +98,7 @@ export async function dmUnreachableReason(address: string): Promise<DmUnreachabl
 async function withoutDepartedGroups(context: AccountClient, convs: Conv[]): Promise<Conv[]> {
   const shown = await Promise.all(
     convs.map(async (conv) => {
-      if (await conversationIsSyncGroup(conv)) {
-        registerHiddenConv(conv.id);
-        return false;
-      }
+      if (await isSyncConv(conv)) return false;
       return (await channelAccess(context, conv)) !== 'outside';
     }),
   );

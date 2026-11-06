@@ -8,7 +8,7 @@ import { MessengerComposer } from '../composer/MessengerComposer';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ChannelMenu } from '../chatRow/ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
-import { isPinned } from '../../lib/pins';
+import { isPinned } from '../../lib/sync/pins';
 import { getCachedRows } from '../../lib/channelsCache';
 import { useGroupAccess } from '../../lib/messaging/useConvConsent';
 import { xmtpDeleteMessage } from '../../lib/xmtp.messages';

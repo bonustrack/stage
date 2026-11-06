@@ -41,7 +41,7 @@ provideActiveAccountReader(async () => {
   await accountDelay?.();
   return id;
 });
-const { applyRemoteDeveloperMode, loadDeveloperMode, onDeveloperModeChanged, setDeveloperMode } = await import('../lib/developerMode');
+const { developerModeSync, setDeveloperMode } = await import('../lib/developerMode');
 let sequence = 0;
 const key = (id: string): string => `developer.mode.${id}`;
 const stored = (id: string): unknown => JSON.parse(values.get(key(id)) ?? 'null');
@@ -67,7 +67,7 @@ beforeEach(async () => {
   accountDelay = null;
   activeId = `account-${++sequence}`;
   bumpAccountEpoch();
-  await loadDeveloperMode(activeId);
+  await developerModeSync.load(activeId);
   writes.length = 0;
 });
 
@@ -75,13 +75,13 @@ describe('developer mode account preference', () => {
   test('starts OFF, ignores the old unscoped prototype and does not snapshot an unset preference', async () => {
     values.set('developer.enabled', '1');
     expect(DEFAULT_DEVELOPER_MODE.enabled).toBe(false);
-    expect(await loadDeveloperMode('unset')).toBeNull();
+    expect(await developerModeSync.load('unset')).toBeNull();
     for (const [id, raw] of [
       ['bad-json', '{'],
       ['bad-shape', '{"enabled":"yes","at":10}'],
     ]) {
       values.set(key(id), raw);
-      expect(await loadDeveloperMode(id)).toBeNull();
+      expect(await developerModeSync.load(id)).toBeNull();
     }
     expect(writes).toEqual([]);
   });
@@ -89,19 +89,19 @@ describe('developer mode account preference', () => {
   test('persists ON and OFF for the account and emits only local edits', async () => {
     const id = activeId ?? '';
     const sent: { accountId: string; state: DeveloperModeContent }[] = [];
-    const stop = onDeveloperModeChanged((change) => {
+    const stop = developerModeSync.onLocalChange((change) => {
       sent.push(change);
     });
     try {
       await setDeveloperMode(true);
-      const on = await loadDeveloperMode(id);
+      const on = await developerModeSync.load(id);
       expect(on?.enabled).toBe(true);
       expect(on?.at).toBeGreaterThan(0);
       expect(stored(id)).toEqual(on);
       await setDeveloperMode(true);
       expect(sent).toHaveLength(1);
       await setDeveloperMode(false);
-      const off = await loadDeveloperMode(id);
+      const off = await developerModeSync.load(id);
       expect(off?.enabled).toBe(false);
       expect(off?.at).toBeGreaterThan(on?.at ?? 0);
       expect(stored(id)).toEqual(off);
@@ -109,7 +109,7 @@ describe('developer mode account preference', () => {
         [id, true],
         [id, false],
       ]);
-      await applyRemoteDeveloperMode(id, { enabled: true, at: (off?.at ?? 0) + 1 });
+      await developerModeSync.applyRemote(id, { enabled: true, at: (off?.at ?? 0) + 1 });
       expect(sent).toHaveLength(2);
     } finally {
       stop();
@@ -119,42 +119,42 @@ describe('developer mode account preference', () => {
   test('restores persisted state across account reloads without importing another account', async () => {
     const original = activeId ?? '';
     await setDeveloperMode(true);
-    const saved = await loadDeveloperMode(original);
+    const saved = await developerModeSync.load(original);
     activeId = 'reload-other';
     bumpAccountEpoch();
     await settle();
-    expect(await loadDeveloperMode('reload-other')).toBeNull();
+    expect(await developerModeSync.load('reload-other')).toBeNull();
     await setDeveloperMode(true);
     await setDeveloperMode(false);
     activeId = original;
     bumpAccountEpoch();
     await settle();
-    expect(await loadDeveloperMode(original)).toEqual(saved);
-    expect(await loadDeveloperMode('reload-other')).toMatchObject({ enabled: false });
+    expect(await developerModeSync.load(original)).toEqual(saved);
+    expect(await developerModeSync.load('reload-other')).toMatchObject({ enabled: false });
     values.set(key('persisted-device'), JSON.stringify(saved));
-    expect(await loadDeveloperMode('persisted-device')).toEqual(saved);
+    expect(await developerModeSync.load('persisted-device')).toEqual(saved);
   });
 
   test('merges newer remote state, rejects stale ON and resolves equal clocks OFF', async () => {
     const id = activeId ?? '';
     const at = Date.now() + 1000;
-    await applyRemoteDeveloperMode(id, { enabled: false, at });
-    await applyRemoteDeveloperMode(id, { enabled: true, at });
-    await applyRemoteDeveloperMode(id, { enabled: true, at: at - 1 });
-    expect(await loadDeveloperMode(id)).toEqual({ enabled: false, at });
+    await developerModeSync.applyRemote(id, { enabled: false, at });
+    await developerModeSync.applyRemote(id, { enabled: true, at });
+    await developerModeSync.applyRemote(id, { enabled: true, at: at - 1 });
+    expect(await developerModeSync.load(id)).toEqual({ enabled: false, at });
     await setDeveloperMode(true);
-    expect(await loadDeveloperMode(id)).toEqual({ enabled: true, at: at + 1 });
+    expect(await developerModeSync.load(id)).toEqual({ enabled: true, at: at + 1 });
     expect(editDeveloperMode({ enabled: true, at: 100 }, false, 50)).toEqual({ enabled: false, at: 101 });
   });
 
   test('concurrent targeted remote updates preserve the newest durable state', async () => {
     await Promise.all([
-      applyRemoteDeveloperMode('remote-only', { enabled: false, at: 20 }),
-      applyRemoteDeveloperMode('remote-only', { enabled: true, at: 19 }),
-      applyRemoteDeveloperMode('remote-only', { enabled: true, at: 20 }),
+      developerModeSync.applyRemote('remote-only', { enabled: false, at: 20 }),
+      developerModeSync.applyRemote('remote-only', { enabled: true, at: 19 }),
+      developerModeSync.applyRemote('remote-only', { enabled: true, at: 20 }),
     ]);
     expect(stored('remote-only')).toEqual({ enabled: false, at: 20 });
-    expect(await loadDeveloperMode(activeId ?? '')).toBeNull();
+    expect(await developerModeSync.load(activeId ?? '')).toBeNull();
   });
 
   test('does not write or emit when account selection changes during a local edit', async () => {
@@ -175,7 +175,7 @@ describe('developer mode account preference', () => {
 
   test('does not write stale data after a failed read or announce a failed durable write', async () => {
     const sent: DeveloperModeContent[] = [];
-    const stop = onDeveloperModeChanged((change) => {
+    const stop = developerModeSync.onLocalChange((change) => {
       sent.push(change.state);
     });
     try {
@@ -187,7 +187,7 @@ describe('developer mode account preference', () => {
       await expect(setDeveloperMode(true)).rejects.toThrow('write unavailable');
       expect(sent).toEqual([]);
       failWrite = false;
-      expect(await loadDeveloperMode(activeId ?? '')).toBeNull();
+      expect(await developerModeSync.load(activeId ?? '')).toBeNull();
     } finally {
       stop();
     }
@@ -223,14 +223,14 @@ describe('developer mode account preference', () => {
     readDelay = null;
     gate.release();
     await settle();
-    expect(await loadDeveloperMode('hydrating-new')).toEqual({ enabled: false, at: 20 });
-    expect(await loadDeveloperMode('hydrating-old')).toEqual({ enabled: true, at: 10 });
+    expect(await developerModeSync.load('hydrating-new')).toEqual({ enabled: false, at: 20 });
+    expect(await developerModeSync.load('hydrating-old')).toEqual({ enabled: true, at: 10 });
     expect(writes).toEqual([]);
   });
 
   test('unreadable selection rejects rather than writing the fallback account', async () => {
     const sent: DeveloperModeContent[] = [];
-    const stop = onDeveloperModeChanged((change) => {
+    const stop = developerModeSync.onLocalChange((change) => {
       sent.push(change.state);
     });
     try {

@@ -46,16 +46,6 @@ export const feedCache = {
 
 export { activeFeedLines } from './feedLines';
 
-const hiddenConvs = new Set<string>();
-
-export function registerHiddenConv(convId: string): void {
-  hiddenConvs.add(convId);
-}
-
-export function isHiddenConv(convId: string | null | undefined): boolean {
-  return convId !== null && convId !== undefined && hiddenConvs.has(convId);
-}
-
 let activeConvId: string | null = null;
 
 export function setActiveConvId(convId: string | null): void {

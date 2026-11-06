@@ -8,9 +8,9 @@ import { getSelectedAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { accountScope, getAccountSelection, subscribeAccountSelection } from './accountSelection';
 import { report } from './errorPolicy';
-import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
 import { editDeveloperMode } from './syncedSettings.model';
+import { syncedSetting } from './sync/setting';
 
 function parseDeveloperMode(raw: string): DeveloperModeContent {
   try {
@@ -22,14 +22,20 @@ function parseDeveloperMode(raw: string): DeveloperModeContent {
   }
 }
 
-const prefs = createValueStore<DeveloperModeContent>({
-  key: 'developer.mode.',
-  default: DEFAULT_DEVELOPER_MODE,
-  deserialize: parseDeveloperMode,
-  serialize: JSON.stringify,
-  perAccount: true,
-  durable: true,
-});
+const developerMode = syncedSetting<DeveloperModeContent>(
+  {
+    key: 'developer.mode.',
+    default: DEFAULT_DEVELOPER_MODE,
+    deserialize: parseDeveloperMode,
+    serialize: JSON.stringify,
+    perAccount: true,
+    durable: true,
+  },
+  { receive: mergeDeveloperMode },
+);
+const { prefs } = developerMode;
+
+export const developerModeSync = developerMode.sync;
 
 let loadedSelection: number | undefined;
 let failedSelection: number | undefined;
@@ -42,8 +48,8 @@ const enabled = (): boolean => loaded() && prefs.get().enabled;
 async function refresh(): Promise<void> {
   const selection = getAccountSelection();
   const account = await getSelectedAccount();
-  await prefs.update((current) => current);
-  if (prefs.accountId() !== (account?.id ?? null)) await prefs.update((current) => current);
+  await prefs.reload();
+  if (prefs.accountId() !== (account?.id ?? null)) await prefs.reload();
   if (selection !== getAccountSelection() || !prefs.isCurrentAccount()) return refresh();
   if (prefs.accountId() !== (account?.id ?? null)) throw new Error('The selected account changed while loading Developer mode.');
   loadedSelection = selection;
@@ -83,14 +89,6 @@ export const useDeveloperMode = (): boolean => useStoreValue(changes.subscribe, 
 export const useDeveloperModeLoaded = (): boolean => useStoreValue(changes.subscribe, loaded, loadAsync);
 export const useDeveloperModeLoadFailed = (): boolean => useStoreValue(changes.subscribe, failed, loadAsync);
 
-interface DeveloperModeChange {
-  accountId: string;
-  state: DeveloperModeContent;
-}
-
-const localChanges = makeListeners<DeveloperModeChange>();
-export const onDeveloperModeChanged = localChanges.subscribe;
-
 export async function setDeveloperMode(value: boolean): Promise<void> {
   const scope = accountScope();
   const account = await getSelectedAccount();
@@ -101,14 +99,5 @@ export async function setDeveloperMode(value: boolean): Promise<void> {
     state = editDeveloperMode(current, value, Date.now());
     return state;
   });
-  if (state !== null) localChanges.notify({ accountId: account.id, state });
-}
-
-export async function loadDeveloperMode(accountId: string): Promise<DeveloperModeContent | null> {
-  const state = await prefs.loadFor(accountId);
-  return state.at > 0 ? state : null;
-}
-
-export function applyRemoteDeveloperMode(accountId: string, incoming: DeveloperModeContent): Promise<void> {
-  return prefs.updateFor(accountId, (current) => mergeDeveloperMode(current, incoming));
+  if (state !== null) developerMode.changedLocally(account.id, state);
 }

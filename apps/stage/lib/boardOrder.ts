@@ -1,6 +1,6 @@
 import { boardOrderSchema } from '@stage-labs/client/xmtp/sync/order';
 import { createValueStore } from './persistedStore';
-import { makeListeners } from './storeCore';
+import { settingChanges, type SyncedSetting } from './sync/setting';
 
 type BoardOrder = readonly string[];
 
@@ -10,23 +10,19 @@ const prefs = createValueStore<BoardOrder>({ key: 'board.columnOrder.', default:
 
 export const useBoardOrder = prefs.use;
 
-export interface AccountOrderChange {
-  accountId: string;
-  order: readonly string[];
-}
-
-const localChanges = makeListeners<AccountOrderChange>();
-export const onBoardOrderChanged = localChanges.subscribe;
+const localChanges = settingChanges<BoardOrder>();
 
 export function setBoardOrder(next: BoardOrder): void {
   const accountId = prefs.accountId();
   if (accountId === null) return;
   prefs.set(next);
-  localChanges.notify({ accountId, order: next });
+  localChanges.notify({ accountId, state: next });
 }
 
 export const loadBoardOrder = prefs.loadFor;
 
-export function applyRemoteBoardOrder(forAccount: string, incoming: BoardOrder): Promise<void> {
-  return prefs.updateFor(forAccount, () => incoming);
-}
+export const boardOrderSync: SyncedSetting<BoardOrder> = {
+  onLocalChange: localChanges.subscribe,
+  load: loadBoardOrder,
+  applyRemote: (accountId, incoming) => prefs.updateFor(accountId, () => incoming),
+};

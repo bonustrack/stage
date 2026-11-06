@@ -53,7 +53,7 @@ import {
 import { capabilities } from '../../lib/capabilities';
 import { ignored, reported } from '../../lib/errorPolicy';
 import { setDraftValue } from '../../lib/drafts';
-import { useClearedChats } from '../../lib/clearedChats';
+import { useClearedChats } from '../../lib/sync/clearedChats';
 import { createValueStore } from '../../lib/persistedStore';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';

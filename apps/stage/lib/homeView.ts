@@ -1,16 +1,16 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
 import { reported } from './errorPolicy';
-import { createValueStore } from './persistedStore';
-import { makeListeners, makeValue, useStoreValue } from './storeCore';
+import { syncedSetting } from './sync/setting';
 import { editHomeView, receiveHomeView, syncedHomeView, syncsHomeView } from './syncedSettings.model';
 
-const prefs = createValueStore<HomeViewContent>({
-  key: 'home.view.',
-  default: DEFAULT_HOME_VIEW,
-  schema: homeViewSchema,
-  perAccount: true,
-});
+const homeView = syncedSetting<HomeViewContent>(
+  { key: 'home.view.', default: DEFAULT_HOME_VIEW, schema: homeViewSchema, perAccount: true },
+  { receive: receiveHomeView, synced: syncedHomeView },
+);
+const { prefs } = homeView;
+
+export const homeViewSync = homeView.sync;
 
 export const useHomeView = prefs.use;
 
@@ -21,45 +21,14 @@ export function useHomeViewOf(view: HomeViewContent['view']): HomeViewContent {
   return useMemo(() => (stored.view === view ? stored : { ...stored, view }), [stored, view]);
 }
 
-const boardQuery = makeValue('');
-
-export function useBoardQuery(): [string, (query: string) => void] {
-  useEffect(
-    () => () => {
-      boardQuery.set('');
-    },
-    [],
-  );
-  return [boardQuery.use(), boardQuery.set];
-}
-
-const homeViewLoaded = (): boolean => prefs.accountId() !== null;
-
-export const useHomeViewLoaded = (): boolean => useStoreValue(prefs.subscribe, homeViewLoaded, prefs.loadAsync);
-
-export interface HomeViewChange {
-  accountId: string;
-  state: HomeViewContent;
-}
-
-const localChanges = makeListeners<HomeViewChange>();
-export const onHomeViewChanged = localChanges.subscribe;
+export const useHomeViewLoaded = homeView.useLoaded;
 
 export function setHomeView(edit: HomeViewEdit): void {
   void prefs
     .update((current) => editHomeView(current, edit, Date.now()))
     .then(() => {
       const accountId = prefs.accountId();
-      if (accountId !== null && syncsHomeView(edit)) localChanges.notify({ accountId, state: syncedHomeView(prefs.get()) });
+      if (accountId !== null && syncsHomeView(edit)) homeView.changedLocally(accountId, prefs.get());
     })
     .catch(reported('homeView.save'));
-}
-
-export async function loadHomeView(forAccount: string): Promise<HomeViewContent | null> {
-  const state = await prefs.loadFor(forAccount);
-  return state.at > 0 ? syncedHomeView(state) : null;
-}
-
-export function applyRemoteHomeView(forAccount: string, incoming: HomeViewContent): Promise<void> {
-  return prefs.updateFor(forAccount, (current) => receiveHomeView(current, incoming));
 }
