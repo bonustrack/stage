@@ -1,4 +1,5 @@
 import { Linking } from 'react-native';
+import { capabilities } from './capabilities';
 import { reported } from './errorPolicy';
 import { downloadFile } from './fileDownload';
 import { nativeFileName } from '@stage-labs/client/files';
@@ -7,7 +8,8 @@ import { fileOpenAction, type OpenableFile } from './fileOpen.model';
 const openedUrls = new Map<string, string>();
 
 function openInTab(url: string): void {
-  void Linking.openURL(url).catch(reported('link.open'));
+  if (url.startsWith('blob:')) void Linking.openURL(url).catch(reported('link.open'));
+  else capabilities.openUrl(url);
 }
 
 type DesktopOpen = (name: string, bytes: Uint8Array) => Promise<boolean>;
