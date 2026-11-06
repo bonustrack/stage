@@ -1,5 +1,5 @@
 import { createPublicClient, http, type Chain, type PublicClient } from 'viem';
-import { VIEM_CHAINS } from './assets';
+import { VIEM_CHAINS } from './chains';
 
 export function broviderRpc(chainId: number): string {
   return `https://rpc.brovider.xyz/${chainId}`;

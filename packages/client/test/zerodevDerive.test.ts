@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { deriveOwner, ownerDerivationPath, isValidMnemonic, normalizeMnemonic } from '../src/zerodev/derive';
-import { nextHdIndex } from '../src/accounts/hdIndex';
+import { nextHdIndex } from '../src/accounts/registry';
 
 const TEST_MNEMONIC = 'test test test test test test test test test test test junk';
 

@@ -11,14 +11,9 @@ interface SigningKey {
 async function smartSigningKey(rec: AccountRecord): Promise<SigningKey> {
   if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
   const { kernelClientForRecord } = await import('./zerodev/client');
-  const { SCW_CHAIN_ID } = await import('@stage-labs/client/zerodev/config');
+  const { WALLET_CHAIN_ID } = await import('@stage-labs/client/wallet/chains');
   const kernelClient = await kernelClientForRecord(rec);
-  return {
-    kind: 'SCW',
-    address: rec.address,
-    chainId: SCW_CHAIN_ID,
-    signMessage: (message) => kernelClient.signMessage({ message } as Parameters<typeof kernelClient.signMessage>[0]),
-  };
+  return { kind: 'SCW', address: rec.address, chainId: WALLET_CHAIN_ID, signMessage: (message) => kernelClient.signMessage({ message }) };
 }
 
 export async function signingKeyForRecord(rec: AccountRecord): Promise<SigningKey> {
@@ -33,8 +28,8 @@ type SigningIdentity = Omit<SigningKey, 'signMessage'>;
 async function signingIdentityForRecord(rec: AccountRecord): Promise<SigningIdentity> {
   if (rec.type !== 'smart') return { kind: 'EOA', address: rec.address, chainId: 1 };
   if (rec.hdIndex == null) throw new Error('Smart account is missing its HD index.');
-  const { SCW_CHAIN_ID } = await import('@stage-labs/client/zerodev/config');
-  return { kind: 'SCW', address: rec.address, chainId: SCW_CHAIN_ID };
+  const { WALLET_CHAIN_ID } = await import('@stage-labs/client/wallet/chains');
+  return { kind: 'SCW', address: rec.address, chainId: WALLET_CHAIN_ID };
 }
 
 export async function lazySigningKeyForRecord(rec: AccountRecord): Promise<SigningKey> {

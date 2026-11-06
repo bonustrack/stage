@@ -1,5 +1,6 @@
 import { formatUnits } from 'viem';
 import { deriveConfirmSummary } from '../wallet/txConfirm';
+import { explorerUrl } from '../wallet/chains';
 import type { WalletSendCallsContent, TransactionReferenceContent } from './tx.schema';
 
 export type { WalletSendCallsContent, TransactionReferenceContent } from './tx.schema';
@@ -77,14 +78,5 @@ export function chainIdToNumber(chainId: string | number): number {
 }
 
 export function explorerTxUrl(chainId: string | number, txHash: string): string {
-  const id = chainIdToNumber(chainId);
-  const base: Record<number, string> = {
-    1: 'https://etherscan.io',
-    10: 'https://optimistic.etherscan.io',
-    137: 'https://polygonscan.com',
-    8453: 'https://basescan.org',
-    42161: 'https://arbiscan.io',
-    11155111: 'https://sepolia.etherscan.io',
-  };
-  return `${base[id] ?? 'https://etherscan.io'}/tx/${txHash}`;
+  return `${explorerUrl(chainIdToNumber(chainId))}/tx/${txHash}`;
 }

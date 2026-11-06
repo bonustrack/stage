@@ -5,7 +5,6 @@ import type { DeviceBoundAccessOptions } from '../../platform/types';
 import { privateKeyToAccount, type PrivateKeyAccount, type HDAccount } from 'viem/accounts';
 import { keccak256, stringToBytes, type Hex } from 'viem';
 import { generateWalletMnemonic, normalizeMnemonic, isValidMnemonic, deriveOwner } from '@stage-labs/client/zerodev/derive';
-import { PK_PREFIX, LEGACY_PK_KEY } from '@stage-labs/client/accounts/keys';
 import { recover, ignored } from '../errorPolicy';
 
 const STORE_OPTS: DeviceBoundAccessOptions = { thisDeviceOnly: true };
@@ -30,6 +29,8 @@ async function requireDeviceAuth(): Promise<boolean> {
   return (await secureStorage.get(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(ignored(null, 'probe'))) !== null;
 }
 
+const PK_PREFIX = 'wallet.pk.';
+const LEGACY_PK_KEY = 'wallet.privateKey';
 const PHRASE_KEY_PREFIX = 'wallet.mnemonic.';
 const PRIMARY_PHRASE_KEY = 'wallet.mnemonic.primary';
 const LEGACY_MNEMONIC_KEY = 'wallet.mnemonic';

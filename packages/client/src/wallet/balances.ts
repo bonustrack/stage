@@ -1,6 +1,7 @@
 import { formatEther, formatUnits, type Hex } from 'viem';
 import { getCurrentPrices, getPriceChanges, type UsdQuote } from '../api/defillama';
-import { ETH_PRICE_ID, MULTICALL3, WALLET_ASSETS, WALLET_CHAIN_ID, erc20Abi, multicall3Abi, type Asset, type AssetRow } from './assets';
+import { ETH_PRICE_ID, MULTICALL3, WALLET_ASSETS, erc20Abi, multicall3Abi, type Asset, type AssetRow } from './assets';
+import { WALLET_CHAIN_ID } from './chains';
 import { publicClientFor } from './client';
 
 export type TokenLogoResolver = (chainId: number, contract: string, displayPx: number) => string;

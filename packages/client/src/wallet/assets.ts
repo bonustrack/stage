@@ -1,5 +1,5 @@
-import type { Hex, Chain } from 'viem';
-import { mainnet, sepolia, base } from 'viem/chains';
+import type { Hex } from 'viem';
+import { WALLET_CHAIN_ID } from './chains';
 
 export const NATIVE_TOKEN_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 
@@ -13,6 +13,7 @@ export interface Asset {
   address: Hex | null;
   logoAddress: string;
   priceId?: string;
+  transferAuthorization?: true;
 }
 
 export const ETH_PRICE_ID = 'ethereum:0x0000000000000000000000000000000000000000';
@@ -28,6 +29,7 @@ export const ASSETS: Asset[] = [
     address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     priceId: USDC_PRICE_ID,
+    transferAuthorization: true,
   },
   {
     symbol: 'ETH',
@@ -46,6 +48,7 @@ export const ASSETS: Asset[] = [
     address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
     logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     priceId: USDC_PRICE_ID,
+    transferAuthorization: true,
   },
   {
     symbol: 'ETH',
@@ -64,6 +67,16 @@ export const ASSETS: Asset[] = [
     address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
     logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
     priceId: 'base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+    transferAuthorization: true,
+  },
+  {
+    symbol: 'USDC',
+    name: 'USD Coin',
+    decimals: 6,
+    chainId: 84532,
+    address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    logoAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    transferAuthorization: true,
   },
   {
     symbol: 'STAGE',
@@ -75,21 +88,13 @@ export const ASSETS: Asset[] = [
   },
 ];
 
-export const WALLET_CHAIN_ID = base.id;
-
 export const WALLET_ASSETS = ASSETS.filter((a) => a.chainId === WALLET_CHAIN_ID);
 
-export const MAINNET_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid7ndxh6y2ljw2jhbisodiyrhcy2udvnwqgon5wgells3kh4si5z4';
-const SEPOLIA_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreif5b7trz7plh4mpfbnom2wqc6yogux6sgzwau6znwu7pbq6qeu63e';
-export const BASE_NETWORK_LOGO = 'https://ipfs.snapshot.box/ipfs/bafkreid4ek4gnj6ccxl3yubwj2wr3d5t6dqelvvh4hv5wo5eldkqs725ri';
-export const NETWORK_LOGO: Record<number, string> = {
-  1: MAINNET_NETWORK_LOGO,
-  8453: BASE_NETWORK_LOGO,
-  84532: BASE_NETWORK_LOGO,
-  11155111: SEPOLIA_NETWORK_LOGO,
-};
-
-export const VIEM_CHAINS: Record<number, Chain> = { 1: mainnet, 8453: base, 11155111: sepolia };
+export const KNOWN_TOKENS: Readonly<Record<string, { symbol: string; decimals: number }>> = Object.fromEntries(
+  ASSETS.flatMap((a) =>
+    a.transferAuthorization === true && a.address !== null ? [[a.address.toLowerCase(), { symbol: a.symbol, decimals: a.decimals }]] : [],
+  ),
+);
 
 export const erc20Abi = [
   {

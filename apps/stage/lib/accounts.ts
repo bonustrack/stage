@@ -3,16 +3,14 @@ import { secureStorage } from '../platform/storage';
 import type { PrivateKeyAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
 import { getViemAccount, adoptLegacyKey, deleteKey, deletePhrase, importPrivateKey, primaryPhraseId } from './zerodev/keyring';
-import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
-import { addLocalAccountToList, resolveActiveAccount } from '@stage-labs/client/accounts/registry';
-import { nextHdIndex } from '@stage-labs/client/accounts/hdIndex';
+import { LEGACY_DB_DIR, addLocalAccountToList, nextHdIndex, resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 import { readSmartHdIndexHighWater } from './zerodev/hdIndexStore';
 import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
 import { recover, ignored } from './errorPolicy';
 import { accountSelectionChanged } from './accountSelection';
 import { capabilities } from './capabilities';
 
-export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';
+export { canExportPrivateKey } from '@stage-labs/client/accounts/registry';
 export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
 export type { AccountRecord } from '@stage-labs/client/accounts/types';
 

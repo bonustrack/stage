@@ -55,7 +55,11 @@ const stageThemeNative = {
 };
 
 const SECRET_KEY_CONSTANTS = new Set(['PK_PREFIX', 'LEGACY_PK_KEY']);
+const SECRET_STORAGE_KEY_PREFIXES = ['wallet.pk.', 'wallet.privateKey', 'wallet.mnemonic'];
 const SECRET_VIEM_NAMES = new Set(['privateKeyToAccount', 'generatePrivateKey', 'mnemonicToAccount', 'hdKeyToAccount']);
+function isSecretStorageKey(value) {
+  return typeof value === 'string' && SECRET_STORAGE_KEY_PREFIXES.some((prefix) => value.startsWith(prefix));
+}
 const keyringGuardRule = {
   'no-keyring-bypass': {
     meta: { type: 'problem', docs: { description: 'only lib/zerodev/keyring may import private-key/mnemonic primitives' }, schema: [] },
@@ -69,20 +73,25 @@ const keyringGuardRule = {
             `Keyring guard: ${what} must only be imported by lib/zerodev/keyring (the single ` +
             "private-key/mnemonic chokepoint). Use the keyring's public API instead.",
         });
+      const failKeyName = (node, value) =>
+        context.report({
+          node,
+          message:
+            `Keyring guard: the secret storage key '${value}' belongs to lib/zerodev/keyring (the single ` +
+            "private-key/mnemonic chokepoint). Use the keyring's public API instead.",
+        });
       return {
         ImportDeclaration(node) {
           const src = node.source.value;
+          for (const s of node.specifiers) {
+            const name = s.imported?.name;
+            if (name !== undefined && SECRET_KEY_CONSTANTS.has(name)) fail(node, `the private-key storage-key constant '${name}'`);
+          }
           if (src === '@stage-labs/client/zerodev/derive') {
             for (const s of node.specifiers) {
               const name = s.imported?.name;
               if (name === 'deriveOwner' || name === 'generateWalletMnemonic') {
                 fail(node, `'${name}' from @stage-labs/client/zerodev/derive`);
-              }
-            }
-          } else if (src === '@stage-labs/client/accounts/keys') {
-            for (const s of node.specifiers) {
-              if (s.imported && SECRET_KEY_CONSTANTS.has(s.imported.name)) {
-                fail(node, `the private-key storage-key constant '${s.imported.name}'`);
               }
             }
           } else if (src === 'viem/accounts') {
@@ -92,6 +101,13 @@ const keyringGuardRule = {
               }
             }
           }
+        },
+        Literal(node) {
+          if (isSecretStorageKey(node.value)) failKeyName(node, node.value);
+        },
+        TemplateElement(node) {
+          const text = node.value?.cooked ?? node.value?.raw;
+          if (isSecretStorageKey(text)) failKeyName(node, text);
         },
       };
     },

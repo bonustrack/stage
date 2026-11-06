@@ -1,6 +1,7 @@
 import type { Hex } from 'viem';
 import { z } from 'zod';
 import type { AccountRecord } from '../accounts/types';
+import { dbDirFor } from '../accounts/registry';
 import { PROFILE_TEXT_KEYS } from '../identity/onchainProfile';
 import { validateStageLabel } from '../identity/stageNames';
 import { parseOrThrow } from '../validate';
@@ -35,7 +36,7 @@ const account = z
   })
   .strict()
   .refine(
-    (value) => value.id === value.address.toLowerCase() && value.dbDir === `xmtp-${value.id}`,
+    (value) => value.id === value.address.toLowerCase() && value.dbDir === dbDirFor(value.id),
     'wallet storage must match the prepared account',
   );
 const durableProfile = profile.extend({

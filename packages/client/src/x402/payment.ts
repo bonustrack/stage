@@ -1,35 +1,17 @@
 import { bytesToHex, zeroAddress, type TypedDataDefinition, type Hex } from 'viem';
 import { utf8ToBase64 } from '../text/base64';
 import type { X402Accept } from './challenge';
-import { KNOWN_TOKENS } from '../wallet/txConfirm';
-
-const NETWORKS: Record<string, { chainId: number; label: string }> = {
-  'eip155:8453': { chainId: 8453, label: 'Base' },
-  base: { chainId: 8453, label: 'Base' },
-  'eip155:84532': { chainId: 84532, label: 'Base Sepolia' },
-  'base-sepolia': { chainId: 84532, label: 'Base Sepolia' },
-  'eip155:1': { chainId: 1, label: 'Ethereum' },
-  ethereum: { chainId: 1, label: 'Ethereum' },
-  'eip155:11155111': { chainId: 11155111, label: 'Sepolia' },
-  sepolia: { chainId: 11155111, label: 'Sepolia' },
-  'eip155:10': { chainId: 10, label: 'Optimism' },
-  'eip155:42161': { chainId: 42161, label: 'Arbitrum' },
-  'eip155:137': { chainId: 137, label: 'Polygon' },
-  'eip155:43114': { chainId: 43114, label: 'Avalanche' },
-};
-
-function netKey(network: string): string {
-  return network.trim().toLowerCase();
-}
+import { KNOWN_TOKENS } from '../wallet/assets';
+import { x402Network } from '../wallet/chains';
 
 export function x402NetworkLabel(network: string): string {
-  return NETWORKS[netKey(network)]?.label ?? network;
+  return x402Network(network)?.label ?? network;
 }
 
 export function x402ChainNumber(network: string): number {
-  const known = NETWORKS[netKey(network)];
+  const known = x402Network(network);
   if (known) return known.chainId;
-  const m = /^eip155:(\d+)$/.exec(netKey(network));
+  const m = /^eip155:(\d+)$/.exec(network.trim().toLowerCase());
   return m ? Number(m[1]) : 1;
 }
 
@@ -54,7 +36,7 @@ export function x402KnownAsset(accept: X402Accept): { symbol: string; decimals: 
 export function x402CanPayInApp(accept: X402Accept): boolean {
   if (accept.scheme !== 'exact') return false;
   if (!accept.payTo || !accept.amount || !accept.asset) return false;
-  if (!NETWORKS[netKey(accept.network)]) return false;
+  if (!x402Network(accept.network)) return false;
   return !!x402KnownAsset(accept);
 }
 

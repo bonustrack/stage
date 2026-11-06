@@ -7,6 +7,7 @@ import { reserveSmartHdIndex } from './hdIndexStore';
 import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
 import { makePublicClient, zerodevConfigured } from './client';
 import { samePreparedAccount } from '@stage-labs/client/profile/setup';
+import { dbDirFor } from '@stage-labs/client/accounts/registry';
 
 export interface RestoredSmartAccount {
   record: AccountRecord;
@@ -55,7 +56,7 @@ async function storeSmartAccount(
     id: address.toLowerCase(),
     address,
     type: 'smart',
-    dbDir: `xmtp-${address.toLowerCase()}`,
+    dbDir: dbDirFor(address.toLowerCase()),
     registered: false,
     createdAt: Date.now(),
     hdIndex,
@@ -78,7 +79,7 @@ function matchesCandidate(rec: AccountRecord, candidate: Candidate): boolean {
     candidate.address.toLowerCase() === rec.id &&
     candidate.address.toLowerCase() === rec.address.toLowerCase() &&
     candidate.owner.address.toLowerCase() === rec.ownerAddress?.toLowerCase() &&
-    rec.dbDir === `xmtp-${rec.id}`
+    rec.dbDir === dbDirFor(rec.id)
   );
 }
 

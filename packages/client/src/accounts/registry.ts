@@ -1,7 +1,18 @@
 import type { AccountRecord } from './types';
 
+export const LEGACY_DB_DIR = 'xmtp';
+
 export function dbDirFor(id: string): string {
   return `xmtp-${id}`;
+}
+
+export function canExportPrivateKey(rec: AccountRecord): boolean {
+  return rec.type === 'generated' || rec.type === 'privateKey';
+}
+
+export function nextHdIndex(usedIndices: readonly number[], highWater: number | null): number {
+  const maxUsed = usedIndices.reduce((max, i) => (Number.isInteger(i) && i > max ? i : max), -1);
+  return Math.max(maxUsed + 1, highWater ?? 0);
 }
 
 export interface AddLocalResult {

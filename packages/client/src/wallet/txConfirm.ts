@@ -1,13 +1,7 @@
 import { decodeFunctionData, erc20Abi, formatEther, formatUnits, isAddress, type Hex } from 'viem';
 import { selectorOf } from './txDecode';
 import type { Eip712TypedData, SignatureRequestContent } from '../xmtp/sign';
-
-export const KNOWN_TOKENS: Record<string, { symbol: string; decimals: number }> = {
-  '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913': { symbol: 'USDC', decimals: 6 },
-  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': { symbol: 'USDC', decimals: 6 },
-  '0x036cbd53842c5426634e7929541ec2318f3dcf7e': { symbol: 'USDC', decimals: 6 },
-  '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238': { symbol: 'USDC', decimals: 6 },
-};
+import { KNOWN_TOKENS } from './assets';
 
 interface ConfirmSummary {
   verified: boolean;
