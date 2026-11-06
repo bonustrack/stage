@@ -2,7 +2,8 @@ export { Column } from '@stage-labs/kit/react-native/column';
 export { Row } from '@stage-labs/kit/react-native/row';
 export { ScreenScroll } from './ScreenScroll';
 export { VirtualList } from './VirtualList';
-export type { VirtualListHandle, VirtualListProps } from './VirtualList.types';
+export { usePersistedScroll } from './VirtualList.persist';
+export type { PersistedScroll, VirtualListHandle, VirtualListProps } from './VirtualList.types';
 export {
   PANE_LEFT_PAD,
   RIGHT_PANE_PAD,

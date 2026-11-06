@@ -25,6 +25,7 @@ import {
   type ListScrollMetrics,
 } from './VirtualList.model';
 import type { VirtualListHandle, VirtualListProps } from './VirtualList.types';
+import { withPersistedScroll } from './VirtualList.persist';
 import { SELF_SCROLL, SELF_SCROLLBAR } from './webChrome';
 
 const ESTIMATED_ITEM_SIZE = 72;
@@ -319,10 +320,11 @@ function SelfList<T>({ props, handle }: { props: VirtualListProps<T>; handle: Fo
 }
 
 function VirtualListInner<T>(props: VirtualListProps<T>, ref: ForwardedRef<VirtualListHandle>): React.ReactElement {
+  const listProps = withPersistedScroll(props);
   return props.scroll === 'self' ? (
-    <SelfList key="self" props={props} handle={ref} />
+    <SelfList key="self" props={listProps} handle={ref} />
   ) : (
-    <WindowList key="window" props={props} handle={ref} />
+    <WindowList key="window" props={listProps} handle={ref} />
   );
 }
 

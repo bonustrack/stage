@@ -1,15 +1,17 @@
 import { forwardRef, useImperativeHandle, useRef, type ForwardedRef, type Ref } from 'react';
 import { FlatList } from 'react-native-gesture-handler';
 import type { VirtualListHandle, VirtualListProps } from './VirtualList.types';
+import { withPersistedScroll } from './VirtualList.persist';
 
 function nativeListProps<T>(
   props: VirtualListProps<T>,
-): Omit<VirtualListProps<T>, 'scroll' | 'anchor' | 'estimatedItemSize' | 'stickToEnd'> {
-  const { scroll, anchor, estimatedItemSize, stickToEnd, ...rest } = props;
+): Omit<VirtualListProps<T>, 'scroll' | 'anchor' | 'estimatedItemSize' | 'stickToEnd' | 'persist'> {
+  const { scroll, anchor, estimatedItemSize, stickToEnd, persist, ...rest } = withPersistedScroll(props);
   void scroll;
   void anchor;
   void estimatedItemSize;
   void stickToEnd;
+  void persist;
   return rest;
 }
 

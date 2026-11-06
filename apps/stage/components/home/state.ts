@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
-import type { VirtualListHandle } from '../layout';
+import { usePersistedScroll, type PersistedScroll } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { useChannelGroups } from '../../lib/channelGroups';
 import { usePinnedOrder } from '../../lib/sync/pins';
 import { groupRows, rowsOf, type HomeListItem } from './groups.model';
 import type { NameOf } from './groupBy.model';
 import { useStoreValue } from '../../lib/storeCore';
-import { CHANNELS_SCROLL_KEY, getScrollOffset, peekScrollOffset, flushScrollOffset } from '../../lib/scrollPos';
+import { CHANNELS_SCROLL_KEY } from '../../lib/scrollPos';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { Row } from './model';
 import { isChannelHidden } from '../../lib/sync/hiddenChannels';
@@ -20,12 +20,6 @@ export interface RowMenu {
   anchor?: MenuPoint;
 }
 
-export interface ScrollRefs {
-  listRef: React.RefObject<VirtualListHandle | null>;
-  savedOffsetRef: React.MutableRefObject<number | undefined>;
-  didRestoreRef: React.MutableRefObject<boolean>;
-}
-
 interface HomeState {
   rows: Row[] | null;
   error: string;
@@ -33,7 +27,7 @@ interface HomeState {
   rowMenu: RowMenu | null;
   setRowMenu: React.Dispatch<React.SetStateAction<RowMenu | null>>;
   pinned: readonly string[];
-  scroll: ScrollRefs;
+  scroll: PersistedScroll;
 }
 
 export function homeRows(): Row[] | null {
@@ -51,20 +45,9 @@ export function useHomeState(): HomeState {
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
   const pinned = usePinnedOrder();
 
-  const listRef = useRef<VirtualListHandle>(null);
-  const savedOffsetRef = useRef<number | undefined>(peekScrollOffset(CHANNELS_SCROLL_KEY));
-  const didRestoreRef = useRef(false);
+  const scroll = usePersistedScroll(CHANNELS_SCROLL_KEY);
 
-  useEffect(() => {
-    void getScrollOffset(CHANNELS_SCROLL_KEY).then((o) => {
-      savedOffsetRef.current ??= o;
-    });
-    return () => {
-      flushScrollOffset(CHANNELS_SCROLL_KEY);
-    };
-  }, []);
-
-  return { rows, error, setError, rowMenu, setRowMenu, pinned, scroll: { listRef, savedOffsetRef, didRestoreRef } };
+  return { rows, error, setError, rowMenu, setRowMenu, pinned, scroll };
 }
 
 interface GroupedRows {

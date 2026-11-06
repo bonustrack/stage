@@ -1,5 +1,4 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
 import { MessagingSetupBanner } from './MessagingSetupBanner';
 import { LabelFilterBar } from './labelbar';
 import { FilterSearch } from './search/FilterSearch';
@@ -11,17 +10,16 @@ import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { useBoardHome } from '../tabs/boardHome';
 import { SuggestedContacts } from '../contacts/SuggestedContacts';
 import { usePalette } from '../../lib/theme';
-import { homeRows, type ScrollRefs } from './state';
+import { homeRows } from './state';
 import { listKeyOf, type HomeListItem } from './groups.model';
 import type { Row } from './model';
-import { attempt } from '../../lib/errorPolicy';
 import { useWebTabRail } from '../layout/webLayout';
 import { HoverIconButton } from '../hover';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { capabilities } from '../../lib/capabilities';
 import { ROUTES } from '../tabs/pages';
 import { useLastActivity } from '../../lib/lastActivity';
-import { Column, VirtualList } from '../layout';
+import { Column, VirtualList, type PersistedScroll } from '../layout';
 
 const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
 const LIST_CONTENT = { paddingTop: TOPNAV_FADE, paddingBottom: 24 };
@@ -42,7 +40,7 @@ interface ChannelsListProps {
   setQuery: (v: string) => void;
   onFilterMenu: (open: boolean) => void;
   listExtraData: readonly unknown[];
-  scroll: ScrollRefs;
+  scroll: PersistedScroll;
   renderRow: ({ item }: { item: HomeListItem }) => React.ReactElement;
   wrapList?: (list: React.ReactElement) => React.ReactElement;
   pane: boolean;
@@ -183,16 +181,13 @@ function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsLis
     )
       return;
     applied.current = { enabledLabels, unreadOnly, activity };
-    scroll.savedOffsetRef.current = 0;
-    scroll.didRestoreRef.current = true;
-    if ((peekScrollOffset(CHANNELS_SCROLL_KEY) ?? 0) <= 0) return;
-    scroll.listRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [enabledLabels, unreadOnly, activity, scroll.listRef, scroll.savedOffsetRef, scroll.didRestoreRef]);
+    scroll.resetToTop();
+  }, [enabledLabels, unreadOnly, activity, scroll]);
 }
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
   const { panRef, items, query, setQuery, pane, listExtraData, renderRow } = props;
-  const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
+  const { scroll } = props;
   const wide = useWebTabRail();
   const search = useSearchOpen(query, setQuery);
   const slot = useHomeTopnav({ ...props, scope: 'chats' }, search, wide);
@@ -212,30 +207,12 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
         ) : (
           (props.wrapList ?? same)(
             <VirtualList
-              ref={listRef}
+              ref={scroll.listRef}
+              persist={scroll}
               scroll={pane ? 'self' : 'window'}
               simultaneousHandlers={panRef}
               data={items}
-              onScroll={(ev) => {
-                saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y);
-              }}
               scrollEventThrottle={16}
-              onContentSizeChange={(_w, h) => {
-                if (didRestoreRef.current) return;
-                const want = savedOffsetRef.current;
-                if (want == null || want <= 0) {
-                  didRestoreRef.current = true;
-                  return;
-                }
-                if (h <= 0) return;
-                didRestoreRef.current = true;
-                const offset = Math.min(want, h);
-                requestAnimationFrame(() => {
-                  attempt(() => {
-                    listRef.current?.scrollToOffset({ offset, animated: false });
-                  }, 'ui');
-                });
-              }}
               extraData={listExtraData}
               keyExtractor={listKeyOf}
               windowSize={11}
