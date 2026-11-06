@@ -1,46 +1,38 @@
-import { isAddress, parseUnits, toHex } from 'viem';
+import { parseUnits, toHex } from 'viem';
 import { base } from 'viem/chains';
 import { xmtpSendPoll, xmtpSendTxRequest, xmtpSendSignatureRequest } from '../../lib/xmtp.messages';
 import { type PollContent, mintPollId, pollFallbackText } from '@stage-labs/client/xmtp/poll';
 import { capabilities } from '../../lib/capabilities';
-import {
-  type SignatureRequestContent,
-  buildEip712SignatureRequest,
-  buildPersonalSignatureRequest,
-  signatureRequestFallbackText,
-} from '@stage-labs/client/xmtp/sign';
+import { signatureRequestFallbackText } from '@stage-labs/client/xmtp/sign';
 import { type WalletSendCallsContent, walletSendCallsFallbackText } from '@stage-labs/client/xmtp/tx';
 import { structuredPayload, type EntryPayload } from '@stage-labs/client/xmtp/entryPayload';
 import { getActiveAccount } from '../../lib/accounts';
-import { setLastAttachment } from '../../lib/drafts';
+import { setLastAttachment, type AttachmentId } from '../../lib/drafts';
 import type { PostHooks } from './types';
 import { mintLocalId } from './outbound';
+import {
+  checkPaymentDraft,
+  checkPollDraft,
+  checkSignatureDraft,
+  type DraftCheck,
+  type PaymentDraft,
+  type PollDraft,
+  type SignatureDraft,
+} from './sheets.model';
 
 export interface PostCtx extends PostHooks {
   close: () => void;
 }
 
-export interface PollDraft {
-  question: string;
-  header: string;
-  options: string[];
-  multi: boolean;
-}
-export interface SignatureDraft {
-  kind: 'personal' | 'eip712';
-  desc: string;
-  message: string;
-  json: string;
-}
-export interface PaymentDraft {
-  to: string;
-  amount: string;
-  note: string;
+function checked<T>(check: DraftCheck<T>): T | null {
+  if (check.ok) return check.value;
+  capabilities.alert(check.message);
+  return null;
 }
 
 async function postStructured(
   post: PostCtx,
-  label: string,
+  attachment: AttachmentId,
   text: string,
   payload: EntryPayload,
   send: (line: string) => Promise<string>,
@@ -48,7 +40,7 @@ async function postStructured(
   const line = await post.openLine();
   if (line === null) return;
   const localId = mintLocalId();
-  setLastAttachment(label);
+  setLastAttachment(attachment);
   post.onOptimistic?.({ localId, text, attachments: [], payload });
   post.close();
   let sendErr: string | undefined;
@@ -63,52 +55,25 @@ async function postStructured(
   }
 }
 
-function buildSignatureContent(d: SignatureDraft): SignatureRequestContent | null {
-  try {
-    return d.kind === 'personal' ? buildPersonalSignatureRequest(d.message, d.desc) : buildEip712SignatureRequest(d.json, d.desc);
-  } catch (e) {
-    capabilities.alert((e as Error).message);
-    return null;
-  }
-}
-
 export async function sendSignatureRequest(d: SignatureDraft, post: PostCtx): Promise<void> {
-  const content = buildSignatureContent(d);
+  const content = checked(checkSignatureDraft(d));
   if (!content) return;
-  await postStructured(post, 'Sign', signatureRequestFallbackText(content), structuredPayload('signatureRequest', content), (line) =>
+  await postStructured(post, 'sign', signatureRequestFallbackText(content), structuredPayload('signatureRequest', content), (line) =>
     xmtpSendSignatureRequest(line, content),
   );
 }
 
 export async function sendPoll(d: PollDraft, post: PostCtx): Promise<void> {
-  const question = d.question.trim();
-  const options = d.options.map((o) => o.trim()).filter(Boolean);
-  if (!question || options.length < 2) {
-    capabilities.alert('Add a question and at least 2 options');
-    return;
-  }
-  const poll: PollContent = {
-    pollId: mintPollId(),
-    question,
-    ...(d.header.trim() ? { header: d.header.trim() } : {}),
-    options: options.map((label) => ({ label })),
-    ...(d.multi ? { multiSelect: true } : {}),
-  };
-  await postStructured(post, 'Poll', pollFallbackText(poll), structuredPayload('poll', poll), (line) => xmtpSendPoll(line, poll));
+  const fields = checked(checkPollDraft(d));
+  if (!fields) return;
+  const poll: PollContent = { pollId: mintPollId(), ...fields };
+  await postStructured(post, 'poll', pollFallbackText(poll), structuredPayload('poll', poll), (line) => xmtpSendPoll(line, poll));
 }
 
 export async function sendTxRequest(d: PaymentDraft, post: PostCtx): Promise<void> {
-  const to = d.to.trim();
-  const amount = d.amount.trim();
-  if (!isAddress(to)) {
-    capabilities.alert('Enter a valid recipient address');
-    return;
-  }
-  const n = Number(amount);
-  if (!isFinite(n) || n <= 0) {
-    capabilities.alert('Enter a valid amount');
-    return;
-  }
+  const fields = checked(checkPaymentDraft(d));
+  if (!fields) return;
+  const { to, amount, units: n } = fields;
   const acct = await getActiveAccount();
   if (!acct) {
     capabilities.alert('No active account');
@@ -127,7 +92,7 @@ export async function sendTxRequest(d: PaymentDraft, post: PostCtx): Promise<voi
       },
     ],
   };
-  await postStructured(post, 'Payment', walletSendCallsFallbackText(wsc), structuredPayload('walletSendCalls', wsc), (line) =>
+  await postStructured(post, 'payment', walletSendCallsFallbackText(wsc), structuredPayload('walletSendCalls', wsc), (line) =>
     xmtpSendTxRequest(line, wsc),
   );
 }

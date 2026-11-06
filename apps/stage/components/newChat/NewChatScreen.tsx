@@ -5,7 +5,7 @@ import { channelLinkOf } from '../../lib/links';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { errorMessage } from '@stage-labs/client/errors';
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
-import { MessengerComposer } from '../composer/MessengerComposer';
+import { DraftComposer } from '../composer/DraftComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { discardComposerDraft, handOverSend } from '../composer/handoff';
 import { startSend } from '../composer/sendRun';
@@ -59,7 +59,7 @@ import { createValueStore } from '../../lib/persistedStore';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
 import { useContentViewportHeight, useWebTabRail } from '../layout/webLayout';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { createGroup } from '../../lib/xmtp.groups';
@@ -233,7 +233,6 @@ function NewChatForm({
   metadata,
   setMetadata,
 }: FormProps & { rounded?: boolean }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
   const focusNonce = useNewChatFocusNonce();
   const mentionCandidates = recipients.picked.map((address) => ({ address, name: peerLabel(address) }));
   return (
@@ -244,15 +243,14 @@ function NewChatForm({
         onToggle={recipients.toggle}
         onAvatarPress={Platform.OS === 'web' ? draft.bumpFocus : undefined}
       />
-      <MessengerComposer
-        dark={dark}
+      <DraftComposer
         state={draft}
         draftKey={draftKey}
         suggestContacts
         mentionCandidates={mentionCandidates}
         placeholder={askPlaceholder(mentionCandidates.map((c) => c.name))}
         rounded={rounded}
-        metadata={<NewChatMetadata value={metadata} onChange={setMetadata} />}
+        header={<NewChatMetadata value={metadata} onChange={setMetadata} />}
         autoFocusNonce={focusNonce}
         busy={creating}
         onSubmit={onSubmit}

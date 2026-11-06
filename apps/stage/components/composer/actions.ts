@@ -57,7 +57,7 @@ async function uploadEach(upload: Upload, files: ComposerPickedFile[]): Promise<
 
 async function onPickedImages(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
   if (files.length === 0) return;
-  setLastAttachment('Image');
+  setLastAttachment('image');
   await uploadEach(upload, files);
 }
 
@@ -71,10 +71,10 @@ async function requestCameraPermission(a: ComposerActionsArgs): Promise<boolean>
   return true;
 }
 
-async function onPickedOne(upload: Upload, files: ComposerPickedFile[], label: 'Camera' | 'File'): Promise<void> {
+async function onPickedOne(upload: Upload, files: ComposerPickedFile[], id: 'camera' | 'file'): Promise<void> {
   const file = files[0];
   if (file === undefined) return;
-  setLastAttachment(label);
+  setLastAttachment(id);
   await upload(file.uri, file.mime, file.name);
 }
 
@@ -89,7 +89,7 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     const location = locationAttachment(pos.coords.latitude, pos.coords.longitude, mintAttachmentId());
     a.setPending((prev) => withLocation(prev, location));
-    setLastAttachment('Location');
+    setLastAttachment('location');
   } catch (e) {
     a.setErr((e as Error).message);
   }
@@ -136,7 +136,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
 
   const voice = useVoiceRecorder({
     upload: (uri, mime, name) => {
-      setLastAttachment('Voice message');
+      setLastAttachment('voice');
       return upload(uri, mime, name);
     },
     setErr: a.setErr,
@@ -169,8 +169,8 @@ export function useComposerActions(a: ComposerActionsArgs) {
     cameraNonce,
     fileNonce,
     onPickedImages: (files: ComposerPickedFile[]) => onPickedImages(upload, files),
-    onPickedCamera: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'Camera'),
-    onPickedFile: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'File'),
+    onPickedCamera: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'camera'),
+    onPickedFile: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'file'),
     onDroppedFiles: (files: ComposerPickedFile[]) => uploadEach(upload, files),
     send: () => performSend(a, () => current.current),
     adoptSend: (started: StartedSend) => adoptSend(current.current, started, () => current.current),

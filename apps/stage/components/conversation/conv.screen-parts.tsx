@@ -190,7 +190,6 @@ export function ConversationFooter({
       {access === 'waiting' || access === 'outside' ? <ChannelAccessNotice outside={access === 'outside'} /> : null}
       {composerShown ? (
         <MessengerComposer
-          dark={dark}
           xmtpLine={line}
           mentionCandidates={mentionCandidates}
           suggestContacts={conv.kind === 'dm'}

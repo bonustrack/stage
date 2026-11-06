@@ -50,12 +50,10 @@ function pendingModelOf(entry: HistoryEntry, dark: boolean, senderEthAddress: st
   };
 }
 
-function usePendingComposer(
-  onSubmit: (text: string) => void,
-): Omit<Parameters<typeof ComposerEditor>[0], 'dark' | 'fg' | 'head' | 'bg' | 'sub' | 'chipBg'> {
+function usePendingComposer(onSubmit: (text: string) => void) {
   const [text, setText] = useState('');
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const unavailable = useCallback(() => {
+  const onUnavailable = useCallback(() => {
     capabilities.toast('Available once this contact can receive messages');
   }, []);
   const onSend = useCallback(() => {
@@ -64,24 +62,7 @@ function usePendingComposer(
     setText('');
     onSubmit(trimmed);
   }, [text, onSubmit]);
-  return {
-    recording: false,
-    levels: [],
-    recordSecs: 0,
-    text,
-    setText,
-    selection,
-    setSelection,
-    focusNonce: 0,
-    blurNonce: 0,
-    attachMenuOpen: false,
-    setAttachMenuOpen: unavailable,
-    hasContent: text.trim().length > 0,
-    onStartRec: unavailable,
-    onCancelRec: unavailable,
-    onStopRec: unavailable,
-    onSend,
-  };
+  return { text, setText, selection, setSelection, hasContent: text.trim().length > 0, onSend, textOnly: { onUnavailable } };
 }
 
 export function PendingConversation({

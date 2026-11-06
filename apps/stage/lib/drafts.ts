@@ -47,15 +47,34 @@ export function useDraftsVersion(): number {
 
 const LAST_ATTACHMENT_KEY = 'composer:lastAttachment';
 
-const lastAttachment = createValueStore<string | undefined>({
+const STORED_ATTACHMENT_NAMES = {
+  voice: 'Voice message',
+  image: 'Image',
+  camera: 'Camera',
+  file: 'File',
+  location: 'Location',
+  poll: 'Poll',
+  sign: 'Sign',
+  payment: 'Payment',
+} as const;
+
+export type AttachmentId = keyof typeof STORED_ATTACHMENT_NAMES;
+
+const ATTACHMENT_IDS = Object.keys(STORED_ATTACHMENT_NAMES) as AttachmentId[];
+
+function attachmentIdOf(stored: string): AttachmentId | undefined {
+  return ATTACHMENT_IDS.find((id) => STORED_ATTACHMENT_NAMES[id] === stored);
+}
+
+const lastAttachment = createValueStore<AttachmentId | undefined>({
   key: LAST_ATTACHMENT_KEY,
   default: undefined,
-  serialize: (v) => v ?? '',
-  deserialize: (raw) => raw,
+  serialize: (id) => (id === undefined ? '' : STORED_ATTACHMENT_NAMES[id]),
+  deserialize: attachmentIdOf,
 });
 
-export const setLastAttachment = (label: string): void => {
-  lastAttachment.set(label);
+export const setLastAttachment = (id: AttachmentId): void => {
+  lastAttachment.set(id);
 };
 
-export const useLastAttachment = (): string | undefined => lastAttachment.use();
+export const useLastAttachment = (): AttachmentId | undefined => lastAttachment.use();
