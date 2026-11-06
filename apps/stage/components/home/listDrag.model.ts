@@ -80,7 +80,3 @@ export function zoneMove(model: HomeDragModel, move: SortMove): { convId: string
   const category = zone === undefined ? undefined : model.categories.get(zone);
   return category === undefined ? null : { convId: move.itemId, category };
 }
-
-export function domElementOf(node: unknown, web: boolean): HTMLElement | null {
-  return web && typeof HTMLElement !== 'undefined' && node instanceof HTMLElement ? node : null;
-}

@@ -3,7 +3,7 @@ import { acceptsColumnMove, boardColumns, columnMovable, orderedColumns } from '
 import { groupRows, isGroupHeader, listKeyOf, rowsOf, type HomeListItem } from '../components/home/groups.model';
 import { NO_GROUPS_PREFS, categoryKeysOf, categoryOrderWith, movedCategoryOrder, channelGroupsSchema } from '../lib/channelGroups.model';
 import { jsonWith } from '../lib/storeCore';
-import { domElementOf, homeDragModel } from '../components/home/listDrag.model';
+import { homeDragModel } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
 import { selectAccount } from './activeAccount';
 
@@ -195,25 +195,6 @@ describe('parseChannelGroupsPrefs', () => {
     expect(parseChannelGroupsPrefs('nope')).toBe(NO_GROUPS_PREFS);
     expect(parseChannelGroupsPrefs('null')).toBe(NO_GROUPS_PREFS);
     expect(parseChannelGroupsPrefs('[]')).toEqual({ collapsed: [], order: [] });
-  });
-});
-
-describe('domElementOf', () => {
-  test('a native view is never a DOM node, even where HTMLElement exists', () => {
-    const saved = Object.getOwnPropertyDescriptor(globalThis, 'HTMLElement');
-    class NativeElement {
-      readonly tagName = 'RN:View';
-    }
-    Object.defineProperty(globalThis, 'HTMLElement', { value: NativeElement, configurable: true, writable: true });
-    try {
-      const view = new NativeElement();
-      expect(domElementOf(view, false)).toBeNull();
-      expect(domElementOf(view, true)).toBe(view as HTMLElement);
-      expect(domElementOf(null, true)).toBeNull();
-    } finally {
-      if (saved === undefined) Reflect.deleteProperty(globalThis, 'HTMLElement');
-      else Object.defineProperty(globalThis, 'HTMLElement', saved);
-    }
   });
 });
 

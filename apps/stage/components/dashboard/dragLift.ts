@@ -1,6 +1,6 @@
 import { Platform, Vibration } from 'react-native';
 import { LIST_CELL_SELECTOR } from '../layout/VirtualList.model';
-import { domElementOf } from '../home/listDrag.model';
+import { domElementOf } from './dragLift.model';
 import { setChromeClass } from '../layout/webChrome';
 
 export const HOLD_MS = 250;
