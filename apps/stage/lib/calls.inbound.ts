@@ -6,28 +6,18 @@ import {
   type CallInvite,
   type CallSignal,
 } from '@stage-labs/client/xmtp/call';
-import type { CallEvent } from '@stage-labs/client/xmtp/callMachine';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feedLines';
 import type { StreamMsg } from './xmtp.types';
 import { reported } from './errorPolicy';
+import type { CallInbound, CallInboundHooks } from './calls.machine.core';
 
 const HISTORY_LIMIT = 100;
 const SEEN_MAX = 2_000;
 interface CallContent {
   invite: CallInvite | null;
   signal: CallSignal | null;
-}
-interface CallInboundDeps {
-  generation: () => number;
-  selfInboxId: (epoch: number) => Promise<string>;
-  dispatch: (event: CallEvent) => void;
-}
-interface CallInbound {
-  onMessage: (message: StreamMsg) => void;
-  reload: (convId: string) => Promise<void>;
-  reset: () => void;
 }
 
 async function convContext(convId: string): Promise<{ dm: boolean; allowed: boolean }> {
@@ -40,7 +30,7 @@ function callContentOf(m: StreamMsg['msg']): CallContent | null {
   const signal = isCallSignalType(m.contentTypeId) ? parseCallSignal(m.content) : null;
   return invite || signal ? { invite, signal } : null;
 }
-export function makeCallInbound({ generation, selfInboxId, dispatch }: CallInboundDeps): CallInbound {
+export function makeCallInbound({ generation, selfInboxId, dispatch }: CallInboundHooks): CallInbound {
   const seen = new Set<string>();
   const histories = new Map<string, Promise<void>>();
   let ingestQueue: Promise<void> = Promise.resolve();

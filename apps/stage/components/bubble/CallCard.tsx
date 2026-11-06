@@ -8,8 +8,7 @@ import { IconCall } from '@central-icons-react-native/round-outlined-radius-1-st
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
-import { joinCall } from '../../lib/calls';
-import { setCallMinimized, useCallView } from '../../lib/calls.store';
+import { joinCall, setCallMinimized, useCallView } from '../../lib/calls';
 import { ignore } from '../../lib/errorPolicy';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { callCardModel, callLiveOf, type CallCardModel, type CallRecord } from './callCard.model';

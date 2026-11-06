@@ -1,6 +1,6 @@
-import { CALL_ICE_GATHER_MS } from '@stage-labs/client/xmtp/call';
+import { CALL_ICE_GATHER_MS, CALL_ICE_SERVERS } from '@stage-labs/client/xmtp/call';
 import { NO_MEDIA, type CallLinkStatus, type CallMedia } from './calls.store';
-import type { CallStream, Outgoing } from './calls.types';
+import type { CallStream, CallTrack, Outgoing } from './calls.types';
 
 interface TransportHooks {
   track: () => void;
@@ -142,4 +142,79 @@ export async function negotiateSdp<Track>(
   const sdp = pc.localDescription?.sdp;
   if (!sdp) throw new Error('No local description');
   return sdp;
+}
+
+interface RtcChannel {
+  readonly readyState: string;
+  send(data: string): void;
+  close(): void;
+  addEventListener(type: 'open' | 'close', listener: () => void): void;
+  addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
+}
+
+interface RtcConnection<Track> extends Connection<Track> {
+  readonly connectionState: string;
+  createDataChannel(label: string, init: { negotiated: boolean; id: number }): RtcChannel;
+  addEventListener(type: 'track', listener: (event: { track: Track | null }) => void): void;
+  addEventListener(type: 'connectionstatechange' | 'icegatheringstatechange', listener: () => void): void;
+  close(): void;
+}
+
+interface RtcConfig {
+  iceServers: { urls: string[] }[];
+  bundlePolicy: 'max-bundle';
+}
+
+interface RemoteStream<Track> {
+  stream: CallStream;
+  add: (track: Track) => void;
+  release: () => void;
+}
+
+export interface RtcPlatform<Track> {
+  connect: (config: RtcConfig) => RtcConnection<Track>;
+  remote: () => RemoteStream<Track>;
+  track: (track: CallTrack | null) => Track | null;
+}
+
+export function openRtcPeer<Track>(platform: RtcPlatform<Track>, hooks: PeerHooks): Peer {
+  const pc = platform.connect({ iceServers: CALL_ICE_SERVERS.map((s) => ({ urls: [...s.urls] })), bundlePolicy: 'max-bundle' });
+  const channel = pc.createDataChannel('media', { negotiated: true, id: 0 });
+  const remote = platform.remote();
+  const tracks = (out: Outgoing): { audio: Track | null; video: Track | null } => ({
+    audio: platform.track(out.audio),
+    video: platform.track(out.video),
+  });
+  return makePeer(
+    {
+      stream: remote.stream,
+      bind: (events) => {
+        pc.addEventListener('track', (event) => {
+          if (event.track) remote.add(event.track);
+          events.track();
+        });
+        pc.addEventListener('connectionstatechange', () => {
+          events.state(pc.connectionState);
+        });
+        channel.addEventListener('open', events.open);
+        channel.addEventListener('close', events.close);
+        channel.addEventListener('message', (event) => {
+          events.message(event.data);
+        });
+      },
+      replace: (out) => replaceOutgoing(pc, tracks(out)),
+      offer: (out) => negotiateSdp(pc, () => tracks(out())),
+      answer: (sdp, out) => negotiateSdp(pc, () => tracks(out()), sdp),
+      accept: (sdp) => pc.setRemoteDescription({ type: 'answer', sdp }),
+      send: (data) => {
+        if (channel.readyState === 'open') channel.send(data);
+      },
+      close: () => {
+        channel.close();
+        pc.close();
+        remote.release();
+      },
+    },
+    hooks,
+  );
 }

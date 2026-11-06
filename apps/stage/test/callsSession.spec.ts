@@ -1,7 +1,10 @@
-import { afterEach, beforeEach, describe, expect, mock, setSystemTime, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, setSystemTime, test } from 'bun:test';
 import { CALL_RING_TIMEOUT_MS, type CallSignal } from '@stage-labs/client/xmtp/call';
 import { EMPTY_CALLS, type CallEvent } from '@stage-labs/client/xmtp/callMachine';
 import { CALL_INVITE_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';
+import { NO_MEDIA, type CallView } from '../lib/calls.store';
+import type { CallInboundHooks } from '../lib/calls.machine.core';
+import { acquire, makeCallSession } from '../lib/calls.session.core';
 import { fakeMedia, fakePeers, fakeTimers, FakeTrack } from './callsFakes';
 
 const SELF = 'self-inbox';
@@ -15,89 +18,62 @@ let sent: { kind: string; content: unknown }[] = [];
 let toasts: string[] = [];
 let ids = 0;
 let inboundResets = 0;
-let hooks: { generation: () => number; dispatch: (event: CallEvent) => void } | null = null;
-
-mock.module('../lib/calls.media', () => ({
-  callsSupported: true,
-  screenShareSupported: true,
-  userMedia: (video: boolean, audio: boolean) => media.userMedia(video, audio),
-  displayMedia: () => media.displayMedia(),
-  previewOf: (video: Parameters<typeof media.previewOf>[0]) => media.previewOf(video),
-  watchScreenEnd: (video: Parameters<typeof media.watchScreenEnd>[0], ended: () => void) => {
-    media.watchScreenEnd(video, ended);
-  },
-  watchCallLifecycle: () => () => undefined,
-  prepareAudio: () => media.prepareAudio(),
-  startAudio: (video: boolean) => media.startAudio(video),
-  stopAudio: () => {
-    media.stopAudio();
-  },
-  startRingtone: () => media.startRingtone(),
-}));
-mock.module('../lib/calls.peer', () => ({ openPeer: (h: Parameters<typeof peers.openPeer>[0]) => peers.openPeer(h) }));
-mock.module('../lib/calls.inbound', () => ({
-  makeCallInbound: (deps: { generation: () => number; dispatch: (event: CallEvent) => void }) => {
-    hooks = deps;
-    return {
-      onMessage: () => undefined,
-      reload: async () => undefined,
-      reset: () => {
-        inboundResets += 1;
-      },
-    };
-  },
-}));
-mock.module('../lib/xmtp.stream', () => ({ subscribeAllMessages: () => () => undefined }));
-mock.module('../lib/xmtp.messages', () => ({
-  xmtpSendJson: async (_line: unknown, codec: unknown, content: unknown) => {
-    sent.push({ kind: codec === CALL_INVITE_CODEC ? 'invite' : 'signal', content });
-  },
-}));
-mock.module('../lib/xmtp.sdk', () => ({
-  sdk: {
-    client: async () => {
-      await media.pass('self');
-      return { inboxId: SELF };
-    },
-  },
-}));
-mock.module('../lib/capabilities', () => ({ capabilities: { toast: (message: string) => toasts.push(message) } }));
-mock.module('@stage-labs/client/ids', () => ({
-  randomUuid: () => {
-    ids += 1;
-    return `call-id-${ids}`;
-  },
-  randomHex: () => 'ab',
-}));
-
-const calls = await import('../lib/calls');
-const store = await import('../lib/calls.store');
-const realSetInterval = globalThis.setInterval;
-const realClearInterval = globalThis.clearInterval;
-const stops = new Map<unknown, () => void>();
-let stopService: () => void = () => undefined;
 
 function harness() {
-  return {
-    start: calls.startCall,
-    join: calls.joinCall,
-    decline: calls.declineCall,
-    leave: calls.leaveCall,
-    toggleMic: calls.toggleMic,
-    toggleCamera: calls.toggleCamera,
-    toggleScreen: (picker: null) => {
-      void picker;
-      return calls.toggleScreen();
+  let view: CallView = { calls: EMPTY_CALLS, selfInboxId: null, preview: null, media: NO_MEDIA, peers: [] };
+  let hooks: CallInboundHooks | null = null;
+  const session = makeCallSession({
+    media,
+    openPeer: peers.openPeer,
+    view: {
+      get: () => view,
+      set: (patch) => {
+        view = { ...view, ...patch };
+      },
     },
-    view: store.callView,
+    inbound: (bound) => {
+      hooks = bound;
+      return {
+        onMessage: () => undefined,
+        reload: async () => undefined,
+        reset: () => {
+          inboundResets += 1;
+        },
+      };
+    },
+    clientInboxId: async () => {
+      await media.pass('self');
+      return SELF;
+    },
+    sendJson: async (_convId, codec, content) => {
+      sent.push({ kind: codec === CALL_INVITE_CODEC ? 'invite' : 'signal', content });
+    },
+    toast: (message) => {
+      toasts.push(message);
+    },
+    newId: () => {
+      ids += 1;
+      return `call-id-${ids}`;
+    },
+    now: () => Date.now(),
+    every: timers.every,
+  });
+  return {
+    start: session.startCall,
+    join: session.joinCall,
+    decline: session.declineCall,
+    leave: session.leaveCall,
+    toggleMic: session.toggleMic,
+    toggleCamera: session.toggleCamera,
+    toggleScreen: session.toggleScreen,
+    view: () => view,
     dispatch: (event: CallEvent) => hooks?.dispatch(event),
     generation: () => hooks?.generation() ?? -1,
-    reset: () => {
-      stopService();
-      stopService = calls.startCallService();
-    },
+    reset: session.reset,
   };
 }
+
+let h = harness();
 
 beforeEach(() => {
   media = fakeMedia();
@@ -108,27 +84,13 @@ beforeEach(() => {
   ids = 0;
   inboundResets = 0;
   setSystemTime(NOW);
-  Object.assign(globalThis, {
-    setInterval: (run: () => void, ms: number) => {
-      const handle = {};
-      stops.set(handle, timers.every(ms, run));
-      return handle;
-    },
-    clearInterval: (handle: unknown) => {
-      stops.get(handle)?.();
-      stops.delete(handle);
-    },
-  });
-  stopService = calls.startCallService();
+  h = harness();
 });
 
 afterEach(() => {
-  stopService();
-  Object.assign(globalThis, { setInterval: realSetInterval, clearInterval: realClearInterval });
+  h.reset();
   setSystemTime();
 });
-
-const h = harness();
 
 function invite(convId: string, callId: string, from: string): CallEvent {
   return {
@@ -415,5 +377,57 @@ describe('in a call', () => {
     expect(stopCounts()).toEqual([1]);
     expect(sent).toHaveLength(1);
     expect(timers.running.size).toBe(0);
+  });
+});
+
+describe('the capture token', () => {
+  test('the platform holds a token that goes stale when the call ends, and the next call gets a new one', async () => {
+    await h.start('c1', true, false);
+    const [preparing, starting] = media.tokens;
+    expect([preparing?.live(), starting?.live()]).toEqual([true, true]);
+    h.leave();
+    expect([preparing?.live(), starting?.live()]).toEqual([false, false]);
+    await h.start('c1', true, false);
+    expect(media.tokens.slice(2).map((t) => t.live())).toEqual([true, true]);
+  });
+
+  test('an account switch cancels the token of a capture in progress', async () => {
+    const preparing = media.hold('prepare');
+    const call = h.start('c1', true, false);
+    await preparing.reached;
+    h.reset();
+    expect(media.tokens[0]?.live()).toBe(false);
+    preparing.open();
+    await call;
+    expect(media.log).toEqual(['prepare', 'stop audio', 'mic', 'stop audio']);
+    expect(stopCounts()).toEqual([1]);
+  });
+
+  test('sharing the screen hands the screen picker to the platform', async () => {
+    await h.start('c1', true, false);
+    const picker = { show: () => undefined };
+    await h.toggleScreen(picker);
+    expect(media.pickers).toEqual([picker]);
+  });
+
+  test('acquire keeps what arrives while the token is live and the media is still wanted', async () => {
+    const disposed: string[] = [];
+    const dispose = (media: string): void => {
+      disposed.push(media);
+    };
+    const live = { live: () => true };
+    const stale = { live: () => false };
+    expect(await acquire(live, async () => 'kept', dispose)).toBe('kept');
+    expect(await acquire(stale, async () => 'late', dispose)).toBeNull();
+    expect(
+      await acquire(
+        live,
+        async () => 'unwanted',
+        dispose,
+        (media) => media !== 'unwanted',
+      ),
+    ).toBeNull();
+    expect(await acquire(stale, async () => null, dispose)).toBeNull();
+    expect(disposed).toEqual(['late', 'unwanted']);
   });
 });

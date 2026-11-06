@@ -1,5 +1,5 @@
 import { makePeer, type Peer, type PeerHooks } from '../lib/calls.peer.core';
-import type { CallStream, CallTrack, CapturedMedia } from '../lib/calls.types';
+import type { CallStream, CallToken, CallTrack, CapturedMedia, ScreenPicker } from '../lib/calls.types';
 
 export class FakeTrack extends EventTarget implements MediaStreamTrack {
   contentHint = '';
@@ -123,6 +123,8 @@ export function fakeMedia() {
   const gates = new Map<Step, Gate>();
   const tracks: FakeTrack[] = [];
   const screenEnds: (() => void)[] = [];
+  const tokens: CallToken[] = [];
+  const pickers: (ScreenPicker | null)[] = [];
   const settings = { cameraRefused: false, micRefused: false, screenEnded: false };
   const failures = new Set<Step>();
   let count = 0;
@@ -143,6 +145,8 @@ export function fakeMedia() {
     log,
     tracks,
     screenEnds,
+    tokens,
+    pickers,
     settings,
     failures,
     hold(step: Step): Gate {
@@ -157,8 +161,10 @@ export function fakeMedia() {
       if ((video && settings.cameraRefused) || (audio && settings.micRefused)) return null;
       return { audio: audio ? track('audio') : null, video: video ? track('video') : null };
     },
-    async displayMedia(): Promise<CallTrack | null> {
+    async displayMedia(token: CallToken, picker: ScreenPicker | null): Promise<CallTrack | null> {
       log.push('display');
+      tokens.push(token);
+      pickers.push(picker);
       await pass('display');
       return track('video', settings.screenEnded);
     },
@@ -170,12 +176,14 @@ export function fakeMedia() {
       log.push(`watch ${video.value.id}`);
       screenEnds.push(ended);
     },
-    async prepareAudio(): Promise<void> {
+    async prepareAudio(token: CallToken): Promise<void> {
       log.push('prepare');
+      tokens.push(token);
       await pass('prepare');
     },
-    async startAudio(video: boolean): Promise<void> {
+    async startAudio(video: boolean, token: CallToken): Promise<void> {
       log.push(video ? 'start video' : 'start audio');
+      tokens.push(token);
       await pass('start');
     },
     stopAudio(): void {

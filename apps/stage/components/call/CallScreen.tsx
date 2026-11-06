@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { DENSITY_SCALE } from '@stage-labs/kit/tokens';
@@ -17,14 +17,26 @@ import { HoverIconButton } from '../hover';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { usePalette } from '../../lib/theme';
 import { useWebTabRail } from '../layout/webLayout';
-import { leaveCall, screenShareSupported, toggleCamera, toggleMic, toggleScreen } from '../../lib/calls';
-import { setCallMinimized, type CallLinkStatus, type CallMedia, type CallView } from '../../lib/calls.store';
-import { toggleSpeaker, useAudioRoutes } from '../../lib/calls.media';
-import { canToggleSpeaker, speakerOn } from '../../lib/calls.route.core';
+import {
+  canToggleSpeaker,
+  leaveCall,
+  screenShareSupported,
+  setCallMinimized,
+  speakerOn,
+  toggleCamera,
+  toggleMic,
+  toggleScreen,
+  toggleSpeaker,
+  useAudioRoutes,
+  type CallLinkStatus,
+  type CallMedia,
+  type CallStream,
+  type CallView,
+  type ScreenPicker,
+} from '../../lib/calls';
 import { ignore } from '../../lib/errorPolicy';
 import { CallMediaView } from './CallMediaView';
 import { CallScreenPicker } from './CallScreenPicker';
-import type { CallStream } from '../../lib/calls.types';
 import { callPerson, callTitle } from './callPeople';
 import { TitleText } from '../TitleText';
 import { callGrid, callSubtitle } from './CallScreen.model';
@@ -128,7 +140,17 @@ function SpeakerControl(): React.ReactElement | null {
   return <CallControl icon={IconVolumeFull} label={on ? 'Turn speaker off' : 'Turn speaker on'} active={on} onPress={toggleSpeaker} />;
 }
 
-function Controls({ media, people, onPeople }: { media: CallMedia; people: boolean; onPeople: () => void }): React.ReactElement {
+function Controls({
+  media,
+  people,
+  onPeople,
+  picker,
+}: {
+  media: CallMedia;
+  people: boolean;
+  onPeople: () => void;
+  picker: { current: ScreenPicker | null };
+}): React.ReactElement {
   const bottom = useSafeAreaInsets().bottom;
   return (
     <Row align="center" justify="center" gap={DENSITY_SCALE.normal.gap} padding={{ top: 12, bottom: 16 + bottom, x: PAGE_GUTTER }} wrap>
@@ -153,7 +175,7 @@ function Controls({ media, people, onPeople }: { media: CallMedia; people: boole
           label={media.screen ? 'Stop sharing' : 'Share screen'}
           active={media.screen}
           onPress={() => {
-            ignore(toggleScreen(), 'ui');
+            ignore(toggleScreen(picker.current), 'ui');
           }}
         />
       ) : null}
@@ -198,9 +220,10 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
   const { cols, rows } = callGrid(tiles.length, wide);
   const connected = view.peers.filter((p) => p.status === 'connected').length;
   const top = useSafeAreaInsets().top;
+  const picker = useRef<ScreenPicker | null>(null);
   return (
     <Column surface="surface" style={viewportFill(60)}>
-      <CallScreenPicker />
+      <CallScreenPicker host={picker} />
       <Row align="center" gap={14} padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
         <MinimizeButton />
         <Column weight={1}>
@@ -229,6 +252,7 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
         onPeople={() => {
           setPeople(!people);
         }}
+        picker={picker}
       />
     </Column>
   );

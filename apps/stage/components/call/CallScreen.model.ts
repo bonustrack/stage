@@ -1,4 +1,4 @@
-import type { CallStream } from '../../lib/calls.types';
+import type { CallStream } from '../../lib/calls';
 import { clockLabel } from '../bubble/audioCard.model';
 
 interface CallGrid {

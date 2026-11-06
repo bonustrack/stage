@@ -1,389 +1,53 @@
-import { VIDEO_OFF_ABOVE } from '@stage-labs/client/xmtp/call';
-import { EMPTY_CALLS, reduceCall, type CallEffect, type CallEndReason, type CallEvent } from '@stage-labs/client/xmtp/callMachine';
+import { randomUuid } from '@stage-labs/client/ids';
+import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { subscribeAllMessages } from './xmtp.stream';
 import { xmtpSendJson } from './xmtp.messages';
 import { sdk } from './xmtp.sdk';
-import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
 import { capabilities } from './capabilities';
-import { NO_MEDIA, callView, setCallView, type CallMedia, type CallPeerView } from './calls.store';
+import { callView, setCallView } from './calls.store';
 import { openPeer } from './calls.peer';
 import { makeCallInbound } from './calls.inbound';
-import { closePeer, sendMedia, type Peer } from './calls.peer.core';
-import { stopMedia, stopTrack, releaseStream, type CallTrack, type CapturedMedia, type Outgoing } from './calls.types';
-import {
-  callsSupported,
-  displayMedia,
-  previewOf,
-  prepareAudio,
-  startAudio,
-  startRingtone,
-  stopAudio,
-  userMedia,
-  watchCallLifecycle,
-  watchScreenEnd,
-} from './calls.media';
-import { ignore, report, reported } from './errorPolicy';
-import { randomUuid } from '@stage-labs/client/ids';
+import { callMedia } from './calls.media';
+import { makeCallSession } from './calls.session.core';
 
-const END_TOASTS: Partial<Record<CallEndReason, string>> = {
-  ended: 'Call ended',
-  declined: 'Call declined',
-  'no-answer': 'No answer',
-  missed: 'Missed call',
-  full: 'This call is full',
-};
-const peers = new Map<string, Peer>();
-let mic: CallTrack | null = null;
-let camera: CallTrack | null = null;
-let screen: CallTrack | null = null;
-let ticker: ReturnType<typeof setInterval> | null = null;
-let stopRing: (() => void) | null = null;
-let busy = false;
-let generation = 0;
-let captureVersion = 0;
-const inbound = makeCallInbound({ generation: () => generation, selfInboxId, dispatch });
+const session = makeCallSession({
+  media: callMedia,
+  openPeer,
+  view: { get: callView, set: setCallView },
+  inbound: makeCallInbound,
+  clientInboxId: async () => (await sdk.client()).inboxId,
+  sendJson: (convId, codec, content) => xmtpSendJson(lineOfConv(convId), codec, content),
+  toast: (message) => {
+    capabilities.toast(message);
+  },
+  newId: randomUuid,
+  now: () => Date.now(),
+  every: (ms, run) => {
+    const timer = setInterval(run, ms);
+    return () => {
+      clearInterval(timer);
+    };
+  },
+});
 
-function captureCurrent(epoch: { generation: number; captureVersion: number }): boolean {
-  return epoch.generation === generation && epoch.captureVersion === captureVersion;
-}
+export const { startCall, joinCall, declineCall, leaveCall, toggleMic, toggleCamera, toggleScreen } = session;
+export const { callsSupported, screenShareSupported, useAudioRoutes, toggleSpeaker } = callMedia;
+export { canToggleSpeaker, speakerOn } from './calls.route.core';
+export { setCallMinimized, useCallMinimized, useCallView, type CallLinkStatus, type CallMedia, type CallView } from './calls.store';
+export type { CallStream, ScreenPicker } from './calls.types';
 
-function state(): ReturnType<typeof callView>['calls'] {
-  return callView().calls;
-}
-function joinedCallId(): string | null {
-  const s = state().session;
-  return s?.phase === 'joined' ? s.callId : null;
-}
-function myMedia(): CallMedia {
-  return { audio: mic?.value.enabled === true, video: (screen ?? camera) !== null, screen: screen !== null };
-}
-function outgoing(): Outgoing {
-  return { audio: mic, video: screen ?? camera };
-}
-function peerViews(): CallPeerView[] {
-  const s = state().session;
-  const roster = s ? (state().calls[s.convId]?.roster ?? {}) : {};
-  return [...peers.entries()].map(([peerId, p]) => ({
-    peerId,
-    inboxId: roster[peerId] ?? '',
-    stream: p.stream,
-    media: p.media,
-    status: p.status,
-  }));
-}
-function publish(): void {
-  const video = screen ?? camera;
-  const current = callView().preview?.value.getVideoTracks()[0] ?? null;
-  if (video?.value !== current) releaseStream(callView().preview);
-  const preview = video?.value === current ? callView().preview : video ? previewOf(video) : null;
-  setCallView({ media: myMedia(), peers: peerViews(), preview });
-}
-function syncTimers(): void {
-  const s = state().session;
-  if (s && !ticker)
-    ticker = setInterval(() => {
-      dispatch({ type: 'tick', nowMs: Date.now() });
-    }, 1_000);
-  if (!s && ticker) {
-    clearInterval(ticker);
-    ticker = null;
-  }
-  syncRingtone(s?.phase === 'ringing' && !busy);
-}
-function syncRingtone(ringing: boolean): void {
-  if (ringing && !stopRing) stopRing = startRingtone();
-  if (!ringing && stopRing) {
-    stopRing();
-    stopRing = null;
-  }
-}
-function dispatch(event: CallEvent): void {
-  const { state: next, effects } = reduceCall(state(), event);
-  if (next !== state()) setCallView({ calls: next });
-  for (const effect of effects) runEffect(effect).catch(reported('calls.effect'));
-  syncTimers();
-  publish();
-}
-async function send<T>(convId: string, codec: JsonCodec<T>, content: T): Promise<void> {
-  try {
-    await xmtpSendJson(lineOfConv(convId), codec, content);
-  } catch (err) {
-    report('calls.send', err);
-    capabilities.toast('Call message could not be sent');
-  }
-}
-function replacePeer(peerId: string): Peer {
-  const old = peers.get(peerId);
-  if (old) closePeer(old);
-  const peer = openPeer({
-    onChange: publish,
-    mine: myMedia,
-    onLost: () => {
-      if (peers.get(peerId) === peer) dispatch({ type: 'lost', peerId });
-    },
-  });
-  peers.set(peerId, peer);
-  return peer;
-}
-async function negotiate(peerId: string, kind: 'offer' | 'answer', offer?: string): Promise<void> {
-  const s = state().session;
-  if (!s?.selfPeerId) return;
-  const peer = replacePeer(peerId);
-  const sdp = offer === undefined ? await peer.offer(outgoing) : await peer.answer(offer, outgoing);
-  if (peers.get(peerId) !== peer) return;
-  await send(s.convId, CALL_SIGNAL_CODEC, { kind, callId: s.callId, from: s.selfPeerId, to: peerId, sdp });
-}
-function dropPeer(peerId: string): void {
-  const peer = peers.get(peerId);
-  if (peer) closePeer(peer);
-  peers.delete(peerId);
-}
-function releaseVideo(track: CallTrack): void {
-  const preview = callView().preview;
-  if (preview?.value.getVideoTracks()[0] === track.value) {
-    releaseStream(preview);
-    setCallView({ preview: null });
-  }
-  stopTrack(track);
-}
-function releaseMedia(): void {
-  captureVersion += 1;
-  for (const peerId of [...peers.keys()]) dropPeer(peerId);
-  releaseStream(callView().preview);
-  setCallView({ preview: null });
-  mic = stopTrack(mic);
-  camera = stopTrack(camera);
-  screen = stopTrack(screen);
-  stopAudio();
-}
-function endCall(reason: CallEndReason): void {
-  releaseMedia();
-  const toast = END_TOASTS[reason];
-  if (toast) capabilities.toast(toast);
-}
-async function runEffect(effect: CallEffect): Promise<void> {
-  switch (effect.type) {
-    case 'invite':
-      return send(effect.convId, CALL_INVITE_CODEC, effect.invite);
-    case 'send':
-      return send(effect.convId, CALL_SIGNAL_CODEC, effect.signal);
-    case 'offer':
-      return negotiate(effect.peerId, 'offer');
-    case 'answer':
-      return negotiate(effect.peerId, 'answer', effect.sdp);
-    case 'accept':
-      return peers.get(effect.peerId)?.accept(effect.sdp);
-    case 'close':
-      dropPeer(effect.peerId);
-      return;
-    case 'end':
-      endCall(effect.reason);
-  }
-}
-async function selfInboxId(epoch: number): Promise<string> {
-  const id = (await sdk.client()).inboxId;
-  if (generation === epoch && callView().selfInboxId !== id) setCallView({ selfInboxId: id });
-  return id;
-}
-function resetCalls(): void {
-  generation += 1;
-  releaseMedia();
-  inbound.reset();
-  setCallView({ calls: EMPTY_CALLS, selfInboxId: null, preview: null, media: NO_MEDIA, peers: [] });
-  syncTimers();
-}
 export function startCallService(): () => void {
   if (!callsSupported) return () => undefined;
-  const unsubscribe = subscribeAllMessages(inbound.onMessage);
-  const unwatch = watchCallLifecycle(() => {
-    if (joinedCallId() !== null) dispatch({ type: 'leave' });
-  });
+  const unsubscribe = subscribeAllMessages(session.onMessage);
+  const unwatch = callMedia.watchCallLifecycle(session.leaveIfJoined);
   return () => {
     unsubscribe();
     unwatch();
-    resetCalls();
+    session.reset();
   };
 }
+
 export function loadCallHistory(convId: string): Promise<void> {
   if (!callsSupported) return Promise.resolve();
-  return inbound.reload(convId);
+  return session.loadHistory(convId);
 }
-async function openMedia(video: boolean): Promise<CapturedMedia | null> {
-  if (stopRing) {
-    stopRing();
-    stopRing = null;
-  }
-  try {
-    await prepareAudio();
-  } catch (error) {
-    stopAudio();
-    throw error;
-  }
-  const media = (video ? await userMedia(true, true) : null) ?? (await userMedia(false, true));
-  if (!media) {
-    stopAudio();
-    capabilities.toast('Allow microphone access to join the call');
-  }
-  return media;
-}
-async function exclusive(run: () => Promise<void>): Promise<void> {
-  if (busy) return;
-  busy = true;
-  try {
-    await run();
-  } finally {
-    busy = false;
-    syncTimers();
-  }
-}
-async function adopt(media: CapturedMedia, event: CallEvent, epoch: { generation: number; captureVersion: number }): Promise<void> {
-  try {
-    await startAudio(media.video !== null);
-  } catch (error) {
-    stopMedia(media);
-    stopAudio();
-    throw error;
-  }
-  if (!captureCurrent(epoch)) {
-    stopMedia(media);
-    stopAudio();
-    return;
-  }
-  mic = media.audio;
-  camera = media.video;
-  dispatch(event);
-  if (joinedCallId() === null) releaseMedia();
-}
-function canJoin(convId: string): boolean {
-  const s = state().session;
-  return s === null || (s.phase === 'ringing' && s.convId === convId);
-}
-export function startCall(convId: string, dm: boolean, video: boolean): Promise<void> {
-  return exclusive(async () => {
-    if (state().session) return;
-    const epoch = { generation, captureVersion };
-    const self = await selfInboxId(epoch.generation);
-    if (!captureCurrent(epoch) || state().session) return;
-    const media = await openMedia(video);
-    if (!media) return;
-    if (!captureCurrent(epoch) || state().session) {
-      stopMedia(media);
-      stopAudio();
-      return;
-    }
-    await adopt(
-      media,
-      { type: 'start', convId, dm, video, callId: randomUuid(), peerId: randomUuid(), selfInboxId: self, nowMs: Date.now() },
-      epoch,
-    );
-  });
-}
-export function joinCall(convId: string, dm: boolean): Promise<void> {
-  return exclusive(async () => {
-    const info = state().calls[convId];
-    if (!info || !canJoin(convId)) return;
-    const epoch = { generation, captureVersion };
-    const self = await selfInboxId(epoch.generation);
-    if (!captureCurrent(epoch) || !canJoin(convId)) return;
-    const crowded = Object.keys(info.roster).length >= VIDEO_OFF_ABOVE;
-    const media = await openMedia(info.video && !crowded);
-    if (!media) return;
-    if (!captureCurrent(epoch) || !canJoin(convId)) {
-      stopMedia(media);
-      stopAudio();
-      return;
-    }
-    await adopt(media, { type: 'join', convId, dm, peerId: randomUuid(), selfInboxId: self, nowMs: Date.now() }, epoch);
-  });
-}
-export function declineCall(): void {
-  dispatch({ type: 'decline' });
-}
-export function leaveCall(): void {
-  dispatch({ type: 'leave' });
-}
-async function pushMedia(): Promise<void> {
-  await Promise.all([...peers.values()].map((p) => p.replace(outgoing())));
-  for (const p of peers.values()) sendMedia(p, myMedia());
-  publish();
-}
-export function toggleMic(): void {
-  if (!mic || joinedCallId() === null) return;
-  mic.value.enabled = !mic.value.enabled;
-  ignore(pushMedia(), 'ui');
-}
-export function toggleCamera(): Promise<void> {
-  return exclusive(async () => {
-    const callId = joinedCallId();
-    if (callId === null) return;
-    if (camera) {
-      const old = camera;
-      camera = null;
-      try {
-        await pushMedia();
-      } finally {
-        releaseVideo(old);
-      }
-      if (joinedCallId() === callId) await startAudio(false);
-      return;
-    }
-    const media = await userMedia(true, false);
-    if (!media) {
-      capabilities.toast('Allow camera access to turn on video');
-      return;
-    }
-    if (joinedCallId() !== callId) {
-      stopMedia(media);
-      return;
-    }
-    try {
-      await startAudio(media.video !== null);
-    } catch (error) {
-      stopMedia(media);
-      throw error;
-    }
-    if (joinedCallId() !== callId) {
-      stopMedia(media);
-      return;
-    }
-    camera = media.video;
-    await pushMedia();
-  });
-}
-export function toggleScreen(): Promise<void> {
-  return exclusive(async () => {
-    const callId = joinedCallId();
-    if (callId === null) return;
-    if (screen) {
-      const old = screen;
-      screen = null;
-      try {
-        await pushMedia();
-      } finally {
-        releaseVideo(old);
-      }
-      return;
-    }
-    const track = await displayMedia();
-    if (!track) return;
-    if (joinedCallId() !== callId || track.ended || track.value.readyState === 'ended') {
-      stopTrack(track);
-      return;
-    }
-    screen = track;
-    watchScreenEnd(track, () => {
-      if (screen !== track) return;
-      screen = null;
-      ignore(
-        pushMedia().finally(() => {
-          releaseVideo(track);
-        }),
-        'ui',
-      );
-    });
-    await pushMedia();
-  });
-}
-
-export { callsSupported, screenShareSupported } from './calls.media';
