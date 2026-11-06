@@ -87,28 +87,18 @@ function useDeviceCount(): number | null {
 
 const THEME_TABS = THEME_OPTIONS.map((o) => ({ title: o.label }));
 
-function HubRows({
-  group,
-  values,
-}: {
-  group: 'preferences' | 'more';
-  values: Partial<Record<SettingsSectionId, string>>;
-}): React.ReactElement {
-  return (
-    <>
-      {hubRows(group).map((row) => (
-        <SettingsNavRow
-          key={row.id}
-          label={row.label}
-          iconStart={row.icon}
-          value={values[row.id]}
-          onPress={() => {
-            capabilities.navigate(row.href);
-          }}
-        />
-      ))}
-    </>
-  );
+function hubRowItems(group: 'preferences' | 'more', values: Partial<Record<SettingsSectionId, string>>): React.ReactElement[] {
+  return hubRows(group).map((row) => (
+    <SettingsNavRow
+      key={row.id}
+      label={row.label}
+      iconStart={row.icon}
+      value={values[row.id]}
+      onPress={() => {
+        capabilities.navigate(row.href);
+      }}
+    />
+  ));
 }
 
 function PreferencesGroup(): React.ReactElement {
@@ -132,7 +122,7 @@ function PreferencesGroup(): React.ReactElement {
         </Column>
       </ListViewItem>
       <PushToggleRow unsupportedNote={PUSH_UNAVAILABLE} />
-      <HubRows group="preferences" values={{ appearance: theme === 'custom' ? 'Custom colors' : undefined }} />
+      {hubRowItems('preferences', { appearance: theme === 'custom' ? 'Custom colors' : undefined })}
       <SettingsToggleRow
         label="Developer mode"
         name="developer-mode"
@@ -169,10 +159,10 @@ function MoreGroup(): React.ReactElement {
           }}
         />
       ))}
-      <HubRows
-        group="more"
-        values={{ devices: count === null ? undefined : `${count} signed in`, wallet: address ? shortAddress(address) : undefined }}
-      />
+      {hubRowItems('more', {
+        devices: count === null ? undefined : `${count} signed in`,
+        wallet: address ? shortAddress(address) : undefined,
+      })}
     </SettingsGroup>
   );
 }
