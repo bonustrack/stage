@@ -60,7 +60,7 @@ interface DispatchEnv {
   NODE_CALLS?: RateLimit;
 }
 
-const answer = (body: BodyInit | null, status: number): Response => new Response(body, { status, headers: HEADERS });
+const answer = (body: string | Blob | null, status: number): Response => new Response(body, { status, headers: HEADERS });
 const fail = (status: number, error: string): Response => answer(JSON.stringify({ error }), status);
 
 function bodyTooLarge(request: Request): boolean {

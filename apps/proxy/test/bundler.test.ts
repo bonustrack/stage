@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { handleBundler, isBrowserRequest, manifestUrl } from '../src/bundler.ts';
+import { restoreFetch, stubFetch } from './fakeFetch.ts';
 
 test('isBrowserRequest is true for html accept without expo headers', () => {
   const request = new Request('https://bundler.stage.box/main', { headers: { accept: 'text/html,application/xhtml+xml' } });
@@ -60,25 +61,21 @@ const EXPO_CLIENT_HEADERS = { 'expo-platform': 'android', accept: 'application/e
 
 async function withStubbedFetch(run: (urls: string[]) => Promise<void>): Promise<void> {
   const urls: string[] = [];
-  const original = globalThis.fetch;
-  globalThis.fetch = (input: RequestInfo | URL): Promise<Response> => {
-    urls.push(input instanceof Request ? input.url : String(input));
-    return Promise.resolve(new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } }));
-  };
+  stubFetch((request) => {
+    urls.push(request.url);
+    return new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
+  });
   try {
     await run(urls);
   } finally {
-    globalThis.fetch = original;
+    restoreFetch();
   }
 }
 
 test('handleBundler loads main for expo clients on the bare domain', () =>
   withStubbedFetch(async (urls) => {
     await handleBundler(new Request('https://bundler.stage.box/', { method: 'HEAD', headers: EXPO_CLIENT_HEADERS }));
-    const [target] = urls;
-    expect(target).toBeTruthy();
-    expect(new URL(target).origin).toBe('https://u.expo.dev');
-    expect(new URL(target).searchParams.get('channel-name')).toBe('main');
+    expect(urls.map(channelOf)).toStrictEqual(['main']);
   }));
 
 test('handleBundler never answers expo clients with the dev hub html on file paths', () =>
@@ -90,8 +87,7 @@ test('handleBundler never answers expo clients with the dev hub html on file pat
     expect(urls.length).toBe(0);
   }));
 
-function channelOf(url: string | undefined): string | null {
-  expect(url).toBeTruthy();
+function channelOf(url: string): string | null {
   expect(new URL(url).origin).toBe('https://u.expo.dev');
   return new URL(url).searchParams.get('channel-name');
 }

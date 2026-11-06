@@ -7,7 +7,7 @@ const ATTACHMENTS_PATH = PROXY_ROUTES.attachments;
 const MAX_ATTACHMENT_BYTES = UPLOAD_MAX_BYTES;
 const ID = 'A'.repeat(32);
 
-function randomBytes(length: number): Uint8Array {
+function randomBytes(length: number): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(length);
   for (let offset = 0; offset < length; offset += 65_536) {
     crypto.getRandomValues(bytes.subarray(offset, Math.min(length, offset + 65_536)));

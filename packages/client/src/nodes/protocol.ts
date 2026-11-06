@@ -258,7 +258,7 @@ async function callNode(method: 'GET' | 'POST', rawUrl: string, key: string, bod
   if (method === 'POST') headers['Content-Type'] = 'application/json';
   if (capabilities !== undefined) headers[NODE_CAPABILITIES_HEADER] = JSON.stringify(capabilities);
   try {
-    const response = await fetch(node.url, {
+    const init: RequestInit & { cache: 'no-store' } = {
       method,
       headers,
       body: method === 'POST' ? body : undefined,
@@ -267,7 +267,8 @@ async function callNode(method: 'GET' | 'POST', rawUrl: string, key: string, bod
       cache: 'no-store',
       referrerPolicy: 'no-referrer',
       signal: signal === undefined ? timeout : AbortSignal.any([signal, timeout]),
-    });
+    };
+    const response = await fetch(node.url, init);
     const load = method === 'GET';
     return onMessage === undefined ? await collectedReply(response, load) : await readMessages(response, load, onMessage);
   } catch {

@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { decodeFunctionData, encodeAbiParameters, keccak256, namehash, parseAbi, parseTransaction, stringToBytes, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { makeNamesChain } from '../src/namesChain.ts';
+import { restoreFetch, stubFetch } from './fakeFetch.ts';
 
 const OPERATOR_KEY: Hex = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d';
 const OPERATOR = privateKeyToAccount(OPERATOR_KEY).address;
@@ -61,15 +62,13 @@ beforeEach(() => {
   owners.clear();
   sent.length = 0;
   receiptStatus = '0x1';
-  spyOn(globalThis, 'fetch').mockImplementation((async (_input: string | URL | Request, init?: RequestInit) => {
-    const request = JSON.parse(String(init?.body)) as RpcCall & { id: number };
-    return Response.json({ jsonrpc: '2.0', id: request.id, result: answer(request) });
-  }) as typeof fetch);
+  stubFetch(async (request) => {
+    const call = (await request.json()) as RpcCall & { id: number };
+    return Response.json({ jsonrpc: '2.0', id: call.id, result: answer(call) });
+  });
 });
 
-afterEach(() => {
-  (globalThis.fetch as unknown as { mockRestore(): void }).mockRestore();
-});
+afterEach(restoreFetch);
 
 function sentCalls(): { to: Hex | null | undefined; functionName: string; args: readonly unknown[] }[] {
   return sent.map((raw) => {

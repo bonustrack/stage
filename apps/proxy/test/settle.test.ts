@@ -1,5 +1,6 @@
-import { expect, test } from 'bun:test';
+import { afterEach, expect, test } from 'bun:test';
 import { parseSettleBody, settleX402 } from '../src/settle.ts';
+import { restoreFetch, stubFetch } from './fakeFetch.ts';
 
 test('parseSettleBody accepts a valid body', () => {
   const r = parseSettleBody({ url: 'https://api.example.com/paid', paymentHeader: 'abc123' });
@@ -29,69 +30,34 @@ interface FetchCall {
   payment: string | null;
 }
 
-function withFakeFetch(responder: (url: string) => { status: number; location?: string; body?: string }): {
-  calls: FetchCall[];
-  restore: () => void;
-} {
+function withFakeFetch(responder: (url: string) => { status: number; location?: string; body?: string }): FetchCall[] {
   const calls: FetchCall[] = [];
-  const orig = globalThis.fetch;
-  const shim = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    const headers = (init?.headers ?? {}) as Record<string, string>;
-    const payment = headers['X-PAYMENT'] ?? null;
-    calls.push({ url, payment });
-    const r = responder(url);
-    const resHeaders = new Map<string, string>();
-    if (r.location) resHeaders.set('location', r.location);
-    const fake = {
-      status: r.status,
-      ok: r.status >= 200 && r.status < 300,
-      headers: { get: (n: string) => resHeaders.get(n.toLowerCase()) ?? null },
-      body: null,
-      text: () => Promise.resolve(r.body ?? ''),
-    };
-    return Promise.resolve(fake as unknown as Response);
-  };
-  globalThis.fetch = shim;
-  return {
-    calls,
-    restore: () => {
-      globalThis.fetch = orig;
-    },
-  };
+  stubFetch((request) => {
+    calls.push({ url: request.url, payment: request.headers.get('X-PAYMENT') });
+    const { status, location, body } = responder(request.url);
+    return new Response(body ?? null, { status, headers: location === undefined ? {} : { location } });
+  });
+  return calls;
 }
 
+afterEach(restoreFetch);
+
 test('SEC6: does NOT replay X-PAYMENT across a cross-origin redirect', async () => {
-  const { calls, restore } = withFakeFetch((url) =>
+  const calls = withFakeFetch((url) =>
     url.startsWith('https://api.example.com') ? { status: 302, location: 'https://evil.attacker.com/grab' } : { status: 200, body: 'ok' },
   );
-  try {
-    await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
-    expect(calls.length).toBe(2);
-    const [first, second] = calls;
-    expect(first).toBeTruthy();
-    expect(second).toBeTruthy();
-    expect(first.payment).toBe('SIGNED-HEADER');
-    expect(second.url.startsWith('https://evil.attacker.com')).toBeTruthy();
-    expect(second.payment).toBe(null);
-  } finally {
-    restore();
-  }
+  await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
+  expect(calls.map(({ url, payment }) => [new URL(url).origin, payment])).toEqual([
+    ['https://api.example.com', 'SIGNED-HEADER'],
+    ['https://evil.attacker.com', null],
+  ]);
 });
 
 test('same-origin redirect still carries the header (legit paid-content hop)', async () => {
-  const { calls, restore } = withFakeFetch((url) =>
+  const calls = withFakeFetch((url) =>
     url.endsWith('/paid') ? { status: 302, location: 'https://api.example.com/content' } : { status: 200, body: 'paid content' },
   );
-  try {
-    const res = await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
-    expect(res.status).toBe(200);
-    const [first, second] = calls;
-    expect(first).toBeTruthy();
-    expect(second).toBeTruthy();
-    expect(first.payment).toBe('SIGNED-HEADER');
-    expect(second.payment).toBe('SIGNED-HEADER');
-  } finally {
-    restore();
-  }
+  const res = await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
+  expect(res.status).toBe(200);
+  expect(calls.map(({ payment }) => payment)).toEqual(['SIGNED-HEADER', 'SIGNED-HEADER']);
 });

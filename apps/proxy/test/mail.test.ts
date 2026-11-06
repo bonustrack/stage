@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { verifyMessage, type Hex } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { mailPath } from '@stage-labs/client/endpoints';
@@ -14,6 +14,7 @@ import {
 import { handleMail, type MailChain, type MailDeps } from '../src/mailApi.ts';
 import { NONCE_TTL_MS, SESSION_TTL_MS, mailboxFetch } from '../src/mailBox.ts';
 import { REJECT_INACTIVE, REJECT_TOO_LARGE, REJECT_UNKNOWN, receiveMail, type IncomingMail } from '../src/mailReceive.ts';
+import { restoreFetch, stubFetch } from './fakeFetch.ts';
 import { memoryStorage, type MemoryStorage } from './memoryArchive.ts';
 
 const BASE = 'https://proxy.stage.box';
@@ -100,13 +101,10 @@ beforeEach(() => {
   clock.now = 1_759_430_000_000;
   owners.clear();
   boxes.clear();
-  spyOn(globalThis, 'fetch').mockImplementation(((input: string | URL | Request, init?: RequestInit) =>
-    handleMail(new Request(input, init), deps)) as typeof fetch);
+  stubFetch((request) => handleMail(request, deps));
 });
 
-afterEach(() => {
-  (globalThis.fetch as unknown as { mockRestore(): void }).mockRestore();
-});
+afterEach(restoreFetch);
 
 describe('st.box mail delivery', () => {
   test('stores only ciphertext that the owner lists, fetches and opens with the client helper', async () => {

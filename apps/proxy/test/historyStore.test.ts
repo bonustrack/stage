@@ -4,7 +4,7 @@ import { memoryNamespace } from './memoryArchive.ts';
 
 const FILE_ID = '9ef6fdd0-0635-4130-8b77-aaeae0f65158';
 
-function randomBytes(length: number): Uint8Array {
+function randomBytes(length: number): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(length);
   for (let offset = 0; offset < length; offset += 65_536) {
     crypto.getRandomValues(bytes.subarray(offset, Math.min(length, offset + 65_536)));

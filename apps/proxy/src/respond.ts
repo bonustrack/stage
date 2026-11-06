@@ -28,7 +28,12 @@ export function openJson(body: unknown, status = 200, extra: HeaderMap = {}): Re
   return jsonResponse(body, status, { ...OPEN_CORS, ...extra });
 }
 
-export function corsResponse(cors: HeaderMap, body: BodyInit | null, status: number, contentType?: string | null): Response {
+export function corsResponse(
+  cors: HeaderMap,
+  body: string | ArrayBuffer | ReadableStream | null,
+  status: number,
+  contentType?: string | null,
+): Response {
   const headers: HeaderMap = { ...cors, ...SERVED_BY };
   if (contentType) headers['content-type'] = contentType;
   return new Response(body, { status, headers });
