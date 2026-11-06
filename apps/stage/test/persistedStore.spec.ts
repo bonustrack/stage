@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
+import { selectAccount } from './activeAccount';
 
 const values = new Map<string, string>();
-let activeId: string | null = 'alice';
+selectAccount('alice');
 let failRead = false;
 const writes: string[] = [];
 const storage = {
@@ -16,16 +17,12 @@ const storage = {
 };
 
 mock.module('../platform/storage', () => ({ appStorage: storage, secureStorage: {} }));
-mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => (activeId === null ? null : { id: activeId }),
-  getActiveAccountStrict: async () => (activeId === null ? null : { id: activeId }),
-}));
 const { createValueStore } = await import('../lib/persistedStore');
 
 beforeEach(() => {
   values.clear();
   writes.length = 0;
-  activeId = 'alice';
+  selectAccount('alice');
   failRead = false;
 });
 
@@ -65,7 +62,7 @@ describe('persisted value stores', () => {
     values.set('counter.bob', '8');
     const store = accountStore();
     await store.load();
-    activeId = 'bob';
+    selectAccount('bob');
     await store.update((n) => n + 1);
     expect(store.get()).toBe(9);
     expect(values.get('counter.alice')).toBe('4');
@@ -76,7 +73,7 @@ describe('persisted value stores', () => {
     values.set('counter.alice', '4');
     const store = accountStore();
     await store.load();
-    activeId = 'bob';
+    selectAccount('bob');
     failRead = true;
     await expect(store.update((n) => n + 1)).rejects.toThrow('storage unavailable');
     expect(store.get()).toBe(4);
@@ -108,7 +105,7 @@ describe('persisted value stores', () => {
   test('does not persist without an account or when an update is unchanged', async () => {
     const store = accountStore();
     await store.update((n) => n);
-    activeId = null;
+    selectAccount(null);
     await store.update((n) => n + 1);
     expect(store.get()).toBe(1);
     expect(writes).toEqual([]);
@@ -140,7 +137,7 @@ describe('persisted value stores', () => {
     });
     store.set(3);
     expect(await store.load()).toBe(12);
-    activeId = 'bob';
+    selectAccount('bob');
     await store.update((n) => n);
     expect(store.get()).toBe(8);
   });

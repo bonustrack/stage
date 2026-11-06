@@ -10,9 +10,10 @@ import {
 } from '../lib/channelGroups.model';
 import { domElementOf, homeDragModel } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
+import { selectAccount } from './activeAccount';
 
 const values = new Map<string, string>();
-let activeId = 'ann';
+selectAccount('ann');
 mock.module('../platform/storage', () => ({
   secureStorage: {},
   appStorage: {
@@ -21,10 +22,6 @@ mock.module('../platform/storage', () => ({
       values.set(key, value);
     },
   },
-}));
-mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => ({ id: activeId }),
-  getActiveAccountStrict: async () => ({ id: activeId }),
 }));
 const { adoptBoardCategoryOrder, applyRemoteCategoryOrder, loadCategoryOrder, moveCategory, onCategoryOrderChanged, setCategoryOrder } =
   await import('../lib/channelGroups');
@@ -289,7 +286,7 @@ describe('one category order for the chat list and the board', () => {
 
   test('a board-only category order seeds the empty shared order once, and is not sent', async () => {
     sent.length = 0;
-    activeId = 'carol';
+    selectAccount('carol');
     values.set('board.columnOrder.carol', JSON.stringify(['label:Todo', 'category:Ops', 'category:', 'assignee:0xbob', 'category:Work']));
     await adoptBoardCategoryOrder('carol');
     expect(await loadCategoryOrder('carol')).toEqual(['category:Ops', 'category:Work']);
@@ -300,7 +297,7 @@ describe('one category order for the chat list and the board', () => {
   });
 
   test('edited empty categories retain spelling, persist and sync without changing collapsed groups', async () => {
-    activeId = 'edited';
+    selectAccount('edited');
     values.set(
       'channels.groups.edited',
       JSON.stringify({ collapsed: ['category:work'], order: ['dm', 'category:fde', 'none', 'category:work'] }),
@@ -331,7 +328,7 @@ describe('one category order for the chat list and the board', () => {
   });
 
   test('deleting the final configured category stays empty after legacy adoption and reload', async () => {
-    activeId = 'empty';
+    selectAccount('empty');
     values.set('board.columnOrder.empty', JSON.stringify(['category:Old']));
     await adoptBoardCategoryOrder('empty');
     setCategoryOrder([]);
@@ -340,15 +337,15 @@ describe('one category order for the chat list and the board', () => {
     expect(stored).toEqual({ collapsed: [], order: [], orderConfigured: true });
     await adoptBoardCategoryOrder('empty');
     expect(await loadCategoryOrder('empty')).toEqual([]);
-    activeId = 'other';
+    selectAccount('other');
     await applyRemoteCategoryOrder('other', ['category:Other']);
-    activeId = 'empty';
+    selectAccount('empty');
     await adoptBoardCategoryOrder('empty');
     expect(await loadCategoryOrder('empty')).toEqual([]);
   });
 
   test('a synced chat order is kept over the board order', async () => {
-    activeId = 'dave';
+    selectAccount('dave');
     values.set('channels.groups.dave', JSON.stringify({ collapsed: [], order: ['category:work'] }));
     values.set('board.columnOrder.dave', JSON.stringify(['category:Ops', 'category:Work']));
     await adoptBoardCategoryOrder('dave');

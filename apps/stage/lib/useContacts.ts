@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { convMembers, primeConversationMembers } from './xmtp.identity';
 import { sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feedLines';
-import { getActiveAccountIdSync, getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
+import { getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
+import { knownActiveAccountId } from './accountSelection';
 import { usePeerProfiles, peerLabel } from './peerProfiles';
 
 export interface Contact {
@@ -29,7 +30,7 @@ function toSortedContacts(addresses: string[]): Contact[] {
 async function collectAddresses(): Promise<string[]> {
   const client = await sdk.client();
   await afterFirstPages();
-  const self = (getActiveAccountIdSync() ?? '').toLowerCase();
+  const self = (knownActiveAccountId() ?? '').toLowerCase();
   const convs = await sdk.listConvs(client, ['allowed']);
   await primeConversationMembers(client, convs);
   const set = new Set<string>();
@@ -48,7 +49,7 @@ async function collectAddresses(): Promise<string[]> {
 
 export function useContactList(enabled: boolean): Contact[] {
   const { data: addresses = NO_ADDRESSES } = useQuery({
-    queryKey: ['allContacts', getActiveAccountIdSync()],
+    queryKey: ['allContacts', knownActiveAccountId()],
     queryFn: collectAddresses,
     enabled,
     placeholderData: () => peerAddressesOf(getCachedRows()),
@@ -66,7 +67,7 @@ export function useContacts(exclude: string[], query: string): Contact[] {
 
   const excludeSet = useMemo(() => {
     const set = new Set(exclude.map((a) => a.toLowerCase()));
-    const self = getActiveAccountIdSync();
+    const self = knownActiveAccountId();
     if (self) set.add(self.toLowerCase());
     return set;
   }, [exclude]);

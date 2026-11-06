@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { AccountChangedError, NoAccountError } from '../lib/xmtp.client.core';
+import { AccountChangedError, NoAccountError } from '../lib/accountSelection';
 import { makeGlobalStream } from '../lib/xmtp.stream.core';
+import { createClientSlot } from '../lib/xmtp.state.core';
 
 interface Context {
   id: string;
@@ -193,6 +194,19 @@ describe('global message stream lifecycle', () => {
     h.hooks.prepare = () => Promise.reject(error);
     expect(await h.fire()).toBe(500);
     expect([...h.timers.values()].map((timer) => timer.delay)).toEqual([5_000]);
+  });
+
+  test('an account switch while the client opens rearms at once instead of backing off', async () => {
+    const h = harness();
+    const slot = createClientSlot<Context>(() => undefined);
+    const opening = Promise.withResolvers<Context>();
+    h.hooks.prepare = () => slot.getOrCreate(() => opening.promise);
+    const first = h.stream.ensure();
+    slot.reset();
+    opening.resolve({ id: 'a' });
+    await first;
+    expect(h.errors).toEqual([]);
+    expect([...h.timers.values()].map((timer) => timer.delay)).toEqual([500]);
   });
 
   test('a genuine stale failure is reported without penalizing the new account', async () => {

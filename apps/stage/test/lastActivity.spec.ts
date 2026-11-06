@@ -11,12 +11,13 @@ import { deriveSortedRows } from '../components/home/model';
 import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
 import { group } from './searchFixtures';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
+import { selectAccount, selectedAccount } from './activeAccount';
 
 const DAY = 86_400_000;
 const now = 40 * DAY;
 const values = new Map<string, string>();
 const writes: string[] = [];
-let activeId = 'activity-alice';
+selectAccount('activity-alice');
 let failedKey: string | null = null;
 let blockedRead: { key: string; pending: Promise<void> } | null = null;
 let account = 0;
@@ -35,10 +36,6 @@ mock.module('../platform/storage', () => ({
     },
   },
 }));
-mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => ({ id: activeId }),
-  getActiveAccountStrict: async () => ({ id: activeId }),
-}));
 mock.module('../lib/appInFront', () => ({ isAppInFront: () => true, subscribeAppInFront: () => () => undefined }));
 const { getLastActivity, setLastActivity } = await import('../lib/lastActivity');
 const settle = (): Promise<void> =>
@@ -52,7 +49,7 @@ beforeEach(() => {
   writes.length = 0;
   failedKey = null;
   blockedRead = null;
-  activeId = `activity-${++account}`;
+  selectAccount(`activity-${++account}`);
 });
 
 describe('Last activity windows', () => {
@@ -137,27 +134,27 @@ describe('Last activity windows', () => {
 
 describe('Last activity local preferences', () => {
   test('hydrates and persists separate selections for each view and account', async () => {
-    activeId = 'activity-alice';
+    selectAccount('activity-alice');
     values.set('home.activity.activity-alice', '{"chats":"3d","board":"7d"}');
     setLastActivity('chats', '1d');
     setLastActivity('board', '30d');
     await settle();
-    expect(stored(activeId)).toEqual({ chats: '1d', board: '30d' });
-    activeId = 'activity-bob';
+    expect(stored(selectedAccount())).toEqual({ chats: '1d', board: '30d' });
+    selectAccount('activity-bob');
     setLastActivity('board', '3d');
     await settle();
-    expect(stored(activeId)).toEqual({ chats: 'all', board: '3d' });
-    activeId = 'activity-alice';
+    expect(stored(selectedAccount())).toEqual({ chats: 'all', board: '3d' });
+    selectAccount('activity-alice');
     setLastActivity('chats', 'all');
     await settle();
-    expect(stored(activeId)).toEqual({ chats: 'all', board: '30d' });
+    expect(stored(selectedAccount())).toEqual({ chats: 'all', board: '30d' });
     expect(stored('activity-bob')).toEqual({ chats: 'all', board: '3d' });
     expect(writes.every((key) => key.startsWith('home.activity.'))).toBe(true);
   });
 
   test('an edit waiting on hydration never writes to a different account', async () => {
-    activeId = 'activity-race-alice';
-    const aliceKey = `home.activity.${activeId}`;
+    selectAccount('activity-race-alice');
+    const aliceKey = `home.activity.${selectedAccount()}`;
     values.set(aliceKey, '{"chats":"3d","board":"7d"}');
     let release = (): void => undefined;
     blockedRead = {
@@ -168,33 +165,33 @@ describe('Last activity local preferences', () => {
     };
     setLastActivity('chats', '1d');
     await settle();
-    activeId = 'activity-race-bob';
-    values.set(`home.activity.${activeId}`, '{"chats":"30d","board":"all"}');
+    selectAccount('activity-race-bob');
+    values.set(`home.activity.${selectedAccount()}`, '{"chats":"30d","board":"all"}');
     bumpAccountEpoch();
     release();
     await settle();
     expect(writes).toEqual([]);
     expect(stored('activity-race-alice')).toEqual({ chats: '3d', board: '7d' });
-    expect(stored(activeId)).toEqual({ chats: '30d', board: 'all' });
+    expect(stored(selectedAccount())).toEqual({ chats: '30d', board: 'all' });
     expect(getLastActivity('chats')).toBe('30d');
   });
 
   test('a failed account-switch read never exposes the previous account selection', async () => {
     const warnings = spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
-      activeId = 'activity-failure-alice';
+      selectAccount('activity-failure-alice');
       setLastActivity('chats', '1d');
       await settle();
       expect(getLastActivity('chats')).toBe('1d');
-      activeId = 'activity-failure-bob';
-      failedKey = `home.activity.${activeId}`;
+      selectAccount('activity-failure-bob');
+      failedKey = `home.activity.${selectedAccount()}`;
       values.set(failedKey, '{"chats":"all","board":"7d"}');
       bumpAccountEpoch();
       expect(getLastActivity('chats')).toBe('all');
       await settle();
       expect(getLastActivity('chats')).toBe('all');
       expect(getLastActivity('board')).toBe('all');
-      expect(stored(activeId)).toEqual({ chats: 'all', board: '7d' });
+      expect(stored(selectedAccount())).toEqual({ chats: 'all', board: '7d' });
       failedKey = null;
       setLastActivity('chats', '3d');
       await settle();
@@ -208,17 +205,17 @@ describe('Last activity local preferences', () => {
   test('a failed read never overwrites saved choices and can be retried', async () => {
     const warnings = spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
-      const key = `home.activity.${activeId}`;
+      const key = `home.activity.${selectedAccount()}`;
       values.set(key, '{"chats":"3d","board":"7d"}');
       failedKey = key;
       setLastActivity('chats', '1d');
       await settle();
       expect(writes).toEqual([]);
-      expect(stored(activeId)).toEqual({ chats: '3d', board: '7d' });
+      expect(stored(selectedAccount())).toEqual({ chats: '3d', board: '7d' });
       failedKey = null;
       setLastActivity('chats', '1d');
       await settle();
-      expect(stored(activeId)).toEqual({ chats: '1d', board: '7d' });
+      expect(stored(selectedAccount())).toEqual({ chats: '1d', board: '7d' });
       expect(warnings).toHaveBeenCalledWith('[stage:lastActivity.save] storage unavailable');
     } finally {
       warnings.mockRestore();

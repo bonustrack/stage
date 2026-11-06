@@ -6,7 +6,7 @@ import { useComposerState, type ComposerState } from '../composer/state';
 import { fileInputs } from '../composer/send.model';
 import { prepareAttachments, forgetAttachments } from '../../lib/xmtp.attachments';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { knownActiveAccountId, subscribeCachedRows } from '../../lib/channelsCache';
+import { knownActiveAccountId, subscribeActiveAccountId } from '../../lib/accountSelection';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useStoreValue } from '../../lib/storeCore';
@@ -98,7 +98,7 @@ export function ShareSession({
 }): React.ReactElement {
   const state = useSharedComposer(share);
   const epoch = useAccountEpoch();
-  const accountId = useStoreValue(subscribeCachedRows, knownActiveAccountId);
+  const accountId = useStoreValue(subscribeActiveAccountId, knownActiveAccountId);
   const account = useActiveAccountRecord();
   const accountReady = account?.id === accountId ? accountId : null;
   const list = useShareRows(accountReady, epoch);

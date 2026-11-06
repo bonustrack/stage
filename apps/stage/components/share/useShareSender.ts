@@ -4,7 +4,7 @@ import { startSend, showSend, finishSend, type StartedSend } from '../composer/s
 import type { ComposerState } from '../composer/state';
 import { assertShareAccount, checkShareDestination } from '../../lib/shareDestination';
 import { getAccountEpoch } from '../../lib/accountEpoch';
-import { knownActiveAccountId } from '../../lib/channelsCache';
+import { knownActiveAccountId } from '../../lib/accountSelection';
 import { capabilities } from '../../lib/capabilities';
 import { conversationSharePath } from '../../lib/links';
 import { stashLocalAttachment } from '../../lib/localAttachmentCache';

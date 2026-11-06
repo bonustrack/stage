@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
-import { NoAccountError, installationsOf, makeClientLifecycle } from '../lib/xmtp.client.core';
+import { installationsOf, makeClientLifecycle } from '../lib/xmtp.client.core';
+import { NoAccountError } from '../lib/accountSelection';
 
 function account(id: string): AccountRecord {
   return { id, address: `0x${id}`, type: 'generated', dbDir: `db-${id}`, createdAt: 0 };

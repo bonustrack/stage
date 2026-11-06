@@ -11,6 +11,7 @@ import {
 import { attempt, ignored } from './errorPolicy';
 import type { XmtpConsent } from './xmtp.types';
 import { visibleCachedRows } from './hiddenChannelsStorage';
+import { knownActiveAccountId, subscribeActiveAccountId } from './accountSelection';
 
 export type CachedRow = CachedChannelRow;
 
@@ -26,7 +27,7 @@ export const onReadStateChanged = readChanges.subscribe;
 const stores = new Map<string, PersistentStore<CachedRow[]>>();
 
 const DEFAULT_KEY = '__default__';
-let activeId: string = DEFAULT_KEY;
+let activeId: string = knownActiveAccountId() ?? DEFAULT_KEY;
 
 const activeListeners = makeListeners<CachedRow[] | null>();
 let activeStoreUnsub: (() => void) | null = null;
@@ -61,14 +62,6 @@ function activeStore(): PersistentStore<CachedRow[]> {
   return storeFor(activeId);
 }
 
-export function getActiveAccountIdSync(): string {
-  return activeId;
-}
-
-export function knownActiveAccountId(): string | null {
-  return activeId === DEFAULT_KEY ? null : activeId;
-}
-
 function bindActiveStore(): void {
   if (activeStoreUnsub) {
     attempt(activeStoreUnsub, 'cleanup');
@@ -80,14 +73,15 @@ function bindActiveStore(): void {
 }
 bindActiveStore();
 
-export function setActiveAccountForCache(id: string | null): void {
-  const next = id !== null && id !== '' ? id : DEFAULT_KEY;
+function followActiveAccount(): void {
+  const next = knownActiveAccountId() ?? DEFAULT_KEY;
   if (next === activeId) return;
   activeId = next;
   bindActiveStore();
   notifyActive();
   void activeStore().hydrate();
 }
+subscribeActiveAccountId(followActiveAccount);
 
 export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
   if (activeId === DEFAULT_KEY) return null;

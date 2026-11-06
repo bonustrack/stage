@@ -3,7 +3,7 @@ import { resolveDmConvId } from './dmResolve';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { xmtpSendText } from './xmtp.messages';
 import { getActiveAccount } from './accounts';
-import { knownActiveAccountId } from './channelsCache';
+import { knownActiveAccountId } from './accountSelection';
 import { addressesWithQueued, deserializeOutbox, itemsForAddress, withoutItem, type OutboxItem } from './dmOutbox.model';
 import { report, reported, recover } from './errorPolicy';
 import { randomHex } from '@stage-labs/client/ids';

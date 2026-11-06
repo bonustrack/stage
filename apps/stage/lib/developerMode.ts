@@ -5,8 +5,8 @@ import {
   type DeveloperModeContent,
 } from '@stage-labs/client/xmtp/readState';
 import { getSelectedAccount } from './accounts';
-import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
-import { getAccountSelection, subscribeAccountSelection } from './accountSelection';
+import { subscribeAccountEpoch } from './accountEpoch';
+import { accountScope, getAccountSelection, subscribeAccountSelection } from './accountSelection';
 import { report } from './errorPolicy';
 import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
@@ -92,13 +92,12 @@ const localChanges = makeListeners<DeveloperModeChange>();
 export const onDeveloperModeChanged = localChanges.subscribe;
 
 export async function setDeveloperMode(value: boolean): Promise<void> {
-  const epoch = getAccountEpoch();
-  const selection = getAccountSelection();
+  const scope = accountScope();
   const account = await getSelectedAccount();
-  if (account === null || epoch !== getAccountEpoch() || selection !== getAccountSelection()) return;
+  if (account === null || !scope.current()) return;
   let state: DeveloperModeContent | null = null;
   await prefs.updateFor(account.id, (current) => {
-    if (epoch !== getAccountEpoch() || selection !== getAccountSelection() || current.enabled === value) return current;
+    if (!scope.current() || current.enabled === value) return current;
     state = editDeveloperMode(current, value, Date.now());
     return state;
   });

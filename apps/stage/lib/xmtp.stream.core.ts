@@ -1,4 +1,4 @@
-import { AccountChangedError, NoAccountError } from './xmtp.client.core';
+import { AccountChangedError, NoAccountError } from './accountSelection';
 import { abortable } from '@stage-labs/client/abortable';
 import { backoffDelay } from '@stage-labs/client/timing';
 

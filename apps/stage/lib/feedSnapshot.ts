@@ -1,7 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { persistenceBackend, sealedCache } from './cache';
-import { getActiveAccountId } from './accounts';
-import { knownActiveAccountId } from './channelsCache';
+import { currentAccountId } from './accounts';
+import { knownActiveAccountId } from './accountSelection';
 import {
   EMPTY_SNAPSHOT,
   decodeSnapshot,
@@ -72,7 +72,7 @@ function update(accountId: string, change: (snapshot: FeedSnapshot) => FeedSnaps
 
 async function activeSnapshot(): Promise<FeedSnapshot | null> {
   if (!sealedCache) return null;
-  const accountId = knownActiveAccountId() ?? (await getActiveAccountId());
+  const accountId = await currentAccountId();
   if (!accountId) return null;
   const loading = loadSnapshot(accountId);
   const snapshot = await loading;

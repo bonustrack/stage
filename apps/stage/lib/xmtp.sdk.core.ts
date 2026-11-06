@@ -9,7 +9,7 @@ import type { XmtpConsent } from './xmtp.types';
 import { registerDmRoute } from './dmRoutes';
 import { recover } from './errorPolicy';
 import { getAccountEpoch } from './accountEpoch';
-import { AccountChangedError } from './xmtp.client.core';
+import { AccountChangedError } from './accountSelection';
 import { prepareNotifyingSend } from '@stage-labs/client/xmtp/pushSenderFilter';
 import { timeSendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 

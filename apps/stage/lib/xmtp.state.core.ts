@@ -4,6 +4,7 @@ import { makeListeners, makeValue } from './storeCore';
 import { resetFeedLines } from './feedLines';
 import { attempt } from './errorPolicy';
 import { sleep } from '@stage-labs/client/timing';
+import { AccountChangedError } from './accountSelection';
 
 export const inboxEthCache = new Map<string, string>();
 
@@ -120,7 +121,7 @@ export function createClientSlot<C>(onReset: () => void, discard?: (client: C) =
             attempt(() => {
               discard(client);
             }, 'cleanup');
-          throw new Error('The account changed while messaging was starting.');
+          throw new AccountChangedError('The account changed while messaging was starting.');
         }
         cached = client;
         return client;

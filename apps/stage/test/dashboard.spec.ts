@@ -29,9 +29,10 @@ import {
   widgetSpan,
 } from '../components/dashboard/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
+import { selectAccount } from './activeAccount';
 
 const values = new Map<string, string>();
-const activeId = 'alice';
+selectAccount('alice');
 mock.module('../platform/storage', () => ({
   secureStorage: {},
   appStorage: {
@@ -43,10 +44,6 @@ mock.module('../platform/storage', () => ({
       values.delete(key);
     },
   },
-}));
-mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => ({ id: activeId }),
-  getActiveAccountStrict: async () => ({ id: activeId }),
 }));
 const { addFrameToDashboard, addLiveToDashboard, applyRemoteDashboard, changeDashboard, loadDashboard, onDashboardChanged } =
   await import('../lib/dashboard');

@@ -96,6 +96,7 @@
         "react-native-worklets": "0.10.1",
         "unicode-segmenter": "0.17.3",
         "viem": "^2.51.0",
+        "zod": "^3.25.76",
       },
       "devDependencies": {
         "@stage-labs/config": "workspace:*",

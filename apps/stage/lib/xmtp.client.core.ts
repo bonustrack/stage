@@ -1,20 +1,7 @@
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import type { XmtpEnv } from './xmtp.types';
 import { report, reported } from './errorPolicy';
-
-export class NoAccountError extends Error {
-  constructor() {
-    super('No account: onboarding not completed yet.');
-    this.name = 'NoAccountError';
-  }
-}
-
-export class AccountChangedError extends Error {
-  constructor() {
-    super('Messaging account changed');
-    this.name = 'AccountChangedError';
-  }
-}
+import { NoAccountError } from './accountSelection';
 
 export interface XmtpInstallation {
   id: string;

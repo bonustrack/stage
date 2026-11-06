@@ -7,17 +7,14 @@ import { LEGACY_DB_DIR, addLocalAccountToList, nextHdIndex, resolveActiveAccount
 import { readSmartHdIndexHighWater } from './zerodev/hdIndexStore';
 import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
 import { recover, ignored } from './errorPolicy';
-import { accountSelectionChanged } from './accountSelection';
+import { accountSelectionChanged, knownActiveAccountId, provideActiveAccountReader, rememberActiveAccountId } from './accountSelection';
 import { capabilities } from './capabilities';
+import { jsonWith } from './storeCore';
+import { z } from 'zod';
 
 export { canExportPrivateKey } from '@stage-labs/client/accounts/registry';
 export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
 export type { AccountRecord } from '@stage-labs/client/accounts/types';
-
-const setActiveAccountForCache = async (id: string | null): Promise<void> => {
-  const { setActiveAccountForCache: fn } = await import('./channelsCache');
-  fn(id);
-};
 
 const LIST_KEY = 'accounts.list';
 const ACTIVE_KEY = 'accounts.active';
@@ -44,14 +41,11 @@ async function withPhraseIds(list: AccountRecord[]): Promise<AccountRecord[]> {
   return next;
 }
 
-function parseStoredList(raw: string): AccountRecord[] | null {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as AccountRecord[]).filter((a) => ACCOUNT_TYPES.includes(a.type)) : null;
-  } catch {
-    return null;
-  }
-}
+const storedListSchema = z
+  .array(z.custom<AccountRecord>((item) => item !== null))
+  .transform((list) => list.filter((a) => ACCOUNT_TYPES.includes(a.type)));
+
+const parseStoredList = jsonWith(storedListSchema);
 
 const UNREADABLE_LIST = 'The account list could not be read, so nothing was changed. Try again.';
 
@@ -66,7 +60,7 @@ async function loadList(strict: boolean): Promise<AccountRecord[]> {
   if (raw === undefined) return unreadable(strict);
   if (raw !== null && raw !== '') {
     const stored = parseStoredList(raw);
-    if (stored === null) return unreadable(strict);
+    if (stored === undefined) return unreadable(strict);
     cache = await withPhraseIds(stored);
     return cache;
   }
@@ -93,7 +87,7 @@ export function loadAccountsForWrite(): Promise<AccountRecord[]> {
 
 export async function getActiveAccountId(): Promise<string | null> {
   const id = await secureStorage.get(ACTIVE_KEY).catch(recover('accounts.activeId', null));
-  if (id) await setActiveAccountForCache(id);
+  if (id) rememberActiveAccountId(id);
   return id;
 }
 
@@ -101,7 +95,7 @@ export async function setActiveAccountId(id: string): Promise<void> {
   const previous = await secureStorage.get(ACTIVE_KEY);
   await secureStorage.set(ACTIVE_KEY, id);
   if (previous !== id) accountSelectionChanged();
-  await setActiveAccountForCache(id);
+  rememberActiveAccountId(id);
 }
 
 export async function getSelectedAccount(): Promise<AccountRecord | null> {
@@ -114,7 +108,7 @@ async function activeAccount(strict: boolean): Promise<AccountRecord | null> {
   const list = await loadList(strict);
   if (!list.length) return null;
   const id = strict ? await secureStorage.get(ACTIVE_KEY) : await getActiveAccountId();
-  if (strict && id) await setActiveAccountForCache(id);
+  if (strict && id) rememberActiveAccountId(id);
   return resolveActiveAccount(list, id);
 }
 
@@ -123,6 +117,12 @@ export function getActiveAccount(): Promise<AccountRecord | null> {
 }
 export function getActiveAccountStrict(): Promise<AccountRecord | null> {
   return activeAccount(true);
+}
+
+provideActiveAccountReader(async () => (await getActiveAccount())?.id ?? null);
+
+export async function currentAccountId(): Promise<string | null> {
+  return knownActiveAccountId() ?? (await getActiveAccountId());
 }
 
 export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> {

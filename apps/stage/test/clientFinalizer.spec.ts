@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { makeClientFinalizer, openFinalizedClient, type FinalizeDeps } from '../lib/xmtp.finalize.core';
+import { AccountChangedError } from '../lib/accountSelection';
 
 const account = (id: string): AccountRecord => ({ id, address: `0x${id}`, type: 'generated', dbDir: id, createdAt: 0 });
 
@@ -57,7 +58,7 @@ describe('client finalization', () => {
     await entered.promise;
     h.select('b');
     persistence.resolve(undefined);
-    expect(await result).toBeInstanceOf(Error);
+    expect(await result).toBeInstanceOf(AccountChangedError);
     await expect(opening).rejects.toThrow('account changed');
     expect(h.selected()).toBe('b');
     expect(h.log).toEqual(['discard:client-a']);

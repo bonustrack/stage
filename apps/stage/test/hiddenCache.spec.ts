@@ -14,7 +14,8 @@ mock.module('../lib/cache', () => ({
 }));
 const { PersistentStore } = await import('../lib/cache.shared');
 const { visibleCachedRows } = await import('../lib/hiddenChannelsStorage');
-const { getCachedRows, hydrateCachedRows, setActiveAccountForCache, setCachedRows } = await import('../lib/channelsCache');
+const { getCachedRows, hydrateCachedRows, setCachedRows } = await import('../lib/channelsCache');
+const { rememberActiveAccountId } = await import('../lib/accountSelection');
 const { filterChannelRows } = await import('@stage-labs/client/xmtp/channelsFilter');
 
 test('cache hydration never publishes a durable hidden channel', async () => {
@@ -47,7 +48,7 @@ test('actual channel-cache hydration and writes publish the same safe title used
     lastPreview: '',
   };
   cached.set('channels-cache.title-test.json', [row]);
-  setActiveAccountForCache('title-test');
+  rememberActiveAccountId('title-test');
   await hydrateCachedRows();
   expect(getCachedRows()?.[0]?.title).toBe('Untitled channel');
   const hydrated = getCachedRows() as (typeof row)[];

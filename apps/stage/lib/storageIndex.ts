@@ -2,13 +2,13 @@ import { useEffect } from 'react';
 import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
 import { sdk } from './xmtp.sdk';
 import { accountClient, type AccountClient } from './xmtp.account';
-import { AccountChangedError, NoAccountError } from './xmtp.client.core';
+import { AccountChangedError, NoAccountError } from './accountSelection';
 import { conversationIsSyncGroup } from './xmtp.conv';
 import { subscribeAllMessages } from './xmtp.stream';
 import type { StreamMsg, XmtpConsent } from './xmtp.types';
-import { getActiveAccountId } from './accounts';
+import { currentAccountId } from './accounts';
 import { getAccountEpoch, useAccountEpoch } from './accountEpoch';
-import { getCachedRows, knownActiveAccountId } from './channelsCache';
+import { getCachedRows } from './channelsCache';
 import { listedConvRow } from './messaging/convRow.model';
 import { makeListeners, useStoreValue } from './storeCore';
 import { report, reported } from './errorPolicy';
@@ -110,7 +110,7 @@ async function heldIndex(accountId: string): Promise<StorageIndex | null> {
 }
 
 async function showCached(): Promise<void> {
-  const accountId = knownActiveAccountId() ?? (await getActiveAccountId());
+  const accountId = await currentAccountId();
   if (accountId === null) return;
   const index = await heldIndex(accountId);
   if (state.accountId === accountId && state.loaded) return;

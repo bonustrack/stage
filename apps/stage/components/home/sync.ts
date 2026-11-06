@@ -1,7 +1,7 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { AppState, Platform } from 'react-native';
 import { getOrCreateXmtpClient, syncPreferences } from '../../lib/xmtp.client';
-import { NoAccountError } from '../../lib/xmtp.client.core';
+import { NoAccountError } from '../../lib/accountSelection';
 import { getXmtpBootstrapPhase, isActiveConv, registerHiddenConv } from '../../lib/xmtp.state.core';
 import { primeConversationMembers } from '../../lib/xmtp.identity';
 import { subscribeAllMessages } from '../../lib/xmtp.stream';

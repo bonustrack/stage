@@ -2,9 +2,10 @@ import { describe, expect, mock, test } from 'bun:test';
 import { collectSyncReplay, DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/readState';
 import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSettings.model';
 import { homeSortOf } from '../components/home/sort.model';
+import { selectAccount } from './activeAccount';
 
 const values = new Map<string, string>();
-let activeId = 'alice';
+selectAccount('alice');
 mock.module('../platform/storage', () => ({
   secureStorage: {},
   appStorage: {
@@ -13,10 +14,6 @@ mock.module('../platform/storage', () => ({
       values.set(key, value);
     },
   },
-}));
-mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => ({ id: activeId }),
-  getActiveAccountStrict: async () => ({ id: activeId }),
 }));
 const { applyRemoteHomeView, loadHomeView, onHomeViewChanged, setHomeView } = await import('../lib/homeView');
 
@@ -128,12 +125,12 @@ describe('home view store', () => {
     expect(stored('alice')).toMatchObject({ view: 'board', columnBy: 'category' });
     expect((await loadHomeView('alice'))?.view).toBe('chats');
 
-    activeId = 'bob';
+    selectAccount('bob');
     setHomeView({ groupBy: 'label' });
     await settle();
     expect(stored('bob')).toMatchObject({ view: 'chats', groupBy: 'label' });
 
-    activeId = 'alice';
+    selectAccount('alice');
     setHomeView({ groupBy: 'assignee' });
     await settle();
     expect(stored('alice')).toMatchObject({ view: 'board', groupBy: 'assignee', columnBy: 'category' });

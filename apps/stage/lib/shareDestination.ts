@@ -3,7 +3,7 @@ import { accountClient, type AccountClient } from './xmtp.account';
 import { getAccountEpoch } from './accountEpoch';
 import { channelAccess } from './channelVisibility';
 import { loadHiddenChannels, subscribeHiddenChannels } from './hiddenChannels';
-import { knownActiveAccountId } from './channelsCache';
+import { knownActiveAccountId } from './accountSelection';
 import { loadClearedChats, subscribeClearedChats } from './clearedChats';
 import { acceptedShareConsent, type ShareDestination } from './shareDestination.model';
 import { sdk } from './xmtp.sdk';

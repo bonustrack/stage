@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createClientSlot } from '../lib/xmtp.state.core';
+import { AccountChangedError } from '../lib/accountSelection';
 
 describe('createClientSlot', () => {
   test('concurrent callers share one build', async () => {
@@ -62,8 +63,8 @@ describe('createClientSlot', () => {
     const joined = slot.getOrCreate(() => Promise.resolve('unused')).catch((e: unknown) => e);
     slot.reset();
     work.resolve('obsolete');
-    expect(await first).toBeInstanceOf(Error);
-    expect(await joined).toBeInstanceOf(Error);
+    expect(await first).toBeInstanceOf(AccountChangedError);
+    expect(await joined).toBeInstanceOf(AccountChangedError);
     expect(slot.get()).toBeNull();
     expect(discarded).toEqual(['obsolete']);
   });

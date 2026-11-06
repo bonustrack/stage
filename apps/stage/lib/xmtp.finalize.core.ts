@@ -1,6 +1,7 @@
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import type { XmtpEnv } from './xmtp.types';
 import { attempt } from './errorPolicy';
+import { AccountChangedError } from './accountSelection';
 
 export interface FinalizeDeps<C> {
   active: () => Promise<AccountRecord | null>;
@@ -30,7 +31,7 @@ export function makeClientFinalizer<C>(
 ): (client: C, rec: AccountRecord, env: XmtpEnv, opts: { markRegistered: boolean }) => Promise<C> {
   return async (client, rec, env, opts) => {
     const assertCurrent = async (): Promise<void> => {
-      if ((await deps.active())?.id !== rec.id) throw new Error('The account changed while messaging was starting.');
+      if ((await deps.active())?.id !== rec.id) throw new AccountChangedError('The account changed while messaging was starting.');
     };
     try {
       await assertCurrent();

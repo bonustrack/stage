@@ -32,15 +32,15 @@ mock.module('../lib/accounts', () => ({
     await accountDelay?.();
     return id === null ? null : { id };
   },
-  getActiveAccount: async () => {
-    const id = activeId;
-    await accountDelay?.();
-    return id === null ? null : { id };
-  },
   getActiveAccountStrict: async () => (activeId === null ? null : { id: activeId }),
 }));
 const { bumpAccountEpoch } = await import('../lib/accountEpoch');
-const { accountSelectionChanged } = await import('../lib/accountSelection');
+const { accountSelectionChanged, provideActiveAccountReader } = await import('../lib/accountSelection');
+provideActiveAccountReader(async () => {
+  const id = activeId;
+  await accountDelay?.();
+  return id;
+});
 const { applyRemoteDeveloperMode, loadDeveloperMode, onDeveloperModeChanged, setDeveloperMode } = await import('../lib/developerMode');
 let sequence = 0;
 const key = (id: string): string => `developer.mode.${id}`;

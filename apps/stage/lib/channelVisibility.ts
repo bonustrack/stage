@@ -2,7 +2,7 @@ import { sdk } from './xmtp.sdk';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { loadHiddenChannels } from './hiddenChannels';
 import { recover, report } from './errorPolicy';
-import { AccountChangedError } from './xmtp.client.core';
+import { AccountChangedError } from './accountSelection';
 import { makeListeners } from './storeCore';
 import { subscribeAccountEpoch } from './accountEpoch';
 

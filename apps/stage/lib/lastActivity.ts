@@ -5,7 +5,8 @@ import {
   type ActivityView,
   type LastActivity,
 } from '../components/home/activity.model';
-import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
+import { subscribeAccountEpoch } from './accountEpoch';
+import { accountScope } from './accountSelection';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
@@ -37,10 +38,8 @@ export function useLastActivity(view: ActivityView): LastActivity {
 }
 
 export function setLastActivity(view: ActivityView, window: LastActivity): void {
-  const epoch = getAccountEpoch();
-  void prefs
-    .update((current) => (epoch === getAccountEpoch() ? { ...current, [view]: window } : current))
-    .catch(reported('lastActivity.save'));
+  const scope = accountScope();
+  void prefs.update((current) => (scope.current() ? { ...current, [view]: window } : current)).catch(reported('lastActivity.save'));
 }
 
 let now = Date.now();

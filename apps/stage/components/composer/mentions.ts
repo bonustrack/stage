@@ -3,7 +3,8 @@ import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useContactList } from '../../lib/useContacts';
-import { getActiveAccountIdSync, getCachedRows } from '../../lib/channelsCache';
+import { getCachedRows } from '../../lib/channelsCache';
+import { knownActiveAccountId } from '../../lib/accountSelection';
 import { mentionAddresses } from '@stage-labs/client/xmtp/messageBody';
 import { mentionLabelOf as labelOf } from '../conversation/convTitle';
 import {
@@ -100,7 +101,7 @@ function useCandidatePool(
   const typing = suggestContacts && mentionQuery(pieces, cursor, candidates).range !== null;
   const contacts = useContactList(typing);
   if (!suggestContacts) return candidates;
-  return withContactCandidates(candidates ?? [], contacts, getActiveAccountIdSync());
+  return withContactCandidates(candidates ?? [], contacts, knownActiveAccountId() ?? '');
 }
 
 const mentionIdOf = (candidate: MentionCandidate): string => candidate.address;
