@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { reopenContextMenuAt } from './dom';
 
 export interface ContextMenuPoint {
   x: number;
@@ -28,14 +29,6 @@ export function contextMenuProps(open: ((point: ContextMenuPoint) => void) | und
   };
 }
 
-function reopenBelowOverlay(clientX: number, clientY: number): void {
-  requestAnimationFrame(() => {
-    const target = document.elementFromPoint(clientX, clientY);
-    if (!target) return;
-    target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX, clientY }));
-  });
-}
-
 export function dismissContextMenuProps(close: () => void): ContextMenuProps {
   if (Platform.OS !== 'web') return {};
   return {
@@ -43,7 +36,7 @@ export function dismissContextMenuProps(close: () => void): ContextMenuProps {
       event.preventDefault();
       const { clientX, clientY } = event;
       close();
-      reopenBelowOverlay(clientX, clientY);
+      reopenContextMenuAt(clientX, clientY);
     },
   };
 }

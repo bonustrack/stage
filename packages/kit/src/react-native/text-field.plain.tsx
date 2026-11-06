@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useRef, useState, type Ref, type Re
 import { Platform, TextInput, type DimensionValue, type TextStyle } from 'react-native';
 import { controlColors, textFieldStyle } from '../control.styles';
 import { accessibilityProps, weightStyle } from './a2ui-props';
+import { growToContent } from './dom';
 import { useKitScheme } from './theme-context';
 import type { TextFieldProps } from './text-field.types';
 
@@ -34,14 +35,11 @@ function useWebAutoGrow(ref: RefObject<TextInput | null>, props: TextFieldProps,
   const enabled = Platform.OS === 'web' && multiline && props.autoGrow === true;
   const [height, setHeight] = useState<number | undefined>(undefined);
   const measure = useCallback((): void => {
-    const node = ref.current as unknown as { style: { height: string }; scrollHeight: number } | null;
-    if (!enabled || node === null) return;
+    if (!enabled) return;
     const min = typeof minHeight === 'number' ? minHeight : 44;
     const max = typeof maxHeight === 'number' ? maxHeight : Number.POSITIVE_INFINITY;
-    node.style.height = 'auto';
-    const next = Math.min(max, Math.max(min, node.scrollHeight));
-    node.style.height = `${next}px`;
-    setHeight(next);
+    const next = growToContent(ref.current, min, max);
+    if (next !== undefined) setHeight(next);
   }, [ref, enabled, minHeight, maxHeight]);
   useEffect(() => {
     measure();
