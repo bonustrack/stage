@@ -12,7 +12,7 @@ import { useWebTabRail } from '../layout/webLayout';
 import { HomeError, RowChannelMenu, useChannelRowRenderer } from './parts';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ChannelsList } from './list';
-import { useChannelsSync } from './sync';
+import { useChannelsSync } from '../../lib/messaging/channelsSync';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
 import { useHomeFilters } from './labelbar';
 import { searchBarLabels, type Row } from './model';

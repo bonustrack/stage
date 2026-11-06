@@ -1,11 +1,11 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import { AppState, Platform } from 'react-native';
-import { getOrCreateXmtpClient, syncPreferences } from '../../lib/xmtp.client';
-import { NoAccountError } from '../../lib/accountSelection';
-import { getXmtpBootstrapPhase, isActiveConv } from '../../lib/xmtp.state.core';
-import { isSyncConv } from '../../lib/sync/group';
-import { primeConversationMembers } from '../../lib/xmtp.identity';
-import { subscribeAllMessages } from '../../lib/xmtp.stream';
+import { getOrCreateXmtpClient, syncPreferences } from '../xmtp.client';
+import { NoAccountError } from '../accountSelection';
+import { getXmtpBootstrapPhase, isActiveConv } from '../xmtp.state.core';
+import { isSyncConv } from '../sync/group';
+import { primeConversationMembers } from '../xmtp.identity';
+import { subscribeAllMessages } from '../xmtp.stream';
 import {
   listVisibleConversations,
   syncConversationsFromNetwork,
@@ -15,27 +15,27 @@ import {
   createdBySelf,
   groupAccessOf,
   isFreshOwnGroup,
-} from '../../lib/xmtp.conv';
-import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
-import { summarizeConversation } from '../../lib/messaging/conversation';
+} from '../xmtp.conv';
+import { hydrateCachedRows, setCachedRows } from '../channelsCache';
+import { summarizeConversation } from './conversation';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { afterFirstPages } from '../../lib/feed/firstPages';
-import { getPeerName } from '../../lib/peerProfiles';
-import { hydratePeerProfiles } from '../../lib/peerProfileCache';
-import { perfLog, perfTime } from '../../lib/perf';
+import { afterFirstPages } from '../feed/firstPages';
+import { getPeerName } from '../peerProfiles';
+import { hydratePeerProfiles } from '../peerProfileCache';
+import { perfLog, perfTime } from '../perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { dmIdsByPeer, uniqueByConvId } from '@stage-labs/client/xmtp/dmRoutes';
-import { homeRows, updateHomeRows } from './state';
-import { mergePaintedRows, visibleRowsDiff, type Row } from './model';
-import { schedulePushTopicRefresh } from '../../lib/pushRegister';
-import { report, recover, attempt } from '../../lib/errorPolicy';
-import { presentInboundNotification } from '../../lib/pushNotify';
+import { homeRows, updateHomeRows } from '../../components/home/state';
+import { mergePaintedRows, visibleRowsDiff, type Row } from '../../components/home/model';
+import { schedulePushTopicRefresh } from '../pushRegister';
+import { report, recover, attempt } from '../errorPolicy';
+import { presentInboundNotification } from '../pushNotify';
 import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { arrivalEffect, countsAsUnread, isRowCandidate, revivesRow } from '@stage-labs/client/xmtp/visibility';
-import { isChannelHidden, loadHiddenChannels, subscribeHiddenChannels } from '../../lib/sync/hiddenChannels';
-import { getActiveAccount } from '../../lib/accounts';
+import { isChannelHidden, loadHiddenChannels, subscribeHiddenChannels } from '../sync/hiddenChannels';
+import { getActiveAccount } from '../accounts';
 
 function makeSeenOnce(limit: number): (id: string) => boolean {
   const seen = new Set<string>();

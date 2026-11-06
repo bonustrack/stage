@@ -9,7 +9,7 @@ import type { HomeMenuState } from '../topnavRight';
 import { useLastActivityCutoff } from '../../../lib/lastActivity';
 import { HomeError, HomeSpinner } from '../parts';
 import { homeRows } from '../state';
-import { useChannelsSync } from '../sync';
+import { useChannelsSync } from '../../../lib/messaging/channelsSync';
 import type { Row as ChannelRowData } from '../model';
 import { subscribeCachedRows } from '../../../lib/channelsCache';
 import { useAccountEpoch } from '../../../lib/accountEpoch';
