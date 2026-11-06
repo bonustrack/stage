@@ -1,4 +1,5 @@
 import type { ListScrollMetrics } from './VirtualList.model';
+import { isRendered } from './webChrome';
 
 export interface ScrollHost {
   metrics(): ListScrollMetrics;
@@ -9,8 +10,6 @@ export interface ScrollHost {
 }
 
 const behavior = (animated: boolean): ScrollBehavior => (animated ? 'smooth' : 'instant');
-
-const rendered = (el: HTMLElement | null): boolean => el !== null && el.getClientRects().length > 0;
 
 export function whenShown<A extends unknown[]>(host: ScrollHost, scroll: (...args: A) => void): (...args: A) => void {
   return (...args) => {
@@ -32,9 +31,9 @@ export function windowHost(content: () => HTMLElement | null): ScrollHost {
         viewportHeight: window.innerHeight,
       };
     },
-    shown: () => rendered(content()),
+    shown: () => isRendered(content()),
     scrollTo: (offset, animated) => {
-      if (!rendered(content())) return;
+      if (!isRendered(content())) return;
       window.scrollTo({ top: contentTop() + offset, behavior: behavior(animated) });
     },
     subscribe: (onScroll) => {
@@ -55,10 +54,10 @@ export function elementHost(element: () => HTMLElement | null): ScrollHost {
       const el = element();
       return { offset: el?.scrollTop ?? 0, contentHeight: el?.scrollHeight ?? 0, viewportHeight: el?.clientHeight ?? 0 };
     },
-    shown: () => rendered(element()),
+    shown: () => isRendered(element()),
     scrollTo: (offset, animated) => {
       const el = element();
-      if (rendered(el)) el?.scrollTo({ top: offset, behavior: behavior(animated) });
+      if (isRendered(el)) el?.scrollTo({ top: offset, behavior: behavior(animated) });
     },
     subscribe: (onScroll) => {
       const el = element();

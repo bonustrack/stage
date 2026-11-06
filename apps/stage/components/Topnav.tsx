@@ -3,12 +3,13 @@ import { usePathname } from 'expo-router';
 import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from './layout/webLayout';
 import { isSplitRoute } from './tabs/splitRoutes';
 import { GradientFade } from './GradientFade';
+import { underTopChrome } from './layout/webChrome';
 import { Column, Row, STICKY_UNDER_CHROME, PAGE_GUTTER, stickyAt } from './layout';
 
 export const TOPNAV_HEIGHT = 52;
 export const TOPNAV_FADE = 8;
 
-export const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
+export const UNDER_TOPNAV = underTopChrome(TOPNAV_HEIGHT);
 
 const FADE_OVERLAY = { position: 'absolute', left: 0, right: 0, zIndex: 2 } as const;
 

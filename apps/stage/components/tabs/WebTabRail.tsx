@@ -9,6 +9,7 @@ import { RailTooltip } from './RailTooltip';
 import { HoverTint } from '../hover';
 import { appIcon } from '../widgets';
 import { useReportBottomChrome } from '../layout/bottomChrome';
+import { TAB_BAR_HEIGHT } from '../layout/webChrome.core';
 import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
 import { useBoardHome } from './boardHome';
 import { railMenuPages, isMenuPageOpen, isMenuPageRoute } from './menuPages';
@@ -26,8 +27,6 @@ export const TAB_ICON_FRAME = { width: 31, height: 28 } as const;
 export const TAB_BADGE_SIZE = 18;
 
 export const TAB_BADGE_POSITION = { position: 'absolute', top: -3, right: -3 } as const;
-
-const WEB_TAB_BAR_HEIGHT = 60;
 
 const RAIL_BUTTON = { height: 48, alignItems: 'center', justifyContent: 'center' } as const;
 
@@ -140,10 +139,10 @@ function MenuPageButtons({ pathname }: { pathname: string }): React.ReactElement
 
 export function WebTabBar({ pathname, unreadBadge }: { pathname: string; unreadBadge: string | undefined }): React.ReactElement {
   const pal = usePalette();
-  useReportBottomChrome(WEB_TAB_BAR_HEIGHT);
+  useReportBottomChrome(TAB_BAR_HEIGHT);
   return (
     <Row
-      height={WEB_TAB_BAR_HEIGHT}
+      height={TAB_BAR_HEIGHT}
       surface="toolbar"
       style={[pinnedEdges({ bottom: 0, left: 0, right: 0 }, 3), { borderTopWidth: 1, borderTopColor: pal.border }]}
     >

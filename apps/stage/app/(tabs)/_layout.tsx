@@ -3,6 +3,7 @@ import { usePathname, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { Tabs } from '../../lib/navigation';
 import { useSafeAreaInsets } from '../../components/layout/safeArea';
+import { TAB_BAR_HEIGHT } from '../../components/layout/webChrome.core';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
@@ -90,7 +91,7 @@ function nativeTabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: numb
     borderTopColor: pal.border,
     elevation: 0,
     shadowOpacity: 0,
-    height: 60 + bottomInset,
+    height: TAB_BAR_HEIGHT + bottomInset,
     paddingTop: 9,
     paddingBottom: bottomInset,
   };
@@ -127,7 +128,7 @@ export default function TabsLayout(): React.ReactElement {
   useRememberHomeView();
 
   const tabBarStyle = nativeTabBarStyle(pal, insets.bottom);
-  const tabBarHeight = web && rail ? 0 : 60 + insets.bottom;
+  const tabBarHeight = web && rail ? 0 : TAB_BAR_HEIGHT + insets.bottom;
 
   if (gate.ready && !gate.hasAccount) return <Landing />;
 

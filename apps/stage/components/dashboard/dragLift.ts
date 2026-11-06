@@ -1,14 +1,14 @@
 import { Platform, Vibration } from 'react-native';
 import { LIST_CELL_SELECTOR } from '../layout/VirtualList.model';
 import { domElementOf } from '../home/listDrag.model';
+import { setChromeClass } from '../layout/webChrome';
 
 export const HOLD_MS = 250;
 export const MOVE_SLOP = 6;
 const CLICK_GRACE_MS = 300;
 
 export function setDragging(on: boolean): void {
-  if (typeof document === 'undefined') return;
-  document.documentElement.classList.toggle('stage-dragging', on);
+  setChromeClass('dragging', on);
 }
 
 let lifted = false;

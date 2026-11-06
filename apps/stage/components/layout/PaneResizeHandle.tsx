@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent, ViewStyle } from 'react-native';
 import { usePalette } from '../../lib/theme';
 import type { PaneWidth } from './paneWidth';
+import { setChromeClass } from './webChrome';
 import { Column } from './';
 
 const DOUBLE_TAP_MS = 300;
@@ -32,8 +33,7 @@ interface Drag {
 }
 
 function setResizing(on: boolean): void {
-  if (typeof document === 'undefined') return;
-  document.documentElement.classList.toggle('stage-resizing', on);
+  setChromeClass('resizing', on);
 }
 
 function capturePointer(target: unknown, pointerId: number): void {

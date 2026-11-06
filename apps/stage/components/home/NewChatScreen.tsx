@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, useWindowDimensions } from 'react-native';
+import { Platform } from 'react-native';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
 import { channelLinkOf } from '../../lib/links';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
@@ -60,7 +60,7 @@ import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { useTopChromeInset, useWebTabRail } from '../layout/webLayout';
+import { useContentViewportHeight, useWebTabRail } from '../layout/webLayout';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { createGroup } from '../../lib/xmtp.groups';
 import { getConvConsentState } from '../../lib/xmtp.conv';
@@ -274,7 +274,7 @@ function NewChatFooter(props: FormProps): React.ReactElement {
 }
 
 function CenteredNewChat(props: FormProps): React.ReactElement {
-  const height = useWindowDimensions().height - useTopChromeInset();
+  const height = useContentViewportHeight();
   return (
     <Column height={height} surface="surface" align="center" justify="center" padding={{ x: PAGE_GUTTER }}>
       <Column width="100%" maxWidth={CENTERED_MAX_WIDTH}>

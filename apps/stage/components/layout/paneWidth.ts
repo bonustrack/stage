@@ -1,6 +1,7 @@
 import { createValueStore } from '../../lib/persistedStore';
 import { appStorage } from '../../platform/storage';
 import { WEB_TAB_RAIL_WIDTH } from './webLayout';
+import { paneLeftRule, writeChromeRule } from './webChrome';
 
 const NOT_KEPT = { get: (): Promise<null> => Promise.resolve(null), set: (): Promise<void> => Promise.resolve() };
 const paneStorage = appStorage.getSync ? appStorage : NOT_KEPT;
@@ -21,17 +22,6 @@ interface PaneWidthOptions {
   css: (width: number) => string;
 }
 
-function writeStyle(id: string, text: string): void {
-  if (typeof document === 'undefined') return;
-  let el = document.getElementById(id);
-  if (!el) {
-    el = document.createElement('style');
-    el.id = id;
-    document.head.appendChild(el);
-  }
-  el.textContent = text;
-}
-
 export function createPaneWidth(opts: PaneWidthOptions): PaneWidth {
   const clamp = (w: number): number => Math.min(opts.max, Math.max(opts.min, w));
   const store = createValueStore<number>({
@@ -44,12 +34,12 @@ export function createPaneWidth(opts: PaneWidthOptions): PaneWidth {
       return Number.isFinite(saved) && saved > 0 ? clamp(saved) : undefined;
     },
   });
-  writeStyle(opts.styleId, opts.css(store.get()));
+  writeChromeRule(opts.styleId, opts.css(store.get()));
 
   const set = (next: number): void => {
     const w = clamp(Math.round(next));
     if (w === store.get()) return;
-    writeStyle(opts.styleId, opts.css(w));
+    writeChromeRule(opts.styleId, opts.css(w));
     store.set(w);
   };
 
@@ -69,7 +59,5 @@ export const channelsPaneWidth = createPaneWidth({
   min: 280,
   max: 600,
   styleId: 'stage-pane-width',
-  css: (width) =>
-    `[data-stagepane="1"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH + width}px; }` +
-    ` [data-stagepane="rail"] { --stage-pane-left: ${WEB_TAB_RAIL_WIDTH}px; }`,
+  css: (width) => paneLeftRule(WEB_TAB_RAIL_WIDTH, width),
 });

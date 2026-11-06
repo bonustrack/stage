@@ -1,48 +1,32 @@
-import { Platform, useWindowDimensions } from 'react-native';
-import type { DesktopBridgeGlobal } from '../../lib/desktopBridge';
-import { WEB_SIDEBAR_MIN_WIDTH } from './breakpoints';
+import { useWindowDimensions } from 'react-native';
+import { useBottomChromeHeight } from './bottomChrome';
 
-const WEB_TOP_BAND = 12;
-
-export const WEB_TAB_RAIL_WIDTH = 72;
+export { WEB_TAB_RAIL_WIDTH } from './webChrome.core';
 
 export function desktopTitleBarInset(): number {
-  if (Platform.OS !== 'web') return 0;
-  const inset = (globalThis as DesktopBridgeGlobal).stageDesktop?.titleBarInset;
-  return typeof inset === 'number' && Number.isFinite(inset) && inset > 0 ? inset : 0;
+  return 0;
 }
 
 export function isCoarsePointer(): boolean {
-  if (Platform.OS !== 'web') return true;
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(pointer: coarse)').matches;
+  return true;
 }
 
 export function documentScroll(): { x: number; y: number } {
-  if (Platform.OS !== 'web') return { x: 0, y: 0 };
-  return { x: window.scrollX, y: window.scrollY };
+  return { x: 0, y: 0 };
 }
 
 export function useWebTabRail(): boolean {
-  const { width } = useWindowDimensions();
-  return Platform.OS === 'web' && width >= WEB_SIDEBAR_MIN_WIDTH;
+  return false;
 }
 
 export function useTopChromeInset(): number {
-  const wide = useWebTabRail();
-  const desktop = desktopTitleBarInset();
-  if (desktop > 0) return desktop;
-  return wide ? WEB_TOP_BAND : 0;
+  return 0;
 }
 
-let scrollLocks = 0;
+export function useContentViewportHeight(): number {
+  return useWindowDimensions().height - useBottomChromeHeight();
+}
 
 export function lockDocumentScroll(): () => void {
-  if (Platform.OS !== 'web' || typeof document === 'undefined') return () => undefined;
-  scrollLocks += 1;
-  document.documentElement.classList.add('stage-scroll-locked');
-  return () => {
-    scrollLocks -= 1;
-    if (scrollLocks === 0) document.documentElement.classList.remove('stage-scroll-locked');
-  };
+  return () => undefined;
 }

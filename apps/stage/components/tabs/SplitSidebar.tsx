@@ -11,18 +11,20 @@ import { PaneResizeHandle } from '../layout/PaneResizeHandle';
 import { isRailOnlyRoute, isSplitRoute, isTabRoute } from './splitRoutes';
 import { useBoardHome } from './boardHome';
 import { Column, pinnedEdges, SCROLLBAR_ON_HOVER } from '../layout';
+import { setPaneScope } from '../layout/webChrome';
+import type { PaneScope } from '../layout/webChrome.core';
 
-function usePaneScope(scope: string | null): void {
+function usePaneScope(scope: PaneScope | null): void {
   useEffect(() => {
-    if (typeof document === 'undefined' || scope === null) return;
-    document.documentElement.dataset.stagepane = scope;
+    if (scope === null) return;
+    setPaneScope(scope);
     return () => {
-      delete document.documentElement.dataset.stagepane;
+      setPaneScope(null);
     };
   }, [scope]);
 }
 
-function paneScopeOf(active: boolean, railOnly: boolean): string | null {
+function paneScopeOf(active: boolean, railOnly: boolean): PaneScope | null {
   if (active) return '1';
   return railOnly ? 'rail' : null;
 }

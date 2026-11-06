@@ -3,6 +3,7 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { createPaneWidth } from '../layout/paneWidth';
+import { rightPaneRule } from '../layout/webChrome';
 import { PaneResizeHandle } from '../layout/PaneResizeHandle';
 import { useMemberListOpen } from '../../lib/memberList';
 import { useSafeAreaInsets } from '../layout/safeArea';
@@ -23,7 +24,7 @@ const sidebarWidth = createPaneWidth({
   min: 200,
   max: 400,
   styleId: 'stage-right-pane',
-  css: (width) => `:root { --stage-right-pane: ${width}px; }`,
+  css: rightPaneRule,
 });
 
 export function useConversationSidebarShown(): boolean {

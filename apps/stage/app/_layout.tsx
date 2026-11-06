@@ -24,7 +24,8 @@ import { useOwnMailKey } from '../lib/mail';
 import { bootMessaging, useMessagingBoot } from '../lib/messaging/boot';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
-import { applyWebGlobalStyles } from '../platform/webStyles';
+import { applyDocumentTheme, applyWebGlobalStyles } from '../components/layout/webChrome';
+import { ContentFrame } from '../components/layout/ContentFrame';
 import { installPlainTextCopy } from '../lib/plainCopy';
 import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
@@ -38,7 +39,7 @@ import { SplitSidebar } from '../components/tabs/SplitSidebar';
 import { ignored } from '../lib/errorPolicy';
 import { useTabRole } from '../lib/tabLock';
 import { TabStandby } from '../components/system/TabStandby';
-import { Column, PANE_LEFT_PAD, viewportFill } from '../components/layout';
+import { Column, viewportFill } from '../components/layout';
 
 const queryClient = getQueryClient();
 
@@ -64,24 +65,10 @@ function isDarkBg(hex: string): boolean {
   return rgb === null || luminance(rgb, LUMA_REC709) < 0.5;
 }
 
-function WebContentFrame({ children }: { children: React.ReactNode }): React.ReactElement {
-  if (Platform.OS !== 'web') return <>{children}</>;
-  return (
-    <Column surface="surface" weight={1} width="100%" style={PANE_LEFT_PAD}>
-      {children}
-    </Column>
-  );
-}
-
-function useDocumentTheme(ready: boolean, dark: boolean, bg: string, sub: string): void {
+function useDocumentTheme(ready: boolean, dark: boolean, background: string, scrollbarThumb: string): void {
   useEffect(() => {
-    if (!ready || Platform.OS !== 'web' || typeof document === 'undefined') return;
-    const root = document.documentElement;
-    root.style.colorScheme = dark ? 'dark' : 'light';
-    root.style.backgroundColor = bg;
-    root.style.setProperty('--stage-scrollbar-thumb', sub);
-    document.getElementById('stage-boot')?.remove();
-  }, [ready, dark, bg, sub]);
+    if (ready) applyDocumentTheme({ dark, background, scrollbarThumb });
+  }, [ready, dark, background, scrollbarThumb]);
 }
 
 export default function RootLayout(): React.ReactElement {
@@ -131,11 +118,11 @@ function RootLayoutInner(): React.ReactElement {
         <KeyboardProvider>
           <KeyboardResync />
           <StatusBar style={barStyle} />
-          <WebContentFrame>
+          <ContentFrame>
             <RootStack detachInactiveScreens screenOptions={rootStackScreenOptions(bg)}>
               <RootStack.Screen name="(tabs)" options={TABS_SCREEN_OPTIONS} />
             </RootStack>
-          </WebContentFrame>
+          </ContentFrame>
           <SplitSidebar visible={shell.sidebarVisible} />
           {!gatesOpen || routing ? (
             <Column surface="surface" align="center" justify="center" style={viewportFill()}>
