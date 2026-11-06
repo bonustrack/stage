@@ -1,6 +1,7 @@
 import { addLabel, assignedAddresses, categoryOf, parseObject } from '@stage-labs/client/xmtp/labels';
 import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { includesKey } from '@stage-labs/client/collections';
+import { groupValueOf } from '../../lib/grouping.model';
 
 export interface NewChatMetadata {
   category: string | null;
@@ -51,7 +52,7 @@ export function newChatParams(metadata: NewChatMetadata): Record<string, string>
 }
 
 export function groupedChatMetadata(by: GroupKey, key: string, title: string): NewChatMetadata {
-  const value = key.startsWith(`${by}:`) ? key.slice(by.length + 1) : '';
+  const value = groupValueOf(by, key) ?? '';
   if (value === '') return NO_NEW_CHAT_METADATA;
   if (by === 'assignee') return { ...NO_NEW_CHAT_METADATA, assigned: assignedAddresses([value]) };
   if (by === 'label') return { ...NO_NEW_CHAT_METADATA, labels: addLabel([], title) };

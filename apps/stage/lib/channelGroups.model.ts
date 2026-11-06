@@ -3,6 +3,7 @@ import { movedKey } from '@stage-labs/client/xmtp/pinOrder';
 import { storedStrings } from './storeCore';
 import { compareNames } from './format';
 import { uniqueKeys } from '@stage-labs/client/collections';
+import { DM_SECTION, NO_SECTION, isGroupKeyOf, isNamedGroupKey } from './grouping.model';
 
 export interface ChannelGroupsPrefs {
   collapsed: string[];
@@ -12,23 +13,21 @@ export interface ChannelGroupsPrefs {
 
 export const NO_GROUPS_PREFS: ChannelGroupsPrefs = { collapsed: [], order: [] };
 
-export const CATEGORY_KEY_PREFIX = 'category:';
-
 export function isCategoryKey(key: string): boolean {
-  return key.startsWith(CATEGORY_KEY_PREFIX);
+  return isGroupKeyOf('category', key);
 }
 
 export function categoryOrderWith(order: readonly string[], visible: readonly string[]): string[] {
   return uniqueKeys([...order, ...[...visible].sort(compareNames)]);
 }
 
-const isNamedCategory = (key: string): boolean => isCategoryKey(key) && key.length > CATEGORY_KEY_PREFIX.length;
+const isNamedCategory = (key: string): boolean => isNamedGroupKey('category', key);
 
 export function categoryKeysOf(keys: readonly string[]): string[] {
   return uniqueKeys(keys.filter(isNamedCategory));
 }
 
-export const isCategorySectionKey = (key: string): boolean => key === 'dm' || key === 'none' || isNamedCategory(key);
+export const isCategorySectionKey = (key: string): boolean => key === DM_SECTION || key === NO_SECTION || isNamedCategory(key);
 
 export function categorySectionKeysOf(keys: readonly string[]): string[] {
   return uniqueKeys(keys.filter(isCategorySectionKey));
@@ -36,7 +35,7 @@ export function categorySectionKeysOf(keys: readonly string[]): string[] {
 
 export function categorySectionOrderWith(order: readonly string[], visible: readonly string[]): string[] {
   const full = categoryOrderWith(order, categoryKeysOf(visible));
-  return [...(full.includes('dm') ? [] : ['dm']), ...full, ...(full.includes('none') ? [] : ['none'])];
+  return [...(full.includes(DM_SECTION) ? [] : [DM_SECTION]), ...full, ...(full.includes(NO_SECTION) ? [] : [NO_SECTION])];
 }
 
 export function movedCategoryOrder(order: readonly string[], visible: readonly string[], key: string, targetKey: string): string[] {

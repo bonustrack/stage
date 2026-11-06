@@ -3,6 +3,7 @@ import { CHANNEL_PRIORITIES, categoryOf, priorityOf } from '@stage-labs/client/x
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { homeSortSchema, type HomeSort, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
 import { compareNames } from '../../lib/format';
+import { GROUPING_FIELDS, groupValueOf } from '../../lib/grouping.model';
 
 const DEFAULT_SORT: Record<HomeViewContent['view'], HomeSort> = {
   chats: { by: 'updated', direction: 'desc' },
@@ -10,10 +11,10 @@ const DEFAULT_SORT: Record<HomeViewContent['view'], HomeSort> = {
 };
 
 export const SORT_LABELS: Record<HomeSort['by'], string> = {
-  status: 'Status',
+  status: GROUPING_FIELDS.status.label,
   created: 'Created',
   updated: 'Updated',
-  priority: 'Priority',
+  priority: GROUPING_FIELDS.priority.label,
 };
 
 export function homeSortOf(view: HomeViewContent): HomeSort {
@@ -55,7 +56,10 @@ function statusRanks(rows: readonly SortableRow[], order: readonly string[]): Ma
       }),
     ),
   ];
-  const saved = order.filter((key) => key.startsWith('status:')).map((key) => key.slice('status:'.length).toLowerCase());
+  const saved = order.flatMap((key) => {
+    const value = groupValueOf('status', key);
+    return value === null ? [] : [value.toLowerCase()];
+  });
   const compare = (a: string, b: string): number => compareNames(a, b) || (a < b ? -1 : a > b ? 1 : 0);
   return new Map(savedFirst(statuses, saved, (value) => value, compare).map((status, index) => [status, index]));
 }

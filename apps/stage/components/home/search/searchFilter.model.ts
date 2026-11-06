@@ -59,7 +59,7 @@ export const HAS_OPTIONS: readonly FilterOption[] = [
 
 export const PRIORITY_OPTIONS: readonly FilterOption[] = CHANNEL_PRIORITIES.map((value) => ({ key: value, label: value, value }));
 
-const FIELD_RE = /^(-?)(label|member|has|category|status|priority):(.*)$/i;
+const FIELD_RE = new RegExp(`^(-?)(${FILTER_FIELDS.join('|')}):(.*)$`, 'i');
 const FILTER_KEYS = {
   label: 'labels',
   member: 'members',

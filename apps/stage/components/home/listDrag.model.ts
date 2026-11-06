@@ -1,6 +1,7 @@
 import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { isCategoryKey, isCategorySectionKey } from '../../lib/channelGroups.model';
-import { NO_GROUP_KEY, isGroupHeader, type ChannelGroupHeader, type HomeListItem } from './groups.model';
+import { NO_SECTION } from '../../lib/grouping.model';
+import { isGroupHeader, type ChannelGroupHeader, type HomeListItem } from './groups.model';
 
 export interface HomeDragModel {
   sections: readonly string[];
@@ -22,7 +23,7 @@ export const NO_HOME_DRAG: HomeDragModel = {
 
 function categoryOfHeader(header: ChannelGroupHeader): string | null | undefined {
   if (isCategoryKey(header.key)) return header.title;
-  return header.key === NO_GROUP_KEY ? null : undefined;
+  return header.key === NO_SECTION ? null : undefined;
 }
 
 export function homeDragModel(items: readonly HomeListItem[], byCategory: boolean): HomeDragModel {

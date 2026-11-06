@@ -19,8 +19,8 @@ import { usePeerProfiles, peerLabel } from '../../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../../lib/drafts';
 import { useEffectiveColorScheme, usePalette } from '../../../lib/theme';
 import { reported } from '../../../lib/errorPolicy';
-import { useBoardOrder } from '../../../lib/boardOrder';
-import { useChannelGroups } from '../../../lib/channelGroups';
+import { useGroupingOrders } from '../../../lib/groupingOrder';
+import { groupingOrderOf } from '../../../lib/grouping.model';
 import { useHomeViewOf } from '../../../lib/homeView';
 import { useBoardQuery } from './boardQuery';
 import { homeSortOf, sortHomeRows } from '../sort.model';
@@ -42,22 +42,22 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
-  const boardOrder = useBoardOrder();
-  const categoryOrder = useChannelGroups().order;
+  const orders = useGroupingOrders();
   const view = useHomeViewOf('board');
   const { columnBy } = view;
   const sort = homeSortOf(view);
-  const order = columnBy === 'category' ? categoryOrder : boardOrder;
+  const order = groupingOrderOf(columnBy, orders);
+  const statusOrder = groupingOrderOf('status', orders);
   const error = useChannelsSyncError();
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(
     () =>
       orderedColumns(
-        boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, (r) => isRowCleared(cleared, r), sort, boardOrder),
+        boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, (r) => isRowCleared(cleared, r), sort, statusOrder),
         order,
       ),
-    [rows, cleared, pinned, order, columnBy, profiles, sort, boardOrder],
+    [rows, cleared, pinned, order, columnBy, profiles, sort, statusOrder],
   );
   const activityCutoff = useLastActivityCutoff('board');
   const shown = useMemo(
@@ -72,9 +72,9 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
       dropCard(columns, order, convId, from, to, columnBy);
     },
     dropColumn: (from, target) => {
-      dropColumn(columns, order, from, target);
+      dropColumn(columns, order, from, target, columnBy);
     },
-    placeCard: (move) => cardLanding(shown, move, (list) => sortHomeRows(list, pinned, sort, boardOrder)),
+    placeCard: (move) => cardLanding(shown, move, (list) => sortHomeRows(list, pinned, sort, statusOrder)),
     rename: (from, to) => {
       if (columnsEditable(columnBy)) void renameBoardColumn(rows, columns, order, from, to, columnBy).catch(reported('board.rename'));
     },

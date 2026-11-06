@@ -8,15 +8,14 @@ import { homeRows } from '../../../lib/messaging/homeRows';
 import { subscribeCachedRows } from '../../../lib/channelsCache';
 import { useStoreValue } from '../../../lib/storeCore';
 import { useClearedChats } from '../../../lib/sync/clearedChats';
-import { useBoardOrder } from '../../../lib/boardOrder';
-import { useChannelGroups } from '../../../lib/channelGroups';
+import { useGroupingOrders } from '../../../lib/groupingOrder';
+import { groupingOrderOf } from '../../../lib/grouping.model';
 import { configuredFieldOptions } from '../../channel/channelFieldOptions.model';
 
 export function useSearchFilterSources(scope: FilterScope): ReturnType<typeof searchFilterSources> {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const cleared = useClearedChats();
-  const statusOrder = useBoardOrder();
-  const categoryOrder = useChannelGroups().order;
+  const orders = useGroupingOrders();
   return useMemo(() => {
     const sources = searchFilterSources(
       (rows ?? []).filter((row) => !isRowCleared(cleared, row)),
@@ -24,10 +23,10 @@ export function useSearchFilterSources(scope: FilterScope): ReturnType<typeof se
     );
     return {
       ...sources,
-      categories: configuredFieldOptions('category', sources.categories, categoryOrder),
-      statuses: configuredFieldOptions('status', sources.statuses, statusOrder),
+      categories: configuredFieldOptions('category', sources.categories, groupingOrderOf('category', orders)),
+      statuses: configuredFieldOptions('status', sources.statuses, groupingOrderOf('status', orders)),
     };
-  }, [rows, cleared, scope, statusOrder, categoryOrder]);
+  }, [rows, cleared, scope, orders]);
 }
 
 export function memberNamesOf(address: string): string[] {

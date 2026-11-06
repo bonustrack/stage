@@ -2,7 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { includesKey, isStringList, uniqueKeys } from '@stage-labs/client/collections';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { appIcon } from '../widgets';
+import { GROUPING_FIELDS } from '../../lib/grouping.model';
 import { FormField } from '../FormField';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
 import {
@@ -33,9 +35,6 @@ import { useStoreValue } from '../../lib/storeCore';
 import { useChannelEditRights } from './channel.detail';
 import { useSearchFilterSources } from '../home/search/FilterSearch';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
-import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
-import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
-import { IconFlag1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFlag1';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/text-field';
@@ -316,11 +315,12 @@ export function ChannelLabels({ convId, labels }: { convId: string; labels: stri
   );
 }
 
-export const FIELD_SECTIONS = {
-  category: { title: 'Project', icon: IconFolder1 },
-  status: { title: 'Status', icon: IconCircleDashed },
-  priority: { title: 'Priority', icon: IconFlag1 },
-};
+const fieldSection = (field: ChannelField): { title: string; icon: CentralIcon } => ({
+  title: GROUPING_FIELDS[field].label,
+  icon: appIcon(GROUPING_FIELDS[field].icon),
+});
+
+export const FIELD_SECTIONS = { category: fieldSection('category'), status: fieldSection('status'), priority: fieldSection('priority') };
 
 function ChannelFieldSection({ convId, field }: { convId: string; field: ChannelField }): React.ReactElement | null {
   const rights = useChannelEditRights(convId);

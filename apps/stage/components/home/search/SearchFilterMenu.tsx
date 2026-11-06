@@ -9,6 +9,7 @@ import { AccountAvatar } from '../../AccountAvatarButton';
 import { MenuHeading, MenuRow } from '../../MenuRows';
 import { PickerNote, PickerRow, PickerSearch } from '../../conversation/SidebarSection';
 import { peerLabel, usePeerProfiles } from '../../../lib/peerProfiles';
+import { GROUPING_FIELDS } from '../../../lib/grouping.model';
 import { memberNamesOf, useSearchFilterSources } from './FilterSearch';
 import {
   FILTER_FIELDS,
@@ -29,20 +30,21 @@ import {
   type FilterScope,
 } from './searchFilter.model';
 
+const { category, status, priority, label } = GROUPING_FIELDS;
 const FIELD_NAMES: Record<FilterField, string> = {
   member: 'Member',
-  category: 'Project',
-  status: 'Status',
-  priority: 'Priority',
-  label: 'Label',
+  category: category.label,
+  status: status.label,
+  priority: priority.label,
+  label: label.label,
   has: 'Has',
 };
 const FIELD_ICONS: Record<FilterField, AppIconName> = {
   member: 'IconPeople',
-  category: 'IconFolder1',
-  status: 'IconCircleDashed',
-  priority: 'IconFlag1',
-  label: 'IconTag',
+  category: category.icon,
+  status: status.icon,
+  priority: priority.icon,
+  label: label.icon,
   has: 'IconFilter1',
 };
 const valueOption = (value: string): FilterOption => ({ key: value, label: value, value });

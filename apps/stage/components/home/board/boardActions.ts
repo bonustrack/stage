@@ -1,8 +1,9 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { setBoardOrder } from '../../../lib/boardOrder';
-import { moveCategory, setCategoryOrder } from '../../../lib/channelGroups';
-import { isCategoryKey } from '../../../lib/channelGroups.model';
+import { moveCategory } from '../../../lib/channelGroups';
+import { groupingOrderStore } from '../../../lib/grouping.model';
+import { saveGroupingOrder } from '../../../lib/groupingOrder';
 import { capabilities } from '../../../lib/capabilities';
 import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
 import { moveGroupLabel, removeGroupLabel, renameGroupLabel, setGroupField } from '../../../lib/xmtp.groups';
@@ -23,31 +24,32 @@ import {
   type EditableColumnBy,
 } from './BoardScreen.model';
 
-function saveColumnOrder(order: readonly string[], by: GroupKey): void {
-  if (by === 'category') setCategoryOrder(order);
-  else setBoardOrder(order);
-}
-
 export function addBoardColumn(
   columns: readonly BoardColumn<unknown>[],
   saved: readonly string[],
   name: string,
   by: EditableColumnBy,
 ): void {
-  saveColumnOrder(
+  saveGroupingOrder(
+    by,
     addedColumnOrder(
       columns.map((column) => column.key),
       saved,
       name,
       by,
     ),
-    by,
   );
 }
 
-export function dropColumn(columns: readonly BoardColumn<unknown>[], saved: readonly string[], from: string, target: string): void {
+export function dropColumn(
+  columns: readonly BoardColumn<unknown>[],
+  saved: readonly string[],
+  from: string,
+  target: string,
+  by: GroupKey,
+): void {
   const shown = columns.map((column) => column.key);
-  if (isCategoryKey(from)) {
+  if (groupingOrderStore(by) === 'categories') {
     moveCategory(from, target, shown);
     return;
   }
@@ -66,7 +68,7 @@ export function dropCard(
   const edit = cardColumnEdit(columns, from, to, by);
   if (edit === null) return;
   const kept = keptColumnOrder(columns, saved, from);
-  if (kept !== null) saveColumnOrder(kept, by);
+  if (kept !== null) saveGroupingOrder(by, kept);
   const line = lineOfConv(convId);
   const write = edit.by === 'label' ? moveGroupLabel(line, edit.from, edit.to) : setGroupField(line, edit.by, edit.value);
   void write.catch((e: unknown) => {
@@ -98,7 +100,8 @@ export async function renameBoardColumn(
   to: string,
   by: EditableColumnBy,
 ): Promise<void> {
-  saveColumnOrder(
+  saveGroupingOrder(
+    by,
     renamedColumnOrder(
       columns.map((c) => c.key),
       saved,
@@ -106,7 +109,6 @@ export async function renameBoardColumn(
       to,
       by,
     ),
-    by,
   );
   if (by === 'category') renameNewChatProject(from, to);
   const results = await Promise.allSettled(
@@ -128,14 +130,14 @@ export async function deleteBoardColumn(
   const carriers = columnCarriers(rows, label, by);
   const confirm = deleteColumnConfirm(label, carriers.length, by);
   if (!(await capabilities.confirm({ ...confirm, confirmLabel: 'Delete', destructive: true }))) return;
-  saveColumnOrder(
+  saveGroupingOrder(
+    by,
     deletedColumnOrder(
       columns.map((c) => c.key),
       saved,
       label,
       by,
     ),
-    by,
   );
   if (by === 'category') renameNewChatProject(label, null);
   const results = await Promise.allSettled(

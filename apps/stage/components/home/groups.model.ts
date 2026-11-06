@@ -2,7 +2,8 @@ import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { compareNames } from '../../lib/format';
 import { categorySectionOrderWith } from '../../lib/channelGroups.model';
-import { NO_GROUP_TITLES, bucketRows, type Bucket, type NameOf } from './groupBy.model';
+import { DM_SECTION, NO_SECTION, groupHeaderId, sectionKeyOf } from '../../lib/grouping.model';
+import { noGroupTitle, bucketRows, type Bucket, type NameOf } from './groupBy.model';
 import { unreadRowCount, type Row } from './model';
 
 export interface ChannelGroupHeader {
@@ -20,9 +21,7 @@ interface GroupHeaderItem {
 
 export type HomeListItem = (Row & { listKey?: string }) | GroupHeaderItem;
 
-const DM_GROUP = { key: 'dm', title: 'Direct messages' };
-export const NO_GROUP_KEY = 'none';
-const HEADER_ID_PREFIX = 'group:';
+const DM_GROUP = { key: DM_SECTION, title: 'Direct messages' };
 
 interface GroupRow {
   convId: string;
@@ -41,8 +40,6 @@ export function rowsOf(items: readonly HomeListItem[]): Row[] {
 }
 
 export const listKeyOf = (item: HomeListItem): string => (isGroupHeader(item) ? item.convId : (item.listKey ?? item.convId));
-
-const sectionKeyOf = (by: GroupKey, value: string): string => `${by}:${value.toLowerCase()}`;
 
 export function groupKeysOf(items: readonly HomeListItem[]): ReadonlyMap<string, string> {
   const keys = new Map<string, string>();
@@ -65,7 +62,7 @@ function orderedBuckets<R extends GroupRow>(rows: readonly R[], by: GroupKey, na
   const sections = [
     ...(dm.length === 0 ? [] : [{ ...DM_GROUP, rows: dm }]),
     ...buckets.sort((a, b) => compareNames(a.title, b.title)),
-    ...(none.length === 0 ? [] : [{ key: NO_GROUP_KEY, title: NO_GROUP_TITLES[by], rows: none }]),
+    ...(none.length === 0 ? [] : [{ key: NO_SECTION, title: noGroupTitle(by), rows: none }]),
   ];
   return by === 'category'
     ? savedFirst(
@@ -107,6 +104,6 @@ export function groupRows(
       unread: unreadRowCount(bucket.rows),
       collapsed: folded,
     };
-    return [{ convId: HEADER_ID_PREFIX + bucket.key, header }, ...(folded ? [] : uniqueListItems(bucket, seen))];
+    return [{ convId: groupHeaderId(bucket.key), header }, ...(folded ? [] : uniqueListItems(bucket, seen))];
   });
 }

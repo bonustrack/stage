@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useHomeView } from '../../lib/homeView';
+import { DM_SECTION } from '../../lib/grouping.model';
 import { NewChatAction } from './NewChatAction';
 import { Eyebrow } from '../Eyebrow';
 import { UnreadBadge } from '../chatRow/UnreadBadge';
@@ -123,7 +124,7 @@ export function GroupHeader({
   return (
     <Row align="center" padding={{ right: PAGE_GUTTER }}>
       <Column weight={1}>{wrapToggle(toggle)}</Column>
-      {groupBy !== 'none' && header.key !== 'dm' ? (
+      {groupBy !== 'none' && header.key !== DM_SECTION ? (
         <Column padding={{ top: LIST_TOP_GAP, bottom: BOTTOM_GAP }}>
           <NewChatAction by={groupBy} groupKey={header.key} title={header.title} />
         </Column>

@@ -5,16 +5,16 @@ import {
   GROUP_KEYS,
   homeSortSchema,
   homeViewSchema,
-  type GroupKey,
   type HomeSort,
   type HomeViewContent,
   type HomeViewEdit,
 } from '@stage-labs/client/xmtp/sync/homeView';
 import type { AppIconName, MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../profile/ProfileScreen.model';
-import { GROUP_BY_LABELS } from './groupBy.model';
+import { groupByLabel } from './groupBy.model';
 import { homeSortEdit, homeSortOf, SORT_LABELS, sortHomeRows } from './sort.model';
-import { labelColumnKey, orderedColumns } from './board/BoardScreen.model';
+import { orderedColumns } from './board/BoardScreen.model';
+import { GROUPING_FIELDS, groupKeyOf } from '../../lib/grouping.model';
 import { lastActivityLabel } from './activity.model';
 import { LAST_ACTIVITY_WINDOWS, type LastActivity } from '../../lib/lastActivity.model';
 
@@ -98,18 +98,11 @@ export interface ViewMenuSection {
 }
 
 const GROUP_ID_PREFIX = 'group:';
-const GROUP_ICONS: Record<GroupKey, AppIconName> = {
-  assignee: 'IconPeopleAdded',
-  category: 'IconFolder1',
-  label: 'IconTag',
-  status: 'IconCircleDashed',
-};
-
 const SORT_ICONS: Record<HomeSort['by'], AppIconName> = {
-  status: 'IconCircleDashed',
+  status: GROUPING_FIELDS.status.icon,
   created: 'IconCalendar1',
   updated: 'IconClock',
-  priority: 'IconFlag1',
+  priority: GROUPING_FIELDS.priority.icon,
 };
 const DIRECTION_ICONS: Record<HomeSort['direction'], AppIconName> = { asc: 'IconArrowUp', desc: 'IconArrowDown' };
 
@@ -168,7 +161,7 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
           {
             id: 'grouping',
             label: board ? 'Column by' : 'Group by',
-            value: picked === 'none' ? 'No grouping' : GROUP_BY_LABELS[picked],
+            value: picked === 'none' ? 'No grouping' : groupByLabel(picked),
             icon: 'IconLayersThree',
             selected: false,
           },
@@ -180,8 +173,8 @@ export function homeViewMenu(current: HomeViewContent, grouping = false): ViewMe
     ];
   const groups = GROUP_KEYS.map((key): ViewMenuRow => ({
     id: GROUP_ID_PREFIX + key,
-    label: GROUP_BY_LABELS[key],
-    icon: GROUP_ICONS[key],
+    label: groupByLabel(key),
+    icon: GROUPING_FIELDS[key].icon,
     selected: picked === key,
   }));
   if (!board) groups.push({ id: `${GROUP_ID_PREFIX}none`, label: 'No grouping', selected: picked === 'none' });
@@ -258,7 +251,7 @@ export function searchBarLabels(matching: string[], enabled: ReadonlySet<string>
   const kept = [...enabled].filter((l) => !keys.has(l.toLowerCase()));
   const labels = [...matching, ...kept].sort((a, b) => a.localeCompare(b));
   return orderedColumns(
-    labels.map((label) => ({ key: labelColumnKey(label), label })),
+    labels.map((label) => ({ key: groupKeyOf('label', label), label })),
     boardOrder,
   ).map((c) => c.label);
 }
