@@ -1,5 +1,6 @@
 import { reduceCall, type CallEffect, type CallEndReason, type CallEvent, type CallsState } from '@stage-labs/client/xmtp/callMachine';
-import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
+import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';
+import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 import type { CallMedia, CallPeerView, CallView } from './calls.store';
 import { closePeer, sendMedia, type Peer, type PeerHooks } from './calls.peer.core';
 import { releaseStream, stopTrack, type CallMediaPort, type CallToken, type CallTrack, type Outgoing } from './calls.types';
