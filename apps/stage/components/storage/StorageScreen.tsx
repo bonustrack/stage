@@ -24,7 +24,7 @@ import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { SETTINGS_ROUTE } from '../../lib/routes';
 import { useWebTabRail } from '../layout/webLayout';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { forgetStorageFile, retryStorage, storageChatOf, storageFileGone, useStorage, type StorageState } from '../../lib/storage';
+import { forgetStorageFile, retryStorage, storageChatOf, storageFileGone, useStorage, type StorageState } from '../../lib/storageIndex';
 import { fileKey, type StoredFile } from '../../lib/storageIndex.model';
 import { usePalette } from '../../lib/theme';
 import { FileUnavailableError, openStoredFile } from './storageOpen';
