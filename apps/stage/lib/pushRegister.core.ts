@@ -25,7 +25,7 @@ import { onReadStateChanged } from './channelsCache';
 import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { setPushStatus } from './pushStatus';
 import { report, reported, ignored } from './errorPolicy';
-import { afterFirstPages } from './feed/lines';
+import { afterFirstPages } from './feed/firstPages';
 import { envBaseUrl } from './env';
 import { signingKeyForRecord } from './xmtp.signing.core';
 

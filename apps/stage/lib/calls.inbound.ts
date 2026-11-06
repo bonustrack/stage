@@ -8,7 +8,7 @@ import {
 } from '@stage-labs/client/xmtp/call';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { convOfLine, sdk } from './xmtp.sdk';
-import { afterFirstPages } from './feed/lines';
+import { afterFirstPages } from './feed/firstPages';
 import type { StreamMsg } from './xmtp.types';
 import { reported } from './errorPolicy';
 import type { CallInbound, CallInboundHooks } from './calls.machine.core';

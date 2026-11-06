@@ -1,50 +1,11 @@
-import type { HistoryEntry } from '@stage-labs/client/types';
 import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
-import { makeListeners, makeValue } from './storeCore';
-import { resetFeedLines } from './feed/lines';
+import { makeValue } from './storeCore';
+import { resetFeed } from './feed/cache';
 import { attempt } from './errorPolicy';
 import { sleep } from '@stage-labs/client/timing';
 import { AccountChangedError } from './accountSelection';
 
 export const inboxEthCache = new Map<string, string>();
-
-let feedGeneration = 0;
-const feedSlices = new Map<string, HistoryEntry[]>();
-const cachedFeedIds = new Map<string, ReadonlySet<string>>();
-const feedChanges = makeListeners<{ line: string; slice: HistoryEntry[] | undefined }>();
-
-function setFeedSlice(line: string, slice: HistoryEntry[]): void {
-  feedSlices.set(line, slice);
-  feedChanges.notify({ line, slice });
-}
-
-export const feedCache = {
-  generation: (): number => feedGeneration,
-  get: (line: string): HistoryEntry[] | undefined => feedSlices.get(line),
-  set: setFeedSlice,
-  showCached(line: string, slice: HistoryEntry[]): void {
-    cachedFeedIds.set(line, new Set(slice.map((e) => e.id)));
-    setFeedSlice(line, slice);
-  },
-  cachedIds: (line: string): ReadonlySet<string> | undefined => cachedFeedIds.get(line),
-  settleCached(line: string): void {
-    cachedFeedIds.delete(line);
-  },
-  subscribeAll(cb: (line: string, slice: HistoryEntry[] | undefined) => void): () => void {
-    return feedChanges.subscribe(({ line, slice }) => {
-      cb(line, slice);
-    });
-  },
-  clear(): void {
-    feedGeneration += 1;
-    const lines = [...feedSlices.keys()];
-    feedSlices.clear();
-    cachedFeedIds.clear();
-    for (const line of lines) feedChanges.notify({ line, slice: undefined });
-  },
-};
-
-export { activeFeedLines } from './feed/lines';
 
 let activeConvId: string | null = null;
 
@@ -80,8 +41,7 @@ export function registerGlobalStreamTeardown(fn: () => void): void {
 export function resetSharedXmtpState(): void {
   clearAppDataWrites();
   globalStreamTeardown?.();
-  resetFeedLines();
-  feedCache.clear();
+  resetFeed();
   inboxEthCache.clear();
 }
 

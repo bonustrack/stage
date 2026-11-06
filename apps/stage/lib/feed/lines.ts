@@ -1,6 +1,4 @@
-import { settleWithin } from '@stage-labs/client/timing';
-export const activeFeedLines = new Set<string>();
-
+const activeLines = new Set<string>();
 const feedLineHolds = new Map<string, number>();
 const loadedFeedLines = new Set<string>();
 let feedHoldEpoch = 0;
@@ -8,7 +6,7 @@ let feedHoldEpoch = 0;
 export function holdFeedLine(line: string): () => void {
   const epoch = feedHoldEpoch;
   feedLineHolds.set(line, (feedLineHolds.get(line) ?? 0) + 1);
-  activeFeedLines.add(line);
+  activeLines.add(line);
   let released = false;
   return () => {
     if (released || epoch !== feedHoldEpoch) return;
@@ -19,29 +17,20 @@ export function holdFeedLine(line: string): () => void {
       return;
     }
     feedLineHolds.delete(line);
-    activeFeedLines.delete(line);
+    activeLines.delete(line);
   };
 }
 
-const firstPageLoads = new Set<Promise<unknown>>();
-const FIRST_PAGE_WAIT_MS = 3_000;
-
-export function trackFirstPageLoad<T>(load: Promise<T>): Promise<T> {
-  firstPageLoads.add(load);
-  const done = (): void => {
-    firstPageLoads.delete(load);
-  };
-  void load.then(done, done);
-  return load;
+export function isFeedLineActive(line: string): boolean {
+  return activeLines.has(line);
 }
 
-export async function afterFirstPages(maxMs = FIRST_PAGE_WAIT_MS): Promise<void> {
-  const deadline = Date.now() + maxMs;
-  while (firstPageLoads.size > 0) {
-    const left = deadline - Date.now();
-    if (left <= 0) return;
-    await settleWithin(Promise.allSettled([...firstPageLoads]), left, []);
-  }
+export function hasOpenFeeds(): boolean {
+  return activeLines.size > 0;
+}
+
+export function openFeedLines(): IterableIterator<string> {
+  return activeLines.values();
 }
 
 export function markFeedLoaded(line: string): void {
@@ -68,7 +57,7 @@ export function isFeedLoaded(line: string): boolean {
 export function resetFeedLines(): void {
   feedHoldEpoch += 1;
   feedLineHolds.clear();
-  activeFeedLines.clear();
+  activeLines.clear();
   loadedFeedLines.clear();
   freshFeedLines.clear();
 }

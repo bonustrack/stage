@@ -10,7 +10,7 @@ import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 import { sdk } from '../xmtp.sdk';
 import type { AccountClient } from '../xmtp.account';
 import { subscribeAccountEpoch } from '../accountEpoch';
-import { afterFirstPages } from '../feed/lines';
+import { afterFirstPages } from '../feed/firstPages';
 import { recover } from '../errorPolicy';
 
 type SyncConv = NonNullable<Awaited<ReturnType<typeof sdk.findConv>>>;

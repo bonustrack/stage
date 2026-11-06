@@ -1,5 +1,5 @@
 import { flushDmOutbox } from '../dmOutbox';
-import { subscribeChannelUpdates } from '../feed/resync';
+import { subscribeChannelUpdates } from '../feed/merge';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { refreshConv } from './queries';
 import { startReadSync } from '../sync/readSync';

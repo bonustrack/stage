@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { afterFirstPages, trackFirstPageLoad } from '../lib/feed/lines';
+import { afterFirstPages, trackFirstPageLoad } from '../lib/feed/firstPages';
 
 const tick = (ms: number): Promise<void> =>
   new Promise((resolve) => {

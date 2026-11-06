@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { activeFeedLines, holdFeedLine, isFeedLoaded, markFeedLoaded, resetFeedLines } from '../lib/feed/lines';
+import {
+  hasOpenFeeds,
+  holdFeedLine,
+  isFeedLineActive,
+  isFeedLoaded,
+  markFeedLoaded,
+  openFeedLines,
+  resetFeedLines,
+} from '../lib/feed/lines';
 
 describe('holdFeedLine', () => {
   test('a line stays active until its last holder lets go', () => {
@@ -7,9 +15,9 @@ describe('holdFeedLine', () => {
     const second = holdFeedLine('line-a');
     first();
     first();
-    expect(activeFeedLines.has('line-a')).toBe(true);
+    expect(isFeedLineActive('line-a')).toBe(true);
     second();
-    expect(activeFeedLines.has('line-a')).toBe(false);
+    expect(isFeedLineActive('line-a')).toBe(false);
   });
 
   test('a hold taken before a reset never releases a newer hold', () => {
@@ -17,9 +25,9 @@ describe('holdFeedLine', () => {
     resetFeedLines();
     const fresh = holdFeedLine('line-b');
     stale();
-    expect(activeFeedLines.has('line-b')).toBe(true);
+    expect(isFeedLineActive('line-b')).toBe(true);
     fresh();
-    expect(activeFeedLines.has('line-b')).toBe(false);
+    expect(isFeedLineActive('line-b')).toBe(false);
   });
 
   test('a line counts as loaded only after its first page, until a reset', () => {
@@ -28,5 +36,18 @@ describe('holdFeedLine', () => {
     expect(isFeedLoaded('line-c')).toBe(true);
     resetFeedLines();
     expect(isFeedLoaded('line-c')).toBe(false);
+  });
+
+  test('open feeds are the held lines, and none stay open after a reset', () => {
+    resetFeedLines();
+    expect(hasOpenFeeds()).toBe(false);
+    const release = holdFeedLine('line-d');
+    holdFeedLine('line-e');
+    expect(hasOpenFeeds()).toBe(true);
+    expect([...openFeedLines()]).toEqual(['line-d', 'line-e']);
+    release();
+    expect([...openFeedLines()]).toEqual(['line-e']);
+    resetFeedLines();
+    expect(hasOpenFeeds()).toBe(false);
   });
 });

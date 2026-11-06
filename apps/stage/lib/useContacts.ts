@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convMembers, primeConversationMembers } from './xmtp.identity';
 import { sdk } from './xmtp.sdk';
-import { afterFirstPages } from './feed/lines';
+import { afterFirstPages } from './feed/firstPages';
 import { getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
 import { knownActiveAccountId } from './accountSelection';
 import { usePeerProfiles, peerLabel } from './peerProfiles';

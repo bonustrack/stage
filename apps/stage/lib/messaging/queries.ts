@@ -15,7 +15,6 @@ export const messagingKeys = {
   groupEditRights: (convId: string | null | undefined) => ['xmtp', 'conv', convId ?? '', 'editRights'] as const,
   groupRoles: (convId: string | null | undefined, inboxIds: readonly string[]) =>
     ['xmtp', 'conv', convId ?? '', 'roles', [...inboxIds].sort().join(',')] as const,
-  messages: (account: number, line: string) => ['xmtp', 'messages', account, line] as const,
 } as const;
 
 export { fetchGroupRoles };

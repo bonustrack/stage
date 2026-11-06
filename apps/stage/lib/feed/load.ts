@@ -2,129 +2,30 @@ import { getQueryClient } from '../queryClient';
 import { getAccountEpoch } from '../accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { convOfLine, sdk } from '../xmtp.sdk';
-import { isShownInFeed } from '@stage-labs/client/xmtp/visibility';
 import { latestConvMessages, olderConvMessages } from '../xmtp.messages';
-import { PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from './resync';
-import { feedCache, activeFeedLines } from '../xmtp.state.core';
-import { isFeedLoaded, markFeedLoaded, takeFreshFeed, trackFirstPageLoad } from './lines';
-import { cachedFeed, rememberFeed } from './snapshot';
+import { PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed } from './merge';
+import { refreshLatestPage, syncInboxOnce } from './resync';
+import { feedCache, feedGeneration, type FeedGeneration } from './cache';
+import { isFeedLoaded, markFeedLoaded, takeFreshFeed } from './lines';
+import { trackFirstPageLoad } from './firstPages';
+import { cachedFeed } from './snapshot';
+import { reconcileOnOpen } from './heal';
+import { feedQueryKey } from './query';
 import { perfLog, perfTime } from '../perf';
-import { messagingKeys } from '../messaging/queries';
 import { report, reported, recover, ignored } from '../errorPolicy';
-
-function feedLatest(line: string): HistoryEntry | undefined {
-  const slice = feedCache.get(line);
-  if (!slice) return undefined;
-  return slice.find(isShownInFeed);
-}
-
-function entryNs(e: HistoryEntry): number {
-  const ms = new Date(e.ts).getTime();
-  return Number.isFinite(ms) ? ms * 1_000_000 : 0;
-}
-
-function logReconcileHeal(
-  label: string,
-  line: string,
-  healedBy: string,
-  before: HistoryEntry | undefined,
-  after: { id: string | null; ts: string | null },
-): void {
-  console.log(
-    label,
-    JSON.stringify({
-      line,
-      feedLatestId: before?.id ?? null,
-      feedLatestTs: before?.ts ?? null,
-      storeLatestId: after.id,
-      storeLatestTs: after.ts,
-      healedBy,
-    }),
-  );
-}
-
-async function reconcileOnOpen(line: string): Promise<void> {
-  const generation = feedCache.generation();
-  try {
-    const conv = await convOfLine(line);
-    if (!conv) return;
-    const [storeLatest] = await latestConvMessages(conv, line, 1);
-    if (!storeLatest) return;
-    if (!isShownInFeed(storeLatest)) return;
-    const feed = feedLatest(line);
-    if (feed?.id === storeLatest.id) return;
-    const page = await latestConvMessages(conv, line, PAGE_SIZE);
-    if (generation !== feedCache.generation()) return;
-    mergePageIntoFeed(line, page);
-    logReconcileHeal('[feed-reconcile] open-time heal', line, 'reconcileOnOpen', feed, storeLatest);
-  } catch (err) {
-    report('feed.reconcileOnOpen', err);
-  }
-}
-
-export async function reconcileOnArrival(line: string, prevLatestNs: number, arrivingNs: number, arrivingId: string): Promise<void> {
-  if (!activeFeedLines.has(line)) return;
-  const latestNow = feedLatest(line);
-  if (latestNow?.id === arrivingId && arrivingNs >= prevLatestNs) return;
-  await healArrivalGap(line);
-}
-
-async function healArrivalGap(line: string): Promise<void> {
-  try {
-    const page = await refreshLatestPage(line);
-    if (!page) return;
-    const before = feedLatest(line);
-    mergePageIntoFeed(line, page);
-    const after = feedLatest(line);
-    if (before?.id !== after?.id) {
-      logReconcileHeal('[feed-reconcile] arrival-gap heal', line, 'reconcileOnArrival', before, {
-        id: after?.id ?? null,
-        ts: after?.ts ?? null,
-      });
-    }
-  } catch (err) {
-    report('feed.reconcileOnArrival', err);
-  }
-}
-
-export function feedLatestNs(line: string): number {
-  const e = feedLatest(line);
-  return e ? entryNs(e) : 0;
-}
-
-function mirrorSlice(line: string, slice: HistoryEntry[] | undefined): void {
-  if (!isFeedLoaded(line)) return;
-  const key = messagingKeys.messages(getAccountEpoch(), line);
-  getQueryClient().setQueryData<HistoryEntry[]>(key, slice ?? []);
-}
-
-function persistSlice(line: string, slice: HistoryEntry[] | undefined): void {
-  if (slice === undefined || feedCache.cachedIds(line) !== undefined) return;
-  rememberFeed(line, slice);
-}
-
-let bridgeStarted = false;
-export function ensureFeedQueryBridge(): void {
-  if (bridgeStarted) return;
-  bridgeStarted = true;
-  feedCache.subscribeAll((line, slice) => {
-    mirrorSlice(line, slice);
-    persistSlice(line, slice);
-  });
-}
 
 const bgSyncInFlight = new Map<string, Promise<void>>();
 
 function revalidateFeed(line: string, wholeInbox: boolean): Promise<void> {
-  const generation = feedCache.generation();
-  const key = `${generation}:${line}`;
+  const generation = feedGeneration();
+  const key = `${generation.id}:${line}`;
   const existing = bgSyncInFlight.get(key);
   if (existing) return existing;
   const run = (async (): Promise<void> => {
     try {
       if (wholeInbox) await syncInboxOnce(0);
       const page = await refreshLatestPage(line);
-      if (!page || generation !== feedCache.generation()) return;
+      if (!page || !generation.current()) return;
       mergePageIntoFeed(line, page);
       await reconcileOnOpen(line);
     } catch (err) {
@@ -137,29 +38,29 @@ function revalidateFeed(line: string, wholeInbox: boolean): Promise<void> {
   return run;
 }
 
-async function loadFirstPage(line: string, generation: number): Promise<HistoryEntry[]> {
+async function loadFirstPage(line: string, generation: FeedGeneration): Promise<HistoryEntry[]> {
   const conv = await perfTime('feed.convOfLine', () => convOfLine(line));
-  if (generation !== feedCache.generation()) return [];
+  if (!generation.current()) return [];
   if (!conv) {
     perfLog('feed.coldPath: conversation not local, awaiting network');
     await perfTime('feed.revalidate', () => revalidateFeed(line, true));
-    if (generation !== feedCache.generation()) return [];
+    if (!generation.current()) return [];
     mergeLatestIntoFeed(line, []);
     markFeedLoaded(line);
     return feedCache.get(line) ?? [];
   }
   const page = await perfTime('feed.latestMessages', () => latestConvMessages(conv, line, PAGE_SIZE));
-  if (generation !== feedCache.generation()) return [];
+  if (!generation.current()) return [];
   mergePageIntoFeed(line, page);
   markFeedLoaded(line);
   if (!takeFreshFeed(line)) void revalidateFeed(line, !sdk.isGroup(conv));
   return feedCache.get(line) ?? [];
 }
 
-async function showCachedFeed(line: string, generation: number): Promise<boolean> {
+async function showCachedFeed(line: string, generation: FeedGeneration): Promise<boolean> {
   if (feedCache.get(line) !== undefined) return false;
   const cached = await cachedFeed(line).catch(recover('feed.cached', null));
-  if (generation !== feedCache.generation()) return false;
+  if (!generation.current()) return false;
   if (!cached?.length || isFeedLoaded(line) || feedCache.get(line) !== undefined) return false;
   feedCache.showCached(line, cached);
   markFeedLoaded(line);
@@ -168,7 +69,7 @@ async function showCachedFeed(line: string, generation: number): Promise<boolean
 }
 
 export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
-  const generation = feedCache.generation();
+  const generation = feedGeneration();
   const latest = trackFirstPageLoad(loadFirstPage(line, generation));
   const cached = showCachedFeed(line, generation).then((shown) => {
     if (!shown) return latest;
@@ -180,7 +81,7 @@ export async function loadFeedFirstPage(line: string): Promise<HistoryEntry[]> {
 
 export function prefetchFeed(line: string): void {
   void getQueryClient()
-    .prefetchQuery({ queryKey: messagingKeys.messages(getAccountEpoch(), line), queryFn: () => loadFeedFirstPage(line), staleTime: 2_000 })
+    .prefetchQuery({ queryKey: feedQueryKey(getAccountEpoch(), line), queryFn: () => loadFeedFirstPage(line), staleTime: 2_000 })
     .catch(ignored(undefined, 'optional'));
 }
 

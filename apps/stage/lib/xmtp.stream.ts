@@ -1,14 +1,13 @@
 import type { StreamMsg, StreamStatus } from './xmtp.types';
-import { isShownInFeed } from '@stage-labs/client/xmtp/visibility';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { sdk } from './xmtp.sdk';
-import { activeFeedLines, feedCache, registerGlobalStreamTeardown } from './xmtp.state.core';
+import { registerGlobalStreamTeardown } from './xmtp.state.core';
 import type { MessageDeletion } from './xmtp.sdk.core';
-import { mergeIntoFeed, resyncActiveFeeds } from './feed/resync';
 import { foregroundWatch } from './xmtp.foreground';
 import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
-import { afterFirstPages } from './feed/lines';
-import { reconcileOnArrival, feedLatestNs } from './feed/load';
+import { afterFirstPages } from './feed/firstPages';
+import { hasOpenFeeds } from './feed/lines';
+import { onArrival, onDeletion, onStreamClosed, onUnknownArrival } from './feed/arrival';
 import { report, reported } from './errorPolicy';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { isHiddenFromFeeds, reconcileHiddenConsent } from './channelVisibility';
@@ -43,7 +42,7 @@ export function subscribeAllMessages(cb: (m: StreamMsg) => void, options: Subscr
   void ensureGlobalStream();
   return () => {
     streamSubscribers.delete(cb);
-    if (streamSubscribers.size === 0 && activeFeedLines.size === 0) globalStream.teardown();
+    if (streamSubscribers.size === 0 && !hasOpenFeeds()) globalStream.teardown();
   };
 }
 
@@ -63,14 +62,7 @@ function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable
 
 function routeMessageToFeed(convId: string, msg: NonNullable<StreamMessage>): void {
   const line = lineOfConv(convId);
-  const env = sdk.envelopeOf(msg, line);
-  if (!isShownInFeed(env)) return;
-  const prevLatestNs = activeFeedLines.has(line) ? feedLatestNs(line) : 0;
-  mergeIntoFeed(line, [env]);
-  if (activeFeedLines.has(line)) {
-    void reconcileOnArrival(line, prevLatestNs, sdk.sentNsOf(msg), env.id);
-  }
-  if (activeFeedLines.size > 0 && !activeFeedLines.has(line)) void resyncActiveFeeds();
+  onArrival(line, sdk.envelopeOf(msg, line), sdk.sentNsOf(msg));
 }
 
 function routedConvId(msg: NonNullable<StreamMessage>): string | null | undefined {
@@ -85,24 +77,20 @@ function handleStreamMessage(msg: StreamMessage): void {
   const convId = routedConvId(msg);
   fanOutToSubscribers(convId, msg);
   if (!convId) {
-    if (activeFeedLines.size > 0) void resyncActiveFeeds();
+    onUnknownArrival();
     return;
   }
   if (!isHiddenFromFeeds(convId)) routeMessageToFeed(convId, msg);
 }
 
-async function applyDeletion(context: AccountClient, line: string, messageId: string): Promise<void> {
-  const generation = feedCache.generation();
-  const entry = await sdk.deletedEntryOf(context.client, messageId, line);
-  if (!context.current() || feedCache.generation() !== generation) return;
-  if (entry) mergeIntoFeed(line, [entry]);
-  else if (activeFeedLines.has(line)) await resyncActiveFeeds();
-}
-
 function onMessageDeleted(context: AccountClient, { convId, messageId }: MessageDeletion): void {
   const line = lineOfConv(routeConvId(convId));
-  if (!feedCache.get(line)?.some((e) => e.id === messageId)) return;
-  void applyDeletion(context, line, messageId).catch(reported('xmtp.deletion'));
+  void onDeletion(
+    line,
+    messageId,
+    () => sdk.deletedEntryOf(context.client, messageId, line),
+    () => context.current(),
+  ).catch(reported('xmtp.deletion'));
 }
 
 async function prepareStream(assertCurrent: () => void): Promise<AccountClient> {
@@ -142,13 +130,13 @@ const globalStream = makeGlobalStream({
   prepare: prepareStream,
   current: (context: AccountClient) => context.current(),
   open: openStream,
-  wanted: () => streamSubscribers.size > 0 || activeFeedLines.size > 0,
+  wanted: () => streamSubscribers.size > 0 || hasOpenFeeds(),
   live: () => {
     foregroundWatch.attach(status);
   },
   closed: () => {
     lastCloseAt = Date.now();
-    void resyncActiveFeeds();
+    onStreamClosed();
   },
   stopped: () => {
     lastMessageAt = 0;

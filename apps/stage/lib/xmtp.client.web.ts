@@ -13,7 +13,7 @@ import { withMainThreadWasm } from './xmtp.wasm.web';
 import { webXmtpDbPath, canReuseSavedClient, installationCreatedAtMs, offlineOpenOptions } from '@stage-labs/client/xmtp/clientConfig';
 import { isStoreLocked } from '@stage-labs/client/xmtp/clientErrors';
 import { ignored, attempt } from './errorPolicy';
-import { afterFirstPages } from './feed/lines';
+import { afterFirstPages } from './feed/firstPages';
 import { historyServerUrl } from './historyServer';
 import { forgetFeeds } from './feed/snapshot';
 import { forgetStorageIndex } from './storageIndexStore';

@@ -3,12 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useAccountEpoch } from '../accountEpoch';
 import { getOrCreateXmtpClient } from '../xmtp.client';
-import { feedCache } from '../xmtp.state.core';
-import { holdFeedLine, isFeedLoaded } from './lines';
+import { feedCache, feedGeneration } from './cache';
+import { isFeedLoaded } from './lines';
 import { ensureGlobalStream } from '../xmtp.stream';
-import { getQueryClient } from '../queryClient';
-import { messagingKeys } from '../messaging/queries';
-import { ensureFeedQueryBridge, loadFeedFirstPage, loadFeedOlderPage } from './load';
+import { feedQueryKey, openFeedLine, queriedFeed } from './query';
+import { loadFeedFirstPage, loadFeedOlderPage } from './load';
 import type { XmtpFeedStatus } from '../xmtp.types';
 import { report, reported } from '../errorPolicy';
 import { feedStartId, useFeedStartId } from './start';
@@ -50,20 +49,19 @@ export function useXmtpFeed(
   useEffect(() => {
     if (!enabled || !line) return;
     const ln = line;
-    ensureFeedQueryBridge();
-    const release = holdFeedLine(ln);
+    const release = openFeedLine(ln);
     void ensureGlobalStream();
     let cancelled = false;
-    const generation = feedCache.generation();
+    const generation = feedGeneration();
     setInboxId('');
     void cachedSelfInboxId()
       .then((id) => {
-        if (!cancelled && generation === feedCache.generation() && id) setInboxId((prev) => prev || id);
+        if (!cancelled && generation.current() && id) setInboxId((prev) => prev || id);
       })
       .catch(reported('feed.cachedSelf'));
     void getOrCreateXmtpClient('production')
       .then((c) => {
-        if (cancelled || generation !== feedCache.generation()) return;
+        if (cancelled || !generation.current()) return;
         rememberSelfInboxId(c.inboxId);
         setInboxId(c.inboxId);
       })
@@ -77,7 +75,7 @@ export function useXmtpFeed(
     };
   }, [line, enabled, accountEpoch]);
 
-  const queryKey = messagingKeys.messages(accountEpoch, line ?? '');
+  const queryKey = feedQueryKey(accountEpoch, line ?? '');
   const query = useQuery<HistoryEntry[]>({
     queryKey,
     enabled: enabled && !!line,
@@ -98,7 +96,7 @@ export function useXmtpFeed(
   const loadOlder = useCallback(async (): Promise<void> => {
     const ln = lineRef.current;
     if (loadingOlderRef.current || olderFailedRef.current || !ln) return;
-    const slice = getQueryClient().getQueryData<HistoryEntry[]>(messagingKeys.messages(epochRef.current, ln)) ?? feedCache.get(ln) ?? EMPTY;
+    const slice = queriedFeed(epochRef.current, ln) ?? feedCache.get(ln) ?? EMPTY;
     const oldest = slice[slice.length - 1];
     if (!oldest || isAtFeedStart(oldest.id, feedStartId(ln))) return;
     loadingOlderRef.current = true;
