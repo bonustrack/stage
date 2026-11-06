@@ -1,5 +1,5 @@
 import type { CallStream } from '../../lib/calls';
-import { clockLabel } from '../bubble/audioCard.model';
+import { clockLabel } from '../../lib/format';
 
 interface CallGrid {
   cols: number;

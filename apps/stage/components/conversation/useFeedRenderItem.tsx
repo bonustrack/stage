@@ -13,7 +13,7 @@ import { inboxIdOfUri, userUriOf } from '@stage-labs/client/xmtp/line';
 import { memberNamer, withMemberNames } from './systemNames.model';
 import { getPeerName } from '../../lib/peerProfiles';
 import { useReconciledMap } from '../../lib/mapReconcile';
-import { reactorNamer, reactorNamesByMessage } from './reactors.model';
+import { reactorNamer, reactorNamesByMessage } from '../bubble/reactors.model';
 import { isLocalId } from '../composer/outbound';
 
 type ConvState = ReturnType<typeof useConversationState>;

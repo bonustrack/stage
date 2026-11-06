@@ -1,7 +1,7 @@
 import { cachedSelfEthAddress } from '../../lib/xmtp.client';
 import { homeRowOf } from '../../lib/messaging/homeRows';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
-import { type ConvTitle } from '../conversation/convTitle';
+import { type ConvTitle } from '../TitleText.model';
 import { peerLabel } from '../../lib/peerProfiles';
 
 interface CallPerson {

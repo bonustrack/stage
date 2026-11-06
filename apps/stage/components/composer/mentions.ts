@@ -6,7 +6,7 @@ import { useContactList } from '../../lib/useContacts';
 import { getCachedRows } from '../../lib/channelsCache';
 import { knownActiveAccountId } from '../../lib/accountSelection';
 import { mentionAddresses } from '@stage-labs/client/xmtp/messageBody';
-import { mentionLabelOf as labelOf } from '../conversation/convTitle';
+import { mentionLabelOf as labelOf } from '../TitleText.model';
 import {
   activeSuggestIndex,
   applyDisplayEdit,

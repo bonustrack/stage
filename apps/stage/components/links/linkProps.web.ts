@@ -1,7 +1,7 @@
 import { NEW_TAB, isPlainClick } from '@stage-labs/kit/link';
 import { internalLinkPath } from '@stage-labs/client/routing/deepLinks';
 import { isAllowedLinkScheme, isStageSchemeUrl, shareUrlFor } from '@stage-labs/client/routing/stageLinks';
-import type { BubbleLinkProps, LinkPress } from './helpers';
+import type { BubbleLinkProps, LinkPress } from './linkProps.types';
 
 function stopPropagation(event: Event): void {
   event.stopPropagation();

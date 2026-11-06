@@ -1,6 +1,6 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
-import { reactorsLabel } from '../conversation/reactors.model';
+import { reactorsLabel } from './reactors.model';
 import { reactionPills } from './reactions.model';
 import { ReactionTooltip } from './ReactionTooltip';
 import { Column, Row } from '../layout';

@@ -1,18 +1,11 @@
-import { fileSizeLabel } from '../media/fileCard.model';
+import { fileSizeLabel } from './fileCard.model';
+import { clockLabel } from '../../lib/format';
 
 const VOICE_NOTE_NAME = /^voice([-_.]|$)/i;
 
 export function isVoiceNote(att: { name?: string }): boolean {
   const name = att.name?.trim() ?? '';
   return name === '' || VOICE_NOTE_NAME.test(name);
-}
-
-export function clockLabel(ms: number): string {
-  const total = Number.isFinite(ms) && ms > 0 ? Math.floor(ms / 1000) : 0;
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = String(total % 60).padStart(2, '0');
-  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
 }
 
 export function base64ByteLength(b64: string): number {

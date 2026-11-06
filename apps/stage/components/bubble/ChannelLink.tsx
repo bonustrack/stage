@@ -6,8 +6,9 @@ import { channelLinkText } from '@stage-labs/client/xmtp/channelLinks';
 import { conversationLinkOf } from '../../lib/links';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
-import { MESSAGE_LINK_STYLE, type LinkPress } from './helpers';
-import { bubbleLinkProps } from './linkProps';
+import { MESSAGE_LINK_STYLE } from './markdown';
+import type { LinkPress } from '../links/linkProps.types';
+import { bubbleLinkProps } from '../links/linkProps';
 
 interface LinkNames {
   groupName?: string;

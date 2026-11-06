@@ -5,6 +5,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { FormField } from '../FormField';
 import { Column, Row } from '../layout';
+import { MessageText } from './MessageText';
 
 export function MessageSelection({
   text,
@@ -44,9 +45,9 @@ export function MessageSelection({
           inputProps={{ readOnly: true, showSoftInputOnFocus: false, accessibilityLabel: 'Message text', scrollEnabled: false }}
         />
       ) : (
-        <Text size="lg" color={fg} selectable style={{ lineHeight: 23 }}>
+        <MessageText color={fg} selectable>
           {text}
-        </Text>
+        </MessageText>
       )}
     </Column>
   );

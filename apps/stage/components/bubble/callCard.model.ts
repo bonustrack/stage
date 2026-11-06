@@ -2,7 +2,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import type { CallSignal } from '@stage-labs/client/xmtp/call';
 import { callInviteOf, callSignalOf } from '@stage-labs/client/xmtp/entryPayload';
 import { joinableCall, type CallsState } from '@stage-labs/client/xmtp/callMachine';
-import { clockLabel } from './audioCard.model';
+import { clockLabel } from '../../lib/format';
 
 export interface CallRecord {
   callId: string;

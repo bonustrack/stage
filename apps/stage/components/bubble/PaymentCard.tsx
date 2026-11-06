@@ -7,7 +7,7 @@ import { usePayerBalance, type PayerBalance } from '../../lib/txPayer';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
-import { bubbleLinkProps } from './linkProps';
+import { bubbleLinkProps } from '../links/linkProps';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';

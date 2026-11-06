@@ -310,7 +310,7 @@
     { "files": ["apps/stage/**/*.js"], "rules": { "typescript/no-require-imports": "off" } },
     {
       "files": [
-        "apps/stage/components/bubble/AudioCard.tsx",
+        "apps/stage/components/media/AudioCard.tsx",
         "apps/stage/components/media/ChatGallery.tsx",
         "apps/stage/components/media/ImageAttachment.tsx",
         "apps/stage/components/media/attachments.tsx",

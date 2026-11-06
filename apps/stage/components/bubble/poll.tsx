@@ -7,7 +7,7 @@ import {
   type PollQuestionBlock,
   type PollVotes,
 } from './poll.model';
-import type { Poll } from './helpers';
+import type { Poll } from './poll.model';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
 import { useState } from 'react';

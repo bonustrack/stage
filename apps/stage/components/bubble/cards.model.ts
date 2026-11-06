@@ -82,3 +82,18 @@ export function txCallFields(req: WalletSendCallsContent): TxCallFields {
     ...txCallFlags({ data, tokenAddr, amount, eth }),
   };
 }
+
+export function fmtSigValue(v: unknown): string {
+  if (v == null) return '';
+  if (typeof v === 'string') {
+    if (/^0x[0-9a-fA-F]{42,}$/.test(v) && v.length > 24) return `${v.slice(0, 12)}…${v.slice(-8)}`;
+    return v;
+  }
+  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
+  try {
+    const s = JSON.stringify(v);
+    return s.length > 200 ? `${s.slice(0, 197)}…` : s;
+  } catch {
+    return '[unserializable]';
+  }
+}

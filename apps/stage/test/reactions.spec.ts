@@ -1,13 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
-import {
-  reactorNamer,
-  reactorNames,
-  reactorNamesByMessage,
-  reactorsLabel,
-  type ReactorNamer,
-} from '../components/conversation/reactors.model';
+import { reactorNamer, reactorNames, reactorNamesByMessage, reactorsLabel, type ReactorNamer } from '../components/bubble/reactors.model';
 import { ownsReaction, reactionPills } from '../components/bubble/reactions.model';
 
 const ME = 'stage://xmtp/user/me';

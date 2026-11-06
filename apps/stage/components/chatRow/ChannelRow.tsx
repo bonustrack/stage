@@ -16,7 +16,7 @@ import { usePalette } from '../../lib/theme';
 import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconThumbtack';
 import { titleTone } from '../TitleText';
 import { UnreadBadge } from './UnreadBadge';
-import type { BubbleLinkProps } from '../bubble/helpers';
+import type { BubbleLinkProps } from '../links/linkProps.types';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 interface ChannelRowProps {

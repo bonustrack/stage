@@ -3,7 +3,7 @@ import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { convTitle } from './convTitle';
+import { convTitle } from '../TitleText.model';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ChannelMenu } from '../chatRow/ChannelMenu';

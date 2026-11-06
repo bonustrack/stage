@@ -68,7 +68,7 @@ import { subscribeCachedRows } from '../../lib/channelsCache';
 import { uploadAttachments } from '../../lib/xmtp.attachments';
 import { schedulePushTopicRefresh, warmSendPath } from '../../lib/pushRegister';
 import { useActiveAccountRecord, useSelfAddress } from '../../lib/messaging/account';
-import { mentionLabelOf } from '../conversation/convTitle';
+import { mentionLabelOf } from '../TitleText.model';
 import { Column, PAGE_GUTTER, Row } from '../layout';
 
 interface Recipients {

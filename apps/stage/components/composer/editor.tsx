@@ -24,6 +24,7 @@ import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radiu
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { usePalette } from '../../lib/theme';
+import { MESSAGE_BODY } from '../bubble/MessageText';
 import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
 import { Column, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
@@ -140,14 +141,14 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         appearance="plain"
         variant="longText"
         autoGrow
-        fontSize={fontSize('lg')}
+        fontSize={fontSize(MESSAGE_BODY.size)}
         fontFamily="Calibre-Medium"
         color={p.head}
         placeholderColor={p.sub}
         paddingX={8}
         paddingTop={4}
         paddingBottom={8}
-        lineHeight={23}
+        lineHeight={MESSAGE_BODY.lineHeight}
         minHeight={24}
         maxHeight={210}
         autoCapitalize="sentences"

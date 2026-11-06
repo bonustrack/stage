@@ -1,4 +1,4 @@
-import { peerLabel } from '../../lib/peerProfiles';
+import { peerLabel } from '../lib/peerProfiles';
 import { mentionLabel } from '@stage-labs/client/xmtp/messageBody';
 
 export function mentionLabelOf(address: string): string {

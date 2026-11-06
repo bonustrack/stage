@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { GestureDetector } from 'react-native-gesture-handler';
@@ -13,7 +12,8 @@ import { usePalette } from '../../lib/theme';
 import { messageKindOf, type MessageKind } from '@stage-labs/client/xmtp/entryPayload';
 import { useBubbleGestures } from './gestures';
 import { MessageSelection } from './MessageSelection';
-import { messageInteraction, type MessageInteraction } from './messageInteraction.model';
+import type { MessageInteraction } from './messageInteraction.model';
+import { messageInteraction } from './interaction';
 import { IconArrowUndoUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUndoUp';
 import { Column, PAGE_GUTTER } from '../layout';
 
@@ -85,7 +85,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
   const fg = muted ? pal.text : pal.link;
   const sub = pal.text;
   const g = useBubbleGestures(props);
-  const interaction = messageInteraction(Platform.OS, props.selectable === true && !!props.onEndSelection);
+  const interaction = messageInteraction(props.selectable === true && !!props.onEndSelection);
   const row = (
     <Animated.View
       ref={g.rowRef}

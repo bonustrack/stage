@@ -1,4 +1,6 @@
-import { SELF_NAME } from '../conversation/reactors.model';
+import { SELF_NAME } from './reactors.model';
+
+export const REACT_PRESETS = ['👍', '🔥', '👀', '🙏', '😁', '💯', '🫡'];
 
 interface ReactionPillModel {
   emoji: string;

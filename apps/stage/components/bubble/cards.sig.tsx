@@ -2,7 +2,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { fmtSigValue } from './helpers';
+import { fmtSigValue } from './cards.model';
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import { usePalette } from '../../lib/theme';
 import { timeAgo } from '../../lib/format';

@@ -4,7 +4,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { mediaMaxWidth } from './imageBox.model';
-import { bubbleLinkProps } from '../bubble/linkProps';
+import { bubbleLinkProps } from '../links/linkProps';
 import { openInBubbleLink } from '../../lib/capabilities';
 import { Column, Row } from '../layout';
 

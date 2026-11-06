@@ -1,5 +1,4 @@
 import { cloneElement, isValidElement, useMemo } from 'react';
-import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown, { renderRules, type RenderRules } from 'react-native-markdown-display';
@@ -8,21 +7,22 @@ import { ChannelCard, GitHubLinkCard, LinkPreviewCard, PreviewLinkCard } from '.
 import type { CardLink } from '@stage-labs/client/embed/cardLinks';
 import type { ComponentProps } from 'react';
 import type { ViewStyle } from 'react-native';
-import { BLOCK_GAP, MESSAGE_LINK_STYLE, findLinks } from './helpers';
-import type { Attachment, LinkPress } from './helpers';
-import { bubbleLinkProps } from './linkProps';
+import { BLOCK_GAP, MESSAGE_LINK_STYLE, findLinks } from './markdown';
+import type { LinkPress } from '../links/linkProps.types';
+import type { ChatAttachment } from '../media/attachment';
+import { bubbleLinkProps } from '../links/linkProps';
 import { AttachmentView, RemoteAttachmentResolver } from '../media/attachments';
 import { inlineAttachmentUrl } from '../media/attachmentUri';
 import { galleryKeyOf } from '../media/imageGallery.model';
 import { ATTACHMENT_GAP, ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
-import { HighlightText } from '../HighlightText';
+import { HighlightText } from './HighlightText';
 import { CodeBlock } from './CodeBlock';
 import { splitCodeBlocks } from '@stage-labs/client/text/codeBlocks';
 import { taskStateOf, unescapeBody, type TaskState } from './markdown.model';
-import { ResetBoundary } from './boundary';
+import { ResetBoundary } from '../chrome/ResetBoundary';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { mentionLabelOf } from '../conversation/convTitle';
+import { mentionLabelOf } from '../TitleText.model';
 import { profileLinkOf } from '../../lib/links';
 import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
 import { ChannelLink, useChannelLinkNames } from './ChannelLink';
@@ -35,8 +35,8 @@ import { IconSquareCheck } from '@central-icons-react-native/round-outlined-radi
 import { IconSquarePlaceholder } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquarePlaceholder';
 import { IconPointer } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPointer';
 import { Column, Row } from '../layout';
-
-const LINE_HEIGHT = 23;
+import { MESSAGE_BODY, MessageText } from './MessageText';
+import { textSelectable } from './interaction';
 
 function TaskMark({ task }: { task: TaskState }): React.ReactElement {
   const pal = usePalette();
@@ -44,7 +44,7 @@ function TaskMark({ task }: { task: TaskState }): React.ReactElement {
   return (
     <Column
       justify="center"
-      height={LINE_HEIGHT}
+      height={MESSAGE_BODY.lineHeight}
       margin={{ left: 2, right: 8 }}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: done }}
@@ -59,8 +59,8 @@ function MentionLink({ address, fg }: { address: string; fg: string }): React.Re
   usePeerProfiles([address]);
   return (
     <Text
-      size="lg"
-      selectable={Platform.OS === 'web'}
+      size={MESSAGE_BODY.size}
+      selectable={textSelectable}
       color={fg}
       style={MESSAGE_LINK_STYLE}
       accessibilityRole="link"
@@ -126,8 +126,8 @@ export const markdownRules: RenderRules = {
 function WebLink({ url, text, fg, onLinkPress }: { url: string; text: string; fg: string; onLinkPress: LinkPress }): React.ReactElement {
   return (
     <Text
-      size="lg"
-      selectable={Platform.OS === 'web'}
+      size={MESSAGE_BODY.size}
+      selectable={textSelectable}
       color={fg}
       style={MESSAGE_LINK_STYLE}
       accessibilityRole="link"
@@ -148,11 +148,7 @@ function segmentNode(seg: BodySegment, i: number, fg: string, onLinkPress: LinkP
 
 function MentionBody({ text, fg, onLinkPress }: { text: string; fg: string; onLinkPress: LinkPress }): React.ReactElement {
   const link = MESSAGE_LINK_COLOR[useEffectiveColorScheme()];
-  return (
-    <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={{ lineHeight: 23 }}>
-      {bodySegments(text, findLinks).map((seg, i) => segmentNode(seg, i, link, onLinkPress))}
-    </Text>
-  );
+  return <MessageText color={fg}>{bodySegments(text, findLinks).map((seg, i) => segmentNode(seg, i, link, onLinkPress))}</MessageText>;
 }
 
 function BubbleAttachment({
@@ -161,7 +157,7 @@ function BubbleAttachment({
   entryId,
   fg,
 }: {
-  att: Attachment;
+  att: ChatAttachment;
   index: number;
   entryId: string;
   fg: string;
@@ -173,7 +169,15 @@ function BubbleAttachment({
   return <AttachmentView att={att} fg={fg} fullUrl={inlineAttachmentUrl(att)} galleryKey={galleryKey} />;
 }
 
-export function BubbleAttachments({ atts, entryId, fg }: { atts: Attachment[]; entryId: string; fg: string }): React.ReactElement | null {
+export function BubbleAttachments({
+  atts,
+  entryId,
+  fg,
+}: {
+  atts: ChatAttachment[];
+  entryId: string;
+  fg: string;
+}): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
     <Column margin={{ top: 4, bottom: 6 }} gap={ATTACHMENT_GAP} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
@@ -202,11 +206,7 @@ interface PlainBodyProps {
 
 function PlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
   if (query) return <HighlightText text={body} query={query} fg={fg} />;
-  return (
-    <Text size="lg" selectable={Platform.OS === 'web'} color={fg} style={{ lineHeight: 23 }}>
-      {body}
-    </Text>
-  );
+  return <MessageText color={fg}>{body}</MessageText>;
 }
 
 function NamedPlainBody({ body, fg, query }: PlainBodyProps): React.ReactElement {
@@ -305,7 +305,7 @@ export function FrameActionLine({ text, fg }: { text: string; fg: string }): Rea
   return (
     <Row align="center" gap={6} style={{ alignSelf: 'stretch' }}>
       <Glyph icon={IconPointer} size={16} color={fg} />
-      <Text size="sm" color={fg} selectable={Platform.OS === 'web'} style={{ flexShrink: 1 }}>
+      <Text size="sm" color={fg} selectable={textSelectable} style={{ flexShrink: 1 }}>
         {text}
       </Text>
     </Row>

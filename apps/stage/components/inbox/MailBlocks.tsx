@@ -6,8 +6,8 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import type { MailBlock, MailImageBlock, MailSpan, MailTextBlock } from '@stage-labs/client/mail/mailHtml';
 import { openInBubbleLink } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
-import { bubbleLinkProps } from '../bubble/linkProps';
-import { MONO_FONT } from '../bubble/helpers';
+import { bubbleLinkProps } from '../links/linkProps';
+import { MONO_FONT } from '../../lib/uiFonts';
 import { useImageAspectRatio } from '../media/mediaAspect';
 import { Column, Row } from '../layout';
 

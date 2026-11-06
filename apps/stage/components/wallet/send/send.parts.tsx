@@ -9,7 +9,7 @@ import type { PersonLookup } from '@stage-labs/client/identity/personLookup';
 import { DANGER, usePalette } from '../../../lib/theme';
 import { useSafeAreaInsets } from '../../layout/safeArea';
 import { openInBubbleLink } from '../../../lib/capabilities';
-import { bubbleLinkProps } from '../../bubble/linkProps';
+import { bubbleLinkProps } from '../../links/linkProps';
 import { RecipientRow } from './send.recipient';
 import type { SendTxState } from './send.model';
 import { Column, Row, PAGE_GUTTER } from '../../layout';

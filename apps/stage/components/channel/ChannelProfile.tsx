@@ -25,7 +25,7 @@ import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Eyebrow } from '../Eyebrow';
 import { TitleText } from '../TitleText';
-import { channelTitle } from '../conversation/convTitle';
+import { channelTitle } from '../TitleText.model';
 import { Column, VirtualList, Row, PAGE_GUTTER } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 

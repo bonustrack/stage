@@ -15,7 +15,9 @@ import {
   walletSendCallsOf,
   type MessageKind,
 } from '@stage-labs/client/xmtp/entryPayload';
-import { attachmentsOf, mdParser, markdownStyles, pollOf } from './helpers';
+import { mdParser, markdownStyles } from './markdown';
+import { pollOf } from './poll.model';
+import { attachmentsOf } from '../media/attachment';
 import { PollView } from './poll';
 import { TxRequestCard, TxReceiptCard } from './cards';
 import { SigRequestCard, SigReferenceCard } from './cards.sig';
@@ -35,6 +37,7 @@ import {
   type MarkdownProps,
 } from './content.parts';
 import { Column, Row } from '../layout';
+import { MESSAGE_BODY } from './MessageText';
 
 const NO_BODY_KINDS: ReadonlySet<MessageKind> = new Set(['txRequest', 'txReceipt']);
 
@@ -92,7 +95,7 @@ function BubbleMain({
 }): React.ReactElement | null {
   if (d.kind === 'deleted') {
     return (
-      <Text size="lg" color={fg} style={{ lineHeight: 23 }}>
+      <Text size={MESSAGE_BODY.size} color={fg} style={{ lineHeight: MESSAGE_BODY.lineHeight }}>
         {deletedTextOf(deletedByOf(entry))}
       </Text>
     );
@@ -139,7 +142,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
   const { entry, dark, pending, fg, sub, replyPreview, onReplyPreviewPress, highlight } = props;
   const d = useMemo(() => descriptorsOf(entry), [entry]);
   const cardLinks = useMemo(() => messageCardLinks(entry.text, mdParser), [entry.text]);
-  const textSize = d.poll ? 'md' : 'lg';
+  const textSize = d.poll ? 'md' : MESSAGE_BODY.size;
   const mdStyle = useMemo(() => markdownStyles(fg, dark, textSize), [fg, dark, textSize]);
   const markdownProps = useMemo(
     (): MarkdownProps => ({

@@ -3,7 +3,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { ImageViewer } from './ImageViewer';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import { useStableCallback } from '../useStableCallback';
-import { attachmentsOf, type Attachment } from '../bubble/helpers';
+import { attachmentsOf, type ChatAttachment as Attachment } from './attachment';
 import { inlineAttachmentUrl, useRemoteAttachment } from './attachmentUri';
 import { galleryItemsOf, galleryStep, type GalleryItem } from './imageGallery.model';
 import { useGalleryKeys } from './galleryKeys';

@@ -1,6 +1,6 @@
 import { SUGGESTED_CONTACTS, suggestedContacts } from '../contacts/SuggestedContacts.model';
 import { isStringList, uniqueKeys } from '@stage-labs/client/collections';
-import { reactorsLabel } from '../conversation/reactors.model';
+import { reactorsLabel } from '../bubble/reactors.model';
 import { PAGES, newChatHref, type ROUTES } from '../tabs/pages';
 import { CHANNEL_NAME_MAX } from '../channel/EditChannelModal.model';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';

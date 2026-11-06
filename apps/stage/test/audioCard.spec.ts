@@ -1,12 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  audioByteSize,
-  audioCardModel,
-  base64ByteLength,
-  clockLabel,
-  isVoiceNote,
-  seekFraction,
-} from '../components/bubble/audioCard.model';
+import { audioByteSize, audioCardModel, base64ByteLength, isVoiceNote, seekFraction } from '../components/media/audioCard.model';
+import { clockLabel } from '../lib/format';
 
 describe('audio card', () => {
   test('recognises recorded voice notes by their file name', () => {

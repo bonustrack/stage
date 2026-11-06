@@ -1,4 +1,4 @@
-import { Dimensions, Platform, useWindowDimensions } from 'react-native';
+import { Dimensions, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -6,7 +6,8 @@ import { TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
-import { REACT_PRESETS } from '../bubble/helpers';
+import { REACT_PRESETS } from '../bubble/reactions.model';
+import { offersSelectMode } from '../bubble/interaction';
 import { usePalette } from '../../lib/theme';
 import { useWebTabRail } from '../layout/webLayout';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -20,7 +21,7 @@ import type { MenuAnchor } from '../bubble/props';
 import { useHover } from '../hover';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { TitleText } from '../TitleText';
-import type { ConvTitle } from './convTitle';
+import type { ConvTitle } from '../TitleText.model';
 import { MODAL, Overlay } from '@stage-labs/kit/react-native/modal';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 
@@ -148,8 +149,6 @@ interface BubbleActions {
   delete: () => void;
 }
 
-const SELECT_TEXT = Platform.OS !== 'web';
-
 function ActionDropdown({ items, on }: { items: ReturnType<typeof bubbleMenuItems>; on: BubbleActions }): React.ReactElement {
   return (
     <DropdownMenu>
@@ -220,7 +219,11 @@ export function BubbleActionMenu({
 
   const pal = usePalette();
   const windowHeight = Dimensions.get('window').height;
-  const items = bubbleMenuItems(!!target?.text, { selectText: SELECT_TEXT, canDelete, addToDashboard: onAddToDashboard !== undefined });
+  const items = bubbleMenuItems(!!target?.text, {
+    selectText: offersSelectMode,
+    canDelete,
+    addToDashboard: onAddToDashboard !== undefined,
+  });
   const { stripTop, dropdownAbove } = menuPlacement(anchor.y, items.length, windowHeight);
   const reactAndClose = (e: string): void => {
     onReact(e);

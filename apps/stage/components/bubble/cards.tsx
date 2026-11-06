@@ -15,7 +15,7 @@ import { useTxSimulation } from '../../lib/txPayer';
 import { explorerTxUrl, receiptTitle, txAmountLabel } from '@stage-labs/client/xmtp/tx';
 import { spoofWarning, type DecodedCall } from '@stage-labs/client/wallet/txDecode';
 import { openInBubbleLink } from '../../lib/capabilities';
-import { bubbleLinkProps } from './linkProps';
+import { bubbleLinkProps } from '../links/linkProps';
 import { ReceiptBox } from './cards.sig';
 import type { SimulateResult } from '@stage-labs/client/wallet/txSimulate';
 import { SimulationBlock } from './sim';

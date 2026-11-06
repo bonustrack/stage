@@ -13,7 +13,7 @@ import type { FrameNav } from '../../lib/frames/frameStacks';
 import { frameSessions } from '../../lib/frames/runtime';
 import { openInBubbleLink } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
-import { ResetBoundary } from '../bubble/boundary';
+import { ResetBoundary } from '../chrome/ResetBoundary';
 import { Column } from '../layout';
 import { frameMediaUrl } from './frame.model';
 

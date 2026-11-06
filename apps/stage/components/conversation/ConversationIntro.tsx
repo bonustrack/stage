@@ -2,7 +2,7 @@ import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Avatar } from '../Avatar';
-import { convTitle } from './convTitle';
+import { convTitle } from '../TitleText.model';
 import { TitleText } from '../TitleText';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { shortAddress } from '@stage-labs/client/identity/format';
