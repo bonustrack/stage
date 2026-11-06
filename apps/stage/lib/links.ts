@@ -1,4 +1,4 @@
-import { getPeerHandle } from '@stage-labs/client/identity/peerProfiles';
+import { getPeerHandle } from './peerProfiles';
 import { conversationPathFor, profileSlugFor, stageLabelOf } from '@stage-labs/client/routing/handles';
 
 export type ConversationLink =

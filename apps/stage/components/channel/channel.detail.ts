@@ -6,7 +6,7 @@ import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { groupEditRights, leaveGroupConv, removeGroupMembers } from '../../lib/xmtp.groups';
 import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
+import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '../../lib/peerProfiles';
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
 import { LEAVE_CHANNEL_CONFIRM } from '../chatRow/ChannelMenu.model';

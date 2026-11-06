@@ -1,4 +1,4 @@
-import { subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
+import { subscribePeerProfiles } from '../../lib/peerProfiles';
 import { subscribeCachedRows } from '../../lib/channelsCache';
 import { getClearedChats, primeClearedChats, subscribeClearedChats } from '../../lib/clearedChats';
 import { getDraft, loadDrafts, subscribeDrafts } from '../../lib/drafts';
