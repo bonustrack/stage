@@ -5,7 +5,7 @@ import { withAlpha } from '../color-math';
 import type { PRESS_FEEDBACKS } from '../kit-vocabulary';
 import { resolvePaletteColor } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
-import { useKitPalette } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export type { Align, Justify, Surface };
 
@@ -34,7 +34,7 @@ function PressableFlex({
   ...view
 }: ViewProps & Pick<FlexProps, 'onPress' | 'disabled' | 'feedback' | 'accessibility'>): React.ReactElement {
   const [hovered, setHovered] = useState(false);
-  const { link } = useKitPalette();
+  const { link } = useKitColors(undefined, 'provider').palette;
   return (
     <Pressable
       accessibilityRole="button"
@@ -67,7 +67,7 @@ export function Flex({
   children,
   ...rest
 }: FlexProps & { direction: 'row' | 'col' }): React.ReactElement {
-  const palette = useKitPalette();
+  const palette = useKitColors(undefined, 'provider').palette;
   const {
     gap,
     padding,

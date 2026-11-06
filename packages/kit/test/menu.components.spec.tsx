@@ -5,7 +5,7 @@ import * as ReactNativeWeb from 'react-native-web';
 mock.module('react-native', () => ReactNativeWeb);
 mock.module('react-native-svg', () => import('react-native-svg/lib/module/elements.web.js'));
 mock.module('../src/react-native/dialog', () => ({ Dialog: () => null }));
-mock.module('../src/react-native/modal', () => ({ MODAL: { maxWidth: 480, backdrop: 'transparent', maxHeight: '88%' } }));
+mock.module('react-native-safe-area-context', () => ({ useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }) }));
 
 const { DropdownMenuItem } = await import('../src/react-native/menu');
 

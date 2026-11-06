@@ -5,7 +5,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveBoxRadius, resolveOptionalColor, type Color, type RadiusValue, type Scheme } from '../tokens';
 import { spacingEntries, type SpacingValue } from '../layout';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export type DialogSide = (typeof MODAL_SIDES)[number];
 
@@ -133,7 +133,7 @@ function Panel(panelProps: { props: DialogProps; scheme: Scheme; insetBottom: nu
 }
 
 export function Dialog(props: DialogProps): ReactNode {
-  const scheme = useKitScheme();
+  const { scheme } = useKitColors(undefined, 'static');
   const insets = useSafeAreaInsets();
   const { open, onClose, children } = props;
   const backdrop = props.backdrop !== false;

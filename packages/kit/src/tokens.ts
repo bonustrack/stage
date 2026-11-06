@@ -180,16 +180,19 @@ export interface SchemePalette {
   border: string;
 }
 
-export function schemePalette(dark: boolean): SchemePalette {
-  const k = dark ? 'dark' : 'light';
+export function schemeRolesOf(palette: KitPalette): SchemePalette {
   return {
-    head: colors[`head-${k}`],
-    text: colors[`fg-${k}`],
-    sub: colors[`sub-${k}`],
-    surface: colors[`hover-${k}`],
-    pressed: colors[`hover-${k}`],
-    border: colors[`border-${k}`],
+    head: palette.link,
+    text: palette.text,
+    sub: palette.sub,
+    surface: palette.inputBg,
+    pressed: palette.inputBg,
+    border: palette.border,
   };
+}
+
+export function schemePalette(dark: boolean): SchemePalette {
+  return schemeRolesOf(kitPalette(dark ? 'dark' : 'light'));
 }
 
 export const RADIUS_FULL = 999;

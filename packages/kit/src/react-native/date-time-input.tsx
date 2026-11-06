@@ -15,7 +15,7 @@ import {
   type WallClock,
 } from './date-time-input.model';
 import { DateTimeSheet, sheetColorsFor, type TimeDraft } from './date-time-input.sheet';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 import { IconCalendar1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCalendar1';
 import { IconClock } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconClock';
 
@@ -139,15 +139,14 @@ export function DateTimeInput(props: DateTimeInputProps): React.ReactElement {
     weight,
     accessibility,
   } = props;
-  const scheme = useKitScheme();
-  const dark = props.dark ?? scheme === 'dark';
+  const { dark, palette, roles } = useKitColors(props.dark, 'static');
   const mode = dateTimeMode(props.enableDate, props.enableTime);
   const [selected, commit] = useValue(props);
   const clock = parseWallClock(selected);
   const sheet = useDraft(mode, clock, commit);
-  const ctrl = controlColors(appearance, dark);
+  const ctrl = controlColors(appearance, dark, roles);
   const box = controlBoxStyle(size, appearance, ctrl, radius ?? (pill === true ? RADIUS_FULL : CONTROL_RADIUS_DEFAULT));
-  const colors = sheetColorsFor(dark);
+  const colors = sheetColorsFor(dark, palette);
   const shown = wallClockLabel(mode, clock);
   return (
     <WithChecks checks={checks} weight={weight}>

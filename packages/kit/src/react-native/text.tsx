@@ -17,7 +17,7 @@ import {
 } from '../text.styles';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useContentColor } from './content-color';
-import { useKitPalette, useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export type { TextAlign, TextFontFamily, TextSizeToken, TextVariant, TextWeight };
 
@@ -61,7 +61,7 @@ function baseStyle(p: StyleProps, color: string): TextStyle {
 }
 
 function useTextColor(color: TextProps['color'], variant: TextVariant | undefined): string {
-  const palette = useKitPalette();
+  const { palette } = useKitColors(undefined, 'provider');
   const inherited = useContentColor();
   return color != null ? resolvePaletteColor(color, palette) : textDefaultColor(variant, palette, inherited);
 }
@@ -97,14 +97,14 @@ function MarkdownText({
   base: TextStyle;
   style: TextProps['style'];
 }): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
+  const { dark, roles } = useKitColors(undefined, 'static');
   const styles = useMemo(() => {
     const fontSize = base.fontSize ?? FONT_SIZE.md;
-    const sheet = markdownStyles({ fg: color, dark, fontSize, lineHeight: Math.round(fontSize * PLAIN_LINE_HEIGHT) });
+    const sheet = markdownStyles({ fg: color, dark, roles, fontSize, lineHeight: Math.round(fontSize * PLAIN_LINE_HEIGHT) });
     for (const block of FLOW_BLOCKS) sheet[block] = { ...sheet[block], marginTop: 0, marginBottom: 0 };
     sheet.body = { ...sheet.body, ...base, ...StyleSheet.flatten(style), gap: MARKDOWN_BLOCK_GAP };
     return sheet;
-  }, [base, color, dark, style]);
+  }, [base, color, dark, roles, style]);
   return (
     <RNMarkdown markdownit={A2UI_MARKDOWN} style={styles}>
       {value}

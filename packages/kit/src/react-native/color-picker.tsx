@@ -8,7 +8,7 @@ import { Row } from './row';
 import { Glyph } from './glyph';
 import { TextField } from './text-field';
 import { Text } from './text';
-import { useKitPalette } from './theme-context';
+import { useKitColors } from './theme-context';
 import { hexToHsv, hsvToHex, isHexColor } from '../color-math';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 
@@ -243,7 +243,7 @@ function Swatches({ value, swatches = DEFAULT_SWATCHES, onChange, dark = false }
 
 export function ColorPicker(props: ColorPickerProps): React.ReactElement {
   const { value, mode = 'swatches', onChange, dark = false } = props;
-  const palette = useKitPalette();
+  const { palette } = useKitColors(undefined, 'provider');
   if (mode === 'hsv') {
     const p: HsvPalette = {
       dark,

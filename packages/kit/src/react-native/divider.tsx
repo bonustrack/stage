@@ -1,9 +1,8 @@
 import type { DIVIDER_AXES } from '../kit-vocabulary';
 import { View, type ViewStyle } from 'react-native';
 import { flushBleed } from '../layout';
-import { schemePalette } from '../tokens';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export type DividerAxis = (typeof DIVIDER_AXES)[number];
 
@@ -23,21 +22,11 @@ function lineStyle(axis: DividerAxis, size: number, spacing: number, bleed: numb
 }
 
 export function Divider(props: DividerProps): React.ReactElement {
-  const scheme = useKitScheme();
-  const {
-    axis = 'horizontal',
-    spacing = 0,
-    color,
-    size = 1,
-    flush = false,
-    dark = scheme === 'dark',
-    style,
-    weight,
-    accessibility,
-  } = props;
+  const { axis = 'horizontal', spacing = 0, color, size = 1, flush = false, style, weight, accessibility } = props;
+  const { border } = useKitColors(props.dark, 'static').roles;
   const base: ViewStyle = {
     ...lineStyle(axis, size, spacing, flushBleed(flush)),
-    backgroundColor: color ?? schemePalette(dark).border,
+    backgroundColor: color ?? border,
     ...weightStyle(weight),
   };
   return <View {...accessibilityProps(accessibility)} style={style ? [base, style] : base} />;

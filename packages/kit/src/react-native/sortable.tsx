@@ -24,7 +24,7 @@ import {
   type SortListEntry,
   type SortSource,
 } from './sortable.store';
-import { useKitPalette } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export type { SortDirection, SortMove } from '../sortable';
 export type { SortTouchAction } from './sortable.context';
@@ -102,7 +102,7 @@ function listStyle(direction: SortDirection, gap: number | undefined, style: Sty
 }
 
 function Indicator({ rect }: { rect: SortRect }): React.ReactElement {
-  const palette = useKitPalette();
+  const { palette } = useKitColors(undefined, 'provider');
   return (
     <View
       pointerEvents="none"

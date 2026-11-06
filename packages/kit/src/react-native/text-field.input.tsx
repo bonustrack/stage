@@ -11,7 +11,7 @@ import {
 } from '../control.styles';
 import { CONTROL_RADIUS_DEFAULT, RADIUS_FULL } from '../tokens';
 import { accessibilityProps, weightStyle } from './a2ui-props';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 import type { TextFieldInputType, TextFieldProps } from './text-field.types';
 
 type ContentSizeEvent = Parameters<NonNullable<TextInputProps['onContentSizeChange']>>[0];
@@ -28,9 +28,9 @@ function cornerOf(props: TextFieldProps, pill: boolean): number {
 }
 
 function useControlStyle(props: TextFieldProps, pill: boolean): { box: ViewStyle; text: TextStyle; placeholder: string } {
-  const scheme = useKitScheme();
+  const { dark, roles } = useKitColors(props.dark, 'static');
   const appearance: ControlVariant = props.appearance === 'outline' ? 'outline' : 'soft';
-  const colors = controlColors(appearance, props.dark ?? scheme === 'dark');
+  const colors = controlColors(appearance, dark, roles);
   const size: ControlSize = props.size ?? 'md';
   return {
     box: controlBoxStyle(size, appearance, colors, cornerOf(props, pill)),

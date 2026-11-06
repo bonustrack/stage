@@ -7,7 +7,7 @@ import { IconPause } from '@central-icons-react-native/round-outlined-radius-1-s
 import { IconPlay } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlay';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { Text } from './text';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 const DEFAULT_BAR_COUNT = 34;
 
@@ -214,8 +214,8 @@ function BasicPlayer({
 }
 
 export function AudioPlayer(props: AudioPlayerProps): React.ReactElement {
-  const scheme = useKitScheme();
-  const { description, weight, accessibility, dark = scheme === 'dark' } = props;
+  const { dark } = useKitColors(props.dark, 'static');
+  const { description, weight, accessibility } = props;
   const body = props.waveform ? (
     <WaveformPlayer {...props} />
   ) : (

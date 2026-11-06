@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View, type ViewStyle } from 'react-native';
 import Svg, { Circle, Defs, G, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
-import { schemePalette } from '../tokens';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export interface SpinnerProps extends A2uiCommonProps {
   size?: number;
@@ -54,7 +53,7 @@ function SpinnerRing({ size, color, gradientId }: { size: number; color: string;
 }
 
 export function Spinner(props: SpinnerProps): React.ReactElement {
-  const head = schemePalette(useKitScheme() === 'dark').head;
+  const { head } = useKitColors(undefined, 'static').roles;
   const { size = 24, color = head, weight, accessibility } = props;
   const [gradientId] = useState(() => `kitSpin${Math.random().toString(36).slice(2, 8)}`);
   const rotate = useNativeRotation();

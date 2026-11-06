@@ -3,7 +3,7 @@ import { Platform, TextInput, type DimensionValue, type TextStyle } from 'react-
 import { controlColors, textFieldStyle } from '../control.styles';
 import { accessibilityProps, weightStyle } from './a2ui-props';
 import { growToContent } from './dom';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 import type { TextFieldProps } from './text-field.types';
 
 function useNonce(nonce: number | undefined, run: () => void): void {
@@ -61,12 +61,12 @@ function assignRef<T>(ref: Ref<T> | undefined, node: T | null): void {
 
 export const PlainField = forwardRef<TextInput, TextFieldProps>(function PlainField(props, ref) {
   const inner = useRef<TextInput | null>(null);
-  const scheme = useKitScheme();
+  const { dark, roles } = useKitColors(props.dark, 'static');
   useNonce(props.focusNonce, () => inner.current?.focus());
   useNonce(props.blurNonce, () => inner.current?.blur());
   const multiline = props.variant === 'longText';
   const grow = useWebAutoGrow(inner, props, multiline);
-  const styled = textFieldStyle({ ...props, baseColors: controlColors('soft', props.dark ?? scheme === 'dark') });
+  const styled = textFieldStyle({ ...props, baseColors: controlColors('soft', dark, roles) });
   const { onSelectionChange, onSubmit } = props;
   return (
     <TextInput

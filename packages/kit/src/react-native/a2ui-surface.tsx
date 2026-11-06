@@ -31,7 +31,7 @@ import {
 import { KIT_RENDERERS } from './a2ui-renderers';
 import { A2uiSortHandle, A2uiSortScope } from './a2ui-renderers.sortable';
 import { useContentColor } from './content-color';
-import { useKitPalette, useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 const RESERVED = new Set(['id', 'component', 'catalogId', 'metadata', 'action', 'checks', 'accessibility', 'weight']);
 const LIVE = ['off', 'polite', 'assertive'] as const;
@@ -170,8 +170,7 @@ function ResolvedNode({
   scope: Scope;
   render: A2uiRenderer;
 }): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
-  const palette = useKitPalette();
+  const { dark, palette } = useKitColors(undefined, 'provider');
   const contentColor = useContentColor();
   const resolved = resolveProps(ctx, instance, scope);
   const bindings = useBindings(ctx, instance, scope, resolved);

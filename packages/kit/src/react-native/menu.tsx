@@ -4,7 +4,7 @@ import { withAlpha } from '../color-math';
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { Glyph, type CentralIcon } from './glyph';
 import { Text, type TextProps } from './text';
-import { useKitPaletteFor } from './theme-context';
+import { useKitColors } from './theme-context';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { Dialog } from './dialog';
 import { MODAL } from './modal';
@@ -43,7 +43,7 @@ export interface DropdownMenuProps {
 }
 
 export function DropdownMenu({ children, dark, background, maxHeight, style }: DropdownMenuProps): React.ReactElement {
-  const pal = useKitPaletteFor(dark);
+  const pal = useKitColors(dark, 'provider').palette;
   const list = <View style={{ paddingVertical: DROPDOWN_MENU.padY }}>{children}</View>;
   return (
     <View
@@ -125,7 +125,7 @@ function itemTrailing(trailing: ReactNode, selected: boolean | undefined, color:
 type ItemColorProps = Pick<DropdownMenuItemProps, 'dark' | 'color' | 'danger' | 'pressedBackground' | 'hoverBackground'>;
 
 function useItemColors({ dark, color, danger, pressedBackground, hoverBackground }: ItemColorProps) {
-  const pal = useKitPaletteFor(dark);
+  const pal = useKitColors(dark, 'provider').palette;
   return {
     color: color ?? (danger === true ? pal.danger : pal.link),
     pressed: pressedBackground ?? withAlpha(pal.link, DROPDOWN_MENU.pressedAlpha),
@@ -187,7 +187,7 @@ export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactEleme
 }
 
 export function DropdownMenuSeparator({ dark }: { dark?: boolean }): React.ReactElement {
-  const pal = useKitPaletteFor(dark);
+  const pal = useKitColors(dark, 'provider').palette;
   const space = useContext(SheetMenuContext) ? DROPDOWN_MENU.sheetPadY : DROPDOWN_MENU.padY;
   return (
     <View
@@ -217,7 +217,7 @@ export function DropdownMenuSheet({
   maxWidth = MODAL.maxWidth,
   avoidKeyboard,
 }: DropdownMenuSheetProps): React.ReactElement {
-  const pal = useKitPaletteFor(dark);
+  const pal = useKitColors(dark, 'provider').palette;
   const centered = side === 'center';
   return (
     <Dialog

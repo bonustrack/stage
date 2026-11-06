@@ -7,7 +7,7 @@ import { Row } from './row';
 import { Text } from './text';
 import { AreaField, InputField } from './text-field.input';
 import type { TextFieldHintTone, TextFieldProps } from './text-field.types';
-import { useKitPalette } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export const FORM_FIELD_RADIUS = 4;
 
@@ -106,7 +106,7 @@ function StackedFrame({ field, props, background }: { field: ReactNode; props: T
 }
 
 export const FilledField = forwardRef<TextInput, TextFieldProps>(function FilledField(props, ref) {
-  const palette = useKitPalette();
+  const { palette } = useKitColors(undefined, 'provider');
   const { hint, color } = resolveHint(props, palette);
   const rows = props.rows ?? 3;
   const multiline = props.variant === 'longText';

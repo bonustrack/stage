@@ -10,7 +10,7 @@ import { Dialog, type DialogSide } from './dialog';
 import { Glyph } from './glyph';
 import { Text } from './text';
 import { Tooltip } from './tooltip';
-import { useKitPaletteFor, useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 import { TriggerContext } from './trigger-context';
 
 export const MODAL = {
@@ -192,8 +192,8 @@ function useModalSide(side: DialogSide): DialogSide {
 
 function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
   const { children, title, footer, bottomInset, dark, background, borderColor, dismissable = true } = props;
-  const pal = useKitPaletteFor(dark);
-  const scheme = useKitScheme();
+  const kit = useKitColors(dark, 'provider');
+  const pal = kit.palette;
   const side = useModalSide(props.side ?? 'center');
   const layout = panelLayout(side, useSafeAreaInsets().top);
   return (
@@ -202,16 +202,7 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
       onClose={close}
       side={side}
       dismissable={dismissable}
-      header={
-        <ModalHeader
-          title={title}
-          onClose={close}
-          pal={pal}
-          dark={dark ?? scheme === 'dark'}
-          dismissable={dismissable}
-          inset={layout.inset}
-        />
-      }
+      header={<ModalHeader title={title} onClose={close} pal={pal} dark={kit.dark} dismissable={dismissable} inset={layout.inset} />}
       footer={footer}
       bottomInset={bottomInset}
       animationType="none"

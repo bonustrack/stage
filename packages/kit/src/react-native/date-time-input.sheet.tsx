@@ -1,5 +1,5 @@
 import { Pressable, Text as RNText, View } from 'react-native';
-import { FONT_SIZE, RADIUS_FULL, fontName } from '../tokens';
+import { FONT_SIZE, RADIUS_FULL, fontName, kitPalette, type KitPalette } from '../tokens';
 import { ControlSheet } from './control-trigger';
 import { buildCells, MONTHS, toISODate, wrapClock, type DateTimeMode } from './date-time-input.model';
 import { Glyph } from './glyph';
@@ -17,13 +17,8 @@ export interface SheetColors {
   accent: string;
 }
 
-export function sheetColorsFor(dark: boolean): SheetColors {
-  return {
-    head: dark ? '#ffffff' : '#000000',
-    sub: dark ? '#7a7a7e' : '#8a929d',
-    sheetBg: dark ? '#1b1c1e' : '#ffffff',
-    accent: dark ? '#4f9cf9' : '#2f6fed',
-  };
+export function sheetColorsFor(dark: boolean, palette: KitPalette = kitPalette(dark ? 'dark' : 'light')): SheetColors {
+  return { head: palette.link, sub: palette.sub, sheetBg: dark ? '#1b1c1e' : '#ffffff', accent: dark ? '#4f9cf9' : '#2f6fed' };
 }
 
 function DayCell(props: {

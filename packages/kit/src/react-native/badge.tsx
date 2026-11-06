@@ -7,7 +7,7 @@ import { FONT_SIZE } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { Row } from './row';
 import { Text } from './text';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export type { BadgeColor, BadgeColorValue, BadgeSize, BadgeVariant };
 
@@ -60,8 +60,8 @@ export function Badge({
   weight,
   accessibility,
 }: BadgeProps): React.ReactElement {
-  const scheme = useKitScheme();
-  const styled = resolveBadgeStyle(color, background, size, dark === undefined ? scheme : dark ? 'dark' : 'light', variant);
+  const { scheme } = useKitColors(dark, 'static');
+  const styled = resolveBadgeStyle(color, background, size, scheme, variant);
   const text: BadgeTextProps = {
     fontWeight,
     color: styled.foreground,

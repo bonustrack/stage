@@ -1,4 +1,4 @@
-import { FONT_SIZE, fontName, schemePalette } from './tokens';
+import { FONT_SIZE, fontName, schemePalette, type SchemePalette } from './tokens';
 
 export interface MarkdownStyleOptions {
   fg: string;
@@ -7,6 +7,7 @@ export interface MarkdownStyleOptions {
   fontSize?: number;
   lineHeight?: number;
   paragraphGap?: number;
+  roles?: SchemePalette;
 }
 
 export const MARKDOWN_LINK = { dark: '#7aa2ff', light: '#2f6feb' } as const;
@@ -75,7 +76,7 @@ function tableStyles(border: string, gap: number): Record<string, object> {
 
 export function markdownStyles(options: MarkdownStyleOptions): Record<string, object> {
   const { fg, dark } = options;
-  const pal = schemePalette(dark);
+  const pal = options.roles ?? schemePalette(dark);
   const base = options.fontSize ?? FONT_SIZE.xs;
   const lineHeight = options.lineHeight ?? Math.round(base * 1.45);
   const gap = options.paragraphGap ?? 8;

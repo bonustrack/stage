@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Platform, View, type ViewStyle } from 'react-native';
 import { OVERLAY_DROP_SHADOW, OVERLAY_SHADOW } from '../overlay.styles';
 import { Text } from './text';
-import { useKitPaletteFor } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export const TOOLTIP = { padX: 14, padY: 8, radius: 4, lineHeight: 20, arrow: 8, gap: 8 } as const;
 
@@ -53,7 +53,7 @@ export function Tooltip({
   onBubbleWidth,
   style,
 }: TooltipProps): React.ReactElement {
-  const pal = useKitPaletteFor(dark);
+  const pal = useKitColors(dark, 'provider').palette;
   const fill = background ?? pal.border;
   const arrowBox = arrow === 'none' ? null : <View style={{ width: 0, height: 0, ...arrowStyle(arrow, fill) }} />;
   const arrowFirst = ARROW_FIRST.includes(arrow);

@@ -16,11 +16,11 @@ import {
   type ChartYAxisConfig,
 } from '../chart';
 import { OVERLAY_SHADOW } from '../overlay.styles';
-import { kitPalette, type KitPalette, type Scheme } from '../tokens';
+import type { KitPalette, Scheme } from '../tokens';
 import { ChartBands } from './chart.bands';
 import { ChartPlot } from './chart.plot';
 import { Text } from './text';
-import { useKitPalette, useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 import { TOOLTIP } from './tooltip';
 import { Row } from './row';
 
@@ -90,11 +90,7 @@ const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
 const MAX_NATIVE_AREA = 1_500_000;
 
 function useChartTheme(dark: boolean | undefined): { scheme: Scheme; palette: KitPalette } {
-  const contextScheme = useKitScheme();
-  const contextPalette = useKitPalette();
-  if (dark === undefined || (dark ? 'dark' : 'light') === contextScheme) return { scheme: contextScheme, palette: contextPalette };
-  const scheme = dark ? 'dark' : 'light';
-  return { scheme, palette: kitPalette(scheme) };
+  return useKitColors(dark, 'matching');
 }
 
 function boxStyle(props: ChartProps): ViewStyle {

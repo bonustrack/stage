@@ -1,4 +1,4 @@
-import { FONT_SIZE, colors, fontName, schemePalette } from './tokens';
+import { FONT_SIZE, colors, fontName, schemePalette, type SchemePalette } from './tokens';
 
 export type ButtonColor = 'primary' | 'secondary' | 'info' | 'discovery' | 'success' | 'caution' | 'warning' | 'danger';
 
@@ -73,8 +73,8 @@ export interface VariantColors {
 const DANGER = '#d6453d';
 const DANGER_PRESSED = '#bf3a33';
 
-function accent(color: ButtonColor, dark: boolean): { bg: string; pressed: string; on: string } {
-  const { head, border } = schemePalette(dark);
+function accent(color: ButtonColor, dark: boolean, roles: SchemePalette): { bg: string; pressed: string; on: string } {
+  const { head, border } = roles;
   switch (color) {
     case 'primary':
       return { bg: head, pressed: head, on: dark ? colors['bg-dark'] : colors['bg-light'] };
@@ -126,10 +126,14 @@ function ghostColors(ctx: ColorCtx): VariantColors {
   return { bg: 'transparent', text: ctx.isNeutral ? ctx.neutralText : ctx.a.bg, ghostPressedBg: ctx.ghostPressedBg };
 }
 
-export function resolveColors(color: ButtonColor, variant: ButtonControlVariant, dark: boolean): VariantColors {
-  const p = schemePalette(dark);
+export function resolveColors(
+  color: ButtonColor,
+  variant: ButtonControlVariant,
+  dark: boolean,
+  p: SchemePalette = schemePalette(dark),
+): VariantColors {
   const ctx: ColorCtx = {
-    a: accent(color, dark),
+    a: accent(color, dark, p),
     border: p.border,
     ghostPressedBg: dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
     neutralText: p.head,

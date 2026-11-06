@@ -8,7 +8,7 @@ import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { CheckboxBox, checkboxColors } from './check-box';
 import { WithChecks } from './control-trigger';
 import { TextField } from './text-field';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export interface ChoiceOption {
   label: string;
@@ -153,9 +153,9 @@ export function ChoicePicker(props: ChoicePickerProps): React.ReactElement {
     weight,
     accessibility,
   } = props;
-  const scheme = useKitScheme();
-  const dark = props.dark ?? scheme === 'dark';
-  const palette = checkboxColors(dark);
+  const kit = useKitColors(props.dark, 'static');
+  const dark = kit.dark;
+  const palette = checkboxColors(dark, kit.palette);
   const [query, setQuery] = useState('');
   const [selected, pick] = useSelection(props);
   const chips = displayStyle === 'chips';

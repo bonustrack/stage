@@ -1,5 +1,5 @@
-import { createContext, createElement, useContext, type ReactNode } from 'react';
-import { kitPalette, type KitPalette } from '../tokens';
+import { createContext, createElement, useContext, useMemo, type ReactNode } from 'react';
+import { kitPalette, schemeRolesOf, type KitPalette, type SchemePalette, type Scheme } from '../tokens';
 import { loadKitFonts } from './fonts.load';
 
 export type { KitPalette } from '../tokens';
@@ -37,7 +37,30 @@ export function useKitScheme(): 'light' | 'dark' {
   return useKitThemeValue().scheme;
 }
 
+export type KitPaletteMode = 'provider' | 'matching' | 'static';
+
+export interface KitColors {
+  scheme: Scheme;
+  dark: boolean;
+  palette: KitPalette;
+  roles: SchemePalette;
+}
+
+function paletteFor(mode: KitPaletteMode, dark: boolean | undefined, scheme: Scheme, provided: KitThemeValue): KitPalette {
+  if (mode === 'static') return kitPalette(scheme);
+  if (mode === 'provider') return dark === undefined ? provided.palette : kitPalette(scheme);
+  return scheme === provided.scheme ? provided.palette : kitPalette(scheme);
+}
+
+export function useKitColors(dark: boolean | undefined, mode: KitPaletteMode): KitColors {
+  const provided = useKitThemeValue();
+  return useMemo(() => {
+    const scheme: Scheme = dark === undefined ? provided.scheme : dark ? 'dark' : 'light';
+    const palette = paletteFor(mode, dark, scheme, { palette: provided.palette, scheme: provided.scheme });
+    return { scheme, dark: scheme === 'dark', palette, roles: schemeRolesOf(palette) };
+  }, [mode, dark, provided.palette, provided.scheme]);
+}
+
 export function useKitPaletteFor(dark: boolean | undefined): KitPalette {
-  const context = useKitPalette();
-  return dark === undefined ? context : kitPalette(dark ? 'dark' : 'light');
+  return useKitColors(dark, 'provider').palette;
 }
