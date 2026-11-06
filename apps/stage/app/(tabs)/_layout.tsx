@@ -10,14 +10,7 @@ import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/tabs/TabsPager';
 import { Topnav } from '../../components/Topnav';
 import { HomeTopnav } from '../../components/home/HomeTopnav';
-import {
-  TAB_BADGE_POSITION,
-  TAB_BADGE_SIZE,
-  TAB_ICON_FRAME,
-  WebTabBar,
-  WebTabRail,
-  chatsTabOpensNewChat,
-} from '../../components/tabs/WebTabRail';
+import { TAB_BADGE_POSITION, TAB_ICON_FRAME, WebTabBar, WebTabRail, chatsTabOpensNewChat } from '../../components/tabs/WebTabRail';
 import { useBoardHome, useRememberHomeView } from '../../components/tabs/boardHome';
 import { homeViewAt } from '../../components/tabs/splitRoutes';
 import { HIDDEN_TAB_ROUTES, PAGES, TAB_BAR_PAGES, tabPageAt } from '../../components/tabs/pages';
@@ -25,6 +18,7 @@ import { routeRendersPage } from '../../components/tabs/pageRenderer';
 import { appIcon } from '../../components/widgets';
 import { useWebTabRail } from '../../components/layout/webLayout';
 import { useVisibleUnreadCount } from '../../components/home/unreadCount';
+import { UNREAD_BADGE_SIZE } from '../../components/chatRow/UnreadBadge';
 import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';
 import { Landing } from '../../components/landing/Landing';
@@ -106,9 +100,9 @@ function chatsTabBadge(pal: ReturnType<typeof usePalette>, unreadBadge: string |
       color: pal.bg,
       fontSize: FONT_SIZE['3xs'],
       fontFamily: 'Calibre-Semibold',
-      minWidth: TAB_BADGE_SIZE,
-      height: TAB_BADGE_SIZE,
-      lineHeight: TAB_BADGE_SIZE,
+      minWidth: UNREAD_BADGE_SIZE,
+      height: UNREAD_BADGE_SIZE,
+      lineHeight: UNREAD_BADGE_SIZE,
     },
   };
 }

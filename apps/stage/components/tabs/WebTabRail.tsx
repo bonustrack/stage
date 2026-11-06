@@ -1,5 +1,4 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { useRouter, type Href } from 'expo-router';
 import { usePalette } from '../../lib/theme';
@@ -9,6 +8,7 @@ import { RailTooltip } from './RailTooltip';
 import { HoverTint } from '../hover';
 import { appIcon } from '../widgets';
 import { useReportBottomChrome } from '../layout/bottomChrome';
+import { UnreadBadgeLabel } from '../chatRow/UnreadBadge';
 import { TAB_BAR_HEIGHT } from '../layout/webChrome.core';
 import { requestNewChatFocus, useOpenNewChat } from '../newChat/newChatFocus';
 import { useBoardHome } from './boardHome';
@@ -24,8 +24,6 @@ export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
 
 export const TAB_ICON_FRAME = { width: 31, height: 28 } as const;
 
-export const TAB_BADGE_SIZE = 18;
-
 export const TAB_BADGE_POSITION = { position: 'absolute', top: -3, right: -3 } as const;
 
 const RAIL_BUTTON = { height: 48, alignItems: 'center', justifyContent: 'center' } as const;
@@ -37,22 +35,7 @@ function TabIcon({ icon, active, badge }: { icon: CentralIcon; active: boolean; 
       {(hovered) => (
         <Column width={TAB_ICON_FRAME.width} height={TAB_ICON_FRAME.height} align="center" justify="center">
           <Glyph icon={icon} size={24} color={active || hovered ? pal.link : pal.text} />
-          {badge !== undefined ? (
-            <Column
-              minWidth={TAB_BADGE_SIZE}
-              height={TAB_BADGE_SIZE}
-              padding={{ x: 4 }}
-              radius="full"
-              background={pal.link}
-              align="center"
-              justify="center"
-              style={TAB_BADGE_POSITION}
-            >
-              <Text fontWeight="semibold" color={pal.bg} size="3xs">
-                {badge}
-              </Text>
-            </Column>
-          ) : null}
+          {badge !== undefined ? <UnreadBadgeLabel text={badge} style={TAB_BADGE_POSITION} /> : null}
         </Column>
       )}
     </HoverTint>
