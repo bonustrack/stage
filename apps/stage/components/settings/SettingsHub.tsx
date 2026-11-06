@@ -11,10 +11,8 @@ import type { SimultaneousRefs } from '../layout/simultaneousRefs';
 import { menuPointBelow } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { capabilities } from '../../lib/capabilities';
-import { usePushEnabled } from '../../lib/pushPref';
 import { setDeveloperMode } from '../../lib/developerMode';
 import { reported } from '../../lib/errorPolicy';
-import { isPushSupported } from '../../lib/pushRegister';
 import { setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { listXmtpInstallations } from '../../lib/xmtp.client';
@@ -24,12 +22,15 @@ import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useWebTabRail } from '../layout/webLayout';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { useEditProfile } from '../profile/useEditProfile';
-import { applyPush } from './NotificationsSettings';
-import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
+import { PUSH_UNAVAILABLE, PushToggleRow } from './PushToggleRow';
+import { SettingsGroup, SettingsNavRow, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
-import { settingsSection } from './settingsCatalog.model';
+import { hubRows, type SettingsSectionId } from './settingsCatalog.model';
+import { StackPage } from '../chrome/StackPage';
 import { developerModeDescription, settingsMenuPages } from '../tabs/menuPages';
 import { DeveloperModeRetry, useDeveloperModeStatus } from '../tabs/MenuPage';
+import { PAGES } from '../tabs/pages';
+import { renderedByRoute } from '../tabs/pageRenderer';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
@@ -95,13 +96,35 @@ function useDeviceCount(): number | null {
 
 const THEME_TABS = THEME_OPTIONS.map((o) => ({ title: o.label }));
 
+function HubRows({
+  group,
+  values,
+}: {
+  group: 'preferences' | 'more';
+  values: Partial<Record<SettingsSectionId, string>>;
+}): React.ReactElement {
+  return (
+    <>
+      {hubRows(group).map((row) => (
+        <SettingsNavRow
+          key={row.id}
+          label={row.label}
+          iconStart={row.icon}
+          value={values[row.id]}
+          onPress={() => {
+            capabilities.navigate(row.href);
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
 function PreferencesGroup(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pref = useThemePreference();
   const custom = useCustomTheme();
-  const push = usePushEnabled();
   const developerMode = useDeveloperModeStatus();
-  const pushSupported = isPushSupported();
   return (
     <SettingsGroup title="Preferences">
       <ListViewItem align="center" gap={14} dark={dark} padding={{ paddingTop: 10, paddingBottom: 10, paddingLeft: 16, paddingRight: 14 }}>
@@ -120,23 +143,8 @@ function PreferencesGroup(): React.ReactElement {
           />
         </Column>
       </ListViewItem>
-      <SettingsToggleRow
-        label="Push notifications"
-        name="push"
-        checked={push && pushSupported}
-        disabled={!pushSupported}
-        description={pushSupported ? undefined : 'Push notifications are unavailable in this browser.'}
-        onChange={(next) => {
-          void applyPush(next);
-        }}
-      />
-      <SettingsNavRow
-        label="Appearance"
-        value={custom ? 'Custom colors' : undefined}
-        onPress={() => {
-          capabilities.navigate(settingsSection('appearance').href);
-        }}
-      />
+      <PushToggleRow unsupportedNote={PUSH_UNAVAILABLE} />
+      <HubRows group="preferences" values={{ appearance: custom ? 'Custom colors' : undefined }} />
       <SettingsToggleRow
         label="Developer mode"
         name="developer-mode"
@@ -161,19 +169,6 @@ function MoreGroup(): React.ReactElement {
   useEffect(() => {
     if (developerMode && boxes !== undefined) prefetchInbox(boxes);
   }, [boxes, developerMode]);
-  const row = (id: 'security' | 'devices' | 'wallet' | 'advanced', label: string, value?: string): React.ReactElement => {
-    const section = settingsSection(id);
-    return (
-      <SettingsNavRow
-        label={label}
-        iconStart={section.icon}
-        value={value}
-        onPress={() => {
-          capabilities.navigate(section.href);
-        }}
-      />
-    );
-  };
   return (
     <SettingsGroup title="More">
       {pages.map((page) => (
@@ -186,23 +181,23 @@ function MoreGroup(): React.ReactElement {
           }}
         />
       ))}
-      {row('security', 'Recovery phrase and private key')}
-      {row('devices', 'Devices and history', count === null ? undefined : `${count} signed in`)}
-      {row('wallet', 'Wallet', address ? shortAddress(address) : undefined)}
-      {row('advanced', 'Advanced')}
+      <HubRows
+        group="more"
+        values={{ devices: count === null ? undefined : `${count} signed in`, wallet: address ? shortAddress(address) : undefined }}
+      />
     </SettingsGroup>
   );
 }
 
 export function SettingsMenu({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   return (
-    <SettingsPage title="Settings" root panRef={panRef}>
+    <StackPage title={PAGES.settings.label} header={renderedByRoute('settings')} panRef={panRef}>
       <Column>
         <IdentityHero />
         <PreferencesGroup />
         <MoreGroup />
       </Column>
       <SettingsAboutFooter />
-    </SettingsPage>
+    </StackPage>
   );
 }

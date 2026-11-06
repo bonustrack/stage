@@ -119,7 +119,7 @@ export function WalletSettings(): React.ReactElement {
   const smart = rec?.type === 'smart';
 
   return (
-    <SettingsPage title="Wallet">
+    <SettingsPage section="wallet">
       {!rec ? (
         <Text size="xs" color={fg} style={{ padding: 24 }}>
           No active account.

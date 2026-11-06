@@ -13,7 +13,7 @@ export function DisplaySettings(): React.ReactElement {
   const previewScope = useFontPreviews();
 
   return (
-    <SettingsPage title="Appearance" keyboardShouldPersistTaps="handled">
+    <SettingsPage section="appearance" keyboardShouldPersistTaps="handled">
       <SettingsGroup title="Theme" footnote="System follows the light or dark mode of this device.">
         {THEME_OPTIONS.map((opt) => (
           <SettingsThemeRow

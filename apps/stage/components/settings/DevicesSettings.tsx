@@ -172,7 +172,7 @@ function HistorySyncSection(): React.ReactElement {
 
 export function DevicesSettings(): React.ReactElement {
   return (
-    <SettingsPage title="Devices">
+    <SettingsPage section="devices">
       <DeviceSessions />
       <LinkDeviceGroup />
       <HistorySyncSection />

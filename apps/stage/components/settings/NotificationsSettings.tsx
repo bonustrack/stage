@@ -1,18 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
-import { setPushEnabled, usePushEnabled } from '../../lib/pushPref';
-import { getOrCreateXmtpClient } from '../../lib/xmtp.client';
-import {
-  getPushPermission,
-  isPushSupported,
-  registerPushWithServer,
-  requestPushPermission,
-  unregisterPushFromServer,
-} from '../../lib/pushRegister';
+import { getPushPermission, isPushSupported } from '../../lib/pushRegister';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
-import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsToggleRow } from './SettingsPage';
-import { capabilities } from '../../lib/capabilities';
-import { report } from '../../lib/errorPolicy';
+import { SettingsButtonRow, SettingsGroup, SettingsPage } from './SettingsPage';
+import { PUSH_UNAVAILABLE, PushToggleRow } from './PushToggleRow';
 
 function permissionLabel(perm: string): string {
   if (perm === 'granted') return 'System notifications are allowed.';
@@ -22,54 +13,23 @@ function permissionLabel(perm: string): string {
     : 'Blocked in system settings. Allow notifications for Stage to receive push.';
 }
 
-export async function applyPush(next: boolean): Promise<void> {
-  if (!isPushSupported()) return;
-  await setPushEnabled(next);
-  if (next) await requestPushPermission();
-  try {
-    const client = await getOrCreateXmtpClient('production');
-    if (next) await registerPushWithServer(client);
-    else await unregisterPushFromServer(client);
-  } catch (err) {
-    report('settings.push', err);
-    capabilities.toast('Could not update notifications. Try again.');
-  }
-}
-
-function usePushToggle(): { enabled: boolean; perm: string; onToggle: (next: boolean) => void } {
-  const enabled = usePushEnabled();
+function usePushPermission(): { perm: string; refresh: () => void } {
   const [perm, setPerm] = useState<string>('undetermined');
-  useEffect(() => {
+  const refresh = (): void => {
     void getPushPermission().then(setPerm);
-  }, []);
-  const onToggle = (next: boolean): void => {
-    void applyPush(next).then(async () => {
-      setPerm(await getPushPermission());
-    });
   };
-  return { enabled, perm, onToggle };
+  useEffect(refresh, []);
+  return { perm, refresh };
 }
 
 export function NotificationsSettings(): React.ReactElement {
-  const { enabled, perm, onToggle } = usePushToggle();
+  const { perm, refresh } = usePushPermission();
   const status = usePushStatus();
   const supported = isPushSupported();
   return (
-    <SettingsPage title="Notifications">
-      <SettingsGroup
-        title="Push"
-        footnote={
-          supported ? `${permissionLabel(perm)} ${describePushStatus(status)}` : 'Push notifications are unavailable in this browser.'
-        }
-      >
-        <SettingsToggleRow
-          label="Push notifications"
-          name="push"
-          checked={enabled && supported}
-          disabled={!supported}
-          description={supported ? 'Get notified about new messages even when Stage is closed.' : undefined}
-          onChange={onToggle}
-        />
+    <SettingsPage section="notifications">
+      <SettingsGroup title="Push" footnote={supported ? `${permissionLabel(perm)} ${describePushStatus(status)}` : PUSH_UNAVAILABLE}>
+        <PushToggleRow about="Get notified about new messages even when Stage is closed." onToggled={refresh} />
       </SettingsGroup>
       {perm === 'denied' && Platform.OS !== 'web' ? (
         <SettingsGroup>

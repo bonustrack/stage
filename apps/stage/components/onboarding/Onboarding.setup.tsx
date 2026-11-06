@@ -23,9 +23,10 @@ import { IconCircleX } from '@central-icons-react-native/round-outlined-radius-1
 import { useEffect, useState } from 'react';
 import { historySyncDeadline, historySyncProblem, useHistorySyncPhase } from '../../lib/history';
 import { historySyncIsActive, historySyncPhaseLabel, timeLeftLabel } from '../../lib/history.model';
+import { settingsBreadcrumb } from '../settings/settingsCatalog.model';
 import { Column, Row } from '../layout';
 
-const CONTINUE_HINT = 'You can also continue without it and sync later from Settings > Devices and history.';
+const CONTINUE_HINT = `You can also continue without it and sync later from ${settingsBreadcrumb('devices')}.`;
 
 function useNow(running: boolean): number {
   const [now, setNow] = useState(() => Date.now());

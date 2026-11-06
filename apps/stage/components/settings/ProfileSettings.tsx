@@ -91,7 +91,7 @@ export function ProfileSettings(): React.ReactElement {
   const view = profileView({ address, name: handle, source });
 
   return (
-    <SettingsPage title="Profile">
+    <SettingsPage section="profile">
       {address && view.claimVisible ? (
         <Column align="center" padding={{ top: 24, bottom: 16 }}>
           <ClaimStageName

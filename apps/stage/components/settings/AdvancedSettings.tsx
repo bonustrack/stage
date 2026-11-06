@@ -120,7 +120,7 @@ function DangerGroup(): React.ReactElement {
 
 export function AdvancedSettings(): React.ReactElement {
   return (
-    <SettingsPage title="Advanced">
+    <SettingsPage section="advanced">
       <IdentityGroup />
       <DangerGroup />
     </SettingsPage>

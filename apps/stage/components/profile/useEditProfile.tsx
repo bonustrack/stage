@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { getPeerHandle } from '../../lib/peerProfiles';
 import { capabilities } from '../../lib/capabilities';
-import { settingsSection } from '../settings/settingsCatalog.model';
+import { SETTINGS_SECTIONS } from '../settings/settingsCatalog.model';
 import { EditProfileModal } from './EditProfileModal';
 
 interface EditProfile {
@@ -18,7 +18,7 @@ export function useEditProfile(allowed: boolean): EditProfile {
   const target = allowed && address !== null && handle ? { address, handle } : null;
   const open = (): void => {
     if (target) setEditing(true);
-    else capabilities.navigate(settingsSection('profile').href);
+    else capabilities.navigate(SETTINGS_SECTIONS.profile.href);
   };
   const modal = target ? (
     <EditProfileModal

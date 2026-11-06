@@ -101,5 +101,5 @@ const SECURITY_FOOTNOTE = 'Your recovery phrase or private key controls your acc
 
 export function SecuritySettings(): React.ReactElement {
   const rec = useActiveAccountRecord();
-  return <SettingsPage title="Security">{rec ? <KeyRows rec={rec} /> : null}</SettingsPage>;
+  return <SettingsPage section="security">{rec ? <KeyRows rec={rec} /> : null}</SettingsPage>;
 }
