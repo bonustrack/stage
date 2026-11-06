@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/accountGate';
 import { AccountSetupError, type EditableProfile } from '../../lib/onboarding.core';
 import { clearPendingSetup, readPendingSetup } from '../../lib/onboardingPending';
 import { syncHistoryToEnd } from '../../lib/history';
+import { capabilities } from '../../lib/capabilities';
 import {
   createWallet,
   resumeCreatedWallet,
@@ -124,7 +124,7 @@ function useCompletion(onDone: () => void): (warning: SetupWarning) => void {
   return (warning) => {
     if (!mounted.current) return;
     onDone();
-    if (warning !== null) Alert.alert(warning.title, warning.message);
+    if (warning !== null) capabilities.alert(warning.title, warning.message);
   };
 }
 

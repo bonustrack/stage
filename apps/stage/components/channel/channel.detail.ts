@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { fetchGroupRoles, messagingKeys, refreshConv, useConvDetails, useConvRow } from '../../lib/messaging/queries';
@@ -72,7 +71,7 @@ async function runTask(mark: (on: boolean) => void, failTitle: string, task: () 
   try {
     await task();
   } catch (e) {
-    Alert.alert(failTitle, (e as Error).message ?? 'Unknown error');
+    capabilities.alert(failTitle, (e as Error).message ?? 'Unknown error');
   } finally {
     mark(false);
   }

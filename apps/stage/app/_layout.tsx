@@ -8,7 +8,8 @@ import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform, Text, TextInput } from 'react-native';
-import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore } from '../lib/navigation';
+import { RootStack, currentRoute, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore } from '../lib/navigation';
+import { isBrowserExtension } from '../lib/extension';
 import { usePathname } from 'expo-router';
 import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
@@ -34,7 +35,6 @@ import { ShareHost } from '../components/share/ShareHost';
 import { KeyboardResync } from '../components/system/KeyboardResync';
 import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
-import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
 import { ignored, reported } from '../lib/errorPolicy';
 import { useTabRole } from '../lib/tabLock';
@@ -45,9 +45,8 @@ const queryClient = getQueryClient();
 
 applyWebGlobalStyles();
 installPlainTextCopy();
-installAlertShim();
 bootKitFonts();
-if (Platform.OS === 'web' && location.protocol !== 'chrome-extension:' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
+if (Platform.OS === 'web' && !isBrowserExtension() && !isOnboardingRoute(currentRoute('').replace(/\?.*$/, ''))) {
   void ensureActiveAccount()
     .then(() => getOrCreateXmtpClient('production'))
     .catch(ignored(undefined, 'optional'));

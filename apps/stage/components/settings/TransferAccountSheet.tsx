@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 import { QrCode } from '@stage-labs/kit/react-native/qr-code';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -27,7 +26,7 @@ function usePayload(rec: AccountRecord | null, onClose: () => void): string | nu
       if (!alive) return;
       if (next === null) {
         onCloseRef.current();
-        Alert.alert('Not available', UNAVAILABLE_MESSAGE);
+        capabilities.alert('Not available', UNAVAILABLE_MESSAGE);
         return;
       }
       setPayload(next);

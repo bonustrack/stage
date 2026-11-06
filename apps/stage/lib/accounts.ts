@@ -10,7 +10,7 @@ import { readSmartHdIndexHighWater } from './zerodev/hdIndexStore';
 import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
 import { recover, ignored } from './errorPolicy';
 import { accountSelectionChanged } from './accountSelection';
-import { reloadApp } from './reloadApp';
+import { capabilities } from './capabilities';
 
 export { canExportPrivateKey } from '@stage-labs/client/accounts/keys';
 export { getViemAccount, revealPrivateKey as getPrivateKey } from './zerodev/keyring';
@@ -29,7 +29,7 @@ let cache: AccountRecord[] | null = null;
 secureStorage.subscribe?.([LIST_KEY, ACTIVE_KEY], () => {
   cache = null;
   accountSelectionChanged();
-  reloadApp();
+  capabilities.reload();
 });
 
 async function persist(list: AccountRecord[]): Promise<void> {

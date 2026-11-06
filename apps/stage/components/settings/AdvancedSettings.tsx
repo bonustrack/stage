@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 import { errorMessage } from '@stage-labs/client/errors';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { switchToAccount, deleteAccount, getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
-import { reloadApp } from '../../lib/reloadApp';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
@@ -25,7 +23,7 @@ function confirmReset(): void {
     .then(async (ok) => {
       if (!ok) return;
       await resetActiveXmtpStore();
-      reloadApp();
+      capabilities.reload();
     });
 }
 
@@ -34,14 +32,14 @@ async function removeAndMoveOn(id: string): Promise<void> {
     await deleteAccount(id);
     const next = (await getActiveAccount())?.id;
     if (next === undefined) {
-      reloadApp(true);
+      capabilities.reload(true);
       return;
     }
     await switchToAccount(next);
     capabilities.navigate('/');
   } catch (err) {
     report('settings.removeAccount', err);
-    Alert.alert('Could not remove account', errorMessage(err));
+    capabilities.alert('Could not remove account', errorMessage(err));
   }
 }
 

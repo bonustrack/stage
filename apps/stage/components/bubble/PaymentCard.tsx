@@ -8,7 +8,6 @@ import { usePalette, withAlpha } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
 import { bubbleLinkProps } from './linkProps';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -25,7 +24,7 @@ import {
   x402KnownAsset,
 } from '@stage-labs/client/x402/payment';
 import { payX402Exact } from '../../lib/x402.pay';
-import { capabilities } from '../../lib/capabilities';
+import { capabilities, openInBubbleLink } from '../../lib/capabilities';
 import type { X402Accept, X402Challenge } from '../../lib/useLinkPreview';
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';

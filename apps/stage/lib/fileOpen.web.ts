@@ -1,9 +1,13 @@
-import { capabilities } from './capabilities';
+import { Linking } from 'react-native';
 import { reported } from './errorPolicy';
 import { downloadFile } from './fileDownload';
 import { fileOpenAction, nativeFileName, type OpenableFile } from './fileOpen.model';
 
 const openedUrls = new Map<string, string>();
+
+function openInTab(url: string): void {
+  void Linking.openURL(url).catch(reported('link.open'));
+}
 
 type DesktopOpen = (name: string, bytes: Uint8Array) => Promise<boolean>;
 
@@ -29,7 +33,7 @@ async function openInertCopy(source: string, mime: string): Promise<void> {
   const blob = await (await fetch(source)).blob();
   const url = URL.createObjectURL(new Blob([blob], { type: mime }));
   openedUrls.set(source, url);
-  capabilities.openUrl(url);
+  openInTab(url);
 }
 
 export function openFile(file: OpenableFile): void {
@@ -40,7 +44,7 @@ export function openFile(file: OpenableFile): void {
   }
   const cached = openedUrls.get(file.url);
   if (cached !== undefined) {
-    capabilities.openUrl(cached);
+    openInTab(cached);
     return;
   }
   const action = fileOpenAction(file);
@@ -52,5 +56,5 @@ export function openFile(file: OpenableFile): void {
     void openInertCopy(action.url, action.mime).catch(reported('file.open'));
     return;
   }
-  capabilities.openUrl(action.kind === 'open' ? action.url : blobUrlFor(file.url, action.bytes, action.mime));
+  openInTab(action.kind === 'open' ? action.url : blobUrlFor(file.url, action.bytes, action.mime));
 }

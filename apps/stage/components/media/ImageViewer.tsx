@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { RoundOverflowMenu } from '../MenuRows';
@@ -14,6 +14,7 @@ import { IconArrowInbox } from '@central-icons-react-native/round-outlined-radiu
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { Modal } from '@stage-labs/kit/react-native/modal';
 import { Column, PAGE_GUTTER, Row } from '../layout';
+import { capabilities } from '../../lib/capabilities';
 
 const FRAME = Platform.OS === 'web' ? { x: 18, y: 104 } : { x: 0, y: 0 };
 
@@ -44,7 +45,7 @@ export function ImageViewer({
     try {
       await downloadImage(uri);
     } catch (e) {
-      Alert.alert('Download failed', describeError(e));
+      capabilities.alert('Download failed', describeError(e));
     } finally {
       setSaving(false);
     }

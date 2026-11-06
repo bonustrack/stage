@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert } from 'react-native';
 import { errorMessage } from '@stage-labs/client/errors';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -22,6 +21,7 @@ import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radiu
 import { IconPeopleAdd } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleAdd';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { Column } from '../layout';
+import { capabilities } from '../../lib/capabilities';
 
 function AccountSwitchRow({
   account,
@@ -106,7 +106,7 @@ export function MenuSheet({
         await switchToAccount(id);
       } catch (err) {
         report('menu.switchAccount', err);
-        Alert.alert('Switch failed', errorMessage(err));
+        capabilities.alert('Switch failed', errorMessage(err));
       }
     })();
   }

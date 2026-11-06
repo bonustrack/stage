@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
@@ -32,7 +31,7 @@ function confirmExport(rec: AccountRecord, setRevealed: (key: RevealedKey) => vo
       if (!ok) return;
       const pk = await getPrivateKey(rec.id);
       if (!pk) {
-        Alert.alert('No key', 'This account has no exportable private key.');
+        capabilities.alert('No key', 'This account has no exportable private key.');
         return;
       }
       setRevealed({ id: rec.id, pk });

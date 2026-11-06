@@ -8,7 +8,7 @@ import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { usePalette, DANGER, SUCCESS } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT, schemePalette } from '@stage-labs/kit/tokens';
 import { bubbleLinkProps } from './linkProps';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { openInBubbleLink } from '../../lib/capabilities';
 import { channelTitle, type ConvTitle } from '../conversation/convTitle';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';

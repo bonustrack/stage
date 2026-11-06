@@ -5,7 +5,7 @@ import { usePalette } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { mediaMaxWidth } from './imageBox.model';
 import { bubbleLinkProps } from '../bubble/linkProps';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { openInBubbleLink } from '../../lib/capabilities';
 import { Column, Row } from '../layout';
 
 interface Props {

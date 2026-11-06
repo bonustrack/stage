@@ -7,7 +7,7 @@ import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { DANGER, usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { openInBubbleLink } from '../../lib/capabilities';
 import { bubbleLinkProps } from '../bubble/linkProps';
 import { RecipientRow } from './send.recipient';
 import { networkName, recipientSummary, type RecipientState } from './recipient.model';

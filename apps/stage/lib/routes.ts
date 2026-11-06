@@ -1,16 +1,11 @@
-import { Platform } from 'react-native';
-
 export const SETTINGS_ROUTE = '/settings';
 
-export function currentRoute(pathname: string): string {
-  if (Platform.OS !== 'web') return pathname;
-  const hash = window.location.hash;
-  return hash.startsWith('#/') ? hash.slice(1) : pathname;
+export function hashRoute(url: string): string | null {
+  const at = url.indexOf('#');
+  return at === -1 ? null : url.slice(at + 1);
 }
 
-export function prettifyRouteQuery(): void {
-  if (Platform.OS !== 'web') return;
-  const hash = window.location.hash;
-  const pretty = hash.replace(/%2F/gi, '/');
-  if (pretty !== hash) window.history.replaceState(window.history.state, '', pretty);
+export function hashPath(url: string): string | null {
+  const route = hashRoute(url);
+  return route?.startsWith('/') ? route : null;
 }

@@ -4,7 +4,7 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { Text, type TextSizeToken } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import type { MailBlock, MailImageBlock, MailSpan, MailTextBlock } from '@stage-labs/client/mail/mailHtml';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { openInBubbleLink } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { bubbleLinkProps } from '../bubble/linkProps';
 import { MONO_FONT } from '../bubble/helpers';

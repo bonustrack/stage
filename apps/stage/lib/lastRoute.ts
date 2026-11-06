@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { appStorage } from '../platform/storage';
 import { loadAccounts } from './accounts';
 import { ignore, ignored } from './errorPolicy';
+import { hashRoute } from './routes';
 
 const STORAGE_KEY = 'stage:lastRoute:v1';
 
@@ -28,8 +29,7 @@ async function readSavedRoute(): Promise<string | null> {
 
 function hasColdStartDeepLink(url: string | null): boolean {
   if (!url) return false;
-  const hash = url.indexOf('#');
-  const body = hash !== -1 ? url.slice(hash + 1) : url.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/?]*/i, '');
+  const body = hashRoute(url) ?? url.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/?]*/i, '');
   return /[a-z0-9]/i.test(body.replace(/^\/+/, '').split(/[?#]/)[0] ?? '');
 }
 

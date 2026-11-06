@@ -1,5 +1,6 @@
 import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
-import { attempt, reported } from './errorPolicy';
+import { attempt } from './errorPolicy';
+import { hashPath } from './routes';
 
 const ALLOWED_SCHEMES = new Set(['http', 'https', 'mailto', 'metro', 'stage']);
 
@@ -34,21 +35,9 @@ export function internalLinkPath(url: string): string | null {
     if (/[\s<>\\]/.test(href)) return;
     const parsed = new URL(href);
     if (!/^https?:$/.test(parsed.protocol) || parsed.host !== 'stage.box' || parsed.username || parsed.password) return;
-    const route = parsed.hash.startsWith('#/') ? parsed.hash.slice(1) : parsed.pathname + parsed.search;
+    const route = hashPath(parsed.hash) ?? parsed.pathname + parsed.search;
     if (/[#]/.test(route) || /^(?:\/\/|\/expo-development-client\/|\/preview-launcher\.html)/.test(route)) return;
     path = appPath(route);
   }, 'probe');
   return path;
-}
-
-export function openInBubbleLink(url: string): boolean {
-  const internal = internalLinkPath(url);
-  if (internal) {
-    const { router } = require('expo-router') as typeof import('expo-router');
-    router.push(internal);
-  } else if (isAllowedLinkScheme(url)) {
-    const { Linking } = require('react-native') as typeof import('react-native');
-    void Linking.openURL(url).catch(reported('link.open'));
-  }
-  return false;
 }

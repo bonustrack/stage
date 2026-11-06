@@ -3,7 +3,7 @@ import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import { useVoiceRecorder } from './voice';
 import type { ComposerState } from './state';
 import type { PostHooks } from './types';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { KeyboardController } from 'react-native-keyboard-controller';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -15,6 +15,7 @@ import { prepareAttachments } from '../../lib/xmtp.attachments';
 import { finishSend, showSend, startSend, type DraftArgs, type StartedSend } from './sendRun';
 import { locationAttachment, withLocation } from './location.model';
 import { ignored } from '../../lib/errorPolicy';
+import { capabilities } from '../../lib/capabilities';
 
 type ComposerActionsArgs = DraftArgs & PostHooks & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
 
@@ -64,7 +65,7 @@ async function requestCameraPermission(a: ComposerActionsArgs): Promise<boolean>
   a.setErr(null);
   const perm = await ImagePicker.requestCameraPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('Camera permission denied');
+    capabilities.alert('Camera permission denied');
     return false;
   }
   return true;
@@ -81,7 +82,7 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
   a.setErr(null);
   const perm = await Location.requestForegroundPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('Location permission denied');
+    capabilities.alert('Location permission denied');
     return;
   }
   try {

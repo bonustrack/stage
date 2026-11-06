@@ -21,4 +21,12 @@ export function useDocumentScrollRestore(): void {
   return undefined;
 }
 
+export function currentRoute(pathname: string): string {
+  return pathname;
+}
+
+export function prettifyRouteQuery(): void {
+  return undefined;
+}
+
 export { Tabs } from 'expo-router';

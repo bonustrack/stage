@@ -1,5 +1,5 @@
 import { ACTIVE_TAB, createTabLock, type TabLock, type TabRole } from './tabLock.core';
-import { reloadApp } from './reloadApp';
+import { capabilities } from './capabilities';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { attempt } from './errorPolicy';
 import { useStoreValue } from './storeCore';
@@ -14,7 +14,7 @@ function stepDown(): void {
     attempt(() => {
       client.close();
     }, 'cleanup');
-  reloadApp();
+  capabilities.reload();
 }
 
 function currentTabLock(): TabLock {

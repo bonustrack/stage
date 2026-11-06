@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { openInBubbleLink } from '../../lib/capabilities';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
 import { messageCardLinks } from './markdown.model';

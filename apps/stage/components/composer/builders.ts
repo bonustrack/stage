@@ -1,8 +1,8 @@
-import { Alert } from 'react-native';
 import { isAddress, parseUnits, toHex } from 'viem';
 import { base } from 'viem/chains';
 import { xmtpSendPoll, xmtpSendTxRequest, xmtpSendSignatureRequest } from '../../lib/xmtp.messages';
 import { type PollContent, mintPollId, pollFallbackText } from '@stage-labs/client/xmtp/poll';
+import { capabilities } from '../../lib/capabilities';
 import {
   type SignatureRequestContent,
   buildEip712SignatureRequest,
@@ -66,7 +66,7 @@ function buildSignatureContent(d: SignatureDraft): SignatureRequestContent | nul
   try {
     return d.kind === 'personal' ? buildPersonalSignatureRequest(d.message, d.desc) : buildEip712SignatureRequest(d.json, d.desc);
   } catch (e) {
-    Alert.alert((e as Error).message);
+    capabilities.alert((e as Error).message);
     return null;
   }
 }
@@ -87,7 +87,7 @@ export async function sendPoll(d: PollDraft, post: PostCtx): Promise<void> {
   const question = d.question.trim();
   const options = d.options.map((o) => o.trim()).filter(Boolean);
   if (!question || options.length < 2) {
-    Alert.alert('Add a question and at least 2 options');
+    capabilities.alert('Add a question and at least 2 options');
     return;
   }
   const poll: PollContent = {
@@ -104,17 +104,17 @@ export async function sendTxRequest(d: PaymentDraft, post: PostCtx): Promise<voi
   const to = d.to.trim();
   const amount = d.amount.trim();
   if (!isAddress(to)) {
-    Alert.alert('Enter a valid recipient address');
+    capabilities.alert('Enter a valid recipient address');
     return;
   }
   const n = Number(amount);
   if (!isFinite(n) || n <= 0) {
-    Alert.alert('Enter a valid amount');
+    capabilities.alert('Enter a valid amount');
     return;
   }
   const acct = await getActiveAccount();
   if (!acct) {
-    Alert.alert('No active account');
+    capabilities.alert('No active account');
     return;
   }
   const description = d.note.trim() || `Send ${amount} ETH`;

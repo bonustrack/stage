@@ -15,7 +15,7 @@ import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { tokenLogoUrl, useDecodedCall, useTxTime, useUsdValue } from '../../lib/txDisplay';
 import { chainIdToNumber, explorerTxUrl, receiptTitle, requestAmountOf, txAmountLabel, type TxAmount } from '@stage-labs/client/xmtp/tx';
 import { spoofWarning, type DecodedCall } from '@stage-labs/client/wallet/txDecode';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { openInBubbleLink } from '../../lib/capabilities';
 import { bubbleLinkProps } from './linkProps';
 import { ReceiptBox } from './cards.sig';
 import { simulateTx, type SimulateResult } from '@stage-labs/client/wallet/txSimulate';

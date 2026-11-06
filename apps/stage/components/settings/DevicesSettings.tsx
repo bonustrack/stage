@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert } from 'react-native';
+import { ActivityIndicator } from 'react-native';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -95,7 +95,7 @@ function DeviceSessions(): React.ReactElement {
           return reload();
         })
         .catch(() => {
-          Alert.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.');
+          capabilities.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.');
         })
         .finally(() => {
           setBusy(null);

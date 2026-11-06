@@ -1,5 +1,5 @@
 import { NEW_TAB, isPlainClick } from '@stage-labs/kit/link';
-import { internalLinkPath, isAllowedLinkScheme, openInBubbleLink } from '../../lib/safeOpenLink';
+import { internalLinkPath, isAllowedLinkScheme } from '../../lib/safeOpenLink';
 import type { BubbleLinkProps, LinkPress } from './helpers';
 
 function stopPropagation(event: Event): void {
@@ -26,7 +26,7 @@ export function bubbleLinkProps(url: string, onLinkPress: LinkPress): BubbleLink
     onPress: (event) => {
       if (!isPlainClick(event)) return;
       event?.preventDefault();
-      (onLinkPress ?? openInBubbleLink)(url);
+      onLinkPress?.(url);
     },
     ref: keepBrowserContextMenu,
   };

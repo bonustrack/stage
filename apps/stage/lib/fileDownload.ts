@@ -1,4 +1,4 @@
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { Directory, File, Paths } from 'expo-file-system';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
@@ -44,10 +44,10 @@ async function toLocalUri(uri: string): Promise<string> {
 export async function downloadImage(uri: string): Promise<void> {
   const perm = await MediaLibrary.requestPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('Permission needed', 'Allow photo library access to save images.');
+    capabilities.alert('Permission needed', 'Allow photo library access to save images.');
     return;
   }
   await MediaLibrary.saveToLibraryAsync(await toLocalUri(uri));
   if (Platform.OS === 'android') capabilities.toast('Saved to photos');
-  else Alert.alert('Saved', 'Image saved to your photos.');
+  else capabilities.alert('Saved', 'Image saved to your photos.');
 }

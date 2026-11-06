@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { isAppInFront } from './appInFront.web';
 import { report } from './errorPolicy';
-import { isBrowserExtension } from './extension.web';
+import { isBrowserExtension } from './extension';
 
 export function markBackgroundDelivered(messageId: string | null | undefined): void {
   void messageId;

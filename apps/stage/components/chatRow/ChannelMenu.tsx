@@ -1,4 +1,3 @@
-import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MenuRow } from '../MenuRows';
 import { LEAVE_CHANNEL_CONFIRM, channelMenuItems } from './ChannelMenu.model';
@@ -46,7 +45,7 @@ function confirmLeaveChannel(
       onAfterLeave?.(result);
       if (context === 'view') router.replace(homeRoute());
     } catch (e) {
-      Alert.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
+      capabilities.alert('Couldn’t leave', (e as Error).message ?? 'Unknown error');
     }
   });
 }
@@ -55,9 +54,9 @@ async function checkSync(convId: string): Promise<void> {
   capabilities.toast('Checking sync…');
   try {
     const { title, message } = await checkConvSync(convId);
-    Alert.alert(title, message);
+    capabilities.alert(title, message);
   } catch (e) {
-    Alert.alert('Couldn’t check sync', (e as Error).message ?? 'Unknown error');
+    capabilities.alert('Couldn’t check sync', (e as Error).message ?? 'Unknown error');
   }
 }
 
@@ -80,11 +79,11 @@ function confirmDeleteChat(
         if (context === 'view') router.replace(homeRoute());
         await (block ? blockRequestConv(convId) : unacceptConv(convId));
       } catch (e) {
-        Alert.alert('Couldn’t delete', (e as Error).message ?? 'Unknown error');
+        capabilities.alert('Couldn’t delete', (e as Error).message ?? 'Unknown error');
       }
     })();
   };
-  Alert.alert('Delete chat', DELETE_CHAT_MESSAGE, [
+  capabilities.alert('Delete chat', DELETE_CHAT_MESSAGE, [
     { text: 'Cancel', style: 'cancel' },
     {
       text: 'Delete',

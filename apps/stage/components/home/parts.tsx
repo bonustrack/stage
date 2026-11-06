@@ -17,7 +17,6 @@ import { toggleGroupCollapsed } from '../../lib/channelGroups';
 import { resetActiveXmtpStore } from '../../lib/xmtp.client';
 import { prefetchFeed } from '../../lib/messaging/feedQuery';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { reloadApp } from '../../lib/reloadApp';
 import { getPeerName, isPeerResolved, peerLabel } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/links';
@@ -257,7 +256,7 @@ function confirmReset(): void {
   void (async (): Promise<void> => {
     if (!(await capabilities.confirm({ title: RESET_TITLE, message: RESET_MESSAGE, confirmLabel: 'Reset', destructive: true }))) return;
     await resetActiveXmtpStore();
-    reloadApp();
+    capabilities.reload();
   })();
 }
 
@@ -276,7 +275,7 @@ export function HomeError({ error, dark, fg }: { error: string; dark: boolean; f
         dark={dark}
         style={{ alignSelf: 'center', marginBottom: 12 }}
         onPress={() => {
-          reloadApp();
+          capabilities.reload();
         }}
       />
       <Pressable

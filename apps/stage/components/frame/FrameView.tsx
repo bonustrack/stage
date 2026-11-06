@@ -15,7 +15,7 @@ import {
   setFrameSessionHost,
   type FrameSessionHost,
 } from '../../lib/frameSession';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
+import { openInBubbleLink } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { ResetBoundary } from '../bubble/boundary';
 import { Column } from '../layout';

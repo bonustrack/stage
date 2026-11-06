@@ -18,6 +18,7 @@ import {
 import { useEffect, useLayoutEffect } from 'react';
 import { usePathname, withLayoutContext } from 'expo-router';
 import { WEB_TAB_BACK_BEHAVIOR } from './navigation.model';
+import { hashPath } from './routes';
 import { Column } from '@stage-labs/kit/react-native/column';
 
 type FlowScreenOptions = Record<string, unknown>;
@@ -126,4 +127,14 @@ export function useDocumentScrollRestore(): void {
   useLayoutEffect(() => {
     window.scrollTo({ top: positions.get(pathname) ?? 0, behavior: 'instant' });
   }, [pathname]);
+}
+
+export function currentRoute(pathname: string): string {
+  return hashPath(window.location.hash) ?? pathname;
+}
+
+export function prettifyRouteQuery(): void {
+  const hash = window.location.hash;
+  const pretty = hash.replace(/%2F/gi, '/');
+  if (pretty !== hash) window.history.replaceState(window.history.state, '', pretty);
 }
