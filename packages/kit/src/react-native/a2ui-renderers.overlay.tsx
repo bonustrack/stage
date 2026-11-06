@@ -1,8 +1,10 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Modal as NativeModal, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { KIT_PROPS } from '../a2ui/kit-catalog';
+import { coerceProps } from '../a2ui/kit-catalog.props';
 import type { JsonValue } from '../a2ui/protocol';
 import type { ScreenRect } from './dom';
-import { asBoolean, asEnum, asOptionalString, asString, colorOf, commonProps, iconNameOf, type RenderContext } from './a2ui-context';
+import { asBoolean, asOptionalString, asString, colorOf, commonProps, iconNameOf, type RenderContext } from './a2ui-context';
 import { accessibilityProps, weightStyle } from './a2ui-props';
 import { useA2uiAction } from './a2ui-action';
 import { Icon } from './icon';
@@ -90,7 +92,7 @@ function A2uiModal({ ctx }: { ctx: RenderContext }): React.ReactElement {
     <Modal
       {...commonProps(ctx)}
       {...control}
-      side={asEnum(ctx.props.side, ['center', 'bottom', 'end'])}
+      side={coerceProps(KIT_PROPS.Modal, ctx.props).side}
       trigger={ctx.child(ctx.props.trigger)}
       title={asOptionalString(ctx.props.title)}
     >
@@ -163,7 +165,7 @@ function MenuRows({ ctx, onClose }: { ctx: RenderContext; onClose: () => void })
 
 function MenuPanel({ ctx, anchor, onClose }: { ctx: RenderContext; anchor: ScreenRect | null; onClose: () => void }): React.ReactElement {
   const window = useWindowDimensions();
-  const end = asEnum(ctx.props.align, ['start', 'end']) === 'end';
+  const end = coerceProps(KIT_PROPS.DropdownMenu, ctx.props).align === 'end';
   const place =
     anchor === null
       ? null
@@ -214,7 +216,7 @@ function A2uiDropdownMenu({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const open = (): void => {
     measure(trigger.current, setAnchor);
   };
-  const contextMenu = asEnum(ctx.props.openOn, ['press', 'contextMenu']) === 'contextMenu';
+  const contextMenu = coerceProps(KIT_PROPS.DropdownMenu, ctx.props).openOn === 'contextMenu';
   return (
     <View style={weightStyle(ctx.weight)}>
       {contextMenu ? (

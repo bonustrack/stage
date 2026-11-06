@@ -1,3 +1,4 @@
+import type { CHECK_BOX_DISPLAY_STYLES } from '../kit-vocabulary';
 import { useState } from 'react';
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
@@ -8,7 +9,7 @@ import { WithChecks } from './control-trigger';
 import { Icon } from './icon';
 import { useKitScheme } from './theme-context';
 
-export type CheckBoxDisplayStyle = 'checkbox' | 'switch';
+export type CheckBoxDisplayStyle = (typeof CHECK_BOX_DISPLAY_STYLES)[number];
 
 export interface CheckBoxProps extends A2uiCommonProps {
   label?: string;

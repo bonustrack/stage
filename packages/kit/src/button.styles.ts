@@ -21,6 +21,10 @@ export type ButtonHint = 'default' | 'primary' | 'borderless';
 
 export type ButtonVariant = ButtonHint | ButtonControlVariant;
 
+export const BUTTON_HINTS: readonly ButtonHint[] = ['default', 'primary', 'borderless'];
+
+export const BUTTON_VARIANTS: readonly ButtonVariant[] = [...BUTTON_HINTS, ...BUTTON_FILLS];
+
 const HINTS: Record<ButtonHint, { fill: ButtonControlVariant; color: ButtonColor }> = {
   default: { fill: 'solid', color: 'secondary' },
   primary: { fill: 'solid', color: 'primary' },
@@ -55,6 +59,8 @@ export const SIZES: Record<ButtonSize, SizeSpec> = {
   lg: { height: 48, paddingHorizontal: 20, fontSize: FONT_SIZE.md, fontFamily: fontName.sans, gap: 8, spinner: 'small' },
   xl: { height: 53, paddingHorizontal: 24, fontSize: FONT_SIZE.lg, lineHeight: 29, fontFamily: fontName.sans, gap: 8, spinner: 'small' },
 };
+
+export const BUTTON_SIZES = Object.keys(SIZES) as ButtonSize[];
 
 export interface VariantColors {
   bg: string;

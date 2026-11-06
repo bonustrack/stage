@@ -2,6 +2,7 @@ import type { Story } from '../gallery/story';
 import { Card, type CardProps } from '../src/react-native/card';
 import { Text } from '../src/react-native/text';
 import { bool, color, number, select, text, useDark } from './_controls';
+import { CARD_SIZES } from '../src/kit-vocabulary';
 
 export default { title: 'Card' };
 
@@ -18,7 +19,7 @@ export const Controls: Story<CardProps & { statusText: string; withActions: bool
 );
 Controls.args = { size: 'md', collapsed: false, statusText: 'Status line', withActions: true };
 Controls.argTypes = {
-  size: select(['sm', 'md', 'lg']),
+  size: select(CARD_SIZES),
   padding: number,
   background: color,
   collapsed: bool,

@@ -1,3 +1,4 @@
+import type { CHOICE_PICKER_DISPLAY_STYLES, CHOICE_PICKER_VARIANTS } from '../kit-vocabulary';
 import { useState } from 'react';
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
@@ -15,9 +16,9 @@ export interface ChoiceOption {
   disabled?: boolean;
 }
 
-export type ChoicePickerVariant = 'mutuallyExclusive' | 'multipleSelection';
+export type ChoicePickerVariant = (typeof CHOICE_PICKER_VARIANTS)[number];
 
-export type ChoicePickerDisplayStyle = 'checkbox' | 'chips';
+export type ChoicePickerDisplayStyle = (typeof CHOICE_PICKER_DISPLAY_STYLES)[number];
 
 export interface ChoicePickerProps extends A2uiCommonProps {
   options: readonly ChoiceOption[];

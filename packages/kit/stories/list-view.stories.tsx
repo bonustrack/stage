@@ -4,6 +4,7 @@ import { Glyph } from '../src/react-native/glyph';
 import { Text } from '../src/react-native/text';
 import { bool, color, number, select, text, useDark } from './_controls';
 import { IconPeople } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeople';
+import { LIST_VIEW_ITEM_ALIGNS } from '../src/kit-vocabulary';
 
 export default { title: 'List View' };
 
@@ -37,7 +38,7 @@ Controls.argTypes = {
   limit: number,
   statusText: text,
   gap: number,
-  align: select(['start', 'center', 'end']),
+  align: select(LIST_VIEW_ITEM_ALIGNS),
   showDivider: bool,
   pressedBackground: color,
 };

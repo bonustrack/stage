@@ -1,13 +1,13 @@
 import { useContext, type ReactNode } from 'react';
 import { isChildTemplate, isDataBinding, type ComponentInstance, type JsonValue } from '../a2ui/protocol';
 import { movedItems } from '../sortable';
-import { DENSITY_SCALE } from '../tokens';
-import { SortHandleContext, asEnum, asNumber, asOptionalString, commonProps, spacingOf, type RenderContext } from './a2ui-context';
+import { KIT_PROPS } from '../a2ui/kit-catalog';
+import { coerceProps } from '../a2ui/kit-catalog.props';
+import { FLEX_ALIGNS, LIST_DIRECTIONS } from '../kit-vocabulary';
+import { DEFAULT_GAP, SortHandleContext, asEnum, asOptionalString, commonProps, type RenderContext } from './a2ui-context';
 import { List, type ListProps } from './list';
 import { SortableHandle, SortableItem, SortableList, SortableScope, type SortMove, type SortSource } from './sortable';
 
-const ALIGN = ['start', 'center', 'end', 'stretch'] as const;
-const GAP = DENSITY_SCALE.normal.gap;
 const CONTENT_SIZED = { flexGrow: 0 };
 
 function keyOf(row: JsonValue, itemKey: string, index: number): string {
@@ -38,9 +38,9 @@ export function listBoxProps(ctx: RenderContext): Omit<ListProps, 'children'> {
   const p = ctx.props;
   return {
     ...commonProps(ctx),
-    direction: asEnum(p.direction, ['vertical', 'horizontal']),
-    align: asEnum(p.align, ALIGN),
-    padding: spacingOf(p.padding),
+    direction: asEnum(p.direction, LIST_DIRECTIONS),
+    align: asEnum(p.align, FLEX_ALIGNS),
+    padding: coerceProps(KIT_PROPS.List, p).padding,
     style: ctx.weight === undefined ? CONTENT_SIZED : undefined,
   };
 }
@@ -59,6 +59,7 @@ export function sortableListRenderer(ctx: RenderContext): ReactNode {
   const children = ctx.children(template);
   const movePath = isDataBinding(ctx.instance.move) ? ctx.pointer(ctx.instance.move['@path']) : null;
   const box = listBoxProps(ctx);
+  const kit = coerceProps(KIT_PROPS.List, p);
   const handle = asOptionalString(ctx.instance.handle);
   const onMove = (move: SortMove, source: SortSource): void => {
     applyMove(ctx, here, itemKey, move, source);
@@ -72,8 +73,8 @@ export function sortableListRenderer(ctx: RenderContext): ReactNode {
         group={asOptionalString(p.group)}
         itemIds={ids}
         direction={box.direction}
-        gap={asNumber(p.gap) ?? GAP}
-        indicator={asEnum(p.indicator, ['preview', 'line'])}
+        gap={kit.gap ?? DEFAULT_GAP}
+        indicator={kit.indicator}
         label={ctx.accessibility?.label}
         payload={here}
         disabled={ctx.disabled}

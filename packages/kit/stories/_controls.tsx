@@ -1,7 +1,8 @@
 import type { ArgType } from '../gallery/story';
 import { Column } from '../src/react-native/column';
 import { Text } from '../src/react-native/text';
-import { FONT_SIZE, type FontSizeName } from '../src/tokens';
+import { FLEX_ALIGNS, FLEX_JUSTIFY, SURFACES as KIT_SURFACES, TEXT_ALIGNS } from '../src/kit-vocabulary';
+import { BOX_RADIUS_SCALE, FONT_SIZE, type FontSizeName, type RadiusValue } from '../src/tokens';
 
 export function select<const T extends string | number>(options: readonly T[]): ArgType<T> {
   return { control: { type: 'select' }, options: [...options] };
@@ -20,16 +21,16 @@ export const FONT_SIZES = Object.keys(FONT_SIZE) as FontSizeName[];
 export const CONTROL_SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 export const CONTROL_VARIANTS = ['soft', 'outline'] as const;
 export { COLOR_TOKENS } from '../src/tokens';
-export const ALIGNS = ['start', 'center', 'end'] as const;
-export const RADII = ['none', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', 'full'] as const;
-export const JUSTIFY = ['start', 'center', 'end', 'spaceBetween', 'spaceAround', 'spaceEvenly', 'stretch'] as const;
-export const SURFACES = ['none', 'surface', 'raised', 'sunken', 'toolbar'] as const;
+export const ALIGNS = TEXT_ALIGNS;
+export const RADII = Object.keys(BOX_RADIUS_SCALE) as RadiusValue[];
+export const JUSTIFY = FLEX_JUSTIFY;
+export const SURFACES = KIT_SURFACES;
 
 export const FLEX_ARG_TYPES = {
   gap: number,
   padding: number,
   margin: number,
-  align: select(['start', 'center', 'end', 'stretch']),
+  align: select(FLEX_ALIGNS),
   justify: select(JUSTIFY),
   weight: number,
   wrap: bool,

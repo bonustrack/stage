@@ -1,3 +1,4 @@
+import type { CARD_SIZES } from '../kit-vocabulary';
 import type { ReactNode } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { Button } from './button';
@@ -6,7 +7,7 @@ import { BLOCK_RADIUS_DEFAULT, schemePalette } from '../tokens';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useKitScheme } from './theme-context';
 
-export type CardSize = 'sm' | 'md' | 'lg';
+export type CardSize = (typeof CARD_SIZES)[number];
 
 export interface CardStatus {
   text: string;

@@ -2,10 +2,24 @@ import { createContext, type ReactNode } from 'react';
 import type { A2uiClient, DispatchResult } from '../a2ui/client';
 import type { Scope } from '../a2ui/evaluate';
 import type { ComponentInstance, JsonValue, ValidationResult } from '../a2ui/protocol';
-import type { ResolvedBoxBorder, ResolvedBoxBorderSide, Size, Spacing } from '../layout';
-import { isColorToken, resolvePaletteColor, type KitPalette } from '../tokens';
+import { borderSpecOf, colorValueOf, type BorderSideSpec, type BorderSpec } from '../a2ui/kit-catalog.coerce';
+import { BORDER_SIDES } from '../kit-vocabulary';
+import type { ResolvedBoxBorder, ResolvedBoxBorderSide } from '../layout';
+import { DENSITY_SCALE, resolvePaletteColor, type KitPalette } from '../tokens';
 import type { A2uiAccessibility } from './a2ui-props';
 import type { IconName, IconProps } from './icon';
+
+export {
+  asBoolean,
+  asEnum,
+  asNumber,
+  asOptionalString,
+  asString,
+  asStringList,
+  colorValueOf,
+  lengthOf,
+  spacingOf,
+} from '../a2ui/kit-catalog.coerce';
 
 export interface Binding<T> {
   value: T | undefined;
@@ -56,89 +70,36 @@ export const SurfaceContext = createContext<SurfaceContextValue | null>(null);
 
 export const SortHandleContext = createContext<string | null>(null);
 
-export function asString(value: unknown): string {
-  if (typeof value === 'string') return value;
-  return typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
-}
-
-export function asOptionalString(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined;
-}
-
-export function asNumber(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) return Number(value);
-  return undefined;
-}
-
-export function asBoolean(value: unknown): boolean | undefined {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'object' && value !== null && 'valid' in value) return value.valid === true;
-  return undefined;
-}
-
-export function asEnum<const T extends string>(value: unknown, allowed: readonly T[]): T | undefined {
-  return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : undefined;
-}
-
-export function asStringList(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
-}
-
 export function commonProps(ctx: RenderContext): { weight?: number; accessibility?: A2uiAccessibility } {
   return { weight: ctx.weight, accessibility: ctx.accessibility };
 }
 
-const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
-const PERCENT = /^(?:100|\d{1,2})(?:\.\d+)?%$/;
-const BORDER_STYLES = ['solid', 'dashed', 'dotted'] as const;
+export const DEFAULT_GAP = DENSITY_SCALE.normal.gap;
 
-export function colorValueOf(value: unknown): string | undefined {
-  return typeof value === 'string' && (isColorToken(value) || HEX_COLOR.test(value)) ? value : undefined;
-}
-
-export function colorOf(ctx: RenderContext, value: unknown): string | undefined {
-  const raw = colorValueOf(value);
+export function paletteColor(ctx: RenderContext, raw: string | undefined): string | undefined {
   return raw === undefined ? undefined : resolvePaletteColor(raw, ctx.palette);
 }
 
-function sizeOf(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined;
+export function colorOf(ctx: RenderContext, value: unknown): string | undefined {
+  return paletteColor(ctx, colorValueOf(value));
 }
 
-export function lengthOf(value: unknown): Size | undefined {
-  return typeof value === 'string' && PERCENT.test(value) ? value : sizeOf(value);
+function resolveBorderSide(ctx: RenderContext, side: BorderSideSpec): ResolvedBoxBorderSide {
+  return { width: side.width, color: paletteColor(ctx, side.color) ?? ctx.palette.border, style: side.style };
 }
 
-export function spacingOf(value: unknown): number | Spacing | undefined {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return sizeOf(value);
-  const sides = Object.entries(value).filter(([side]) => ['top', 'right', 'bottom', 'left', 'x', 'y'].includes(side));
-  const spacing = Object.fromEntries(sides.flatMap(([side, size]) => (sizeOf(size) === undefined ? [] : [[side, size]])));
-  return Object.keys(spacing).length === 0 ? undefined : spacing;
-}
-
-const BORDER_SIDES = ['top', 'right', 'bottom', 'left'] as const;
-
-function borderSideOf(ctx: RenderContext, value: unknown): ResolvedBoxBorderSide | undefined {
-  const spec = typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : { size: value };
-  const width = sizeOf(spec.size);
-  if (width === undefined) return undefined;
-  return { width, color: colorOf(ctx, spec.color) ?? ctx.palette.border, style: asEnum(spec.style, BORDER_STYLES) };
+export function resolveBorder(ctx: RenderContext, spec: BorderSpec | undefined): ResolvedBoxBorder | undefined {
+  if (spec === undefined) return undefined;
+  return Object.fromEntries(
+    BORDER_SIDES.flatMap((name) => {
+      const side = spec[name];
+      return side === undefined ? [] : [[name, resolveBorderSide(ctx, side)]];
+    }),
+  );
 }
 
 export function borderOf(ctx: RenderContext, value: unknown): ResolvedBoxBorder | undefined {
-  const record = typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
-  if (record !== undefined && BORDER_SIDES.some((side) => record[side] !== undefined)) {
-    const sides = Object.fromEntries(
-      BORDER_SIDES.flatMap((side) => {
-        const resolved = borderSideOf(ctx, record[side]);
-        return resolved === undefined ? [] : [[side, resolved]];
-      }),
-    );
-    return Object.keys(sides).length === 0 ? undefined : sides;
-  }
-  const side = borderSideOf(ctx, value);
-  return side === undefined ? undefined : { top: side, right: side, bottom: side, left: side };
+  return resolveBorder(ctx, borderSpecOf(value));
 }
 
 const MARKDOWN_SYNTAX: readonly RegExp[] = [

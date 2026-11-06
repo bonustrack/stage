@@ -1,10 +1,11 @@
+import type { DIVIDER_AXES } from '../kit-vocabulary';
 import { View, type ViewStyle } from 'react-native';
 import { flushBleed } from '../layout';
 import { schemePalette } from '../tokens';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useKitScheme } from './theme-context';
 
-export type DividerAxis = 'horizontal' | 'vertical';
+export type DividerAxis = (typeof DIVIDER_AXES)[number];
 
 export interface DividerProps extends A2uiCommonProps {
   axis?: DividerAxis;

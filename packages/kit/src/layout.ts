@@ -1,11 +1,12 @@
+import type { BOX_ALIGNS, FLEX_JUSTIFY, SURFACES } from './kit-vocabulary';
 import { BOX_RADIUS_SCALE, colors, isRadiusValue, type ColorToken, type RadiusValue } from './tokens';
 
 export type { RadiusValue };
 
 export type Size = number | string;
 
-export type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
-export type Justify = 'start' | 'center' | 'end' | 'spaceBetween' | 'spaceAround' | 'spaceEvenly' | 'stretch';
+export type Align = (typeof BOX_ALIGNS)[number];
+export type Justify = (typeof FLEX_JUSTIFY)[number];
 
 export interface Spacing {
   top?: number | string;
@@ -182,7 +183,7 @@ export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   return s;
 }
 
-export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
+export type Surface = (typeof SURFACES)[number];
 
 export interface SurfacePalette {
   bg: string;

@@ -3,6 +3,7 @@ import type { Story } from '../gallery/story';
 import { ChoicePicker, type ChoicePickerProps } from '../src/react-native/choice-picker';
 import { Column } from '../src/react-native/column';
 import { bool, select, text, useDark } from './_controls';
+import { CHOICE_PICKER_DISPLAY_STYLES, CHOICE_PICKER_VARIANTS } from '../src/kit-vocabulary';
 
 export default { title: 'Choice Picker' };
 
@@ -12,8 +13,8 @@ const OPTIONS = [
   { label: 'SMS', value: 'sms' },
   { label: 'Fax', value: 'fax', disabled: true },
 ];
-const VARIANTS = ['mutuallyExclusive', 'multipleSelection'] as const;
-const DISPLAY_STYLES = ['checkbox', 'chips'] as const;
+const VARIANTS = CHOICE_PICKER_VARIANTS;
+const DISPLAY_STYLES = CHOICE_PICKER_DISPLAY_STYLES;
 
 export const Controls: Story<ChoicePickerProps> = (args) => {
   const [value, setValue] = useState<string[]>(['email']);

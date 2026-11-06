@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
 import RNMarkdown, { MarkdownIt } from 'react-native-markdown-display';
+import type { TEXT_TRANSFORMS } from '../kit-vocabulary';
 import { markdownStyles } from '../markdown.styles';
 import { FONT_SIZE, resolvePaletteColor, type ColorToken } from '../tokens';
 import {
@@ -38,7 +39,7 @@ export interface TextProps extends Omit<RNTextProps, 'style' | 'role'>, A2uiComm
   style?: TextStyle | TextStyle[];
 }
 
-export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+export type TextTransform = (typeof TEXT_TRANSFORMS)[number];
 
 type StyleProps = Pick<
   TextProps,

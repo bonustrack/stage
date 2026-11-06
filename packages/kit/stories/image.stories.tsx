@@ -4,11 +4,12 @@ import { Column } from '../src/react-native/column';
 import { Row } from '../src/react-native/row';
 import { Text } from '../src/react-native/text';
 import { bool, color, number, RADII, select, svgSwatch, text } from './_controls';
+import { IMAGE_FITS, IMAGE_VARIANTS } from '../src/kit-vocabulary';
 
 export default { title: 'Image' };
 
-const FIT = ['contain', 'cover', 'fill', 'none', 'scaleDown'] as const;
-const VARIANTS = ['icon', 'avatar', 'smallFeature', 'mediumFeature', 'largeFeature', 'header'] as const;
+const FIT = IMAGE_FITS;
+const VARIANTS = IMAGE_VARIANTS;
 const POSITION = ['center', 'top', 'bottom', 'left', 'right', 'top left', 'top right', 'bottom left', 'bottom right'] as const;
 const URL = svgSwatch('#5b8def', 'IMG');
 

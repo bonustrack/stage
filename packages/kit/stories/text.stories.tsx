@@ -2,13 +2,14 @@ import type { Story } from '../gallery/story';
 import { Text, type TextProps } from '../src/react-native/text';
 import { Column } from '../src/react-native/column';
 import { ALIGNS, bool, COLOR_TOKENS, FONT_SIZES, number, select, text } from './_controls';
+import { TEXT_FONT_FAMILIES, TEXT_TRANSFORMS, TEXT_VARIANTS, TEXT_WEIGHTS } from '../src/kit-vocabulary';
 
 export default { title: 'Text' };
 
-const VARIANTS = ['body', 'caption'] as const;
-const WEIGHTS = ['normal', 'medium', 'semibold', 'bold'] as const;
-const FAMILIES = ['sans', 'head', 'mono'] as const;
-const TRANSFORMS = ['none', 'uppercase', 'lowercase', 'capitalize'] as const;
+const VARIANTS = TEXT_VARIANTS;
+const WEIGHTS = TEXT_WEIGHTS;
+const FAMILIES = TEXT_FONT_FAMILIES;
+const TRANSFORMS = TEXT_TRANSFORMS;
 
 export const Controls: Story<TextProps> = (args) => <Text {...args} />;
 Controls.args = {

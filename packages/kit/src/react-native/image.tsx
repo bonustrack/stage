@@ -1,3 +1,4 @@
+import type { IMAGE_FITS, IMAGE_VARIANTS } from '../kit-vocabulary';
 import {
   Image as RNImage,
   StyleSheet,
@@ -14,8 +15,8 @@ import { flushBleed } from '../layout';
 import { BLOCK_RADIUS_DEFAULT, RADIUS_FULL, type RadiusValue } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 
-export type ImageFit = 'contain' | 'cover' | 'fill' | 'none' | 'scaleDown';
-export type ImageVariant = 'icon' | 'avatar' | 'smallFeature' | 'mediumFeature' | 'largeFeature' | 'header';
+export type ImageFit = (typeof IMAGE_FITS)[number];
+export type ImageVariant = (typeof IMAGE_VARIANTS)[number];
 export type ImagePosition = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top left' | 'top right' | 'bottom left' | 'bottom right';
 export type ImageRadius = RadiusValue;
 

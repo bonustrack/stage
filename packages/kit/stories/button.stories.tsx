@@ -6,11 +6,12 @@ import { Column } from '../src/react-native/column';
 import { Row } from '../src/react-native/row';
 import { Text } from '../src/react-native/text';
 import { bool, color, number, select, text, useDark } from './_controls';
+import { BUTTON_HINTS, BUTTON_SIZES } from '../src/button.styles';
 
 export default { title: 'Button' };
 
-const HINTS = ['default', 'primary', 'borderless'] as const;
-const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
+const HINTS = BUTTON_HINTS;
+const SIZES = BUTTON_SIZES;
 
 export const Controls: Story<ButtonProps & { withIconStart: boolean; withIconEnd: boolean }> = ({
   withIconStart,

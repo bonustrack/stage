@@ -1,3 +1,4 @@
+import type { TABS_VARIANTS } from '../kit-vocabulary';
 import { useState, type ReactNode } from 'react';
 import { Pressable, Text as RNText, View, type TextStyle, type ViewStyle } from 'react-native';
 import { surfaceColor } from '../layout';
@@ -6,7 +7,7 @@ import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-pr
 import { Icon, type IconName } from './icon';
 import { useKitPalette, useKitScheme } from './theme-context';
 
-export type TabsVariant = 'segmented' | 'underline';
+export type TabsVariant = (typeof TABS_VARIANTS)[number];
 
 export interface TabItem {
   title: string;

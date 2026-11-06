@@ -5,6 +5,7 @@ import { Column } from '../src/react-native/column';
 import { Button } from '../src/react-native/button';
 import { Text } from '../src/react-native/text';
 import { bool, color, select, text, useDark } from './_controls';
+import { MODAL_SIDES } from '../src/kit-vocabulary';
 
 export default { title: 'Modal' };
 
@@ -39,7 +40,7 @@ export const Controls: Story<ControlArgs> = (args) => {
 Controls.args = { title: 'New chat', side: 'center', backdrop: true, dismissable: true, animationType: 'none' };
 Controls.argTypes = {
   title: text,
-  side: select(['center', 'bottom', 'end']),
+  side: select(MODAL_SIDES),
   backdrop: bool,
   dismissable: bool,
   animationType: select(['none', 'fade', 'slide']),

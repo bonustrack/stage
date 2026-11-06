@@ -3,11 +3,12 @@ import type { Story } from '../gallery/story';
 import { Column } from '../src/react-native/column';
 import { TextField, type TextFieldProps } from '../src/react-native/text-field';
 import { bool, color, CONTROL_SIZES, number, select, text, useDark } from './_controls';
+import { TEXT_FIELD_APPEARANCES, TEXT_FIELD_VARIANTS } from '../src/kit-vocabulary';
 
 export default { title: 'Text Field' };
 
-const VARIANTS = ['shortText', 'longText', 'number', 'obscured'] as const;
-const APPEARANCES = ['soft', 'outline', 'plain'] as const;
+const VARIANTS = TEXT_FIELD_VARIANTS;
+const APPEARANCES = TEXT_FIELD_APPEARANCES;
 
 export const Controls: Story<TextFieldProps> = (args) => {
   const [value, setValue] = useState(args.value ?? '');

@@ -1,4 +1,7 @@
 import type { ReactNode } from 'react';
+import { KIT_PROPS } from '../a2ui/kit-catalog';
+import { coerceProps } from '../a2ui/kit-catalog.props';
+import { CHOICE_PICKER_DISPLAY_STYLES, CHOICE_PICKER_VARIANTS, TEXT_FIELD_VARIANTS } from '../kit-vocabulary';
 import { failingChecks } from './a2ui-props';
 import { useA2uiAction } from './a2ui-action';
 import { CheckBox } from './check-box';
@@ -41,8 +44,9 @@ function A2uiTextField({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const act = useA2uiAction(ctx);
   const binding = ctx.binding<string>('value');
   const field = fieldProps(ctx);
+  const kit = coerceProps(KIT_PROPS.TextField, p);
   const hidden =
-    asBoolean(p.hideLabel) === true
+    kit.hideLabel === true
       ? { label: undefined, accessibility: { ...field.accessibility, label: field.accessibility?.label ?? field.label } }
       : {};
   return (
@@ -51,9 +55,9 @@ function A2uiTextField({ ctx }: { ctx: RenderContext }): React.ReactElement {
       {...hidden}
       value={asString(binding.value)}
       placeholder={asOptionalString(p.placeholder)}
-      variant={asEnum(p.variant, ['shortText', 'longText', 'number', 'obscured'])}
-      appearance={asEnum(p.appearance, ['soft', 'outline', 'plain'])}
-      pill={asBoolean(p.pill)}
+      variant={asEnum(p.variant, TEXT_FIELD_VARIANTS)}
+      appearance={kit.appearance}
+      pill={kit.pill}
       hint={asOptionalString(p.hint)}
       onChangeText={binding.set}
       onSubmit={() => {
@@ -72,7 +76,7 @@ function A2uiCheckBox({ ctx }: { ctx: RenderContext }): React.ReactElement {
     <CheckBox
       {...fieldProps(ctx)}
       value={asBoolean(binding.value) ?? false}
-      displayStyle={asEnum(ctx.props.displayStyle, ['checkbox', 'switch'])}
+      displayStyle={coerceProps(KIT_PROPS.CheckBox, ctx.props).displayStyle}
       onChange={(next) => {
         binding.set(next);
         if (ctx.instance.action !== undefined) act();
@@ -91,8 +95,8 @@ function choicePickerRenderer(ctx: RenderContext): ReactNode {
       {...fieldProps(ctx)}
       options={optionsOf(p.options)}
       value={asStringList(binding.value)}
-      variant={asEnum(p.variant, ['mutuallyExclusive', 'multipleSelection'])}
-      displayStyle={asEnum(p.displayStyle, ['checkbox', 'chips'])}
+      variant={asEnum(p.variant, CHOICE_PICKER_VARIANTS)}
+      displayStyle={asEnum(p.displayStyle, CHOICE_PICKER_DISPLAY_STYLES)}
       filterable={asBoolean(p.filterable)}
       onChange={binding.set}
     />

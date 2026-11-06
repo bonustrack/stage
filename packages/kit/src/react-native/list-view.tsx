@@ -1,3 +1,4 @@
+import type { LIST_VIEW_ITEM_ALIGNS } from '../kit-vocabulary';
 import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { FLEX_ALIGN, borderStyleEntries, type ResolvedBoxBorder } from '../layout';
@@ -5,7 +6,7 @@ import { FONT_SIZE, fontName, schemePalette, type SchemePalette } from '../token
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useKitScheme } from './theme-context';
 
-export type ListItemAlign = 'start' | 'center' | 'end';
+export type ListItemAlign = (typeof LIST_VIEW_ITEM_ALIGNS)[number];
 
 const ROW_INSET = 16;
 

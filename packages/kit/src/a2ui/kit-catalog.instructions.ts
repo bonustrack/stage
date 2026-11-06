@@ -1,8 +1,17 @@
+import { BUTTON_COLORS, BUTTON_FILLS, BUTTON_HINTS } from '../button.styles';
+import { CHART_SERIES_TYPES, SURFACES, TEXT_WEIGHTS } from '../kit-vocabulary';
+import { COLOR_TOKENS, FONT_SIZE } from '../tokens';
 import { AGENT_CALLABLE_FUNCTIONS } from './kit-catalog.functions';
 
-function sentenceList(items: readonly string[]): string {
-  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1) ?? ''}`;
+function listOf(items: readonly string[], conjunction: 'and' | 'or'): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} ${conjunction} ${items.at(-1) ?? ''}`;
 }
+
+const FONT_SIZE_NAMES = Object.keys(FONT_SIZE);
+const FONT_SIZE_RANGE = `${FONT_SIZE_NAMES[0] ?? ''} to ${FONT_SIZE_NAMES.at(-1) ?? ''}`;
+const TEXT_COLORS = COLOR_TOKENS.map((token) =>
+  token === 'surface' ? 'surface (the page background, for text on a text-coloured pill)' : token,
+).join(', ');
 
 const FUNCTIONS_NOTE =
   'Every basic catalog function is available, plus `equals` ({ value, other }, both bindable), which returns a boolean, so `not` can wrap it: a Save button whose check is `not(equals(field, saved))` stays disabled until the field changes.';
@@ -12,7 +21,7 @@ export const KIT_INSTRUCTIONS = [
   '',
   '## Layout',
   '',
-  'Use Row and Column to organise components. Kit adds `gap`, `padding` (one number or per side), `wrap`, `surface` (surface, raised, sunken, toolbar), `background`, `radius`, `border`, and `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight` in pixels or as a percentage such as "40%". Prefer `gap` on the container over spacing on the children. A proportional bar is a Row whose filled Column has a `width` bound to a percentage.',
+  `Use Row and Column to organise components. Kit adds \`gap\`, \`padding\` (one number or per side), \`wrap\`, \`surface\` (${SURFACES.filter((surface) => surface !== 'none').join(', ')}), \`background\`, \`radius\`, \`border\`, and \`width\`, \`height\`, \`minWidth\`, \`minHeight\`, \`maxWidth\`, \`maxHeight\` in pixels or as a percentage such as "40%". Prefer \`gap\` on the container over spacing on the children. A proportional bar is a Row whose filled Column has a \`width\` bound to a percentage.`,
   '',
   '## Data binding',
   '',
@@ -20,15 +29,15 @@ export const KIT_INSTRUCTIONS = [
   '',
   '## Charts',
   '',
-  'Chart takes the ChatKit Chart props: `data` (an array of objects, usually bound to the data model), `series` (bar, line or area, each with a `dataKey`), `xAxis` and the optional `yAxis`, `showYAxis`, `showLegend`, `showTooltip`, `barGap`, `barCategoryGap`, `width`, `height` and `aspectRatio`.',
+  `Chart takes the ChatKit Chart props: \`data\` (an array of objects, usually bound to the data model), \`series\` (${listOf(CHART_SERIES_TYPES, 'or')}, each with a \`dataKey\`), \`xAxis\` and the optional \`yAxis\`, \`showYAxis\`, \`showLegend\`, \`showTooltip\`, \`barGap\`, \`barCategoryGap\`, \`width\`, \`height\` and \`aspectRatio\`.`,
   '',
   '## Text',
   '',
-  'Text takes the Kit `size` tokens (3xs to 3xl, md is the body size), `fontWeight` (normal, medium, semibold, bold) and `color` tokens: text, secondary, muted, link, primary, danger, success, border, surface (the page background, for text on a text-coloured pill). Use `variant: caption` for secondary small print and Title for headings.',
+  `Text takes the Kit \`size\` tokens (${FONT_SIZE_RANGE}, md is the body size), \`fontWeight\` (${TEXT_WEIGHTS.join(', ')}) and \`color\` tokens: ${TEXT_COLORS}. Use \`variant: caption\` for secondary small print and Title for headings.`,
   '',
   '## Buttons',
   '',
-  'Button `variant` accepts the basic hints (default, primary, borderless) or a Kit fill (solid, soft, outline, ghost) combined with `color` (primary, secondary, info, discovery, success, caution, warning, danger). Use exactly one primary button per surface. `loading` shows a spinner and ignores presses while work runs. A Button, Row or Column whose action is only an `openUrl` call renders as a real link on web, so a middle or Cmd click opens a new tab. A button with an event action inside a Modal closes it once the action is sent. Give icon-only buttons, icons and images an `accessibility.label`: screen readers read it and pointers show it as a tooltip.',
+  `Button \`variant\` accepts the basic hints (${BUTTON_HINTS.join(', ')}) or a Kit fill (${BUTTON_FILLS.join(', ')}) combined with \`color\` (${BUTTON_COLORS.join(', ')}). Use exactly one primary button per surface. \`loading\` shows a spinner and ignores presses while work runs. A Button, Row or Column whose action is only an \`openUrl\` call renders as a real link on web, so a middle or Cmd click opens a new tab. A button with an event action inside a Modal closes it once the action is sent. Give icon-only buttons, icons and images an \`accessibility.label\`: screen readers read it and pointers show it as a tooltip.`,
   '',
   '## Menus and dialogs',
   '',
@@ -44,7 +53,7 @@ export const KIT_INSTRUCTIONS = [
   '',
   '## Functions',
   '',
-  `${FUNCTIONS_NOTE} In this catalog the agent may also call ${sentenceList(AGENT_CALLABLE_FUNCTIONS)} with callRendererFunction.`,
+  `${FUNCTIONS_NOTE} In this catalog the agent may also call ${listOf(AGENT_CALLABLE_FUNCTIONS, 'and')} with callRendererFunction.`,
   '',
   '## Reordering',
   '',

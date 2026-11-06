@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, View, type ViewProps, type ViewStyle } from 'react-native';
 import { boxStyleEntries, surfaceColor, type Align, type BoxBaseProps, type Justify, type Surface } from '../layout';
 import { withAlpha } from '../color-math';
+import type { PRESS_FEEDBACKS } from '../kit-vocabulary';
 import { resolvePaletteColor } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { useKitPalette } from './theme-context';
@@ -12,7 +13,7 @@ export type FlexProps = ViewProps &
   Omit<BoxBaseProps, 'direction'> &
   A2uiCommonProps & { surface?: Surface; onPress?: () => void; disabled?: boolean; feedback?: PressFeedback };
 
-export type PressFeedback = 'opacity' | 'highlight' | 'none';
+export type PressFeedback = (typeof PRESS_FEEDBACKS)[number];
 
 const HOVER_ALPHA = 0.06;
 const PRESS_ALPHA = 0.12;

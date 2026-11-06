@@ -1,3 +1,4 @@
+import type { TITLE_LEVELS, TITLE_SIZES } from '../kit-vocabulary';
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
 import { fontName, resolveColorToken, type ColorToken } from '../tokens';
 import { HERO_TITLE_STYLE } from '../title.styles';
@@ -6,8 +7,8 @@ import { useKitPalette, useKitScheme } from './theme-context';
 
 export { BALANCE_TITLE_STYLE } from '../title.styles';
 
-export type TitleLevel = 1 | 2 | 3;
-export type TitleSizeToken = 'sm' | 'md' | 'lg';
+export type TitleLevel = (typeof TITLE_LEVELS)[number];
+export type TitleSizeToken = (typeof TITLE_SIZES)[number];
 export type TitleHeroSize = keyof typeof HERO_TITLE_STYLE;
 
 export interface TitleProps extends Omit<RNTextProps, 'style'>, A2uiCommonProps {

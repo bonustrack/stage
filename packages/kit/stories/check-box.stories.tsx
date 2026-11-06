@@ -3,10 +3,11 @@ import type { Story } from '../gallery/story';
 import { CheckBox, type CheckBoxProps } from '../src/react-native/check-box';
 import { Column } from '../src/react-native/column';
 import { bool, number, select, text, useDark } from './_controls';
+import { CHECK_BOX_DISPLAY_STYLES } from '../src/kit-vocabulary';
 
 export default { title: 'Check Box' };
 
-const DISPLAY_STYLES = ['checkbox', 'switch'] as const;
+const DISPLAY_STYLES = CHECK_BOX_DISPLAY_STYLES;
 
 export const Controls: Story<CheckBoxProps> = (args) => {
   const [value, setValue] = useState(args.value ?? false);

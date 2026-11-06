@@ -1,3 +1,4 @@
+import type { MODAL_SIDES } from '../kit-vocabulary';
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -6,7 +7,7 @@ import { resolveBoxRadius, resolveOptionalColor, type Color, type RadiusValue, t
 import { spacingEntries, type SpacingValue } from '../layout';
 import { useKitScheme } from './theme-context';
 
-export type DialogSide = 'center' | 'bottom' | 'end';
+export type DialogSide = (typeof MODAL_SIDES)[number];
 
 export interface DialogProps {
   open: boolean;

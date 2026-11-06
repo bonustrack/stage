@@ -2,6 +2,7 @@ import type { Story } from '../gallery/story';
 import { Title, type TitleProps } from '../src/react-native/title';
 import { Column } from '../src/react-native/column';
 import { COLOR_TOKENS, select, text } from './_controls';
+import { TITLE_LEVELS, TITLE_SIZES } from '../src/kit-vocabulary';
 
 export default { title: 'Title' };
 
@@ -9,8 +10,8 @@ export const Controls: Story<TitleProps> = (args) => <Title {...args} />;
 Controls.args = { text: 'Title', level: 2 };
 Controls.argTypes = {
   text,
-  level: select([1, 2, 3]),
-  size: select(['sm', 'md', 'lg']),
+  level: select(TITLE_LEVELS),
+  size: select(TITLE_SIZES),
   hero: select(['3xl', '4xl']),
   color: select(COLOR_TOKENS),
 };

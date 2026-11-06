@@ -1,3 +1,4 @@
+import type { TEXT_FIELD_APPEARANCES, TEXT_FIELD_VARIANTS } from '../kit-vocabulary';
 import type { ReactNode } from 'react';
 import type {
   NativeSyntheticEvent,
@@ -11,9 +12,9 @@ import type { ValidationResult } from '../a2ui/protocol';
 import type { ControlSize } from '../control.styles';
 import type { A2uiCommonProps } from './a2ui-props';
 
-export type TextFieldVariant = 'shortText' | 'longText' | 'number' | 'obscured';
+export type TextFieldVariant = (typeof TEXT_FIELD_VARIANTS)[number];
 
-export type TextFieldAppearance = 'soft' | 'outline' | 'plain' | 'filled';
+export type TextFieldAppearance = (typeof TEXT_FIELD_APPEARANCES)[number];
 
 export type TextFieldInputType = 'text' | 'email' | 'tel' | 'url';
 

@@ -7,6 +7,7 @@ import type { JsonObject } from '../../src/a2ui/protocol';
 import { RENDER_LIMITS, fitsRenderLimits } from '../../src/a2ui/structure';
 import { isColorToken } from '../../src/tokens';
 import { colorValueOf, lengthOf, spacingOf } from '../../src/react-native/a2ui-context';
+import { LITERAL_HEX_COLOR_PATTERN } from '../../src/kit-vocabulary';
 
 function surfaceOf(components: JsonObject[], dataModel: JsonObject = {}) {
   const client = createA2uiClient();
@@ -118,8 +119,9 @@ describe('colour tokens', () => {
 });
 
 describe('bound style values', () => {
-  test('colours from data are Kit tokens or hex only', () => {
+  test('colours from data are Kit tokens or 3, 6 or 8 digit hex, deliberately wider than the #rrggbb a literal may be', () => {
     expect(['danger', '#ff0000', '#f00', '#ff000080'].map(colorValueOf)).toEqual(['danger', '#ff0000', '#f00', '#ff000080']);
+    expect(['#ff0000', '#f00', '#ff000080'].map((hex) => new RegExp(LITERAL_HEX_COLOR_PATTERN).test(hex))).toEqual([true, false, false]);
     expect(['red; background: url(x)', 'url(x)', 'constructor', 'rgb(0,0,0)', 7].map(colorValueOf)).toEqual([
       undefined,
       undefined,

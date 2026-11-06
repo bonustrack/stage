@@ -8,10 +8,9 @@ import {
   type ChartXAxis,
   type ChartYAxisConfig,
 } from '../chart';
+import { CHART_DOMAIN_BOUNDS, CHART_SERIES_TYPES } from '../kit-vocabulary';
 import { Chart } from './chart';
 import { asBoolean, asEnum, asNumber, asOptionalString, colorValueOf, lengthOf, type RenderContext } from './a2ui-context';
-
-const DOMAIN_BOUNDS = ['auto', 'dataMin', 'dataMax'] as const;
 
 function recordOf(value: unknown): Record<string, unknown> | undefined {
   return typeof value === 'object' && value !== null && !Array.isArray(value) ? Object.fromEntries(Object.entries(value)) : undefined;
@@ -34,7 +33,7 @@ function seriesColorOf(value: unknown): string | undefined {
 
 function seriesOf(value: unknown): ChartSeries | undefined {
   const raw = recordOf(value);
-  const type = asEnum(raw?.type, ['bar', 'line', 'area']);
+  const type = asEnum(raw?.type, CHART_SERIES_TYPES);
   const dataKey = asOptionalString(raw?.dataKey);
   if (raw === undefined || type === undefined || dataKey === undefined) return undefined;
   const base = { dataKey, label: asOptionalString(raw.label), color: seriesColorOf(raw.color) };
@@ -63,7 +62,7 @@ function xAxisOf(value: unknown): ChartXAxis | undefined {
 function yAxisOf(value: unknown): ChartYAxisConfig | undefined {
   const domain = recordOf(value)?.domain;
   if (!Array.isArray(domain) || domain.length !== 2) return undefined;
-  const bounds = domain.map((bound) => asNumber(bound) ?? asEnum(bound, DOMAIN_BOUNDS));
+  const bounds = domain.map((bound) => asNumber(bound) ?? asEnum(bound, CHART_DOMAIN_BOUNDS));
   const [low, high] = bounds;
   return low === undefined || high === undefined ? undefined : { domain: [low, high] };
 }
