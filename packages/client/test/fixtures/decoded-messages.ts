@@ -1,38 +1,32 @@
-import type { DecodedMessageView } from '../../src/xmtp/envelope';
+import type { XmtpMessage } from '../../src/xmtp/message';
 
 const NS = 1_717_000_000_000 * 1_000_000;
 
-export const textMessage: DecodedMessageView = {
-  id: 'msg-text-1',
-  senderInboxId: 'inbox-alice',
-  sentNs: NS,
-  contentTypeId: 'xmtp.org/text:1.0',
-  content: () => 'hello world',
-};
+export function xmtpMessage(fields: Partial<XmtpMessage> & Pick<XmtpMessage, 'contentTypeId' | 'content'>): XmtpMessage {
+  return { id: 'msg-1', senderInboxId: 'inbox-alice', sentNs: NS, sentMs: NS / 1_000_000, ...fields };
+}
 
-export const reactionMessage: DecodedMessageView = {
+export const textMessage = xmtpMessage({ id: 'msg-text-1', contentTypeId: 'text', content: 'hello world' });
+
+export const reactionMessage = xmtpMessage({
   id: 'msg-react-1',
   senderInboxId: 'inbox-bob',
-  sentNs: NS,
-  contentTypeId: 'xmtp.org/reaction:2.0',
-  content: () => ({ reference: 'msg-text-1', action: 'added', content: '👍', schema: 'unicode' }),
-};
+  contentTypeId: 'reaction',
+  content: { reference: 'msg-text-1', content: '👍', removed: false, custom: false },
+});
 
-export const voteReaction: DecodedMessageView = {
+export const voteReaction = xmtpMessage({
   id: 'msg-vote-1',
   senderInboxId: 'inbox-bob',
-  sentNs: NS,
-  contentTypeId: 'xmtp.org/reaction:2.0',
-  content: () => ({ reference: 'poll-msg-1', action: 'added', content: '1', schema: 'custom' }),
-};
+  contentTypeId: 'reaction',
+  content: { reference: 'poll-msg-1', content: '1', removed: false, custom: true },
+});
 
-export const throwingCodec: DecodedMessageView = {
+export const undecodableMessage = xmtpMessage({
   id: 'msg-unknown-1',
   senderInboxId: 'inbox-carol',
-  sentNs: NS,
-  contentTypeId: 'example.com/somethingNew:9.9',
-  content: () => {
-    throw new Error('codec not registered');
-  },
+  contentTypeId: 'somethingNew',
+  content: undefined,
+  undecodable: true,
   fallback: 'fallback text',
-};
+});

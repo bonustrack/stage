@@ -11,9 +11,12 @@ import {
   type MessageId,
 } from '@xmtp/react-native-sdk';
 import { buildReply } from '@stage-labs/client/xmtp/builders';
-import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
+import { envelopeOf } from '@stage-labs/client/xmtp/envelope';
 import { convIdFromTopic, isMissingMlsState, pickNativeErrors } from '@stage-labs/client/xmtp/clientErrors';
-import { UNKNOWN_GROUP_POLICY, groupMetaPolicyOfSet, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
+import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
+import type { AppDataGroup } from '@stage-labs/client/xmtp/labels';
+import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
+import { nativeGroupMetaPolicy, nativeMessageOf } from './xmtp.sdk.native.shapes';
 import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
 import {
@@ -92,14 +95,6 @@ function nativeQuery(q: MessageQuery): NativeMessagesOptions {
   };
 }
 
-function contentOf(m: NativeMessage): unknown {
-  try {
-    return m.content();
-  } catch {
-    return undefined;
-  }
-}
-
 function conversationIdField(m: NativeMessage): string | undefined {
   return 'conversationId' in m && typeof m.conversationId === 'string' ? m.conversationId : undefined;
 }
@@ -133,7 +128,17 @@ async function groupAdminsOf(conv: Conversation): Promise<{ admins: string[]; su
 async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
   if (!(conv instanceof Group)) return UNKNOWN_GROUP_POLICY;
   const set = await conv.permissionPolicySet().catch(recover('xmtp.groupMetaPolicy', null));
-  return set ? groupMetaPolicyOfSet(set) : UNKNOWN_GROUP_POLICY;
+  return set ? nativeGroupMetaPolicy(set) : UNKNOWN_GROUP_POLICY;
+}
+
+function appDataGroupOf(conv: Conversation): AppDataGroup | null {
+  if (!(conv instanceof Group)) return null;
+  return {
+    id: conv.id,
+    sync: () => conv.sync(),
+    appData: async () => (await conv.appData()) || '',
+    updateAppData: (appData) => conv.updateAppData(appData),
+  };
 }
 
 async function streamAllMessages(
@@ -229,7 +234,7 @@ async function messageTarget(client: NativeClient, messageId: string): Promise<M
   const message = await client.conversations.findMessage(asMessageId(messageId));
   const convId = message ? (convIdFromTopic(message.topic) ?? conversationIdField(message)) : undefined;
   const conv = convId ? await client.conversations.findConversation(asConversationId(convId)) : undefined;
-  return message && conv ? { conv, contentTypeId: message.contentTypeId } : null;
+  return message && conv ? { conv, contentTypeId: shortTypeId(message.contentTypeId) } : null;
 }
 
 async function keyPackageErrors(_client: NativeClient, installationIds: string[]): Promise<(string | null | undefined)[]> {
@@ -331,6 +336,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   groupAdmins: groupAdminsOf,
   groupMetaPolicy: groupMetaPolicyOf,
   groupOps: (conv) => (conv instanceof Group ? conv : null),
+  appDataGroup: appDataGroupOf,
   addMembers: (conv, addresses) => asGroup(conv).addMembersByIdentity(identitiesOf(addresses)),
   removeMembers: (conv, addresses) => asGroup(conv).removeMembersByIdentity(identitiesOf(addresses)),
   leaveOp: (conv) => {
@@ -342,8 +348,8 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   consentOf: (conv) => conv.consentState(),
   setConsent: (conv, state) => conv.updateConsent(state),
   messages: (conv, query) => conv.messages(nativeQuery(query)),
-  rowOf: (m) => ({ id: m.id, content: contentOf(m), contentTypeId: m.contentTypeId, senderInboxId: m.senderInboxId, sentNs: m.sentNs }),
-  envelopeOf: (m, line) => mapDecodedToEnvelope(m, line),
+  rowOf: nativeMessageOf,
+  envelopeOf: (m, line) => envelopeOf(nativeMessageOf(m), line),
   sentNsOf: (m) => m.sentNs,
   convIdOf: (m) => convIdFromTopic(m.topic) ?? conversationIdField(m),
   deleteMessage: (conv, messageId) => conv.deleteMessage(asMessageId(messageId)),

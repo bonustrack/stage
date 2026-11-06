@@ -4,7 +4,6 @@ import {
   canReuseSavedClient,
   offlineOpenOptions,
   installationCreatedAtMs,
-  nativeInstallationCreatedAtMs,
   openPersistedClient,
   OPEN_ATTEMPTS,
 } from '../src/xmtp/clientConfig';
@@ -52,34 +51,6 @@ describe('installationCreatedAtMs', () => {
   test('null/undefined passthrough', () => {
     expect(installationCreatedAtMs(null)).toBeNull();
     expect(installationCreatedAtMs(undefined)).toBeNull();
-  });
-});
-
-describe('nativeInstallationCreatedAtMs', () => {
-  const MS = Date.UTC(2026, 8, 24, 10, 30);
-  test('Android hands over nanoseconds labelled as milliseconds', () => {
-    expect(nativeInstallationCreatedAtMs(MS * 1_000_000)).toBe(MS);
-  });
-  test('iOS hands over seconds since the epoch', () => {
-    expect(nativeInstallationCreatedAtMs(MS / 1_000)).toBe(MS);
-    expect(nativeInstallationCreatedAtMs(MS / 1_000 + 0.25)).toBe(MS + 250);
-  });
-  test('milliseconds and microseconds pass through as milliseconds', () => {
-    expect(nativeInstallationCreatedAtMs(MS)).toBe(MS);
-    expect(nativeInstallationCreatedAtMs(MS * 1_000)).toBe(MS);
-  });
-  test('every result is a valid date', () => {
-    for (const value of [MS * 1_000_000, MS * 1_000, MS, MS / 1_000]) {
-      expect(Number.isNaN(new Date(nativeInstallationCreatedAtMs(value) ?? Number.NaN).getTime())).toBe(false);
-    }
-  });
-  test('missing or nonsense values are unknown', () => {
-    expect(nativeInstallationCreatedAtMs(undefined)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(null)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(0)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(-5)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(Number.NaN)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs('1700000000')).toBeUndefined();
   });
 });
 

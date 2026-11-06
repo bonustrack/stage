@@ -10,7 +10,7 @@ import {
   writeChannelField,
   writeLabels,
   type ChannelField,
-  type Group,
+  type AppDataGroup,
 } from '../src/xmtp/labels';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { appDataGroup } from './helpers';
@@ -40,10 +40,10 @@ describe('channel status and priority', () => {
     expect(priorityOf('Other')).toBeNull();
   });
 
-  test('reads both SDK appData shapes and keeps old channels compatible', async () => {
+  test('reads the app data and keeps old channels compatible', async () => {
     const raw = JSON.stringify({ ...kept, status: ' Needs review ', priority: 'High' });
     const native = appDataGroup(raw).group;
-    const web: Group = { appData: raw, updateAppData: () => Promise.resolve() };
+    const web: AppDataGroup = { appData: () => Promise.resolve(raw), updateAppData: () => Promise.resolve() };
     for (const group of [native, web]) {
       expect(await groupTagsOf(group)).toEqual({
         labels: ['Todo'],
@@ -90,10 +90,11 @@ describe('channel status and priority', () => {
   test.each([null, 'Doing'])('a guarded status change to %s preserves a newer status found by sync', async (next) => {
     const writes: string[] = [];
     const fresh = JSON.stringify({ ...kept, status: 'Done' });
-    const group: Group = {
-      appData: JSON.stringify({ ...kept, status: 'Todo' }),
+    let current = JSON.stringify({ ...kept, status: 'Todo' });
+    const group: AppDataGroup = {
+      appData: () => Promise.resolve(current),
       sync: () => {
-        group.appData = fresh;
+        current = fresh;
         return Promise.resolve();
       },
       updateAppData: (value) => {
@@ -102,7 +103,7 @@ describe('channel status and priority', () => {
       },
     };
     await expect(writeChannelField(group, 'status', next, 'Todo')).rejects.toThrow('The status changed. Try again.');
-    expect(group.appData).toBe(fresh);
+    expect(await group.appData()).toBe(fresh);
     expect(writes).toEqual([]);
   });
 
@@ -147,7 +148,7 @@ describe('channel status and priority', () => {
   });
 
   test.each(fields)('reports a permission error for %s', async (field) => {
-    const group: Group = { appData: '', updateAppData: () => Promise.reject(new Error('not authorized')) };
+    const group: AppDataGroup = { appData: () => Promise.resolve(''), updateAppData: () => Promise.reject(new Error('not authorized')) };
     const failure = writeChannelField(group, field, 'High');
     await expect(failure).rejects.toBeInstanceOf(LabelPermissionError);
     await expect(failure).rejects.toThrow(`You don't have permission to edit the ${field} in this channel.`);

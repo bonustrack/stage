@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { categoryOf, groupTagsOf, LabelPermissionError, writeChannelField, writeLabels, type Group } from '../src/xmtp/labels';
+import { categoryOf, groupTagsOf, LabelPermissionError, writeChannelField, writeLabels, type AppDataGroup } from '../src/xmtp/labels';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { appDataGroup } from './helpers';
 
@@ -19,17 +19,13 @@ describe('channel category', () => {
         appDataGroup(blob({ labels: ['Todo'], category: 'Work', assigned: [bob.toUpperCase().replace('0X', '0x')] })).group,
       ),
     ).toEqual({ labels: ['Todo'], category: 'Work', status: null, priority: null, assigned: [bob] });
-    expect(await groupTagsOf({ appData: blob({ category: 'Ops' }), updateAppData: () => Promise.resolve() })).toEqual({
-      labels: [],
-      category: 'Ops',
-      status: null,
-      priority: null,
-      assigned: [],
-    });
+    expect(
+      await groupTagsOf({ appData: () => Promise.resolve(blob({ category: 'Ops' })), updateAppData: () => Promise.resolve() }),
+    ).toEqual({ labels: [], category: 'Ops', status: null, priority: null, assigned: [] });
     for (const raw of ['', '{', '[]', blob({ labels: ['Todo'] }), blob({ category: ['Work'] })]) {
       expect((await groupTagsOf(appDataGroup(raw).group)).category).toBeNull();
     }
-    expect(await groupTagsOf({})).toEqual({ labels: [], category: null, status: null, priority: null, assigned: [] });
+    expect(await groupTagsOf(null)).toEqual({ labels: [], category: null, status: null, priority: null, assigned: [] });
   });
 
   test('sets, changes and clears one category while keeping the other fields', async () => {
@@ -46,7 +42,7 @@ describe('channel category', () => {
   });
 
   test('turns a permission failure into a readable error', async () => {
-    const group: Group = { appData: '', updateAppData: () => Promise.reject(new Error('not authorized')) };
+    const group: AppDataGroup = { appData: () => Promise.resolve(''), updateAppData: () => Promise.reject(new Error('not authorized')) };
     const failure = writeChannelField(group, 'category', 'Work');
     await expect(failure).rejects.toBeInstanceOf(LabelPermissionError);
     await expect(failure).rejects.toThrow("You don't have permission to edit the project in this channel.");

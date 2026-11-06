@@ -112,7 +112,7 @@ async function gatherGroupRowData(conv: Conversation, members: ConvMembers): Pro
   if (members.peerAddress) {
     return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, tags: NO_TAGS };
   }
-  const [groupMeta, tags] = await Promise.all([sdk.groupInfo(conv), groupTagsOf(conv)]);
+  const [groupMeta, tags] = await Promise.all([sdk.groupInfo(conv), groupTagsOf(sdk.appDataGroup(conv))]);
   return { memberAddresses: members.otherAddresses, groupMeta, tags };
 }
 

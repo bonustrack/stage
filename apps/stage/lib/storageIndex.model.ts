@@ -1,6 +1,7 @@
-import { deleteTargetOfContent, isDeleteRequestType, isDeletedPlaceholderType, shortTypeId } from '@stage-labs/client/xmtp/deleteMessage';
+import { deleteTargetOfContent, isDeleteRequestType, isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { remoteAttachmentOfReply } from '@stage-labs/client/xmtp/envelope';
+import { validRemoteAttachment } from '@stage-labs/client/xmtp/envelope';
+import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
 
 export const FILE_PAGE_SIZE = 20;
 export const DELETED_LIMIT = 2_000;
@@ -66,9 +67,8 @@ function base64Bytes(data: string): number {
   return Math.max(0, Math.floor((data.length * 3) / 4) - padding);
 }
 
-function inlineSize(content: { content?: unknown; data?: unknown }): number {
-  if (content.content instanceof Uint8Array) return content.content.length;
-  return typeof content.data === 'string' ? base64Bytes(content.data) : Number.NaN;
+function inlineSize(content: { dataB64?: unknown }): number {
+  return typeof content.dataB64 === 'string' ? base64Bytes(content.dataB64) : Number.NaN;
 }
 
 function objectOf(content: unknown): Record<string, unknown> | null {
@@ -77,7 +77,7 @@ function objectOf(content: unknown): Record<string, unknown> | null {
 
 function partsOf(typeId: string, content: Record<string, unknown>): FilePart[] {
   if (typeId === 'reply') {
-    const remote = remoteAttachmentOfReply(content);
+    const remote = validRemoteAttachment(content.remote);
     return remote === undefined ? [] : [{ name: remote.filename, size: byteCount(remote.contentLength) }];
   }
   if (typeId === 'attachment') return [{ name: content.filename, size: inlineSize(content) }];

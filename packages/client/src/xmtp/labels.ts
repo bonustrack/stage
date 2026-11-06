@@ -10,26 +10,11 @@ export class LabelPermissionError extends Error {
   }
 }
 
-interface GroupLike {
+export interface AppDataGroup {
   id?: string;
   sync?: () => Promise<unknown>;
-  appData?: (() => Promise<string>) | string;
-  updateAppData?: (appData: string) => Promise<void>;
-}
-
-export interface Group extends GroupLike {
-  updateAppData: (appData: string) => Promise<void>;
-}
-
-export function asGroup(conv: unknown): Group | null {
-  const g = conv as GroupLike;
-  const readableAppData = typeof g?.appData === 'function' || typeof g?.appData === 'string' || g?.appData === undefined;
-  return g && typeof g.updateAppData === 'function' && readableAppData ? (g as Group) : null;
-}
-
-async function readAppData(group: Group): Promise<string> {
-  if (typeof group.appData === 'function') return (await group.appData()) ?? '';
-  return group.appData ?? '';
+  appData: () => Promise<string>;
+  updateAppData: (appData: string) => Promise<unknown>;
 }
 
 export function cleanLabel(raw: string): string {
@@ -99,11 +84,10 @@ export interface GroupTags {
 
 export const NO_TAGS: GroupTags = { labels: [], category: null, status: null, priority: null, assigned: [] };
 
-export async function groupTagsOf(conv: unknown): Promise<GroupTags> {
-  const group = asGroup(conv);
+export async function groupTagsOf(group: AppDataGroup | null): Promise<GroupTags> {
   if (!group) return NO_TAGS;
   try {
-    const blob = parseBlob(await readAppData(group));
+    const blob = parseBlob(await group.appData());
     return {
       labels: readLabels(blob),
       category: categoryOf(blob.category),
@@ -150,7 +134,7 @@ export function renameLabels(labels: string[], from: string, to: string): string
   });
 }
 
-const appDataWrites = new Map<string | Group, Promise<void>>();
+const appDataWrites = new Map<string | AppDataGroup, Promise<void>>();
 let appDataEpoch = 0;
 
 export function clearAppDataWrites(): void {
@@ -158,16 +142,16 @@ export function clearAppDataWrites(): void {
   appDataWrites.clear();
 }
 
-async function writeBlob(group: Group, patch: (blob: Record<string, unknown>) => Promise<Record<string, unknown>>): Promise<void> {
+async function writeBlob(group: AppDataGroup, patch: (blob: Record<string, unknown>) => Promise<Record<string, unknown>>): Promise<void> {
   const key = group.id ?? group;
   const previous = appDataWrites.get(key);
   const epoch = appDataEpoch;
   const task = async (): Promise<void> => {
     if (epoch !== appDataEpoch) throw new Error('Channel edit canceled.');
     await group.sync?.();
-    const existing = parseBlob(await readAppData(group));
+    const existing = parseBlob(await group.appData());
     const changed = await patch(existing);
-    const latest = parseBlob(await readAppData(group));
+    const latest = parseBlob(await group.appData());
     if (epoch !== appDataEpoch) throw new Error('Channel edit canceled.');
     await group.updateAppData(JSON.stringify({ ...latest, v: 1, ...changed }));
   };
@@ -180,7 +164,11 @@ async function writeBlob(group: Group, patch: (blob: Record<string, unknown>) =>
   }
 }
 
-async function writeTags(group: Group, what: string, patch: (blob: Record<string, unknown>) => Record<string, unknown>): Promise<void> {
+async function writeTags(
+  group: AppDataGroup,
+  what: string,
+  patch: (blob: Record<string, unknown>) => Record<string, unknown>,
+): Promise<void> {
   try {
     await writeBlob(group, (existing) => Promise.resolve(patch(existing)));
   } catch (e) {
@@ -189,7 +177,7 @@ async function writeTags(group: Group, what: string, patch: (blob: Record<string
   }
 }
 
-export async function writeLabels(group: Group, fn: (labels: string[]) => string[]): Promise<string[]> {
+export async function writeLabels(group: AppDataGroup, fn: (labels: string[]) => string[]): Promise<string[]> {
   let next: string[] = [];
   await writeTags(group, 'labels', (existing) => {
     next = readLabels({ labels: fn(readLabels(existing)) });
@@ -199,7 +187,7 @@ export async function writeLabels(group: Group, fn: (labels: string[]) => string
 }
 
 export async function writeChannelField(
-  group: Group,
+  group: AppDataGroup,
   field: ChannelField,
   value: string | null,
   expected?: string | null,
@@ -223,12 +211,11 @@ export function assignedAddresses(value: unknown): string[] {
   return [...new Set(validMemberAddresses(stringList(value)).map((address) => address.toLowerCase()))];
 }
 
-export async function groupAssignedOf(conv: unknown): Promise<string[]> {
-  const group = asGroup(conv);
-  return group ? assignedAddresses(parseBlob(await readAppData(group)).assigned) : [];
+export async function groupAssignedOf(group: AppDataGroup | null): Promise<string[]> {
+  return group ? assignedAddresses(parseBlob(await group.appData()).assigned) : [];
 }
 
-export async function writeAssigned(group: Group, assigned: string[], members: () => Promise<string[]>): Promise<string[]> {
+export async function writeAssigned(group: AppDataGroup, assigned: string[], members: () => Promise<string[]>): Promise<string[]> {
   const next = assignedAddresses(assigned);
   if (next.length !== new Set(assigned.map((address) => address.trim().toLowerCase())).size) {
     throw new Error('Choose valid channel members.');

@@ -1,5 +1,6 @@
 import type { OutputSchema } from '../../validate';
 import { jsonCodec, type JsonCodec } from '../jsonCodec';
+import { shortTypeId } from '../typeId';
 
 export interface SyncMessage {
   contentTypeId: string | undefined;
@@ -23,7 +24,7 @@ interface SyncKindSpec<T, R> {
 
 export function defineSyncKind<T, R>(spec: SyncKindSpec<T, R>): SyncKindDef<T, R> {
   const contentType = { authorityId: 'stage.box', typeId: spec.typeId, versionMajor: 1, versionMinor: 0 };
-  const matches = (contentTypeId: string | undefined): boolean => typeof contentTypeId === 'string' && contentTypeId.includes(spec.typeId);
+  const matches = (contentTypeId: string | undefined): boolean => shortTypeId(contentTypeId) === spec.typeId;
   const stateOf = (message: SyncMessage): T[] => {
     if (!matches(message.contentTypeId)) return [];
     const parsed = spec.schema.safeParse(message.content);

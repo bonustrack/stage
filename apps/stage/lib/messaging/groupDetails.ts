@@ -10,7 +10,7 @@ export async function fetchConvDetails(convId: string): Promise<ConvDetails> {
   if (!conv || !sdk.isGroup(conv)) return NO_DETAILS;
   const [info, assigned] = await Promise.all([
     sdk.groupInfo(conv),
-    groupAssignedOf(conv).catch(recover<string[] | null>('xmtp.groupAssigned', null)),
+    groupAssignedOf(sdk.appDataGroup(conv)).catch(recover<string[] | null>('xmtp.groupAssigned', null)),
   ]);
   return { description: info.description, assigned: assigned ?? [], assignedReady: assigned !== null };
 }

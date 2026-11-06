@@ -10,12 +10,13 @@ import {
   STAGE_DELETE_TYPE_ID,
   deletedByOfContent,
   deletedTextOf,
-  shortTypeId,
 } from './deleteMessage';
+import { shortTypeId } from './typeId';
 import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
 import { parseOpenVote, parseVoteKey } from './poll-tally';
 import { paymentRequestPreview, receiptTitle, type TransactionReferenceContent, type WalletSendCallsContent } from './tx';
 import { frameActionText } from './frame';
+import type { CanonicalReply } from './message';
 interface FieldChange {
   fieldName: string;
   oldValue?: string;
@@ -40,10 +41,10 @@ function describeFieldChange(f: FieldChange): string {
   return `changed ${f.fieldName.replace(/_/g, ' ')}`;
 }
 
-const GROUP_UPDATE_TYPE_IDS: readonly string[] = ['group_updated', 'groupUpdated'];
+export const GROUP_UPDATE_TYPE_ID = 'group_updated';
 
 export function isGroupUpdateTypeId(typeId: string | undefined): boolean {
-  return typeId !== undefined && GROUP_UPDATE_TYPE_IDS.includes(typeId);
+  return typeId === GROUP_UPDATE_TYPE_ID;
 }
 
 export const LEAVE_REQUEST_TYPE_ID = 'leave_request';
@@ -114,9 +115,8 @@ export function humanizeMentions(text: string): string {
 }
 
 function previewReply(decoded: unknown): string {
-  const r = decoded as { content?: { text?: string } | string };
-  if (typeof r.content === 'string') return humanizeMentions(r.content);
-  return r.content?.text ? humanizeMentions(r.content.text) : '[reply]';
+  const text = (decoded as CanonicalReply | null)?.text;
+  return text ? humanizeMentions(text) : '[reply]';
 }
 
 function previewPoll(decoded: unknown): string {
@@ -158,8 +158,7 @@ function previewFrameAction(decoded: unknown): string {
 }
 
 const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
-  group_updated: (decoded) => humanizeGroupUpdated(decoded as GroupUpdatedContent),
-  groupUpdated: (decoded) => humanizeGroupUpdated(decoded as GroupUpdatedContent),
+  [GROUP_UPDATE_TYPE_ID]: (decoded) => humanizeGroupUpdated(decoded as GroupUpdatedContent),
   [LEAVE_REQUEST_TYPE_ID]: () => LEFT_CHANNEL_TEXT,
   reaction: previewReaction,
   poll: previewPoll,

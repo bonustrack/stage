@@ -8,7 +8,7 @@ import type { XmtpEnv } from './xmtp.types';
 import { loadOrCreateDbKey, deleteDbKey, deleteDbFiles, ensureDbDir, wipeXmtpStore } from './xmtp.dbkey';
 import { createClientForAccount, finalizeClient, isStoreCorruption } from './xmtp.recover';
 import { makeClientLifecycle } from './xmtp.client.core';
-import { nativeInstallationCreatedAtMs } from '@stage-labs/client/xmtp/clientConfig';
+import { nativeInstallationCreatedAtMs } from './xmtp.sdk.native.shapes';
 import { forgetPushAccount, recordPushAccount } from './xmtp.dbkeyFs';
 import { forgetStorageIndex } from './storageIndexStore';
 import { registerPushWithServer } from './pushRegister';

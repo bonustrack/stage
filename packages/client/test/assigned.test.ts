@@ -14,14 +14,14 @@ describe('channel assignees', () => {
     expect(assignedAddresses({ assigned: [A] })).toEqual([]);
   });
 
-  test('reads both SDK appData shapes and defaults old channels to no assignees', async () => {
-    const stringGroup = { appData: JSON.stringify({ assigned: [A, B] }), updateAppData: () => Promise.resolve() };
+  test('reads the app data and defaults old channels to no assignees', async () => {
+    const stringGroup = { appData: () => Promise.resolve(JSON.stringify({ assigned: [A, B] })), updateAppData: () => Promise.resolve() };
     expect(await groupAssignedOf(stringGroup)).toEqual([A, B]);
     expect(await groupAssignedOf(appDataGroup(JSON.stringify({ assigned: [A] })).group)).toEqual([A]);
     for (const raw of ['', '{', '[]', 'null', '{"labels":["Todo"]}']) {
       expect(await groupAssignedOf(appDataGroup(raw).group)).toEqual([]);
     }
-    expect(await groupAssignedOf({})).toEqual([]);
+    expect(await groupAssignedOf(null)).toEqual([]);
   });
 
   test('syncs before merging and preserves labels, links and unknown fields', async () => {

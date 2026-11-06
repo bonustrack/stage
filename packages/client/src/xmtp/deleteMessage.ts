@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
+import { shortTypeId } from './typeId';
 
 export const DELETE_MESSAGE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'xmtp.org',
@@ -136,11 +137,6 @@ export const DELETE_MESSAGE_CODEC = {
   shouldPush: (): boolean => false,
 };
 
-export function shortTypeId(contentTypeId: string | undefined | null): string {
-  if (!contentTypeId) return '';
-  return contentTypeId.split('/').pop()?.split(':')[0] ?? contentTypeId;
-}
-
 export function isDeleteRequestType(contentTypeId: string | undefined | null): boolean {
   const typeId = shortTypeId(contentTypeId);
   return typeId === DELETE_MESSAGE_TYPE_ID || typeId === STAGE_DELETE_TYPE_ID;
@@ -159,9 +155,6 @@ export function deleteTargetOfContent(content: unknown): string | undefined {
   return parsed.success ? parsed.data.messageId : undefined;
 }
 
-const ADMIN_VALUES: readonly unknown[] = [1, 'Admin', 'admin'];
-
 export function deletedByOfContent(content: unknown): DeletedBy {
-  const by = (content as { deletedBy?: unknown } | null | undefined)?.deletedBy;
-  return ADMIN_VALUES.includes(by) ? 'admin' : 'sender';
+  return (content as { deletedBy?: unknown } | null | undefined)?.deletedBy === 'admin' ? 'admin' : 'sender';
 }

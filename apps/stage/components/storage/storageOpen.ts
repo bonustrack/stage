@@ -1,5 +1,6 @@
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
-import { isDeletedPlaceholderType, shortTypeId } from '@stage-labs/client/xmtp/deleteMessage';
+import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
+import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { sdk } from '../../lib/xmtp.sdk';
 import { resolveRemoteAttachment } from '../../lib/xmtp.attachments';

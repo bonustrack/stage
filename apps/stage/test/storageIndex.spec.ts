@@ -18,6 +18,9 @@ import {
 } from '../lib/storageIndex.model';
 import { ScanStopped, scanConversations, scanQuery, type ScanSink, type ScanSource } from '../lib/storageScan.model';
 import type { MessageQuery } from '../lib/xmtp.sdk.core';
+import { nativeMessageOf } from '../lib/xmtp.sdk.native.shapes';
+import { webMessageOf } from '../lib/xmtp.sdk.web.message';
+import type { XmtpMessage } from '@stage-labs/client/xmtp/message';
 
 const ME = 'inbox-me';
 const PEER = 'inbox-peer';
@@ -33,6 +36,10 @@ function message(id: string, fields: Partial<ScannedMessage> = {}): ScannedMessa
     content: { attachments: [{ filename: `${id}.pdf`, contentLength: '2048', url: 'https://x' }] },
     ...fields,
   };
+}
+
+function scanned(m: XmtpMessage): ScannedMessage {
+  return { ...m, convId: 'c1' };
 }
 
 function file(messageId: string, sentMs: number, index = 0, convId = 'c1'): StoredFile {
@@ -58,8 +65,8 @@ describe('storage index model', () => {
       [1, 'attachment-2', 0],
       [2, 'attachment-3', 30],
     ]);
-    const webInline = message('m2', { contentTypeId: 'attachment', content: { filename: 'v.m4a', content: new Uint8Array(5) } });
-    const nativeInline = message('m3', { contentTypeId: 'xmtp.org/attachment:1.0', content: { filename: 'n.txt', data: 'AAAAAA==' } });
+    const webInline = message('m2', { contentTypeId: 'attachment', content: { filename: 'v.m4a', dataB64: 'AAAAAAA=' } });
+    const nativeInline = message('m3', { contentTypeId: 'attachment', content: { filename: 'n.txt', dataB64: 'AAAAAA==' } });
     const single = message('m4', { contentTypeId: 'remoteStaticAttachment', content: { url: 'https://x', contentLength: 99 } });
     expect(filesOfMessage(webInline)[0]?.size).toBe(5);
     expect(filesOfMessage(nativeInline)[0]?.size).toBe(4);
@@ -77,27 +84,40 @@ describe('storage index model', () => {
       nonce: 'nonce',
       contentLength: '4097',
     };
-    const native = message('native', {
-      contentTypeId: 'xmtp.org/reply:1.0',
-      content: { reference: 'original', content: { remoteAttachment: remote } },
-    });
-    const web = message('web', {
-      contentTypeId: 'reply',
-      content: {
-        referenceId: 'original',
-        content: { ...remote, secret: new Uint8Array([1]), salt: new Uint8Array([2]), nonce: new Uint8Array([3]), contentLength: 4097 },
-        contentType: async () => ({ typeId: 'remoteStaticAttachment' }),
-      },
-    });
+    const native = scanned(
+      nativeMessageOf({
+        id: 'native',
+        senderInboxId: ME,
+        sentNs: 1_700_000_000_000 * MS,
+        contentTypeId: 'xmtp.org/reply:1.0',
+        content: () => ({ reference: 'original', content: { remoteAttachment: remote } }),
+      }),
+    );
+    const web = scanned(
+      webMessageOf({
+        id: 'web',
+        senderInboxId: ME,
+        sentAtNs: BigInt(1_700_000_000_000 * MS),
+        sentAt: new Date(1_700_000_000_000),
+        contentType: { typeId: 'reply' },
+        content: {
+          referenceId: 'original',
+          content: { ...remote, secret: new Uint8Array([1]), salt: new Uint8Array([2]), nonce: new Uint8Array([3]), contentLength: 4097 },
+          contentType: async () => ({ typeId: 'remoteStaticAttachment' }),
+        },
+      }),
+    );
     for (const entry of [native, web])
       expect(filesOfMessage(entry)).toEqual([
         { messageId: entry.id, convId: 'c1', index: 0, name: 'message.txt', size: 4097, sentMs: 1_700_000_000_000 },
       ]);
+    expect(filesOfMessage(message('text-reply', { contentTypeId: 'reply', content: { reference: 'original', text: 'hello' } }))).toEqual(
+      [],
+    );
     expect(
-      filesOfMessage(message('text-reply', { contentTypeId: 'reply', content: { referenceId: 'original', content: 'hello' } })),
-    ).toEqual([]);
-    expect(
-      filesOfMessage(message('incomplete', { contentTypeId: 'reply', content: { content: { ...remote, nonce: undefined } } })),
+      filesOfMessage(
+        message('incomplete', { contentTypeId: 'reply', content: { reference: '', remote: { ...remote, nonce: undefined } } }),
+      ),
     ).toEqual([]);
     expect(findingsOf([native, { ...web, senderInboxId: PEER }], ME).files.map((f) => f.messageId)).toEqual(['native']);
   });

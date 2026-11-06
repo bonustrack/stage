@@ -15,7 +15,6 @@ import {
   mapUpdateGroupError,
   updateGroupMetaWith,
   UNKNOWN_GROUP_POLICY,
-  groupMetaPolicyOfSet,
   missingInstallationIds,
   type GroupMetaPolicy,
 } from '../src/xmtp/groups';
@@ -201,21 +200,6 @@ describe('groupRoleOf', () => {
     expect(groupRoleOf('ownerinbox', staff)).toBe('owner');
     expect(groupRoleOf('ADMININBOX', staff)).toBe('admin');
     expect(groupRoleOf('someone', staff)).toBe('member');
-  });
-});
-
-describe('groupMetaPolicyOfSet', () => {
-  test('reads name, description and image from their own policies', () => {
-    expect(
-      groupMetaPolicyOfSet({
-        updateGroupNamePolicy: 'admin',
-        updateGroupDescriptionPolicy: 'deny',
-        updateGroupImagePolicy: 'superAdmin',
-        updateAppDataPolicy: 'admin',
-        addMemberPolicy: 'allow',
-        removeMemberPolicy: 'admin',
-      }),
-    ).toEqual({ name: 'admin', description: 'deny', image: 'superAdmin', appData: 'admin', addMember: 'allow', removeMember: 'admin' });
   });
 });
 

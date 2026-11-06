@@ -1,7 +1,7 @@
 import type { HistoryEntry } from '../types';
 import { isSystemEntry } from './envelope';
 import { LEAVE_REQUEST_TYPE_ID, isGroupUpdateTypeId } from './humanize';
-import { XMTP_USER_PREFIX } from './line';
+import { inboxIdOfUri } from './line';
 import {
   DELETED_MESSAGE_TYPE_ID,
   DELETE_MESSAGE_TYPE_ID,
@@ -9,9 +9,9 @@ import {
   deletedByOfContent,
   isDeleteRequestType,
   isDeletedPlaceholderType,
-  shortTypeId,
   type DeletedBy,
 } from './deleteMessage';
+import { shortTypeId } from './typeId';
 import type { StreamedMessage } from './summarizeRow';
 
 interface DeletionPayload {
@@ -50,10 +50,6 @@ export function isDeletableEntry(entry: HistoryEntry): boolean {
   return !isSystemEntry(entry) && !isDeleteRequest(entry) && !isDeletedPlaceholder(entry);
 }
 
-function inboxIdOf(from: string): string {
-  return from.startsWith(XMTP_USER_PREFIX) ? from.slice(XMTP_USER_PREFIX.length) : '';
-}
-
 function deleteAuthority(sameSender: boolean, deleterInboxId: string, superAdmins: ReadonlySet<string>): DeletedBy | null {
   if (sameSender) return 'sender';
   return deleterInboxId !== '' && superAdmins.has(deleterInboxId.toLowerCase()) ? 'admin' : null;
@@ -71,13 +67,13 @@ function requestDeletion(
   const target = deletionPayloadOf(request)?.deletes;
   const original = target === undefined ? undefined : byId.get(target);
   if (target === undefined || original === undefined || !isDeletableEntry(original)) return null;
-  const by = deleteAuthority(original.from === request.from, inboxIdOf(request.from), superAdmins);
+  const by = deleteAuthority(original.from === request.from, inboxIdOfUri(request.from), superAdmins);
   return by === null ? null : [target, by];
 }
 
 function entryDeletion(entry: HistoryEntry, rights: DeleteRights): DeletedBy | null {
   if (isDeletedPlaceholder(entry)) return deletedByOf(entry);
-  if (rights.ownDeletes?.has(entry.id)) return ownDeleteBy(inboxIdOf(entry.from), rights.selfInboxId);
+  if (rights.ownDeletes?.has(entry.id)) return ownDeleteBy(inboxIdOfUri(entry.from), rights.selfInboxId);
   return null;
 }
 

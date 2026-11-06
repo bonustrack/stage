@@ -9,21 +9,12 @@ import {
   isDeletedPlaceholderType,
   isXmtpDeletableType,
 } from '../src/xmtp/deleteMessage';
-import { envelopeFromContent, mapDecodedToEnvelope } from '../src/xmtp/envelope';
+import { envelopeOf } from '../src/xmtp/envelope';
+import { xmtpMessage } from './fixtures/decoded-messages';
 import { previewOfXmtpContent } from '../src/xmtp/humanize';
 import { countUnreadEntries } from '../src/xmtp/summarizeRow';
-import type { HistoryEntry } from '../src/types';
 
 const MESSAGE_ID = 'c2c22efb7a1d9b0e4f2c1a3b5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80';
-
-const base: HistoryEntry = {
-  id: 'm1',
-  ts: '2026-09-30T00:00:00.000Z',
-  station: 'xmtp',
-  line: 'stage://xmtp/c',
-  from: 'xmtp:alice',
-  to: 'c',
-};
 
 describe('XIP-76 delete message codec', () => {
   test('encodes the message id as protobuf field 1, like the probe that worked on the dev network', () => {
@@ -109,53 +100,27 @@ describe('which messages XMTP itself can delete', () => {
 
 describe('delete entries in the feed', () => {
   test('a native delete request becomes a hidden request that points at its target', () => {
-    const e = mapDecodedToEnvelope(
-      { id: 'd1', senderInboxId: 'alice', sentNs: 1, contentTypeId: 'xmtp.org/deleteMessage:1.0', content: () => ({ messageId: 'm1' }) },
-      'stage://xmtp/c',
-    );
+    const e = envelopeOf(xmtpMessage({ id: 'd1', contentTypeId: 'deleteMessage', content: { messageId: 'm1' } }), 'stage://xmtp/c');
     expect(e.payload).toEqual({ contentType: 'deleteMessage', deletes: 'm1' });
     expect(e.text).toBeUndefined();
   });
 
   test('a Stage delete request becomes the same hidden request, on native and on web', () => {
-    const native = mapDecodedToEnvelope(
-      { id: 'd1', senderInboxId: 'alice', sentNs: 1, contentTypeId: 'stage.box/deleteRequest:1.0', content: () => ({ messageId: 'm1' }) },
-      'stage://xmtp/c',
-    );
-    expect(native.payload).toEqual({ contentType: 'deleteMessage', deletes: 'm1' });
-    expect(native.text).toBeUndefined();
-    expect(envelopeFromContent(base, 'deleteRequest', { messageId: 'm1' }, undefined).payload).toEqual({
-      contentType: 'deleteMessage',
-      deletes: 'm1',
-    });
+    const request = envelopeOf(xmtpMessage({ id: 'd1', contentTypeId: 'deleteRequest', content: { messageId: 'm1' } }), 'stage://xmtp/c');
+    expect(request.payload).toEqual({ contentType: 'deleteMessage', deletes: 'm1' });
+    expect(request.text).toBeUndefined();
   });
 
-  test('a web placeholder keeps who deleted it, number or string', () => {
-    expect(envelopeFromContent(base, 'deletedMessage', { deletedBy: 0 }, undefined).payload).toEqual({
-      contentType: 'deletedMessage',
-      deletedBy: 'sender',
-    });
-    expect(envelopeFromContent(base, 'deletedMessage', { deletedBy: 'Sender' }, undefined).payload).toEqual({
-      contentType: 'deletedMessage',
-      deletedBy: 'sender',
-    });
-    expect(envelopeFromContent(base, 'deletedMessage', { deletedBy: 1, adminInboxId: 'x' }, undefined).payload).toEqual({
-      contentType: 'deletedMessage',
-      deletedBy: 'admin',
-    });
-    expect(envelopeFromContent(base, 'deletedMessage', { deletedBy: 'Admin' }, undefined).payload).toEqual({
-      contentType: 'deletedMessage',
-      deletedBy: 'admin',
-    });
-    expect(envelopeFromContent(base, 'deletedMessage', {}, undefined).payload).toEqual({
-      contentType: 'deletedMessage',
-      deletedBy: 'sender',
-    });
+  test('a placeholder keeps who deleted it', () => {
+    const placeholder = (content: unknown) => envelopeOf(xmtpMessage({ contentTypeId: 'deletedMessage', content }), 'stage://xmtp/c');
+    expect(placeholder({ deletedBy: 'sender' }).payload).toEqual({ contentType: 'deletedMessage', deletedBy: 'sender' });
+    expect(placeholder({ deletedBy: 'admin' }).payload).toEqual({ contentType: 'deletedMessage', deletedBy: 'admin' });
+    expect(placeholder({}).payload).toEqual({ contentType: 'deletedMessage', deletedBy: 'sender' });
   });
 
   test('chat list preview reads Message deleted, or by an admin', () => {
-    expect(previewOfXmtpContent({ deletedBy: 0 }, 'deletedMessage')).toBe(DELETED_MESSAGE_TEXT);
-    expect(previewOfXmtpContent({ deletedBy: 1, adminInboxId: 'x' }, 'deletedMessage')).toBe('Message deleted by an admin');
+    expect(previewOfXmtpContent({ deletedBy: 'sender' }, 'deletedMessage')).toBe(DELETED_MESSAGE_TEXT);
+    expect(previewOfXmtpContent({ deletedBy: 'admin' }, 'deletedMessage')).toBe('Message deleted by an admin');
     expect(previewOfXmtpContent({ messageId: 'm1' }, 'xmtp.org/deleteMessage:1.0')).toBe(DELETED_MESSAGE_TEXT);
     expect(previewOfXmtpContent({ messageId: 'm1' }, 'stage.box/deleteRequest:1.0')).toBe(DELETED_MESSAGE_TEXT);
   });

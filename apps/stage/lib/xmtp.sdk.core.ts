@@ -2,6 +2,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { GroupMetaPolicy, GroupMetaWriters } from '@stage-labs/client/xmtp/groups';
+import type { AppDataGroup } from '@stage-labs/client/xmtp/labels';
 import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 import { INACTIVE_SEND_MESSAGE, readableSendError } from '@stage-labs/client/xmtp/clientErrors';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
@@ -128,6 +129,7 @@ interface ConvPrimitives<C, M> {
   groupAdmins: (conv: C) => Promise<GroupAdmins>;
   groupMetaPolicy: (conv: C) => Promise<GroupMetaPolicy>;
   groupOps: (conv: C) => GroupMetaWriters | null;
+  appDataGroup: (conv: C) => AppDataGroup | null;
   addMembers: (conv: C, addresses: string[]) => Promise<unknown>;
   removeMembers: (conv: C, addresses: string[]) => Promise<unknown>;
   leaveOp: (conv: C) => (() => Promise<unknown>) | null;

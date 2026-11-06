@@ -17,13 +17,11 @@ import {
   type Identifier,
   type InboxState,
   type Reaction,
-  type Attachment as AttachmentContent,
 } from '@xmtp/browser-sdk';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { bytesToBase64 } from '@stage-labs/client/text/base64';
-import { envelopeFromContent, type EnvelopeOptions } from '@stage-labs/client/xmtp/envelope';
-import { consentStateToString } from '@stage-labs/client/xmtp/consent';
+import { envelopeOf } from '@stage-labs/client/xmtp/envelope';
+import type { AppDataGroup } from '@stage-labs/client/xmtp/labels';
 import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { encodeDeleteMessage } from '@stage-labs/client/xmtp/deleteMessage';
 import { xmtpClient } from './xmtp.client.web';
@@ -31,8 +29,8 @@ import { getCachedXmtpClient } from './xmtp.state.web';
 import { withNestedReactions } from './feedOrder.model';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import { webGroupMetaPolicy } from './xmtp.sdk.web.groupPolicy';
-import { webConsentState, webListOptions } from './xmtp.sdk.web.consent';
-import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';
+import { webConsentState, webListOptions, xmtpConsentOf } from './xmtp.sdk.web.consent';
+import { webMessageOf } from './xmtp.sdk.web.message';
 import {
   NO_GROUP_ADMINS,
   NO_GROUP_INFO,
@@ -59,33 +57,18 @@ const ARCHIVE_OPTIONS: ArchiveOptions = {
   excludeDisappearingMessages: false,
 };
 
-const webEnvelopeOptions: EnvelopeOptions = {
-  reactionRemoved: (action) => action === ReactionAction.Removed || action === 'removed',
-  reactionCustom: (schema) => schema === ReactionSchema.Custom || schema === 'custom',
-  reactionCustomPayloadExtras: false,
-  replyReferenceOf: (decoded) => (decoded as { referenceId: string }).referenceId,
-  replyTextOf: (decoded) => {
-    const c = (decoded as { content: unknown }).content;
-    return typeof c === 'string' ? c : undefined;
-  },
-  attachmentNameOf: (decoded) => (decoded as AttachmentContent).filename,
-  attachmentLabelOf: (decoded) => (decoded as AttachmentContent).filename ?? 'attachment',
-  attachmentDataB64Of: (decoded) => bytesToBase64((decoded as AttachmentContent).content),
-  requireObjectForHandlers: true,
-};
-
 function envelopeOfXmtpMessage(msg: DecodedMessage, line: string): HistoryEntry {
-  const base: HistoryEntry = {
-    id: msg.id,
-    ts: msg.sentAt.toISOString(),
-    station: 'xmtp',
-    line,
-    from: `${XMTP_USER_PREFIX}${msg.senderInboxId}`,
-    to: line,
-    messageId: msg.id,
+  return envelopeOf(webMessageOf(msg), line);
+}
+
+function appDataGroupOf(conv: Conversation): AppDataGroup | null {
+  if (!(conv instanceof Group)) return null;
+  return {
+    id: conv.id,
+    sync: () => conv.sync(),
+    appData: () => Promise.resolve(conv.appData ?? ''),
+    updateAppData: (appData) => conv.updateAppData(appData),
   };
-  const typeId = msg.contentType.typeId;
-  return envelopeFromContent(base, typeId, msg.content, msg.fallback, webEnvelopeOptions);
 }
 
 function identifierOf(address: string): Identifier {
@@ -311,12 +294,13 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   groupAdmins: (conv) => Promise.resolve(conv instanceof Group ? { admins: conv.admins, superAdmins: conv.superAdmins } : NO_GROUP_ADMINS),
   groupMetaPolicy: groupMetaPolicyOf,
   groupOps: (conv) => (conv instanceof Group ? conv : null),
+  appDataGroup: appDataGroupOf,
   addMembers: (conv, addresses) => asGroup(conv).addMembersByIdentifiers(identifiersOf(addresses)),
   removeMembers: (conv, addresses) => asGroup(conv).removeMembersByIdentifiers(identifiersOf(addresses)),
   leaveOp: (conv) => (conv instanceof Group ? () => conv.requestRemoval() : null),
   createdAtNs: (conv) => (conv.createdAtNs === undefined ? 0 : Number(conv.createdAtNs)),
   addedByInboxId: (conv) => conv.addedByInboxId,
-  consentOf: async (conv) => consentStateToString(await conv.consentState()),
+  consentOf: async (conv) => xmtpConsentOf(await conv.consentState()),
   setConsent: (conv, state) => conv.updateConsentState(webConsentState(state)),
   messages: async (conv, query) =>
     withNestedReactions(
@@ -324,13 +308,7 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
       (m) => m.reactions,
       (m) => Number(m.sentAtNs),
     ),
-  rowOf: (m) => ({
-    id: m.id,
-    content: m.content,
-    contentTypeId: m.contentType.typeId,
-    senderInboxId: m.senderInboxId,
-    sentNs: Number(m.sentAtNs),
-  }),
+  rowOf: webMessageOf,
   envelopeOf: envelopeOfXmtpMessage,
   sentNsOf: (m) => Number(m.sentAtNs),
   convIdOf: (m) => m.conversationId || null,

@@ -11,7 +11,7 @@ import { pollFallbackText } from './poll';
 import { signatureRequestFallbackText, signatureReferenceFallbackText } from './sign';
 import { walletSendCallsFallbackText, transactionReferenceFallbackText } from './tx';
 import { type FrameActionContent, frameActionText, frameFallbackText } from './frame';
-import { XMTP_USER_PREFIX } from './line';
+import { userUriOf } from './line';
 import { parseCallInvite, parseCallSignal } from './call';
 import {
   DELETED_MESSAGE_TYPE_ID,
@@ -19,70 +19,17 @@ import {
   STAGE_DELETE_TYPE_ID,
   deleteTargetOfContent,
   deletedByOfContent,
-  shortTypeId,
 } from './deleteMessage';
+import { objectOf, type CanonicalAttachment, type CanonicalReaction, type CanonicalReply, type XmtpMessage } from './message';
 
-export interface DecodedMessageView {
-  id: string;
-  senderInboxId: string;
-  sentNs: number;
-  contentTypeId: string;
-  content(): unknown;
-  fallback?: string;
-}
-
-interface ReactionContentView {
-  reference: string;
-  action: string;
-  content: string;
-  schema: string;
-}
-interface ReplyContentView {
-  reference: string;
-  content?: { text?: string };
-}
-interface StaticAttachmentView {
-  filename: string;
-  mimeType?: string;
-  data: string;
-}
-interface MultiRemoteAttachmentView {
-  attachments?: ({ filename?: string } & Record<string, unknown>)[];
-}
-
-export interface EnvelopeOptions {
-  reactionRemoved(action: unknown): boolean;
-  reactionCustom(schema: unknown): boolean;
-  reactionCustomPayloadExtras: boolean;
-  replyReferenceOf(decoded: unknown): string;
-  replyTextOf(decoded: unknown): string | undefined;
-  attachmentNameOf(decoded: unknown): string | undefined;
-  attachmentLabelOf(decoded: unknown): string;
-  attachmentDataB64Of(decoded: unknown): string;
-  requireObjectForHandlers: boolean;
-}
-
-const defaultEnvelopeOptions: EnvelopeOptions = {
-  reactionRemoved: (action) => action === 'removed',
-  reactionCustom: (schema) => schema === 'custom',
-  reactionCustomPayloadExtras: true,
-  replyReferenceOf: (decoded) => (decoded as ReplyContentView).reference,
-  replyTextOf: (decoded) => (decoded as ReplyContentView).content?.text,
-  attachmentNameOf: (decoded) => (decoded as StaticAttachmentView).filename,
-  attachmentLabelOf: (decoded) => (decoded as StaticAttachmentView).filename,
-  attachmentDataB64Of: (decoded) => (decoded as StaticAttachmentView).data,
-  requireObjectForHandlers: false,
-};
-
-function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions): HistoryEntry {
-  const r = decoded as ReactionContentView;
-  const removed = opts.reactionRemoved(r.action);
-  if (opts.reactionCustom(r.schema)) {
-    const extras = opts.reactionCustomPayloadExtras ? { voteFor: r.reference, optionIndex: Number(r.content) } : {};
+function reactionEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+  const r = decoded as CanonicalReaction;
+  const removed = r.removed;
+  if (r.custom) {
     return {
       ...base,
       text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
-      payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, schema: 'custom', ...extras, removed },
+      payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, schema: 'custom', removed },
     };
   }
   return {
@@ -100,42 +47,39 @@ function safe<T>(fn: () => T): T | undefined {
   }
 }
 
-function objectOf(value: unknown): Record<string, unknown> | undefined {
-  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : undefined;
-}
-
-export function remoteAttachmentOfReply(decoded: unknown): Record<string, unknown> | undefined {
-  const content = objectOf(objectOf(decoded)?.content);
-  const remote = objectOf(content?.remoteAttachment) ?? content;
+export function validRemoteAttachment(value: unknown): Record<string, unknown> | undefined {
+  const remote = objectOf(value);
   if (remote === undefined || typeof remote.url !== 'string' || typeof remote.contentDigest !== 'string') return undefined;
   return ['secret', 'salt', 'nonce'].every((key) => typeof remote[key] === 'string' || remote[key] instanceof Uint8Array)
     ? remote
     : undefined;
 }
 
-function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions, fallback?: string): HistoryEntry {
-  const reference = safe(() => opts.replyReferenceOf(decoded)) ?? '';
-  const remote = remoteAttachmentOfReply(decoded);
+function replyEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, fallback?: string): HistoryEntry {
+  const reply = decoded as CanonicalReply;
+  const reference = reply.reference;
+  const remote = validRemoteAttachment(reply.remote);
   const nested = remote === undefined ? undefined : safe(() => multiRemoteEnvelope(base, typeId, { attachments: [remote] }));
   return {
     ...base,
-    text: nested?.text ?? safe(() => opts.replyTextOf(decoded)) ?? fallback ?? '[reply]',
+    text: nested?.text ?? reply.text ?? fallback ?? '[reply]',
     replyTo: reference,
     payload: { ...nested?.payload, contentType: typeId, replyTo: reference },
   };
 }
 
-function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions): HistoryEntry {
-  const a = decoded as StaticAttachmentView;
+function attachmentEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry {
+  const a = decoded as CanonicalAttachment;
   const kind = attachmentKindOf({ mimeType: a.mimeType });
   return {
     ...base,
-    text: `[${kind}: ${opts.attachmentLabelOf(decoded)}]`,
-    payload: {
-      contentType: typeId,
-      attachments: [{ kind, mime: a.mimeType, name: opts.attachmentNameOf(decoded), dataB64: opts.attachmentDataB64Of(decoded) }],
-    },
+    text: `[${kind}: ${a.filename ?? 'attachment'}]`,
+    payload: { contentType: typeId, attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64: a.dataB64 }] },
   };
+}
+
+interface MultiRemoteAttachmentView {
+  attachments?: ({ filename?: string } & Record<string, unknown>)[];
 }
 
 function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknown): HistoryEntry & { payload: Record<string, unknown> } {
@@ -150,7 +94,7 @@ function multiRemoteEnvelope(base: HistoryEntry, typeId: string, decoded: unknow
   return { ...base, text: summary, payload: { contentType: typeId, attachments } };
 }
 
-type Handler = (base: HistoryEntry, typeId: string, decoded: unknown, opts: EnvelopeOptions, fallback?: string) => HistoryEntry;
+type Handler = (base: HistoryEntry, typeId: string, decoded: unknown, fallback?: string) => HistoryEntry;
 
 const deleteRequestEnvelope: Handler = (base, _typeId, decoded) => ({
   ...base,
@@ -158,7 +102,7 @@ const deleteRequestEnvelope: Handler = (base, _typeId, decoded) => ({
 });
 
 function callEnvelope(key: 'callInvite' | 'callSignal', parse: (decoded: unknown) => unknown): Handler {
-  return (base, typeId, decoded, _opts, fallback) => {
+  return (base, typeId, decoded, fallback) => {
     const content = parse(decoded);
     return {
       ...base,
@@ -206,17 +150,10 @@ export function isSystemEntry(entry: HistoryEntry): boolean {
   return (entry.payload as { system?: boolean } | undefined)?.system === true;
 }
 
-function handledEnvelope(
-  base: HistoryEntry,
-  typeId: string,
-  decoded: unknown,
-  fallback: string | undefined,
-  options: EnvelopeOptions,
-): HistoryEntry | undefined {
-  const objectOk = !options.requireObjectForHandlers || (decoded !== null && typeof decoded === 'object');
+function handledEnvelope(base: HistoryEntry, typeId: string, decoded: unknown, fallback: string | undefined): HistoryEntry | undefined {
   const handler = Object.hasOwn(ENVELOPE_HANDLERS, typeId) ? ENVELOPE_HANDLERS[typeId] : undefined;
-  if (objectOk && handler) {
-    const built = safe(() => handler(base, typeId, decoded, options, fallback));
+  if (objectOf(decoded) !== undefined && handler) {
+    const built = safe(() => handler(base, typeId, decoded, fallback));
     if (built) return built;
   }
   if (isGroupUpdateTypeId(typeId)) {
@@ -229,19 +166,10 @@ function handledEnvelope(
   return undefined;
 }
 
-export function envelopeFromContent(
-  base: HistoryEntry,
-  typeId: string,
-  decoded: unknown,
-  fallback: string | undefined,
-  options: EnvelopeOptions = defaultEnvelopeOptions,
-): HistoryEntry {
-  if (typeId === LEAVE_REQUEST_TYPE_ID) return leaveEnvelope(base, typeId);
-  if (typeof decoded === 'string') {
-    return { ...base, text: decoded, payload: { contentType: typeId } };
-  }
+function contentEnvelopeOf(base: HistoryEntry, typeId: string, decoded: unknown, fallback: string | undefined): HistoryEntry {
+  if (typeof decoded === 'string') return { ...base, text: decoded, payload: { contentType: typeId } };
   return (
-    handledEnvelope(base, typeId, decoded, fallback, options) ?? {
+    handledEnvelope(base, typeId, decoded, fallback) ?? {
       ...base,
       text: fallback ?? `[${typeId} payload]`,
       payload: { contentType: typeId },
@@ -249,25 +177,18 @@ export function envelopeFromContent(
   );
 }
 
-export function mapDecodedToEnvelope(msg: DecodedMessageView, line: string): HistoryEntry {
-  const ts = new Date(Math.floor(msg.sentNs / 1_000_000)).toISOString();
+export function envelopeOf(message: XmtpMessage, line: string): HistoryEntry {
   const base: HistoryEntry = {
-    id: msg.id,
-    ts,
+    id: message.id,
+    ts: new Date(message.sentMs).toISOString(),
     station: 'xmtp',
     line,
-    from: `${XMTP_USER_PREFIX}${msg.senderInboxId}`,
+    from: userUriOf(message.senderInboxId),
     to: line,
-    messageId: msg.id,
+    messageId: message.id,
   };
-  const typeId = shortTypeId(msg.contentTypeId);
+  const typeId = message.contentTypeId;
   if (typeId === LEAVE_REQUEST_TYPE_ID) return leaveEnvelope(base, typeId);
-  let decoded: unknown;
-  try {
-    decoded = msg.content();
-  } catch {
-    return { ...base, text: `[${typeId} payload]`, payload: { contentType: typeId } };
-  }
-
-  return envelopeFromContent(base, typeId, decoded, msg.fallback);
+  if (message.undecodable === true) return { ...base, text: `[${typeId} payload]`, payload: { contentType: typeId } };
+  return contentEnvelopeOf(base, typeId, message.content, message.fallback);
 }

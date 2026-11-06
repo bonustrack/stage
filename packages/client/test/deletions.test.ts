@@ -130,8 +130,8 @@ describe('deletedRowBy', () => {
   });
 
   test("web: the SDK placeholder, and this device's own delete", () => {
-    expect(deletedRowBy(row('m1', 'alice', 'deletedMessage', { deletedBy: 0 }), [])).toBe('sender');
-    expect(deletedRowBy(row('m1', 'alice', 'deletedMessage', { deletedBy: 1, adminInboxId: 'owner' }), [])).toBe('admin');
+    expect(deletedRowBy(row('m1', 'alice', 'deletedMessage', { deletedBy: 'sender' }), [])).toBe('sender');
+    expect(deletedRowBy(row('m1', 'alice', 'deletedMessage', { deletedBy: 'admin' }), [])).toBe('admin');
     expect(deletedRowBy(last, [last], { ownDeletes: new Set(['m1']), selfInboxId: 'alice' })).toBe('sender');
     expect(deletedRowBy(last, [last], { ownDeletes: new Set(['m1']), selfInboxId: 'owner' })).toBe('admin');
     expect(deletedRowBy(last, [last])).toBeNull();

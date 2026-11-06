@@ -12,7 +12,8 @@ import {
   type FrameContent,
 } from '../src/xmtp/frame';
 import { FRAME_MAX_CHARS, frameActionSchema, frameContentSchema } from '../src/xmtp/frame.schema';
-import { mapDecodedToEnvelope } from '../src/xmtp/envelope';
+import { envelopeOf } from '../src/xmtp/envelope';
+import { xmtpMessage } from './fixtures/decoded-messages';
 import { previewOfXmtpContent } from '../src/xmtp/humanize';
 
 const NS = 1_717_000_000_000 * 1_000_000;
@@ -140,8 +141,8 @@ describe('frame content types', () => {
 
 describe('frame envelopes', () => {
   test('a decoded frame becomes an entry with the frame in its payload', () => {
-    const e = mapDecodedToEnvelope(
-      { id: 'msg-frame-1', senderInboxId: 'inbox-agent', sentNs: NS, contentTypeId: 'stage.box/frame:2.0', content: () => frame },
+    const e = envelopeOf(
+      xmtpMessage({ id: 'msg-frame-1', senderInboxId: 'inbox-agent', sentNs: NS, contentTypeId: 'frame', content: frame }),
       'stage://xmtp/a/conv1',
     );
     expect(e.text).toBe('Frame: Weekly report\nSales up 12%');
@@ -149,8 +150,8 @@ describe('frame envelopes', () => {
   });
 
   test('a decoded frame action reads as a tap on its label and quotes its frame', () => {
-    const e = mapDecodedToEnvelope(
-      { id: 'msg-action-1', senderInboxId: 'inbox-less', sentNs: NS, contentTypeId: 'stage.box/frameAction:2.0', content: () => action },
+    const e = envelopeOf(
+      xmtpMessage({ id: 'msg-action-1', senderInboxId: 'inbox-less', sentNs: NS, contentTypeId: 'frameAction', content: action }),
       'stage://xmtp/a/conv1',
     );
     expect(e.text).toBe('Tapped "Approve"');
@@ -159,15 +160,15 @@ describe('frame envelopes', () => {
   });
 
   test('a frame whose codec failed falls back to its fallback text', () => {
-    const e = mapDecodedToEnvelope(
-      {
+    const e = envelopeOf(
+      xmtpMessage({
         id: 'msg-frame-2',
         senderInboxId: 'inbox-agent',
         sentNs: NS,
-        contentTypeId: 'stage.box/frame:2.0',
-        content: () => undefined,
+        contentTypeId: 'frame',
+        content: undefined,
         fallback: 'Frame: Broken',
-      },
+      }),
       'stage://xmtp/a/conv1',
     );
     expect(e.text).toBe('Frame: Broken');

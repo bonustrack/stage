@@ -86,7 +86,7 @@ describe('description changes in appData', () => {
     expect(humanizeGroupUpdated({ metadataFieldsChanged: changes })).toBe(notice);
     expect(humanizeGroupUpdated({ metadataFieldChanges: changes })).toBe(notice);
     expect(previewOfXmtpContent({ metadataFieldsChanged: changes }, 'xmtp.org/group_updated:1.0')).toBe(notice);
-    expect(previewOfXmtpContent({ metadataFieldChanges: changes }, 'xmtp.org/groupUpdated:1.0')).toBe(notice);
+    expect(previewOfXmtpContent({ metadataFieldChanges: changes }, 'group_updated')).toBe(notice);
     expect(humanizeGroupUpdated({ metadataFieldsChanged: changes, membersAdded: [{ inboxId: 'member' }] }, () => 'Alice')).toBe(
       `${notice} • added Alice`,
     );

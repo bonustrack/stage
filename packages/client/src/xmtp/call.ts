@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
+import { shortTypeId } from './typeId';
 
 export const CALL_INVITE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'stage.box',
@@ -44,11 +45,11 @@ export const callSignalSchema = z.discriminatedUnion('kind', [
 export type CallSignal = z.infer<typeof callSignalSchema>;
 
 export function isCallInviteType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(CALL_INVITE_CONTENT_TYPE.typeId);
+  return shortTypeId(contentTypeId) === CALL_INVITE_CONTENT_TYPE.typeId;
 }
 
 export function isCallSignalType(contentTypeId: string | undefined): boolean {
-  return typeof contentTypeId === 'string' && contentTypeId.includes(CALL_SIGNAL_CONTENT_TYPE.typeId);
+  return shortTypeId(contentTypeId) === CALL_SIGNAL_CONTENT_TYPE.typeId;
 }
 
 export function isCallSignalEntry(entry: { payload?: unknown }): boolean {

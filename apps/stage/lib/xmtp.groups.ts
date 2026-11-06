@@ -13,7 +13,6 @@ import {
 import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
 import {
   addLabel,
-  asGroup,
   assignedAddresses,
   channelFieldOf,
   moveLabel,
@@ -23,8 +22,8 @@ import {
   writeAssigned,
   writeChannelField,
   writeLabels,
+  type AppDataGroup,
   type ChannelField,
-  type Group,
 } from '@stage-labs/client/xmtp/labels';
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { uniqueBy } from '@stage-labs/client/collections';
@@ -119,7 +118,7 @@ export async function updateGroupMeta(convId: string, patch: GroupMetaPatch): Pr
 export async function updateGroupAssigned(convId: string, assigned: string[]): Promise<string[]> {
   try {
     const conv = await requireGroup(lineOfConv(convId));
-    const group = asGroup(conv) ?? notAGroup();
+    const group = sdk.appDataGroup(conv) ?? notAGroup();
     return await writeAssigned(group, assigned, async () => {
       const client = await sdk.client();
       const members = await conv.members();
@@ -204,8 +203,9 @@ function settleLabelWrite(convId: string | null, writes: LabelWrites | null): vo
   if (writes.failed) patchRowLabels(convId, () => writes.base);
 }
 
-async function groupOfLine(line: string): Promise<Group> {
-  const group = asGroup(await convOfLine(line));
+async function groupOfLine(line: string): Promise<AppDataGroup> {
+  const conv = await convOfLine(line);
+  const group = conv ? sdk.appDataGroup(conv) : null;
   if (!group) throw new Error('Not a channel');
   return group;
 }

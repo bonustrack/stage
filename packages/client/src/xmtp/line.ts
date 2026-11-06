@@ -3,6 +3,14 @@ import { STAGE_LINK_START, STAGE_SCHEMES, appUrlFor, hasTrailingPunctuation } fr
 
 export const XMTP_USER_PREFIX = appUrlFor('/xmtp/user/');
 
+export function userUriOf(inboxId: string): string {
+  return `${XMTP_USER_PREFIX}${inboxId}`;
+}
+
+export function inboxIdOfUri(uri: string): string {
+  return uri.startsWith(XMTP_USER_PREFIX) ? uri.slice(XMTP_USER_PREFIX.length) : '';
+}
+
 export function lineOfConv(convId: string): string {
   return appUrlFor(`/xmtp/${convId}`);
 }
