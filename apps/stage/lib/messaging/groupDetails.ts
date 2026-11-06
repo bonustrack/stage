@@ -1,5 +1,6 @@
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { convOfLine, sdk } from '../xmtp.sdk';
+import { sdk } from '../xmtp.sdk';
+import { convOfLine } from '../xmtp.find';
 import { groupRoleOf, superAdminInboxIds, type GroupRole } from '@stage-labs/client/xmtp/groups';
 import { groupAssignedOf } from '@stage-labs/client/xmtp/labels';
 import { recover } from '../errorPolicy';

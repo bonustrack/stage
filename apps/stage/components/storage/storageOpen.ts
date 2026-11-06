@@ -2,7 +2,7 @@ import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
 import { attachedFilesOf } from '@stage-labs/client/xmtp/contentTypes';
 import { sdk } from '../../lib/xmtp.sdk';
-import { resolveRemoteAttachment } from '../../lib/xmtp.attachments';
+import { resolveRemoteAttachment } from '../../lib/xmtp.attachmentSdk';
 import { openFile } from '../../lib/fileOpen';
 import type { StoredFile } from '../../lib/storageIndex.model';
 import { inlineAttachmentUrl } from '../media/attachmentUri';

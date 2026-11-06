@@ -7,7 +7,8 @@ import {
   type CallSignal,
 } from '@stage-labs/client/xmtp/call';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { convOfLine, sdk } from './xmtp.sdk';
+import { sdk } from './xmtp.sdk';
+import { convOfLine } from './xmtp.find';
 import { afterFirstPages } from './feed/firstPages';
 import type { StreamMsg } from './xmtp.types';
 import { reported } from './errorPolicy';

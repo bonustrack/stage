@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows } from './channelsCache';
 import { knownActiveAccountId } from './accountSelection';
-import { convOfLine } from './xmtp.sdk';
+import { convOfLine } from './xmtp.find';
 import { convMembers } from './xmtp.identity';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { channelStampSeed } from '@stage-labs/kit/avatar';

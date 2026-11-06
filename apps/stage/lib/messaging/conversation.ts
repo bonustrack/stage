@@ -1,7 +1,8 @@
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { convMembers, type ConvMembers } from '../xmtp.identity';
 import { getCachedRows, getLastReadNs, getMarkedUnread } from '../channelsCache';
-import { convOfLine, sdk } from '../xmtp.sdk';
+import { sdk } from '../xmtp.sdk';
+import { convOfLine } from '../xmtp.find';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { rowMessagesOf } from '../xmtp.messages';
 import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';

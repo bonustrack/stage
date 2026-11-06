@@ -3,7 +3,14 @@ import { mergeShareRows, parseIncomingShare, sharedAttachments, shareDestination
 import { acceptedShareConsent } from '../lib/shareDestination.model';
 import { currentShareDraft, makeShareSender } from '../components/share/shareSend.model';
 import { planSendSteps } from '../components/composer/send.model';
-import { sendPreparedMessage } from '../lib/xmtp.messageSend.core';
+import { sendPreparedMessage, type SendTarget } from '../lib/xmtp.messageSend.core';
+
+const targetOf = <C>(conv: C): SendTarget<C> => ({
+  conv,
+  assertCurrent: () => {
+    return;
+  },
+});
 
 const id = 'f1363f20-9a10-4e7c-9adc-5da913462fc4';
 const file = (index = 0, size = 1_024) => ({
@@ -204,14 +211,14 @@ describe('explicit share send gate', () => {
     });
     const transport = mock(async () => 'sent-caption');
     const submit = (guard?: () => Promise<void>) =>
-      sendPreparedMessage(
-        () => {
+      sendPreparedMessage({
+        find: () => {
           entered.resolve(true);
-          return prepared.promise;
+          return prepared.promise.then(targetOf);
         },
-        transport,
-        guard,
-      );
+        beforeSend: guard,
+        send: transport,
+      });
     const steps = planSendSteps(
       'line',
       'caption',
@@ -248,7 +255,7 @@ describe('explicit share send gate', () => {
       [],
       undefined,
       {
-        text: (_line, _text, guard) => sendPreparedMessage(async () => 'channel', transport, guard),
+        text: (_line, _text, guard) => sendPreparedMessage({ find: async () => targetOf('channel'), beforeSend: guard, send: transport }),
         reply: mock(async () => 'reply'),
         attachments: mock(async () => 'files'),
       },

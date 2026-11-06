@@ -1,7 +1,8 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { latestConvMessages, olderConvMessages, type ConvHandle } from '../xmtp.messages';
-import { convOfLine, sdk } from '../xmtp.sdk';
+import { sdk } from '../xmtp.sdk';
+import { convOfLine } from '../xmtp.find';
 import { PAGE_SIZE } from '../feed/merge';
 import { deletedMessages, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { isDeleteRequest } from '@stage-labs/client/xmtp/entryPayload';

@@ -42,8 +42,8 @@ mock.module('../lib/developerMode', () => ({
     },
   },
 }));
+mock.module('../lib/xmtp.find', () => ({ convOfLine: async () => null }));
 mock.module('../lib/xmtp.sdk', () => ({
-  convOfLine: async () => null,
   sdk: {
     client: async () => client,
     cachedClient: () => client,

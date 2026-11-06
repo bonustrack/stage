@@ -24,17 +24,13 @@ import {
   NO_GROUP_ADMINS,
   NO_GROUP_INFO,
   VISIBLE_CONSENT,
-  convFinder,
   notAGroup,
-  sendableFinder,
   type MessageDeletion,
   type MessageQuery,
   type MessageTarget,
   type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt, ignored } from './errorPolicy';
-import { prepareSenderFilters } from './pushRegister';
-import { groupTopicOf } from '@stage-labs/client/xmtp/pushServer';
 import { sleep } from '@stage-labs/client/timing';
 
 type NativeClient = Awaited<ReturnType<typeof xmtpClient>>;
@@ -361,9 +357,3 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     json: (conv, codec, content) => conv.send(content, { contentType: codec.contentType }),
   },
 };
-
-export const convOfLine = convFinder(sdk);
-
-export const sendableConvOfLine = sendableFinder(sdk, (client, conv, timing) =>
-  prepareSenderFilters(client, groupTopicOf(conv.id), timing),
-);

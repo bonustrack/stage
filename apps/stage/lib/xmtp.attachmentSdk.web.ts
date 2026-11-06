@@ -2,19 +2,16 @@ import {
   decryptAttachment,
   encryptAttachment,
   encodeRemoteAttachment,
+  type Conversation,
   type EncryptedAttachment,
   type RemoteAttachment,
 } from '@xmtp/browser-sdk';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
-import { sendableConvOfLine } from './xmtp.sdk.web';
-import { withReadableSendError } from './xmtp.sdk.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
-import type { LocalAttachmentInput, OnAttachmentsUploaded } from './xmtp.types';
+import type { LocalAttachmentInput } from './xmtp.types';
 import { attachmentDownloadUrl, uploadEncryptedAttachment } from './attachmentStorage';
 import { inertBlobType } from './fileOpen.model';
 import { attachmentMimeType } from './attachmentFiles';
-import { makeAttachmentPrep, sendPreparedAttachment } from './xmtp.attachmentPrep.core';
-import { accountClient } from './xmtp.account';
 
 declare const sanitizedBrand: unique symbol;
 type SanitizedAttachmentBytes = Uint8Array & { readonly [sanitizedBrand]: true };
@@ -42,13 +39,13 @@ export async function encryptSanitizedAttachment(file: {
   return await withMainThreadWasm(() => encryptAttachment({ filename: file.filename, mimeType: file.mimeType, content: file.bytes }));
 }
 
-async function encryptedFileOf(f: LocalAttachmentInput): Promise<EncryptedAttachment> {
+export async function encryptFile(f: LocalAttachmentInput): Promise<EncryptedAttachment> {
   const mimeType = attachmentMimeType(f.mimeType, f.filename);
   const clean = sanitizeAttachmentBytes(await fetchBytes(f.fileUri), mimeType, f.filename);
   return await encryptSanitizedAttachment({ bytes: clean, mimeType, filename: f.filename });
 }
 
-async function storedRemoteAttachment(encrypted: EncryptedAttachment, f: LocalAttachmentInput): Promise<RemoteAttachment> {
+export async function storeEncrypted(encrypted: EncryptedAttachment, f: LocalAttachmentInput): Promise<RemoteAttachment> {
   return {
     url: await uploadEncryptedAttachment(new Blob([encrypted.payload.slice().buffer], { type: 'application/octet-stream' }), f.filename),
     contentDigest: encrypted.contentDigest,
@@ -61,36 +58,12 @@ async function storedRemoteAttachment(encrypted: EncryptedAttachment, f: LocalAt
   };
 }
 
-const prep = makeAttachmentPrep(encryptedFileOf, storedRemoteAttachment);
+export function sendFiles(conv: Conversation, infos: RemoteAttachment[]): Promise<string> {
+  return conv.sendMultiRemoteAttachment({ attachments: infos });
+}
 
-export const { prepare: prepareAttachments, upload: uploadAttachments, forget: forgetAttachments } = prep;
-
-export async function xmtpSendMultiRemoteAttachment(
-  line: string,
-  files: LocalAttachmentInput[],
-  onUploaded?: OnAttachmentsUploaded,
-  beforeSend?: () => Promise<void>,
-  replyTo?: string,
-): Promise<string> {
-  if (files.length === 0) throw new Error('No attachments to send.');
-  const session = await accountClient();
-  const id = await withReadableSendError(() =>
-    sendPreparedAttachment({
-      assertCurrent: session.assertCurrent,
-      uploaded: () => prep.uploaded(files),
-      onUploaded,
-      beforeSend,
-      find: () => sendableConvOfLine(line),
-      send: async (conv, infos) => {
-        if (replyTo === undefined) return conv.sendMultiRemoteAttachment({ attachments: infos });
-        const info = infos[0];
-        if (infos.length !== 1 || info === undefined) throw new Error('A file reply needs one attachment.');
-        return conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeRemoteAttachment(info)) });
-      },
-    }),
-  );
-  prep.forget(files);
-  return id;
+export async function sendFileReply(conv: Conversation, replyTo: string, info: RemoteAttachment): Promise<string> {
+  return conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeRemoteAttachment(info)) });
 }
 
 export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{ fileUri: string; mimeType?: string; filename?: string }> {

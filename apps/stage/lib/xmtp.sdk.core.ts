@@ -4,15 +4,7 @@ import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { GroupMetaPolicy, GroupMetaWriters } from '@stage-labs/client/xmtp/groups';
 import type { AppDataGroup } from '@stage-labs/client/xmtp/labels';
 import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
-import { INACTIVE_SEND_MESSAGE, readableSendError } from '@stage-labs/client/xmtp/clientErrors';
-import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import type { XmtpConsent } from './xmtp.types';
-import { registerDmRoute } from './dmRoutes';
-import { recover } from './errorPolicy';
-import { getAccountEpoch } from './accountEpoch';
-import { AccountChangedError } from './accountSelection';
-import { prepareNotifyingSend } from '@stage-labs/client/xmtp/pushSenderFilter';
-import { timeSendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 
 export interface GroupMeta {
   name?: string;
@@ -147,51 +139,3 @@ interface ConvPrimitives<C, M> {
 }
 
 export type XmtpSdk<Cl, C extends ConvLike, M> = ClientPrimitives<Cl, C, M> & ConvPrimitives<C, M>;
-
-export function convFinder<Cl, C extends ConvLike, M>(sdk: XmtpSdk<Cl, C, M>): (line: string) => Promise<C | null> {
-  return async (line) => {
-    const convId = convIdOfLine(line);
-    if (!convId) return null;
-    return (await sdk.findConv(await sdk.client(), convId).catch(recover('xmtp.findConv', null))) ?? null;
-  };
-}
-
-export function sendableFinder<Cl, C extends ConvLike, M>(
-  sdk: XmtpSdk<Cl, C, M>,
-  prepare: (client: Cl, conv: C, timing?: SendTiming) => Promise<void>,
-): (line: string, shouldPush?: boolean, timing?: SendTiming) => Promise<C> {
-  const find = convFinder(sdk);
-  return async (line, shouldPush = true, timing) => {
-    const epoch = getAccountEpoch();
-    const client = await timeSendPhase(timing, 'client.ready', () => sdk.client());
-    const assertCurrent = (): void => {
-      if (getAccountEpoch() !== epoch || sdk.cachedClient() !== client) throw new AccountChangedError();
-    };
-    const conv = await timeSendPhase(timing, 'conversation.find', () => find(line));
-    assertCurrent();
-    if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-    const active = await timeSendPhase(timing, 'conversation.active', () => activeForSend(sdk, client, conv, line));
-    assertCurrent();
-    await timeSendPhase(timing, 'filter.prepare', () =>
-      prepareNotifyingSend(shouldPush, () => prepare(client, active, timing), assertCurrent),
-    );
-    return active;
-  };
-}
-
-async function activeForSend<Cl, C extends ConvLike, M>(sdk: XmtpSdk<Cl, C, M>, client: Cl, conv: C, line: string): Promise<C> {
-  if (await sdk.isActive(conv).catch(recover('xmtp.isActive', true))) return conv;
-  const peerInboxId = sdk.dmPeerInboxId(conv);
-  if (!peerInboxId) throw new Error(INACTIVE_SEND_MESSAGE);
-  const active = await sdk.activeDm(client, await peerInboxId());
-  registerDmRoute(active.id, convIdOfLine(line) ?? conv.id);
-  return active;
-}
-
-export async function withReadableSendError<T>(send: () => Promise<T>): Promise<T> {
-  try {
-    return await send();
-  } catch (err) {
-    throw readableSendError(err);
-  }
-}

@@ -70,11 +70,13 @@ mock.module('../lib/channelsCache', () => ({
   patchRowConsent: () => undefined,
 }));
 mock.module('../lib/messaging/conversation', () => ({ groupRowMeta: async () => null }));
-mock.module('../lib/xmtp.sdk', () => ({
+mock.module('../lib/xmtp.find', () => ({
   convOfLine: async (line: string) => {
     const conv = convs.find((c) => line === lineOfConv(c.id));
     return conv ? withMethods(conv) : null;
   },
+}));
+mock.module('../lib/xmtp.sdk', () => ({
   sdk: {
     client: async () => connectedClient,
     cachedClient: () => connectedClient,

@@ -28,7 +28,8 @@ import {
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { getCachedRows, setCachedRows, type CachedRow } from './channelsCache';
-import { convOfLine, sdk } from './xmtp.sdk';
+import { sdk } from './xmtp.sdk';
+import { convOfLine } from './xmtp.find';
 import { notAGroup } from './xmtp.sdk.core';
 import { groupRowMeta } from './messaging/conversation';
 import { report, reported } from './errorPolicy';

@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { resolveRemoteAttachment } from '../../lib/xmtp.attachments';
+import { resolveRemoteAttachment } from '../../lib/xmtp.attachmentSdk';
 import type { Attachment } from '../bubble/helpers';
 
 const WEB_PLAYABLE_MIME: Readonly<Record<string, string>> = { 'audio/m4a': 'audio/mp4' };

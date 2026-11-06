@@ -1,5 +1,6 @@
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
-import { convOfLine, sdk } from './xmtp.sdk';
+import { sdk } from './xmtp.sdk';
+import { convOfLine } from './xmtp.find';
 import { setChannelHidden } from './sync/hiddenChannels';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { channelAccess, checkChannelAccess, type GroupAccess } from './channelAccess';

@@ -8,7 +8,8 @@ import { frameOf } from './frame.model';
 import { useAccountEpoch } from '../accountEpoch';
 import { recover } from '../errorPolicy';
 import { ownDeletesReady } from '../ownDeletes';
-import { convOfLine, sdk } from '../xmtp.sdk';
+import { sdk } from '../xmtp.sdk';
+import { convOfLine } from '../xmtp.find';
 
 export type FrameMessage = { state: 'ready'; frame: FrameContent } | { state: 'missing' } | { state: 'deleted' };
 
