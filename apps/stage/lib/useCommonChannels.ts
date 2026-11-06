@@ -24,7 +24,7 @@ async function fetchMembers(convId: string): Promise<string[]> {
 
 async function resolveChannels(peerAddress: string): Promise<CommonChannel[]> {
   await hydrateCachedRows().catch(reported('commonChannels.hydrate'));
-  const rows = (getCachedRows() ?? []) as CommonChannelRow[];
+  const rows: CommonChannelRow[] = getCachedRows() ?? [];
   const memberSetOf = memberSetCache.resolver(getAccountEpoch(), fetchMembers);
   return resolveCommonChannels(peerAddress, rows, memberSetOf, (row) => channelStampSeed(row.convId));
 }

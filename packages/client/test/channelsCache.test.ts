@@ -7,12 +7,12 @@ import {
   applyUnread,
   applySentPatch,
   normalizeChannelRowTitle,
-  type CachedChannelRow,
+  type ChannelRow,
   type GroupRowMeta,
 } from '../src/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
 
-interface Row extends CachedChannelRow {
+interface Row extends Partial<ChannelRow> {
   lastTs?: number;
   lastPreview?: string;
   lastFromSelf?: boolean;

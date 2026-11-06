@@ -4,7 +4,6 @@ import { getConvConsentState, groupAccessOf, streamConvConsent } from '../xmtp.c
 import type { XmtpConsent } from '../xmtp.types';
 import { getCachedRows, patchRowConsent, subscribeCachedRows } from '../channelsCache';
 import { useStoreValue } from '../storeCore';
-import type { ConversationView } from './conversation';
 import { useAccountEpoch } from '../accountEpoch';
 import { report, recover, attempt } from '../errorPolicy';
 import { useHiddenChannels } from '../sync/hiddenChannels';
@@ -12,7 +11,7 @@ import { cachedChannelAccess, subscribeChannelAccess, type GroupAccess } from '.
 import { knownConsentOf, rememberConsent } from '../channelVisibility';
 
 function listedConsent(convId: string | undefined): XmtpConsent | undefined {
-  const rows = getCachedRows() as ConversationView[] | null;
+  const rows = getCachedRows();
   return (convId ? rows?.find((r) => r.convId === convId)?.consent : null) ?? undefined;
 }
 

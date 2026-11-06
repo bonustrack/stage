@@ -1,6 +1,6 @@
 import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
-import type { CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
+import type { CachedRow } from '../../lib/channelsCache';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import type { IncomingShare, SharedFile } from '../../lib/incomingShare.types';
 import { attachmentMimeType } from '../../lib/attachmentFiles';
@@ -80,7 +80,7 @@ export function sharedAttachments(share: Extract<IncomingShare, { status: 'ready
   });
 }
 
-function destinationOf(row: CachedChannelRow, cleared: ClearedChats): ShareDestination | null {
+function destinationOf(row: CachedRow, cleared: ClearedChats): ShareDestination | null {
   if (row.consent !== 'allowed' || typeof row.title !== 'string') return null;
   if (typeof row.groupName === 'string' && isSyncGroupName(row.groupName)) return null;
   const peerAddress = typeof row.peerAddress === 'string' ? row.peerAddress : null;
@@ -102,7 +102,7 @@ export function mergeShareRows<T extends { convId: string }>(previous: readonly 
   return [...rows.values()];
 }
 
-export function shareDestinations(rows: readonly CachedChannelRow[] | null, cleared: ClearedChats, query: string): ShareDestination[] {
+export function shareDestinations(rows: readonly CachedRow[] | null, cleared: ClearedChats, query: string): ShareDestination[] {
   return (rows ?? [])
     .map((row) => destinationOf(row, cleared))
     .filter((row): row is ShareDestination => row !== null && row.title.toLowerCase().includes(query.trim().toLowerCase()));

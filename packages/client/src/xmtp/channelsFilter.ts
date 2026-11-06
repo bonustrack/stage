@@ -1,14 +1,7 @@
-export interface ChannelListRow {
-  convId: string;
-  title: string;
-  lastPreview: string;
-  lastTs: number | null;
-  unreadCount: number;
-  markedUnread?: boolean;
-  labels?: string[];
-  peerAddress?: string | null;
-  memberAddresses?: string[];
-}
+import type { ChannelRow } from './channelsCache';
+
+export type ChannelListRow = Pick<ChannelRow, 'convId' | 'title' | 'lastPreview' | 'lastTs' | 'unreadCount'> &
+  Partial<Pick<ChannelRow, 'markedUnread' | 'labels' | 'peerAddress'>> & { memberAddresses?: string[] };
 
 export interface ChannelListFilter {
   enabledLabels?: Set<string>;

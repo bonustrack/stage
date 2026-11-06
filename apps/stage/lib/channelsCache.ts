@@ -1,19 +1,16 @@
 import { secureStorage } from '../platform/storage';
 import { PersistentStore, getSecure, setSecure } from './cache.shared';
 import { makeListeners } from './storeCore';
-import {
-  applyRead,
-  applyUnread,
-  applySentPatch,
-  normalizeChannelRowTitle,
-  type CachedChannelRow,
-} from '@stage-labs/client/xmtp/channelsCache';
+import { applyRead, applyUnread, applySentPatch, normalizeChannelRowTitle, type ChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import { attempt, ignored } from './errorPolicy';
 import type { XmtpConsent } from './xmtp.types';
 import { visibleCachedRows } from './sync/hiddenChannels';
 import { knownActiveAccountId, subscribeActiveAccountId } from './accountSelection';
 
-export type CachedRow = CachedChannelRow;
+export interface CachedRow extends ChannelRow {
+  createdTs?: number | null;
+  consent: XmtpConsent | null;
+}
 
 export interface ReadStateChange {
   convId: string;

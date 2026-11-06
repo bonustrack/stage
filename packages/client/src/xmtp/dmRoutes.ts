@@ -1,4 +1,5 @@
 import { uniqueBy } from '../collections';
+import type { ChannelRow } from './channelsCache';
 
 export type ConvRoutes = Readonly<Record<string, string>>;
 
@@ -20,10 +21,7 @@ export function withRoute(routes: ConvRoutes, from: string, to: string): ConvRou
   return { ...routes, [from]: target };
 }
 
-export interface DmRowRef {
-  convId: string;
-  peerAddress: string | null;
-}
+export type DmRowRef = Pick<ChannelRow, 'convId' | 'peerAddress'>;
 
 export function dmIdsByPeer(rows: readonly DmRowRef[]): ReadonlyMap<string, string> {
   const byPeer = new Map<string, string>();

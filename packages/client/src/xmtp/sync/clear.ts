@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { defineSyncKind } from './kind';
+import type { ChannelRow } from '../channelsCache';
 
 export type ClearedChats = Record<string, number>;
 
@@ -51,11 +52,7 @@ export function isChatCleared(cleared: ClearedChats, peerAddress: string | null 
   return clearedAt !== undefined && (lastTsMs ?? 0) <= clearedAt;
 }
 
-export interface ClearableRow {
-  peerAddress: string | null;
-  lastTs: number | null;
-  lastBubbleTs?: number | null;
-}
+export type ClearableRow = Pick<ChannelRow, 'peerAddress' | 'lastTs'> & Partial<Pick<ChannelRow, 'lastBubbleTs'>>;
 
 export function isRowCleared(cleared: ClearedChats, row: ClearableRow): boolean {
   const revivalTs = row.lastBubbleTs === undefined ? row.lastTs : row.lastBubbleTs;

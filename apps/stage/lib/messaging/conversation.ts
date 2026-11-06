@@ -22,23 +22,12 @@ import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletio
 import { ownDeletesReady } from '../ownDeletes';
 import { fetchSuperAdmins } from './groupDetails';
 import { rowCreatedTs, type ConvRow } from './convRow.model';
-import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
+import type { ChannelRow, GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../dmRoutes';
 import { reported, recover } from '../errorPolicy';
 import { channelConsent } from '../channelVisibility';
-export interface ConversationView extends ConvRow, GroupTags {
-  convId: string;
-  title: string;
-  lastTs: number | null;
+export interface ConversationView extends ChannelRow, ConvRow {
   createdTs?: number | null;
-  lastBubbleTs: number | null;
-  lastPreview: string;
-  avatarAddress: string | null;
-  lastSenderAddress: string | null;
-  lastFromSelf: boolean;
-  unreadCount: number;
-  lastReadNs: number;
-  markedUnread: boolean;
   consent: XmtpConsent | null;
 }
 

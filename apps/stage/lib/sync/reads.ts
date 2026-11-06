@@ -1,4 +1,4 @@
-import { applyReadUpTo, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
+import { applyReadUpTo, applyUnread, type ChannelRow } from '@stage-labs/client/xmtp/channelsCache';
 import type { ReadStateContent } from '@stage-labs/client/xmtp/sync/read';
 import { getCachedRows, onReadStateChanged, raiseLastReadNs, setCachedRows, setMarkedUnreadFlag } from '../channelsCache';
 import { knownActiveAccountId } from '../accountSelection';
@@ -8,7 +8,7 @@ import { defineAppSyncKind } from './kind';
 
 const readKey = (convId: string): string => `read:${convId}`;
 
-function patchedRows<R extends CachedChannelRow>(rows: R[], state: ReadStateContent): R[] {
+function patchedRows<R extends ChannelRow>(rows: R[], state: ReadStateContent): R[] {
   const next = state.markedUnread ? applyUnread(rows, state.convId) : applyReadUpTo(rows, state.convId, state.lastReadNs);
   return next ?? rows;
 }
