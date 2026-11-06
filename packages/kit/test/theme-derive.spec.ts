@@ -4,10 +4,12 @@ import {
   assertDefaultLossless,
   accentHex,
   derivePalette,
+  formulaPalette,
   grayscaleFromHex,
   grayscaleHex,
   type ThemeSeed,
 } from '../src/theme-derive';
+import { kitPalette } from '../src/tokens';
 
 const CUSTOM: ThemeSeed = {
   accent: { primary: '#ff6600', level: 3 },
@@ -45,8 +47,25 @@ describe('derivePalette', () => {
     expect(derivePalette(CUSTOM, 'dark')).toMatchSnapshot();
   });
 
-  test('assertDefaultLossless does not throw', () => {
+  test('the default seed short-circuits to the legacy palette, which assertDefaultLossless checks', () => {
+    expect(derivePalette(DEFAULT_SEED.dark, 'dark')).toEqual(kitPalette('dark'));
+    expect(derivePalette(DEFAULT_SEED.light, 'light')).toEqual(kitPalette('light'));
     expect(() => assertDefaultLossless()).not.toThrow();
+  });
+
+  test('the formula alone is not lossless at the default seed: sub and inputBg drift', () => {
+    for (const scheme of ['dark', 'light'] as const) {
+      const legacy = kitPalette(scheme);
+      expect(formulaPalette(DEFAULT_SEED[scheme], scheme)).toEqual({
+        ...legacy,
+        sub: scheme === 'dark' ? '#646568' : '#9ea2a8',
+        inputBg: scheme === 'dark' ? '#1b1d1f' : '#f2f2f2',
+      });
+    }
+  });
+
+  test('any other seed goes through the formula', () => {
+    expect(derivePalette(CUSTOM, 'dark')).toEqual(formulaPalette(CUSTOM, 'dark'));
   });
 });
 

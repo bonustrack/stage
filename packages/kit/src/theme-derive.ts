@@ -105,8 +105,10 @@ function seedEquals(a: ThemeSeed, b: ThemeSeed): boolean {
 }
 
 export function derivePalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {
-  if (seedEquals(seed, DEFAULT_SEED[scheme])) return { ...LEGACY[scheme] };
+  return seedEquals(seed, DEFAULT_SEED[scheme]) ? { ...LEGACY[scheme] } : formulaPalette(seed, scheme);
+}
 
+export function formulaPalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {
   const bg = seed.surface.background;
   const text = seed.surface.foreground;
   const gray = grayscaleHex(seed.grayscale, scheme);
