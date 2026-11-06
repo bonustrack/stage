@@ -209,7 +209,7 @@ function isStoredFile(value: unknown): value is StoredFile {
   );
 }
 
-export function indexRecord(index: StorageIndex): Record<string, unknown> {
+function indexRecord(index: StorageIndex): Record<string, unknown> {
   return { v: 1, ...index };
 }
 
@@ -218,7 +218,7 @@ function retryOf(value: unknown): Record<string, number> {
   return Object.fromEntries(entries.filter((e): e is [string, number] => typeof e[1] === 'number'));
 }
 
-export function indexOfRecord(raw: unknown): StorageIndex | null {
+function indexOfRecord(raw: unknown): StorageIndex | null {
   const o = objectOf(raw);
   if (o === null || o.v !== 1 || typeof o.inboxId !== 'string' || typeof o.cursorNs !== 'number') return null;
   const files = Array.isArray(o.files) ? o.files.filter(isStoredFile) : [];

@@ -1,4 +1,4 @@
-import { attempt, recover } from './errorPolicy';
+import { attempt, recover, reported } from './errorPolicy';
 const DB_NAME = 'stage-cache';
 const DB_VERSION = 1;
 const STORE = 'kv';
@@ -142,3 +142,51 @@ async function sealedWrite(name: string, text: string | null): Promise<void> {
 }
 
 export const sealedCache = { read: sealedRead, write: sealedWrite };
+
+export interface RecordStore {
+  read(name: string): Promise<string | null>;
+  write(name: string, text: () => string | Promise<string>): void;
+  remove(name: string): Promise<void>;
+}
+
+const RECORD_WRITE_DELAY_MS = 1_000;
+
+export function createRecordStore(writeErrorTag: string): RecordStore {
+  const texts = new Map<string, () => string | Promise<string>>();
+  const timers = new Map<string, ReturnType<typeof setTimeout>>();
+  let queue: Promise<void> = Promise.resolve();
+  function queued(task: () => Promise<void>): Promise<void> {
+    const run = queue.then(task);
+    queue = run.catch(reported(writeErrorTag));
+    return queue;
+  }
+  function writeNow(name: string): void {
+    clearTimeout(timers.get(name));
+    timers.delete(name);
+    const text = texts.get(name);
+    texts.delete(name);
+    if (text !== undefined) void queued(async () => sealedWrite(name, await text()));
+  }
+  persistenceBackend.onFlushSignal(() => {
+    for (const name of [...timers.keys()]) writeNow(name);
+  });
+  return {
+    read: sealedRead,
+    write(name, text) {
+      texts.set(name, text);
+      if (timers.has(name)) return;
+      timers.set(
+        name,
+        setTimeout(() => {
+          writeNow(name);
+        }, RECORD_WRITE_DELAY_MS),
+      );
+    },
+    remove(name) {
+      clearTimeout(timers.get(name));
+      timers.delete(name);
+      texts.delete(name);
+      return queued(() => sealedWrite(name, null));
+    },
+  };
+}
