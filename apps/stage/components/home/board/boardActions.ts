@@ -9,7 +9,7 @@ import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
 import { moveGroupLabel, removeGroupLabel, renameGroupLabel, setGroupField } from '../../../lib/xmtp.groups';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { toastLabelError } from '../../channel/channelActions';
-import { renameNewChatProject } from '../newChatDefaults';
+import { renameNewChatProject } from '../../newChat/newChatDefaults';
 import {
   addedColumnOrder,
   cardColumnEdit,

@@ -4,7 +4,7 @@ import { usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { peerLabel } from '../../lib/peerProfiles';
-import { NewChatScreen } from './NewChatScreen';
+import { NewChatScreen } from '../newChat/NewChatScreen';
 import { useWebTabRail } from '../layout/webLayout';
 import { HomeError, HomeLoading, useChannelRowRenderer } from './parts';
 import { RowChannelMenu } from '../chatRow/chatRow';

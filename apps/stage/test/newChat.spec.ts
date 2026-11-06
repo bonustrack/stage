@@ -18,7 +18,7 @@ import {
   savedPicks,
   shownRecipients,
   startedChatWith,
-} from '../components/home/newChat.model';
+} from '../components/newChat/newChat.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
 const SELF = '0x5e1f000000000000000000000000000000000002';

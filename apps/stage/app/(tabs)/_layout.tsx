@@ -29,7 +29,7 @@ import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';
 import { Landing } from '../../components/landing/Landing';
 import { useAccountGate } from '../../lib/accountGate';
-import { useOpenNewChat } from '../../components/home/newChatFocus';
+import { useOpenNewChat } from '../../components/newChat/newChatFocus';
 import { Column } from '../../components/layout';
 
 function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }): React.ReactElement {

@@ -11,7 +11,7 @@ import {
   NO_NEW_CHAT_METADATA,
   parseNewChatFields,
   renamedNewChatFields,
-} from '../components/home/newChatMetadata.model';
+} from '../components/newChat/newChatMetadata.model';
 
 const alice = `0x${'1'.repeat(40)}`;
 const bob = `0x${'2'.repeat(40)}`;

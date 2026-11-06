@@ -10,7 +10,7 @@ import { HoverTint } from '../hover';
 import { appIcon } from '../widgets';
 import { useReportBottomChrome } from '../layout/bottomChrome';
 import { TAB_BAR_HEIGHT } from '../layout/webChrome.core';
-import { requestNewChatFocus, useOpenNewChat } from '../home/newChatFocus';
+import { requestNewChatFocus, useOpenNewChat } from '../newChat/newChatFocus';
 import { useBoardHome } from './boardHome';
 import { railMenuPages, isMenuPageOpen, isMenuPageRoute } from './menuPages';
 import { isTabRoute } from './splitRoutes';

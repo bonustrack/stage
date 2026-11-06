@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Path } from 'react-native-svg';
 import { CentralIconBase, type CentralIconBaseProps } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/CentralIconBase';
 import type { HomeView } from '../../lib/homeView';
-import { useOpenNewChat } from './newChatFocus';
+import { useOpenNewChat } from '../newChat/newChatFocus';
 import { HoverIconButton } from '../hover';
 import { CHANNELS_OVERFLOW_ITEMS, type HomeOverflowId } from './model';
 import { OverflowMenu, type MenuActions } from '../MenuRows';
