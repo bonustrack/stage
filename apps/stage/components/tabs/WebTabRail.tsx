@@ -117,8 +117,8 @@ function TabButtons({
             openNewChat();
             return;
           }
-          if (name === 'index') requestNewChatFocus();
-          navigate(TAB_HREF[name]);
+          if (name === 'index' && home.href === '/') requestNewChatFocus();
+          navigate(name === 'index' ? home.href : TAB_HREF[name]);
         };
         return vertical ? (
           <RailTooltip key={name} label={label} onPress={go} placement="beside" style={RAIL_BUTTON}>
