@@ -7,10 +7,10 @@ import { capabilities } from '../../lib/capabilities';
 import { channelTimestamp } from '../../lib/format';
 import { useInbox, useMailboxes, useReadMail, type InboxState, type Mailbox } from '../../lib/mail';
 import { usePalette } from '../../lib/theme';
-import { useWebTabRail } from '../layout/webLayout';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { inboxRows, type InboxRow } from './Inbox.model';
-import { SettingsGroup, SettingsPage } from '../settings/SettingsPage';
+import { SettingsGroup } from '../settings/SettingsPage';
+import { MenuPage } from '../tabs/MenuPage';
 import { PAGES } from '../tabs/pages';
 import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEmail1';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -141,11 +141,10 @@ function InboxBody(): React.ReactElement {
   return <MailList boxes={boxes} state={inbox.data} />;
 }
 
-export function InboxSettings(): React.ReactElement {
-  const rail = useWebTabRail();
+export function InboxScreen(): React.ReactElement | null {
   return (
-    <SettingsPage title="Inbox" back={!rail}>
+    <MenuPage id="inbox">
       <InboxBody />
-    </SettingsPage>
+    </MenuPage>
   );
 }

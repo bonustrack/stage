@@ -12,14 +12,7 @@ import { menuPointBelow } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePushEnabled } from '../../lib/pushPref';
-import {
-  retryDeveloperMode,
-  setDeveloperMode,
-  useDeveloperMode,
-  useDeveloperModeLoaded,
-  useDeveloperModeLoadFailed,
-} from '../../lib/developerMode';
-import { RetryNotice } from '../chrome/RetryNotice';
+import { setDeveloperMode } from '../../lib/developerMode';
 import { reported } from '../../lib/errorPolicy';
 import { isPushSupported } from '../../lib/pushRegister';
 import { setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference } from '../../lib/theme';
@@ -35,7 +28,8 @@ import { applyPush } from './NotificationsSettings';
 import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { settingsSection } from './settingsCatalog.model';
-import { settingsMenuPages } from '../tabs/menuPages';
+import { developerModeDescription, settingsMenuPages } from '../tabs/menuPages';
+import { DeveloperModeRetry, useDeveloperModeStatus } from '../tabs/MenuPage';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
@@ -106,9 +100,7 @@ function PreferencesGroup(): React.ReactElement {
   const pref = useThemePreference();
   const custom = useCustomTheme();
   const push = usePushEnabled();
-  const developerMode = useDeveloperMode();
-  const developerModeLoaded = useDeveloperModeLoaded();
-  const developerModeFailed = useDeveloperModeLoadFailed();
+  const developerMode = useDeveloperModeStatus();
   const pushSupported = isPushSupported();
   return (
     <SettingsGroup title="Preferences">
@@ -148,14 +140,14 @@ function PreferencesGroup(): React.ReactElement {
       <SettingsToggleRow
         label="Developer mode"
         name="developer-mode"
-        checked={developerMode}
-        disabled={!developerModeLoaded}
-        description="Show Check sync, Storage, Inbox and Dashboard on all your devices."
+        checked={developerMode === 'on'}
+        disabled={developerMode === 'loading' || developerMode === 'failed'}
+        description={developerModeDescription()}
         onChange={(enabled) => {
           void setDeveloperMode(enabled).catch(reported('developerMode.save'));
         }}
       />
-      {developerModeFailed ? <RetryNotice message="Developer mode could not be loaded." onRetry={retryDeveloperMode} /> : null}
+      {developerMode === 'failed' ? <DeveloperModeRetry /> : null}
     </SettingsGroup>
   );
 }
@@ -164,7 +156,7 @@ function MoreGroup(): React.ReactElement {
   const count = useDeviceCount();
   const address = useActiveAccountRecord()?.address;
   const boxes = useMailboxes().data;
-  const developerMode = useDeveloperMode();
+  const developerMode = useDeveloperModeStatus() === 'on';
   const pages = useWebTabRail() ? [] : settingsMenuPages(developerMode, (boxes?.length ?? 0) > 0);
   useEffect(() => {
     if (developerMode && boxes !== undefined) prefetchInbox(boxes);

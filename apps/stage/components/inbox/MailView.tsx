@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -9,11 +10,12 @@ import { downloadFile } from '../../lib/fileDownload';
 import { reported } from '../../lib/errorPolicy';
 import { markMailRead, useMail, useMailboxes } from '../../lib/mail';
 import { useEffectiveColorScheme } from '../../lib/theme';
+import { EmptyState } from '../chrome/EmptyState';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { mailBody, mailDataUri, mailDateLabel, mailReceivedAt, subjectLabel, visibleBlocks, type MailAttachmentRow } from './Inbox.model';
 import { MailBlocks } from './MailBlocks';
-import { SettingsGroup, SettingsNavRow, SettingsPage } from '../settings/SettingsPage';
-import { PAGES } from '../tabs/pages';
+import { SettingsGroup, SettingsNavRow } from '../settings/SettingsPage';
+import { MenuPage, MenuPageGate } from '../tabs/MenuPage';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { IconFileDownload } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileDownload';
 import { Column, Row, PAGE_GUTTER } from '../layout';
@@ -152,10 +154,17 @@ function MailBodyState({ label, id }: { label: string; id: string }): React.Reac
   return <MailContent key={`${box?.selection}/${label}/${id}`} mail={mail.data} id={id} />;
 }
 
-export function MailView({ label, id }: { label: string; id: string }): React.ReactElement {
+export function MailScreen(): React.ReactElement | null {
+  const { label, id } = useLocalSearchParams<{ label?: string; id?: string }>();
+  if (!label || !id)
+    return (
+      <MenuPageGate id="inbox">
+        <EmptyState title="This mail is not available." />
+      </MenuPageGate>
+    );
   return (
-    <SettingsPage title="Mail" backTo={PAGES.inbox.href}>
+    <MenuPage id="inbox" sub="Mail">
       <MailBodyState label={label} id={id} />
-    </SettingsPage>
+    </MenuPage>
   );
 }

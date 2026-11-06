@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { contactNameModel } from './ContactsScreen.model';
 import { ChannelRow } from '../chatRow/ChannelRow';
-import { StackHeader } from '../chrome/StackHeader';
+import { MenuPage } from '../tabs/MenuPage';
 import { usePalette } from '../../lib/theme';
 import { Platform } from 'react-native';
 import { useBottomChromeHeight } from '../layout/bottomChrome';
@@ -11,9 +11,9 @@ import { useContactList, type Contact } from '../../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { SuggestedContacts } from './SuggestedContacts';
-import { Column, LIST_TOP_GAP, VirtualList } from '../layout';
+import { LIST_TOP_GAP, VirtualList } from '../layout';
 
-export function ContactsScreen(): React.ReactElement {
+export function ContactsScreen(): React.ReactElement | null {
   const { bg } = usePalette();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -54,8 +54,7 @@ export function ContactsScreen(): React.ReactElement {
   );
 
   return (
-    <Column surface="surface" weight={1}>
-      <StackHeader title="Contacts" back={false} />
+    <MenuPage id="contacts" list>
       <VirtualList
         data={contacts}
         keyExtractor={(c) => c.address}
@@ -69,6 +68,6 @@ export function ContactsScreen(): React.ReactElement {
         }}
         ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
       />
-    </Column>
+    </MenuPage>
   );
 }

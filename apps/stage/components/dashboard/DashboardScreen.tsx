@@ -1,8 +1,7 @@
 import { Text } from '@stage-labs/kit/react-native/text';
-import { SettingsPage } from '../settings/SettingsPage';
 import { useDashboard, useDashboardLoaded } from '../../lib/frames/dashboard';
 import { canAddWidget } from '../../lib/frames/dashboard.model';
-import { useWebTabRail } from '../layout/webLayout';
+import { MenuPage } from '../tabs/MenuPage';
 import { AddLiveWidgetButton } from './AddLiveWidget';
 import { DashboardGrid } from './DashboardGrid';
 import { Column, PAGE_GUTTER } from '../layout';
@@ -21,18 +20,23 @@ function EmptyDashboard(): React.ReactElement {
   );
 }
 
-export function DashboardScreen(): React.ReactElement {
+function AddWidget(): React.ReactElement {
   const loaded = useDashboardLoaded();
   const { widgets } = useDashboard();
-  const rail = useWebTabRail();
+  return <AddLiveWidgetButton disabled={!loaded || !canAddWidget(widgets)} />;
+}
+
+function DashboardBody(): React.ReactElement | null {
+  const loaded = useDashboardLoaded();
+  const { widgets } = useDashboard();
+  if (!loaded) return null;
+  return widgets.length === 0 ? <EmptyDashboard /> : <DashboardGrid widgets={widgets} />;
+}
+
+export function DashboardScreen(): React.ReactElement | null {
   return (
-    <SettingsPage
-      title="Dashboard"
-      back={!rail}
-      keyboardShouldPersistTaps="handled"
-      trailing={<AddLiveWidgetButton disabled={!loaded || !canAddWidget(widgets)} />}
-    >
-      {!loaded ? null : widgets.length === 0 ? <EmptyDashboard /> : <DashboardGrid widgets={widgets} />}
-    </SettingsPage>
+    <MenuPage id="dashboard" keyboardShouldPersistTaps="handled" trailing={<AddWidget />}>
+      <DashboardBody />
+    </MenuPage>
   );
 }

@@ -13,7 +13,6 @@ import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
 import { RetryNotice } from '../chrome/RetryNotice';
-import { StackHeader } from '../chrome/StackHeader';
 import { LabelChip } from '../LabelChip';
 import { SearchTopnavBar } from '../SearchTopnavBar';
 import { capabilities } from '../../lib/capabilities';
@@ -21,8 +20,7 @@ import { report } from '../../lib/errorPolicy';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useOwnDeletes } from '../../lib/ownDeletes';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { PAGES } from '../tabs/pages';
-import { useWebTabRail } from '../layout/webLayout';
+import { MenuPage } from '../tabs/MenuPage';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { forgetStorageFile, retryStorage, storageChatOf, storageFileGone, useStorage, type StorageState } from '../../lib/storageIndex';
 import { fileKey, type StoredFile } from '../../lib/storageIndex.model';
@@ -257,7 +255,6 @@ function StorageBody(): React.ReactElement {
   const hidden = useOwnDeletes();
   const insets = useSafeAreaInsets();
   const { bg } = usePalette();
-  const rail = useWebTabRail();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StorageFilter>('all');
   const { opening, unavailable, open } = useFileOpener();
@@ -269,27 +266,29 @@ function StorageBody(): React.ReactElement {
     [opening, unavailable, open],
   );
   return (
-    <Column surface="surface" weight={1}>
-      <StackHeader title="Storage" backTo={PAGES.settings.href} back={!rail} />
-      <VirtualList
-        data={rows}
-        keyExtractor={(row) => row.key}
-        renderItem={renderItem}
-        extraData={`${opening ?? ''}:${unavailable.size}`}
-        estimatedItemSize={64}
-        keyboardShouldPersistTaps="handled"
-        style={{ backgroundColor: bg }}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
-        ListHeaderComponent={
-          <ListHeader query={query} onQuery={setQuery} filter={filter} onFilter={setFilter} storage={storage} hidden={hidden} />
-        }
-        ListEmptyComponent={<EmptyList storage={storage} filtered={query.trim() !== '' || filter !== 'all'} />}
-        ListFooterComponent={<Footnote show={rows.length > 0} />}
-      />
-    </Column>
+    <VirtualList
+      data={rows}
+      keyExtractor={(row) => row.key}
+      renderItem={renderItem}
+      extraData={`${opening ?? ''}:${unavailable.size}`}
+      estimatedItemSize={64}
+      keyboardShouldPersistTaps="handled"
+      style={{ backgroundColor: bg }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
+      ListHeaderComponent={
+        <ListHeader query={query} onQuery={setQuery} filter={filter} onFilter={setFilter} storage={storage} hidden={hidden} />
+      }
+      ListEmptyComponent={<EmptyList storage={storage} filtered={query.trim() !== '' || filter !== 'all'} />}
+      ListFooterComponent={<Footnote show={rows.length > 0} />}
+    />
   );
 }
 
-export function StorageScreen(): React.ReactElement {
-  return <StorageBody key={useAccountEpoch()} />;
+export function StorageScreen(): React.ReactElement | null {
+  const epoch = useAccountEpoch();
+  return (
+    <MenuPage id="storage" list>
+      <StorageBody key={epoch} />
+    </MenuPage>
+  );
 }

@@ -1,10 +1,1 @@
-import { DeveloperModeGate } from '../components/settings/DeveloperModeGate';
-import { DashboardScreen } from '../components/dashboard/DashboardScreen';
-
-export default function DashboardRoute(): React.ReactElement {
-  return (
-    <DeveloperModeGate>
-      <DashboardScreen />
-    </DeveloperModeGate>
-  );
-}
+export { DashboardScreen as default } from '../components/dashboard/DashboardScreen';
