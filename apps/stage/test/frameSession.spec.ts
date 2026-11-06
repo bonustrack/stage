@@ -13,7 +13,7 @@ import {
   setFrameSessionHost,
   streamInto,
   type FrameSessionHost,
-} from '../lib/frameSession';
+} from '../lib/frames/frameSession';
 import { KIT_CATALOG, titleMessages } from './frameFixtures';
 
 const QUOTE = { '@call': 'quote', catalogId: KIT_CATALOG, args: { coin: 'BTC' } };

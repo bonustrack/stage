@@ -3,11 +3,11 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { frameIsDeleted, frameOf } from '../components/frame/frame.model';
-import { useAccountEpoch } from './accountEpoch';
-import { recover } from './errorPolicy';
-import { ownDeletesReady } from './ownDeletes';
-import { convOfLine, sdk } from './xmtp.sdk';
+import { frameIsDeleted, frameOf } from '../../components/frame/frame.model';
+import { useAccountEpoch } from '../accountEpoch';
+import { recover } from '../errorPolicy';
+import { ownDeletesReady } from '../ownDeletes';
+import { convOfLine, sdk } from '../xmtp.sdk';
 
 export type FrameMessage = { state: 'ready'; frame: FrameContent } | { state: 'missing' } | { state: 'deleted' };
 

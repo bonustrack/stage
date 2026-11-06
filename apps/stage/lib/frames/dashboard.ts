@@ -14,10 +14,10 @@ import {
   liveWidgetAdd,
   removedLiveIds,
   type FrameWidgetAdd,
-} from '../components/dashboard/dashboard.model';
+} from '../../components/dashboard/dashboard.model';
 import { forgetLiveSnapshots } from './liveSnapshots';
-import { syncedSetting } from './sync/setting';
-import { editDashboard, receiveDashboard } from './syncedSettings.model';
+import { syncedSetting } from '../sync/setting';
+import { editDashboard, receiveDashboard } from '../syncedSettings.model';
 import { randomHex } from '@stage-labs/client/ids';
 
 function receiveForgetting(current: DashboardContent, incoming: DashboardContent, accountId: string): DashboardContent {

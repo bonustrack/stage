@@ -2,7 +2,7 @@ import type { NodeProblem, NodeResult, NodeUrlProblem } from '@stage-labs/client
 import { NODE_CODE_MAX_BYTES, NODES_HOST } from '@stage-labs/client/nodes/hosting';
 import { ownNodeUrl, type PublishProblem } from '@stage-labs/client/nodes/publish';
 import { frameContentSchema, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
-import type { FrameApplied } from '../../lib/frameSession';
+import type { FrameApplied } from '../../lib/frames/frameSession';
 import type { LiveSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import { frameRenders } from '../frame/frame.model';
 

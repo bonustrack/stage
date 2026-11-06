@@ -15,7 +15,7 @@ mock.module('../lib/accounts', () => ({
   getActiveAccountStrict: async () => null,
   getSelectedAccount: async () => null,
 }));
-mock.module('../lib/liveSnapshots', () => ({ forgetLiveSnapshots: () => undefined }));
+mock.module('../lib/frames/liveSnapshots', () => ({ forgetLiveSnapshots: () => undefined }));
 const { SYNC_APP_KINDS } = await import('../lib/sync/kinds');
 const { SHARED_CURSOR } = await import('../lib/sync/replay');
 

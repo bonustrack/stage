@@ -45,7 +45,7 @@ mock.module('../platform/storage', () => ({
     },
   },
 }));
-const { addFrameToDashboard, addLiveToDashboard, dashboardSync, changeDashboard } = await import('../lib/dashboard');
+const { addFrameToDashboard, addLiveToDashboard, dashboardSync, changeDashboard } = await import('../lib/frames/dashboard');
 
 const widget = (id: string, w: DashboardWidth = 'half', h: DashboardHeight = 1): DashboardWidget => ({
   id,

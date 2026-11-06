@@ -14,7 +14,7 @@ import {
   releaseFrameSession,
   setFrameSessionHost,
   type FrameSessionHost,
-} from '../../lib/frameSession';
+} from '../../lib/frames/frameSession';
 import { openInBubbleLink } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { ResetBoundary } from '../bubble/boundary';

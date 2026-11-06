@@ -3,8 +3,8 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { xmtpSendFrameAction } from '../../lib/xmtp.messages';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
-import { engageFrameSession, rejectAgentCall } from '../../lib/frameSession';
-import { refreshLiveFrame, sendToLiveFrame, useChatFrameKey, useLiveFrame } from '../../lib/liveFrame';
+import { engageFrameSession, rejectAgentCall } from '../../lib/frames/frameSession';
+import { refreshLiveFrame, sendToLiveFrame, useChatFrameKey, useLiveFrame } from '../../lib/frames/liveFrame';
 import { frameActionContent, frameNodeOf, type FrameMessageHandler, type FrameNodeLink, type FrameOut } from './frame.model';
 
 async function sendFrameActionToChat(line: string, messageId: string, out: FrameOut): Promise<boolean> {

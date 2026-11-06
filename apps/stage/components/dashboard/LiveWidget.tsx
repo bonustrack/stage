@@ -5,7 +5,7 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { FrameSurface } from '../frame/FramePreview';
 import type { FrameMessageHandler } from '../frame/frame.model';
 import { channelTimestamp } from '../../lib/format';
-import { liveWidgetKey, useLiveWidget } from '../../lib/liveWidget';
+import { liveWidgetKey, useLiveWidget } from '../../lib/frames/liveWidget';
 import { liveProblemText, liveStatusText, type LiveState } from './liveWidget.model';
 import { Unavailable, WidgetHeader, type WidgetGrip } from './widgetParts';
 import { Column } from '../layout';

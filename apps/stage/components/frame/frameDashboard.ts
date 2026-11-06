@@ -1,7 +1,7 @@
 import { newNodeKey } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { capabilities } from '../../lib/capabilities';
-import { addFrameToDashboard, addLiveToDashboard } from '../../lib/dashboard';
+import { addFrameToDashboard, addLiveToDashboard } from '../../lib/frames/dashboard';
 import { report } from '../../lib/errorPolicy';
 import { FRAME_ADD_TOASTS, type FrameWidgetAdd } from '../dashboard/dashboard.model';
 import { liveConfirmOf } from '../dashboard/liveWidget.model';

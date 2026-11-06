@@ -1,6 +1,6 @@
-import { liveSnapshotJson, liveSnapshotOf, type LiveState } from '../components/dashboard/liveWidget.model';
-import { appStorage } from '../platform/storage';
-import { attempt } from './errorPolicy';
+import { liveSnapshotJson, liveSnapshotOf, type LiveState } from '../../components/dashboard/liveWidget.model';
+import { appStorage } from '../../platform/storage';
+import { attempt } from '../errorPolicy';
 
 const SNAPSHOT_PREFIX = 'liveFrame.v1.';
 

@@ -10,7 +10,7 @@ import { FrameTile } from '../frame/FramePreview';
 import { chatLabelOf } from '../storage/StorageScreen.model';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { capabilities } from '../../lib/capabilities';
-import { useFrameMessage } from '../../lib/frameMessage';
+import { useFrameMessage } from '../../lib/frames/frameMessage';
 import { conversationLinkOf } from '../../lib/links';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { storageChatOf } from '../../lib/storageIndex';

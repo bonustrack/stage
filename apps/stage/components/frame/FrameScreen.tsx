@@ -10,7 +10,7 @@ import { HoverIconButton } from '../hover';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../lib/messaging/useConvConsent';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
-import { useFrameMessage } from '../../lib/frameMessage';
+import { useFrameMessage } from '../../lib/frames/frameMessage';
 import { usePalette } from '../../lib/theme';
 import type { XmtpConsent } from '../../lib/xmtp.types';
 import { useSafeAreaInsets } from '../layout/safeArea';

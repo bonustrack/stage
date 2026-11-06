@@ -1,9 +1,9 @@
 import type { NodeRequest, NodeResult } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
-import { nodeRequestOf, type FrameOut } from '../components/frame/frame.model';
-import { EMPTY_LIVE, liveProblemText, liveStateAfter, type LiveState } from '../components/dashboard/liveWidget.model';
+import { nodeRequestOf, type FrameOut } from '../../components/frame/frame.model';
+import { EMPTY_LIVE, liveProblemText, liveStateAfter, type LiveState } from '../../components/dashboard/liveWidget.model';
 import { streamInto } from './frameSession';
-import { makeListeners } from './storeCore';
+import { makeListeners } from '../storeCore';
 
 type OnMessage = (message: FrameMessage) => void;
 

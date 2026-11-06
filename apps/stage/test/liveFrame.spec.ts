@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test } from 'bun:test';
 import type { NodeRequest, NodeResult } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
-import { clearFrameSessions, frameSession } from '../lib/frameSession';
-import { makeLiveFrames } from '../lib/liveFrame.core';
+import { clearFrameSessions, frameSession } from '../lib/frames/frameSession';
+import { makeLiveFrames } from '../lib/frames/liveFrame.core';
 import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf, titleMessages } from './frameFixtures';
 
 const NODE = 'https://eth.example.com/price';

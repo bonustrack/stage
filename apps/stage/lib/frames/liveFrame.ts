@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import { loadNode, newNodeKey, sendNodeMessage } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
-import type { FrameOut } from '../components/frame/frame.model';
-import { getAccountEpoch, subscribeAccountEpoch, useAccountEpoch } from './accountEpoch';
-import { capabilities } from './capabilities';
+import type { FrameOut } from '../../components/frame/frame.model';
+import { getAccountEpoch, subscribeAccountEpoch, useAccountEpoch } from '../accountEpoch';
+import { capabilities } from '../capabilities';
 import { clearFrameSessions, RENDERER_CAPABILITIES } from './frameSession';
 import { makeLiveFrames } from './liveFrame.core';
-import { useStoreValue } from './storeCore';
+import { useStoreValue } from '../storeCore';
 
 const frames = makeLiveFrames({
   load: (url, key, onMessage) => loadNode(url, key, { capabilities: RENDERER_CAPABILITIES, onMessage }),

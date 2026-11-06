@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { RENDERER_CAPABILITIES } from '../../lib/frameSession';
+import { RENDERER_CAPABILITIES } from '../../lib/frames/frameSession';
 import { loadNode, newNodeKey, nodeUrlOf, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import { deleteNode, publishNode } from '@stage-labs/client/nodes/publish';
 import { NODES_HOST, NODE_LIMITS } from '@stage-labs/client/nodes/hosting';
@@ -10,7 +10,7 @@ import { FrameSurface } from '../frame/FramePreview';
 import { capabilities } from '../../lib/capabilities';
 import { ignore } from '../../lib/errorPolicy';
 import { linkProxyBase } from '../../lib/linkProxy';
-import { addLivePreview } from '../../lib/liveWidget';
+import { addLivePreview } from '../../lib/frames/liveWidget';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { livePreviewOf, publishProblemText, type LivePreview } from './liveWidget.model';
 import { Column, Row } from '../layout';

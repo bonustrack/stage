@@ -4,7 +4,7 @@ import { boardOrderSync } from '../boardOrder';
 import { categoryOrderSync } from '../channelGroups';
 import { searchStateSync } from '../searchState';
 import { homeViewSync } from '../homeView';
-import { dashboardSync } from '../dashboard';
+import { dashboardSync } from '../frames/dashboard';
 import { developerModeSync } from '../developerMode';
 import { stampLocal, takeIfNewer } from './clock';
 import { defineAppSyncKind, type AppSyncKind, type KindJob } from './kind';

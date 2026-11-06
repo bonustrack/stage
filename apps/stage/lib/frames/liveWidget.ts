@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useIsFocused } from 'expo-router';
-import { nodeRequestOf, type FrameMessageHandler, type FrameOut } from '../components/frame/frame.model';
+import { nodeRequestOf, type FrameMessageHandler, type FrameOut } from '../../components/frame/frame.model';
 import { loadNode, sendNodeMessage, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
 import type { LiveSource } from '@stage-labs/client/xmtp/sync/dashboard';
-import { FRAME_ADD_TOASTS } from '../components/dashboard/dashboard.model';
+import { FRAME_ADD_TOASTS } from '../../components/dashboard/dashboard.model';
 import {
   EMPTY_LIVE,
   LIVE_REFRESH_MS,
@@ -14,16 +14,16 @@ import {
   liveStateAfter,
   type LivePreview,
   type LiveState,
-} from '../components/dashboard/liveWidget.model';
-import { getAccountEpoch, useAccountEpoch } from './accountEpoch';
-import { isAppInFront, subscribeAppInFront } from './appInFront';
-import { capabilities } from './capabilities';
+} from '../../components/dashboard/liveWidget.model';
+import { getAccountEpoch, useAccountEpoch } from '../accountEpoch';
+import { isAppInFront, subscribeAppInFront } from '../appInFront';
+import { capabilities } from '../capabilities';
 import { addLiveToDashboard, dashboardAccountId } from './dashboard';
-import { ignore, recover, report } from './errorPolicy';
+import { ignore, recover, report } from '../errorPolicy';
 import { RENDERER_CAPABILITIES, streamInto } from './frameSession';
 import { readLiveSnapshot, saveLiveSnapshot } from './liveSnapshots';
-import { getQueryClient } from './queryClient';
-import { useStoreValue } from './storeCore';
+import { getQueryClient } from '../queryClient';
+import { useStoreValue } from '../storeCore';
 
 const LIVE_QUERY = 'liveWidget';
 const SNAPSHOT_QUERY = 'liveSnapshot';
