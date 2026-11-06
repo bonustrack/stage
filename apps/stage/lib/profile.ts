@@ -9,8 +9,7 @@ import {
   ProfileNameTakenError,
   runProfileSetup,
 } from '@stage-labs/client/profile/setup';
-import { base } from 'viem/chains';
-import { createWalletClient, namehash, type Hex } from 'viem';
+import { namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
 import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
@@ -22,12 +21,11 @@ import {
   inspectNameSetup,
 } from '@stage-labs/client/identity/onchainProfile';
 import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
-import { broviderTransport } from '@stage-labs/client/wallet/client';
-import { getSelectedAccount, getViemAccount, type AccountRecord } from './accounts';
+import { getSelectedAccount, type AccountRecord } from './accounts';
 import { getAccountSelection } from './accountSelection';
 import { linkProxyBase } from './linkProxy';
 import { invalidatePeerProfile } from './peerProfiles';
-import { kernelClientForRecord } from './zerodev/client';
+import { sendCallsFrom, signFrom } from './tx';
 import { ignore, recover, reported } from './errorPolicy';
 import { claimMailKey, registerOwnMailKey } from './mailKey';
 import { profileRequest, readPicture } from './profileFetch';
@@ -75,32 +73,25 @@ export interface ProfileChanges {
   removeImage?: boolean;
 }
 
+async function succeededOnBase(hash: Hex): Promise<boolean> {
+  return (await baseProfileClient().waitForTransactionReceipt({ hash })).status === 'success';
+}
+
 async function confirmedOnBase(hash: Hex): Promise<Hex> {
-  const receipt = await baseProfileClient().waitForTransactionReceipt({ hash });
-  if (receipt.status !== 'success') throw new Error('The transaction reverted.');
+  if (!(await succeededOnBase(hash))) throw new Error('The transaction reverted.');
   return hash;
 }
 
+const NO_PROFILE_KEY = 'This account cannot save a profile.';
+
 async function sendOnBase(account: ProfileAccount, calls: ContractCall[]): Promise<Hex> {
-  const { record, assertCurrent } = account;
-  if (record.type === 'smart') {
-    const kernel = await kernelClientForRecord(record);
-    const batch = calls.map((call) => ({ to: call.to, data: call.data, value: 0n }));
-    assertCurrent();
-    const hash = await confirmedOnBase(await kernel.sendTransaction({ calls: batch }));
-    assertCurrent();
-    return hash;
-  }
-  const local = await getViemAccount(record.id);
-  if (!local) throw new Error('This account cannot save a profile.');
-  const wallet = createWalletClient({ account: local, chain: base, transport: broviderTransport(base.id) });
-  let hash: Hex = '0x';
-  for (const call of calls) {
-    assertCurrent();
-    hash = await confirmedOnBase(await wallet.sendTransaction({ to: call.to, data: call.data }));
-  }
-  assertCurrent();
-  return hash;
+  const sent = await sendCallsFrom(account.record, calls, {
+    missingKey: NO_PROFILE_KEY,
+    before: account.assertCurrent,
+    confirm: confirmedOnBase,
+  });
+  account.assertCurrent();
+  return sent.hash;
 }
 
 function refreshProfileCaches(address: string, avatarChanged = false): void {
@@ -146,16 +137,12 @@ export type { NameCheck } from '@stage-labs/client/profile/setup';
 const HEADERS = { 'content-type': 'application/json', 'x-stage-client': '1' };
 
 async function signForAccount(account: ProfileAccount, message: string): Promise<Hex> {
-  const { record, assertCurrent } = account;
-  if (record.type === 'smart') {
-    const kernel = await kernelClientForRecord(record);
-    assertCurrent();
-    return kernel.signMessage({ message } as Parameters<typeof kernel.signMessage>[0]);
-  }
-  const local = await getViemAccount(record.id);
-  if (!local) throw new Error('This account cannot sign messages');
-  assertCurrent();
-  return local.signMessage({ message });
+  const signed = await signFrom(
+    account.record,
+    { message },
+    { missingKey: 'This account cannot sign messages', before: account.assertCurrent },
+  );
+  return signed.signature;
 }
 
 export function checkStageName(label: string): Promise<NameCheck> {
@@ -197,13 +184,21 @@ export async function claimStageName(label: string): Promise<string> {
   return claimForAccount(await profileAccount(), label);
 }
 
+async function nameSetupCalls(address: string, label: string, records: Record<string, string>): Promise<ContractCall[]> {
+  const name = stageNameOf(label);
+  return encodeNameSetup(name, address as Hex, records, await nameResolver(name));
+}
+
 export async function setUpStageName(address: string, label: string, records: Record<string, string> = {}): Promise<Hex> {
   const account = await profileAccount(address);
-  const name = stageNameOf(label);
-  const calls = encodeNameSetup(name, address as Hex, records, await nameResolver(name));
-  const hash = await sendOnBase(account, calls);
+  const hash = await sendOnBase(account, await nameSetupCalls(address, label, records));
   refreshProfileCaches(address, records[PROFILE_TEXT_KEYS.avatar] !== undefined);
   return hash;
+}
+
+export async function claimAndSetUpStageName(address: string, label: string): Promise<Hex> {
+  await claimStageName(label);
+  return setUpStageName(address, label);
 }
 
 export async function applyProfileSetup(
@@ -221,13 +216,10 @@ export async function applyProfileSetup(
       claim: (label) => claimForAccount(account, label),
       send: async (label, records) => {
         if (account.record.type !== 'smart') throw new Error('The prepared account is not a smart wallet.');
-        const name = stageNameOf(label);
-        const calls = encodeNameSetup(name, address as Hex, records, await nameResolver(name));
-        const kernel = await kernelClientForRecord(account.record);
-        account.assertCurrent();
-        return kernel.sendTransaction({ calls: calls.map((call) => ({ ...call, value: 0n })) });
+        const calls = await nameSetupCalls(address, label, records);
+        return (await sendCallsFrom(account.record, calls, { missingKey: NO_PROFILE_KEY, before: account.assertCurrent })).hash;
       },
-      confirm: async (hash) => (await baseProfileClient().waitForTransactionReceipt({ hash })).status === 'success',
+      confirm: succeededOnBase,
     },
     profile,
     progress,

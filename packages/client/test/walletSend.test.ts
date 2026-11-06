@@ -40,8 +40,18 @@ describe('parseSendAmount', () => {
     expect(() => parseSendAmount('0x1', 18)).toThrow('Invalid amount');
   });
 
-  it('rejects more fraction digits than token decimals', () => {
-    expect(() => parseSendAmount('1.1234567', 6)).toThrow('Invalid amount');
+  it('rounds fraction digits past the token decimals, as the smart account send always did', () => {
+    expect(parseSendAmount('1.1234567', 6)).toBe(1_123_457n);
+    expect(parseSendAmount('0.0033333333333333335', 18)).toBe(3_333_333_333_333_334n);
+  });
+
+  it('accepts a bare leading or trailing decimal point', () => {
+    expect(parseSendAmount('.5', 18)).toBe(parseUnits('0.5', 18));
+    expect(parseSendAmount('1.', 18)).toBe(parseUnits('1', 18));
+  });
+
+  it('rejects an amount that rounds to zero', () => {
+    expect(() => parseSendAmount('0.0000001', 6)).toThrow('Invalid amount');
   });
 });
 

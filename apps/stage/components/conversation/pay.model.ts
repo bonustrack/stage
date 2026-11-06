@@ -1,4 +1,4 @@
-import { base } from 'viem/chains';
+import { isWalletChain, WALLET_CHAIN_ONLY } from '@stage-labs/client/wallet/chains';
 
 export interface PaymentCheck {
   callCount: number;
@@ -9,8 +9,6 @@ export interface PaymentCheck {
 
 export function paymentBlocker(check: PaymentCheck): string | null {
   if (check.callCount !== 1) return 'This payment has several steps. Stage can only pay single-step requests.';
-  if (check.smartAccount && check.chainId !== base.id) {
-    return `This payment is on ${check.chainName}. Your Stage wallet pays on Base only.`;
-  }
+  if (check.smartAccount && !isWalletChain(check.chainId)) return `This payment is on ${check.chainName}. ${WALLET_CHAIN_ONLY}`;
   return null;
 }
