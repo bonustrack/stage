@@ -1,39 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { patchRowSent } from '../../lib/channelsCache';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import { isFeedBubble } from '@stage-labs/client/xmtp/visibility';
 import { attachmentsPayload } from '@stage-labs/client/xmtp/entryPayload';
-import type { VirtualListHandle } from '../layout';
 import { deletedViewCache } from './messageDeletion.model';
 import { optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
-import { useStableCallback } from '../useStableCallback';
-import { attempt } from '../../lib/errorPolicy';
 import { useUploadedAttachments } from '../../lib/localAttachmentCache';
 import type { OptimisticEntry } from '../composer/types';
 
-function useStickyBottom(
-  allBubblesLength: number,
-  convId: string | undefined,
-  atBottom: () => boolean,
-  setShowJump: (v: boolean) => void,
-  scrollToNewest: () => void,
-): void {
-  const prevBubbleCount = useRef(0);
-  useEffect(() => {
-    prevBubbleCount.current = 0;
-  }, [convId]);
-  useEffect(() => {
-    if (allBubblesLength > prevBubbleCount.current && prevBubbleCount.current > 0 && atBottom()) {
-      scrollToNewest();
-      setShowJump(false);
-    }
-    prevBubbleCount.current = allBubblesLength;
-  }, [allBubblesLength, atBottom]);
-}
-
-function useFeedBubbles(events: HistoryEntry[], myUri: string, deletedIds: DeletedMessages) {
+export function useFeedBubbles(events: HistoryEntry[], myUri: string, deletedIds: DeletedMessages) {
   const [outbound, setOutbound] = useState<OutboundState>(() => ({ optimistic: [], confirmedIds: new Map() }));
 
   const deletedView = useMemo(deletedViewCache, []);
@@ -62,49 +38,12 @@ function useFeedBubbles(events: HistoryEntry[], myUri: string, deletedIds: Delet
 }
 
 export function useOutboundLayer(
-  events: HistoryEntry[],
+  setOutbound: React.Dispatch<React.SetStateAction<OutboundState>>,
   myUri: string,
   convId: string | undefined,
   activeLine: string,
-  isAtBottomRef: React.MutableRefObject<boolean>,
-  deletedIds: DeletedMessages,
+  followNewest: () => void,
 ) {
-  const atBottom = useCallback(() => isAtBottomRef.current, [isAtBottomRef]);
-  const [showJump, setShowJump] = useState(false);
-  const [jumpHighlightId, setJumpHighlightId] = useState<string | null>(null);
-  const jumpClearTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const listRef = useRef<VirtualListHandle>(null);
-  const scrollToNewest = useStableCallback(() => {
-    requestAnimationFrame(() => {
-      attempt(() => {
-        if (Platform.OS === 'web') listRef.current?.scrollToEnd({ animated: false });
-        else listRef.current?.scrollToOffset({ offset: 0, animated: false });
-      }, 'ui');
-    });
-  });
-
-  const { confirmedIds, setOutbound, allBubbles, rowKeyOf } = useFeedBubbles(events, myUri, deletedIds);
-  useStickyBottom(allBubbles.length, convId, atBottom, setShowJump, scrollToNewest);
-  const jumpToMessage = useStableCallback((messageId: string) => {
-    const idx = allBubbles.findIndex((b) => b.id === messageId);
-    setJumpHighlightId(messageId);
-    if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current);
-    jumpClearTimer.current = setTimeout(() => {
-      setJumpHighlightId(null);
-    }, 1800);
-    if (idx < 0) return;
-    const index = Platform.OS === 'web' ? allBubbles.length - 1 - idx : idx;
-    attempt(() => {
-      listRef.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 });
-    }, 'ui');
-  });
-  useEffect(
-    () => () => {
-      if (jumpClearTimer.current) clearTimeout(jumpClearTimer.current);
-    },
-    [],
-  );
-
   const onOptimistic = useCallback(
     ({ localId, text, attachments, replyTo, payload }: OptimisticEntry) => {
       setOutbound((s) => ({
@@ -124,29 +63,18 @@ export function useOutboundLayer(
           ...s.optimistic,
         ],
       }));
-      isAtBottomRef.current = true;
-      scrollToNewest();
-      setShowJump(false);
+      followNewest();
       if (convId) patchRowSent(convId, optimisticRowPreview(text, attachments));
     },
-    [activeLine, myUri, convId, isAtBottomRef],
+    [activeLine, myUri, convId, followNewest, setOutbound],
   );
 
-  const onSent = useCallback((localId: string, _error: unknown, sentId?: string) => {
-    setOutbound((s) => recordSent(s, localId, sentId));
-  }, []);
+  const onSent = useCallback(
+    (localId: string, _error: unknown, sentId?: string) => {
+      setOutbound((s) => recordSent(s, localId, sentId));
+    },
+    [setOutbound],
+  );
 
-  return {
-    showJump,
-    setShowJump,
-    scrollToNewest,
-    jumpHighlightId,
-    listRef,
-    confirmedIds,
-    allBubbles,
-    rowKeyOf,
-    jumpToMessage,
-    onOptimistic,
-    onSent,
-  };
+  return { onOptimistic, onSent };
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
@@ -13,16 +13,6 @@ import { useConvConsentState } from '../../lib/messaging/useConvConsent';
 import { inboxEthAddresses } from '../../lib/xmtp.identity';
 import { setActiveConversation } from '../../modules/stage-pill';
 import { setActiveConvId } from '../../lib/xmtp.state.core';
-import {
-  markConvAtBottom,
-  convScrollKey,
-  getScrollOffset,
-  peekScrollOffset,
-  flushScrollOffset,
-  getFeedAnchor,
-  peekFeedAnchor,
-  type FeedAnchor,
-} from '../../lib/scrollPos';
 import { isCoarsePointer } from '../layout/webLayout';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -39,7 +29,8 @@ import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { makeSeenCheck } from './markRead.model';
-import { useOutboundLayer } from './useOutboundLayer';
+import { useFeedBubbles, useOutboundLayer } from './useOutboundLayer';
+import { useFeedScroll } from './useFeedScroll';
 import { useClearedChats } from '../../lib/sync/clearedChats';
 import { entriesAfterClear, feedReachedClear, countFromOthers } from './feed-helpers';
 import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
@@ -128,39 +119,6 @@ function useConsentGate(convId: string | undefined) {
     setAllowedHere(true);
   }, []);
   return { consent: allowedHere ? 'allowed' : (streamed ?? undefined), consentKnown: allowedHere || streamed !== undefined, markAllowed };
-}
-
-function useConvScrollPersistence(convId: string | undefined) {
-  const savedScrollRef = useRef<number | undefined>(undefined);
-  const savedAnchorRef = useRef<FeedAnchor | null>(null);
-  const savedScrollLoaded = useRef(false);
-  const didRestoreScroll = useRef(false);
-  const pinBottomUntil = useRef(0);
-  const isAtBottomRef = useRef(true);
-  useLayoutEffect(() => {
-    if (!convId) return;
-    const key = convScrollKey(convId);
-    isAtBottomRef.current = true;
-    didRestoreScroll.current = false;
-    pinBottomUntil.current = 0;
-    const cached = peekScrollOffset(key);
-    const cachedAnchor = peekFeedAnchor(convId);
-    if (cached !== undefined && cachedAnchor !== undefined) {
-      savedScrollRef.current = cached;
-      savedAnchorRef.current = cachedAnchor;
-      savedScrollLoaded.current = true;
-    } else {
-      void Promise.all([getScrollOffset(key), getFeedAnchor(convId)]).then(([o, anchor]) => {
-        savedScrollRef.current = o;
-        savedAnchorRef.current = anchor;
-        savedScrollLoaded.current = true;
-      });
-    }
-    return () => {
-      flushScrollOffset(key);
-    };
-  }, [convId]);
-  return { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef };
 }
 
 function useFeedDerivations(events: HistoryEntry[], myUri: string, dm: boolean) {
@@ -307,21 +265,15 @@ export function useConversationState(convId: string | undefined, focus: string |
 
   const people = useConvPeople(events, fields, inboxId);
 
-  const scroll = useConvScrollPersistence(convId);
-  const { isAtBottomRef } = scroll;
-
   const { reactions, ownReactions, votes, ownVotes, openAnswers, callRecords } = useFeedDerivations(events, myUri, !isGroup);
   const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, inboxId);
 
   const reactionsLayer = useReactionsLayer(activeLine, ownReactions);
   const votesLayer = useVotesLayer(activeLine, events, votes, ownVotes, openAnswers, myUri);
   const txSignLayer = useTxSignLayer(activeLine);
-  const outbound = useOutboundLayer(events, myUri, convId, activeLine, isAtBottomRef, deletedIds);
-
-  const markAtBottom = useCallback(() => {
-    isAtBottomRef.current = true;
-    if (convId) markConvAtBottom(convId);
-  }, [convId]);
+  const { confirmedIds, setOutbound, allBubbles, rowKeyOf } = useFeedBubbles(events, myUri, deletedIds);
+  const scroll = useFeedScroll(convId, allBubbles, feed.loadOlder);
+  const outbound = useOutboundLayer(setOutbound, myUri, convId, activeLine, scroll.followNewest);
   const onAnswer = useCallback(
     (messageId: string, label: string) => {
       void xmtpReply(activeLine, messageId, label).catch((e: unknown) => {
@@ -335,6 +287,9 @@ export function useConversationState(convId: string | undefined, focus: string |
     ...feed,
     ...menus,
     ...outbound,
+    confirmedIds,
+    allBubbles,
+    rowKeyOf,
     ...reactionsLayer,
     ...votesLayer,
     ...txSignLayer,
@@ -352,7 +307,6 @@ export function useConversationState(convId: string | undefined, focus: string |
     deletedIds,
     isSuperAdmin,
     onAnswer,
-    markAtBottom,
     consent,
     consentKnown,
     consentAllowed,

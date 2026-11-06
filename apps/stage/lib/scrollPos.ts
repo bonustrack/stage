@@ -16,8 +16,6 @@ export interface FeedAnchor {
 
 const WRITE_DEBOUNCE_MS = 300;
 
-export const AT_BOTTOM_THRESHOLD_PX = 24;
-
 function debouncedKv<T>(parse: (raw: string | null) => T | undefined, write: (key: string, value: T) => Promise<void>) {
   const values = new Map<string, T>();
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -103,27 +101,6 @@ export function getScrollOffset(key: string): Promise<number | undefined> {
 
 export function saveScrollOffset(key: string, offset: number): void {
   if (isOffset(offset)) offsets.save(key, offset);
-}
-
-export function planFeedRestore(args: {
-  loaded: boolean;
-  contentHeight: number;
-  itemCount: number;
-  savedOffset: number | undefined;
-  now: number;
-  pinUntil: number;
-  setPinUntil: (t: number) => void;
-}): 'skip' | 'bottom' | { offset: number; done: true } {
-  const { loaded, contentHeight, itemCount, savedOffset, now, pinUntil, setPinUntil } = args;
-  if (!loaded || contentHeight <= 0 || itemCount === 0) return 'skip';
-  if (savedOffset == null || savedOffset <= 0) {
-    if (pinUntil === 0) {
-      setPinUntil(now + 1200);
-      return 'bottom';
-    }
-    return now > pinUntil ? 'skip' : 'bottom';
-  }
-  return { offset: Math.min(savedOffset, Math.max(0, contentHeight)), done: true };
 }
 
 export function markConvAtBottom(convId: string): void {

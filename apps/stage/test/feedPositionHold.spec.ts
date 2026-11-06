@@ -1,24 +1,24 @@
 import { describe, expect, test } from 'bun:test';
-import { feedPositionHold } from '../components/conversation/feed-helpers';
-
-const FOLLOW_WITHIN = 24;
+import { feedOrientation as inverted } from '../components/conversation/feedOrientation';
+import { feedOrientation as upright } from '../components/conversation/feedOrientation.web';
+import { FOLLOW_NEWEST_WITHIN_PX } from '../components/conversation/feedOrientation.core';
 
 describe('the native feed follows new messages unless the reader has scrolled back', () => {
   test('resting on the newest message leaves the list free to follow a new row', () => {
-    expect(feedPositionHold(false, false, FOLLOW_WITHIN)).toBeUndefined();
+    expect(inverted.positionHold(false)).toBeUndefined();
   });
 
   test('reading older messages holds the visible row in place', () => {
-    expect(feedPositionHold(false, true, FOLLOW_WITHIN)).toEqual({ minIndexForVisible: 0, autoscrollToTopThreshold: FOLLOW_WITHIN });
+    expect(inverted.positionHold(true)).toEqual({ minIndexForVisible: 0, autoscrollToTopThreshold: FOLLOW_NEWEST_WITHIN_PX });
   });
 });
 
 describe('the web feed keeps its anchor for older pages wherever the reader is', () => {
   test('at the newest message', () => {
-    expect(feedPositionHold(true, false, FOLLOW_WITHIN)).toEqual({ minIndexForVisible: 0 });
+    expect(upright.positionHold(false)).toEqual({ minIndexForVisible: 0 });
   });
 
   test('while reading older messages', () => {
-    expect(feedPositionHold(true, true, FOLLOW_WITHIN)).toEqual({ minIndexForVisible: 0 });
+    expect(upright.positionHold(true)).toEqual({ minIndexForVisible: 0 });
   });
 });

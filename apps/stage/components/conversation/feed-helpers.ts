@@ -2,58 +2,6 @@ import { humanizeMentions, attachmentEmojiPreview } from '@stage-labs/client/xmt
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { attachmentsOf } from '@stage-labs/client/xmtp/entryPayload';
 
-export interface FeedScrollMetrics {
-  offset: number;
-  contentHeight: number;
-  viewportHeight: number;
-}
-
-export function feedDistanceFromNewest(m: FeedScrollMetrics, upright: boolean): number {
-  if (!upright) return Math.max(0, m.offset);
-  return Math.max(0, m.contentHeight - m.viewportHeight - m.offset);
-}
-
-interface FeedPositionHold {
-  minIndexForVisible: number;
-  autoscrollToTopThreshold?: number;
-}
-
-export function feedPositionHold(upright: boolean, awayFromNewest: boolean, followWithinPx: number): FeedPositionHold | undefined {
-  if (upright) return { minIndexForVisible: 0 };
-  return awayFromNewest ? { minIndexForVisible: 0, autoscrollToTopThreshold: followWithinPx } : undefined;
-}
-
-export function uprightScrollOffset(distanceFromNewest: number, contentHeight: number, viewportHeight: number): number {
-  return Math.max(0, contentHeight - viewportHeight - distanceFromNewest);
-}
-
-export function shouldPageOlder(m: FeedScrollMetrics, positioned: boolean): boolean {
-  if (!positioned) return false;
-  if (m.contentHeight <= m.viewportHeight) return true;
-  return m.offset <= m.viewportHeight / 2;
-}
-
-export const FEED_MIN_BATCH = 12;
-export const FEED_MAX_FIRST_PAINT = 60;
-
-export function uprightFirstBatch(rowCount: number): number {
-  return Math.min(Math.max(rowCount, FEED_MIN_BATCH), FEED_MAX_FIRST_PAINT);
-}
-
-export function planUprightRestore(args: {
-  loaded: boolean;
-  restoredSaved: boolean;
-  savedDistance: number | undefined;
-  userDragged: boolean;
-  atNewest: boolean;
-}): 'saved' | 'newest' | 'skip' {
-  const { loaded, restoredSaved, savedDistance, userDragged, atNewest } = args;
-  if (!loaded) return 'skip';
-  if (!restoredSaved && savedDistance != null && savedDistance > 0) return 'saved';
-  if (atNewest) return 'newest';
-  return userDragged || restoredSaved ? 'skip' : 'newest';
-}
-
 export function previewOf(e: HistoryEntry): string {
   const text = e.text ? humanizeMentions(e.text).slice(0, 80) : '';
   if (text) return text;
