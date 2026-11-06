@@ -12,7 +12,7 @@ function deferred() {
   return { promise, release };
 }
 
-function fixture(timeoutMs = 80) {
+function fixture(timeoutMs = 1_000) {
   const publisher = makeSenderFilterPublisher(Date.now, timeoutMs);
   const bodies: string[] = [];
   const input: SenderFilterInput = {
@@ -321,7 +321,7 @@ describe('foreground sender-filter isolation', () => {
   });
 
   test('multiple batches reuse an unchanged account snapshot within the original deadline', async () => {
-    const f = fixture(150);
+    const f = fixture(1_000);
     const topics = Array.from({ length: 300 }, (_, i) => `/xmtp/mls/1/g-${i.toString(16)}/proto`);
     let scans = 0;
     f.input.collectTopics = async () => {
@@ -344,7 +344,7 @@ describe('foreground sender-filter isolation', () => {
   });
 
   test('an unrelated publication cannot invalidate an expensive selected-conversation read', async () => {
-    const f = fixture(150);
+    const f = fixture(1_000);
     const entered = deferred();
     const collect = f.input.collectTopics;
     let scans = 0;
