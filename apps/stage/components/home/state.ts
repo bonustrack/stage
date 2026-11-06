@@ -1,16 +1,14 @@
 import { useMemo, useState } from 'react';
 import type { HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { usePersistedScroll, type PersistedScroll } from '../layout';
-import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { useHomeRows } from '../../lib/messaging/homeRows';
 import { useChannelGroups } from '../../lib/channelGroups';
 import { usePinnedOrder } from '../../lib/sync/pins';
 import { groupRows, rowsOf, type HomeListItem } from './groups.model';
 import type { NameOf } from './groupBy.model';
-import { useStoreValue } from '../../lib/storeCore';
 import { CHANNELS_SCROLL_KEY } from '../../lib/scrollPos';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { Row } from './model';
-import { isChannelHidden } from '../../lib/sync/hiddenChannels';
 
 export interface RowMenu {
   convId: string;
@@ -22,32 +20,20 @@ export interface RowMenu {
 
 interface HomeState {
   rows: Row[] | null;
-  error: string;
-  setError: React.Dispatch<React.SetStateAction<string>>;
   rowMenu: RowMenu | null;
   setRowMenu: React.Dispatch<React.SetStateAction<RowMenu | null>>;
   pinned: readonly string[];
   scroll: PersistedScroll;
 }
 
-export function homeRows(): Row[] | null {
-  return getCachedRows() as Row[] | null;
-}
-
-export function updateHomeRows(fn: (prev: Row[] | null) => Row[] | null): void {
-  const next = fn(homeRows());
-  setCachedRows(next?.filter((row) => row.peerAddress !== null || !isChannelHidden(row.convId)) ?? null);
-}
-
 export function useHomeState(): HomeState {
-  const rows = useStoreValue(subscribeCachedRows, homeRows);
-  const [error, setError] = useState<string>('');
+  const rows = useHomeRows();
   const [rowMenu, setRowMenu] = useState<RowMenu | null>(null);
   const pinned = usePinnedOrder();
 
   const scroll = usePersistedScroll(CHANNELS_SCROLL_KEY);
 
-  return { rows, error, setError, rowMenu, setRowMenu, pinned, scroll };
+  return { rows, rowMenu, setRowMenu, pinned, scroll };
 }
 
 interface GroupedRows {

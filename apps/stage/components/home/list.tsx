@@ -10,7 +10,7 @@ import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { useBoardHome } from '../tabs/boardHome';
 import { SuggestedContacts } from '../contacts/SuggestedContacts';
 import { usePalette } from '../../lib/theme';
-import { homeRows } from './state';
+import { homeRows } from '../../lib/messaging/homeRows';
 import { listKeyOf, type HomeListItem } from './groups.model';
 import type { Row } from './model';
 import { useWebTabRail } from '../layout/webLayout';

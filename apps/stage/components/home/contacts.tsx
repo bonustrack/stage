@@ -8,7 +8,7 @@ import { usePersonLookup } from '../../lib/resolveHandle';
 import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
 import { dmLinkOf } from '../../lib/links';
-import { homeRows } from './state';
+import { homeRows } from '../../lib/messaging/homeRows';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
 

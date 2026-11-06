@@ -20,10 +20,8 @@ import { fontName } from '@stage-labs/kit/tokens';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/pushRegister';
-import { ensureActiveAccount } from '../lib/xmtp.recover.core';
 import { useOwnMailKey } from '../lib/mail';
-import { ensureMessagingStreamSync } from '../lib/messaging/streamSync';
-import { getOrCreateXmtpClient } from '../lib/xmtp.client';
+import { bootMessaging, useMessagingBoot } from '../lib/messaging/boot';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
 import { applyWebGlobalStyles } from '../platform/webStyles';
@@ -37,7 +35,7 @@ import { KeyboardResync } from '../components/system/KeyboardResync';
 import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
-import { ignored, reported } from '../lib/errorPolicy';
+import { ignored } from '../lib/errorPolicy';
 import { useTabRole } from '../lib/tabLock';
 import { TabStandby } from '../components/system/TabStandby';
 import { Column, PANE_LEFT_PAD, viewportFill } from '../components/layout';
@@ -48,9 +46,7 @@ applyWebGlobalStyles();
 installPlainTextCopy();
 bootKitFonts();
 if (Platform.OS === 'web' && !isBrowserExtension() && !isOnboardingRoute(currentRoute('').replace(/\?.*$/, ''))) {
-  void ensureActiveAccount()
-    .then(() => getOrCreateXmtpClient('production'))
-    .catch(ignored(undefined, 'optional'));
+  void bootMessaging(true).catch(ignored(undefined, 'optional'));
 }
 
 (function applyDefaultFont(): void {
@@ -120,15 +116,7 @@ function RootLayoutInner(): React.ReactElement {
   const onboarding = useAccountGate();
   const pathname = usePathname();
 
-  useEffect(() => {
-    if (!onboarding.hasAccount) return;
-    void ensureActiveAccount()
-      .then(() => (isOnboardingRoute(pathname) ? undefined : getOrCreateXmtpClient('production')))
-      .catch(reported('boot.client'));
-  }, [onboarding.hasAccount]);
-  useEffect(() => {
-    ensureMessagingStreamSync();
-  }, []);
+  useMessagingBoot(onboarding, !isOnboardingRoute(pathname));
   useOwnMailKey(onboarding.hasAccount);
 
   const loaded = useKitFontsLoaded();

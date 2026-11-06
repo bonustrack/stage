@@ -4,7 +4,7 @@ import { SearchTopnavBar } from '../../SearchTopnavBar';
 import { useWebTabRail } from '../../layout/webLayout';
 import { getPeerDisplayName, getPeerHandle } from '../../../lib/peerProfiles';
 import { memberNames, searchFilterSources, searchQueryText, setSearchQueryText, type FilterScope } from './searchFilter.model';
-import { homeRows } from '../state';
+import { homeRows } from '../../../lib/messaging/homeRows';
 import { subscribeCachedRows } from '../../../lib/channelsCache';
 import { useStoreValue } from '../../../lib/storeCore';
 import { useClearedChats } from '../../../lib/sync/clearedChats';

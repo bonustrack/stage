@@ -8,11 +8,10 @@ import { useHomeTopnav, useSearchOpen } from '../list';
 import type { HomeMenuState } from '../topnavRight';
 import { useLastActivityCutoff } from '../../../lib/lastActivity';
 import { HomeError, HomeSpinner } from '../parts';
-import { homeRows } from '../state';
-import { useChannelsSync } from '../../../lib/messaging/channelsSync';
+import { homeRows } from '../../../lib/messaging/homeRows';
+import { useChannelsSyncError } from '../../../lib/messaging/channelsSync';
 import type { Row as ChannelRowData } from '../model';
 import { subscribeCachedRows } from '../../../lib/channelsCache';
-import { useAccountEpoch } from '../../../lib/accountEpoch';
 import { useStoreValue } from '../../../lib/storeCore';
 import { usePinnedOrder } from '../../../lib/sync/pins';
 import { useClearedChats } from '../../../lib/sync/clearedChats';
@@ -49,8 +48,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const { columnBy } = view;
   const sort = homeSortOf(view);
   const order = columnBy === 'category' ? categoryOrder : boardOrder;
-  const [error, setError] = useState<string>('');
-  useChannelsSync({ accountEpoch: useAccountEpoch(), setError, enabled: Platform.OS === 'web' });
+  const error = useChannelsSyncError();
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(

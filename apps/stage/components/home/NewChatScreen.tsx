@@ -28,7 +28,7 @@ import {
   NO_NEW_CHAT_METADATA,
   type NewChatMetadata as Metadata,
 } from './newChatMetadata.model';
-import { homeRows } from './state';
+import { homeRows } from '../../lib/messaging/homeRows';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
   NO_MEMBER_HISTORY,

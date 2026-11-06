@@ -1,5 +1,7 @@
-import { useEffect, type Dispatch, type SetStateAction } from 'react';
+import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
+import { makeValue } from '../storeCore';
+import { useAccountEpoch } from '../accountEpoch';
 import { getOrCreateXmtpClient, syncPreferences } from '../xmtp.client';
 import { NoAccountError } from '../accountSelection';
 import { getXmtpBootstrapPhase, isActiveConv } from '../xmtp.state.core';
@@ -25,8 +27,8 @@ import { hydratePeerProfiles } from '../peerProfileCache';
 import { perfLog, perfTime } from '../perf';
 import type { Conversation } from '@xmtp/react-native-sdk';
 import { dmIdsByPeer, uniqueByConvId } from '@stage-labs/client/xmtp/dmRoutes';
-import { homeRows, updateHomeRows } from '../../components/home/state';
-import { mergePaintedRows, visibleRowsDiff, type Row } from '../../components/home/model';
+import { hasHomeRows, homeRows, updateHomeRows, type HomeRow as Row } from './homeRows';
+import { mergePaintedRows, visibleRowsDiff } from './channelsSync.model';
 import { schedulePushTopicRefresh } from '../pushRegister';
 import { report, recover, attempt } from '../errorPolicy';
 import { presentInboundNotification } from '../pushNotify';
@@ -66,7 +68,7 @@ interface MsgHandlerDeps {
 }
 
 function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<void>) {
-  let missTimer: number | null = null;
+  let missTimer: ReturnType<typeof setTimeout> | null = null;
   let refreshInFlight = false;
 
   const runRefresh = (): void => {
@@ -84,7 +86,7 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
     missTimer = setTimeout(() => {
       missTimer = null;
       if (!isCancelled()) runRefresh();
-    }, 1_000) as unknown as number;
+    }, 1_000);
   }
 
   return (convId: string | null): void => {
@@ -173,15 +175,13 @@ async function summarize(conv: Conversation, selfInboxId: string, alreadySynced 
   return { ...(await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(homeRows() ?? []))) };
 }
 
-interface SyncArgs {
-  accountEpoch: number;
-  setError: Dispatch<SetStateAction<string>>;
-  enabled?: boolean;
-}
+const INIT_TIMEOUT_MESSAGE = 'XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.';
 
-function hasHomeRows(): boolean {
-  return (homeRows()?.length ?? 0) > 0;
-}
+const PAINTS_LOCAL_OVER_ROWS = Platform.OS !== 'web';
+
+const syncError = makeValue('');
+
+export const useChannelsSyncError = syncError.use;
 
 interface SyncRun {
   cancelled: boolean;
@@ -218,7 +218,7 @@ function makeRefreshers(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>
   const refresh = async (): Promise<void> => {
     if (run.cancelled) return;
     try {
-      if (!(Platform.OS === 'web' && hasHomeRows())) {
+      if (PAINTS_LOCAL_OVER_ROWS || !hasHomeRows()) {
         const local = await perfTime('channels.listLocal', listVisibleConversations);
         perfLog('channels.localCount', { count: local.length });
         if (local.length > 0) await perfTime('channels.paintLocal', () => paintFrom(local));
@@ -308,7 +308,7 @@ function subscribeLiveStreams(run: SyncRun, r: Refreshers, selfInboxId: string):
   });
 }
 
-async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
+async function initSync(run: SyncRun): Promise<void> {
   try {
     const client = await getOrCreateXmtpClient('production');
     clearTimeout(run.initTimer);
@@ -326,54 +326,60 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
       clearTimeout(run.initTimer);
       return;
     }
-    if (!hasHomeRows()) args.setError((e as Error).message);
+    if (!hasHomeRows()) syncError.set((e as Error).message);
   }
 }
 
-export function useChannelsSync(args: SyncArgs): void {
-  const { accountEpoch, setError, enabled = true } = args;
-  useEffect(() => {
-    if (!enabled) return;
-    setError('');
-    const run: SyncRun = { cancelled: false, cancelConvStream: null, cancelMsgStream: null, cancelConsentStream: null, appStateSub: null };
-    const armInitTimer = (): void => {
-      run.initTimer = setTimeout(() => {
-        if (run.cancelled || hasHomeRows()) return;
-        if (getXmtpBootstrapPhase() === 'registering') {
-          armInitTimer();
-          return;
-        }
-        setError('XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.');
-      }, INIT_TIMEOUT_MS);
-    };
-    armInitTimer();
-    const removeHidden = (): void => {
-      if (homeRows() !== null) updateHomeRows((rows) => rows);
-    };
-    const stopVisibility = subscribeHiddenChannels(() => {
-      removeHidden();
-      void run.reconcileVisibility?.();
-    });
-    void (async (): Promise<void> => {
-      const account = await getActiveAccount();
-      if (account) await loadHiddenChannels(account.id);
-      await hydrateCachedRows();
-      if (!run.cancelled) removeHidden();
-    })().catch(recover('home.visibility', undefined));
-    void hydratePeerProfiles();
-    void initSync(run, args);
-    return (): void => {
-      run.cancelled = true;
-      stopVisibility();
-      clearTimeout(run.initTimer);
-      for (const stop of [run.cancelConvStream, run.cancelMsgStream, run.cancelConsentStream]) {
-        if (stop) attempt(stop, 'cleanup');
-      }
-      const appStateSub = run.appStateSub;
-      if (appStateSub)
-        attempt(() => {
-          appStateSub.remove();
-        }, 'cleanup');
-    };
-  }, [accountEpoch, enabled]);
+function armInitTimer(run: SyncRun): void {
+  run.initTimer = setTimeout(() => {
+    if (run.cancelled || hasHomeRows()) return;
+    if (getXmtpBootstrapPhase() === 'registering') {
+      armInitTimer(run);
+      return;
+    }
+    syncError.set(INIT_TIMEOUT_MESSAGE);
+  }, INIT_TIMEOUT_MS);
+}
+
+function stopRun(run: SyncRun): void {
+  run.cancelled = true;
+  clearTimeout(run.initTimer);
+  for (const stop of [run.cancelConvStream, run.cancelMsgStream, run.cancelConsentStream]) {
+    if (stop) attempt(stop, 'cleanup');
+  }
+  const appStateSub = run.appStateSub;
+  if (appStateSub)
+    attempt(() => {
+      appStateSub.remove();
+    }, 'cleanup');
+}
+
+function startChannelsSync(): () => void {
+  syncError.set('');
+  const run: SyncRun = { cancelled: false, cancelConvStream: null, cancelMsgStream: null, cancelConsentStream: null, appStateSub: null };
+  armInitTimer(run);
+  const removeHidden = (): void => {
+    if (homeRows() !== null) updateHomeRows((rows) => rows);
+  };
+  const stopVisibility = subscribeHiddenChannels(() => {
+    removeHidden();
+    void run.reconcileVisibility?.();
+  });
+  void (async (): Promise<void> => {
+    const account = await getActiveAccount();
+    if (account) await loadHiddenChannels(account.id);
+    await hydrateCachedRows();
+    if (!run.cancelled) removeHidden();
+  })().catch(recover('home.visibility', undefined));
+  void hydratePeerProfiles();
+  void initSync(run);
+  return (): void => {
+    stopRun(run);
+    stopVisibility();
+  };
+}
+
+export function useChannelsSync(active: boolean): void {
+  const accountEpoch = useAccountEpoch();
+  useEffect(() => (active ? startChannelsSync() : undefined), [accountEpoch, active]);
 }

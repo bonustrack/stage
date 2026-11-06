@@ -7,7 +7,7 @@ import { useStoreValue } from '../../lib/storeCore';
 import { memberNamesOf } from './search/FilterSearch';
 import { parseSearchFilter, searchRowMatcher } from './search/searchFilter.model';
 import { visibleUnreadCount } from './model';
-import { homeRows } from './state';
+import { homeRows } from '../../lib/messaging/homeRows';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
 
 function subscribeSources(onChange: () => void): () => void {

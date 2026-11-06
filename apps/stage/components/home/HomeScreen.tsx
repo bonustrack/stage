@@ -12,7 +12,7 @@ import { useWebTabRail } from '../layout/webLayout';
 import { HomeError, RowChannelMenu, useChannelRowRenderer } from './parts';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ChannelsList } from './list';
-import { useChannelsSync } from '../../lib/messaging/channelsSync';
+import { useChannelsSyncError } from '../../lib/messaging/channelsSync';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
 import { useHomeFilters } from './labelbar';
 import { searchBarLabels, type Row } from './model';
@@ -106,11 +106,9 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const cleared = useClearedChats();
   const visibleRows = useMemo(() => sortedRows.filter((r) => matches(r) && !isRowCleared(cleared, r)), [sortedRows, matches, cleared]);
   const list = useGroupedRows(visibleRows, search.text, groupBy, peerLabel, channelProfilesVersion);
-  const accountEpoch = useAccountEpoch();
   const fields = useChannelFields('chats');
   const hideAvatar = !fields.avatar;
-
-  useChannelsSync({ accountEpoch, setError: st.setError });
+  const error = useChannelsSyncError();
 
   const activePath = pane ? pathname : '';
   const menuConvId = rowMenu?.convId;
@@ -137,8 +135,8 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     items: list.items,
   });
 
-  const placeholder = st.error ? (
-    <HomeError error={st.error} dark={dark} fg={fg} />
+  const placeholder = error ? (
+    <HomeError error={error} dark={dark} fg={fg} />
   ) : !rows ? (
     <Column weight={1} align="center" justify="center">
       <Spinner size={28} color={head} />
