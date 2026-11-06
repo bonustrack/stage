@@ -73,9 +73,9 @@ describe('assignedEntries', () => {
   test('zero or multiple current members, case insensitive and without duplicates', () => {
     const entries = memberListEntries(Object.keys(names), nameOf, shortOf);
     expect(assignedEntries(entries, [])).toEqual([]);
-    expect(assignedEntries(entries, [Object.keys(names)[0]?.toUpperCase() ?? '', Object.keys(names)[0] ?? '', '0xgone'])).toEqual([
-      entries[1],
-    ]);
+    expect(assignedEntries(entries, [Object.keys(names)[0]?.toUpperCase() ?? '', Object.keys(names)[0] ?? '', '0xgone'])).toEqual(
+      entries.slice(1, 2),
+    );
     expect(assignedEntries(entries, Object.keys(names))).toEqual(entries);
   });
 });

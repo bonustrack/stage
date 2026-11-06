@@ -8,6 +8,7 @@ import {
 import { CALL_INVITE_CODEC, CALL_SIGNAL_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';
 import type { PushTopics } from '@stage-labs/client/xmtp/pushRegistration';
 import { makeSendTimingDiagnostic } from '../lib/sendTiming.core';
+import type { SendPhase } from '@stage-labs/client/xmtp/sendTiming';
 
 const TOPIC = '/xmtp/mls/1/g-abcdef/proto';
 const PERIOD = 700;
@@ -445,7 +446,7 @@ describe('account-wide sender publication without a push token', () => {
     controller.abort();
     await expect(send).rejects.toThrow('cancelled');
     timing?.finish();
-    const expected = [
+    const expected: { phase: SendPhase; durationMs: number }[][] = [
       [
         { phase: 'filter.preferences', durationMs: 0 },
         { phase: 'filter.keys', durationMs: 0 },

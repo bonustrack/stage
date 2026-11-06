@@ -15,7 +15,6 @@ export default defineConfig({
           'fingerprint.config.js',
           'lib/**/*.web.{ts,tsx}',
           'lib/**/*.ios.{ts,tsx}',
-          'lib/xmtp.stripGuard.ts',
           'components/**/*.web.{ts,tsx}',
           'components/**/*.ios.{ts,tsx}',
           'modules/*/index.ts',

@@ -59,6 +59,7 @@ describe('dictation language fallback', () => {
     const h = harness();
     await h.control.start();
     const old = h.starts[0];
+    if (old === undefined) throw new Error('dictation did not start');
     h.event({ text: 'Bonjour' });
     h.event(fallback);
     await tick();

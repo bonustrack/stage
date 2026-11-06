@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, type Chain, type PublicClient } from 'viem';
 import { base } from 'viem/chains';
 
 type Answer = { result: unknown } | { error: unknown };
@@ -33,7 +33,9 @@ async function replay(_url: string | URL | Request, init?: RequestInit): Promise
   return live;
 }
 
-export const recordedBaseClient = createPublicClient({
-  chain: base,
+const chain: Chain = base;
+
+export const recordedBaseClient: PublicClient = createPublicClient({
+  chain,
   transport: http(RPC, { fetchFn: replay, retryCount: RECORD ? 5 : 0 }),
 });

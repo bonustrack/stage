@@ -4,6 +4,7 @@ import { parseMail } from '@stage-labs/client/mail/mime';
 import { inboxRows, mailBody, mailReceivedAt, senderLabel, subjectLabel, visibleBlocks } from '../components/inbox/Inbox.model';
 import { mailReadKey, parseReadKeys, withReadKey, type InboxEntry } from '../lib/mail.core';
 import { safeFileName } from '@stage-labs/client/files';
+import type { Hex } from 'viem';
 
 const index = (from: string, subject: string): MailIndex => ({
   envelopeFrom: 'bounce@example.com',
@@ -83,7 +84,7 @@ describe('inbox list', () => {
 
 describe('mail view', () => {
   test('decrypts a sealed mail and its index into the view model', async () => {
-    const keys = await deriveMailKey('alice1', () => Promise.resolve(`0x${'ab'.repeat(65)}`));
+    const keys = await deriveMailKey('alice1', () => Promise.resolve<Hex>(`0x${'ab'.repeat(65)}`));
     const id = '1759430000000-9ef6fdd0-0635-4130-8b77-aaeae0f65158';
     const sealedIndex = sealMailIndex(keys.publicKey, 'alice1', id, index('Ann <ann@example.com>', 'Report'));
     const sealedBody = sealMailPart(keys.publicKey, 'alice1', id, 'body', new TextEncoder().encode(RAW));

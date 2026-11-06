@@ -46,7 +46,7 @@ function harness() {
       return SELF;
     },
     sendJson: async (_convId, codec, content) => {
-      sent.push({ kind: codec === CALL_INVITE_CODEC ? 'invite' : 'signal', content });
+      sent.push({ kind: codec.contentType.typeId === CALL_INVITE_CODEC.contentType.typeId ? 'invite' : 'signal', content });
     },
     toast: (message) => {
       toasts.push(message);

@@ -1,15 +1,17 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test';
+import type { Hex } from 'viem';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import type { SignMessage } from '@stage-labs/client/mail/api';
 import { deriveMailKey, mailPublicKeyHex, sealMailIndex, sealMailPart } from '@stage-labs/client/mail/mailbox';
 import { makeMailAccess, type Mailbox } from '../lib/mail.core';
+import { fetchHandler } from './helpers';
 
 const A: AccountRecord = { id: 'a', address: `0x${'aa'.repeat(20)}`, type: 'generated', dbDir: 'a', createdAt: 0 };
 const B: AccountRecord = { ...A, id: 'b', address: `0x${'bb'.repeat(20)}`, dbDir: 'b' };
 const ID = '1759430000000-9ef6fdd0-0635-4130-8b77-aaeae0f65158';
 const SIGN: Record<string, SignMessage> = {
-  a: () => Promise.resolve(`0x${'ab'.repeat(65)}`),
-  b: () => Promise.resolve(`0x${'cd'.repeat(65)}`),
+  a: () => Promise.resolve<Hex>(`0x${'ab'.repeat(65)}`),
+  b: () => Promise.resolve<Hex>(`0x${'cd'.repeat(65)}`),
 };
 
 function deferred<T>() {
@@ -63,26 +65,28 @@ async function harness() {
       return Promise.resolve(sign);
     },
   };
-  fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-    const request = new Request(input, init);
-    const url = new URL(request.url);
-    const body = request.method === 'POST' ? ((await request.json()) as { label: string }) : null;
-    const label = body?.label ?? url.searchParams.get('label') ?? '';
-    const key = `${url.pathname}/${label}`;
-    requests.push(key);
-    started.get(key)?.resolve(undefined);
-    const pause = pauses.get(key);
-    if (pause !== undefined) return pause.promise;
-    const fixture = fixtures.get(label);
-    if (fixture === undefined) throw new Error('unexpected mailbox');
-    if (url.pathname === '/mail/key') return Response.json(fixture);
-    if (url.pathname === '/mail/challenge') return Response.json({ nonce: 'nonce', expiresAt: Date.now() + 60_000 });
-    if (url.pathname === '/mail/session') return Response.json({ token: label, expiresAt: Date.now() + 900_000 });
-    if (request.headers.get('authorization') !== `Bearer ${label}`) throw new Error('wrong session');
-    if (url.pathname === '/mail/list') return Response.json({ mails: [{ id: ID, ts: 1759430000000, size: 10, index: fixture.index }] });
-    if (url.pathname === '/mail/message') return new Response(fixture.body);
-    throw new Error('unexpected request');
-  });
+  fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(
+    fetchHandler(async (input, init) => {
+      const request = new Request(input, init);
+      const url = new URL(request.url);
+      const body = request.method === 'POST' ? ((await request.json()) as { label: string }) : null;
+      const label = body?.label ?? url.searchParams.get('label') ?? '';
+      const key = `${url.pathname}/${label}`;
+      requests.push(key);
+      started.get(key)?.resolve(undefined);
+      const pause = pauses.get(key);
+      if (pause !== undefined) return pause.promise;
+      const fixture = fixtures.get(label);
+      if (fixture === undefined) throw new Error('unexpected mailbox');
+      if (url.pathname === '/mail/key') return Response.json(fixture);
+      if (url.pathname === '/mail/challenge') return Response.json({ nonce: 'nonce', expiresAt: Date.now() + 60_000 });
+      if (url.pathname === '/mail/session') return Response.json({ token: label, expiresAt: Date.now() + 900_000 });
+      if (request.headers.get('authorization') !== `Bearer ${label}`) throw new Error('wrong session');
+      if (url.pathname === '/mail/list') return Response.json({ mails: [{ id: ID, ts: 1759430000000, size: 10, index: fixture.index }] });
+      if (url.pathname === '/mail/message') return new Response(fixture.body.slice());
+      throw new Error('unexpected request');
+    }),
+  );
   const activeLookup = { run: (): Promise<AccountRecord | null> => Promise.resolve(active) };
   const access = makeMailAccess({
     activeAccount: () => activeLookup.run(),

@@ -66,7 +66,7 @@ describe('bubble model', () => {
   });
 
   test('only a request from someone else can be signed', () => {
-    const request = structuredPayload('signatureRequest', { kind: 'personal', message: 'hello' });
+    const request = structuredPayload('signatureRequest', { id: 'request-1', kind: 'personal', message: 'hello' });
     expect(bubbleModelOf(entry('s1', { from: PEER, payload: request }), feedState(), view).signable).toBe(true);
     expect(bubbleModelOf(entry('s2', { from: ME, payload: request }), feedState(), view).signable).toBe(false);
   });

@@ -99,9 +99,12 @@ describe('the peer connection both platforms open', () => {
       },
     };
     const { pc } = fakeConnection();
+    let connectionState = 'new';
     const connection: ReturnType<RtcPlatform<Track>['connect']> = {
       ...pc,
-      connectionState: 'new',
+      get connectionState() {
+        return connectionState;
+      },
       createDataChannel: (label, init) => {
         log.push(`channel ${label} ${init.id}`);
         return channel;
@@ -143,7 +146,7 @@ describe('the peer connection both platforms open', () => {
     );
     fire('track');
     fire('track', { kind: 'audio' });
-    connection.connectionState = 'connected';
+    connectionState = 'connected';
     fire('connectionstatechange');
     channel.readyState = 'open';
     fire('channel open');

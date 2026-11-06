@@ -1,4 +1,4 @@
-import type { SanitizedFileUri, encryptSanitizedAttachment, sanitizeFileUri } from './xmtp.attachmentSdk';
+import type { SanitizedFileUri, encryptSanitizedAttachment, sanitizeFileUri } from '../lib/xmtp.attachmentSdk';
 
 type AssertAssignable<B, A extends B> = A;
 

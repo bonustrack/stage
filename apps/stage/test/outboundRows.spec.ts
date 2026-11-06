@@ -94,7 +94,7 @@ describe('matching pending messages to the live feed', () => {
   });
 
   test('an attachment without a registered upload is only confirmed by its sent id', () => {
-    const photo = entry('tmp_1', 0, '', { payload: { attachments: [{ mime: 'image/png' }] } });
+    const photo = entry('tmp_1', 0, '', { payload: { attachments: [{ kind: 'image', mime: 'image/png' }] } });
     const live = [entry('real_1', 400, '')];
     expect(matchConfirmed([photo], live, ME, new Map()).size).toBe(0);
     expect(matchConfirmed([photo], live, ME, new Map([['tmp_1', 'real_1']])).get('tmp_1')).toBe('real_1');

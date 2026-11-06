@@ -1,13 +1,20 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { planSendSteps, unsentDraft } from '../components/composer/send.model';
-import { COMPOSER_TEXT_BYTE_LIMIT, textAttachment } from '../components/composer/textAttachment.model';
+import { textAttachment } from '../components/composer/textAttachment.model';
 import { locationAttachment } from '../components/composer/location.model';
 import type { Attachment } from '../components/composer/types';
 import type { LocalAttachmentInput, OnAttachmentsUploaded } from '../lib/xmtp.types';
 
 const longText = `  Café, ไทย, 👨‍👩‍👧‍👦, é\r\n${'Full original text\n\n'.repeat(300)}\t \n`;
-const photo: Attachment = { id: 'photo', url: 'file:///photo.jpg', kind: 'image', mime: 'image/jpeg', name: 'photo.jpg', size: 10 };
+const photo = {
+  id: 'photo',
+  url: 'file:///photo.jpg',
+  kind: 'image',
+  mime: 'image/jpeg',
+  name: 'photo.jpg',
+  size: 10,
+} satisfies Attachment;
 
 function senders() {
   return {
@@ -38,7 +45,6 @@ function bytesOf(file: Attachment): Uint8Array {
 describe('large composer text becomes a UTF-8 attachment', () => {
   test('the exact byte limit remains a normal message, the next byte becomes a file', () => {
     const mint = mock(() => 'text-file');
-    expect(COMPOSER_TEXT_BYTE_LIMIT).toBe(4096);
     expect(textAttachment('a'.repeat(4095), mint)).toBeNull();
     expect(textAttachment('a'.repeat(4096), mint)).toBeNull();
     expect(mint).not.toHaveBeenCalled();
@@ -102,18 +108,11 @@ describe('large composer text becomes a UTF-8 attachment', () => {
   test('a long reply keeps its reference on the generated file only', async () => {
     const { ports, steps } = planner(longText, [photo], 'reference');
     const generated = steps[0]?.attachments[0];
+    if (generated === undefined) throw new Error('the long text was not turned into a file');
     for (const step of steps) await step.run();
-    expect(ports.attachments.mock.calls[0]).toEqual([
-      'line',
-      [{ fileUri: generated?.url, mimeType: 'text/plain', filename: 'message.txt' }],
-      undefined,
-      undefined,
-      'reference',
-    ]);
-    expect(ports.attachments.mock.calls[1]).toEqual([
-      'line',
-      [{ fileUri: photo.url, mimeType: photo.mime, filename: photo.name }],
-      undefined,
+    expect(ports.attachments.mock.calls.map(([line, files, , , replyTo]) => [line, files, replyTo])).toEqual([
+      ['line', [{ fileUri: generated.url, mimeType: 'text/plain', filename: 'message.txt' }], 'reference'],
+      ['line', [{ fileUri: photo.url, mimeType: photo.mime, filename: photo.name }], undefined],
     ]);
     expect(ports.reply).not.toHaveBeenCalled();
   });

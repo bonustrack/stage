@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { getAddress } from 'viem';
-import { internalLinkPath, routeForUrl } from '@stage-labs/client/routing/deepLinks';
+import { internalLinkPath, routeForUrl, type ParsedRoute } from '@stage-labs/client/routing/deepLinks';
 import { contactQrValue, contactScanResult, parseContactQr } from '../components/contacts/ContactQr.model';
 import { redirectSystemPath } from '../app/+native-intent';
 
@@ -57,7 +57,7 @@ describe('Stage contact QR codes', () => {
   });
 
   test('web and native deep links reach the same existing contact profile', () => {
-    const target = { pathname: '/profile/[id]', params: { id: ALICE } };
+    const target: ParsedRoute = { pathname: '/profile/[id]', params: { id: ALICE } };
     expect(routeForUrl(LINK)).toEqual(target);
     expect(internalLinkPath(LINK)).toBe(`/profile/${ALICE}`);
     expect(routeForUrl(redirectSystemPath({ path: LINK, initial: true }))).toEqual(target);

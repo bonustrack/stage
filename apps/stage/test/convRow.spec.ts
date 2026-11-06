@@ -30,7 +30,8 @@ describe('listedConvRow', () => {
   });
 
   test('a channel row without a name or image never borrows the list title', () => {
-    expect(listedConvRow([{ convId: 'g', peerAddress: null, title: '3 members', avatarUri: null }], 'g')).toEqual({
+    const cached = { convId: 'g', peerAddress: null, title: '3 members', avatarUri: null };
+    expect(listedConvRow([cached], 'g')).toEqual({
       peerAddress: null,
       groupName: undefined,
       avatarUri: null,

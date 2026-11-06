@@ -52,8 +52,8 @@ describe('internalLinkPath', () => {
       ['stage://wallet/send?to=alice', '/wallet/send?to=alice'],
       ['https://stage.box/#/settings/display?theme=dark', '/settings/display?theme=dark'],
       ['https://stage.box/frame?convId=channel72&id=abc', '/frame?convId=channel72&id=abc'],
-    ])
-      expect(internalLinkPath(url ?? '')).toBe(path);
+    ] satisfies [string, string][])
+      expect(internalLinkPath(url)).toBe(path);
   });
 
   test('never treats other hosts, credentials, ports or schemes as internal', () => {

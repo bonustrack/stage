@@ -25,30 +25,28 @@ async function apply(manifest: AndroidManifest): Promise<AndroidManifest> {
   return result.modResults;
 }
 
+type ApplicationWithProvider = AndroidConfig.Manifest.ManifestApplication & { provider: { $: Record<string, string> }[] };
+
 function manifest(factory = 'androidx.core.app.CoreComponentFactory'): AndroidManifest {
-  return {
-    manifest: {
-      $: { 'xmlns:android': 'http://schemas.android.com/apk/res/android' },
-      application: [
-        {
-          $: { 'android:name': '.MainApplication', 'android:appComponentFactory': factory, 'tools:replace': 'android:allowBackup' },
-          activity: [
-            {
-              $: { 'android:name': '.MainActivity', 'android:exported': 'true' },
-              'intent-filter': [
-                {
-                  action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
-                  category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }],
-                },
-              ],
-            },
-          ],
-          provider: [{ $: { 'android:name': 'ExistingProvider', 'android:authorities': 'box.metro.monitor.provider' } }],
-        },
-      ],
-    },
+  const application: ApplicationWithProvider = {
+    $: { 'android:name': '.MainApplication', 'android:appComponentFactory': factory, 'tools:replace': 'android:allowBackup' },
+    activity: [
+      {
+        $: { 'android:name': '.MainActivity', 'android:exported': 'true' },
+        'intent-filter': [
+          {
+            action: [{ $: { 'android:name': 'android.intent.action.MAIN' } }],
+            category: [{ $: { 'android:name': 'android.intent.category.LAUNCHER' } }],
+          },
+        ],
+      },
+    ],
+    provider: [{ $: { 'android:name': 'ExistingProvider', 'android:authorities': 'box.metro.monitor.provider' } }],
   };
+  return { manifest: { $: { 'xmlns:android': 'http://schemas.android.com/apk/res/android' }, queries: [], application: [application] } };
 }
+
+const providersOf = (application: object): unknown => ('provider' in application ? application.provider : undefined);
 
 describe('native crash report entry', () => {
   test('adds an isolated entry without changing normal entry or provider process', async () => {
@@ -57,7 +55,8 @@ describe('native crash report entry', () => {
     const result = AndroidConfig.Manifest.getMainApplicationOrThrow(await apply(input));
     expect(result.$['android:name']).toBe('.MainApplication');
     expect(result.activity?.[0]).toEqual(original.activity?.[0]);
-    expect(result.provider).toEqual(original.provider);
+    expect(providersOf(result)).toEqual(providersOf(original));
+    expect(providersOf(result)).toBeDefined();
     expect(result.activity?.[1]?.$).toMatchObject({
       'android:process': ':stage_crash_report',
       'android:taskAffinity': 'box.metro.monitor.crashreport',

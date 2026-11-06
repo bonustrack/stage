@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import type { EntryAttachment } from '@stage-labs/client/xmtp/entryPayload';
 import { makeLocalAttachmentCache } from '../lib/localAttachmentCache.core';
 import type { UploadedAttachment } from '../lib/xmtp.types';
 import { outboundView, recordSent, settleOutbound, type OutboundState } from '../components/conversation/outboundRows.model';
@@ -9,7 +10,7 @@ const REMOTE = { url: 'https://store.example/encrypted-1', contentDigest: 'diges
 const OTHER = { url: 'https://store.example/encrypted-2', contentDigest: 'digest-2' };
 const URI = 'file:///photo.jpg';
 
-function entry(id: string, attachments: object[], extra: Partial<HistoryEntry> = {}): HistoryEntry {
+function entry(id: string, attachments: EntryAttachment[], extra: Partial<HistoryEntry> = {}): HistoryEntry {
   return { id, station: 'xmtp', line: 'line', from: ME, to: 'line', ts: '2026-10-05T10:00:00.000Z', payload: { attachments }, ...extra };
 }
 
@@ -160,7 +161,14 @@ describe('one bubble per outgoing attachment message', () => {
   });
 
   test('an attachment batch matches the entire ordered upload, not a subset', () => {
-    const h = harness(pending(entry('tmp_1', [{ url: URI }, { url: 'file:///second.jpg' }])));
+    const h = harness(
+      pending(
+        entry('tmp_1', [
+          { kind: 'image', url: URI },
+          { kind: 'image', url: 'file:///second.jpg' },
+        ]),
+      ),
+    );
     h.cache.remember('tmp_1', [{ uri: URI }, { uri: 'file:///second.jpg' }], [REMOTE, OTHER]);
     expect(h.keys([echo()])).toEqual(['tmp_1', 'real_1']);
     expect(h.keys([echo('reversed', [OTHER, REMOTE])])).toEqual(['tmp_1', 'reversed']);

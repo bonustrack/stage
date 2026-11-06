@@ -1,5 +1,10 @@
 import { expect, test } from 'bun:test';
-import { timeSendPhase } from '@stage-labs/client/xmtp/sendTiming';
+import { timeSendPhase, type SendPhase } from '@stage-labs/client/xmtp/sendTiming';
+
+interface PhaseSample {
+  phase: SendPhase;
+  durationMs: number;
+}
 import { makeSendTimingDiagnostic } from '../lib/sendTiming.core';
 
 function fixture() {
@@ -46,7 +51,7 @@ test('snapshots contain only fixed phases and durations, not results, errors or 
     }),
   ).rejects.toBe(error);
   timing?.finish();
-  const expected = [
+  const expected: PhaseSample[][] = [
     [
       { phase: 'conversation.find', durationMs: 7 },
       { phase: 'sdk.send', durationMs: 23 },
@@ -171,7 +176,7 @@ test('settlement closes unfinished phases at the observed wait and ignores their
   const work = timeSendPhase(timing, 'filter.keys', () => pending);
   f.advance(30);
   timing?.finish();
-  const expected = [
+  const expected: PhaseSample[][] = [
     [
       { phase: 'filter.keys', durationMs: 30 },
       { phase: 'xmtp.total', durationMs: 30 },
