@@ -56,13 +56,13 @@ while a laptop with notifications disabled refreshes that group's filters.
   A key lasts at most about 90 days plus clock skew and one cleanup interval.
 - Empty groups idle for 24 hours are removed. Immutable installation bindings
   remain as bounded tombstones, so an old installation cannot change groups.
-  Turning push off removes delivery registration, not these bindings. There are
-  at most 50 active publishers per group in a rolling 24 hours, 16 key variants
-  per topic/period and 50,000 keys per group. Historical installations stop
-  consuming the active-publisher quota after 24 hours.
-- Transactional global limits bound storage to 10,000 groups, 100,000 bindings
-  and 500,000 keys. Admission allows 100 new groups and 500 new installations
-  per hour; known installations can still refresh within storage limits.
+  Turning push off removes delivery registration, not these bindings. Active
+  publishers per group, key variants per topic/period and keys per group are
+  capped, and historical installations stop consuming the active-publisher
+  quota after a while (the limits are constants in `stagepush/`).
+- Transactional global limits bound the stored groups, bindings and keys, and
+  admission caps the new groups and installations per hour; known
+  installations can still refresh within storage limits.
   These limits bound generated-key abuse, not prove XMTP identity registration.
   Capacity exhaustion returns 429 and requires retry or operator intervention.
 - Ingress budgets are separate per source address and claimed capability, with
@@ -73,12 +73,10 @@ while a laptop with notifications disabled refreshes that group's filters.
 Each receiving device must run the updated JS once to sign its own enrollment.
 An unupgraded sleeping phone cannot be securely enrolled from a laptop. The
 sender does not need push permission or a delivery token. Before a notifying
-send, it syncs preferences (reusing a sync from the last thirty seconds) and
-publishes dirty topic keys, with acknowledged fingerprints cached for four
-minutes. The new-chat screen runs that preference sync while the first message
-is typed, so pressing Send only publishes the new topic's keys. The 30-second
-deadline includes queue
-wait. Failed publication blocks that send rather than knowingly allowing a stale
+send, it syncs preferences and publishes dirty topic keys, within a deadline
+that includes queue wait (the reuse window, the acknowledged-fingerprint cache
+and the deadline are in `packages/client/src/xmtp/pushSenderFilter.ts`).
+Failed publication blocks that send rather than knowingly allowing a stale
 own-message notification. Non-notifying call control bypasses publication while
 retaining account checks. Receiving-token registration and subscription refresh
 run independently, even if sender publication fails. Existing subscriptions,
@@ -130,8 +128,8 @@ next to the XMTP API). The Docker build applies both and runs their tests.
 id>` to the other installations of that group that subscribe to that topic,
   and each removes its own cards for that chat. No content, nothing the server
   did not already know.
-- Rate limits: 30 calls per group, refilled one every 2 seconds, and 100 calls
-  for the whole server, refilled 50 a second.
+- Calls are rate limited per group and for the whole server (constants in
+  `stagepush/`).
 
 ## One-time setup
 

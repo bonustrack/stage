@@ -10,8 +10,8 @@ All platform-neutral logic comes from [`@stage-labs/client`](../../packages/clie
 
 ## Stack
 
-- Expo SDK 54 (managed workflow) with `expo-dev-client` and `expo-router` for file-based navigation
-- React Native 0.81 (new architecture) + Reanimated; hand-rolled stores + react-query, no global state library
+- Expo (managed workflow) with `expo-dev-client` and `expo-router` for file-based navigation
+- React Native (new architecture) + Reanimated; hand-rolled stores + react-query, no global state library
 - XMTP via `@xmtp/react-native-sdk` natively and `@xmtp/browser-sdk` on web, behind the `lib/xmtp.*` seams
 - Wallet via `viem` + `@zerodev/sdk` (Kernel smart accounts, ECDSA owner validator, sponsored userOps)
 - `expo-secure-store` for keys (Keychain / Keystore on native, device-bound), IndexedDB/OPFS on web
@@ -34,37 +34,6 @@ bun run --cwd apps/stage/desktop start  # Electron shell around the web export
 ```
 
 > "Metro" in this repo always means Expo's JavaScript bundler, never the product. New native modules require a fresh dev-client / APK build, not just a JS reload.
-
-## Project structure
-
-```
-app/            # expo-router routes ONLY: (tabs), (conv), channel, group, profile, user, wallet, settings, accounts, signup, import
-components/     # kit-JSX screens with colocated *.model.ts files, one folder per family:
-                #   bubble/ composer/ conversation/ group/ home/ wallet/ onboarding/ settings/ accounts/ landing/ chrome/ layout/ tabs/ system/
-lib/            # accounts + keyring, caches, XMTP seams (xmtp.*.ts / .web.ts / .core.ts), zerodev, names, wallet helpers
-modules/        # messaging/ (conversation rows, queries, feed and consent; import each module directly) + stage-pill (Android native module)
-platform/       # storage seams (x.ts native / x.web.ts web)
-plugins/        # Expo config plugins (stage-pill, gradle memory, BouncyCastle dedup)
-scripts/        # build helpers (XMTP wasm copy)
-desktop/        # Electron shell (nested workspace, see docs/desktop-release.md)
-test/           # pure-model tests (bun test)
-assets/         # fonts + images
-app.config.js   # Expo app config (variants: prod = stage.box, dev = dev.stage.box)
-eas.json        # EAS build profiles (no account identifiers — injected at build time)
-oxlint-plugin.mjs # app lint rules (stage/*): keyring guard, native-only seams, silent catch, theme roles
-```
-
-## Scripts
-
-| Script              | Description                          |
-| ------------------- | ------------------------------------ |
-| `bun run start`     | Start the Expo bundler.              |
-| `bun run android`   | Build and run on Android.            |
-| `bun run ios`       | Build and run on iOS.                |
-| `bun run web`       | Run in the browser.                  |
-| `bun run build:web` | Export the web bundle to `dist/`.    |
-| `bun check`         | Type-check.                          |
-| `bun run test`      | Run the pure-model tests in `test/`. |
 
 Linting is centralised at the repo root (`bun run lint`).
 

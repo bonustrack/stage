@@ -13,12 +13,6 @@ name: Dev client APK
 #
 # Other branches build on demand: `Actions -> Dev client APK -> Run workflow`
 # on the branch. `publish_rolling` also points the rolling APK at its runtime.
-#
-# The APK is checked with scripts/verify-apk.mjs (v2 signature, package,
-# versionCode, signing certificate, packaged runtime, commit) and published as a
-# direct download on the `dev-client` GitHub release, named after the commit:
-#   releases/download/dev-client/stage-dev-client-<sha7>.apk
-# Other assets are never deleted.
 
 on:
   push:

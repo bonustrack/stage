@@ -3,7 +3,7 @@ name: Distribute release to testers
 # Re-sends an already published GitHub Release APK to the Firebase App
 # Distribution tester group, without rebuilding. Use it to hand an existing
 # version to newly added testers or after fixing the distribution secret.
-# Needs FIREBASE_APP_DISTRIBUTION_SA_JSON (see release-stage.yml).
+# Needs FIREBASE_APP_DISTRIBUTION_SA_JSON (see release-mobile.yml).
 
 on:
   workflow_dispatch:

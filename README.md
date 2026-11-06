@@ -66,30 +66,10 @@ bun fmt --check     # fail when a file needs formatting (the first CI gate)
 bun run knip        # unused files / deps / exports
 ```
 
-`stage lint` runs `oxlint --type-aware` with the root `.oxlintrc.json`: the
-type-aware rules run through `oxlint-tsgolint`, and the rules oxlint does not
-have natively (no comments, no em dash, `stage/*`, `no-restricted-syntax`)
-run as JS plugins; quotes are left to `bun fmt`. `import/no-cycle` fails on circular imports. It skips git-ignored files. `stage lint <paths>`
-lints only those paths. CI always runs the full lint, because a type change in
-one file can create findings in another.
-
-`stage/no-custom-font-size` requires named Kit font sizes in Stage's `app`,
-`components`, `lib`, `modules` and `platform` JS/TS source. It checks object and
-StyleSheet properties, assignments, JSX font-size props and CSS font declarations
-in strings. Native inputs and Markdown body sizing can use `FONT_SIZE` or
-`fontSize()` imported from Kit. Imported Kit `Text` (including aliases) must use
-`size`, not a style override, even when that override contains a token. The check
-follows local const aliases and destructuring, static computed keys, arrays,
-spreads, branches and `StyleSheet.create` / `flatten`. Direct arithmetic writes
-are rejected; destructuring reads are not declarations. CSS-like strings are
-checked at declaration boundaries, not by matching ordinary prose. This is not
-cross-module or runtime data-flow analysis of arbitrary wrappers, functions,
-mutations, dynamic property keys or generated CSS. Kit's semantic Title, wallet
-and computed Markdown styles, test fixtures and standalone HTML support pages
-are outside this app rule. Existing Kit-specific lint rules still apply there.
-The CLI/config regression suite lives in `apps/stage/scripts/test`, separate
-from the app's pure-model `test` directory. Run it with
-`bun test apps/stage/scripts/test/typographyLint.test.mjs`; `bun run test` includes it.
+`packages/config/README.md` describes what each `stage` command runs. The app's
+own lint rules (`stage/*`) live in `apps/stage/oxlint-plugin.mjs`; the fixtures in
+`apps/stage/scripts/test/typographyLint.test.mjs` show what
+`stage/no-custom-font-size` accepts and rejects.
 
 Bun runs the workspace tasks itself (no Turbo): `bun run --workspaces` for scripts
 and one `bun test --parallel` for every test file.
@@ -128,18 +108,9 @@ as `attachments/<random id>` and serves it back from
 links (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
 (`download.gateway.ethswarm.org`).
 
-Composer text over **4,096 UTF-8 bytes** sends as `message.txt` through this same
-encrypted attachment pipeline, in existing and new chats. This is a readability
-cutoff, kept well below XMTP's message-size ceiling, not a transport maximum.
-The file keeps the original Unicode, whitespace and newlines without trimming
-or adding a BOM. Short messages keep their existing behavior. Picked attachments
-and locations still follow the text, and a reply reference stays on the text file.
-A failed file send restores the original draft; text that already sent is not
-restored if a later attachment fails.
-
 ## Releases
 
-- **Web:** Netlify builds `bun run build:web` from `apps/stage` on every push to `main`.
+- **Web:** Netlify builds `apps/stage` on every push to `main` with the command in `apps/stage/netlify.toml` (source checks, then `bun run build:web`).
 - **Mobile:** bumping `version` in `apps/stage/app.config.js` triggers
   `release-mobile.yml` (EAS Build + Submit to Play and TestFlight); every push
   publishes a JS-OTA dev-client preview. See `docs/mobile-release.md`.
@@ -151,9 +122,8 @@ restored if a later attachment fails.
 
 ## CI / quality gates
 
-CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`).
-The gates, in
-order, are: **format → lint → check → knip → build → test**, all on Bun
+CI runs on every push to any branch, on pull requests and on demand
+(`.github/workflows/ci.yml`). The gates, in order, are: **format → lint → check → knip → build → test**, all on Bun
 `1.4.4` with a frozen lockfile.
 
 ## License

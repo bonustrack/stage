@@ -1,60 +1,22 @@
 name: App preview
 
-# Per-branch JS-bundle preview for the Metro dev-client (#236, #256).
-#
-# What it does: on EVERY push to ANY branch it publishes the app's JS bundle as
-# an EAS Update on a per-branch channel and surfaces a clickable dev-client deep
-# link. Less taps it on a device that has the dev-client APK; the installed app
-# swaps its JS for that branch's bundle — no new APK per push.
-#
-# TRIGGER (changed): runs on `push` to any branch (branches: ['**']), not just
-# PRs. Every commit to every branch auto-publishes a preview — no /preview
-# comment, no PR required. Branch maps 1:1 to its own EAS channel so each branch
-# gets an independent preview + deep link.
-#
-# HOW THE DEEP LINK IS SURFACED (no PR context on a push):
-#   • ALWAYS: written to the GitHub Actions job SUMMARY ($GITHUB_STEP_SUMMARY)
-#     with the launcher URL, raw deep link and QR — open the run to grab it.
-#   • WHEN A PR EXISTS for the pushed branch: also publishes the clickable
-#     "Preview" commit status on the head SHA (target_url -> launcher), so the
-#     existing PR "Preview" check keeps working exactly as before (#256). A
-#     commit status is the only mechanism GitHub honors for a custom link target
-#     (a github-actions[bot] Check Run has its details_url overridden).
-#
-# CONCURRENCY: keyed on the branch ref so rapid pushes cancel the in-flight
-# superseded run (one live preview per branch) on PR branches only.
-# EXCEPTION (#437): main is NEVER cancelled. Rapid merges to main used to cancel
-# the in-flight preview for earlier main commits, leaving main commits (incl. the
-# tip) with NO published preview at all. For main every push must publish its
-# exact sha, so cancel-in-progress is forced false there; PR branches keep the
-# "latest commit wins" cancellation.
-#
-# USAGE TRADEOFF: every push now builds + publishes, which increases Actions +
-# EAS usage. The concurrency-cancel above mitigates rapid-push bursts. Branches
-# that change native code still need an APK (see native guard).
-#
-# REQUIRES (native, one-time): the dev-client APK must include `expo-updates`.
-# Until that APK is installed, the deep link has no updates client to load it.
+# Publishes every push of every branch as an EAS Update on that branch's channel
+# and links it as a dev-client deep link: in the job summary always, and as the
+# "Preview" commit status (a commit status is the only GitHub mechanism with a
+# custom link target; a github-actions[bot] Check Run has its details_url
+# overridden). The dev-client APK must include `expo-updates` to load it.
 
 on:
   push:
     branches: ['**', '!feat/native-mic-dictation']
-  # GitHub fires `delete` when a branch or tag is deleted. We use it to tear down
-  # that branch's per-branch EAS preview so stale channels/branches don't pile up.
   delete:
 
 concurrency:
-  # One preview build per branch at a time; a newer push cancels the in-flight
-  # superseded run. Keyed on the ref so different branches never cancel each
-  # other.
   group: app-preview-${{ github.ref }}
-  # Cancel superseded runs on PR branches (latest commit wins), but NEVER on main
-  # (#437): every push to main must publish a preview for its exact sha.
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
-    # Only publish on push. The `delete` event handled below must not build.
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -64,12 +26,9 @@ jobs:
       statuses: write
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-      # Public ZeroDev client id, inlined into the OTA bundle so the preview's
-      # smart wallet is configured (empty until the repo secret is set — the
-      # bundle still publishes, wallet setup just stays unconfigured).
+      # Public ZeroDev client id, inlined into the bundle; without the secret the
+      # preview still publishes with the smart wallet unconfigured.
       EXPO_PUBLIC_ZERODEV_PROJECT_ID: ${{ secrets.EXPO_PUBLIC_ZERODEV_PROJECT_ID }}
-      # Kill Expo/EAS telemetry network round-trips (saves a few seconds + avoids
-      # flakey analytics calls).
       EXPO_NO_TELEMETRY: '1'
       TMPDIR: ${{ github.workspace }}/.metro-tmp
     steps:
@@ -125,8 +84,6 @@ jobs:
       - name: Publish EAS Update for this branch
         id: update
         working-directory: apps/stage
-        # Stamp the preview bundle with the pushed commit so the About page shows
-        # the exact previewed SHA. app.config.js (resolveGitHash) reads GIT_COMMIT.
         env:
           GIT_COMMIT: ${{ github.sha }}
           GIT_COMMIT_TIME: ${{ github.event.head_commit.timestamp }}
@@ -134,50 +91,17 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$TMPDIR"
-          # One EAS channel per git branch, named by channelKey() in
-          # apps/proxy/src/branchChannel.ts: [A-Za-z0-9.-] kept, every other
-          # byte written as _xx (feat/foo -> feat_2ffoo), so two branches never
-          # share a channel. bundler.stage.box/<branch> maps paths with the same
-          # function, so /feat/foo and /feat%2Ffoo load this channel.
+          # One EAS channel per branch, named by channelKey() in
+          # apps/proxy/src/branchChannel.ts.
           BRANCH="$(bun ../../scripts/pr-preview/channel-key.mjs "$RAW_BRANCH")"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-          # Git short-hash: the unambiguous identity of the previewed commit. We
-          # keep a per-BRANCH EAS channel (the update groupId already makes each
-          # publish a unique, immutable deep link, so the manifest URL maps 1:1 to
-          # a commit) and surface the short-sha prominently in the update message,
-          # job summary and Preview status so the running version is never in
-          # doubt. A per-commit channel was rejected: it would create an unbounded
-          # set of stale, never-cleaned channels (one per push, forever).
+          # Per-branch, not per-commit, channels: each update's groupId already
+          # makes an immutable deep link, and per-commit channels would pile up.
           SHORT_SHA="$(git rev-parse --short HEAD)"
           echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
-          # Two-step export instead of letting `eas update` bundle implicitly, so
-          # we can pass preview-only Metro flags that `eas update` does NOT expose:
-          #
-          #   1. `expo export` builds dist/ with:
-          #      --platform android  : the preview is consumed ONLY by the Android
-          #                            dev-client APK, so bundling iOS (and the web
-          #                            byproduct) is pure waste. (eas update defaults
-          #                            to --platform all = 2-3x the bundle work.)
-          #      --no-minify         : a dev-client preview swaps in this JS at
-          #                            runtime; it does not ship to users, so the
-          #                            terser/minify pass is wasted CPU. Skipping it
-          #                            cuts the export and leaves a larger-but-fine
-          #                            bundle that downloads over the same manifest.
-          #      --no-bytecode       : skip Hermes bytecode compilation (hermesc over
-          #                            the whole bundle). The dev-client loads plain
-          #                            JS for OTA updates; bytecode is a build-time
-          #                            cost with no preview benefit.
-          #      (source maps are OFF by default — we never pass -s — so no extra
-          #       sourcemap emit/upload either.)
-          #
-          #   2. `eas update --skip-bundler --input-dir dist` uploads the dist/ we
-          #      just built and auto-generates the expo-updates manifest the
-          #      dev-client consumes, WITHOUT re-bundling. --non-interactive needs
-          #      EXPO_TOKEN (set above). eas-cli is pinned (not @latest) so bunx
-          #      resolves one cached version instead of re-checking the registry.
-          #
-          # The deep link rides the shared update groupId, unchanged by these flags,
-          # so the launcher still resolves (eas-deeplink.mjs).
+          # Export first and upload with --skip-bundler: `eas update` does not
+          # expose the preview-only Metro flags (Android only, no minify, no
+          # Hermes bytecode).
           bunx eas-cli@20.1.0 --version &
           EAS_PID=$!
           bunx expo export \
@@ -239,10 +163,6 @@ jobs:
             echo "![QR]($QR)"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # When a PR exists for this branch, the clickable "Preview" commit status on
-      # the head SHA satisfies the existing PR check (#256). On a plain push with
-      # no PR this is harmless (the summary already carries the link). A commit
-      # status is the only mechanism GitHub honors for a custom link target.
       - name: Publish clickable "Preview" status
         uses: actions/github-script@v7
         with:
@@ -262,9 +182,6 @@ jobs:
               description,
             });
 
-  # When a git branch is deleted, tear down its per-branch EAS preview so stale
-  # channels/branches don't accumulate forever. Gated on the `delete` event and
-  # ref_type == 'branch' (a tag delete fires the same event and must be ignored).
   cleanup:
     if: github.event_name == 'delete' && github.event.ref_type == 'branch'
     runs-on: ubuntu-latest
@@ -284,16 +201,8 @@ jobs:
           RAW_BRANCH: ${{ github.event.ref }}
         run: |
           set -euo pipefail
-          # Map the deleted ref with the SAME channelKey() the publish job uses
-          # (github.event.ref is the deleted branch name on a delete event), so we
-          # target the exact channel/branch that was created on push.
           BRANCH="$(bun ../../scripts/pr-preview/channel-key.mjs "$RAW_BRANCH")"
           echo "Tearing down EAS preview for branch '$RAW_BRANCH' -> '$BRANCH'"
-          # Idempotent: a branch that never got a preview has no EAS channel/branch.
-          # `|| true` so a missing channel/branch (or a tag-like ref) never fails
-          # the job. --non-interactive needs EXPO_TOKEN (set above).
-          #
-          # Delete the channel first (it points at the branch), then the branch.
           bunx eas-cli@20.1.0 channel:delete "$BRANCH" --non-interactive || \
             echo "No EAS channel '$BRANCH' to delete (or already gone)."
           bunx eas-cli@20.1.0 branch:delete "$BRANCH" --non-interactive || \
