@@ -7,7 +7,6 @@ import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { normalizeQuestions, type PollContent, type PollQuestion } from '@stage-labs/client/xmtp/poll';
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
-import { formatEther } from 'viem';
 import { MarkdownIt } from 'react-native-markdown-display';
 import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
 import type { LinkFinder } from '@stage-labs/client/xmtp/messageBody';
@@ -139,14 +138,4 @@ export function txReceiptOf(entry: HistoryEntry): TransactionReferenceContent | 
   const p = entry.payload as { txReference?: TransactionReferenceContent } | undefined;
   if (!p?.txReference?.reference) return undefined;
   return p.txReference;
-}
-
-export function ethFromWeiHex(valueHex?: string): string | undefined {
-  if (!valueHex) return undefined;
-  try {
-    const out = formatEther(BigInt(valueHex));
-    return out.includes('.') ? out.replace(/\.?0+$/, '') : out;
-  } catch {
-    return undefined;
-  }
 }

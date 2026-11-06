@@ -2,8 +2,8 @@ import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { TokenAvatar } from '../wallet/screen/tokenAvatar';
-import { usePayerBalance, type PayerBalance } from './balance';
+import { TokenAvatar } from '../token/TokenAvatar';
+import { usePayerBalance, type PayerBalance } from '../../lib/txPayer';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
@@ -37,6 +37,23 @@ interface PaymentBalanceArgs {
   token: string | undefined;
   symbol: string | undefined;
   needed: number | undefined;
+}
+
+export interface PaymentBalance {
+  show: boolean;
+  value: PayerBalance | null;
+}
+
+const CARD_AVATAR = { size: 32, badgeSize: 18, ring: 2.5 } as const;
+
+export function usePaymentBalance(args: PaymentBalanceArgs): PaymentBalance {
+  const value = usePayerBalance(
+    args.show ? args.chainId : undefined,
+    args.show ? args.token : undefined,
+    args.show ? args.symbol : undefined,
+    args.show ? args.needed : undefined,
+  );
+  return { show: args.show, value };
 }
 
 interface PaymentAction {
@@ -118,25 +135,17 @@ export function PaymentCard({
   badge?: React.ReactElement;
   amountLabel?: string;
   detail?: React.ReactNode;
-  balance: PaymentBalanceArgs;
-  action?: PaymentAction | ((bal: PayerBalance | null) => PaymentAction | undefined);
+  balance: PaymentBalance;
+  action?: PaymentAction;
   footer?: React.ReactNode;
 }): React.ReactElement {
   const pal = usePalette();
-
-  const bal = usePayerBalance(
-    balance.show ? balance.chainId : undefined,
-    balance.show ? balance.token : undefined,
-    balance.show ? balance.symbol : undefined,
-    balance.show ? balance.needed : undefined,
-  );
-
-  const resolvedAction = typeof action === 'function' ? action(bal) : action;
+  const cardBackground = withAlpha(pal.primary, 0.08);
 
   return (
     <Column
       radius={BLOCK_RADIUS_DEFAULT}
-      background={withAlpha(pal.primary, 0.08)}
+      background={cardBackground}
       padding={12}
       margin={{ top: 8 }}
       gap={8}
@@ -145,7 +154,16 @@ export function PaymentCard({
     >
       <Row align="center" justify="spaceBetween" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
-          <TokenAvatar logoUrl={logoUrl} chainId={chainNum} bg={withAlpha(pal.primary, 0.08)} border={pal.border} />
+          <TokenAvatar
+            logoUrl={logoUrl}
+            chainId={chainNum}
+            size={CARD_AVATAR.size}
+            badgeSize={CARD_AVATAR.badgeSize}
+            badge="corner"
+            logoBackground={pal.border}
+            badgeBackground={pal.border}
+            ring={{ color: cardBackground, width: CARD_AVATAR.ring }}
+          />
           <Text fontWeight="semibold" size="xs" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
             {description}
           </Text>
@@ -158,8 +176,8 @@ export function PaymentCard({
         </Text>
       ) : null}
       {detail}
-      <PaymentBalanceLine show={balance.show} bal={bal} pal={pal} />
-      {resolvedAction ? <PaymentActionButton action={resolvedAction} dark={dark} pal={pal} /> : footer}
+      <PaymentBalanceLine show={balance.show} bal={balance.value} pal={pal} />
+      {action ? <PaymentActionButton action={action} dark={dark} pal={pal} /> : footer}
     </Column>
   );
 }
@@ -226,11 +244,21 @@ function payButtonLabel(phase: PayPhase, insufficient: boolean, asset: { symbol:
 }
 
 export function X402Card({ challenge, dark }: { challenge: X402Challenge; dark?: boolean }): React.ReactElement | null {
-  const pal = usePalette();
   const accept = challenge.accepts[0];
-  const [phase, setPhase] = useState<PayPhase>('idle');
-  if (!accept) return null;
+  return accept ? <X402PaymentCard challenge={challenge} accept={accept} dark={dark} /> : null;
+}
 
+function X402PaymentCard({
+  challenge,
+  accept,
+  dark,
+}: {
+  challenge: X402Challenge;
+  accept: X402Accept;
+  dark?: boolean;
+}): React.ReactElement {
+  const pal = usePalette();
+  const [phase, setPhase] = useState<PayPhase>('idle');
   const endpoint = challenge.endpoint || '';
   const amountLabel = x402AmountLabel(accept);
   const network = x402NetworkLabel(accept.network);
@@ -267,6 +295,14 @@ export function X402Card({ challenge, dark }: { challenge: X402Challenge; dark?:
       });
   };
 
+  const balance = usePaymentBalance({
+    show: !!accept.asset && chainNum > 0,
+    chainId: chainNum,
+    token: accept.asset,
+    symbol: asset?.symbol,
+    needed: x402AmountNumber(accept),
+  });
+
   const buildAction = (bal: { insufficient: boolean } | null): PaymentAction => {
     if (!canPay) return { label: 'Open endpoint', url: endpoint, icon: <Glyph icon={IconSquareArrowTopRight} size={18} color={pal.bg} /> };
     const insufficient = bal?.insufficient === true;
@@ -289,14 +325,8 @@ export function X402Card({ challenge, dark }: { challenge: X402Challenge; dark?:
       badge={badge}
       amountLabel={amountLabel}
       detail={<X402Detail accept={accept} network={network} endpoint={endpoint} pal={pal} />}
-      balance={{
-        show: !!accept.asset && chainNum > 0,
-        chainId: chainNum,
-        token: accept.asset,
-        symbol: asset?.symbol,
-        needed: x402AmountNumber(accept),
-      }}
-      action={buildAction}
+      balance={balance}
+      action={buildAction(balance.value)}
     />
   );
 }

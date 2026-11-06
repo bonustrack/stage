@@ -1,25 +1,23 @@
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Avatar } from '../Avatar';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { ethFromWeiHex } from './helpers';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { timeAgo } from '../../lib/format';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
-import { PaymentCard } from './PaymentCard';
-import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
+import { PaymentCard, usePaymentBalance } from './PaymentCard';
+import { viemChainName } from '@stage-labs/client/wallet/chains';
 import { tokenLogoUrl, useDecodedCall, useTxTime, useUsdValue } from '../../lib/txDisplay';
-import { chainIdToNumber, explorerTxUrl, receiptTitle, requestAmountOf, txAmountLabel, type TxAmount } from '@stage-labs/client/xmtp/tx';
+import { useTxSimulation } from '../../lib/txPayer';
+import { explorerTxUrl, receiptTitle, txAmountLabel } from '@stage-labs/client/xmtp/tx';
 import { spoofWarning, type DecodedCall } from '@stage-labs/client/wallet/txDecode';
 import { openInBubbleLink } from '../../lib/capabilities';
 import { bubbleLinkProps } from './linkProps';
 import { ReceiptBox } from './cards.sig';
-import { simulateTx, type SimulateResult } from '@stage-labs/client/wallet/txSimulate';
-import { getActiveAccount } from '../../lib/accounts';
+import type { SimulateResult } from '@stage-labs/client/wallet/txSimulate';
 import { SimulationBlock } from './sim';
 import { txActionLabel, isTransferRequest } from '@stage-labs/client/wallet/txWording';
 import { profileLinkOf } from '../../lib/links';
@@ -28,6 +26,7 @@ import { IconCodeBrackets } from '@central-icons-react-native/round-outlined-rad
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 import { IconShieldBreak } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldBreak';
 import { Column, Row } from '../layout';
+import { txCallFields, type TxCallFields } from './cards.model';
 
 type TxCardModel = TxCallFields & {
   amountLabel?: string;
@@ -57,6 +56,13 @@ export function TxRequestCard({
   const pal = usePalette();
   const gated = consentAllowed === false;
   const m = useTxCardModel(req);
+  const balance = usePaymentBalance({
+    show: m.showBalance,
+    chainId: req.chainId,
+    token: m.tokenAddr,
+    symbol: m.balanceSymbol,
+    needed: m.needed,
+  });
   const action =
     onPay && !gated
       ? {
@@ -74,7 +80,7 @@ export function TxRequestCard({
       description={m.desc}
       amountLabel={m.showDecodedBlock ? undefined : m.amountLabel}
       detail={<TxRequestDetail m={m} sub={pal.text} />}
-      balance={{ show: m.showBalance, chainId: req.chainId, token: m.tokenAddr, symbol: m.balanceSymbol, needed: m.needed }}
+      balance={balance}
       action={action}
       footer={
         onPay && gated ? (
@@ -86,100 +92,6 @@ export function TxRequestCard({
     />
   );
 }
-interface TxCallFields {
-  target?: string;
-  data?: string;
-  value?: string;
-  eth?: string;
-  amount?: TxAmount;
-  balanceSymbol?: string;
-  needed?: number;
-  desc: string;
-  rawDesc?: string;
-  recipient?: string;
-  tokenAddr?: string;
-  chainNum: number;
-  isErc20Transfer: boolean;
-  showDecodedBlock: boolean;
-  showBalance: boolean;
-}
-
-function balanceNeed(amount: TxAmount | undefined, eth: string | undefined): { balanceSymbol?: string; needed?: number } {
-  if (amount) return { balanceSymbol: amount.unit, needed: Number(amount.value) };
-  return { balanceSymbol: eth ? 'ETH' : undefined, needed: undefined };
-}
-
-function txCallFlags(args: { data?: string; tokenAddr?: string; amount?: TxAmount; eth?: string }): {
-  isErc20Transfer: boolean;
-  showDecodedBlock: boolean;
-  showBalance: boolean;
-} {
-  const isErc20Transfer = !!args.tokenAddr;
-  const hasCalldata = !!args.data && args.data !== '0x';
-  return {
-    isErc20Transfer,
-    showDecodedBlock: hasCalldata && !isErc20Transfer,
-    showBalance: !!args.amount || !!args.eth || !!args.tokenAddr,
-  };
-}
-
-function rawCall(req: WalletSendCallsContent): {
-  target?: string;
-  data?: string;
-  value?: string;
-  meta: NonNullable<WalletSendCallsContent['calls'][number]['metadata']>;
-} {
-  const call = req.calls[0];
-  return { target: call?.to, data: call?.data, value: call?.value, meta: call?.metadata ?? {} };
-}
-
-function txCallFields(req: WalletSendCallsContent): TxCallFields {
-  const { target, data, value, meta } = rawCall(req);
-  const { toAddress, description } = meta;
-  const eth = ethFromWeiHex(value);
-  const amount = requestAmountOf(req);
-  const tokenAddr = toAddress ? target : undefined;
-  const desc = description ?? 'Payment request';
-  const recipient = toAddress ?? target;
-  const chainNum = chainIdToNumber(req.chainId ?? '0x1');
-  return {
-    target,
-    data,
-    value,
-    eth,
-    amount,
-    desc,
-    rawDesc: description,
-    recipient,
-    tokenAddr,
-    chainNum,
-    ...balanceNeed(amount, eth),
-    ...txCallFlags({ data, tokenAddr, amount, eth }),
-  };
-}
-
-function useTxSimulation(
-  to: string | undefined,
-  data: string | undefined,
-  value: string | undefined,
-  chainId: number,
-): { result: SimulateResult | null; pending: boolean } {
-  const { data: result, isPending } = useQuery({
-    queryKey: ['txSimulate', chainId, to ?? '', data ?? '', value ?? ''],
-    queryFn: async (): Promise<SimulateResult> => {
-      const from = (await getActiveAccount())?.address;
-      if (!from) {
-        return { success: 'unknown', assetChanges: { in: [], out: [] }, error: 'No active wallet' };
-      }
-      return simulateTx({ from, to: to ?? '', data, value, chainId });
-    },
-    enabled: !!to,
-    staleTime: 0,
-    gcTime: 0,
-  });
-  return { result: result ?? null, pending: !!to && isPending };
-}
-
 function useTxCardModel(req: WalletSendCallsContent): TxCardModel {
   const f = txCallFields(req);
   const logoUrl = tokenLogoUrl(f.chainNum, f.tokenAddr ?? null, 36);
@@ -211,7 +123,7 @@ function TxRequestDetail({ m, sub }: { m: TxCardModel; sub: string }): React.Rea
       {m.sendsNativeWithCall && m.eth ? <TxNativeValueRow eth={m.eth} chainId={m.chainNum} /> : null}
       {m.recipient ? <TxToRow address={m.recipient} /> : null}
       <Text size="3xs" color="secondary">
-        On {VIEM_CHAINS[m.chainNum]?.name ?? `chain ${m.chainNum}`}
+        On {viemChainName(m.chainNum) ?? `chain ${m.chainNum}`}
       </Text>
     </Column>
   );

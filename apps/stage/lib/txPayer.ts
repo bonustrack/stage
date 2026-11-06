@@ -1,45 +1,54 @@
 import { useQuery } from '@tanstack/react-query';
 import { formatUnits, isAddress, erc20Abi, type Hex } from 'viem';
-
-import { getActiveAccount } from '../../lib/accounts';
-import { ASSETS, NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
+import { isNativeToken } from '@stage-labs/client/wallet/tokens';
+import { ASSETS } from '@stage-labs/client/wallet/assets';
 import { chainFor, publicClientFor } from '@stage-labs/client/wallet/client';
+import { truncateDecimals } from '@stage-labs/client/wallet/format';
+import { simulateTx, type SimulateResult } from '@stage-labs/client/wallet/txSimulate';
 import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
-import { recover, ignored } from '../../lib/errorPolicy';
+import { getActiveAccount } from './accounts';
+import { ignored, recover } from './errorPolicy';
+
+export function useTxSimulation(
+  to: string | undefined,
+  data: string | undefined,
+  value: string | undefined,
+  chainId: number,
+): { result: SimulateResult | null; pending: boolean } {
+  const { data: result, isPending } = useQuery({
+    queryKey: ['txSimulate', chainId, to ?? '', data ?? '', value ?? ''],
+    queryFn: async (): Promise<SimulateResult> => {
+      const from = (await getActiveAccount())?.address;
+      if (!from) {
+        return { success: 'unknown', assetChanges: { in: [], out: [] }, error: 'No active wallet' };
+      }
+      return simulateTx({ from, to: to ?? '', data, value, chainId });
+    },
+    enabled: !!to,
+    staleTime: 0,
+    gcTime: 0,
+  });
+  return { result: result ?? null, pending: !!to && isPending };
+}
 
 export interface PayerBalance {
   text: string;
   insufficient: boolean;
 }
 
+const BALANCE_DIGITS = 4;
+
 function parseChainId(raw?: string | number): number {
   return raw == null || raw === '' ? 1 : chainIdToNumber(raw);
 }
 
-function trim(value: string): string {
-  if (!value.includes('.')) return value;
-  const [whole, frac] = value.split('.');
-  const cut = (frac ?? '').slice(0, 4).replace(/0+$/, '');
-  return cut ? `${whole ?? ''}.${cut}` : (whole ?? '');
-}
-
-function isNativeToken(token?: string): boolean {
-  if (!token) return true;
-  const t = token.toLowerCase();
-  return (
-    t === NATIVE_TOKEN_SENTINEL.toLowerCase() ||
-    t === '0x0000000000000000000000000000000000000000' ||
-    t === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
-  );
-}
-
-interface OnchainMeta {
+interface OnchainBalance {
   raw: bigint;
   decimals: number;
   symbol: string;
 }
 
-async function readOnchain(cid: number, token: string | undefined, addr: Hex): Promise<OnchainMeta | null> {
+async function readOnchain(cid: number, token: string | undefined, addr: Hex): Promise<OnchainBalance | null> {
   const chain = chainFor(cid);
   const pub = publicClientFor(cid);
 
@@ -58,7 +67,7 @@ async function readOnchain(cid: number, token: string | undefined, addr: Hex): P
 }
 
 function buildBalance(
-  onchain: OnchainMeta,
+  onchain: OnchainBalance,
   symbol: string | undefined,
   needed: number | undefined,
   known: { decimals: number; symbol: string } | undefined,
@@ -66,7 +75,7 @@ function buildBalance(
   const decimals = known?.decimals ?? onchain.decimals;
   const human = formatUnits(onchain.raw, decimals);
   const sym = known?.symbol ?? symbol ?? onchain.symbol;
-  return { text: `Balance: ${trim(human)} ${sym}`, insufficient: needed != null && Number(human) < needed };
+  return { text: `Balance: ${truncateDecimals(human, BALANCE_DIGITS)} ${sym}`, insufficient: needed != null && Number(human) < needed };
 }
 
 async function resolveBalance(
