@@ -1,5 +1,6 @@
 import { ignored } from './errorPolicy';
 import { linkProxyBase } from './linkProxy';
+import { FetchTimeoutError, fetchWithin } from '@stage-labs/client/timing';
 
 const UPLOAD_URL = `${linkProxyBase()}/attachments`;
 const UPLOAD_TIMEOUT_MS = 60_000;
@@ -37,24 +38,16 @@ export function assertUploadSize(bytes: number, filename: string): void {
 
 export async function uploadEncryptedAttachment(payload: Blob, filename: string): Promise<string> {
   assertUploadSize(payload.size, filename);
-  const controller = new AbortController();
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, UPLOAD_TIMEOUT_MS);
   let res: Response;
   try {
-    res = await fetch(UPLOAD_URL, {
-      method: 'POST',
-      headers: { 'content-type': 'application/octet-stream' },
-      body: payload,
-      signal: controller.signal,
-    });
+    res = await fetchWithin(
+      UPLOAD_URL,
+      { method: 'POST', headers: { 'content-type': 'application/octet-stream' }, body: payload },
+      { timeoutMs: UPLOAD_TIMEOUT_MS },
+    );
   } catch (e) {
-    const timedOut = e instanceof Error && e.name === 'AbortError';
-    const reason = timedOut ? 'the upload timed out' : 'the upload service could not be reached';
+    const reason = e instanceof FetchTimeoutError ? 'the upload timed out' : 'the upload service could not be reached';
     throw new Error(`Couldn't send "${filename}": ${reason}. Check your connection and try again.`);
-  } finally {
-    clearTimeout(timer);
   }
   const body = (await res.json().catch(ignored(null, 'optional'))) as { id?: string } | null;
   return resolveUploadResponse(res.status, body, filename);

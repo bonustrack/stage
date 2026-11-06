@@ -1,5 +1,6 @@
 import { dbDirFor } from '../accounts/registry';
 import { STORE_LOCKED_MESSAGE } from './clientErrors';
+import { sleep as defaultSleep } from '../timing';
 
 export function webXmtpDbPath(accountId: string, env: string): string {
   return `${dbDirFor(accountId)}-${env}.db3`;
@@ -57,12 +58,6 @@ export interface OpenedClient<C> {
 
 export const OPEN_ATTEMPTS = 5;
 const OPEN_RETRY_MS = 800;
-
-function defaultSleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 function matchesSavedInstallation<C>(deps: PersistedClientDeps<C>, client: C, saved: string | null): boolean {
   return saved === null || deps.installationIdOf(client) === saved;

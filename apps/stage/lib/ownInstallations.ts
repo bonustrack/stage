@@ -6,16 +6,11 @@ import { ignored } from './errorPolicy';
 import { loadHiddenChannels } from './hiddenChannels';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { channelAccess } from './channelVisibility';
+import { sleep } from '@stage-labs/client/timing';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof sdk.findConv>>>;
 const DONE_PREFIX = 'ownInstallations.done.';
 const SPACING_MS = 1500;
-
-function pause(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 async function repairConversation(context: AccountClient, conv: Conv, devices: string[]): Promise<void> {
   const installationsIn = sdk.memberInstallationIds;
@@ -27,7 +22,7 @@ async function repairConversation(context: AccountClient, conv: Conv, devices: s
   context.assertCurrent();
   if (hidden[conv.id]?.hidden) return;
   await conv.sync();
-  await pause(SPACING_MS);
+  await sleep(SPACING_MS);
 }
 
 export async function addOwnInstallationsToChats(accountId: string): Promise<void> {

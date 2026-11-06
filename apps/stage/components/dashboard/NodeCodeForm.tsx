@@ -13,6 +13,7 @@ import { addLivePreview } from '../../lib/liveWidget';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { livePreviewOf, publishProblemText, type LivePreview } from './liveWidget.model';
 import { Column, Row } from '../layout';
+import { sleep } from '@stage-labs/client/timing';
 
 const NOTE =
   'Stage runs this code at nodes.stage.box in its own sandbox: no secrets, only public https calls, ' +
@@ -40,9 +41,7 @@ function buttonLabel(busy: boolean, ready: boolean): string {
 async function loadFresh(url: string, key: string): Promise<NodeResult> {
   const first = await loadNode(url, key, { capabilities: RENDERER_CAPABILITIES });
   if (first.ok || first.status !== 404) return first;
-  await new Promise((resolve) => {
-    setTimeout(resolve, FRESH_RETRY_MS);
-  });
+  await sleep(FRESH_RETRY_MS);
   return loadNode(url, key, { capabilities: RENDERER_CAPABILITIES });
 }
 

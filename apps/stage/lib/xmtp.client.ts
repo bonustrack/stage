@@ -12,6 +12,7 @@ import { nativeInstallationCreatedAtMs } from '@stage-labs/client/xmtp/clientCon
 import { forgetPushAccount, recordPushAccount } from './xmtp.dbkeyFs';
 import { forgetStorageIndex } from './storageIndexStore';
 import { registerPushWithServer } from './pushRegister';
+import { settleWithin } from '@stage-labs/client/timing';
 
 type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
 
@@ -24,14 +25,11 @@ async function openClientForAccount(rec: AccountRecord, env: XmtpEnv): Promise<C
   if (rec.registered) {
     let built: Client | null = null;
     try {
-      built = await Promise.race<Client | null>([
+      built = await settleWithin<Client | null>(
         Client.build(new PublicIdentity(rec.address, 'ETHEREUM'), opts),
-        new Promise<null>((resolve) =>
-          setTimeout(() => {
-            resolve(null);
-          }, REGISTERED_BUILD_TIMEOUT_MS),
-        ),
-      ]);
+        REGISTERED_BUILD_TIMEOUT_MS,
+        null,
+      );
     } catch (e) {
       if (isStoreCorruption(e)) {
         await wipeXmtpStore(rec.id, rec.dbDir);

@@ -10,6 +10,8 @@
     "./errors": "./src/errors.ts",
     "./collections": "./src/collections.ts",
     "./abortable": "./src/abortable.ts",
+    "./timing": "./src/timing.ts",
+    "./ids": "./src/ids.ts",
     "./profile/avatar": "./src/profile/avatar.ts",
     "./profile/upload": "./src/profile/upload.ts",
     "./profile/setup": "./src/profile/setup.ts",

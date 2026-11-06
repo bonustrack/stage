@@ -31,6 +31,7 @@ import {
 import { reported, recover, attempt, ignored } from './errorPolicy';
 import { prepareSenderFilters } from './pushRegister';
 import { groupTopicOf } from '@stage-labs/client/xmtp/pushServer';
+import { sleep } from '@stage-labs/client/timing';
 
 type NativeClient = Awaited<ReturnType<typeof xmtpClient>>;
 type NativeMessage = Awaited<ReturnType<Conversation['messages']>>[number];
@@ -246,7 +247,7 @@ async function nativeErrorLog(work: () => Promise<unknown>): Promise<string> {
   Client.activatePersistentLibXMTPLogWriter(LOG_LEVEL_ERROR, LOG_ROTATION_HOURLY, 1);
   try {
     await work().catch(ignored(undefined, 'probe'));
-    await new Promise((resolve) => setTimeout(resolve, LOG_FLUSH_MS));
+    await sleep(LOG_FLUSH_MS);
   } finally {
     Client.deactivatePersistentLibXMTPLogWriter();
   }

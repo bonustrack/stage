@@ -7,6 +7,7 @@ import { NAME_TAKEN, makeNamesChain, NameTransactionRevertedError } from './name
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
 import { CLIENT_CORS as CORS, corsResponse, jsonResponse } from './respond.ts';
+import { sleep } from '@stage-labs/client/timing';
 
 export const NAMES_PREFIX = '/names/';
 
@@ -138,7 +139,7 @@ async function savedWithRetries(save: () => Promise<number>): Promise<boolean> {
   for (let attempt = 1; attempt <= MAIL_KEY_ATTEMPTS; attempt++) {
     const status = await save().catch(() => 0);
     if (status === 204 || status === 409) return true;
-    if (attempt < MAIL_KEY_ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, MAIL_KEY_RETRY_MS));
+    if (attempt < MAIL_KEY_ATTEMPTS) await sleep(MAIL_KEY_RETRY_MS);
   }
   return false;
 }

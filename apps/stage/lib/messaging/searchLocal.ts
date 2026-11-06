@@ -10,6 +10,7 @@ import { ownDeletesReady } from '../ownDeletes';
 import { convMembers } from '../xmtp.identity';
 import { recover } from '../errorPolicy';
 import { fetchSuperAdmins } from './groupDetails';
+import { sleep } from '@stage-labs/client/timing';
 
 const SEARCH_MAX_PAGES = 25;
 const SEARCH_MAX_RESULTS = 50;
@@ -23,10 +24,6 @@ function matches(e: HistoryEntry, needle: string): boolean {
   if (!e.text) return false;
   if (isControlBody(e.text) || isCallSignalEntry(e)) return false;
   return e.text.toLowerCase().includes(needle);
-}
-
-function yieldToEventLoop(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 interface ScanState {
@@ -122,7 +119,7 @@ export async function searchLocalHistory(
     onResults({ hits: [...state.hits], truncated: state.truncated });
 
     if (shouldStopScan(capped, state, mapped.length, page)) break;
-    await yieldToEventLoop();
+    await sleep(0);
   }
 
   const final: SearchScanResult = { hits: state.hits, truncated: state.truncated };

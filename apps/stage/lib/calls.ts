@@ -24,6 +24,7 @@ import {
   watchScreenEnd,
 } from './calls.media';
 import { ignore, report, reported } from './errorPolicy';
+import { randomUuid } from '@stage-labs/client/ids';
 
 const END_TOASTS: Partial<Record<CallEndReason, string>> = {
   ended: 'Call ended',
@@ -258,13 +259,6 @@ function canJoin(convId: string): boolean {
   const s = state().session;
   return s === null || (s.phase === 'ringing' && s.convId === convId);
 }
-function newId(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = ((bytes[6] ?? 0) & 15) | 64;
-  bytes[8] = ((bytes[8] ?? 0) & 63) | 128;
-  const hex = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
 export function startCall(convId: string, dm: boolean, video: boolean): Promise<void> {
   return exclusive(async () => {
     if (state().session) return;
@@ -278,7 +272,11 @@ export function startCall(convId: string, dm: boolean, video: boolean): Promise<
       stopAudio();
       return;
     }
-    await adopt(media, { type: 'start', convId, dm, video, callId: newId(), peerId: newId(), selfInboxId: self, nowMs: Date.now() }, epoch);
+    await adopt(
+      media,
+      { type: 'start', convId, dm, video, callId: randomUuid(), peerId: randomUuid(), selfInboxId: self, nowMs: Date.now() },
+      epoch,
+    );
   });
 }
 export function joinCall(convId: string, dm: boolean): Promise<void> {
@@ -296,7 +294,7 @@ export function joinCall(convId: string, dm: boolean): Promise<void> {
       stopAudio();
       return;
     }
-    await adopt(media, { type: 'join', convId, dm, peerId: newId(), selfInboxId: self, nowMs: Date.now() }, epoch);
+    await adopt(media, { type: 'join', convId, dm, peerId: randomUuid(), selfInboxId: self, nowMs: Date.now() }, epoch);
   });
 }
 export function declineCall(): void {

@@ -3,6 +3,7 @@ import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
 import { makeListeners, makeValue } from './storeCore';
 import { resetFeedLines } from './feedLines';
 import { attempt } from './errorPolicy';
+import { sleep } from '@stage-labs/client/timing';
 
 export const inboxEthCache = new Map<string, string>();
 
@@ -133,7 +134,7 @@ export function createClientSlot<C>(onReset: () => void, discard?: (client: C) =
     },
     waitForReady: async () => {
       const start = Date.now();
-      while (cached === null && Date.now() - start < READY_CAP_MS) await new Promise((r) => setTimeout(r, 250));
+      while (cached === null && Date.now() - start < READY_CAP_MS) await sleep(250);
       return cached !== null;
     },
     reset: () => {

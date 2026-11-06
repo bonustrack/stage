@@ -1,4 +1,5 @@
 import { errorMessage } from '@stage-labs/client/errors';
+import { settleBy } from '@stage-labs/client/timing';
 
 export type HistorySyncPhase = 'idle' | 'requesting' | 'waiting' | 'done' | 'timeout' | 'error';
 
@@ -56,24 +57,6 @@ export function historySyncPhaseLabel(phase: HistorySyncPhase, problem?: string 
 
 export function historySyncIsActive(phase: HistorySyncPhase): boolean {
   return phase === 'requesting' || phase === 'waiting';
-}
-
-export function settleBy<T>(work: Promise<T>, deadline: number, fallback: T, tickMs = 1_000): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const expired = new Promise<T>((resolve) => {
-    const check = (): void => {
-      const left = deadline - Date.now();
-      if (left <= 0) {
-        resolve(fallback);
-        return;
-      }
-      timer = setTimeout(check, Math.min(tickMs, left));
-    };
-    check();
-  });
-  return Promise.race([work, expired]).finally(() => {
-    if (timer !== undefined) clearTimeout(timer);
-  });
 }
 
 export function timeLeftLabel(msLeft: number): string {

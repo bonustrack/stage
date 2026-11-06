@@ -1,4 +1,3 @@
-import { bytesToHex } from 'viem';
 import { createValueStore } from './persistedStore';
 import { resolveDmConvId } from './dmResolve';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -7,12 +6,9 @@ import { getActiveAccount } from './accounts';
 import { knownActiveAccountId } from './channelsCache';
 import { addressesWithQueued, deserializeOutbox, itemsForAddress, withoutItem, type OutboxItem } from './dmOutbox.model';
 import { report, reported, recover } from './errorPolicy';
+import { randomHex } from '@stage-labs/client/ids';
 
 const store = createValueStore<OutboxItem[]>({ key: 'dm.outbox', default: [], serialize: JSON.stringify, deserialize: deserializeOutbox });
-
-function newId(): string {
-  return bytesToHex(crypto.getRandomValues(new Uint8Array(8))).slice(2);
-}
 
 export function subscribeDmOutbox(cb: () => void): () => void {
   store.loadAsync();
@@ -33,7 +29,7 @@ export async function enqueueDm(address: string, text: string): Promise<OutboxIt
   const items = await store.load();
   const accountId = await activeAccountId();
   const item: OutboxItem = {
-    id: newId(),
+    id: randomHex(8),
     address: address.toLowerCase(),
     text,
     createdAt: Date.now(),

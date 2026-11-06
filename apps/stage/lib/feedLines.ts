@@ -1,3 +1,4 @@
+import { settleWithin } from '@stage-labs/client/timing';
 export const activeFeedLines = new Set<string>();
 
 const feedLineHolds = new Map<string, number>();
@@ -39,12 +40,7 @@ export async function afterFirstPages(maxMs = FIRST_PAGE_WAIT_MS): Promise<void>
   while (firstPageLoads.size > 0) {
     const left = deadline - Date.now();
     if (left <= 0) return;
-    await Promise.race([
-      Promise.allSettled([...firstPageLoads]),
-      new Promise<void>((resolve) => {
-        setTimeout(resolve, left);
-      }),
-    ]);
+    await settleWithin(Promise.allSettled([...firstPageLoads]), left, []);
   }
 }
 

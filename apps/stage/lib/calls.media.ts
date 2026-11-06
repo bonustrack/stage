@@ -9,6 +9,9 @@ import { cancelScreenPicker, startScreenPicker } from './calls.screen';
 import { ignore, ignored, report } from './errorPolicy';
 import { makeValue } from './storeCore';
 import { stopMedia, stopTrack, type CallStream, type CallTrack, type CapturedMedia } from './calls.types';
+import { sleep } from '@stage-labs/client/timing';
+
+const AUDIO_RELEASE_MS = 150;
 
 export const callsSupported = true;
 export const screenShareSupported = true;
@@ -106,9 +109,7 @@ export function prepareAudio(): Promise<void> {
   const epoch = captureEpoch;
   preparing = acquireCallAudio().then(async () => {
     await setIsAudioActiveAsync(false);
-    await new Promise((resolve) => {
-      setTimeout(resolve, 150);
-    });
+    await sleep(AUDIO_RELEASE_MS);
     if (epoch !== captureEpoch) throw new Error('Call was canceled');
     if (Platform.OS === 'android' && Platform.Version >= 31) {
       await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT);

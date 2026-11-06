@@ -1,5 +1,6 @@
 import { AccountChangedError, NoAccountError } from './xmtp.client.core';
 import { abortable } from '@stage-labs/client/abortable';
+import { backoffDelay } from '@stage-labs/client/timing';
 
 interface StreamDeps<C> {
   prepare: (assertCurrent: () => void) => Promise<C>;
@@ -77,7 +78,7 @@ export function makeGlobalStream<C>(deps: StreamDeps<C>) {
     if (stale || changed) rearm();
     else if (!absent) {
       failures += 1;
-      rearm(Math.min(5_000 * 2 ** (failures - 1), 60_000));
+      rearm(backoffDelay(failures));
     }
   }
 

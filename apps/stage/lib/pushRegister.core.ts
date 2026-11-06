@@ -17,6 +17,7 @@ import { makePushRetry } from './pushRetry.core';
 import { makeSenderFilterPublisher, maintainPushPaths } from '@stage-labs/client/xmtp/pushSenderFilter';
 import { timeSendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 import { memoized } from './storeCore';
+import { fetchWithin } from '@stage-labs/client/timing';
 
 export type { PushTopics } from '@stage-labs/client/xmtp/pushRegistration';
 import { onReadStateChanged } from './channelsCache';
@@ -72,26 +73,15 @@ export function directRpcUrl(method: PushRpc): string {
   return `${PUSH_SERVER_URL}${pushRpcPath(method)}`;
 }
 
+const PUSH_POST_TIMEOUT_MS = 15_000;
+
 async function postJson(url: string, body: unknown, accepted?: number, signal?: AbortSignal): Promise<void> {
-  const controller = new AbortController();
-  const abort = (): void => {
-    controller.abort();
-  };
-  if (signal?.aborted) abort();
-  else signal?.addEventListener('abort', abort, { once: true });
-  const timer = setTimeout(abort, 15_000);
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok && res.status !== accepted) throw new Error(`push server responded ${res.status}`);
-  } finally {
-    clearTimeout(timer);
-    signal?.removeEventListener('abort', abort);
-  }
+  const res = await fetchWithin(
+    url,
+    { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) },
+    { timeoutMs: PUSH_POST_TIMEOUT_MS, signal },
+  );
+  if (!res.ok && res.status !== accepted) throw new Error(`push server responded ${res.status}`);
 }
 
 const groupKeys = new Map<string, Promise<string>>();

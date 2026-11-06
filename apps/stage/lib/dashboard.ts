@@ -1,4 +1,3 @@
-import { bytesToHex } from 'viem';
 import {
   dashboardSchema,
   EMPTY_DASHBOARD,
@@ -20,6 +19,7 @@ import { forgetLiveSnapshots } from './liveSnapshots';
 import { createValueStore } from './persistedStore';
 import { jsonWith, makeListeners, useStoreValue } from './storeCore';
 import { editDashboard, receiveDashboard } from './syncedSettings.model';
+import { randomHex } from '@stage-labs/client/ids';
 
 const prefs = createValueStore<DashboardContent>({
   key: 'dashboard.v1.',
@@ -56,10 +56,6 @@ export function changeDashboard(change: (widgets: DashboardWidget[]) => Dashboar
   localChanges.notify({ accountId, state: next });
 }
 
-function newWidgetId(): string {
-  return bytesToHex(crypto.getRandomValues(new Uint8Array(8))).slice(2);
-}
-
 interface WidgetAdded {
   outcome: FrameWidgetAdd;
   id: string;
@@ -71,7 +67,7 @@ async function addWidget(
 ): Promise<WidgetAdded> {
   await prefs.load();
   if (prefs.accountId() === null) throw new Error('No active account for the dashboard');
-  const id = newWidgetId();
+  const id = randomHex(8);
   const outcome = outcomeOf(prefs.get().widgets);
   if (outcome === 'added') changeDashboard((widgets) => add(widgets, id));
   return { outcome, id };

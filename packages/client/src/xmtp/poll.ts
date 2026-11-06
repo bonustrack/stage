@@ -1,4 +1,4 @@
-import { mintId } from '../mintId';
+import { randomUuid } from '../ids';
 import type { PollContent } from './poll.schema';
 
 export type { PollContent } from './poll.schema';
@@ -44,7 +44,7 @@ export function normalizeQuestions(poll: PollContent | undefined): PollQuestion[
 }
 
 export function mintPollId(): string {
-  return mintId('poll');
+  return randomUuid();
 }
 
 export function pollFallbackText(poll: PollContent): string {

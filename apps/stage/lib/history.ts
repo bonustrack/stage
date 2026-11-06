@@ -9,13 +9,13 @@ import {
   historyProblemMessage,
   historySyncIsActive,
   isMissingArchive,
-  settleBy,
   within,
   HISTORY_COPY,
   HistoryProblem,
   type HistorySyncPhase,
 } from './history.model';
 import { report } from './errorPolicy';
+import { settleBy, sleep } from '@stage-labs/client/timing';
 
 const TIMEOUT_MS = 120_000;
 const POLL_MS = 4_000;
@@ -53,12 +53,6 @@ async function processHistoryArchive(): Promise<void> {
   const startedAt = Date.now();
   await sdk.history.processSyncArchive(client);
   await markHistoryImported(startedAt);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
 }
 
 async function messagingReady(): Promise<void> {

@@ -1,22 +1,17 @@
+import { FetchTimeoutError, fetchWithin } from '@stage-labs/client/timing';
+const PROFILE_TIMEOUT_MS = 30_000;
+
 export async function profileRequest<T>(
   input: string,
   init: RequestInit,
   read: (response: Response) => Promise<T>,
-  timeoutMs = 30_000,
+  timeoutMs = PROFILE_TIMEOUT_MS,
 ): Promise<T> {
-  const controller = new AbortController();
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new Error('The profile request timed out. Try again to check its status.'));
-      controller.abort();
-    }, timeoutMs);
-  });
   try {
-    const request = fetch(input, { ...init, signal: controller.signal }).then(read);
-    return await Promise.race([request, timeout]);
-  } finally {
-    if (timer !== undefined) clearTimeout(timer);
+    return await fetchWithin(input, init, { timeoutMs }, read);
+  } catch (e) {
+    if (e instanceof FetchTimeoutError) throw new Error('The profile request timed out. Try again to check its status.');
+    throw e;
   }
 }
 

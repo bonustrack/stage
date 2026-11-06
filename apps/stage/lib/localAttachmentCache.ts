@@ -3,6 +3,7 @@ import { makeListeners, useStoreValue } from './storeCore';
 import { attempt } from './errorPolicy';
 import type { UploadedAttachment } from './xmtp.types';
 import { makeLocalAttachmentCache, type LocalAttachmentPreview } from './localAttachmentCache.core';
+import { randomHex } from '@stage-labs/client/ids';
 
 const cache = makeLocalAttachmentCache();
 
@@ -33,7 +34,7 @@ export function asFileUri(uri: string): string {
 export function stashLocalAttachment(srcUri: string): string {
   if (!srcUri.startsWith('file://')) return srcUri;
   try {
-    const name = `stage-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExtFor(srcUri)}`;
+    const name = `stage-pending-${Date.now()}-${randomHex(3)}.${safeExtFor(srcUri)}`;
     const src = new File(srcUri);
     const dest = new File(Paths.cache, name);
     if (dest.exists)
