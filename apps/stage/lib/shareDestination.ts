@@ -9,9 +9,12 @@ import { loadClearedChats, subscribeClearedChats } from './sync/clearedChats';
 import { acceptedShareConsent, type ShareDestination } from './shareDestination.model';
 import { sdk } from './xmtp.sdk';
 
+export function isShareAccountCurrent(accountId: string, epoch: number): boolean {
+  return getAccountEpoch() === epoch && knownActiveAccountId() === accountId;
+}
+
 export function assertShareAccount(accountId: string, epoch: number): void {
-  if (getAccountEpoch() !== epoch || knownActiveAccountId() !== accountId)
-    throw new Error('Choose a channel again for the active account.');
+  if (!isShareAccountCurrent(accountId, epoch)) throw new Error('Choose a channel again for the active account.');
 }
 
 async function shareConsent(accountId: string, conv: NonNullable<Awaited<ReturnType<typeof sdk.findConv>>>) {

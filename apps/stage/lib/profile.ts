@@ -23,7 +23,7 @@ import {
 } from '@stage-labs/client/identity/onchainProfile';
 import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import { getSelectedAccount, type AccountRecord } from './accounts';
-import { getAccountSelection } from './accountSelection';
+import { selectionScope } from './accountSelection';
 import { linkProxyBase } from './linkProxy';
 import { invalidatePeerProfile } from './peerProfiles';
 import { sendCallsFrom, signFrom } from './tx';
@@ -37,10 +37,10 @@ interface ProfileAccount {
 }
 
 async function profileAccount(address?: string): Promise<ProfileAccount> {
-  const selected = getAccountSelection();
+  const scope = selectionScope();
   const record = await getSelectedAccount();
   const assertCurrent = (): void => {
-    if (selected !== getAccountSelection()) throw new Error('The account changed while saving your profile.');
+    scope.assertCurrent('The account changed while saving your profile.');
   };
   assertCurrent();
   if (record === null || (address !== undefined && record.address.toLowerCase() !== address.toLowerCase())) {

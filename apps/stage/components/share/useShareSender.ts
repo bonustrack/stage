@@ -2,9 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { startSend, showSend, finishSend, type StartedSend } from '../composer/sendRun';
 import type { ComposerState } from '../composer/state';
-import { assertShareAccount, checkShareDestination } from '../../lib/shareDestination';
-import { getAccountEpoch } from '../../lib/accountEpoch';
-import { knownActiveAccountId } from '../../lib/accountSelection';
+import { assertShareAccount, checkShareDestination, isShareAccountCurrent } from '../../lib/shareDestination';
 import { capabilities } from '../../lib/capabilities';
 import { conversationSharePath } from '../../lib/links';
 import { stashLocalAttachment } from '../../lib/localAttachmentCache';
@@ -83,7 +81,7 @@ export function useShareSender(props: {
         const picked = current.current.selection;
         await current.current.onDismiss(true);
         capabilities.toast('Shared to channel');
-        if (picked !== null && getAccountEpoch() === picked.epoch && knownActiveAccountId() === picked.accountId) {
+        if (picked !== null && isShareAccountCurrent(picked.accountId, picked.epoch)) {
           capabilities.navigate(conversationSharePath(picked.destination.convId, picked.destination.peerAddress));
         }
       },

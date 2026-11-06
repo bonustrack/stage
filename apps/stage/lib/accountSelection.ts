@@ -47,23 +47,32 @@ export function readActiveAccountId(): Promise<string | null> {
   return readActive();
 }
 
-export interface AccountScope {
+export interface SelectionScope {
   accountId: string | null;
-  epoch: number;
   current: () => boolean;
-  assertCurrent: () => void;
+  assertCurrent: (message?: string) => void;
+}
+
+export interface AccountScope extends SelectionScope {
+  epoch: number;
+}
+
+function scopeOf(current: () => boolean): Pick<SelectionScope, 'current' | 'assertCurrent'> {
+  return {
+    current,
+    assertCurrent: (message) => {
+      if (!current()) throw new AccountChangedError(message);
+    },
+  };
+}
+
+export function selectionScope(): SelectionScope {
+  const selection = getAccountSelection();
+  return { accountId: activeId.get(), ...scopeOf(() => selection === getAccountSelection()) };
 }
 
 export function accountScope(): AccountScope {
   const epoch = getAccountEpoch();
   const selection = getAccountSelection();
-  const current = (): boolean => epoch === getAccountEpoch() && selection === getAccountSelection();
-  return {
-    accountId: activeId.get(),
-    epoch,
-    current,
-    assertCurrent: () => {
-      if (!current()) throw new AccountChangedError();
-    },
-  };
+  return { accountId: activeId.get(), epoch, ...scopeOf(() => epoch === getAccountEpoch() && selection === getAccountSelection()) };
 }
