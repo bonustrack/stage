@@ -1,5 +1,5 @@
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { uniqueBy } from '@stage-labs/client/collections';
+import { includesKey, uniqueKeys } from '@stage-labs/client/collections';
 import { cleanLabel } from '@stage-labs/client/xmtp/labels';
 
 export interface ListEdits {
@@ -20,23 +20,6 @@ interface Rect {
 }
 
 export const PICKER_MAX_WIDTH = 400;
-
-const keyOf = (value: string): string => value.toLowerCase();
-
-export function includesKey(list: readonly string[], value: string): boolean {
-  const key = keyOf(value);
-  return list.some((item) => keyOf(item) === key);
-}
-
-export function uniqueKeys(list: readonly string[]): string[] {
-  return uniqueBy(list, keyOf);
-}
-
-export function toggleKey(list: readonly string[], value: string, single = false): string[] {
-  const key = keyOf(value);
-  if (includesKey(list, value)) return list.filter((item) => keyOf(item) !== key);
-  return single ? [value] : [...list, value];
-}
 
 function missingFrom(list: readonly string[], other: readonly string[]): string[] {
   return list.filter((item) => !includesKey(other, item));

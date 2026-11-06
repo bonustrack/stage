@@ -1,31 +1,16 @@
-export interface OutboxItem {
-  id: string;
-  address: string;
-  text: string;
-  createdAt: number;
-  accountId?: string;
-}
+import { z } from 'zod';
 
-function parseItem(entry: unknown): OutboxItem | null {
-  if (typeof entry !== 'object' || entry === null) return null;
-  const r = entry as Record<string, unknown>;
-  if (typeof r.id !== 'string' || typeof r.address !== 'string' || typeof r.text !== 'string' || typeof r.createdAt !== 'number') {
-    return null;
-  }
-  const accountId = typeof r.accountId === 'string' ? { accountId: r.accountId } : {};
-  return { id: r.id, address: r.address, text: r.text, createdAt: r.createdAt, ...accountId };
-}
+const outboxItemSchema = z.object({
+  id: z.string(),
+  address: z.string(),
+  text: z.string(),
+  createdAt: z.number(),
+  accountId: z.string().optional().catch(undefined),
+});
 
-export function deserializeOutbox(raw: string): OutboxItem[] | undefined {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return undefined;
-    const items = parsed.map(parseItem);
-    return items.every((i): i is OutboxItem => i !== null) ? items : undefined;
-  } catch {
-    return undefined;
-  }
-}
+export type OutboxItem = z.infer<typeof outboxItemSchema>;
+
+export const outboxSchema = z.array(outboxItemSchema);
 
 function belongsTo(item: OutboxItem, accountId: string | null): boolean {
   return accountId === null || item.accountId === undefined || item.accountId === accountId;

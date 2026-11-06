@@ -1,6 +1,6 @@
 import { addLabel, assignedAddresses, categoryOf, parseObject } from '@stage-labs/client/xmtp/labels';
 import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
-import { includesKey } from '../conversation/SidebarSection.model';
+import { includesKey } from '@stage-labs/client/collections';
 
 export interface NewChatMetadata {
   category: string | null;

@@ -98,14 +98,20 @@ export function setCachedRows(next: CachedRow[] | null): void {
 export const subscribeCachedRows = activeListeners.subscribe;
 
 const LAST_READ_PREFIX = 'unread.lastRead.';
-export async function getLastReadNs(convId: string): Promise<number> {
-  const raw = await getSecure(LAST_READ_PREFIX + convId);
+function lastReadOf(raw: string | null): number {
   if (!raw) return 0;
   const n = Number(raw);
   return Number.isFinite(n) ? n : 0;
 }
-export async function setLastReadNs(convId: string, ns: number): Promise<void> {
+export async function getLastReadNs(convId: string): Promise<number> {
+  return lastReadOf(await getSecure(LAST_READ_PREFIX + convId));
+}
+async function setLastReadNs(convId: string, ns: number): Promise<void> {
   await setSecure(LAST_READ_PREFIX + convId, String(ns));
+}
+export async function raiseLastReadNs(convId: string, ns: number): Promise<void> {
+  const stored = lastReadOf(await secureStorage.get(LAST_READ_PREFIX + convId));
+  await setLastReadNs(convId, Math.max(stored, ns));
 }
 
 const MARKED_UNREAD_PREFIX = 'unread.marked.';

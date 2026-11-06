@@ -15,7 +15,8 @@ import { COPY_ADDRESS_ITEM } from '../profile/ProfileScreen.model';
 import { GROUP_BY_LABELS } from './groupBy.model';
 import { homeSortEdit, homeSortOf, SORT_LABELS, sortHomeRows } from './sort.model';
 import { labelColumnKey, orderedColumns } from './board/BoardScreen.model';
-import { LAST_ACTIVITY_WINDOWS, lastActivityLabel, type LastActivity } from './activity.model';
+import { lastActivityLabel } from './activity.model';
+import { LAST_ACTIVITY_WINDOWS, type LastActivity } from '../../lib/lastActivity.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';
 export type Row = ConversationView & Record<string, unknown>;

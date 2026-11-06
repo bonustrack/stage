@@ -6,7 +6,7 @@ import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { MessagingSetupBanner } from './MessagingSetupBanner';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { ChannelRowFields } from '../chatRow/ChannelRowFields';
-import type { ChannelFields } from './fields.model';
+import type { ChannelFields } from '../../lib/channelFields.model';
 import { ChannelMenu } from '../chatRow/ChannelMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { DragCell, PinnedRow, SectionHandle, type HomeDrag } from './listDrag';

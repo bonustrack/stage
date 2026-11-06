@@ -1,6 +1,5 @@
-import { makeListeners, useStoreValue } from '../../lib/storeCore';
+import { createValueStore } from '../../lib/persistedStore';
 import { WEB_TAB_RAIL_WIDTH } from './webLayout';
-import { namespacedKey, readNamespaced } from '../../platform/storageNamespace';
 
 export interface PaneWidth {
   get: () => number;
@@ -30,40 +29,32 @@ function writeStyle(id: string, text: string): void {
 }
 
 export function createPaneWidth(opts: PaneWidthOptions): PaneWidth {
-  const listeners = makeListeners();
   const clamp = (w: number): number => Math.min(opts.max, Math.max(opts.min, w));
-
-  const readInitial = (): number => {
-    if (typeof localStorage === 'undefined') return opts.initial;
-    const raw = Number(readNamespaced(localStorage, opts.key));
-    return Number.isFinite(raw) && raw > 0 ? clamp(raw) : opts.initial;
-  };
-
-  let width = readInitial();
-  writeStyle(opts.styleId, opts.css(width));
-
-  const get = (): number => width;
+  const store = createValueStore<number>({
+    key: opts.key,
+    default: opts.initial,
+    readNow: true,
+    deserialize: (raw) => {
+      const saved = Number(raw);
+      return Number.isFinite(saved) && saved > 0 ? clamp(saved) : undefined;
+    },
+  });
+  writeStyle(opts.styleId, opts.css(store.get()));
 
   const set = (next: number): void => {
     const w = clamp(Math.round(next));
-    if (w === width) return;
-    width = w;
-    writeStyle(opts.styleId, opts.css(width));
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(namespacedKey(opts.key), String(w));
-    }
-    listeners.notify();
+    if (w === store.get()) return;
+    writeStyle(opts.styleId, opts.css(w));
+    store.set(w);
   };
 
-  const use = (): number => useStoreValue(listeners.subscribe, get);
-
   return {
-    get,
+    get: store.get,
     set,
     reset: () => {
       set(opts.initial);
     },
-    use,
+    use: store.use,
   };
 }
 

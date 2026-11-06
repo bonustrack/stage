@@ -9,7 +9,7 @@ import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu'
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
 import { FIELD_SECTIONS, LabelPicker } from '../channel/channel.labels';
-import { toggleKey } from '../conversation/SidebarSection.model';
+import { toggleKey } from '@stage-labs/client/collections';
 import { peerLabel } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
 import type { NewChatMetadata as Metadata } from './newChatMetadata.model';

@@ -14,7 +14,7 @@ import { ConvTopnavShell } from '../conversation/parts';
 import { ChatColumnSpinner, ConversationSidebar, useConversationSidebarShown } from '../conversation/ConversationSidebar';
 import { ConversationSidebarToggle } from '../conversation/ConversationSidebarToggle';
 import { ChatColumn, FooterDock } from '../conversation/FooterDock';
-import { includesKey, toggleKey, uniqueKeys } from '../conversation/SidebarSection.model';
+import { includesKey, toggleKey, uniqueKeys } from '@stage-labs/client/collections';
 import { RecipientBar } from './RecipientBar';
 import { NewChatMetadata } from './NewChatMetadata';
 import { NewChatProject } from './NewChatProject';

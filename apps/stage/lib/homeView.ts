@@ -2,14 +2,13 @@ import { useEffect, useMemo } from 'react';
 import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
-import { jsonWith, makeListeners, makeValue, useStoreValue } from './storeCore';
+import { makeListeners, makeValue, useStoreValue } from './storeCore';
 import { editHomeView, receiveHomeView, syncedHomeView, syncsHomeView } from './syncedSettings.model';
 
 const prefs = createValueStore<HomeViewContent>({
   key: 'home.view.',
   default: DEFAULT_HOME_VIEW,
-  deserialize: jsonWith(homeViewSchema),
-  serialize: JSON.stringify,
+  schema: homeViewSchema,
   perAccount: true,
 });
 

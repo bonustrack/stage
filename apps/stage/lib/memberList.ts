@@ -1,16 +1,10 @@
 import { createValueStore } from './persistedStore';
 import { makeValue } from './storeCore';
-import { readNamespaced } from '../platform/storageNamespace';
-
-const KEY = 'chat.memberList';
-
-function savedOpen(): boolean {
-  return typeof localStorage !== 'undefined' && readNamespaced(localStorage, KEY) === '1';
-}
 
 const store = createValueStore<boolean>({
-  key: KEY,
-  default: savedOpen(),
+  key: 'chat.memberList',
+  default: false,
+  readNow: true,
   serialize: (open) => (open ? '1' : '0'),
   deserialize: (raw) => raw === '1',
 });

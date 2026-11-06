@@ -1,10 +1,11 @@
 import {
   DEFAULT_LAST_ACTIVITY,
   lastActivityCutoff,
-  parseLastActivity,
+  lastActivitySchema,
+  type ActivityPreferences,
   type ActivityView,
   type LastActivity,
-} from '../components/home/activity.model';
+} from './lastActivity.model';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { accountScope } from './accountSelection';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
@@ -12,11 +13,10 @@ import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
 import { makeSharedSource, useStoreValue } from './storeCore';
 
-const prefs = createValueStore({
+const prefs = createValueStore<ActivityPreferences>({
   key: 'home.activity.',
   default: DEFAULT_LAST_ACTIVITY,
-  deserialize: parseLastActivity,
-  serialize: JSON.stringify,
+  schema: lastActivitySchema,
   perAccount: true,
 });
 

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { visibleChannelFields } from '../components/chatRow/ChannelRowFields.model';
-import { CHANNEL_FIELDS, DEFAULT_CHANNEL_FIELDS, type ChannelFields } from '../components/home/fields.model';
+import { CHANNEL_FIELDS } from '../components/home/fields.model';
+import { DEFAULT_CHANNEL_FIELDS, type ChannelFields } from '../lib/channelFields.model';
 
 const all: ChannelFields = {
   members: true,

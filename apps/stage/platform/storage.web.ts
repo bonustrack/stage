@@ -57,6 +57,7 @@ export const secureStorage: SecureStorage = {
 
 export const appStorage: AppStorage = {
   get: (key) => Promise.resolve(readKey(key)),
+  getSync: readKey,
   set: (key, value) => {
     writeKey(key, value);
     return Promise.resolve();

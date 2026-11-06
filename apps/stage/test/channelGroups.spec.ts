@@ -1,16 +1,13 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { acceptsColumnMove, boardColumns, columnMovable, orderedColumns } from '../components/home/board/BoardScreen.model';
 import { groupRows, isGroupHeader, listKeyOf, rowsOf, type HomeListItem } from '../components/home/groups.model';
-import {
-  NO_GROUPS_PREFS,
-  categoryKeysOf,
-  categoryOrderWith,
-  movedCategoryOrder,
-  parseChannelGroupsPrefs,
-} from '../lib/channelGroups.model';
+import { NO_GROUPS_PREFS, categoryKeysOf, categoryOrderWith, movedCategoryOrder, channelGroupsSchema } from '../lib/channelGroups.model';
+import { jsonWith } from '../lib/storeCore';
 import { domElementOf, homeDragModel } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';
 import { selectAccount } from './activeAccount';
+
+const parseChannelGroupsPrefs = (raw: string): unknown => jsonWith(channelGroupsSchema)(raw) ?? NO_GROUPS_PREFS;
 
 const values = new Map<string, string>();
 selectAccount('ann');

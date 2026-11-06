@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { isStringList } from '@stage-labs/client/collections';
+import { includesKey, isStringList, uniqueKeys } from '@stage-labs/client/collections';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -14,7 +14,7 @@ import {
   SidebarSection,
   type SectionDraft,
 } from '../conversation/SidebarSection';
-import { includesKey, selectedFirst, tagSearch, uniqueKeys, type ListEdits } from '../conversation/SidebarSection.model';
+import { selectedFirst, tagSearch, type ListEdits } from '../conversation/SidebarSection.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { addGroupLabel, removeGroupLabel, setGroupCategory, setGroupField, suggestLabels } from '../../lib/xmtp.groups';

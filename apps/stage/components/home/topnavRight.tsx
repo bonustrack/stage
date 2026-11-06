@@ -2,8 +2,9 @@ import { useRouter } from 'expo-router';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { PickerRow } from '../conversation/SidebarSection';
 import { AppIcon } from '../widgets';
-import { CHANNEL_FIELDS, visibleChannelFieldCount, type ChannelFields } from './fields.model';
+import { CHANNEL_FIELDS, visibleChannelFieldCount } from './fields.model';
 import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
+import type { ChannelFields } from '../../lib/channelFields.model';
 import { useOpenNewChat } from './newChatFocus';
 import { HoverIconButton } from '../hover';
 import {
@@ -15,8 +16,9 @@ import {
   homeViewMenu,
   type ViewMenuSection,
 } from './model';
-import { isLastActivity, lastActivityLabel } from './activity.model';
+import { lastActivityLabel } from './activity.model';
 import { setLastActivity, useLastActivity } from '../../lib/lastActivity';
+import { isLastActivity } from '../../lib/lastActivity.model';
 import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
 import { AnchoredMenu, menuPointBelow, menuPointOnLayout } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';

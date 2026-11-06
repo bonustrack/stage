@@ -1,6 +1,8 @@
+import { z } from 'zod';
 import { movedKey } from '@stage-labs/client/xmtp/pinOrder';
+import { storedStrings } from './storeCore';
 import { compareNames } from './format';
-import { uniqueKeys } from '../components/conversation/SidebarSection.model';
+import { uniqueKeys } from '@stage-labs/client/collections';
 
 export interface ChannelGroupsPrefs {
   collapsed: string[];
@@ -49,17 +51,8 @@ export function movedCategoryOrder(order: readonly string[], visible: readonly s
   return moved === undefined || target === undefined ? [...order] : movedKey(full, moved, target);
 }
 
-function stringsOf(value: unknown): string[] {
-  return Array.isArray(value) ? value.filter((key): key is string => typeof key === 'string') : [];
-}
-
-export function parseChannelGroupsPrefs(raw: string): ChannelGroupsPrefs {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (parsed === null || typeof parsed !== 'object') return NO_GROUPS_PREFS;
-    const { collapsed, order, orderConfigured } = parsed as Partial<Record<keyof ChannelGroupsPrefs, unknown>>;
-    return { collapsed: stringsOf(collapsed), order: stringsOf(order), ...(orderConfigured === true ? { orderConfigured } : {}) };
-  } catch {
-    return NO_GROUPS_PREFS;
-  }
-}
+export const channelGroupsSchema = z.object({
+  collapsed: storedStrings.catch([]),
+  order: storedStrings.catch([]),
+  orderConfigured: z.literal(true).optional().catch(undefined),
+});

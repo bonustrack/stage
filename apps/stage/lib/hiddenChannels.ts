@@ -1,14 +1,13 @@
-import { mergeHiddenChannels, type HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
+import { hiddenChannelsSchema, mergeHiddenChannels, type HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
 import { createValueStore } from './persistedStore';
 import { makeListeners } from './storeCore';
 import type { XmtpConsent } from './xmtp.types';
-import { HIDDEN_CHANNELS_KEY, parseHiddenChannels } from './hiddenChannelsStorage';
+import { HIDDEN_CHANNELS_KEY } from './hiddenChannelsStorage';
 
 const prefs = createValueStore<HiddenChannels>({
   key: HIDDEN_CHANNELS_KEY,
   default: {},
-  deserialize: parseHiddenChannels,
-  serialize: JSON.stringify,
+  schema: hiddenChannelsSchema,
   perAccount: true,
   durable: true,
 });

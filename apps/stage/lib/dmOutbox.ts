@@ -4,11 +4,11 @@ import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { xmtpSendText } from './xmtp.messages';
 import { getActiveAccount } from './accounts';
 import { knownActiveAccountId } from './accountSelection';
-import { addressesWithQueued, deserializeOutbox, itemsForAddress, withoutItem, type OutboxItem } from './dmOutbox.model';
+import { addressesWithQueued, itemsForAddress, outboxSchema, withoutItem, type OutboxItem } from './dmOutbox.model';
 import { report, reported, recover } from './errorPolicy';
 import { randomHex } from '@stage-labs/client/ids';
 
-const store = createValueStore<OutboxItem[]>({ key: 'dm.outbox', default: [], serialize: JSON.stringify, deserialize: deserializeOutbox });
+const store = createValueStore<OutboxItem[]>({ key: 'dm.outbox', default: [], schema: outboxSchema });
 
 export function subscribeDmOutbox(cb: () => void): () => void {
   store.loadAsync();

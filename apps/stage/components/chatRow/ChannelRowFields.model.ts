@@ -1,4 +1,5 @@
-import { CHANNEL_FIELDS, type ChannelFields, type ChannelField } from '../home/fields.model';
+import { CHANNEL_FIELDS } from '../home/fields.model';
+import type { ChannelFields, ChannelField } from '../../lib/channelFields.model';
 import type { AppIconName } from '../appIcons';
 
 export interface ChannelRowFieldData {

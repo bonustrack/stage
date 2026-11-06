@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { configuredFieldOptions } from '../components/channel/channelFieldOptions.model';
-import { uniqueKeys } from '../components/conversation/SidebarSection.model';
+import { uniqueKeys } from '@stage-labs/client/collections';
 import { searchFilterSources } from '../components/home/search/searchFilter.model';
 import { group } from './searchFixtures';
 

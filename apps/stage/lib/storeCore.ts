@@ -1,8 +1,17 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { z } from 'zod';
 import { report } from './errorPolicy';
 
-interface StoredSchema<T> {
+export interface StoredSchema<T> {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
+}
+
+export const storedStrings = z.array(z.unknown()).transform((items) => items.filter((item): item is string => typeof item === 'string'));
+
+export function storedRecordOf<V>(isValue: (value: unknown) => value is V) {
+  return z
+    .record(z.unknown())
+    .transform((entries) => Object.fromEntries(Object.entries(entries).filter((entry): entry is [string, V] => isValue(entry[1]))));
 }
 
 export function jsonWith<T>(schema: StoredSchema<T>): (raw: string) => T | undefined {

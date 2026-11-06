@@ -8,7 +8,7 @@ import { useHover } from '../hover';
 import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MembersPicker } from '../conversation/MemberListSidebar.pickers';
-import { includesKey } from '../conversation/SidebarSection.model';
+import { includesKey } from '@stage-labs/client/collections';
 import { usePalette } from '../../lib/theme';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { peerLabel } from '../../lib/peerProfiles';

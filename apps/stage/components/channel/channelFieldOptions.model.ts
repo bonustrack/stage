@@ -1,5 +1,5 @@
 import { channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/labels';
-import { uniqueKeys } from '../conversation/SidebarSection.model';
+import { uniqueKeys } from '@stage-labs/client/collections';
 
 export function configuredFieldOptions(
   field: Exclude<ChannelField, 'priority'>,

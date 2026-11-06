@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { uniqueBy } from '@stage-labs/client/collections';
+import { includesKey, uniqueBy } from '@stage-labs/client/collections';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Avatar } from '../Avatar';
 import { PickerList, PickerNote, PickerRow, PickerSearch, type SectionDraft } from './SidebarSection';
-import { includesKey, matchesQuery, selectedFirst } from './SidebarSection.model';
+import { matchesQuery, selectedFirst } from './SidebarSection.model';
 import type { MemberListEntry } from './MemberListSidebar.model';
 import { lookupMember } from '../channel/MemberPicker';
 import { capabilities } from '../../lib/capabilities';

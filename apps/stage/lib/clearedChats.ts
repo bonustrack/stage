@@ -1,25 +1,15 @@
 import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import { createValueStore } from './persistedStore';
-import { makeListeners } from './storeCore';
+import { makeListeners, storedRecordOf } from './storeCore';
 
 const EMPTY: ClearedChats = {};
 
-function parseCleared(raw: string): ClearedChats {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (parsed === null || typeof parsed !== 'object') return EMPTY;
-    const entries = Object.entries(parsed).filter((e): e is [string, number] => typeof e[1] === 'number');
-    return Object.fromEntries(entries);
-  } catch {
-    return EMPTY;
-  }
-}
+const isClearedAt = (value: unknown): value is number => typeof value === 'number';
 
 const prefs = createValueStore<ClearedChats>({
   key: 'channels.cleared.',
   default: EMPTY,
-  deserialize: parseCleared,
-  serialize: JSON.stringify,
+  schema: storedRecordOf(isClearedAt),
   perAccount: true,
 });
 

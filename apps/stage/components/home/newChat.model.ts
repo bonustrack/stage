@@ -1,7 +1,6 @@
 import { SUGGESTED_CONTACTS, suggestedContacts } from '../contacts/SuggestedContacts.model';
-import { isStringList } from '@stage-labs/client/collections';
+import { isStringList, uniqueKeys } from '@stage-labs/client/collections';
 import { reactorsLabel } from '../conversation/reactors.model';
-import { uniqueKeys } from '../conversation/SidebarSection.model';
 import { BOARD_ROUTE } from '../tabs/splitRoutes';
 import { CHANNEL_NAME_MAX } from '../channel/EditChannelModal.model';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';

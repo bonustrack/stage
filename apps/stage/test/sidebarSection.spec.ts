@@ -3,16 +3,14 @@ import {
   PICKER_MAX_WIDTH,
   applyListEdits,
   hasListEdits,
-  includesKey,
   listEdits,
   matchesQuery,
   pickerAnchorOf,
   pickerWidth,
   selectedFirst,
   tagSearch,
-  toggleKey,
-  uniqueKeys,
 } from '../components/conversation/SidebarSection.model';
+import { includesKey, toggleKey, uniqueKeys } from '@stage-labs/client/collections';
 
 describe('sidebar section draft', () => {
   test('diffs the draft against the saved list, ignoring case', () => {

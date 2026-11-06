@@ -1,10 +1,10 @@
-import { toggleKey } from '../components/conversation/SidebarSection.model';
+import { toggleKey } from '@stage-labs/client/collections';
 import {
   NO_GROUPS_PREFS,
   categoryKeysOf,
   categorySectionKeysOf,
   movedCategoryOrder,
-  parseChannelGroupsPrefs,
+  channelGroupsSchema,
   type ChannelGroupsPrefs,
 } from './channelGroups.model';
 import { reported } from './errorPolicy';
@@ -15,8 +15,7 @@ import { makeListeners } from './storeCore';
 const prefs = createValueStore<ChannelGroupsPrefs>({
   key: 'channels.groups.',
   default: NO_GROUPS_PREFS,
-  deserialize: parseChannelGroupsPrefs,
-  serialize: JSON.stringify,
+  schema: channelGroupsSchema,
   perAccount: true,
 });
 

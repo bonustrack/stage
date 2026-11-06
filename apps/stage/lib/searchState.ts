@@ -1,6 +1,6 @@
 import { searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/sync/search';
 import { createValueStore } from './persistedStore';
-import { jsonWith, makeListeners } from './storeCore';
+import { makeListeners } from './storeCore';
 import {
   EMPTY_SEARCH,
   editFilters,
@@ -14,8 +14,7 @@ import {
 const prefs = createValueStore<SearchStateContent>({
   key: 'channels.search.',
   default: EMPTY_SEARCH,
-  deserialize: jsonWith(searchStateSchema),
-  serialize: JSON.stringify,
+  schema: searchStateSchema,
   perAccount: true,
   restore: restoreSearch,
 });

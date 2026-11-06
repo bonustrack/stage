@@ -8,7 +8,7 @@ import { Row } from '../layout';
 import { AppIcon } from '../widgets';
 import { memberListEntries } from '../conversation/MemberListSidebar.model';
 import { visibleChannelFields, type ChannelRowFieldData } from './ChannelRowFields.model';
-import type { ChannelFields } from '../home/fields.model';
+import type { ChannelFields } from '../../lib/channelFields.model';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 
 const MAX_PEOPLE = 3;

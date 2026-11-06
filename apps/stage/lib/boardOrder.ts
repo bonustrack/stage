@@ -1,18 +1,12 @@
 import { boardOrderSchema } from '@stage-labs/client/xmtp/sync/order';
 import { createValueStore } from './persistedStore';
-import { jsonWith, makeListeners } from './storeCore';
+import { makeListeners } from './storeCore';
 
 type BoardOrder = readonly string[];
 
 const EMPTY: BoardOrder = [];
 
-const prefs = createValueStore<BoardOrder>({
-  key: 'board.columnOrder.',
-  default: EMPTY,
-  deserialize: jsonWith(boardOrderSchema),
-  serialize: JSON.stringify,
-  perAccount: true,
-});
+const prefs = createValueStore<BoardOrder>({ key: 'board.columnOrder.', default: EMPTY, schema: boardOrderSchema, perAccount: true });
 
 export const useBoardOrder = prefs.use;
 

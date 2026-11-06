@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
-import {
-  CHANNEL_FIELDS,
-  DEFAULT_CHANNEL_FIELDS,
-  parseChannelFields,
-  toggleChannelFieldIn,
-  visibleChannelFieldCount,
-} from '../components/home/fields.model';
+import { CHANNEL_FIELDS, visibleChannelFieldCount } from '../components/home/fields.model';
+import { DEFAULT_CHANNEL_FIELDS, parseChannelFields, toggleChannelFieldIn } from '../lib/channelFields.model';
 import { selectAccount, selectedAccount } from './activeAccount';
 
 const values = new Map<string, string>();

@@ -18,6 +18,7 @@ const storage = {
 
 mock.module('../platform/storage', () => ({ appStorage: storage, secureStorage: {} }));
 const { createValueStore } = await import('../lib/persistedStore');
+const { storedStrings } = await import('../lib/storeCore');
 
 beforeEach(() => {
   values.clear();
@@ -123,6 +124,35 @@ describe('persisted value stores', () => {
     expect(store.get()).toBe(14);
     expect(values.get('counter.bob')).toBe('9');
     expect(values.has('counter.carol')).toBe(false);
+  });
+
+  test('a schema store keeps the strings of a list, writes JSON and ignores unreadable JSON', async () => {
+    values.set('list.alice', '["a",1,"b",null]');
+    const store = createValueStore<readonly string[]>({ key: 'list.', default: [], schema: storedStrings, perAccount: true });
+    expect(await store.load()).toEqual(['a', 'b']);
+    await store.update((list) => [...list, 'c']);
+    expect(values.get('list.alice')).toBe('["a","b","c"]');
+    selectAccount('bob');
+    values.set('list.bob', '{');
+    await store.update((list) => list);
+    expect(store.get()).toEqual([]);
+  });
+
+  test('readNow takes the saved value at creation from a storage that reads synchronously', async () => {
+    values.set('pane', '7');
+    const store = createValueStore({
+      key: 'pane',
+      default: 1,
+      readNow: true,
+      deserialize: Number,
+      storage: { ...storage, getSync: (key) => values.get(key) ?? null },
+    });
+    expect(store.get()).toBe(7);
+    values.set('pane', '9');
+    expect(await store.load()).toBe(7);
+    const later = createValueStore({ key: 'pane', default: 1, readNow: true, deserialize: Number });
+    expect(later.get()).toBe(1);
+    expect(await later.load()).toBe(9);
   });
 
   test('restore merges a value set before the first load, later accounts start from the default', async () => {

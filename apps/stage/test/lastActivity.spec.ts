@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
-import {
-  DEFAULT_LAST_ACTIVITY,
-  LAST_ACTIVITY_WINDOWS,
-  lastActivityCutoff,
-  matchesLastActivity,
-  parseLastActivity,
-} from '../components/home/activity.model';
+import { matchesLastActivity } from '../components/home/activity.model';
+import { DEFAULT_LAST_ACTIVITY, LAST_ACTIVITY_WINDOWS, lastActivityCutoff, lastActivitySchema } from '../lib/lastActivity.model';
+import { jsonWith } from '../lib/storeCore';
 import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
 import { deriveSortedRows } from '../components/home/model';
 import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
@@ -13,6 +9,7 @@ import { group } from './searchFixtures';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
 import { selectAccount, selectedAccount } from './activeAccount';
 
+const parseLastActivity = (raw: string): unknown => jsonWith(lastActivitySchema)(raw) ?? DEFAULT_LAST_ACTIVITY;
 const DAY = 86_400_000;
 const now = 40 * DAY;
 const values = new Map<string, string>();

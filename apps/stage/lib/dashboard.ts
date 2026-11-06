@@ -17,15 +17,14 @@ import {
 } from '../components/dashboard/dashboard.model';
 import { forgetLiveSnapshots } from './liveSnapshots';
 import { createValueStore } from './persistedStore';
-import { jsonWith, makeListeners, useStoreValue } from './storeCore';
+import { makeListeners, useStoreValue } from './storeCore';
 import { editDashboard, receiveDashboard } from './syncedSettings.model';
 import { randomHex } from '@stage-labs/client/ids';
 
 const prefs = createValueStore<DashboardContent>({
   key: 'dashboard.v1.',
   default: EMPTY_DASHBOARD,
-  deserialize: jsonWith(dashboardSchema),
-  serialize: JSON.stringify,
+  schema: dashboardSchema,
   perAccount: true,
 });
 

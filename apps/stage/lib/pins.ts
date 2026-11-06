@@ -1,16 +1,7 @@
 import { movedPinOrder, pinOrderAfterRemote, toggledPinOrder, type PinOrder } from '@stage-labs/client/xmtp/pinOrder';
 import type { PinStateContent } from '@stage-labs/client/xmtp/sync/pin';
 import { createValueStore } from './persistedStore';
-import { makeListeners } from './storeCore';
-
-function parseOrder(raw: string): PinOrder | undefined {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : undefined;
-  } catch {
-    return undefined;
-  }
-}
+import { makeListeners, storedStrings } from './storeCore';
 
 export interface PinChange {
   convId: string;
@@ -21,12 +12,7 @@ export interface PinChange {
 const pinChanges = makeListeners<PinChange>();
 export const onPinChanged = pinChanges.subscribe;
 
-const store = createValueStore<PinOrder>({
-  key: 'channels.pinned',
-  default: [],
-  serialize: (v) => JSON.stringify(v),
-  deserialize: parseOrder,
-});
+const store = createValueStore<PinOrder>({ key: 'channels.pinned', default: [], schema: storedStrings });
 
 export const isPinned = (convId: string): boolean => store.get().includes(convId);
 

@@ -1,11 +1,12 @@
 import {
   DEFAULT_CHANNEL_FIELDS,
+  channelFieldsSchema,
   parseChannelFields,
   toggleChannelFieldIn,
   type ChannelField,
   type ChannelFields,
   type ChannelFieldView,
-} from '../components/home/fields.model';
+} from './channelFields.model';
 import { appStorage } from '../platform/storage';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
@@ -13,8 +14,7 @@ import { createValueStore } from './persistedStore';
 const prefs = createValueStore({
   key: 'home.fields.',
   default: DEFAULT_CHANNEL_FIELDS,
-  deserialize: parseChannelFields,
-  serialize: JSON.stringify,
+  schema: channelFieldsSchema(DEFAULT_CHANNEL_FIELDS),
   perAccount: true,
   storage: {
     get: async (key) => {

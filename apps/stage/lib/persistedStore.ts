@@ -2,23 +2,39 @@ import { appStorage } from '../platform/storage';
 import type { AppStorage } from '../platform/types';
 import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
 import { readActiveAccountId } from './accountSelection';
-import { hydrateOnce, makeListeners, useStoreValue } from './storeCore';
+import { hydrateOnce, jsonWith, makeListeners, useStoreValue, type StoredSchema } from './storeCore';
 import { report, reported } from './errorPolicy';
 
-export interface ValueStoreOptions<T> {
+type StoreStorage = Pick<AppStorage, 'get' | 'set' | 'getSync'>;
+
+interface StoreOptions<T> {
   key: string;
   default: T;
-  serialize?: (value: T) => string;
-  deserialize: (raw: string) => T | undefined;
-  storage?: Pick<AppStorage, 'get' | 'set'>;
+  storage?: StoreStorage;
   perAccount?: boolean;
   durable?: boolean;
   restore?: (local: T, stored: T) => T;
+  readNow?: boolean;
 }
+
+interface JsonStoreOptions<T> extends StoreOptions<T> {
+  schema: StoredSchema<T>;
+  serialize?: never;
+  deserialize?: never;
+}
+
+interface RawStoreOptions<T> extends StoreOptions<T> {
+  schema?: never;
+  serialize?: (value: T) => string;
+  deserialize: (raw: string) => T | undefined;
+}
+
+export type ValueStoreOptions<T> = JsonStoreOptions<T> | RawStoreOptions<T>;
 
 export interface ValueStore<T> {
   load: () => Promise<T>;
   loadAsync: () => void;
+  reload: () => Promise<T>;
   get: () => T;
   set: (value: T) => void;
   setAsync: (value: T) => Promise<void>;
@@ -31,12 +47,20 @@ export interface ValueStore<T> {
   use: () => T;
 }
 
-type StoreStorage = Pick<AppStorage, 'get' | 'set'>;
+interface StoreCodec<T> {
+  parse: (raw: string) => T | undefined;
+  serialize: (value: T) => string;
+}
 
 interface StoreState<T> {
   cache: T;
   accountId: string | null | undefined;
   accountEpoch: number | undefined;
+}
+
+function codecOf<T>(opts: ValueStoreOptions<T>): StoreCodec<T> {
+  if (opts.schema) return { parse: jsonWith(opts.schema), serialize: JSON.stringify };
+  return { parse: opts.deserialize, serialize: opts.serialize ?? ((v: T): string => String(v)) };
 }
 
 function durableWriter<T>(
@@ -60,24 +84,28 @@ function durableWriter<T>(
   };
 }
 
-function parseRaw<T>(opts: ValueStoreOptions<T>, raw: string | null): T | undefined {
-  return raw == null ? undefined : opts.deserialize(raw);
+function parseRaw<T>(codec: StoreCodec<T>, raw: string | null): T | undefined {
+  return raw == null ? undefined : codec.parse(raw);
 }
 
-function applyRaw<T>(opts: ValueStoreOptions<T>, state: StoreState<T>, raw: string | null): boolean {
-  const parsed = parseRaw(opts, raw);
+function applyRaw<T>(opts: ValueStoreOptions<T>, codec: StoreCodec<T>, state: StoreState<T>, raw: string | null): boolean {
+  const parsed = parseRaw(codec, raw);
   if (parsed === undefined) return false;
   state.cache = opts.restore ? opts.restore(state.cache, parsed) : parsed;
   return true;
 }
 
-async function readStored<T>(
-  opts: ValueStoreOptions<T>,
-  storage: StoreStorage,
-  state: StoreState<T>,
-  ready: () => Promise<void>,
-): Promise<boolean> {
-  if (!opts.perAccount) return applyRaw(opts, state, await storage.get(opts.key));
+interface StoreReader<T> {
+  opts: ValueStoreOptions<T>;
+  codec: StoreCodec<T>;
+  storage: StoreStorage;
+  state: StoreState<T>;
+  ready: () => Promise<void>;
+}
+
+async function readStored<T>(reader: StoreReader<T>): Promise<boolean> {
+  const { opts, codec, storage, state } = reader;
+  if (!opts.perAccount) return applyRaw(opts, codec, state, await storage.get(opts.key));
   const epoch = getAccountEpoch();
   const id = await readActiveAccountId();
   if (id === state.accountId) {
@@ -85,22 +113,22 @@ async function readStored<T>(
     state.accountEpoch = epoch;
     return changed;
   }
-  await ready();
+  await reader.ready();
   const raw = id === null ? null : await storage.get(opts.key + id);
-  if (epoch !== getAccountEpoch()) return readStored(opts, storage, state, ready);
+  if (epoch !== getAccountEpoch()) return readStored(reader);
   if (!opts.restore || state.accountId !== undefined) state.cache = opts.default;
   state.accountId = id;
   state.accountEpoch = epoch;
-  applyRaw(opts, state, raw);
+  applyRaw(opts, codec, state, raw);
   return true;
 }
 
-function storeHydration<T>(opts: ValueStoreOptions<T>, storage: StoreStorage, state: StoreState<T>, ready: () => Promise<void>) {
-  const read = (): Promise<boolean> => readStored(opts, storage, state, ready);
+function storeHydration<T>(reader: StoreReader<T>) {
+  const { opts } = reader;
   return hydrateOnce(async (): Promise<boolean> => {
-    if (opts.perAccount) return read();
+    if (opts.perAccount) return readStored(reader);
     try {
-      return await read();
+      return await readStored(reader);
     } catch (err) {
       report(`store.${opts.key}`, err);
       return false;
@@ -108,19 +136,28 @@ function storeHydration<T>(opts: ValueStoreOptions<T>, storage: StoreStorage, st
   });
 }
 
+function readNow<T>(reader: StoreReader<T>): boolean {
+  const { opts, storage } = reader;
+  if (!opts.readNow || opts.perAccount || !storage.getSync) return false;
+  applyRaw(opts, reader.codec, reader.state, storage.getSync(opts.key));
+  return true;
+}
+
 export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
-  const serialize = opts.serialize ?? ((v: T): string => String(v));
+  const codec = codecOf(opts);
   const storage = opts.storage ?? appStorage;
   const state: StoreState<T> = { cache: opts.default, accountId: undefined, accountEpoch: undefined };
   const { notify, subscribe } = makeListeners();
   const durable = durableWriter(
     storedFor,
-    (id, value) => storage.set(opts.key + id, serialize(value)),
+    (id, value) => storage.set(opts.key + id, codec.serialize(value)),
     (id, value) => {
-      if (id === state.accountId && serialize(state.cache) !== serialize(value)) commit(value);
+      if (id === state.accountId && codec.serialize(state.cache) !== codec.serialize(value)) commit(value);
     },
   );
-  const hydration = storeHydration(opts, storage, state, () => durable.ready());
+  const reader: StoreReader<T> = { opts, codec, storage, state, ready: () => durable.ready() };
+  const hydration = storeHydration(reader);
+  if (readNow(reader)) hydration.markDone();
 
   function storageKey(): string | null {
     return opts.perAccount ? (typeof state.accountId === 'string' ? opts.key + state.accountId : null) : opts.key;
@@ -156,7 +193,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   function write(): Promise<void> {
     const key = storageKey();
     if (key === null) return Promise.resolve();
-    return storage.set(key, serialize(state.cache)).catch(reported(`store.${opts.key}`));
+    return storage.set(key, codec.serialize(state.cache)).catch(reported(`store.${opts.key}`));
   }
 
   function set(value: T): void {
@@ -181,7 +218,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   async function storedFor(id: string): Promise<T> {
-    return parseRaw(opts, await storage.get(opts.key + id)) ?? opts.default;
+    return parseRaw(codec, await storage.get(opts.key + id)) ?? opts.default;
   }
 
   async function loadFor(id: string): Promise<T> {
@@ -196,7 +233,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     if (id === state.accountId) return change(next);
     const stored = await storedFor(id);
     const value = next(stored);
-    if (value !== stored) await storage.set(opts.key + id, serialize(value));
+    if (value !== stored) await storage.set(opts.key + id, codec.serialize(value));
   }
 
   if (opts.perAccount)
@@ -209,6 +246,7 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   return {
     load,
     loadAsync,
+    reload,
     get,
     set,
     setAsync,

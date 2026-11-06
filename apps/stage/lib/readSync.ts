@@ -11,10 +11,9 @@ import { getActiveAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import {
   getCachedRows,
-  getLastReadNs,
   onReadStateChanged,
+  raiseLastReadNs,
   setCachedRows,
-  setLastReadNs,
   setMarkedUnreadFlag,
   type ReadStateChange,
 } from './channelsCache';
@@ -89,7 +88,7 @@ async function applyReadStates(remote: readonly ReadStateContent[]): Promise<voi
   for (const state of reads) {
     if (!isNewerSyncState(localAt.get(readKey(state.convId)), state.at)) continue;
     localAt.set(readKey(state.convId), state.at);
-    await setLastReadNs(state.convId, Math.max(await getLastReadNs(state.convId), state.lastReadNs));
+    await raiseLastReadNs(state.convId, state.lastReadNs);
     await setMarkedUnreadFlag(state.convId, state.markedUnread);
     applied.push(state);
   }
