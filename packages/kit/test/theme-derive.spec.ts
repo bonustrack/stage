@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
   DEFAULT_SEED,
-  assertDefaultLossless,
   accentHex,
   derivePalette,
   formulaPalette,
@@ -18,14 +17,6 @@ const CUSTOM: ThemeSeed = {
 };
 
 describe('derivePalette', () => {
-  test('default seed returns the LEGACY palette (dark): snapshot', () => {
-    expect(derivePalette(DEFAULT_SEED.dark, 'dark')).toMatchSnapshot();
-  });
-
-  test('default seed returns the LEGACY palette (light): snapshot', () => {
-    expect(derivePalette(DEFAULT_SEED.light, 'light')).toMatchSnapshot();
-  });
-
   test('default seed matches case-insensitively and returns a copy', () => {
     const upper: ThemeSeed = {
       accent: { primary: '#FFFFFF', level: 3 },
@@ -47,10 +38,9 @@ describe('derivePalette', () => {
     expect(derivePalette(CUSTOM, 'dark')).toMatchSnapshot();
   });
 
-  test('the default seed short-circuits to the legacy palette, which assertDefaultLossless checks', () => {
+  test('the default seed short-circuits to the legacy palette', () => {
     expect(derivePalette(DEFAULT_SEED.dark, 'dark')).toEqual(kitPalette('dark'));
     expect(derivePalette(DEFAULT_SEED.light, 'light')).toEqual(kitPalette('light'));
-    expect(() => assertDefaultLossless()).not.toThrow();
   });
 
   test('the formula alone is not lossless at the default seed: sub and inputBg drift', () => {
@@ -71,13 +61,13 @@ describe('derivePalette', () => {
 
 describe('ChatKit-shaped colour generators', () => {
   test('grayscale hue/tint/shade reproduces the legacy border exactly, not only via the short-circuit', () => {
-    expect(grayscaleHex(DEFAULT_SEED.dark.grayscale, 'dark')).toBe('#282a2d');
-    expect(grayscaleHex(DEFAULT_SEED.light.grayscale, 'light')).toBe('#e4e4e5');
+    expect(grayscaleHex(DEFAULT_SEED.dark.grayscale, 'dark')).toBe(kitPalette('dark').border);
+    expect(grayscaleHex(DEFAULT_SEED.light.grayscale, 'light')).toBe(kitPalette('light').border);
   });
 
   test('grayscaleFromHex round-trips the default greys', () => {
-    expect(grayscaleFromHex('#282a2d', 'dark')).toEqual({ hue: 216, tint: 6, shade: 0 });
-    expect(grayscaleFromHex('#e4e4e5', 'light')).toEqual({ hue: 240, tint: 2, shade: 0 });
+    expect(grayscaleFromHex(kitPalette('dark').border, 'dark')).toEqual(DEFAULT_SEED.dark.grayscale);
+    expect(grayscaleFromHex(kitPalette('light').border, 'light')).toEqual(DEFAULT_SEED.light.grayscale);
   });
 
   test('negative shade lightens and positive shade darkens', () => {

@@ -7,7 +7,7 @@ import { KIT_CATALOG, KIT_CATALOG_ID } from '../../src/a2ui/kit-catalog';
 import { ROOT_SCOPE } from '../../src/a2ui/evaluate';
 import { BASIC_CATALOG, PROTOCOL_DOCUMENTS, PROTOCOL_SCHEMAS } from '../../src/a2ui/schemas';
 import { createSchemaRegistry, validateJson } from '../../src/a2ui/json-schema';
-import { BASIC_CATALOG_ID, type JsonObject, type RendererMessage } from '../../src/a2ui/protocol';
+import { BASIC_CATALOG_ID, type CheckRule, type JsonObject, type RendererMessage } from '../../src/a2ui/protocol';
 
 const CONTACT_FORM = readFileSync(join(import.meta.dir, 'cases', 'contact_form_example.jsonl'), 'utf8');
 
@@ -175,37 +175,86 @@ describe('A2UI client', () => {
 });
 
 describe('Kit catalog', () => {
+  const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+  const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
+  const basic = (component: JsonObject) => registry.validateComponent(BASIC_CATALOG_ID, component, []);
+  const action = { event: { name: 'x' } };
+
   test('is a valid A2UI v1.0 catalog definition', () => {
-    const registry = createSchemaRegistry([...PROTOCOL_DOCUMENTS, KIT_CATALOG, BASIC_CATALOG]);
+    const schemas = createSchemaRegistry([...PROTOCOL_DOCUMENTS, KIT_CATALOG, BASIC_CATALOG]);
     const document = PROTOCOL_SCHEMAS.catalogDefinition;
-    expect(validateJson(document, KIT_CATALOG, { registry, document })).toEqual([]);
+    expect(validateJson(document, KIT_CATALOG, { registry: schemas, document })).toEqual([]);
   });
 
-  test('accepts Kit extras and still rejects unknown props', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
+  test('extends the basic catalog components and still rejects unknown props', () => {
     const text = { id: 't', component: 'Text', text: 'Hi', size: 'lg', fontWeight: 'semibold', color: 'secondary' };
-    expect(registry.validateComponent(KIT_CATALOG_ID, text, [])).toEqual([]);
-    expect(registry.validateComponent(BASIC_CATALOG_ID, text, []).length).toBeGreaterThan(0);
-    expect(registry.validateComponent(KIT_CATALOG_ID, { ...text, bogus: 1 }, [])).toEqual([
-      { path: '/bogus', message: "Unexpected property 'bogus'." },
-    ]);
-    const button = { id: 'b', component: 'Button', child: 't', variant: 'soft', color: 'danger', action: { event: { name: 'x' } } };
-    expect(registry.validateComponent(KIT_CATALOG_ID, button, [])).toEqual([]);
-    expect(registry.validateComponent(KIT_CATALOG_ID, { id: 'i', component: 'Icon', name: 'wallet' }, [])).toEqual([]);
-    expect(registry.validateComponent(BASIC_CATALOG_ID, { id: 'i', component: 'Icon', name: 'wallet' }, []).length).toBeGreaterThan(0);
-    expect(registry.functionMeta(KIT_CATALOG_ID, 'openUrl')).toEqual({
-      returnType: 'void',
-      allowedCallers: 'rendererOnly',
-      requiresUserActivation: true,
-    });
-    expect(Object.keys(registry.component(KIT_CATALOG_ID, 'Text')?.properties ?? {}).sort()).toContain('fontWeight');
+    expect(valid(text)).toEqual([]);
+    expect(basic(text).length).toBeGreaterThan(0);
+    expect(valid({ ...text, bogus: 1 })).toEqual([{ path: '/bogus', message: "Unexpected property 'bogus'." }]);
+    expect(Object.keys(registry.component(KIT_CATALOG_ID, 'Text')?.properties ?? {})).toContain('fontWeight');
   });
 
-  test('Kit style props take bindings, sizes take percentages, and Chart is a Kit component', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
-    expect(valid({ id: 't', component: 'Text', text: 'Late', color: { '@path': 'tone' }, fontWeight: { '@path': '/weight' } })).toEqual([]);
-    expect(valid({ id: 'b', component: 'Button', child: 't', color: { '@path': 'tone' }, action: { event: { name: 'x' } } })).toEqual([]);
+  describe('functions', () => {
+    test('openUrl is renderer only and needs a tap', () => {
+      expect(registry.functionMeta(KIT_CATALOG_ID, 'openUrl')).toEqual({
+        returnType: 'void',
+        allowedCallers: 'rendererOnly',
+        requiresUserActivation: true,
+      });
+    });
+
+    test('equals compares two bound values, and not(equals) keeps Save disabled until a field changes', () => {
+      const client = createA2uiClient();
+      client.receive([surface('editor', KIT_CATALOG_ID, { dataModel: { name: 'Ada', saved: 'Ada' } })]);
+      const rules: CheckRule[] = [
+        {
+          condition: {
+            '@call': 'not',
+            args: { value: { '@call': 'equals', args: { value: { '@path': '/name' }, other: { '@path': '/saved' } } } },
+          },
+          message: 'No changes yet.',
+        },
+      ];
+      expect(client.checks('editor', rules, ROOT_SCOPE)[0]?.valid).toBe(false);
+      client.write('editor', '/name', 'Grace');
+      expect(client.checks('editor', rules, ROOT_SCOPE)[0]?.valid).toBe(true);
+      expect(valid({ id: 'save', component: 'Button', child: 'l', action: { event: { name: 'save' } }, checks: rules })).toEqual([]);
+    });
+  });
+
+  describe('Text', () => {
+    test('takes bound colours and weights, the surface colour, letter spacing and case, opacity and selection', () => {
+      expect(valid({ id: 't', component: 'Text', text: 'Late', color: { '@path': 'tone' }, fontWeight: { '@path': '/weight' } })).toEqual(
+        [],
+      );
+      expect(valid({ id: 't', component: 'Text', text: '3', color: 'surface' })).toEqual([]);
+      expect(valid({ id: 't', component: 'Text', text: 'Panel', letterSpacing: 1, textTransform: 'uppercase' })).toEqual([]);
+      expect(valid({ id: 't', component: 'Text', text: 'Panel', textTransform: 'shout' }).length).toBeGreaterThan(0);
+      expect(valid({ id: 't', component: 'Text', text: 'x', opacity: 0.5, selectable: true })).toEqual([]);
+    });
+  });
+
+  describe('Icon', () => {
+    test('takes Central icon names only', () => {
+      expect(valid({ id: 'i', component: 'Icon', name: 'wallet' })).toEqual([]);
+      expect(basic({ id: 'i', component: 'Icon', name: 'wallet' }).length).toBeGreaterThan(0);
+      expect(valid({ id: 'i', component: 'Icon', name: 'settingsGear1' })).toEqual([]);
+      expect(valid({ id: 'i', component: 'Icon', name: 'chevronRightSmall' })).toEqual([]);
+      expect(valid({ id: 'i', component: 'Icon', name: 'noSuchIcon' }).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Button', () => {
+    test('takes a Kit fill and colour, a bound colour and a bound loading state', () => {
+      expect(valid({ id: 'b', component: 'Button', child: 't', variant: 'soft', color: 'danger', action })).toEqual([]);
+      expect(valid({ id: 'b', component: 'Button', child: 't', color: { '@path': 'tone' }, action })).toEqual([]);
+      expect(
+        valid({ id: 'b', component: 'Button', child: 'l', loading: { '@path': '/saving' }, action: { event: { name: 'save' } } }),
+      ).toEqual([]);
+    });
+  });
+
+  describe('Row and Column', () => {
     const bar = {
       id: 'r',
       component: 'Row',
@@ -215,168 +264,144 @@ describe('Kit catalog', () => {
       padding: { x: 12, top: 4 },
       border: { size: 1, color: 'border' },
     };
-    expect(valid(bar)).toEqual([]);
-    expect(valid({ ...bar, width: '40%', height: 8 })).toEqual([]);
-    expect(valid({ ...bar, width: '40px' }).length).toBeGreaterThan(0);
-    expect(valid({ ...bar, padding: { inside: 4 } }).length).toBeGreaterThan(0);
-    expect(valid({ id: 'k', component: 'Card', child: 'r', background: '#f7f7f8' })).toEqual([]);
-    const chart = {
-      id: 'c',
-      component: 'Chart',
-      data: { '@path': '/trend' },
-      series: [{ type: 'bar', dataKey: 'sales', color: 'blue' }],
-      xAxis: 'week',
-      height: 160,
-    };
-    expect(valid(chart)).toEqual([]);
-    expect(valid({ ...chart, data: [{ week: 'W1', sales: 3 }] })).toEqual([]);
-    expect(valid({ ...chart, series: [{ type: 'pie', dataKey: 'sales' }] }).length).toBeGreaterThan(0);
+
+    test('take bound or percentage sizes and per-side padding', () => {
+      expect(valid(bar)).toEqual([]);
+      expect(valid({ ...bar, width: '40%', height: 8 })).toEqual([]);
+      expect(valid({ ...bar, width: '40px' }).length).toBeGreaterThan(0);
+      expect(valid({ ...bar, padding: { inside: 4 } }).length).toBeGreaterThan(0);
+    });
+
+    test('take per-side borders, pixel radii and opacity', () => {
+      expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { bottom: { size: 1, color: 'border' } } })).toEqual([]);
+      expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { left: 2 } })).toEqual([]);
+      expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { middle: 1 } }).length).toBeGreaterThan(0);
+      expect(valid({ id: 'c', component: 'Column', children: ['a'], radius: 14 })).toEqual([]);
+      expect(valid({ id: 'c', component: 'Column', children: ['a'], radius: -1 }).length).toBeGreaterThan(0);
+      expect(valid({ id: 'r', component: 'Column', children: ['a'], opacity: 0.6 })).toEqual([]);
+      expect(valid({ id: 'r', component: 'Column', children: ['a'], opacity: 2 }).length).toBeGreaterThan(0);
+    });
+
+    test('take a standard action with press feedback, which the basic catalog does not', () => {
+      const pick = { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } };
+      expect(valid({ id: 'c', component: 'Column', children: ['a'], action: pick })).toEqual([]);
+      expect(valid({ id: 'r', component: 'Row', children: ['a'], action: pick })).toEqual([]);
+      expect(basic({ id: 'c', component: 'Column', children: ['a'], action: pick }).length).toBeGreaterThan(0);
+      expect(valid({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'highlight' })).toEqual([]);
+      expect(valid({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'shake' }).length).toBeGreaterThan(0);
+    });
   });
 
-  test('Kit List takes the sortable props and a standard action', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const list = {
-      id: 'l',
-      component: 'List',
-      children: { componentId: 'card', path: 'cards' },
-      sortable: true,
-      group: 'board',
-      listId: { '@path': 'id' },
-      itemKey: 'id',
-      move: { '@path': '/lastMove' },
-      action: { event: { name: 'moveCard', context: { move: { '@path': '/lastMove' } } } },
-    };
-    expect(registry.validateComponent(KIT_CATALOG_ID, list, [])).toEqual([]);
-    expect(registry.validateComponent(KIT_CATALOG_ID, { ...list, move: '/lastMove' }, []).length).toBeGreaterThan(0);
+  describe('Card', () => {
+    test('takes a background colour or a surface', () => {
+      expect(valid({ id: 'k', component: 'Card', child: 'r', background: '#f7f7f8' })).toEqual([]);
+      expect(valid({ id: 'k', component: 'Card', child: 'r', surface: 'surface' })).toEqual([]);
+    });
   });
 
-  test('Kit List takes a preview or line indicator and padding, and Kit TextField a submit action', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
-    expect(valid({ id: 'l', component: 'List', children: ['a'], indicator: 'line', padding: { x: 8 } })).toEqual([]);
-    expect(valid({ id: 'l', component: 'List', children: ['a'], indicator: 'shift' }).length).toBeGreaterThan(0);
-    const field = { id: 'f', component: 'TextField', label: 'Name', value: { '@path': '/name' } };
-    expect(valid({ ...field, action: { event: { name: 'rename', context: { name: { '@path': '/name' } } } } })).toEqual([]);
-    expect(registry.validateComponent(BASIC_CATALOG_ID, { ...field, action: { event: { name: 'rename' } } }, []).length).toBeGreaterThan(0);
+  describe('List', () => {
+    test('takes the sortable props with a bound move, a handle and a standard action', () => {
+      const list = {
+        id: 'l',
+        component: 'List',
+        children: { componentId: 'card', path: 'cards' },
+        sortable: true,
+        group: 'board',
+        listId: { '@path': 'id' },
+        itemKey: 'id',
+        move: { '@path': '/lastMove' },
+        action: { event: { name: 'moveCard', context: { move: { '@path': '/lastMove' } } } },
+      };
+      expect(valid(list)).toEqual([]);
+      expect(valid({ ...list, move: '/lastMove' }).length).toBeGreaterThan(0);
+      expect(
+        valid({ id: 'l', component: 'List', children: { componentId: 'row', path: '/pages' }, sortable: true, handle: 'grip' }),
+      ).toEqual([]);
+    });
+
+    test('takes a preview or line indicator and padding', () => {
+      expect(valid({ id: 'l', component: 'List', children: ['a'], indicator: 'line', padding: { x: 8 } })).toEqual([]);
+      expect(valid({ id: 'l', component: 'List', children: ['a'], indicator: 'shift' }).length).toBeGreaterThan(0);
+    });
   });
 
-  test('Kit catalog takes Central icon names, pixel radii, the surface colour, menu swatches, press feedback and side sheets', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
-    expect(valid({ id: 'i', component: 'Icon', name: 'settingsGear1' })).toEqual([]);
-    expect(valid({ id: 'i', component: 'Icon', name: 'chevronRightSmall' })).toEqual([]);
-    expect(valid({ id: 'i', component: 'Icon', name: 'noSuchIcon' }).length).toBeGreaterThan(0);
-    expect(valid({ id: 'c', component: 'Column', children: ['a'], radius: 14 })).toEqual([]);
-    expect(valid({ id: 'c', component: 'Column', children: ['a'], radius: -1 }).length).toBeGreaterThan(0);
-    expect(valid({ id: 't', component: 'Text', text: '3', color: 'surface' })).toEqual([]);
-    const action = { event: { name: 'setColor' } };
-    expect(
-      valid({ id: 'm', component: 'DropdownMenu', trigger: 'b', items: [{ label: 'Red', swatch: '#e25507', selected: true, action }] }),
-    ).toEqual([]);
-    expect(valid({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'highlight' })).toEqual([]);
-    expect(valid({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'shake' }).length).toBeGreaterThan(0);
-    expect(valid({ id: 'd', component: 'Modal', trigger: 'b', content: 'c', side: 'end' })).toEqual([]);
+  describe('TextField and CheckBox', () => {
+    test('a TextField takes a submit action, which the basic catalog does not, a hidden label and a pill shape', () => {
+      const field = { id: 'f', component: 'TextField', label: 'Name', value: { '@path': '/name' } };
+      expect(valid({ ...field, action: { event: { name: 'rename', context: { name: { '@path': '/name' } } } } })).toEqual([]);
+      expect(basic({ ...field, action: { event: { name: 'rename' } } }).length).toBeGreaterThan(0);
+      expect(valid({ id: 'f', component: 'TextField', label: 'Search', hideLabel: true, pill: true, value: { '@path': '/q' } })).toEqual(
+        [],
+      );
+    });
+
+    test('a CheckBox takes an action and the switch style', () => {
+      expect(
+        valid({
+          id: 'c',
+          component: 'CheckBox',
+          label: 'In sidebar',
+          value: { '@path': 'shown' },
+          displayStyle: 'switch',
+          action: { event: { name: 'toggle', context: { shown: { '@path': 'shown' } } } },
+        }),
+      ).toEqual([]);
+    });
   });
 
-  test('equals compares two bound values, and not(equals) keeps Save disabled until a field changes', () => {
-    const client = createA2uiClient();
-    client.receive([surface('editor', KIT_CATALOG_ID, { dataModel: { name: 'Ada', saved: 'Ada' } })]);
-    const rules = [
-      {
-        condition: {
-          '@call': 'not',
-          args: { value: { '@call': 'equals', args: { value: { '@path': '/name' }, other: { '@path': '/saved' } } } },
-        },
-        message: 'No changes yet.',
-      },
-    ];
-    expect(client.checks('editor', rules as never, ROOT_SCOPE)[0]?.valid).toBe(false);
-    client.write('editor', '/name', 'Grace');
-    expect(client.checks('editor', rules as never, ROOT_SCOPE)[0]?.valid).toBe(true);
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const button = { id: 'save', component: 'Button', child: 'l', action: { event: { name: 'save' } }, checks: rules };
-    expect(registry.validateComponent(KIT_CATALOG_ID, button, [])).toEqual([]);
+  describe('DropdownMenu and Modal', () => {
+    test('a DropdownMenu takes a trigger, rows with actions, swatches and a context menu opening', () => {
+      const row = {
+        label: 'Delete',
+        icon: 'delete',
+        danger: true,
+        action: { event: { name: 'deleteColumn', context: { id: { '@path': 'id' } } } },
+      };
+      const menu = { id: 'm', component: 'DropdownMenu', trigger: 'more', align: 'end', items: [row] };
+      expect(valid(menu)).toEqual([]);
+      expect(valid({ ...menu, items: [{ label: 'Delete' }] }).length).toBeGreaterThan(0);
+      expect(valid({ ...menu, items: [{ ...row, bogus: 1 }] }).length).toBeGreaterThan(0);
+      const setColor = { event: { name: 'setColor' } };
+      expect(
+        valid({
+          id: 'm',
+          component: 'DropdownMenu',
+          trigger: 'b',
+          items: [{ label: 'Red', swatch: '#e25507', selected: true, action: setColor }],
+        }),
+      ).toEqual([]);
+      const rename = { label: 'Rename', action: { event: { name: 'rename' } } };
+      expect(valid({ id: 'm', component: 'DropdownMenu', trigger: 'row', openOn: 'contextMenu', items: [rename] })).toEqual([]);
+    });
+
+    test('a Modal opens as a side sheet or from a bound value', () => {
+      expect(valid({ id: 'd', component: 'Modal', trigger: 'b', content: 'c', side: 'end' })).toEqual([]);
+      expect(valid({ id: 'd', component: 'Modal', trigger: 'open', content: 'body', open: { '@path': '/confirm/open' } })).toEqual([]);
+    });
   });
 
-  test('Kit CheckBox takes an action, sortable lists a handle, and Text letter spacing and case', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
-    expect(
-      valid({
+  describe('Title and Chart', () => {
+    test('a Title takes a line clamp', () => {
+      expect(valid({ id: 'h', component: 'Title', text: 'Project', maxLines: 3 })).toEqual([]);
+    });
+
+    test('a Chart takes bound or inline data and bound series, and only its chart types', () => {
+      const chart = {
         id: 'c',
-        component: 'CheckBox',
-        label: 'In sidebar',
-        value: { '@path': 'shown' },
-        displayStyle: 'switch',
-        action: { event: { name: 'toggle', context: { shown: { '@path': 'shown' } } } },
-      }),
-    ).toEqual([]);
-    expect(valid({ id: 'l', component: 'List', children: { componentId: 'row', path: '/pages' }, sortable: true, handle: 'grip' })).toEqual(
-      [],
-    );
-    expect(valid({ id: 't', component: 'Text', text: 'Panel', letterSpacing: 1, textTransform: 'uppercase' })).toEqual([]);
-    expect(valid({ id: 't', component: 'Text', text: 'Panel', textTransform: 'shout' }).length).toBeGreaterThan(0);
-    expect(
-      valid({
-        id: 'm',
-        component: 'DropdownMenu',
-        trigger: 'row',
-        openOn: 'contextMenu',
-        items: [{ label: 'Rename', action: { event: { name: 'rename' } } }],
-      }),
-    ).toEqual([]);
-  });
-
-  test('Kit catalog takes per-side borders, opacity, Button loading and selectable Text', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
-    expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { bottom: { size: 1, color: 'border' } } })).toEqual([]);
-    expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { left: 2 } })).toEqual([]);
-    expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { middle: 1 } }).length).toBeGreaterThan(0);
-    expect(valid({ id: 'r', component: 'Column', children: ['a'], opacity: 0.6 })).toEqual([]);
-    expect(valid({ id: 'r', component: 'Column', children: ['a'], opacity: 2 }).length).toBeGreaterThan(0);
-    expect(valid({ id: 't', component: 'Text', text: 'x', opacity: 0.5, selectable: true })).toEqual([]);
-    expect(
-      valid({ id: 'b', component: 'Button', child: 'l', loading: { '@path': '/saving' }, action: { event: { name: 'save' } } }),
-    ).toEqual([]);
-  });
-
-  test('Kit Row and Column take a standard action', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const action = { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } };
-    expect(registry.validateComponent(KIT_CATALOG_ID, { id: 'c', component: 'Column', children: ['a'], action }, [])).toEqual([]);
-    expect(registry.validateComponent(KIT_CATALOG_ID, { id: 'r', component: 'Row', children: ['a'], action }, [])).toEqual([]);
-    expect(
-      registry.validateComponent(BASIC_CATALOG_ID, { id: 'c', component: 'Column', children: ['a'], action }, []).length,
-    ).toBeGreaterThan(0);
-  });
-
-  test('Kit DropdownMenu takes a trigger and rows with actions, and Kit Modal a bound open', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
-    const row = {
-      label: 'Delete',
-      icon: 'delete',
-      danger: true,
-      action: { event: { name: 'deleteColumn', context: { id: { '@path': 'id' } } } },
-    };
-    const menu = { id: 'm', component: 'DropdownMenu', trigger: 'more', align: 'end', items: [row] };
-    expect(valid(menu)).toEqual([]);
-    expect(valid({ ...menu, items: [{ label: 'Delete' }] }).length).toBeGreaterThan(0);
-    expect(valid({ ...menu, items: [{ ...row, bogus: 1 }] }).length).toBeGreaterThan(0);
-    expect(valid({ id: 'd', component: 'Modal', trigger: 'open', content: 'body', open: { '@path': '/confirm/open' } })).toEqual([]);
-  });
-
-  test('Kit catalog takes card surfaces, hidden labels, title line clamps and bound chart series', () => {
-    const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
-    const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
-    expect(valid({ id: 'k', component: 'Card', child: 'r', surface: 'surface' })).toEqual([]);
-    expect(valid({ id: 'f', component: 'TextField', label: 'Search', hideLabel: true, pill: true, value: { '@path': '/q' } })).toEqual([]);
-    expect(valid({ id: 'h', component: 'Title', text: 'Project', maxLines: 3 })).toEqual([]);
-    const chart = { id: 'c', component: 'Chart', data: { '@path': '/trend' }, xAxis: 'week' };
-    expect(valid({ ...chart, series: { '@path': '/series' } })).toEqual([]);
-    expect(
-      valid({ ...chart, series: [{ type: 'line', dataKey: { '@path': '/metric/key' }, label: { '@path': '/metric/label' } }] }),
-    ).toEqual([]);
+        component: 'Chart',
+        data: { '@path': '/trend' },
+        series: [{ type: 'bar', dataKey: 'sales', color: 'blue' }],
+        xAxis: 'week',
+        height: 160,
+      };
+      expect(valid(chart)).toEqual([]);
+      expect(valid({ ...chart, data: [{ week: 'W1', sales: 3 }] })).toEqual([]);
+      expect(valid({ ...chart, series: [{ type: 'pie', dataKey: 'sales' }] }).length).toBeGreaterThan(0);
+      const bare = { id: 'c', component: 'Chart', data: { '@path': '/trend' }, xAxis: 'week' };
+      expect(valid({ ...bare, series: { '@path': '/series' } })).toEqual([]);
+      expect(
+        valid({ ...bare, series: [{ type: 'line', dataKey: { '@path': '/metric/key' }, label: { '@path': '/metric/label' } }] }),
+      ).toEqual([]);
+    });
   });
 });

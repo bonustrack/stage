@@ -41,8 +41,12 @@ describe('withAlpha', () => {
 
 describe('luminance', () => {
   test('weights the channels with Rec.601 by default and Rec.709 on request', () => {
-    expect(luminance([0, 255, 0])).toBeCloseTo(LUMA_REC601[1]);
-    expect(luminance([0, 255, 0], LUMA_REC709)).toBeCloseTo(LUMA_REC709[1]);
+    expect(luminance([255, 0, 0])).toBeCloseTo(0.299);
+    expect(luminance([0, 255, 0])).toBeCloseTo(0.587);
+    expect(luminance([0, 0, 255])).toBeCloseTo(0.114);
+    expect(luminance([12, 200, 99], LUMA_REC601)).toBe(luminance([12, 200, 99]));
+    expect(luminance([0, 255, 0], LUMA_REC709)).toBeCloseTo(0.7152);
+    expect(luminance([255, 255, 255], LUMA_REC709)).toBeCloseTo(1);
   });
 
   test('readableForeground switches to black above 0.6 on the Rec.601 scale', () => {

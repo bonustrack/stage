@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { HERO_ICON_DEFAULTS, heroIconPaths, iconStroke, iconStrokeWidth } from '../src/icons';
+import { heroIconPaths, iconStroke } from '../src/icons';
 
 describe('iconStroke', () => {
   test('explicit color always wins', () => {
@@ -21,18 +21,7 @@ describe('iconStroke', () => {
   });
 });
 
-describe('iconStrokeWidth', () => {
-  test('focused uses the active width', () => {
-    expect(iconStrokeWidth(true)).toBe(HERO_ICON_DEFAULTS.activeStrokeWidth);
-  });
-
-  test('unfocused (false or undefined) uses the default width', () => {
-    expect(iconStrokeWidth(false)).toBe(HERO_ICON_DEFAULTS.strokeWidth);
-    expect(iconStrokeWidth(undefined)).toBe(HERO_ICON_DEFAULTS.strokeWidth);
-  });
-});
-
-describe('heroIconPaths', () => {
+describe('heroIconPaths, kept for consumers of the icons subpath', () => {
   test('returns non-empty path arrays for known names', () => {
     for (const name of ['academicCap', 'bell', 'ban', 'arrowLeft'] as const) {
       const paths = heroIconPaths(name);
