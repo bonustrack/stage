@@ -6,7 +6,8 @@ import { List } from '@stage-labs/kit/react-native/list';
 import { SortableHandle, SortableItem, SortableList, SortableScope } from '@stage-labs/kit/react-native/sortable';
 import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { CountTag } from '../CountTag';
-import { NewChatAction } from '../home/NewChatAction';
+import { useAccountEpoch } from '../../lib/accountEpoch';
+import { BoardNewChannel, NewChannelButton } from './BoardNewChannel';
 import type { Row as ChannelRowData } from '../home/model';
 import { prefetchFeed } from '../../modules/messaging/feedQuery';
 import { useSafeAreaInsets } from '../../lib/safeArea';
@@ -49,25 +50,22 @@ function columnMaxHeight(laneHeight: number): DimensionValue | undefined {
   return laneHeight > 0 ? laneHeight : undefined;
 }
 
-function BoardColumnView({
-  column,
-  columns,
-  maxHeight,
-  pinned,
-  actions,
-  onOpen,
-}: {
+interface BoardColumnProps {
   column: BoardColumn<ChannelRowData>;
   columns: readonly BoardColumn<ChannelRowData>[];
   maxHeight?: DimensionValue;
   pinned: readonly string[];
   actions: ColumnActions;
   onOpen: (key: string) => void;
-}): React.ReactElement {
+}
+
+function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }: BoardColumnProps): React.ReactElement {
   const { label } = column;
   const { columnBy } = useHomeView();
   const editable = actions.editable && columnEditable(column.key);
   const [editing, setEditing] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const epoch = useAccountEpoch();
   const heading = editing ? (
     <RenameHeading
       label={label}
@@ -103,14 +101,19 @@ function BoardColumnView({
           }}
         />
       ) : null}
-      <NewChatAction by={columnBy} groupKey={column.key} title={label} />
+      <NewChannelButton
+        title={label}
+        onPress={() => {
+          setDrafting(true);
+        }}
+      />
     </Row>
   );
   return (
     <SortableItem
       itemId={column.key}
       handle
-      disabled={editing || !columnMovable(column.key)}
+      disabled={editing || drafting || !columnMovable(column.key)}
       style={maxHeight === undefined ? undefined : { maxHeight }}
     >
       <SortableList
@@ -128,6 +131,17 @@ function BoardColumnView({
         {({ over, placeholder }) => (
           <ColumnFrame over={over} shrink>
             {heading}
+            {drafting ? (
+              <BoardNewChannel
+                key={epoch}
+                by={columnBy}
+                columnKey={column.key}
+                title={label}
+                onClose={() => {
+                  setDrafting(false);
+                }}
+              />
+            ) : null}
             <ColumnCards column={column} pinned={pinned} editable={actions.editable} placeholder={placeholder} onOpen={onOpen} />
           </ColumnFrame>
         )}
