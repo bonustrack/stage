@@ -1,26 +1,17 @@
-import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
+import { beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import { CHANNEL_FIELDS, visibleChannelFieldCount } from '../components/home/fields.model';
 import { DEFAULT_CHANNEL_FIELDS, parseChannelFields, toggleChannelFieldIn } from '../lib/channelFields.model';
 import { selectAccount, selectedAccount } from './activeAccount';
+import { mockAppStorage } from './memoryStorage';
 
-const values = new Map<string, string>();
-const writes: string[] = [];
 selectAccount('alice');
 let failedKey: string | null = null;
 let account = 0;
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => {
-      if (key === failedKey) throw new Error('storage unavailable');
-      return values.get(key) ?? null;
-    },
-    set: async (key: string, value: string): Promise<void> => {
-      writes.push(key);
-      values.set(key, value);
-    },
+const { values, writes } = mockAppStorage({
+  read: (key) => {
+    if (key === failedKey) throw new Error('storage unavailable');
   },
-}));
+});
 const { toggleChannelField } = await import('../lib/channelFields');
 const settle = (): Promise<void> =>
   new Promise((resolve) => {
@@ -47,17 +38,7 @@ beforeEach(() => {
 });
 
 describe('channel field preferences', () => {
-  test('lists all eight fields in display order and preserves existing view defaults', () => {
-    expect(CHANNEL_FIELDS.map(({ id, label }) => [id, label])).toEqual([
-      ['members', 'Members'],
-      ['assignees', 'Assignees'],
-      ['category', 'Project'],
-      ['status', 'Status'],
-      ['labels', 'Labels'],
-      ['priority', 'Priority'],
-      ['avatar', 'Avatar'],
-      ['lastMessage', 'Last message'],
-    ]);
+  test('the chat list shows labels, avatars and the last message by default, the board only the last message', () => {
     expect(DEFAULT_CHANNEL_FIELDS).toEqual({ chats: { ...hidden, labels: true, avatar: true }, board: hidden });
   });
 

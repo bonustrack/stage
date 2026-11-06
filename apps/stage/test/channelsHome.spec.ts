@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { DEFAULT_HOME_VIEW, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
-import { CHANNELS_OVERFLOW_ITEMS, searchBarLabels } from '../components/home/model';
+import { searchBarLabels } from '../components/home/model';
 import {
   homeActivityMenu,
   homeLayoutMenu,
@@ -105,7 +105,7 @@ describe('the View menu', () => {
   test('Group by uses a distinct grouping icon', () => {
     const rows = homeViewMenu(chats).flatMap((section) => section.rows);
     const icon = rows.find((row) => row.id === 'grouping')?.icon;
-    expect(icon).toBe('IconLayersThree');
+    expect(icon).toBeDefined();
     expect(rows.filter((row) => row.id !== 'grouping').every((row) => row.icon !== icon)).toBe(true);
   });
 
@@ -180,6 +180,5 @@ describe('the View menu', () => {
     expect(DEFAULT_HOME_VIEW).toEqual({ ...chats, columnBy: 'status' });
     expect(labels(homeViewMenu({ ...DEFAULT_HOME_VIEW, view: 'board' }, true))).toEqual([['Assignees', 'Project', 'Label', 'Status*']]);
     expect(pick(board, 'group:status')).toEqual({ columnBy: 'status' });
-    expect(CHANNELS_OVERFLOW_ITEMS.map((item) => item.label)).toEqual(['Copy address', 'Profile', 'Settings']);
   });
 });

@@ -3,36 +3,27 @@ import { matchesLastActivity } from '../components/home/activity.model';
 import { DEFAULT_LAST_ACTIVITY, LAST_ACTIVITY_WINDOWS, lastActivityCutoff, lastActivitySchema } from '../lib/lastActivity.model';
 import { jsonWith } from '../lib/storeCore';
 import { boardColumns } from '../components/home/board/BoardScreen.model';
-import { sortedListing } from '../components/home/listing.model';
+import { homeListing } from '../components/home/listing.model';
 import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
-import { group, searched } from './searchFixtures';
+import { searched } from './searchFixtures';
+import { row } from './rowFixture';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
 import { selectAccount, selectedAccount } from './activeAccount';
+import { mockAppStorage } from './memoryStorage';
 
 const parseLastActivity = (raw: string): unknown => jsonWith(lastActivitySchema)(raw) ?? DEFAULT_LAST_ACTIVITY;
 const DAY = 86_400_000;
 const now = 40 * DAY;
-const values = new Map<string, string>();
-const writes: string[] = [];
 selectAccount('activity-alice');
 let failedKey: string | null = null;
 let blockedRead: { key: string; pending: Promise<void> } | null = null;
 let account = 0;
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => {
-      if (key === failedKey) throw new Error('storage unavailable');
-      const saved = values.get(key) ?? null;
-      if (blockedRead?.key === key) await blockedRead.pending;
-      return saved;
-    },
-    set: async (key: string, value: string): Promise<void> => {
-      writes.push(key);
-      values.set(key, value);
-    },
+const { values, writes } = mockAppStorage({
+  read: async (key) => {
+    if (key === failedKey) throw new Error('storage unavailable');
+    if (blockedRead?.key === key) await blockedRead.pending;
   },
-}));
+});
 mock.module('../lib/appInFront', () => ({ isAppInFront: () => true, subscribeAppInFront: () => () => undefined }));
 const { getLastActivity, setLastActivity } = await import('../lib/lastActivity');
 const settle = (): Promise<void> =>
@@ -51,7 +42,6 @@ beforeEach(() => {
 
 describe('Last activity windows', () => {
   test('All preserves existing behavior and stored choices are independent by view', () => {
-    expect(LAST_ACTIVITY_WINDOWS).toEqual(['1d', '3d', '7d', '30d', 'all']);
     expect(lastActivityCutoff('all', now)).toBeNull();
     expect(matchesLastActivity({}, null)).toBe(true);
     for (const raw of ['', '{', 'null', '[]', 'false', '{}', '{"chats":"2d","board":5}']) {
@@ -85,16 +75,16 @@ describe('Last activity windows', () => {
   });
 
   test('rolling windows age idle rows out without changing the selected duration', () => {
-    const row = { lastTs: now - DAY + 1 };
-    expect(matchesLastActivity(row, lastActivityCutoff('1d', now))).toBe(true);
-    expect(matchesLastActivity(row, lastActivityCutoff('1d', now + 2))).toBe(false);
+    const idle = { lastTs: now - DAY + 1 };
+    expect(matchesLastActivity(idle, lastActivityCutoff('1d', now))).toBe(true);
+    expect(matchesLastActivity(idle, lastActivityCutoff('1d', now + 2))).toBe(false);
   });
 
   test('ANDs with search and chips, excludes old pins, and preserves empty Board columns', () => {
     const rows = [
-      { ...group('recent', ['Bug']), lastTs: now, category: 'Stage', status: 'Todo' },
-      { ...group('old', ['Bug']), lastTs: now - 4 * DAY, category: 'Stage', status: 'Done' },
-      { ...group('other', ['Feature']), lastTs: now, category: 'Snapshot', status: 'Todo' },
+      row('recent', { labels: ['Bug'], lastTs: now, category: 'Stage', status: 'Todo' }),
+      row('old', { labels: ['Bug'], lastTs: now - 4 * DAY, category: 'Stage', status: 'Done' }),
+      row('other', { labels: ['Feature'], lastTs: now, category: 'Snapshot', status: 'Todo' }),
     ];
     const cutoff = lastActivityCutoff('3d', now);
     const matches = searchRowMatcher(
@@ -103,8 +93,8 @@ describe('Last activity windows', () => {
       () => '',
       cutoff,
     );
-    const listed = sortedListing({ rows, enabledLabels: new Set(['bug']), unreadOnly: false, pinned: ['old'] });
-    expect(listed.filter(matches).map((row) => row.convId)).toEqual(['recent']);
+    const listed = homeListing({ rows, enabledLabels: new Set(['bug']), unreadOnly: false, pinned: ['old'], matches, cleared: {} });
+    expect(listed.map((r) => r.convId)).toEqual(['recent']);
     const columns = boardColumns(rows, ['old'], ['status:Todo', 'status:Done', 'status:Blocked'], 'status');
     const shown = searched(
       columns,
@@ -116,7 +106,7 @@ describe('Last activity windows', () => {
     expect(shown.map((column) => column.key)).toEqual(columns.map((column) => column.key));
     expect(shown.find((column) => column.key === 'status:Done')?.rows).toEqual([]);
     expect(shown.find((column) => column.key === 'status:Blocked')?.rows).toEqual([]);
-    expect(shown.flatMap((column) => column.rows).map((row) => row.convId)).toEqual(['recent']);
+    expect(shown.flatMap((column) => column.rows).map((r) => r.convId)).toEqual(['recent']);
     expect(
       searched(
         columns,

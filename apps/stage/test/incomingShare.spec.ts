@@ -11,6 +11,8 @@ import { acceptedShareConsent } from '../lib/shareDestination.model';
 import { currentShareDraft, makeShareSender } from '../components/share/shareSend.model';
 import { planSendSteps } from '../components/composer/send.model';
 import { sendPreparedMessage, type SendTarget } from '../lib/xmtp.messageSend.core';
+import type { Row } from '../components/home/model';
+import { row } from './rowFixture';
 
 const targetOf = <C>(conv: C): SendTarget<C> => ({
   conv,
@@ -126,8 +128,8 @@ describe('incoming share boundary', () => {
   });
 
   test('only offers accepted existing destinations, never sync groups or deleted chats', () => {
-    const base = { convId: 'channel', title: 'Design', unreadCount: 0, lastReadNs: 0, consent: 'allowed', peerAddress: null };
-    const rows = [
+    const base = row('channel', { title: 'Design', lastBubbleTs: null });
+    const rows: Row[] = [
       base,
       { ...base, convId: 'request', consent: 'unknown' },
       { ...base, convId: 'blocked', consent: 'denied' },

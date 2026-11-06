@@ -1,19 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { english } from 'viem/accounts';
-import {
-  acceptTypedChar,
-  applyCompletion,
-  currentToken,
-  normalizePastedPhrase,
-  replaceWordAt,
-  suggestWords,
-  typePhrase,
-  visibleSuggestions,
-  wordAt,
-} from '../components/onboarding/RecoveryPhrase.model';
+import { replaceWordAt, typePhrase, visibleSuggestions, wordAt } from '../components/onboarding/RecoveryPhrase.model';
+
+const typed = (previous: string, next: string): string => typePhrase({ text: previous, pending: '' }, next).text;
 
 describe('BIP-39 wordlist shape', () => {
-  test('every word is unique in its first four letters, but not its first three', () => {
+  test('filling a word after four letters relies on every word being unique in its first four letters, but not its first three', () => {
     const four = new Set(english.map((w) => w.slice(0, 4)));
     expect(four.size).toBe(english.length);
     const three = new Set(english.map((w) => w.slice(0, 3)));
@@ -21,62 +13,38 @@ describe('BIP-39 wordlist shape', () => {
   });
 });
 
-describe('currentToken', () => {
-  test('reports the word being typed and whether it is finished', () => {
-    expect(currentToken('abandon abi')).toEqual({ word: 'abi', complete: false });
-    expect(currentToken('abandon ability ')).toEqual({ word: '', complete: true });
-    expect(currentToken('')).toEqual({ word: '', complete: true });
-    expect(currentToken('ABI')).toEqual({ word: 'abi', complete: false });
-  });
-});
-
-describe('suggestWords', () => {
-  test('lists words for a prefix, capped', () => {
-    expect(suggestWords('act')).toEqual(['act', 'action', 'actor', 'actress', 'actual']);
-    expect(suggestWords('')).toEqual([]);
-    expect(suggestWords('qqq')).toEqual([]);
-    expect(applyCompletion('abandon act', 'actor')).toBe('abandon actor ');
-  });
-});
-
-describe('acceptTypedChar', () => {
+describe('typing a phrase letter by letter', () => {
   test('rejects a character that cannot start any word', () => {
-    expect(acceptTypedChar('fr', 'frm')).toBe('fr');
-    expect(acceptTypedChar('', 'x')).toBe('');
-    expect(acceptTypedChar('', 'a')).toBe('a');
+    expect(typed('fr', 'frm')).toBe('fr');
+    expect(typed('', 'x')).toBe('');
+    expect(typed('', 'a')).toBe('a');
   });
 
-  test('never completes a word for the typist, so whole words type through unchanged', () => {
-    let text = '';
-    for (const ch of 'weekend palace') text = acceptTypedChar(text, text + ch);
-    expect(text).toBe('weekend palace');
-  });
-
-  test('inserts the space when the next word starts right after a finished one', () => {
-    expect(acceptTypedChar('weekend', 'weekendp')).toBe('weekend p');
-    expect(acceptTypedChar('act', 'acti')).toBe('acti');
-    expect(acceptTypedChar('act', 'actx')).toBe('act');
+  test('inserts the space when the next word starts right after a finished one, not when the letter continues the word', () => {
+    expect(typed('weekend', 'weekendp')).toBe('weekend p');
+    expect(typePhrase({ text: 'act', pending: '' }, 'acti')).toEqual({ text: 'action ', pending: 'on' });
+    expect(typed('act', 'actx')).toBe('act');
   });
 
   test('keeps valid prefixes, deletions and pastes', () => {
-    expect(acceptTypedChar('fr', 'fro')).toBe('fro');
-    expect(acceptTypedChar('frm', 'fr')).toBe('fr');
-    expect(acceptTypedChar('', 'abandon ability zzz')).toBe('abandon ability zzz');
+    expect(typed('fr', 'fro')).toBe('fro');
+    expect(typed('frm', 'fr')).toBe('fr');
+    expect(typed('', 'abandon ability zzz')).toBe('abandon ability zzz');
   });
 
   test('only accepts a space right after a complete word', () => {
-    expect(acceptTypedChar('frog', 'frog ')).toBe('frog ');
-    expect(acceptTypedChar('add', 'add ')).toBe('add ');
-    expect(acceptTypedChar('fro', 'fro ')).toBe('fro');
-    expect(acceptTypedChar('', ' ')).toBe('');
-    expect(acceptTypedChar('frog ', 'frog  ')).toBe('frog ');
-    expect(acceptTypedChar('fro', 'fro\n')).toBe('fro');
+    expect(typed('frog', 'frog ')).toBe('frog ');
+    expect(typed('add', 'add ')).toBe('add ');
+    expect(typed('fro', 'fro ')).toBe('fro');
+    expect(typed('', ' ')).toBe('');
+    expect(typed('frog ', 'frog  ')).toBe('frog ');
+    expect(typed('fro', 'fro\n')).toBe('fro');
   });
 
   test('leaves transfer codes and private keys alone', () => {
-    expect(acceptTypedChar('0', '0x')).toBe('0x');
-    expect(acceptTypedChar('stage-account:', 'stage-account:1')).toBe('stage-account:1');
-    expect(acceptTypedChar('0xabc', '0xabc ')).toBe('0xabc ');
+    expect(typed('0', '0x')).toBe('0x');
+    expect(typed('stage-account:', 'stage-account:1')).toBe('stage-account:1');
+    expect(typed('0xabc', '0xabc ')).toBe('0xabc ');
   });
 });
 
@@ -111,28 +79,33 @@ describe('typePhrase', () => {
 });
 
 describe('visibleSuggestions', () => {
+  test('lists the other words that start with what is typed, and nothing for an empty or unknown prefix', () => {
+    expect(visibleSuggestions('act')).toEqual(['action', 'actor', 'actress', 'actual']);
+    expect(visibleSuggestions('a')).toHaveLength(6);
+    expect(visibleSuggestions('')).toEqual([]);
+    expect(visibleSuggestions('qqq')).toEqual([]);
+  });
+
   test('never suggests the word that is already typed', () => {
     expect(visibleSuggestions('soda')).toEqual([]);
-    expect(visibleSuggestions('act')).not.toContain('act');
-    expect(visibleSuggestions('act').length).toBeGreaterThan(0);
   });
 });
 
 describe('pasting a phrase', () => {
   test('dashes and underscores become spaces, extra spaces collapse and the ends are trimmed', () => {
-    expect(normalizePastedPhrase('  Abandon-ability_able   about \n')).toBe('abandon ability able about');
+    expect(typed('', '  Abandon-ability_able   about \n')).toBe('abandon ability able about');
     expect(typePhrase({ text: '', pending: '' }, ' weekend_palace-soda ')).toEqual({ text: 'weekend palace soda', pending: '' });
   });
 
   test('anything that is not a letter becomes a space, numbered lists included', () => {
-    expect(normalizePastedPhrase('1. abandon 2. ability, able/about.soda')).toBe('abandon ability able about soda');
-    expect(normalizePastedPhrase('Abandon\tability\n\nable')).toBe('abandon ability able');
+    expect(typed('', '1. abandon 2. ability, able/about.soda')).toBe('abandon ability able about soda');
+    expect(typed('', 'Abandon\tability\n\nable')).toBe('abandon ability able');
   });
 
   test('a pasted private key or code is only trimmed', () => {
-    expect(normalizePastedPhrase(' 0xabc123 ')).toBe('0xabc123');
-    expect(normalizePastedPhrase(` ${'a1'.repeat(32)} `)).toBe('a1'.repeat(32));
-    expect(normalizePastedPhrase('stage-transfer:v1:abc')).toBe('stage-transfer:v1:abc');
+    expect(typed('', ' 0xabc123 ')).toBe('0xabc123');
+    expect(typed('', ` ${'a1'.repeat(32)} `)).toBe('a1'.repeat(32));
+    expect(typed('', 'stage-transfer:v1:abc')).toBe('stage-transfer:v1:abc');
   });
 });
 

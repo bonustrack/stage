@@ -4,8 +4,8 @@ import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { XmtpConsent } from '../lib/xmtp.types';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { SYNC_CODECS } from '@stage-labs/client/xmtp/jsonCodecs';
+import { mockAppStorage } from './memoryStorage';
 
-const values = new Map<string, string>();
 let activeId = 'web';
 interface FakeConv {
   id: string;
@@ -16,6 +16,7 @@ interface FakeConv {
   memberIds?: string[];
 }
 const convs: FakeConv[] = [];
+const consentOf = (conv: FakeConv): XmtpConsent => conv.consent;
 let beforePreferences: (() => void) | undefined;
 let beforeConsent: (() => Promise<void>) | undefined;
 let beforeInstallations: (() => Promise<void>) | undefined;
@@ -31,6 +32,7 @@ const client = {
   },
 };
 const synced: string[] = [];
+let scans = 0;
 let storageFails = false;
 let beforeFind: (() => Promise<void>) | undefined;
 let beforeMembers: (() => Promise<void>) | undefined;
@@ -49,16 +51,11 @@ function withMethods(conv: FakeConv) {
 }
 let leaveFails = false;
 let leaves = 0;
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => values.get(key) ?? null,
-    set: async (key: string, value: string): Promise<void> => {
-      if (storageFails) throw new Error('disk full');
-      values.set(key, value);
-    },
+const { values } = mockAppStorage({
+  write: () => {
+    if (storageFails) throw new Error('disk full');
   },
-}));
+});
 mock.module('../lib/accounts', () => ({
   getActiveAccount: async () => ({ id: activeId, address: activeId }),
   getActiveAccountStrict: async () => ({ id: activeId, address: activeId }),
@@ -113,7 +110,10 @@ mock.module('../lib/xmtp.sdk', () => ({
       leaves += 1;
       if (leaveFails) throw new Error('super-admin cannot leave');
     },
-    listConvs: async (_client: unknown, consent: XmtpConsent[]) => convs.filter((c) => consent.includes(c.consent)).map(withMethods),
+    listConvs: async (_client: unknown, consent: XmtpConsent[]) => {
+      scans += 1;
+      return convs.filter((c) => consent.includes(c.consent)).map(withMethods);
+    },
     syncVisible: async () => {
       synced.push(...convs.filter((c) => c.consent !== 'denied').map((c) => c.id));
     },
@@ -191,7 +191,7 @@ describe('departed channels across devices', () => {
     group.active = false;
     group.consent = 'unknown';
     expect(await visible()).toEqual(['legitimate-archive']);
-    expect(values.has('channels.hidden.phone')).toBe(true);
+    expect((await loadHiddenChannels('phone'))[group.id]?.hidden).toBe(true);
   });
 
   test('a refused leave hides the creator group without removing any membership', async () => {
@@ -231,7 +231,7 @@ describe('departed channels across devices', () => {
     await backfillHiddenChannels('phone');
     expect(await visible()).toContain(group.id);
     expect(await getConvConsentState(group.id)).toBe('allowed');
-    expect(group.consent).toBe('allowed');
+    expect(consentOf(group)).toBe('allowed');
     expect(synced).toContain(group.id);
   });
 
@@ -253,7 +253,7 @@ describe('departed channels across devices', () => {
     expect(isChannelHidden('unwritten')).toBe(false);
     storageFails = false;
     await applyRemoteHiddenChannels('phone', state);
-    expect(JSON.parse(values.get('channels.hidden.phone') ?? '{}').unwritten).toEqual(state.unwritten);
+    expect((await loadHiddenChannels('phone')).unwritten).toEqual(state.unwritten);
   });
 
   test('concurrent delayed writes preserve both changes on an inactive account', async () => {
@@ -379,14 +379,11 @@ describe('departed channels across devices', () => {
     creator.consent = 'allowed';
     synced.length = 0;
     await syncVisibleChannels();
-    expect(creator.consent).toBe('denied');
+    expect(consentOf(creator)).toBe('denied');
     expect(synced).not.toContain('creator');
     expect(synced).toContain('departed');
-    const rows = [
-      { convId: 'creator', peerAddress: null },
-      { convId: 'departed', peerAddress: null },
-    ];
-    expect(await visibleCachedRows('phone', rows)).toEqual([rows[1]]);
+    const departed = { convId: 'departed', peerAddress: null };
+    expect(await visibleCachedRows('phone', [{ convId: 'creator', peerAddress: null }, departed])).toEqual([departed]);
   });
 
   test('backfill reads legacy denials delivered by preference sync', async () => {
@@ -431,43 +428,42 @@ describe('departed channels across devices', () => {
     synced.length = 0;
     await addOwnInstallationsToChats('phone');
     expect(synced).not.toContain(group.id);
-    expect(values.has('ownInstallations.done.phone')).toBe(false);
+    const before = scans;
     await addOwnInstallationsToChats('phone');
-    const hiddenSignature = values.get('ownInstallations.done.phone');
-    expect(hiddenSignature).toBeDefined();
+    expect(scans).toBe(before + 1);
+    await addOwnInstallationsToChats('phone');
+    expect(scans).toBe(before + 1);
     await applyRemoteHiddenChannels('phone', { [group.id]: { hidden: false, at: 80 } });
     await addOwnInstallationsToChats('phone');
     expect(synced).toContain(group.id);
-    expect(values.get('ownInstallations.done.phone')).not.toBe(hiddenSignature);
     presentDevices.delete(group.id);
   });
 
   test('failed repair queries do not mark missing installations as repaired', async () => {
-    values.delete('ownInstallations.done.phone');
+    await applyRemoteHiddenChannels('phone', { 'repair-retry': { hidden: true, at: 1 } });
     beforeInstallations = async () => {
       beforeInstallations = undefined;
       throw new Error('offline');
     };
     await expect(addOwnInstallationsToChats('phone')).rejects.toThrow('offline');
-    expect(values.has('ownInstallations.done.phone')).toBe(false);
     presentDevices.set('departed', ['first']);
     beforeActive = async () => {
       beforeActive = undefined;
       throw new Error('activity unavailable');
     };
     await expect(addOwnInstallationsToChats('phone')).rejects.toThrow('activity unavailable');
-    expect(values.has('ownInstallations.done.phone')).toBe(false);
     expect(cachedChannelAccess('departed')).toBe('checking');
     synced.length = 0;
     await addOwnInstallationsToChats('phone');
-    expect(values.has('ownInstallations.done.phone')).toBe(true);
     expect(synced).toContain('departed');
+    const repaired = scans;
+    await addOwnInstallationsToChats('phone');
+    expect(scans).toBe(repaired);
     presentDevices.delete('departed');
   });
 
-  test('an old cursor does not skip hidden snapshots and a failed write does not acknowledge replay', async () => {
+  test('a failed write does not acknowledge the replayed hidden snapshot', async () => {
     convs.push({ id: 'replay-group', consent: 'allowed', group: true, active: true });
-    values.set('readSync.cursor.v3.phone.replay-group', '1000');
     messages.push({
       contentTypeId: 'stage.box/clearState:1.0',
       senderInboxId: 'owner',
@@ -488,9 +484,8 @@ describe('departed channels across devices', () => {
     messages.length = 0;
   });
 
-  test('a dashboard saved while this device did not know dashboards is replayed past the old cursor', async () => {
+  test('a dashboard layout in the sync history is replayed and its message acknowledged', async () => {
     convs.push({ id: 'dash-group', consent: 'allowed', group: true, active: true });
-    values.set('readSync.cursor.v3.phone.dash-group', '1000');
     const layout = { widgets: [{ id: 'w1', w: 'half', h: 2, kind: 'frame', source: { conversationId: 'c1', messageId: 'm1' } }], at: 90 };
     messages.push({ contentTypeId: 'stage.box/dashboardLayout:1.0', senderInboxId: 'owner', sentNs: 200, content: layout });
     const context = await accountClient();

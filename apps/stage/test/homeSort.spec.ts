@@ -4,38 +4,10 @@ import { applyGroupMeta, applyInbound } from '@stage-labs/client/xmtp/channelsCa
 import { DEFAULT_HOME_VIEW, type HomeSort } from '@stage-labs/client/xmtp/sync/homeView';
 import { boardColumns, orderedColumns } from '../components/home/board/BoardScreen.model';
 import { groupRows, isGroupHeader } from '../components/home/groups.model';
-import type { Row } from '../components/home/model';
 import { sortedListing } from '../components/home/listing.model';
 import { homeSortOf, sortHomeRows } from '../components/home/sort.model';
+import { row } from './rowFixture';
 
-function row(convId: string, fields: Partial<Row> = {}): Row {
-  return {
-    convId,
-    title: convId,
-    groupName: convId,
-    lastPreview: '',
-    createdTs: null,
-    lastTs: null,
-    lastBubbleTs: null,
-    unreadCount: 0,
-    lastReadNs: 0,
-    markedUnread: false,
-    lastFromSelf: false,
-    lastSenderAddress: null,
-    peerAddress: null,
-    avatarUri: null,
-    avatarAddress: null,
-    inboxToAddr: {},
-    selfInboxId: 'self',
-    consent: 'allowed',
-    labels: [],
-    assigned: [],
-    category: null,
-    status: null,
-    priority: null,
-    ...fields,
-  };
-}
 const ids = (rows: readonly { convId: string }[]): string[] => rows.map((r) => r.convId);
 const rows = [
   row('a', { createdTs: 30, lastTs: 10, priority: 'Low', status: 'Done', category: 'Stage', labels: ['Work', 'Other'] }),
@@ -109,7 +81,11 @@ describe('sorting defaults and boundaries', () => {
   test('missing or invalid values remain last in either direction, ties are deterministic', () => {
     for (const direction of ['asc', 'desc'] as const) {
       for (const by of ['status', 'created', 'updated', 'priority'] as const) {
-        const input = [row('z'), row('b', { createdTs: 1, lastTs: 1, status: 'Todo', priority: 'High' }), row('a')];
+        const input = [
+          row('z', { lastTs: null }),
+          row('b', { createdTs: 1, lastTs: 1, status: 'Todo', priority: 'High' }),
+          row('a', { lastTs: null }),
+        ];
         expect(ids(sortHomeRows(input, [], { by, direction }))).toEqual(['b', 'a', 'z']);
         expect(ids(sortHomeRows([...input].reverse(), [], { by, direction }))).toEqual(['b', 'a', 'z']);
       }

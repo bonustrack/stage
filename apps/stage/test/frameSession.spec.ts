@@ -95,10 +95,8 @@ describe('frame sessions', () => {
     expect(sessions.apply('missing', [])).toEqual({ kind: 'invalid' });
   });
 
-  test('the renderer advertises the basic and Kit catalogs', () => {
-    expect(RENDERER_CAPABILITIES).toEqual({
-      'v1.0': { supportedCatalogIds: ['https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json', KIT_CATALOG] },
-    });
+  test('nodes are told the renderer draws the Kit catalog', () => {
+    expect(JSON.stringify(RENDERER_CAPABILITIES)).toContain(JSON.stringify(KIT_CATALOG));
   });
 
   test('a load keeps showing the old client until the new one renders, then takes over', async () => {

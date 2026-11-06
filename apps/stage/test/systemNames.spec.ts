@@ -1,24 +1,26 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import type { GroupUpdatedContent } from '@stage-labs/client/xmtp/humanize';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
 import { memberNamer, unknownSystemLineInboxIds, withMemberNames } from '../components/conversation/systemNames.model';
 import { isLeftOnlyUpdate } from '@stage-labs/client/xmtp/visibility';
+import { messageEntry } from './helpers';
 
 const PEER = '0x59445094F08D01213bd6ba7215a6ab7a4bc29a4a';
 const OTHER = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';
 
-const entry = (payload: unknown, text = 'added 1 member'): HistoryEntry =>
-  ({ id: 'm1', ts: '2026-09-25T00:00:00Z', station: 'xmtp', line: 'l', from: 'u', to: 'l', text, payload }) as HistoryEntry;
+const update = (groupUpdate: GroupUpdatedContent, text = 'added 1 member'): HistoryEntry =>
+  messageEntry('m1', 'group_updated', groupUpdate, { text });
 
 describe('member names in group event lines', () => {
   const addresses: Record<string, string> = { peer: PEER, other: OTHER };
   const nameOf = memberNamer('me', (id) => addresses[id] ?? null);
 
   test('names added members as mentions, calling yourself "you"', () => {
-    const e = entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'me' }] } });
+    const e = update({ addedInboxes: [{ inboxId: 'me' }] });
     expect(withMemberNames(e, nameOf).text).toBe('added you');
-    const p = entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'peer' }, { inboxId: 'other' }] } });
-    const text = withMemberNames(p, nameOf).text;
+    const p = update({ addedInboxes: [{ inboxId: 'peer' }, { inboxId: 'other' }] });
+    const text = withMemberNames(p, nameOf).text ?? '';
     expect(text).toBe(`added @${PEER.toLowerCase()} and @${OTHER}`);
     expect(parseMentions(text)).toEqual([
       { type: 'text', text: 'added ' },
@@ -29,47 +31,44 @@ describe('member names in group event lines', () => {
   });
 
   test('names removed members, and counts only the members with no address', () => {
-    const removed = entry({ system: true, groupUpdate: { membersRemoved: [{ inboxId: 'other' }] } });
+    const removed = update({ membersRemoved: [{ inboxId: 'other' }] });
     expect(withMemberNames(removed, nameOf).text).toBe(`removed @${OTHER}`);
-    const e = entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'peer' }, { inboxId: 'ghost' }] } });
+    const e = update({ addedInboxes: [{ inboxId: 'peer' }, { inboxId: 'ghost' }] });
     expect(withMemberNames(e, nameOf).text).toBe(`added @${PEER.toLowerCase()} and 1 other`);
-    const ghost = entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'ghost' }] } });
+    const ghost = update({ addedInboxes: [{ inboxId: 'ghost' }] });
     expect(withMemberNames(ghost, nameOf).text).toBe('added 1 member');
   });
 
   test('finds the inbox ids of system lines that have no known address yet', () => {
     const events = [
-      entry({ system: true, groupUpdate: { addedInboxes: [{ inboxId: 'gone' }, { inboxId: 'peer' }] } }),
-      { ...entry({ system: true, groupUpdate: { membersRemoved: [{ inboxId: 'gone' }] } }), from: 'stage://xmtp/user/admin' },
-      { ...entry({ contentType: 'leave_request', system: true }), from: 'stage://xmtp/user/leaver' },
-      { ...entry({ contentType: 'text' }, 'hi'), from: 'stage://xmtp/user/stranger' },
+      { ...update({ addedInboxes: [{ inboxId: 'gone' }, { inboxId: 'peer' }] }), from: 'stage://xmtp/user/peer' },
+      { ...update({ membersRemoved: [{ inboxId: 'gone' }] }), from: 'stage://xmtp/user/admin' },
+      { ...messageEntry('m1', 'leave_request', {}), from: 'stage://xmtp/user/leaver' },
+      { ...messageEntry('m1', 'text', 'hi'), from: 'stage://xmtp/user/stranger' },
     ];
     expect(unknownSystemLineInboxIds(events, addresses)).toEqual(['admin', 'gone', 'leaver']);
     expect(unknownSystemLineInboxIds(events, { ...addresses, admin: OTHER, gone: PEER, leaver: PEER })).toEqual([]);
   });
 
   test('names members who left, and hides an update that only repeats a leave', () => {
-    const left = entry({ system: true, groupUpdate: { leftInboxes: [{ inboxId: 'peer' }] } });
+    const left = update({ leftInboxes: [{ inboxId: 'peer' }] });
     expect(withMemberNames(left, nameOf).text).toBe(`@${PEER.toLowerCase()} left the channel`);
     expect(isLeftOnlyUpdate(left)).toBe(true);
-    const kicked = entry({ system: true, groupUpdate: { leftInboxes: [{ inboxId: 'peer' }], removedInboxes: [{ inboxId: 'other' }] } });
+    const kicked = update({ leftInboxes: [{ inboxId: 'peer' }], removedInboxes: [{ inboxId: 'other' }] });
     expect(withMemberNames(kicked, nameOf).text).toBe(`removed @${OTHER} • @${PEER.toLowerCase()} left the channel`);
     expect(isLeftOnlyUpdate(kicked)).toBe(false);
   });
 
   test('retains historical assignment names as profile mentions during re-humanization', () => {
-    const e = entry(
+    const e = update(
       {
-        system: true,
-        groupUpdate: {
-          metadataFieldChanges: [
-            { fieldName: 'app_data', oldValue: JSON.stringify({ assigned: [PEER] }), newValue: JSON.stringify({ assigned: [OTHER] }) },
-          ],
-        },
+        metadataFieldChanges: [
+          { fieldName: 'app_data', oldValue: JSON.stringify({ assigned: [PEER] }), newValue: JSON.stringify({ assigned: [OTHER] }) },
+        ],
       },
       'updated the channel settings',
     );
-    const text = withMemberNames(e, nameOf).text;
+    const text = withMemberNames(e, nameOf).text ?? '';
     expect(text).toBe(`assigned @${OTHER} • unassigned @${PEER.toLowerCase()}`);
     expect(parseMentions(text).filter((part) => part.type === 'mention')).toEqual([
       { type: 'mention', address: OTHER },
@@ -79,8 +78,8 @@ describe('member names in group event lines', () => {
   });
 
   test('does not infer assignment history from a missing before-value', () => {
-    const e = entry(
-      { system: true, groupUpdate: { metadataFieldChanges: [{ fieldName: 'app_data', newValue: JSON.stringify({ assigned: [PEER] }) }] } },
+    const e = update(
+      { metadataFieldChanges: [{ fieldName: 'app_data', newValue: JSON.stringify({ assigned: [PEER] }) }] },
       'updated the channel settings',
     );
     expect(withMemberNames(e, nameOf)).toBe(e);
@@ -88,11 +87,8 @@ describe('member names in group event lines', () => {
 
   test('re-humanizes description history while preserving sender, event payload and membership semantics', () => {
     const change = { fieldName: 'app_data', oldValue: '{"description":"Before"}', newValue: '{"description":"Private after"}' };
-    const e = entry(
-      {
-        system: true,
-        groupUpdate: { initiatedByInboxId: 'initiator', metadataFieldChanges: [change], membersAdded: [{ inboxId: 'peer' }] },
-      },
+    const e = update(
+      { initiatedByInboxId: 'initiator', metadataFieldChanges: [change], membersAdded: [{ inboxId: 'peer' }] },
       'updated the channel settings',
     );
     const named = withMemberNames(e, nameOf);
@@ -106,13 +102,13 @@ describe('member names in group event lines', () => {
       { fieldName: 'app_data', newValue: '{"description":"After"}' },
       { fieldName: 'app_data', oldValue: '{"description":"Before"}', newValue: '{"description":"After","future":true}' },
     ]) {
-      const e = entry({ system: true, groupUpdate: { metadataFieldsChanged: [change] } }, 'updated the channel settings');
+      const e = update({ metadataFieldsChanged: [change] }, 'updated the channel settings');
       expect(withMemberNames(e, nameOf)).toBe(e);
     }
   });
 
   test('keeps other entries untouched', () => {
-    const e = entry({ contentType: 'text' }, 'hello');
+    const e = messageEntry('m1', 'text', 'hello');
     expect(withMemberNames(e, nameOf)).toBe(e);
   });
 });

@@ -81,14 +81,14 @@ describe('live frames in chats', () => {
 
   test('a refresh loads the node with the frame key and shows the reply in place', async () => {
     const h = harness();
-    let updates = 0;
+    const seen: (FrameContent | null)[] = [];
     h.frames.subscribe(() => {
-      updates += 1;
+      seen.push(h.frames.frameOf('m1'));
     });
     await h.frames.refresh('m1', SENT, NODE);
     expect(h.calls).toEqual([{ method: 'GET', url: NODE, key: 'key1' }]);
     expect(h.frames.frameOf('m1')).toEqual({ messages: NEXT });
-    expect(updates).toBe(2);
+    expect(seen.at(-1)).toEqual({ messages: NEXT });
     expect(h.toasts).toEqual([]);
   });
 

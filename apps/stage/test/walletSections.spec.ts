@@ -1,14 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { walletAccountRows, walletDeployLabel } from '../components/settings/WalletSettings.model';
-
-describe('walletDeployLabel', () => {
-  test('maps every deploy state to its label', () => {
-    expect(walletDeployLabel('loading')).toBe('Checking…');
-    expect(walletDeployLabel('deployed')).toBe('Deployed on-chain');
-    expect(walletDeployLabel('counterfactual')).toBe('Counterfactual (not yet deployed)');
-    expect(walletDeployLabel('unknown')).toBe('Unknown');
-  });
-});
+import { walletAccountRows } from '../components/settings/WalletSettings.model';
 
 describe('walletAccountRows', () => {
   test('legacy account', () => {

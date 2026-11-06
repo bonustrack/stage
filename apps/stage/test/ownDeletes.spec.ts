@@ -1,15 +1,7 @@
 import { describe, expect, mock, test } from 'bun:test';
+import { mockAppStorage } from './memoryStorage';
 
-const values = new Map<string, string>();
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => values.get(key) ?? null,
-    set: async (key: string, value: string): Promise<void> => {
-      values.set(key, value);
-    },
-  },
-}));
+mockAppStorage();
 const { provideActiveAccountReader } = await import('../lib/accountSelection');
 provideActiveAccountReader(async () => 'acct');
 const { deleteForEveryone, ownDeletesReady } = await import('../lib/ownDeletes');

@@ -1,4 +1,6 @@
+import { createRequire } from 'node:module';
 import { describe, expect, test } from 'bun:test';
+import { EAS_PROJECT_ID, EAS_UPDATES_URL } from '@stage-labs/client/endpoints';
 import { mainUpdateMessage } from '../components/settings/DevClientUpdate.model';
 import {
   compatibleMainUrl,
@@ -10,7 +12,7 @@ import {
 } from '../lib/devClientUpdates.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from '../lib/devClientUpdates.core';
 
-const PROJECT = 'https://u.expo.dev/1707f2db-c2b8-4c91-9341-27b1d57d355f';
+const PROJECT = EAS_UPDATES_URL;
 const OLD_SHA = 'a'.repeat(40);
 const NEW_SHA = 'b'.repeat(40);
 const OLD_GROUP = `${PROJECT}/group/11111111-1111-1111-1111-111111111111`;
@@ -48,6 +50,13 @@ function fixture(
   };
   return { request, calls };
 }
+
+describe('the EAS project', () => {
+  test('the app takes its updates from the project the update checks trust', () => {
+    const appConfig: unknown = createRequire(import.meta.url)('../app.config.js');
+    expect(appConfig).toMatchObject({ expo: { updates: { url: EAS_UPDATES_URL }, extra: { eas: { projectId: EAS_PROJECT_ID } } } });
+  });
+});
 
 describe('main dev-client manifests', () => {
   test('release launcher stubs are not dev-client capabilities', () => {

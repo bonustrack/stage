@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { mergeFeedEntries, settleCachedFeed, withNestedReactions } from '../lib/feed/order.model';
-import { entry } from './helpers';
+import { entry, messageEntry } from './helpers';
 
 const addedYou = entry('added-you', { ts: '2026-09-25T14:04:06.017Z' });
 const context = entry('context', { ts: '2026-09-25T14:04:08.999Z' });
@@ -39,13 +39,28 @@ describe('feed merge order', () => {
     expect(mergeFeedEntries([], [context, context]).entries).toEqual([context]);
   });
 
+  test('an SDK placeholder for a deleted message replaces the cached original in place', () => {
+    const original = entry('in-review', { ts: inReview.ts, text: 'hello', payload: { contentType: 'text' } });
+    const placeholder = messageEntry('in-review', 'deletedMessage', { deletedBy: 'sender' }, { ts: inReview.ts });
+    const merged = mergeFeedEntries([screenshot, original], [placeholder]);
+    expect(merged.replaced).toBe(1);
+    expect(merged.added).toBe(0);
+    expect(merged.entries.map((e) => e.payload)).toEqual([screenshot.payload, placeholder.payload]);
+    expect(mergeFeedEntries(merged.entries, [original]).entries[1]).toBe(placeholder);
+  });
+
   test('keeps a new message above one sent in the same millisecond', () => {
     const twin = entry('twin', { ts: fixPosted.ts });
     expect(ids(mergeFeedEntries([fixPosted, inReview], [twin]).entries)).toEqual(['twin', 'fix-posted', 'in-review']);
   });
 
   test('keeps a reaction stamped before its message above it, so the feed still ends on its oldest message', () => {
-    const early = entry('early', { ts: '2026-09-25T13:58:00.000Z', payload: { reactTo: 'in-progress', emoji: '+1' } });
+    const early = messageEntry(
+      'early',
+      'reaction',
+      { reference: 'in-progress', content: '+1', removed: false, custom: false },
+      { ts: '2026-09-25T13:58:00.000Z' },
+    );
     const firstPage = mergeFeedEntries([fixPosted], [inReview, early, inProgress]);
     expect(ids(firstPage.entries)).toEqual(['fix-posted', 'in-review', 'early', 'in-progress']);
     const olderPage = mergeFeedEntries(firstPage.entries, [context, addedYou]);
@@ -54,7 +69,7 @@ describe('feed merge order', () => {
   });
 
   test('flags a channel update only when a new system line arrives', () => {
-    const labeled = entry('labeled', { ts: '2026-09-25T14:23:00.000Z', payload: { system: true } });
+    const labeled = messageEntry('labeled', 'group_updated', { addedInboxes: [{ inboxId: 'bob' }] }, { ts: '2026-09-25T14:23:00.000Z' });
     expect(mergeFeedEntries([fixPosted], [labeled, fixPosted]).channelUpdated).toBe(true);
     expect(mergeFeedEntries([labeled, fixPosted], [labeled, screenshot]).channelUpdated).toBe(false);
     expect(mergeFeedEntries([fixPosted], [screenshot]).channelUpdated).toBe(false);

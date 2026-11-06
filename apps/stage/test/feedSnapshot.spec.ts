@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { attachmentsOf } from '@stage-labs/client/xmtp/entryPayload';
 import {
   EMPTY_SNAPSHOT,
   INLINE_DATA_LIMIT,
@@ -11,19 +12,21 @@ import {
   withLine,
   withSelf,
 } from '../lib/feed/snapshot.model';
-import { entry } from './helpers';
+import { entry, messageEntry } from './helpers';
 
 const ids = (entries: readonly HistoryEntry[]): string[] => entries.map((e) => e.id);
 const messages = (n: number): HistoryEntry[] => Array.from({ length: n }, (_, i) => entry(`m${i}`));
+const reaction = (id: string, reference: string): HistoryEntry =>
+  messageEntry(id, 'reaction', { reference, content: '+1', removed: false, custom: false });
 
 describe('feed snapshot', () => {
   test('keeps the newest messages with their reactions and skips sends still in flight', () => {
     const slice = [
       entry('sending', { pending: true }),
-      entry('r1', { payload: { reactTo: 'm0', emoji: '+1' } }),
+      reaction('r1', 'm0'),
       entry('m0'),
       entry('m1'),
-      entry('r2', { payload: { reactTo: 'm2', emoji: '+1' } }),
+      reaction('r2', 'm2'),
       entry('m2'),
       entry('m3'),
     ];
@@ -72,13 +75,9 @@ describe('feed snapshot', () => {
     const snapshot = withSelf(withLine(EMPTY_SNAPSHOT, 'line-a', [remote], 5), 'inbox-a');
     const decoded = decodeSnapshot(encodeSnapshot(snapshot));
     expect(decoded?.self).toBe('inbox-a');
-    const att = (
-      lineEntries(decoded ?? EMPTY_SNAPSHOT, 'line-a')?.[0]?.payload as {
-        attachments: { remote: { secret: Uint8Array; contentLength: bigint } }[];
-      }
-    ).attachments[0];
-    expect(att?.remote.secret).toEqual(secret);
-    expect(att?.remote.contentLength).toBe(12n);
+    const att = attachmentsOf(lineEntries(decoded ?? EMPTY_SNAPSHOT, 'line-a')?.[0])[0];
+    expect(att?.remote?.secret).toEqual(secret);
+    expect(att?.remote?.contentLength).toBe(12n);
   });
 
   test('reads nothing from a damaged record', () => {

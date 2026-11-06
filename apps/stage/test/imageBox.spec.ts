@@ -1,11 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  ATTACHMENT_MAX_HEIGHT,
-  VIDEO_PLACEHOLDER_RATIO,
-  mediaAspectRatio,
-  mediaMaxWidth,
-  validSize,
-} from '../components/media/imageBox.model';
+import { VIDEO_PLACEHOLDER_RATIO, mediaAspectRatio, mediaMaxWidth, validSize } from '../components/media/imageBox.model';
 
 describe('attachment layout', () => {
   test('media retain landscape, portrait and square ratios', () => {
@@ -28,7 +22,6 @@ describe('attachment layout', () => {
   test('portrait media narrow so they never pass the max height', () => {
     expect(mediaMaxWidth(9 / 16)).toBe(225);
     expect(mediaMaxWidth(3 / 4)).toBe(300);
-    expect(mediaMaxWidth(16 / 9) / (16 / 9)).toBe(ATTACHMENT_MAX_HEIGHT);
   });
 
   test('accepts only a positive measured size', () => {

@@ -2,12 +2,12 @@ import { english } from 'viem/accounts';
 
 const SUGGESTION_LIMIT = 6;
 
-export interface PhraseToken {
+interface PhraseToken {
   word: string;
   complete: boolean;
 }
 
-export function currentToken(text: string): PhraseToken {
+function currentToken(text: string): PhraseToken {
   const complete = /\s$/.test(text) || text.length === 0;
   const parts = text
     .trim()
@@ -17,7 +17,7 @@ export function currentToken(text: string): PhraseToken {
   return { word: complete || last === undefined ? '' : last.toLowerCase(), complete };
 }
 
-export function suggestWords(prefix: string, wordlist: readonly string[] = english, limit = SUGGESTION_LIMIT): string[] {
+function suggestWords(prefix: string, wordlist: readonly string[] = english, limit = SUGGESTION_LIMIT): string[] {
   const clean = prefix.toLowerCase();
   if (clean.length === 0) return [];
   const matches: string[] = [];
@@ -58,7 +58,7 @@ export function visibleSuggestions(word: string, wordlist: readonly string[] = e
     .slice(0, limit);
 }
 
-export function applyCompletion(text: string, word: string): string {
+function applyCompletion(text: string, word: string): string {
   const trimmed = text.replace(/\S+$/, '');
   return `${trimmed}${word} `;
 }
@@ -83,7 +83,7 @@ function acceptTypedLetter(previous: string, next: string, wordlist: readonly st
   return startsNextWord ? `${previous} ${char}` : previous;
 }
 
-export function acceptTypedChar(previous: string, next: string, wordlist: readonly string[] = english): string {
+function acceptTypedChar(previous: string, next: string, wordlist: readonly string[] = english): string {
   if (!isSingleTypedChar(previous, next)) return next;
   if (/\s$/.test(next)) return acceptTypedSpace(previous, wordlist) ? next : previous;
   if (!looksLikePhrase(next)) return next;
@@ -109,7 +109,7 @@ function looksLikeKeyOrCode(text: string): boolean {
   return /^0x/i.test(text) || /^[0-9a-f]{64}$/i.test(text) || text.includes(':');
 }
 
-export function normalizePastedPhrase(pasted: string): string {
+function normalizePastedPhrase(pasted: string): string {
   const trimmed = pasted.trim();
   if (looksLikeKeyOrCode(trimmed)) return trimmed;
   return trimmed

@@ -1,46 +1,17 @@
 import { describe, expect, test } from 'bun:test';
 import type { ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
-import type { Row } from '../components/home/model';
 import { homeListing, listedUnreadCount, unreadRowCount } from '../components/home/listing.model';
 import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
 import { ALICE, NAMES, SELF } from './searchFixtures';
-
-function row(convId: string, unreadCount: number, fields: Partial<Row> = {}): Row {
-  return {
-    convId,
-    title: convId,
-    groupName: convId,
-    lastPreview: '',
-    createdTs: null,
-    lastTs: 1,
-    lastBubbleTs: null,
-    unreadCount,
-    lastReadNs: 0,
-    markedUnread: false,
-    lastFromSelf: false,
-    lastSenderAddress: null,
-    peerAddress: null,
-    avatarUri: null,
-    avatarAddress: null,
-    inboxToAddr: { self: SELF },
-    selfInboxId: 'self',
-    consent: 'allowed',
-    labels: [],
-    assigned: [],
-    category: null,
-    status: null,
-    priority: null,
-    ...fields,
-  };
-}
+import { row } from './rowFixture';
 
 const rows = [
-  row('a', 5, { labels: ['Stage'], status: 'Todo' }),
-  row('b', 2, { labels: ['Metro'], status: 'Done' }),
-  row('c', 0, { labels: ['Stage'], markedUnread: true }),
-  row('d', 0, { labels: ['Stage'] }),
-  row('e', 1, { inboxToAddr: { self: SELF, alice: ALICE } }),
-  row('dm', 1, { peerAddress: '0xpeer', lastBubbleTs: 10 }),
+  row('a', { unreadCount: 5, labels: ['Stage'], status: 'Todo' }),
+  row('b', { unreadCount: 2, labels: ['Metro'], status: 'Done' }),
+  row('c', { unreadCount: 0, labels: ['Stage'], markedUnread: true }),
+  row('d', { unreadCount: 0, labels: ['Stage'] }),
+  row('e', { unreadCount: 1, inboxToAddr: { self: SELF, alice: ALICE } }),
+  row('dm', { unreadCount: 1, peerAddress: '0xpeer', lastBubbleTs: 10 }),
 ];
 const namesOf = (address: string): string[] => NAMES[address] ?? [];
 

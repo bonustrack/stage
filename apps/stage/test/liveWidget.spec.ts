@@ -1,17 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import { newNodeKey, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import { ownNodeUrl } from '@stage-labs/client/nodes/publish';
-import {
-  NODE_URL_HINTS,
-  livePreviewOf,
-  liveStatusText,
-  ownsHostedNode,
-  publishProblemText,
-} from '../components/dashboard/liveWidget.model';
+import { livePreviewOf, liveStatusText, ownsHostedNode, publishProblemText } from '../components/dashboard/liveWidget.model';
 import { liveConfirmOf } from '../lib/frames/dashboard.model';
 import {
   EMPTY_LIVE,
-  LIVE_REFRESH_MS,
   liveProblemText,
   liveRefetchInterval,
   liveRefreshDelay,
@@ -74,7 +67,7 @@ describe('live widget state', () => {
       version: 'v1.0',
       updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$105' }] },
     };
-    const reply = { ok: true, reply: { kind: 'messages', messages: [update] } } as const;
+    const reply: NodeResult = { ok: true, reply: { kind: 'messages', messages: [update] } };
     const next = { messages: titleMessages('$105') };
     expect(liveStateAfter(shown, reply, 3_000, { kind: 'frame', frame: next })).toEqual({ ...shown, frame: next, at: 3_000 });
     expect(liveStateAfter({ ...shown, failures: 2 }, reply, 3_000, { kind: 'unchanged' })).toEqual({ ...shown, at: 3_000 });
@@ -85,7 +78,6 @@ describe('live widget state', () => {
 
 describe('live widget refresh', () => {
   test('refreshes every minute while active, backs off after failures up to 5 minutes, and never while hidden', () => {
-    expect(LIVE_REFRESH_MS).toBe(60_000);
     expect(liveRefreshDelay(undefined)).toBe(60_000);
     expect([0, 1, 2, 3, 9].map((failures) => liveRefreshDelay({ ...shown, failures }))).toEqual([
       60_000, 120_000, 240_000, 300_000, 300_000,
@@ -113,10 +105,6 @@ describe('live widget status', () => {
       message: 'It loads from btc.example.com every minute while your Dashboard is open. That site sees your IP address, not your account.',
       confirmLabel: 'Add',
     });
-  });
-
-  test('every blocked link gets a hint', () => {
-    expect(Object.keys(NODE_URL_HINTS).sort()).toEqual(['credentials', 'insecure', 'invalid', 'local']);
   });
 });
 

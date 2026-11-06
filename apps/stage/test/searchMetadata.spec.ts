@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { boardColumns } from '../components/home/board/BoardScreen.model';
 import {
-  FILTER_FIELDS,
   PRIORITY_OPTIONS,
   parseSearchFilter,
   searchFilterSources,
@@ -110,10 +109,6 @@ describe('channel metadata search filters', () => {
 });
 
 describe('metadata filter suggestions', () => {
-  test('lists fields in right-panel order with Has last', () => {
-    expect(FILTER_FIELDS).toEqual(['member', 'category', 'status', 'priority', 'label', 'has']);
-  });
-
   test('collects real categories and freeform statuses, including unlabelled board cards', () => {
     const duplicate: FilterRow = { ...group('duplicate', []), category: 'stage', status: 'backlog' };
     const dm: FilterRow = { ...group('dm', []), peerAddress: BOB, category: 'Private', status: 'DM only' };

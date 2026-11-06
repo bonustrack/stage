@@ -1,24 +1,13 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { entry } from './helpers';
+import { mockAppStorage } from './memoryStorage';
 
-const values = new Map<string, string>();
 const resyncs: number[] = [];
 const refreshed: string[] = [];
 let latestPage: HistoryEntry[] = [];
 
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => values.get(key) ?? null,
-    set: async (key: string, value: string): Promise<void> => {
-      values.set(key, value);
-    },
-    delete: async (key: string): Promise<void> => {
-      values.delete(key);
-    },
-  },
-}));
+mockAppStorage();
 mock.module('../lib/xmtp.sdk', () => ({ sdk: {} }));
 mock.module('../lib/xmtp.find', () => ({ convOfLine: async () => null }));
 mock.module('../lib/xmtp.messages', () => ({ latestConvMessages: async () => [] }));

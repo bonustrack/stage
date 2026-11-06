@@ -1,4 +1,5 @@
 import { expect, mock, test } from 'bun:test';
+import { row } from './rowFixture';
 
 const values = new Map<string, string>();
 const cached = new Map<string, unknown>();
@@ -19,10 +20,8 @@ const { rememberActiveAccountId } = await import('../lib/accountSelection');
 const { filterChannelRows } = await import('@stage-labs/client/xmtp/channelsFilter');
 
 test('cache hydration never publishes a durable hidden channel', async () => {
-  const rows = [
-    { convId: 'hidden', peerAddress: null },
-    { convId: 'shown', peerAddress: null },
-  ];
+  const shown = { convId: 'shown', peerAddress: null };
+  const rows = [{ convId: 'hidden', peerAddress: null }, shown];
   cached.set('rows', rows);
   values.set('channels.hidden.a', JSON.stringify({ hidden: { hidden: true, at: 1 } }));
   const store = new PersistentStore('rows', undefined, (stored: typeof rows) => visibleCachedRows('a', stored));
@@ -30,38 +29,27 @@ test('cache hydration never publishes a durable hidden channel', async () => {
   store.subscribe((value) => {
     published.push(value);
   });
-  expect(await store.hydrate()).toEqual([rows[1]]);
-  expect(published).toEqual([[rows[1]]]);
+  expect(await store.hydrate()).toEqual([shown]);
+  expect(published).toEqual([[shown]]);
 });
 
 test('actual channel-cache hydration and writes publish the same safe title used for search', async () => {
-  const row = {
-    convId: 'unnamed',
-    title: 'proto',
-    peerAddress: null,
-    groupName: '',
-    inboxToAddr: {},
-    selfInboxId: 'self',
-    unreadCount: 0,
-    lastReadNs: 0,
-    lastTs: null,
-    lastPreview: '',
-  };
-  cached.set('channels-cache.title-test.json', [row]);
+  const unnamed = row('unnamed', { title: 'proto', groupName: '', lastTs: null });
+  cached.set('channels-cache.title-test.json', [unnamed]);
   rememberActiveAccountId('title-test');
   await hydrateCachedRows();
   expect(getCachedRows()?.[0]?.title).toBe('Untitled channel');
-  const hydrated = getCachedRows() as (typeof row)[];
+  const hydrated = getCachedRows() ?? [];
   expect(filterChannelRows(hydrated, { query: 'Untitled channel' })).toHaveLength(1);
   expect(filterChannelRows(hydrated, { query: 'proto' })).toHaveLength(0);
-  setCachedRows([{ ...row, inboxToAddr: { self: '0xself', other: '0xother' } }]);
+  setCachedRows([{ ...unnamed, inboxToAddr: { self: '0xself', other: '0xother' } }]);
   expect(getCachedRows()?.[0]?.title).toBe('2 members');
-  const resolved = getCachedRows() as (typeof row)[];
+  const resolved = getCachedRows() ?? [];
   expect(filterChannelRows(resolved, { query: '2 members' })).toHaveLength(1);
   expect(filterChannelRows(resolved, { query: 'proto' })).toHaveLength(0);
-  setCachedRows([{ ...row, groupName: 'proto' }]);
+  setCachedRows([{ ...unnamed, groupName: 'proto' }]);
   expect(getCachedRows()?.[0]?.title).toBe('proto');
-  setCachedRows([{ ...row, title: 'Old title', groupName: 'Edited title' }]);
+  setCachedRows([{ ...unnamed, title: 'Old title', groupName: 'Edited title' }]);
   expect(getCachedRows()?.[0]?.title).toBe('Edited title');
 });
 

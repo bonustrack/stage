@@ -1,20 +1,11 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  groupHeaderId,
-  groupKeyOf,
-  groupValueOf,
-  groupingOrderOf,
-  groupingOrderStore,
-  isNamedGroupKey,
-  sectionKeyOf,
-} from '../lib/grouping.model';
+import { groupKeyOf, groupValueOf, groupingOrderOf, groupingOrderStore, isNamedGroupKey, sectionKeyOf } from '../lib/grouping.model';
 
 describe('grouping vocabulary', () => {
   test('saved order keys keep the value as typed and section keys lower it', () => {
     expect(groupKeyOf('label', 'To Do')).toBe('label:To Do');
     expect(groupKeyOf('status', '')).toBe('status:');
     expect(sectionKeyOf('category', 'Work')).toBe('category:work');
-    expect(groupHeaderId(sectionKeyOf('status', 'Done'))).toBe('group:status:done');
   });
 
   test('reads the value back only from a key of the same grouping', () => {

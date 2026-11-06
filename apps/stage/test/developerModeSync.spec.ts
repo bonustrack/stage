@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, jest, mock, test } from 'bun:test';
 import { mergeDeveloperMode, DEFAULT_DEVELOPER_MODE, type DeveloperModeContent } from '@stage-labs/client/xmtp/sync/developerMode';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
+import { mockAppStorage } from './memoryStorage';
 
 let activeId = 'a';
-const values = new Map<string, string>();
 const states = new Map<string, DeveloperModeContent>();
 const messages: RowMessage[] = [];
 const queries: { afterNs?: number; beforeNs?: number; limit: number }[] = [];
@@ -14,19 +14,14 @@ let failApply = false;
 let failSend: Error | null = null;
 let beforeMessages: (() => void) | undefined;
 const client = { inboxId: 'owner' };
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => {
-      if (failRead) throw new Error('read unavailable');
-      return values.get(key) ?? null;
-    },
-    set: async (key: string, value: string): Promise<void> => {
-      if (failWrite) throw new Error('write unavailable');
-      values.set(key, value);
-    },
+const { values } = mockAppStorage({
+  read: () => {
+    if (failRead) throw new Error('read unavailable');
   },
-}));
+  write: () => {
+    if (failWrite) throw new Error('write unavailable');
+  },
+});
 mock.module('../lib/accounts', () => ({
   getActiveAccount: async () => ({ id: activeId }),
   getActiveAccountStrict: async () => ({ id: activeId, address: activeId }),
@@ -71,8 +66,9 @@ const { accountClient } = await import('../lib/xmtp.account');
 const { SETTING_KINDS } = await import('../lib/sync/settings');
 const { createSyncPublisher } = await import('../lib/sync/publisher');
 const { replaySyncHistory } = await import('../lib/sync/replay');
-const developerMode = SETTING_KINDS.find((kind) => kind.kind === 'developerMode');
-if (!developerMode) throw new Error('Developer mode is not a synced kind');
+const developerModeKind = SETTING_KINDS.find((kind) => kind.kind === 'developerMode');
+if (!developerModeKind) throw new Error('Developer mode is not a synced kind');
+const developerMode = developerModeKind;
 const groups = [{ id: 'sync', active: true, createdAtNs: 1 }];
 const cursorKey = 'developerMode.cursor.v1.a.sync';
 const replay = async (): Promise<void> => {
@@ -220,7 +216,7 @@ describe('independent paginated Developer mode replay', () => {
   test('paginates over more than 5000 unread messages after an existing feature cursor', async () => {
     values.set(cursorKey, '10');
     messages.push(stateMessage(9, true, 1000), stateMessage(11, false, 100));
-    for (let i = 12; i <= 5012; i += 1) messages.push({ sentNs: i, senderInboxId: 'owner', content: 'other' });
+    for (let i = 12; i <= 5012; i += 1) messages.push({ sentNs: i, senderInboxId: 'owner', contentTypeId: 'text', content: 'other' });
     await replay();
     expect(queries).toHaveLength(2);
     expect(queries.every((query) => query.afterNs === 10)).toBe(true);

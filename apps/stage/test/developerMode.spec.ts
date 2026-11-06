@@ -1,30 +1,23 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { DEFAULT_DEVELOPER_MODE, type DeveloperModeContent } from '@stage-labs/client/xmtp/sync/developerMode';
 import { editDeveloperMode } from '../lib/syncedSettings.model';
+import { mockAppStorage } from './memoryStorage';
 
-const values = new Map<string, string>();
-const writes: string[] = [];
 let activeId: string | null = null;
 let failRead = false;
 let failWrite = false;
 let failSelection = false;
 let readDelay: (() => Promise<void>) | null = null;
 let accountDelay: (() => Promise<void>) | null = null;
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => {
-      if (failRead) throw new Error('read unavailable');
-      await readDelay?.();
-      return values.get(key) ?? null;
-    },
-    set: async (key: string, value: string): Promise<void> => {
-      if (failWrite) throw new Error('write unavailable');
-      writes.push(key);
-      values.set(key, value);
-    },
+const { values, writes } = mockAppStorage({
+  read: async () => {
+    if (failRead) throw new Error('read unavailable');
+    await readDelay?.();
   },
-}));
+  write: () => {
+    if (failWrite) throw new Error('write unavailable');
+  },
+});
 mock.module('../lib/accounts', () => ({
   getSelectedAccount: async () => {
     if (failSelection) throw new Error('selection unavailable');
@@ -76,10 +69,11 @@ describe('developer mode account preference', () => {
     values.set('developer.enabled', '1');
     expect(DEFAULT_DEVELOPER_MODE.enabled).toBe(false);
     expect(await developerModeSync.load('unset')).toBeNull();
-    for (const [id, raw] of [
+    const broken: [string, string][] = [
       ['bad-json', '{'],
       ['bad-shape', '{"enabled":"yes","at":10}'],
-    ]) {
+    ];
+    for (const [id, raw] of broken) {
       values.set(key(id), raw);
       expect(await developerModeSync.load(id)).toBeNull();
     }

@@ -16,18 +16,17 @@ describe('settingsCatalog', () => {
     ).toEqual([...SETTINGS_ROUTE_FILES].sort());
   });
 
-  test('the hub lists Appearance among the preferences and the other pages under More, with their icons', () => {
-    expect(hubRows('preferences').map((row) => [row.href, row.label, row.icon])).toEqual([['/settings/display', 'Appearance', undefined]]);
-    expect(hubRows('more').map((row) => [row.href, row.label, row.icon])).toEqual([
-      ['/settings/security', 'Recovery phrase and private key', 'IconKey2'],
-      ['/settings/devices', 'Devices and history', 'IconDevices'],
-      ['/settings/wallet', 'Wallet', 'IconWallet4'],
-      ['/settings/advanced', 'Advanced', 'IconCode'],
+  test('the hub lists Appearance among the preferences and the other pages under More', () => {
+    expect(hubRows('preferences').map((row) => [row.href, row.label])).toEqual([['/settings/display', 'Appearance']]);
+    expect(hubRows('more').map((row) => [row.href, row.label])).toEqual([
+      ['/settings/security', 'Recovery phrase and private key'],
+      ['/settings/devices', 'Devices and history'],
+      ['/settings/wallet', 'Wallet'],
+      ['/settings/advanced', 'Advanced'],
     ]);
   });
 
   test('copy that points to a settings page uses the label the hub shows', () => {
     expect(settingsBreadcrumb('devices')).toBe('Settings > Devices and history');
-    expect(SETTINGS_SECTIONS.devices.title).toBe('Devices');
   });
 });

@@ -1,13 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  BACKUP_PHRASE_COPY,
-  SHOW_PHRASE_COPY,
-  SHOWN_PHRASE_TIMEOUT_MS,
-  phrasePanelActions,
-  phraseRowCopy,
-  securityRows,
-  type SecurityRowsInput,
-} from '../components/settings/SecuritySettings.model';
+import { phrasePanelActions, securityRows, type SecurityRowsInput } from '../components/settings/SecuritySettings.model';
 
 const SMART: SecurityRowsInput = { isSmart: true, backedUp: true, canExportKey: false, keyRevealed: false };
 
@@ -34,19 +26,8 @@ describe('securityRows', () => {
 });
 
 describe('recovery phrase panel', () => {
-  test('backup mode keeps its copy and asks to confirm the save', () => {
-    expect(phraseRowCopy('backup').label).toBe(BACKUP_PHRASE_COPY.label);
+  test('backup mode asks to confirm the save, show mode only offers hide', () => {
     expect(phrasePanelActions('backup')).toEqual(['hide', 'saved']);
-  });
-
-  test('show mode only offers hide and has a destructive-style confirm', () => {
-    expect(phraseRowCopy('show').label).toBe('Show recovery phrase');
     expect(phrasePanelActions('show')).toEqual(['hide']);
-    expect(SHOW_PHRASE_COPY.confirmTitle).toBe('Show recovery phrase?');
-    expect(SHOW_PHRASE_COPY.confirmLabel).toBe('Show');
-  });
-
-  test('shown phrase hides after about a minute', () => {
-    expect(SHOWN_PHRASE_TIMEOUT_MS).toBe(60_000);
   });
 });

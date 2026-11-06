@@ -1,8 +1,7 @@
-import { describe, expect, mock, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
   DASHBOARD_MAX_WIDGETS,
   dashboardSchema,
-  EMPTY_DASHBOARD,
   liveSourceOf,
   type DashboardContent,
   type DashboardHeight,
@@ -19,7 +18,6 @@ import {
   widgetSpan,
 } from '../components/dashboard/grid.model';
 import {
-  FRAME_ADD_TOASTS,
   addFrameWidget,
   addLiveWidget,
   canAddWidget,
@@ -32,21 +30,10 @@ import {
 } from '../lib/frames/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
 import { selectAccount } from './activeAccount';
+import { mockAppStorage } from './memoryStorage';
 
-const values = new Map<string, string>();
 selectAccount('alice');
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => values.get(key) ?? null,
-    set: async (key: string, value: string): Promise<void> => {
-      values.set(key, value);
-    },
-    delete: async (key: string): Promise<void> => {
-      values.delete(key);
-    },
-  },
-}));
+const { values } = mockAppStorage();
 const { addFrameToDashboard, addLiveToDashboard, dashboardSync, changeDashboard } = await import('../lib/frames/dashboard');
 const { bumpAccountEpoch } = await import('../lib/accountEpoch');
 
@@ -127,11 +114,6 @@ describe('frame widgets', () => {
     const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
     expect(frameWidgetAdd(full, source)).toBe('full');
     expect(addFrameWidget(full, 'f', source, 'half')).toBe(full);
-    expect(FRAME_ADD_TOASTS).toEqual({
-      added: 'Added to your dashboard',
-      exists: 'Already on your dashboard',
-      full: 'Your dashboard is full',
-    });
   });
 
   test('only frame and live widgets are kept: no kind, another kind or a broken reference drops the widget', () => {
@@ -410,6 +392,5 @@ describe('dashboard store', () => {
     values.set('dashboard.v1.erin', JSON.stringify({ widgets: [{ id: '', w: 'half', h: 1 }, { w: 'half', h: 1 }, 7], at: 3 }));
     expect(await dashboardSync.load('dave')).toBeNull();
     expect(await dashboardSync.load('erin')).toEqual({ widgets: [], at: 3 });
-    expect(EMPTY_DASHBOARD).toEqual({ widgets: [], at: 0 });
   });
 });

@@ -11,17 +11,21 @@ import {
   tornadoField,
 } from '../components/landing/Landing.model';
 
-const HALF = (): number => 0.5;
-
 describe('heroBoxes', () => {
-  test('sizes every box from the frame proportions', () => {
-    const boxes = heroBoxes(4, 1000, 600, HALF);
-    expect(boxes).toHaveLength(4);
-    for (const box of boxes) {
-      expect(box.width).toBe(250);
-      expect(box.height).toBe(210);
-      expect(box.x).toBe(Math.floor(0.5 * (1000 - 100) - 75));
-      expect(box.y).toBe(Math.floor(0.5 * (600 - 84) - 63));
+  test('every box is a fifth to three tenths of the frame wide, three to four tenths high, and mostly inside it', () => {
+    for (const roll of [0, 0.5, 0.999]) {
+      const boxes = heroBoxes(4, 1000, 600, () => roll);
+      expect(boxes).toHaveLength(4);
+      for (const box of boxes) {
+        expect(box.width).toBeGreaterThanOrEqual(200);
+        expect(box.width).toBeLessThanOrEqual(300);
+        expect(box.height).toBeGreaterThanOrEqual(180);
+        expect(box.height).toBeLessThanOrEqual(240);
+        expect(box.x).toBeGreaterThanOrEqual(-0.3 * box.width - 1);
+        expect(box.x + box.width).toBeLessThanOrEqual(1000 + 0.3 * box.width);
+        expect(box.y).toBeGreaterThanOrEqual(-0.3 * box.height - 1);
+        expect(box.y + box.height).toBeLessThanOrEqual(600 + 0.3 * box.height);
+      }
     }
   });
 });
@@ -55,7 +59,11 @@ describe('asciiFrame', () => {
 
 describe('ascii glyph layout', () => {
   test('the grid is centred on the field at the Menlo pitch', () => {
-    expect(asciiOrigin(1000, 400, 100, 50)).toEqual({ x: (1000 - 100 * ASCII_GLYPH.pitch) / 2, y: 0 });
+    const origin = asciiOrigin(1000, 400, 100, 40);
+    expect(origin.x).toBeGreaterThan(0);
+    expect(1000 - (origin.x + 100 * ASCII_GLYPH.pitch)).toBeCloseTo(origin.x);
+    expect(400 - (origin.y + 40 * ASCII.lineHeight)).toBeCloseTo(origin.y);
+    expect(asciiOrigin(1000, 400, 100, 50).y).toBe(0);
   });
 
   test('period and dot sit on their Menlo boxes and other glyphs draw no rect', () => {

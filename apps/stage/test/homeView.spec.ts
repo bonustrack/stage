@@ -1,21 +1,13 @@
-import { describe, expect, mock, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import { DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { collectSyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSettings.model';
 import { homeSortOf } from '../components/home/sort.model';
 import { selectAccount } from './activeAccount';
+import { mockAppStorage } from './memoryStorage';
 
-const values = new Map<string, string>();
 selectAccount('alice');
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => values.get(key) ?? null,
-    set: async (key: string, value: string): Promise<void> => {
-      values.set(key, value);
-    },
-  },
-}));
+const { values } = mockAppStorage();
 const { homeViewSync, setHomeView } = await import('../lib/homeView');
 
 const view = (v: HomeViewContent['view'], groupBy: HomeViewContent['groupBy'], at: number): HomeViewContent => ({

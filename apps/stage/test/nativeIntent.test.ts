@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'bun:test';
+import { EAS_UPDATES_URL } from '@stage-labs/client/endpoints';
 import { redirectSystemPath } from '../app/+native-intent';
 
 const r = (path: string): string => redirectSystemPath({ path, initial: true });
 
-const PROJECT = '1707f2db-c2b8-4c91-9341-27b1d57d355f';
 const GROUP = '27ac1746-b19f-4d16-a4c1-b04280d36626';
-const EXPO = `https://u.expo.dev/${PROJECT}/group/${GROUP}`;
+const EXPO = `${EAS_UPDATES_URL}/group/${GROUP}`;
 
 describe('redirectSystemPath', () => {
   test('stage:// dev-client launch link → home', () => {

@@ -22,16 +22,7 @@ import { frameKeysOf } from '../lib/frames/frameKeys';
 import { frameStackOf, makeFrameStacks, navigateFrame, withFrameNav, type FrameStacks } from '../lib/frames/frameStacks';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf } from './frameFixtures';
-
-const base: HistoryEntry = {
-  id: 'msg-frame-1',
-  ts: '2026-10-01T04:00:00.000Z',
-  station: 'xmtp',
-  line: 'stage://xmtp/a/conv1',
-  from: 'stage://xmtp/a/user/agent',
-  to: 'stage://xmtp/a/conv1',
-  messageId: 'msg-frame-1',
-};
+import { entry, messageEntry } from './helpers';
 
 function surface(surfaceId: string, components: Record<string, unknown>[]): FrameMessage {
   return { version: 'v1.0', createSurface: { surfaceId, catalogId: KIT_CATALOG, components } };
@@ -45,31 +36,33 @@ const REPORT = surface('home', [
 
 const report: FrameContent = { messages: [REPORT] };
 
+const frameEntry = (content: unknown): HistoryEntry => messageEntry('msg-frame-1', 'frame', content);
+
 describe('frameOf', () => {
   test('reads a valid frame from the entry payload', () => {
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: report } })).toEqual(report);
+    expect(frameOf(frameEntry(report))).toEqual(report);
   });
 
   test('parses each payload once and returns the same frame', () => {
-    const entry = { ...base, payload: { contentType: 'frame', frame: { messages: [REPORT] } } };
-    expect(frameOf(entry)).toBe(frameOf(entry));
+    const shown = frameEntry({ messages: [REPORT] });
+    expect(frameOf(shown)).toBe(frameOf(shown));
   });
 
   test('ignores entries without a frame, with a broken one or with a ChatKit widget', () => {
-    expect(frameOf(base)).toBeNull();
+    expect(frameOf(entry('plain'))).toBeNull();
     expect(frameOf(undefined)).toBeNull();
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { messages: 'Card' } } })).toBeNull();
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { widget: { type: 'Card' } } } })).toBeNull();
+    expect(frameOf(frameEntry({ messages: 'Card' }))).toBeNull();
+    expect(frameOf(frameEntry({ widget: { type: 'Card' } }))).toBeNull();
   });
 });
 
 describe('isFrameActionEntry', () => {
   test('only an entry carrying a decoded frame action is a frame tap', () => {
     const frameAction = { frameId: 'msg-frame-1', action: actionOf('approve'), label: 'Approve' };
-    expect(isFrameActionEntry({ ...base, payload: { contentType: 'frameAction', frameAction } })).toBe(true);
-    expect(isFrameActionEntry({ ...base, text: 'Frame action: approve', payload: { contentType: 'frameAction' } })).toBe(false);
-    expect(isFrameActionEntry({ ...base, payload: { contentType: 'frame', frame: report } })).toBe(false);
-    expect(isFrameActionEntry(base)).toBe(false);
+    expect(isFrameActionEntry(messageEntry('tap', 'frameAction', frameAction))).toBe(true);
+    expect(isFrameActionEntry(messageEntry('tap', 'frameAction', 'Frame action: approve'))).toBe(false);
+    expect(isFrameActionEntry(frameEntry(report))).toBe(false);
+    expect(isFrameActionEntry(entry('plain'))).toBe(false);
   });
 });
 
