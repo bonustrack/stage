@@ -5,16 +5,15 @@ import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { IntroCard, SkipLink } from '../chrome/IntroCard';
 import type { HistoryControls } from './useSetupRunner';
 import { DANGER, usePalette } from '../../lib/theme';
-import type { Stage } from './flow';
+import type { Stage } from '../../lib/onboarding';
 import {
   setupHint,
-  setupLinks,
+  canStartOver,
   setupStages,
   setupTitle,
   stageLabel,
   stageState,
   type SetupErr,
-  type SetupLinkKind,
   type SetupPlan,
   type StageState,
 } from './Onboarding.setup.model';
@@ -102,8 +101,6 @@ function SetupActions({
   );
 }
 
-const SETUP_LINK_LABELS: Record<SetupLinkKind, string> = { startOver: 'Start over' };
-
 function SetupLink({
   busy,
   setupErr,
@@ -116,14 +113,10 @@ function SetupLink({
   history: HistoryControls;
 }): React.ReactElement | null {
   if (setupErr === null && history.stalled) return <SkipLink label="Continue without history" onPress={history.continueWithout} />;
-  if (setupErr === null) return null;
-  const links = setupLinks(setupErr);
-  if (links.length === 0) return null;
+  if (!canStartOver(setupErr)) return null;
   return (
     <Column gap={16}>
-      {links.map((kind) => (
-        <SkipLink key={kind} label={SETUP_LINK_LABELS[kind]} disabled={busy} onPress={onBack} />
-      ))}
+      <SkipLink label="Start over" disabled={busy} onPress={onBack} />
     </Column>
   );
 }

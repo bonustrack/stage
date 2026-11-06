@@ -1,25 +1,15 @@
-import { errorMessage } from '@stage-labs/client/errors';
-import { createSmartAccount, resumeSmartAccount, restoreSmartAccount } from '../../lib/zerodev/create';
-import { addPhrase } from '../../lib/zerodev/keyring';
-import { switchToAccount } from '../../lib/xmtp.client';
 import type { Hex } from 'viem';
-import { addPrivateKeyAccount } from '../../lib/accounts';
-import { applyProfileSetup } from '../../lib/profile';
-import type { ProfileSetup } from './Onboarding.profile.model';
-import { makeOnboarding } from '../../lib/onboarding.core';
-import { readPendingSetup, writePendingSetup, clearPendingSetup } from '../../lib/onboardingPending';
-import { preserveProfileImage } from '../../lib/onboardingImage';
+import type { ProfileSetup } from '@stage-labs/client/profile/setup';
+import { createSmartAccount, resumeSmartAccount, restoreSmartAccount } from './zerodev/create';
+import { addPhrase } from './zerodev/keyring';
+import { switchToAccount } from './xmtp.client';
+import { addPrivateKeyAccount } from './accounts';
+import { applyProfileSetup } from './profile';
+import { XmtpSetupError, makeOnboarding } from './onboarding.core';
+import { readPendingSetup, writePendingSetup, clearPendingSetup } from './onboardingPending';
+import { preserveProfileImage } from './onboardingImage';
 
 export type Stage = 'wallet' | 'messaging' | 'profile' | 'history' | 'finishing';
-
-export class XmtpSetupError extends Error {
-  readonly accountId: string;
-  constructor(accountId: string, cause: unknown) {
-    super(errorMessage(cause));
-    this.name = 'XmtpSetupError';
-    this.accountId = accountId;
-  }
-}
 
 export async function bringMessagingOnline(accountId: string, onStage?: (s: Stage) => void): Promise<void> {
   onStage?.('messaging');
@@ -43,18 +33,15 @@ const creation = makeOnboarding({
   profile: (account, profile, progress, checkpoint) => applyProfileSetup(account.address, profile, progress, checkpoint),
 });
 
-export async function createWallet(onStage?: (s: Stage) => void, profile?: ProfileSetup): Promise<SetupWarning> {
-  await creation.run(profile, onStage);
-  return null;
+export function createWallet(onStage?: (s: Stage) => void, profile?: ProfileSetup): Promise<void> {
+  return creation.run(profile, onStage);
 }
+
+export const resumeCreatedWallet = creation.resume;
 
 export const editableCreatedProfile = creation.editableProfile;
-export const editCreatedProfile = creation.editProfile;
 
-export async function resumeCreatedWallet(onStage?: (s: Stage) => void): Promise<SetupWarning> {
-  await creation.resume(onStage);
-  return null;
-}
+export const editCreatedProfile = creation.editProfile;
 
 export async function restoreWallet(phrase: string, onStage?: (s: Stage) => void): Promise<SetupWarning> {
   onStage?.('wallet');
@@ -67,9 +54,8 @@ export async function restoreWallet(phrase: string, onStage?: (s: Stage) => void
   };
 }
 
-export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<SetupWarning> {
+export async function importKeyAccount(pk: Hex, onStage?: (s: Stage) => void): Promise<void> {
   onStage?.('wallet');
   const rec = await addPrivateKeyAccount(pk);
   await bringMessagingOnline(rec.id, onStage);
-  return null;
 }

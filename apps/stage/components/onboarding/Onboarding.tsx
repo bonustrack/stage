@@ -9,7 +9,7 @@ import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
 import { ProfileRecoveryStep } from './Onboarding.recovery';
-import { useOnboardingFlow } from './useOnboardingFlow';
+import { useOnboardingFlow, type OnboardingMode } from './useOnboardingFlow';
 import { safeNextRoute } from './nextRoute.model';
 import { ROUTES } from '../tabs/pages';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
@@ -21,6 +21,7 @@ import { USERNAME_COPY, usernameReady } from '../profile/username.model';
 import { Column } from '../layout';
 
 export interface OnboardingProps {
+  mode: OnboardingMode;
   onDone: () => void;
 }
 
@@ -117,10 +118,7 @@ function stepBack(f: Flow): (() => void) | null {
 }
 
 function stepSkip(f: Flow): (() => void) | null {
-  if (f.step === 'username')
-    return () => {
-      f.onUsernameContinue('');
-    };
+  if (f.step === 'username') return f.onUsernameSkip;
   if (f.step === 'profile') return f.onProfileSkip;
   return null;
 }
@@ -151,12 +149,12 @@ function KeptStep({ f, own, children }: { f: Flow; own: 'username' | 'profile'; 
   );
 }
 
-export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
+export function Onboarding({ mode, onDone }: OnboardingProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  const f = useOnboardingFlow(onDone);
+  const f = useOnboardingFlow(mode, onDone);
 
   return (
     <Column
@@ -194,10 +192,11 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   );
 }
 
-export function OnboardingPage(): React.ReactElement {
+export function OnboardingPage({ mode }: { mode: OnboardingMode }): React.ReactElement {
   const { next } = useLocalSearchParams<{ next?: string }>();
   return (
     <Onboarding
+      mode={mode}
       onDone={() => {
         router.replace(safeNextRoute(next));
       }}

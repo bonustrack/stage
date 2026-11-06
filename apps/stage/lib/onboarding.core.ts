@@ -20,6 +20,15 @@ export class AccountSetupError extends Error {
   }
 }
 
+export class XmtpSetupError extends Error {
+  readonly accountId: string;
+  constructor(accountId: string, cause: unknown) {
+    super(errorMessage(cause));
+    this.name = 'XmtpSetupError';
+    this.accountId = accountId;
+  }
+}
+
 export interface OnboardingDeps {
   read: () => Promise<PendingSetup | null>;
   write: (pending: PendingSetup) => Promise<void>;
