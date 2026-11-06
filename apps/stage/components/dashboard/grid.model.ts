@@ -1,4 +1,4 @@
-import { DASHBOARD_HEIGHTS, DASHBOARD_WIDTHS, type DashboardWidget, type DashboardWidth } from '@stage-labs/client/xmtp/readState';
+import { DASHBOARD_HEIGHTS, DASHBOARD_WIDTHS, type DashboardWidget, type DashboardWidth } from '@stage-labs/client/xmtp/sync/dashboard';
 
 export const DASHBOARD_ROW = 128;
 export const DASHBOARD_GAP = 12;
