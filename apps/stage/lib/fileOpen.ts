@@ -3,9 +3,9 @@ import { Directory, File, Paths } from 'expo-file-system';
 import { getContentUriAsync } from 'expo-file-system/legacy';
 import { startActivityAsync } from 'expo-intent-launcher';
 import { shareAsync } from 'expo-sharing';
-import { base64ToBytes } from '@stage-labs/client/text/base64';
+import { dataUrlBytes, nativeFileName, normalizedMime } from '@stage-labs/client/files';
 import { attempt, ignored, reported } from './errorPolicy';
-import { nativeFileName, normalizedMime, type OpenableFile } from './fileOpen.model';
+import type { OpenableFile } from './fileOpen.model';
 
 const VIEW_ACTION = 'android.intent.action.VIEW';
 const GRANT_READ_URI_PERMISSION = 1;
@@ -24,8 +24,10 @@ function freshOpenDirectory(): Directory {
 function localCopy(file: OpenableFile, name: string): File {
   const dest = new File(freshOpenDirectory(), name);
   if (file.url.startsWith('data:')) {
+    const bytes = dataUrlBytes(file.url);
+    if (bytes === null) throw new Error('Could not read this file.');
     dest.create();
-    dest.write(base64ToBytes(file.url.slice(file.url.indexOf(',') + 1)));
+    dest.write(bytes);
   } else {
     new File(file.url).copySync(dest);
   }

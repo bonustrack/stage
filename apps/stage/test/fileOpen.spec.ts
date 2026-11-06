@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { fileOpenAction, inertBlobType, nativeFileName, normalizedMime } from '../lib/fileOpen.model';
+import { nativeFileName, normalizedMime } from '@stage-labs/client/files';
+import { fileOpenAction, inertBlobType } from '../lib/fileOpen.model';
 
 const b64 = (text: string): string => Buffer.from(text, 'utf8').toString('base64');
 

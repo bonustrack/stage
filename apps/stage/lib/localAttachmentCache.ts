@@ -4,6 +4,7 @@ import { attempt } from './errorPolicy';
 import type { UploadedAttachment } from './xmtp.types';
 import { makeLocalAttachmentCache, type LocalAttachmentPreview } from './localAttachmentCache.core';
 import { randomHex } from '@stage-labs/client/ids';
+import { fileExtension, withoutQuery } from '@stage-labs/client/files';
 
 const cache = makeLocalAttachmentCache();
 
@@ -23,7 +24,7 @@ export function useUploadedAttachments(): ReadonlyMap<string, readonly string[]>
 }
 
 function safeExtFor(srcUri: string): string {
-  const ext = srcUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
+  const ext = fileExtension(withoutQuery(srcUri));
   return ext.length > 0 && ext.length <= 5 ? ext : 'bin';
 }
 

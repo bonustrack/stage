@@ -12,6 +12,7 @@
     "./abortable": "./src/abortable.ts",
     "./timing": "./src/timing.ts",
     "./ids": "./src/ids.ts",
+    "./files": "./src/files.ts",
     "./profile/avatar": "./src/profile/avatar.ts",
     "./profile/upload": "./src/profile/upload.ts",
     "./profile/setup": "./src/profile/setup.ts",

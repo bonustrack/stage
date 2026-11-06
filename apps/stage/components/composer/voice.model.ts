@@ -1,3 +1,5 @@
+import { baseMime, extensionForMime } from '@stage-labs/client/files';
+
 export interface VoiceFile {
   uri: string;
   mime: string;
@@ -5,17 +7,7 @@ export interface VoiceFile {
 }
 
 export function voiceFileMeta(mime: string): Pick<VoiceFile, 'mime' | 'extension'> {
-  const type = mime.split(';')[0]?.trim().toLowerCase();
-  const extensions: Record<string, string> = {
-    'audio/webm': 'webm',
-    'audio/ogg': 'ogg',
-    'audio/mp4': 'm4a',
-    'audio/m4a': 'm4a',
-    'audio/x-m4a': 'm4a',
-    'audio/wav': 'wav',
-    'audio/aac': 'aac',
-  };
-  const extension = type === undefined ? undefined : extensions[type];
+  const extension = extensionForMime(baseMime(mime), 'record');
   if (extension === undefined) throw new Error('The browser recorded an unsupported audio format.');
   return { mime, extension };
 }

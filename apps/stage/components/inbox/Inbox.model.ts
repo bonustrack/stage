@@ -32,7 +32,6 @@ export interface MailBody {
 
 const INLINE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 const MAIL_ID_TS = /^(\d{13})-/;
-const UNSAFE_FILE_CHARS = /[\\/:*?"<>|]/g;
 
 export function senderLabel(from: string): string {
   const address = parseAddress(decodeWords(from));
@@ -70,14 +69,6 @@ export function mailReceivedAt(id: string): number | null {
 
 export function mailDataUri(attachment: MailAttachment): string {
   return `data:${attachment.mimeType};base64,${bytesToBase64(attachment.content)}`;
-}
-
-export function safeFileName(name: string): string {
-  const clean = Array.from(name.replace(UNSAFE_FILE_CHARS, '_'))
-    .filter((ch) => ch.charCodeAt(0) >= 0x20)
-    .join('')
-    .trim();
-  return clean === '' || clean === '.' || clean === '..' ? 'attachment' : clean.slice(0, 200);
 }
 
 function isInlineImage(attachment: MailAttachment): boolean {

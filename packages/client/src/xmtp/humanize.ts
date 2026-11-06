@@ -1,3 +1,4 @@
+import { fileExtension, kindExtensions } from '../files';
 import { shortAddress } from '../identity/format';
 import { describeAppDataChange } from './appDataChange';
 import { withChannelLabels } from './channelRefs';
@@ -195,7 +196,7 @@ export interface AttachmentMeta {
 }
 
 export function attachmentKindOf(a: AttachmentMeta): AttachmentKind {
-  const ext = a.filename?.split('.').pop()?.toLowerCase() ?? '';
+  const ext = fileExtension(a.filename ?? '');
   const mime = a.mimeType ?? '';
   if (matchesKind(mime, ext, 'image/', IMAGE_EXTS)) return 'image';
   if (matchesKind(mime, ext, 'audio/', AUDIO_EXTS)) return 'audio';
@@ -237,6 +238,6 @@ function matchesKind(mime: string, ext: string, mimePrefix: string, exts: string
   return mime.startsWith(mimePrefix) || exts.includes(ext);
 }
 
-const IMAGE_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'avif'];
-const AUDIO_EXTS = ['m4a', 'mp3', 'wav', 'aac', 'ogg'];
-const VIDEO_EXTS = ['mp4', 'mov', 'webm'];
+const IMAGE_EXTS = kindExtensions('image');
+const AUDIO_EXTS = kindExtensions('audio');
+const VIDEO_EXTS = kindExtensions('video');

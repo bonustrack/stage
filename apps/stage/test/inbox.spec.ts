@@ -1,16 +1,9 @@
 import { describe, expect, test } from 'bun:test';
 import { deriveMailKey, openMailIndex, openMailPart, sealMailIndex, sealMailPart, type MailIndex } from '@stage-labs/client/mail/mailbox';
 import { parseMail } from '@stage-labs/client/mail/mime';
-import {
-  inboxRows,
-  mailBody,
-  mailReceivedAt,
-  safeFileName,
-  senderLabel,
-  subjectLabel,
-  visibleBlocks,
-} from '../components/inbox/Inbox.model';
+import { inboxRows, mailBody, mailReceivedAt, senderLabel, subjectLabel, visibleBlocks } from '../components/inbox/Inbox.model';
 import { mailReadKey, parseReadKeys, withReadKey, type InboxEntry } from '../lib/mail.core';
+import { safeFileName } from '@stage-labs/client/files';
 
 const index = (from: string, subject: string): MailIndex => ({
   envelopeFrom: 'bounce@example.com',

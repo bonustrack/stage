@@ -1,7 +1,8 @@
 import { Linking } from 'react-native';
 import { reported } from './errorPolicy';
 import { downloadFile } from './fileDownload';
-import { fileOpenAction, nativeFileName, type OpenableFile } from './fileOpen.model';
+import { nativeFileName } from '@stage-labs/client/files';
+import { fileOpenAction, type OpenableFile } from './fileOpen.model';
 
 const openedUrls = new Map<string, string>();
 

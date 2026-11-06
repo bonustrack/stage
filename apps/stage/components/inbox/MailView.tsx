@@ -3,22 +3,14 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { ParsedMail } from '@stage-labs/client/mail/mime';
+import { safeFileName } from '@stage-labs/client/files';
 import { capabilities } from '../../lib/capabilities';
 import { downloadFile } from '../../lib/fileDownload';
 import { reported } from '../../lib/errorPolicy';
 import { markMailRead, useMail, useMailboxes } from '../../lib/mail';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { RetryNotice } from '../chrome/RetryNotice';
-import {
-  mailBody,
-  mailDataUri,
-  mailDateLabel,
-  mailReceivedAt,
-  safeFileName,
-  subjectLabel,
-  visibleBlocks,
-  type MailAttachmentRow,
-} from './Inbox.model';
+import { mailBody, mailDataUri, mailDateLabel, mailReceivedAt, subjectLabel, visibleBlocks, type MailAttachmentRow } from './Inbox.model';
 import { MailBlocks } from './MailBlocks';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from '../settings/SettingsPage';
 import { INBOX_ROUTE } from '../tabs/menuPages';
