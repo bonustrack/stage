@@ -1,10 +1,9 @@
 import type { HistoryEntry } from '../types';
-import { isSystemEntry } from './entryPayload';
+import { deleteTargetOf, deletedByOf, isDeleteRequest, isDeletedPlaceholder, isSystemEntry } from './entryPayload';
 import { isSystemMessage } from './visibility';
 import { inboxIdOfUri } from './line';
 import {
   DELETED_MESSAGE_TYPE_ID,
-  DELETE_MESSAGE_TYPE_ID,
   deleteTargetOfContent,
   deletedByOfContent,
   isDeleteRequestType,
@@ -12,12 +11,6 @@ import {
   type DeletedBy,
 } from './deleteMessage';
 import type { StreamedMessage } from './summarizeRow';
-
-interface DeletionPayload {
-  contentType?: string;
-  deletes?: string;
-  deletedBy?: DeletedBy;
-}
 
 export interface DeleteRights {
   ownDeletes?: ReadonlySet<string>;
@@ -28,22 +21,6 @@ export interface DeleteRights {
 export type DeletedMessages = ReadonlyMap<string, DeletedBy>;
 
 const NO_IDS: ReadonlySet<string> = new Set();
-
-function deletionPayloadOf(entry: HistoryEntry): DeletionPayload | undefined {
-  return entry.payload as DeletionPayload | undefined;
-}
-
-export function isDeleteRequest(entry: HistoryEntry): boolean {
-  return deletionPayloadOf(entry)?.contentType === DELETE_MESSAGE_TYPE_ID;
-}
-
-export function isDeletedPlaceholder(entry: HistoryEntry): boolean {
-  return deletionPayloadOf(entry)?.contentType === DELETED_MESSAGE_TYPE_ID;
-}
-
-export function deletedByOf(entry: HistoryEntry): DeletedBy {
-  return deletionPayloadOf(entry)?.deletedBy ?? 'sender';
-}
 
 export function isDeletableEntry(entry: HistoryEntry): boolean {
   return !isSystemEntry(entry) && !isDeleteRequest(entry) && !isDeletedPlaceholder(entry);
@@ -63,7 +40,7 @@ function requestDeletion(
   byId: ReadonlyMap<string, HistoryEntry>,
   superAdmins: ReadonlySet<string>,
 ): [string, DeletedBy] | null {
-  const target = deletionPayloadOf(request)?.deletes;
+  const target = deleteTargetOf(request);
   const original = target === undefined ? undefined : byId.get(target);
   if (target === undefined || original === undefined || !isDeletableEntry(original)) return null;
   const by = deleteAuthority(original.from === request.from, inboxIdOfUri(request.from), superAdmins);

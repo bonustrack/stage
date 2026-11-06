@@ -4,6 +4,7 @@ import { frameActionSchema, frameContentSchema, type FrameActionContent, type Fr
 import type { TransportMetadata } from '@stage-labs/kit/a2ui/client';
 import type { RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 import { a2uiSnapshot } from '@stage-labs/kit/a2ui/snapshot';
+import { frameFieldOf, isFrameActionEntry as hasFrameAction } from '@stage-labs/client/xmtp/entryPayload';
 
 export interface FrameOut {
   message: RendererMessage;
@@ -16,8 +17,8 @@ export type FrameMessageHandler = (out: FrameOut) => Promise<void> | void;
 const parsedFrames = new WeakMap<object, FrameContent | null>();
 
 export function frameOf(entry: HistoryEntry | undefined): FrameContent | null {
-  const frame = (entry?.payload as { frame?: unknown } | undefined)?.frame;
-  if (typeof frame !== 'object' || frame === null) return null;
+  const frame = frameFieldOf(entry);
+  if (frame === null) return null;
   const known = parsedFrames.get(frame);
   if (known !== undefined) return known;
   const parsed = frameContentSchema.safeParse(frame);
@@ -27,8 +28,7 @@ export function frameOf(entry: HistoryEntry | undefined): FrameContent | null {
 }
 
 export function isFrameActionEntry(entry: HistoryEntry): boolean {
-  const action = (entry.payload as { frameAction?: unknown } | undefined)?.frameAction;
-  return typeof action === 'object' && action !== null;
+  return hasFrameAction(entry);
 }
 
 export function filledText(value: string | undefined): string | undefined {

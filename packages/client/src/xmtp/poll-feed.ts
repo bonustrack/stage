@@ -1,25 +1,14 @@
 import type { HistoryEntry } from '../types';
 import { votesByPoll, ownVotes, openAnswersByPoll, type VoteEvent } from './poll-tally';
-import { normalizeQuestions, type PollContent, type PollQuestion } from './poll';
-
-interface VotePayload {
-  reactTo?: string;
-  emoji?: string;
-  removed?: boolean;
-  schema?: string;
-}
-
-interface PollPayload {
-  contentType?: string;
-  poll?: PollContent;
-}
+import { normalizeQuestions, type PollQuestion } from './poll';
+import { payloadTypeOf, pollContentOf, reactionOf } from './entryPayload';
 
 export function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
   const out: VoteEvent[] = [];
   for (const e of events) {
-    const p = e.payload as VotePayload | undefined;
-    if (p?.schema !== 'custom' || !p.reactTo || p.emoji === undefined) continue;
-    out.push({ reference: p.reactTo, content: p.emoji, schema: 'custom', removed: !!p.removed, voter: e.from, ts: e.ts });
+    const p = reactionOf(e);
+    if (!p?.custom || !p.reactTo) continue;
+    out.push({ reference: p.reactTo, content: p.emoji, schema: 'custom', removed: p.removed, voter: e.from, ts: e.ts });
   }
   return out;
 }
@@ -27,9 +16,9 @@ export function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
 export function pollQuestionsInFeed(events: HistoryEntry[]): Map<string, PollQuestion[]> {
   const out = new Map<string, PollQuestion[]>();
   for (const e of events) {
-    const p = e.payload as PollPayload | undefined;
-    if (p?.contentType !== 'poll' || !p.poll) continue;
-    const qs = normalizeQuestions(p.poll);
+    const poll = payloadTypeOf(e) === 'poll' ? pollContentOf(e) : undefined;
+    if (poll === undefined) continue;
+    const qs = normalizeQuestions(poll);
     if (qs.length > 0) out.set(e.id, qs);
   }
   return out;

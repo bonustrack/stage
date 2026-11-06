@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '../src/types';
-import { deletedEntryView, deletedMessages, deletedRowBy, isDeletableEntry, isDeleteRequest } from '../src/xmtp/deletions';
+import { deletedEntryView, deletedMessages, deletedRowBy, isDeletableEntry } from '../src/xmtp/deletions';
+import { isDeleteRequest } from '../src/xmtp/entryPayload';
 import { XMTP_USER_PREFIX } from '../src/xmtp/line';
 import type { StreamedMessage } from '../src/xmtp/summarizeRow';
 import { entry } from './helpers';

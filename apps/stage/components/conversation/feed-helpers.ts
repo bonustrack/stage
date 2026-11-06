@@ -1,9 +1,6 @@
 import { humanizeMentions, attachmentEmojiPreview } from '@stage-labs/client/xmtp/humanize';
 import type { HistoryEntry } from '@stage-labs/client/types';
-
-export function hasAttachments(e: HistoryEntry): boolean {
-  return ((e.payload as { attachments?: unknown[] } | undefined)?.attachments?.length ?? 0) > 0;
-}
+import { attachmentsOf } from '@stage-labs/client/xmtp/entryPayload';
 
 export interface FeedScrollMetrics {
   offset: number;
@@ -60,7 +57,7 @@ export function planUprightRestore(args: {
 export function previewOf(e: HistoryEntry): string {
   const text = e.text ? humanizeMentions(e.text).slice(0, 80) : '';
   if (text) return text;
-  const a = (e.payload as { attachments?: { mime?: string; name?: string }[] } | undefined)?.attachments?.[0];
+  const a = attachmentsOf(e)[0];
   return attachmentEmojiPreview(a?.mime, a?.name);
 }
 

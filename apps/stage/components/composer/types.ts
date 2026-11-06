@@ -1,3 +1,5 @@
+import type { EntryPayload } from '@stage-labs/client/xmtp/entryPayload';
+
 export interface Attachment {
   id: string;
   url: string;
@@ -12,7 +14,7 @@ export interface OptimisticEntry {
   text: string;
   attachments: Attachment[];
   replyTo?: string;
-  payload?: unknown;
+  payload?: EntryPayload;
 }
 
 export interface PostHooks {

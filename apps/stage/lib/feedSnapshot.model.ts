@@ -1,6 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { base64ToBytes, bytesToBase64 } from '@stage-labs/client/text/base64';
-import { reactionTarget } from './feedOrder.model';
+import { attachmentsOf, reactionTargetOf, type EntryAttachment } from '@stage-labs/client/xmtp/entryPayload';
 
 const SNAPSHOT_MESSAGES = 20;
 export const SNAPSHOT_LINES = 40;
@@ -22,17 +22,16 @@ export const EMPTY_SNAPSHOT: FeedSnapshot = { self: null, lines: [] };
 const BYTES_TAG = '$bytes';
 const BIGINT_TAG = '$bigint';
 
-function bulky(attachment: unknown): boolean {
-  const data = (attachment as { dataB64?: unknown } | null)?.dataB64;
+function bulky(attachment: EntryAttachment): boolean {
+  const data: unknown = attachment.dataB64;
   return typeof data === 'string' && data.length > INLINE_DATA_LIMIT;
 }
 
 function withoutBulkyData(entry: HistoryEntry): HistoryEntry {
-  const payload = entry.payload as { attachments?: unknown } | undefined;
-  const attachments = payload?.attachments;
-  if (!Array.isArray(attachments) || !attachments.some(bulky)) return entry;
-  const slim: unknown[] = attachments.map((a: unknown) => (bulky(a) ? { ...(a as object), dataB64: undefined } : a));
-  return { ...entry, payload: { ...payload, attachments: slim } };
+  const attachments = attachmentsOf(entry);
+  if (!attachments.some(bulky)) return entry;
+  const slim = attachments.map((a) => (bulky(a) ? { ...a, dataB64: undefined } : a));
+  return { ...entry, payload: { ...entry.payload, attachments: slim } };
 }
 
 export function snapshotEntries(slice: readonly HistoryEntry[], messages = SNAPSHOT_MESSAGES): HistoryEntry[] {
@@ -40,7 +39,7 @@ export function snapshotEntries(slice: readonly HistoryEntry[], messages = SNAPS
   let kept = 0;
   for (const entry of slice) {
     if (entry.pending === true) continue;
-    if (reactionTarget(entry) === undefined) {
+    if (reactionTargetOf(entry) === undefined) {
       if (kept === messages) break;
       kept += 1;
     }

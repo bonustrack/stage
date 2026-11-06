@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { shortAddress } from '@stage-labs/client/identity/format';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { enqueueDm, flushDmOutboxFor, queuedDmsFor, subscribeDmOutbox } from '../../lib/dmOutbox';
 import { pendingBanner, type OutboxItem } from '../../lib/dmOutbox.model';
-import { getPeerName, usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
+import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { knownActiveAccountId } from '../../lib/accountSelection';
@@ -20,14 +19,13 @@ type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
 
 const PENDING_MY_URI = 'pending://me';
 
-function entryOf(item: OutboxItem, myAddress: string | null, myName: string | null): HistoryEntry {
+function entryOf(item: OutboxItem): HistoryEntry {
   return {
     id: `outbox-${item.id}`,
     ts: new Date(item.createdAt).toISOString(),
     station: 'xmtp',
     line: lineOfDmPeer(item.address),
     from: PENDING_MY_URI,
-    fromName: myName ?? (myAddress ? shortAddress(myAddress) : 'You'),
     to: item.address,
     text: item.text,
   };
@@ -83,7 +81,6 @@ export function PendingConversation({
   const myAddress = knownActiveAccountId();
   usePeerProfiles([address, myAddress]);
   const peerName = peerLabel(address);
-  const myName = getPeerName(myAddress ?? '') ?? null;
 
   useEffect(() => {
     const sync = (): void => {
@@ -122,14 +119,7 @@ export function PendingConversation({
       <ChatColumn>
         <Column weight={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
           {queued.map((item) => (
-            <MessengerBubble
-              key={item.id}
-              entry={entryOf(item, myAddress, myName)}
-              dark={dark}
-              pending
-              myUri={PENDING_MY_URI}
-              senderEthAddress={myAddress}
-            />
+            <MessengerBubble key={item.id} entry={entryOf(item)} dark={dark} pending myUri={PENDING_MY_URI} senderEthAddress={myAddress} />
           ))}
           <Text size="2xs" color={pal.text} textAlign="center" style={{ paddingHorizontal: 24, paddingVertical: 12, opacity: 0.6 }}>
             {pendingBanner(reason, peerName)}

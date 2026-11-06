@@ -4,9 +4,8 @@ import { fontFamily, fontSize, type FontSizeName } from '@stage-labs/kit/tokens'
 import type { LinkClickEvent } from '@stage-labs/kit/link';
 import { markdownStyles as kitMarkdownStyles } from '@stage-labs/kit/markdown-styles';
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
-import { normalizeQuestions, type PollContent, type PollQuestion } from '@stage-labs/client/xmtp/poll';
-import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
-import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
+import { normalizeQuestions, type PollQuestion } from '@stage-labs/client/xmtp/poll';
+import { attachmentsOf as entryAttachmentsOf, pollContentOf } from '@stage-labs/client/xmtp/entryPayload';
 import { MarkdownIt } from 'react-native-markdown-display';
 import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
 import type { LinkFinder } from '@stage-labs/client/xmtp/messageBody';
@@ -33,8 +32,7 @@ export interface Attachment {
 }
 
 export function attachmentsOf(entry: HistoryEntry): Attachment[] {
-  const p = entry.payload as { attachments?: Attachment[] } | undefined;
-  return Array.isArray(p?.attachments) ? p.attachments : [];
+  return entryAttachmentsOf(entry) as Attachment[];
 }
 
 export const MESSAGE_LINK_STYLE = { textDecorationLine: 'none' } as const;
@@ -89,29 +87,17 @@ export function questionOf(entry: HistoryEntry): Question | undefined {
 }
 
 export interface Poll {
-  pollId?: string;
   question?: string;
   questions: PollQuestion[];
 }
 
 export function pollOf(entry: HistoryEntry): Poll | undefined {
-  const raw = (entry.payload as { poll?: PollContent })?.poll;
+  const raw = pollContentOf(entry);
   if (!raw) return undefined;
   const questions = normalizeQuestions(raw);
   const first = questions[0];
   if (first === undefined) return undefined;
-  return { pollId: raw.pollId, question: first.question, questions };
-}
-
-export function sigRequestOf(entry: HistoryEntry): SignatureRequestContent | undefined {
-  const p = entry.payload as { signatureRequest?: SignatureRequestContent } | undefined;
-  if (!p?.signatureRequest?.kind) return undefined;
-  return p.signatureRequest;
-}
-export function sigReferenceOf(entry: HistoryEntry): SignatureReferenceContent | undefined {
-  const p = entry.payload as { signatureReference?: SignatureReferenceContent } | undefined;
-  if (!p?.signatureReference?.signature) return undefined;
-  return p.signatureReference;
+  return { question: first.question, questions };
 }
 
 export function fmtSigValue(v: unknown): string {
@@ -127,15 +113,4 @@ export function fmtSigValue(v: unknown): string {
   } catch {
     return '[unserializable]';
   }
-}
-
-export function txRequestOf(entry: HistoryEntry): WalletSendCallsContent | undefined {
-  const p = entry.payload as { walletSendCalls?: WalletSendCallsContent } | undefined;
-  if (!p?.walletSendCalls || !Array.isArray(p.walletSendCalls.calls)) return undefined;
-  return p.walletSendCalls;
-}
-export function txReceiptOf(entry: HistoryEntry): TransactionReferenceContent | undefined {
-  const p = entry.payload as { txReference?: TransactionReferenceContent } | undefined;
-  if (!p?.txReference?.reference) return undefined;
-  return p.txReference;
 }

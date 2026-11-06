@@ -4,6 +4,7 @@ import { patchRowSent } from '../../lib/channelsCache';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import { isFeedBubble } from '@stage-labs/client/xmtp/visibility';
+import { attachmentsPayload } from '@stage-labs/client/xmtp/entryPayload';
 import type { VirtualListHandle } from '../layout';
 import { deletedViewCache } from './messageDeletion.model';
 import { optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
@@ -118,7 +119,7 @@ export function useOutboundLayer(
             to: activeLine,
             text: text || undefined,
             ...(replyTo ? { replyTo } : {}),
-            ...(payload ? { payload } : attachments.length ? { payload: { attachments } } : {}),
+            ...(payload ? { payload } : attachments.length ? { payload: attachmentsPayload(attachments) } : {}),
           },
           ...s.optimistic,
         ],

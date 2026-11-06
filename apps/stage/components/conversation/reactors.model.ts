@@ -1,4 +1,5 @@
 import { shortAddress } from '@stage-labs/client/identity/format';
+import { inboxIdOfUri } from '@stage-labs/client/xmtp/line';
 
 const MAX_NAMED = 3;
 
@@ -9,7 +10,7 @@ export type ReactorNamer = (uri: string) => string;
 export function reactorNamer(addressOf: (uri: string) => string | null, peerName: (address: string) => string | undefined): ReactorNamer {
   return (uri) => {
     const address = addressOf(uri);
-    if (!address) return shortAddress(uri.slice(uri.lastIndexOf('/') + 1));
+    if (!address) return shortAddress(inboxIdOfUri(uri) || uri);
     return peerName(address) ?? shortAddress(address);
   };
 }

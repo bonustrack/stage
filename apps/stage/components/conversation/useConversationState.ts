@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { AppState, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
-import { XMTP_USER_PREFIX, lineOfConv } from '@stage-labs/client/xmtp/line';
+import { inboxIdOfUri, lineOfConv, userUriOf } from '@stage-labs/client/xmtp/line';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
 import { xmtpReply } from '../../lib/xmtp.messages';
 import { useConvDetails, useConvRow } from '../../lib/messaging/queries';
@@ -238,7 +238,7 @@ function useConvFeed(convId: string | undefined, focus: string | undefined) {
   );
   const { loadOlder, loadingOlder, retry: retryFeed } = xmtpFeed;
   const hasMore = xmtpFeed.hasMore && !feedReachedClear(xmtpFeed.events, clearedAt);
-  const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;
+  const myUri = userUriOf(xmtpFeed.inboxId ?? '');
   useMarkReadWhileSeen(convId, countFromOthers(events, myUri));
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);
@@ -283,9 +283,8 @@ function useConvPeople(events: HistoryEntry[], fields: ReturnType<typeof useConv
   const knownAddrs = useSystemLineAddresses(events, inboxToAddr);
   const senderEthOf = useCallback(
     (from: string): string | null => {
-      if (!from.startsWith(XMTP_USER_PREFIX)) return null;
-      const inboxId = from.slice(XMTP_USER_PREFIX.length);
-      return knownAddrs[inboxId] ?? null;
+      const inboxId = inboxIdOfUri(from);
+      return inboxId === '' ? null : (knownAddrs[inboxId] ?? null);
     },
     [knownAddrs],
   );

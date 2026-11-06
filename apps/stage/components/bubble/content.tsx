@@ -3,21 +3,19 @@ import { openInBubbleLink } from '../../lib/capabilities';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
 import { messageCardLinks } from './markdown.model';
-import { isAttachmentSummary } from '../media/fileCard.model';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf } from '@stage-labs/client/xmtp/deleteMessage';
-import { deletedByOf, isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
 import {
-  attachmentsOf,
-  mdParser,
-  markdownStyles,
-  questionOf,
-  pollOf,
-  sigRequestOf,
-  sigReferenceOf,
-  txRequestOf,
-  txReceiptOf,
-} from './helpers';
+  deletedByOf,
+  isAttachmentSummary,
+  messageKindOf,
+  signatureReferenceOf,
+  signatureRequestOf,
+  txReferenceOf,
+  walletSendCallsOf,
+  type MessageKind,
+} from '@stage-labs/client/xmtp/entryPayload';
+import { attachmentsOf, mdParser, markdownStyles, questionOf, pollOf } from './helpers';
 import { QuestionView } from './question';
 import { PollView } from './poll';
 import { TxRequestCard, TxReceiptCard } from './cards';
@@ -26,7 +24,7 @@ import { FramePreview } from '../frame/FramePreview';
 import { CallCard } from './CallCard';
 import type { CallRecord } from './callCard.model';
 import type { MessengerBubbleProps } from './props';
-import { frameOf, isFrameActionEntry } from '../../lib/frames/frame.model';
+import { frameOf } from '../../lib/frames/frame.model';
 import { bubbleTimestamp } from '../../lib/format';
 import {
   BubbleAttachments,
@@ -39,17 +37,19 @@ import {
 } from './content.parts';
 import { Column, Row } from '../layout';
 
+const NO_BODY_KINDS: ReadonlySet<MessageKind> = new Set(['txRequest', 'txReceipt']);
+
 function descriptorsOf(entry: HistoryEntry) {
   return {
+    kind: messageKindOf(entry),
     atts: attachmentsOf(entry),
     question: questionOf(entry),
     poll: pollOf(entry),
-    sigReq: sigRequestOf(entry),
-    sigRef: sigReferenceOf(entry),
-    txReq: txRequestOf(entry),
-    txReceipt: txReceiptOf(entry),
+    sigReq: signatureRequestOf(entry),
+    sigRef: signatureReferenceOf(entry),
+    txReq: walletSendCallsOf(entry),
+    txReceipt: txReferenceOf(entry),
     frame: frameOf(entry),
-    frameAction: isFrameActionEntry(entry),
   };
 }
 
@@ -93,7 +93,7 @@ function BubbleMain({
   highlight?: string;
   markdownProps: MarkdownProps;
 }): React.ReactElement | null {
-  if (isDeletedPlaceholder(entry)) {
+  if (d.kind === 'deleted') {
     return (
       <Text size="lg" color={fg} style={{ lineHeight: 23 }}>
         {deletedTextOf(deletedByOf(entry))}
@@ -107,8 +107,8 @@ function BubbleMain({
       </Column>
     ) : null;
   }
-  if (d.txReq || d.txReceipt || d.frame || call) return null;
-  if (!entry.text || isAttachmentSummary(entry.text, d.atts.length)) return null;
+  if (NO_BODY_KINDS.has(d.kind) || d.frame || call) return null;
+  if (!entry.text || isAttachmentSummary(entry)) return null;
   return <BubbleBody text={entry.text} fg={fg} highlight={highlight} markdownProps={markdownProps} />;
 }
 
@@ -163,7 +163,7 @@ export function BubbleContent(props: BubbleContentProps): React.ReactElement {
       </Row>
       <ReplyPreview preview={replyPreview} fg={fg} sub={sub} onPress={onReplyPreviewPress} />
       <BubbleAttachments atts={d.atts} entryId={entry.id} fg={fg} />
-      {d.frameAction ? (
+      {d.kind === 'frameAction' ? (
         <FrameActionLine text={entry.text ?? ''} fg={fg} />
       ) : (
         <BubbleMain d={d} entry={entry} fg={fg} call={props.call} highlight={highlight} markdownProps={markdownProps} />

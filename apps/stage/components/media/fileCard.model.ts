@@ -1,9 +1,3 @@
-const SUMMARY_RE = /^\[(?:(?:image|audio|video|file): .+|\d+ attachments)\]$/;
-
-export function isAttachmentSummary(text: string | undefined, attachmentCount: number): boolean {
-  return attachmentCount > 0 && text !== undefined && SUMMARY_RE.test(text.trim());
-}
-
 const UNITS = ['B', 'KB', 'MB', 'GB'] as const;
 
 export function fileSizeLabel(bytes: number | undefined): string {

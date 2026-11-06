@@ -3,6 +3,7 @@ import { attachmentKindOf, humanizeGroupUpdated, LEFT_CHANNEL_TEXT, type GroupUp
 import { type FrameActionContent, frameActionText } from './frame';
 import { DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, deletedByOfContent } from './deleteMessage';
 import { objectOf, type CanonicalAttachment, type CanonicalReaction, type CanonicalReply } from './message';
+import { structuredPayload, type StructuredType } from './entryPayload';
 
 export type EntryBuilder = (base: HistoryEntry, typeId: string, decoded: unknown, fallback?: string) => HistoryEntry;
 
@@ -99,8 +100,8 @@ export function callEntry(key: 'callInvite' | 'callSignal', parse: (decoded: unk
   };
 }
 
-export function contentEntry(key: string, textOf: (content: never) => string): EntryBuilder {
-  return (base, typeId, decoded) => ({ ...base, text: textOf(decoded as never), payload: { contentType: typeId, [key]: decoded } });
+export function structuredEntry(type: StructuredType, textOf: (content: never) => string): EntryBuilder {
+  return (base, _typeId, decoded) => ({ ...base, text: textOf(decoded as never), payload: structuredPayload(type, decoded as never) });
 }
 
 export const frameActionEntry: EntryBuilder = (base, typeId, decoded) => {

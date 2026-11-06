@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf, type DeletedBy } from '@stage-labs/client/xmtp/deleteMessage';
-import { deletedByOf, deletedEntryView, isDeletableEntry, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
+import { deletedEntryView, isDeletableEntry, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
+import { deletedByOf } from '@stage-labs/client/xmtp/entryPayload';
 import type { ConfirmOptions } from '../../lib/capabilities';
 import { previewOf } from './feed-helpers';
 import { isFrameActionEntry } from '../../lib/frames/frame.model';

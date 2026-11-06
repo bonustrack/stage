@@ -1,15 +1,24 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { attachmentsPreview } from '@stage-labs/client/xmtp/humanize';
-import { hasAttachments } from './feed-helpers';
+import { attachmentsOf, hasAttachments } from '@stage-labs/client/xmtp/entryPayload';
 import { uploadedAttachmentKey } from '../../lib/localAttachmentCache.core';
 import type { UploadedAttachment } from '../../lib/xmtp.types';
 
+function uploadedRemote(remote: Record<string, unknown> | undefined): UploadedAttachment | undefined {
+  return typeof remote?.url === 'string' && typeof remote.contentDigest === 'string'
+    ? { url: remote.url, contentDigest: remote.contentDigest }
+    : undefined;
+}
+
 function matchesUpload(entry: HistoryEntry, keys: readonly string[]): boolean {
-  const attachments = (entry.payload as { attachments?: { remote?: UploadedAttachment }[] } | undefined)?.attachments;
+  const attachments = attachmentsOf(entry);
   return (
     keys.length > 0 &&
-    attachments?.length === keys.length &&
-    attachments.every((attachment, i) => attachment.remote !== undefined && uploadedAttachmentKey(attachment.remote) === keys[i])
+    attachments.length === keys.length &&
+    attachments.every((attachment, i) => {
+      const remote = uploadedRemote(attachment.remote);
+      return remote !== undefined && uploadedAttachmentKey(remote) === keys[i];
+    })
   );
 }
 

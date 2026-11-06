@@ -1,6 +1,5 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
-import { isSystemEntry } from '@stage-labs/client/xmtp/entryPayload';
+import { isDeletedPlaceholder, isSystemEntry, reactionTargetOf } from '@stage-labs/client/xmtp/entryPayload';
 import { uniqueBy } from '@stage-labs/client/collections';
 
 export interface FeedMerge {
@@ -22,11 +21,6 @@ function sentMs(entry: HistoryEntry): number {
   return Number.isFinite(ms) ? ms : Number.POSITIVE_INFINITY;
 }
 
-export function reactionTarget(entry: HistoryEntry): string | undefined {
-  const target = (entry.payload as { reactTo?: unknown } | undefined)?.reactTo;
-  return typeof target === 'string' && target !== '' ? target : undefined;
-}
-
 function byNewest(a: Keyed, b: Keyed): number {
   if (a.ms !== b.ms) return a.ms < b.ms ? 1 : -1;
   if (a.reaction !== b.reaction) return a.reaction ? -1 : 1;
@@ -36,7 +30,7 @@ function byNewest(a: Keyed, b: Keyed): number {
 function keyed(entries: readonly HistoryEntry[]): Keyed[] {
   const msById = new Map(entries.map((e) => [e.id, sentMs(e)]));
   return entries.map((entry, index) => {
-    const targetId = reactionTarget(entry);
+    const targetId = reactionTargetOf(entry);
     const targetMs = targetId === undefined ? undefined : msById.get(targetId);
     const ms = targetMs === undefined ? sentMs(entry) : Math.max(sentMs(entry), targetMs);
     return { entry, index, ms, reaction: targetId !== undefined };

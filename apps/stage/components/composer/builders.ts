@@ -10,6 +10,7 @@ import {
   signatureRequestFallbackText,
 } from '@stage-labs/client/xmtp/sign';
 import { type WalletSendCallsContent, walletSendCallsFallbackText } from '@stage-labs/client/xmtp/tx';
+import { structuredPayload, type EntryPayload } from '@stage-labs/client/xmtp/entryPayload';
 import { getActiveAccount } from '../../lib/accounts';
 import { setLastAttachment } from '../../lib/drafts';
 import type { PostHooks } from './types';
@@ -41,7 +42,7 @@ async function postStructured(
   post: PostCtx,
   label: string,
   text: string,
-  payload: unknown,
+  payload: EntryPayload,
   send: (line: string) => Promise<string>,
 ): Promise<void> {
   const line = await post.openLine();
@@ -74,12 +75,8 @@ function buildSignatureContent(d: SignatureDraft): SignatureRequestContent | nul
 export async function sendSignatureRequest(d: SignatureDraft, post: PostCtx): Promise<void> {
   const content = buildSignatureContent(d);
   if (!content) return;
-  await postStructured(
-    post,
-    'Sign',
-    signatureRequestFallbackText(content),
-    { contentType: 'signatureRequest', signatureRequest: content },
-    (line) => xmtpSendSignatureRequest(line, content),
+  await postStructured(post, 'Sign', signatureRequestFallbackText(content), structuredPayload('signatureRequest', content), (line) =>
+    xmtpSendSignatureRequest(line, content),
   );
 }
 
@@ -97,7 +94,7 @@ export async function sendPoll(d: PollDraft, post: PostCtx): Promise<void> {
     options: options.map((label) => ({ label })),
     ...(d.multi ? { multiSelect: true } : {}),
   };
-  await postStructured(post, 'Poll', pollFallbackText(poll), { contentType: 'poll', poll }, (line) => xmtpSendPoll(line, poll));
+  await postStructured(post, 'Poll', pollFallbackText(poll), structuredPayload('poll', poll), (line) => xmtpSendPoll(line, poll));
 }
 
 export async function sendTxRequest(d: PaymentDraft, post: PostCtx): Promise<void> {
@@ -130,11 +127,7 @@ export async function sendTxRequest(d: PaymentDraft, post: PostCtx): Promise<voi
       },
     ],
   };
-  await postStructured(
-    post,
-    'Payment',
-    walletSendCallsFallbackText(wsc),
-    { contentType: 'walletSendCalls', walletSendCalls: wsc },
-    (line) => xmtpSendTxRequest(line, wsc),
+  await postStructured(post, 'Payment', walletSendCallsFallbackText(wsc), structuredPayload('walletSendCalls', wsc), (line) =>
+    xmtpSendTxRequest(line, wsc),
   );
 }

@@ -1,7 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
-import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
+import { signatureRequestOf, walletSendCallsOf } from '@stage-labs/client/xmtp/entryPayload';
 import { MessengerBubble } from '../bubble/MessengerBubble';
 import { BubbleErrorBoundary } from '../bubble/boundary';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -10,7 +9,7 @@ import { previewOf } from './feed-helpers';
 import { replyQuoteOf } from './messageDeletion.model';
 import type { useConversationState } from './useConversationState';
 import { profileLinkOf } from '../../lib/links';
-import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';
+import { inboxIdOfUri, userUriOf } from '@stage-labs/client/xmtp/line';
 import { memberNamer, withMemberNames } from './systemNames.model';
 import { getPeerName } from '../../lib/peerProfiles';
 import { useReconciledMap } from '../../lib/mapReconcile';
@@ -33,7 +32,7 @@ function useReactorNames(
 }
 
 function signHandlerOf(item: HistoryEntry, myUri: string, onSign: ConvState['onSign']): (() => void) | undefined {
-  const req = (item.payload as { signatureRequest?: SignatureRequestContent } | undefined)?.signatureRequest;
+  const req = signatureRequestOf(item);
   if (!req || item.from === myUri) return undefined;
   return () => {
     onSign(item.id, req);
@@ -41,7 +40,7 @@ function signHandlerOf(item: HistoryEntry, myUri: string, onSign: ConvState['onS
 }
 
 function payHandlerOf(item: HistoryEntry, myUri: string, onPay: ConvState['onPay']): (() => void) | undefined {
-  const wsc = (item.payload as { walletSendCalls?: WalletSendCallsContent } | undefined)?.walletSendCalls;
+  const wsc = walletSendCallsOf(item);
   if (!wsc || item.from === myUri) return undefined;
   return () => {
     onPay(item.id, wsc);
@@ -265,8 +264,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): { renderIte
   const eventsById = useMemo(() => new Map(events.map((e) => [e.id, e])), [events]);
 
   const namedEntry = useMemo(() => {
-    const selfInboxId = myUri.startsWith(XMTP_USER_PREFIX) ? myUri.slice(XMTP_USER_PREFIX.length) || null : null;
-    const nameOf = memberNamer(selfInboxId, (inboxId) => senderEthOf(`${XMTP_USER_PREFIX}${inboxId}`));
+    const nameOf = memberNamer(inboxIdOfUri(myUri) || null, (inboxId) => senderEthOf(userUriOf(inboxId)));
     const cache = new WeakMap<Bubble, Bubble>();
     return (item: Bubble): Bubble => {
       const hit = cache.get(item);
