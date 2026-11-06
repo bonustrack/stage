@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
+import { channelLinkOf } from '../../lib/links';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { errorMessage } from '@stage-labs/client/errors';
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
@@ -307,7 +308,7 @@ export function NewChatScreen(): React.ReactElement {
   const { creating, start } = useStartChat(draft, draftKey, selectedMetadata, (convId) => {
     recipients.reset();
     setMetadata(NO_NEW_CHAT_METADATA);
-    router.replace({ pathname: '/channel/[convId]', params: { convId } });
+    router.replace(channelLinkOf(convId));
   });
   const toggleRecipient = (address: string): void => {
     if (includesKey(metadata.assigned, address))

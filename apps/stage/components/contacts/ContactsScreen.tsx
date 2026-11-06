@@ -9,6 +9,7 @@ import { useBottomChromeHeight } from '../layout/bottomChrome';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { useContactList, type Contact } from '../../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../../lib/peerProfiles';
+import { dmLinkOf } from '../../lib/links';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { SuggestedContacts } from './SuggestedContacts';
 import { LIST_TOP_GAP, VirtualList } from '../layout';
@@ -23,7 +24,7 @@ export function ContactsScreen(): React.ReactElement | null {
 
   const open = useCallback(
     (address: string): void => {
-      router.push({ pathname: '/[convId]', params: { convId: address } });
+      router.push(dmLinkOf(address));
     },
     [router],
   );

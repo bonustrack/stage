@@ -4,6 +4,7 @@ import { Eyebrow } from '../Eyebrow';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { getPeerDescription, usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
+import { dmLinkOf } from '../../lib/links';
 import { SUGGESTED_HEADING, suggestedContacts, suggestedSubtitle } from './SuggestedContacts.model';
 import { Column, PAGE_GUTTER } from '../layout';
 
@@ -32,7 +33,7 @@ export function SuggestedContacts({
           square={false}
           subtitle={suggestedSubtitle(getPeerDescription(address))}
           onPress={() => {
-            router.push({ pathname: '/[convId]', params: { convId: address } });
+            router.push(dmLinkOf(address));
           }}
         />
       ))}

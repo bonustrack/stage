@@ -2,6 +2,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useRouter } from 'expo-router';
+import { channelLinkOf } from '../../lib/links';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { useCommonChannels } from '../../lib/useCommonChannels';
 import { getDraft } from '../../lib/drafts';
@@ -54,7 +55,7 @@ export function CommonChannels({ peerAddress, c }: { peerAddress: string; c: Pal
             pinned={isPinned(ch.convId)}
             draftText={getDraft(ch.convId)}
             onPress={() => {
-              router.push({ pathname: '/channel/[convId]', params: { convId: ch.convId } });
+              router.push(channelLinkOf(ch.convId));
             }}
           />
         );

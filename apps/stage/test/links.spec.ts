@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { channelProfileLinkOf, isActiveConversationPath, profileKindOf, profileLinkOf } from '../lib/links';
+import {
+  channelLinkOf,
+  channelProfileLinkOf,
+  conversationLinkOf,
+  dmLinkOf,
+  isActiveConversationPath,
+  profileKindOf,
+  profileLinkOf,
+} from '../lib/links';
 
 const PEER = '0x1234567890AbcdEF1234567890aBcDeF12345678';
 const CHANNEL = '449ce5e585c1ed5db256b6fd7cbd60e7';
@@ -80,5 +88,23 @@ describe('profile links', () => {
     expect(profileLinkOf(PEER)).toEqual({ pathname: '/profile/[id]', params: { id: PEER.toLowerCase() } });
     expect(profileLinkOf(PEER, 'boorger.stage.base.eth')).toEqual({ pathname: '/profile/[id]', params: { id: 'boorger' } });
     expect(profileKindOf(profileLinkOf(PEER).params.id)).toBe('user');
+  });
+});
+
+describe('conversation links', () => {
+  test('a chat with a person opens at their Stage label, else at their address', () => {
+    expect(dmLinkOf(PEER, 'boorger.stage.base.eth')).toEqual({ pathname: '/[convId]', params: { convId: 'boorger' } });
+    expect(dmLinkOf(PEER, null)).toEqual({ pathname: '/[convId]', params: { convId: PEER.toLowerCase() } });
+    expect(conversationLinkOf('conv-1', PEER, 'boorger.stage.base.eth')).toEqual(dmLinkOf(PEER, 'boorger.stage.base.eth'));
+    expect(conversationLinkOf(CHANNEL, null)).toEqual(channelLinkOf(CHANNEL));
+  });
+
+  test('a person named like an app page gets an address link, and that page never highlights their chat', () => {
+    for (const label of ['settings', 'signup', 'import', 'account']) {
+      const handle = `${label}.stage.base.eth`;
+      expect(dmLinkOf(PEER, handle).params.convId).toBe(PEER.toLowerCase());
+      expect(isActiveConversationPath(`/${label}`, 'conv-1', PEER, handle)).toBe(false);
+      expect(isActiveConversationPath(`/${PEER.toLowerCase()}`, 'conv-1', PEER, handle)).toBe(true);
+    }
   });
 });

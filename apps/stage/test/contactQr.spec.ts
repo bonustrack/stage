@@ -65,8 +65,8 @@ describe('Stage contact QR codes', () => {
   });
 
   test('scanning never returns wallet, authentication or message actions', () => {
-    expect(contactScanResult(LINK, BOB, 4, 4)).toEqual({ path: `/profile/${ALICE}` });
-    expect(contactScanResult(ALICE, BOB, 4, 4)).toEqual({ path: `/profile/${ALICE}` });
+    expect(contactScanResult(LINK, BOB, 4, 4)).toEqual({ address: ALICE });
+    expect(contactScanResult(ALICE, BOB, 4, 4)).toEqual({ address: ALICE });
     expect(contactScanResult('invalid', BOB, 4, 4)).toEqual({ error: 'Use a Stage contact QR code or a public address.' });
     expect(contactScanResult(ALICE.toLowerCase(), ALICE, 4, 4)?.error).toContain('your own address');
   });
@@ -76,6 +76,6 @@ describe('Stage contact QR codes', () => {
     expect(contactScanResult(LINK, BOB, 4, 6)).toBeNull();
     expect(contactScanResult('invalid', BOB, 4, 5)).toBeNull();
     expect(contactQrValue(BOB)).not.toBe(contactQrValue(ALICE));
-    expect(contactScanResult(BOB, ALICE, 5, 5)).toEqual({ path: `/profile/${BOB}` });
+    expect(contactScanResult(BOB, ALICE, 5, 5)).toEqual({ address: BOB });
   });
 });

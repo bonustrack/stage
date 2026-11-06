@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { QrCode } from '@stage-labs/kit/react-native/qr-code';
@@ -13,6 +13,7 @@ import { QrScanner } from '../qr/QrScanner';
 import { getSelectedAccount } from '../../lib/accounts';
 import { getAccountSelection, useAccountSelection } from '../../lib/accountSelection';
 import { capabilities } from '../../lib/capabilities';
+import { profileLinkOf } from '../../lib/links';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { contactQrValue, contactScanResult } from './ContactQr.model';
 import { Column, ScreenScroll, PAGE_GUTTER } from '../layout';
@@ -85,7 +86,7 @@ function useContactScan(address: string, selection: number) {
     if (result === null) return;
     stop();
     if (result.error !== undefined) setError(result.error);
-    else capabilities.navigate(result.path);
+    else router.push(profileLinkOf(result.address));
   };
   return {
     scanning,

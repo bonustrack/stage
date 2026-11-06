@@ -7,6 +7,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { usePersonLookup } from '../../lib/resolveHandle';
 import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
+import { dmLinkOf } from '../../lib/links';
 import { homeRows } from './state';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
@@ -66,9 +67,9 @@ function peerRow(p: Peer): ResultRow {
 }
 
 function openPeer(address: string, convId?: string): void {
-  const target = isAddress(address) ? address : (convId ?? address);
+  const target = isAddress(address) ? dmLinkOf(address) : { pathname: '/[convId]' as const, params: { convId: convId ?? address } };
   void import('expo-router').then(({ router }) => {
-    router.push({ pathname: '/[convId]', params: { convId: target } });
+    router.push(target);
   });
 }
 

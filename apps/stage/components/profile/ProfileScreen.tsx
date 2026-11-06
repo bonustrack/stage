@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { dmLinkOf } from '../../lib/links';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../../lib/theme';
@@ -119,7 +120,7 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
   const [viewerUri, setViewerUri] = useState<string | null>(null);
 
   const onMessage = (): void => {
-    router.replace({ pathname: '/[convId]', params: { convId: addr } });
+    router.replace(dmLinkOf(addr));
   };
 
   const onSend = (): void => {

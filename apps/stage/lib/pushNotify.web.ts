@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { channelLinkOf } from './links';
 import { isAppInFront } from './appInFront.web';
 import { report } from './errorPolicy';
 import { isBrowserExtension } from './extension';
@@ -9,7 +10,7 @@ export function markBackgroundDelivered(messageId: string | null | undefined): v
 
 function openConversation(convId: string): void {
   if (typeof window !== 'undefined') window.focus();
-  router.push({ pathname: '/channel/[convId]', params: { convId } });
+  router.push(channelLinkOf(convId));
 }
 
 export async function presentInboundNotification(args: { title: string; body: string; convId: string; messageId?: string }): Promise<void> {

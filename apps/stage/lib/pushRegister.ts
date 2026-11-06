@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
+import { channelLinkOf } from './links';
 import type { Client } from '@xmtp/react-native-sdk';
 import { getAllPushTopics, getHmacKeys } from '@xmtp/react-native-sdk';
 import { groupIdOfTopic, type HmacKeysByTopic, type PushPlatform } from '@stage-labs/client/xmtp/pushServer';
@@ -130,7 +131,7 @@ function openConvFromResponse(response: Notifications.NotificationResponse | nul
   if (!response) return;
   const convId = convIdOfNotificationData(response.notification?.request?.content?.data);
   if (!convId) return;
-  router.push({ pathname: '/channel/[convId]', params: { convId } });
+  router.push(channelLinkOf(convId));
   void markConvRead(convId).catch(reported('push.markRead'));
 }
 

@@ -24,10 +24,10 @@ export function contactScanResult(
   ownAddress: string,
   selection: number,
   currentSelection: number,
-): { path: string; error?: never } | { error: string; path?: never } | null {
+): { address: string; error?: never } | { error: string; address?: never } | null {
   if (selection !== currentSelection) return null;
   const address = parseContactQr(value);
   if (address === null) return { error: 'Use a Stage contact QR code or a public address.' };
   if (address.toLowerCase() === ownAddress.toLowerCase()) return { error: 'This is your own address. Scan someone else’s QR code.' };
-  return { path: `/profile/${address}` };
+  return { address };
 }

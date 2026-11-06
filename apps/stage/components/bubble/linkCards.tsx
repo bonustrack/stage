@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { channelLinkOf, dmLinkOf } from '../../lib/links';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { useConvRow } from '../../lib/messaging/queries';
 import { isGroupRow, memberAddressesOf, type ConvRow } from '../../lib/messaging/convRow.model';
@@ -290,7 +291,7 @@ function ConvIdCard({ convId, url }: { convId: string; url: string }): React.Rea
         avatarAddress={avatarAddress}
         square={isGroupRow(row)}
         onPress={() => {
-          router.push({ pathname: '/channel/[convId]', params: { convId } });
+          router.push(channelLinkOf(convId));
         }}
         linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />
@@ -311,7 +312,7 @@ function DmPeerCard({ address, url }: { address: string; url: string }): React.R
         subtitle="Direct message"
         avatarAddress={isPeerResolved(address) ? address : null}
         onPress={() => {
-          router.push({ pathname: '/[convId]', params: { convId: address } });
+          router.push(dmLinkOf(address));
         }}
         linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />
