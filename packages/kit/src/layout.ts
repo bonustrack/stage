@@ -1,4 +1,4 @@
-import { colors, resolveBoxRadius, type ColorToken, type RadiusValue } from './tokens';
+import { BOX_RADIUS_SCALE, colors, isRadiusValue, type ColorToken, type RadiusValue } from './tokens';
 
 export type { RadiusValue };
 
@@ -114,7 +114,15 @@ function applyFlex(s: BoxStyleEntries, props: BoxBaseProps): void {
   setIf(s, 'flex', props.weight);
   if (props.wrap !== undefined) s.flexWrap = props.wrap ? 'wrap' : 'nowrap';
   if (props.background !== undefined) s.backgroundColor = resolveBg(props.background);
-  if (props.radius !== undefined) s.borderRadius = resolveBoxRadius(props.radius);
+  setIf(s, 'borderRadius', boxRadius(props.radius));
+}
+
+const RADIUS_LENGTH = /^\d+(?:\.\d+)?(?:%|px)?$/;
+
+function boxRadius(radius: BoxBaseProps['radius']): number | string | undefined {
+  if (radius === undefined || typeof radius === 'number') return radius;
+  if (isRadiusValue(radius)) return BOX_RADIUS_SCALE[radius];
+  return RADIUS_LENGTH.test(radius) ? radius : undefined;
 }
 
 function applySizing(s: BoxStyleEntries, props: BoxBaseProps): void {

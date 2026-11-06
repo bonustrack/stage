@@ -11,6 +11,7 @@ import {
   type SizeSpec,
 } from '../button.styles';
 import type { ValidationResult } from '../a2ui/protocol';
+import { RADIUS_FULL } from '../tokens';
 import { accessibilityProps, failingChecks, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { ContentColorProvider } from './content-color';
 import { Spinner } from './spinner';
@@ -21,7 +22,7 @@ export type { ButtonColor, ButtonControlVariant, ButtonHint, ButtonSize, ButtonV
 
 const SPINNER_SIZE: Record<SizeSpec['spinner'], number> = { small: 20, large: 36 };
 
-let defaultButtonRadius = 999;
+let defaultButtonRadius: number = RADIUS_FULL;
 export function setDefaultButtonRadius(r: number): void {
   if (Number.isFinite(r) && r >= 0) defaultButtonRadius = r;
 }
@@ -152,7 +153,7 @@ function containerArgs(input: ContainerInput): ContainerStyleArgs {
     spec,
     square: uniform === true,
     stretch: block === true || fullWidth === true,
-    radius: pill === true ? 999 : radius,
+    radius: pill === true ? RADIUS_FULL : radius,
     c,
     isDisabled,
     style: weight === undefined ? style : { ...weightStyle(weight), ...style },

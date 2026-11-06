@@ -1,5 +1,5 @@
 import { Pressable, Text as RNText, View } from 'react-native';
-import { FONT_SIZE, fontName } from '../tokens';
+import { FONT_SIZE, RADIUS_FULL, fontName } from '../tokens';
 import { ControlSheet } from './control-trigger';
 import { buildCells, MONTHS, toISODate, wrapClock, type DateTimeMode } from './date-time-input.model';
 import { Icon } from './icon';
@@ -198,7 +198,7 @@ function TimeRow(props: {
         accessibilityRole="button"
         onPress={onDone}
         hitSlop={8}
-        style={{ marginLeft: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.accent }}
+        style={{ marginLeft: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS_FULL, backgroundColor: colors.accent }}
       >
         <RNText style={{ color: '#ffffff', fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>Done</RNText>
       </Pressable>

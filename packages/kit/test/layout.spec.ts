@@ -35,7 +35,7 @@ describe('boxStyleEntries', () => {
       weight: 1,
       wrap: true,
       background: 'bg-dark',
-      radius: 'soft',
+      radius: 'lg',
       width: '100%',
       height: 40,
       size: 32,
@@ -59,6 +59,13 @@ describe('boxStyleEntries', () => {
     const s = boxStyleEntries({ padding: { x: 10, left: 2 } });
     expect(s.paddingLeft).toBe(2);
     expect(s.paddingRight).toBe(10);
+  });
+
+  test('radius tokens resolve, lengths pass through and other words are dropped', () => {
+    expect(boxStyleEntries({ radius: 'full' }).borderRadius).toBe(999);
+    expect(boxStyleEntries({ radius: 6 }).borderRadius).toBe(6);
+    expect(boxStyleEntries({ radius: '50%' }).borderRadius).toBe('50%');
+    expect(boxStyleEntries({ radius: 'soft' }).borderRadius).toBeUndefined();
   });
 
   test('background token resolves, raw color passes through', () => {

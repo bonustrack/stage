@@ -190,6 +190,7 @@ export function schemePalette(dark: boolean): SchemePalette {
   };
 }
 
+export const RADIUS_FULL = 999;
 export const RADIUS_DEFAULT = 999;
 export const RADIUS_MIN = 0;
 export const RADIUS_MAX = 999;
@@ -247,7 +248,7 @@ export const fontName = { sans: fontFamily.sans[0], head: fontFamily.head[0], mo
 
 export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
 
-export const RADIUS_SCALE: Record<RadiusName, number> = { pill: 999, round: 16, soft: 12, sharp: 0 } as const;
+export const RADIUS_SCALE: Record<RadiusName, number> = { pill: RADIUS_FULL, round: 16, soft: 12, sharp: 0 } as const;
 
 export const RADIUS_NAME_DEFAULT: RadiusName = 'pill';
 
@@ -264,7 +265,7 @@ export const BOX_RADIUS_SCALE: Record<RadiusValue, number | string> = {
   '2xl': 20,
   '3xl': 24,
   '4xl': 32,
-  full: 999,
+  full: RADIUS_FULL,
   '100%': '50%',
 } as const;
 

@@ -9,7 +9,7 @@ import {
   type ControlSize,
   type ControlVariant,
 } from '../control.styles';
-import { CONTROL_RADIUS_DEFAULT } from '../tokens';
+import { CONTROL_RADIUS_DEFAULT, RADIUS_FULL } from '../tokens';
 import { accessibilityProps, weightStyle } from './a2ui-props';
 import { useKitScheme } from './theme-context';
 import type { TextFieldInputType, TextFieldProps } from './text-field.types';
@@ -27,7 +27,7 @@ function keyboardFor(props: TextFieldProps): KeyboardTypeOptions {
 
 function cornerOf(props: TextFieldProps, pill: boolean): number {
   if (typeof props.radius === 'number') return props.radius;
-  return pill ? 999 : CONTROL_RADIUS_DEFAULT;
+  return pill ? RADIUS_FULL : CONTROL_RADIUS_DEFAULT;
 }
 
 function useControlStyle(props: TextFieldProps, pill: boolean): { box: ViewStyle; text: TextStyle; placeholder: string } {

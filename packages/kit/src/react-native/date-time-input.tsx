@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Text as RNText, View, type ViewStyle } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import { controlBoxStyle, controlColors, type ControlSize, type ControlVariant } from '../control.styles';
-import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
+import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, RADIUS_FULL, fontName } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { ControlTrigger, WithChecks } from './control-trigger';
 import {
@@ -145,7 +145,7 @@ export function DateTimeInput(props: DateTimeInputProps): React.ReactElement {
   const clock = parseWallClock(selected);
   const sheet = useDraft(mode, clock, commit);
   const ctrl = controlColors(appearance, dark);
-  const box = controlBoxStyle(size, appearance, ctrl, radius ?? (pill === true ? 999 : CONTROL_RADIUS_DEFAULT));
+  const box = controlBoxStyle(size, appearance, ctrl, radius ?? (pill === true ? RADIUS_FULL : CONTROL_RADIUS_DEFAULT));
   const colors = sheetColorsFor(dark);
   const shown = wallClockLabel(mode, clock);
   return (

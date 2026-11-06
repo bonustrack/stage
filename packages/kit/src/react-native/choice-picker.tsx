@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import { styleList } from '../control.styles';
-import { FONT_SIZE, fontName } from '../tokens';
+import { FONT_SIZE, RADIUS_FULL, fontName } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { CheckboxBox, checkboxColors } from './check-box';
 import { WithChecks } from './control-trigger';
@@ -100,7 +100,7 @@ function Chip({ option, selected, disabled, palette, onPick }: OptionViewProps):
       style={{
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 999,
+        borderRadius: RADIUS_FULL,
         borderWidth: 1,
         borderColor: selected ? palette.head : palette.border,
         backgroundColor: selected ? palette.head : 'transparent',
