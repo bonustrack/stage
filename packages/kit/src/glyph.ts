@@ -5,6 +5,8 @@ export type CentralIcon = ComponentType<CentralIconBaseProps>;
 
 export type IconStyle = 'line' | 'solid';
 
+export const ICON_VIEW_BOX = '0 0 24 24';
+
 export function iconStroke(color: string | undefined, dark: boolean | undefined): string {
   return color ?? (dark === undefined ? 'currentColor' : dark ? '#ffffff' : '#000000');
 }

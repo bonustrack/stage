@@ -34,4 +34,4 @@ export function withStampDisplayPx(url: string, displayPx: number): string {
   return url.replace(/([?&]s=)\d+/, `$1${displayPx * 2}`);
 }
 
-export const NATIVE_TOKEN_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+export { NATIVE_TOKEN_SENTINEL } from './legacy';

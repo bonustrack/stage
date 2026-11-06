@@ -1,14 +1,7 @@
 import { View } from 'react-native';
 import { Path, Svg } from 'react-native-svg';
-import {
-  iconStroke,
-  HERO_ICON_DEFAULTS,
-  type CentralIcon,
-  type HeroIconName,
-  type HeroSolidIconName,
-  type IconName as KitIconName,
-  type IconStyle,
-} from '../icons';
+import { ICON_VIEW_BOX, iconStroke, type CentralIcon, type IconStyle } from '../glyph';
+import type { HeroIconName, HeroSolidIconName, IconName as KitIconName } from '../icons';
 import { IconBackward } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBackward';
 import { IconBellOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBellOff';
 import { IconBrokenHeart } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBrokenHeart';
@@ -43,7 +36,7 @@ export interface IconProps extends A2uiCommonProps {
 
 function PathIcon({ d, size, fill }: { d: string; size: number; fill: string }): React.ReactElement {
   return (
-    <Svg width={size} height={size} viewBox={HERO_ICON_DEFAULTS.viewBox}>
+    <Svg width={size} height={size} viewBox={ICON_VIEW_BOX}>
       <Path d={d} fill={fill} stroke="none" />
     </Svg>
   );

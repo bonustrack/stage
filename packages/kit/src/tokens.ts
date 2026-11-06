@@ -1,5 +1,7 @@
 import { luminance, parseHex } from './color-math';
 
+export { BUTTON_RADIUS_DEFAULT, FONT_SIZE_SNAP, RADIUS_DEFAULT, RADIUS_MAX, RADIUS_MIN } from './legacy';
+
 export const colors = {
   'bg-dark': '#0e0f10',
   'bg-light': '#ffffff',
@@ -191,10 +193,6 @@ export function schemePalette(dark: boolean): SchemePalette {
 }
 
 export const RADIUS_FULL = 999;
-export const RADIUS_DEFAULT = 999;
-export const RADIUS_MIN = 0;
-export const RADIUS_MAX = 999;
-export const BUTTON_RADIUS_DEFAULT = 999;
 export const BLOCK_RADIUS_DEFAULT = 12;
 export const CONTROL_RADIUS_DEFAULT = 8;
 
@@ -217,26 +215,6 @@ export const FONT_SIZE_DEFAULT: FontSizeName = 'md';
 export function fontSize(name: FontSizeName): number {
   return FONT_SIZE[name];
 }
-
-export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
-  '10': '3xs',
-  '11': '3xs',
-  '12': '3xs',
-  '13': '3xs',
-  '14': '2xs',
-  '15': 'xs',
-  '16': 'xs',
-  '17': 'sm',
-  '18': 'md',
-  '19': 'lg',
-  '20': 'xl',
-  '22': '2xl',
-  '24': '2xl',
-  '26': '3xl',
-  '28': '3xl',
-  '34': '3xl',
-  '38': '3xl',
-} as const;
 
 export const fontFamily = {
   sans: ['Calibre-Medium', 'system-ui', 'sans-serif'],

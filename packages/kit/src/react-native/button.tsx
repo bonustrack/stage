@@ -11,6 +11,7 @@ import {
   type SizeSpec,
 } from '../button.styles';
 import type { ValidationResult } from '../a2ui/protocol';
+import { getDefaultButtonRadius } from '../legacy';
 import { RADIUS_FULL } from '../tokens';
 import { accessibilityProps, failingChecks, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { ContentColorProvider } from './content-color';
@@ -22,13 +23,7 @@ export type { ButtonColor, ButtonControlVariant, ButtonHint, ButtonSize, ButtonV
 
 const SPINNER_SIZE: Record<SizeSpec['spinner'], number> = { small: 20, large: 36 };
 
-let defaultButtonRadius: number = RADIUS_FULL;
-export function setDefaultButtonRadius(r: number): void {
-  if (Number.isFinite(r) && r >= 0) defaultButtonRadius = r;
-}
-export function getDefaultButtonRadius(): number {
-  return defaultButtonRadius;
-}
+export { getDefaultButtonRadius, setDefaultButtonRadius } from '../legacy';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style' | 'disabled'>, A2uiCommonProps {
   color?: ButtonColor;
@@ -91,7 +86,7 @@ function containerStyle(args: ContainerStyleArgs, pressed: boolean): (ViewStyle 
     height: spec.height,
     width: square ? spec.height : stretch ? '100%' : undefined,
     paddingHorizontal: square ? 0 : spec.paddingHorizontal,
-    borderRadius: radius ?? defaultButtonRadius,
+    borderRadius: radius ?? getDefaultButtonRadius(),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
