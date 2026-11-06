@@ -17,7 +17,6 @@ import {
 } from 'expo-router/react-navigation';
 import { useEffect, useLayoutEffect } from 'react';
 import { usePathname, withLayoutContext } from 'expo-router';
-import { WEB_TAB_BACK_BEHAVIOR } from './navigation.model';
 import { hashPath } from './routes';
 import { Column } from '@stage-labs/kit/react-native/column';
 
@@ -87,7 +86,7 @@ function FlowTabNavigator({
   screenListeners,
   screenOptions,
   screenLayout,
-  backBehavior = WEB_TAB_BACK_BEHAVIOR,
+  backBehavior = 'fullHistory',
 }: FlowProps<TabNavigationState<ParamListBase>, TabRouterOptions>): React.ReactElement {
   const { state, descriptors, NavigationContent } = useNavigationBuilder<
     TabNavigationState<ParamListBase>,

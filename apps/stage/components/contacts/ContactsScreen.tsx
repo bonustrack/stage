@@ -7,7 +7,7 @@ import { usePalette } from '../../lib/theme';
 import { Platform } from 'react-native';
 import { useBottomChromeHeight } from '../layout/bottomChrome';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { useAllContacts, type Contact } from '../../lib/useContacts';
+import { useContactList, type Contact } from '../../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { SuggestedContacts } from './SuggestedContacts';
@@ -18,7 +18,7 @@ export function ContactsScreen(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const bottomChrome = useBottomChromeHeight();
-  const { contacts } = useAllContacts();
+  const contacts = useContactList(true);
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
   const open = useCallback(
