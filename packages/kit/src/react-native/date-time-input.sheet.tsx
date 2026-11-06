@@ -2,7 +2,11 @@ import { Pressable, Text as RNText, View } from 'react-native';
 import { FONT_SIZE, RADIUS_FULL, fontName } from '../tokens';
 import { ControlSheet } from './control-trigger';
 import { buildCells, MONTHS, toISODate, wrapClock, type DateTimeMode } from './date-time-input.model';
-import { Icon } from './icon';
+import { Glyph } from './glyph';
+import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
+import { IconChevronLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronLeft';
+import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
+import { IconChevronTop } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronTop';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -73,7 +77,7 @@ function MonthHeader(props: { month: number; year: number; head: string; onShift
         }}
         hitSlop={8}
       >
-        <Icon name="chevronLeft" size={20} color={head} />
+        <Glyph icon={IconChevronLeft} size={20} color={head} />
       </Pressable>
       <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>
         {MONTHS[month]} {year}
@@ -86,7 +90,7 @@ function MonthHeader(props: { month: number; year: number; head: string; onShift
         }}
         hitSlop={8}
       >
-        <Icon name="chevronRight" size={20} color={head} />
+        <Glyph icon={IconChevronRight} size={20} color={head} />
       </Pressable>
     </View>
   );
@@ -139,7 +143,7 @@ function Stepper(props: {
           onChange(wrapClock(value, 1, size));
         }}
       >
-        <Icon name="chevronUp" size={20} color={colors.head} />
+        <Glyph icon={IconChevronTop} size={20} color={colors.head} />
       </Pressable>
       <RNText
         accessibilityLabel={label}
@@ -155,7 +159,7 @@ function Stepper(props: {
           onChange(wrapClock(value, -1, size));
         }}
       >
-        <Icon name="chevronDown" size={20} color={colors.head} />
+        <Glyph icon={IconChevronBottom} size={20} color={colors.head} />
       </Pressable>
     </View>
   );

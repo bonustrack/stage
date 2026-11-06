@@ -16,7 +16,8 @@ import {
 } from './date-time-input.model';
 import { DateTimeSheet, sheetColorsFor, type TimeDraft } from './date-time-input.sheet';
 import { useKitScheme } from './theme-context';
-import { centralIcon } from '../central-icons';
+import { IconCalendar1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCalendar1';
+import { IconClock } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconClock';
 
 export interface DateTimeInputProps extends A2uiCommonProps {
   value?: string;
@@ -159,7 +160,7 @@ export function DateTimeInput(props: DateTimeInputProps): React.ReactElement {
             open={sheet.draft.open}
             hasValue={shown !== undefined}
             label={shown ?? props.placeholder ?? PLACEHOLDER[mode]}
-            icon={centralIcon(mode === 'time' ? 'clock' : 'calendar')}
+            icon={mode === 'time' ? IconClock : IconCalendar1}
             box={box}
             rootStyle={rootStyle}
             headColor={colors.head}
