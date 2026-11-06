@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { ConsentState } from '@xmtp/browser-sdk';
-import { webConsentState, webListOptions } from '../lib/consentWeb.model';
+import { webConsentState, webListOptions } from '../lib/xmtp.sdk.web.consent';
 
 describe('web consent', () => {
   test('a consent filter becomes the browser SDK list option', () => {

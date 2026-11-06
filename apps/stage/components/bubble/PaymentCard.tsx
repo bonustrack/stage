@@ -25,7 +25,7 @@ import {
 } from '@stage-labs/client/x402/payment';
 import { payX402Exact } from '../../lib/x402.pay';
 import { capabilities, openInBubbleLink } from '../../lib/capabilities';
-import type { X402Accept, X402Challenge } from '../../lib/useLinkPreview';
+import type { X402Accept, X402Challenge } from '@stage-labs/client/x402';
 import { IconChainLink3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChainLink3';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';

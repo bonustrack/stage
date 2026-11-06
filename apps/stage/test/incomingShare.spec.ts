@@ -1,12 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
-import {
-  acceptedShareConsent,
-  mergeShareRows,
-  parseIncomingShare,
-  sharedAttachments,
-  shareDestinations,
-  shareError,
-} from '../components/share/share.model';
+import { mergeShareRows, parseIncomingShare, sharedAttachments, shareDestinations, shareError } from '../components/share/share.model';
+import { acceptedShareConsent } from '../lib/shareDestination.model';
 import { currentShareDraft, makeShareSender } from '../components/share/shareSend.model';
 import { planSendSteps } from '../components/composer/send.model';
 import { sendPreparedMessage } from '../lib/xmtp.messageSend.core';

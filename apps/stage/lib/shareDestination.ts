@@ -5,7 +5,7 @@ import { channelAccess } from './channelVisibility';
 import { loadHiddenChannels, subscribeHiddenChannels } from './hiddenChannels';
 import { knownActiveAccountId } from './channelsCache';
 import { loadClearedChats, subscribeClearedChats } from './clearedChats';
-import { acceptedShareConsent, type ShareDestination } from '../components/share/share.model';
+import { acceptedShareConsent, type ShareDestination } from './shareDestination.model';
 import { sdk } from './xmtp.sdk';
 
 export function assertShareAccount(accountId: string, epoch: number): void {

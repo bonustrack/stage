@@ -1,7 +1,7 @@
 import { requireOptionalNativeModule } from 'expo';
 import { NativeModules, Platform } from 'react-native';
 import * as Updates from 'expo-updates';
-import { freshUrl, isDevClientLauncher, loadedCommit, type MainUpdate } from '../components/settings/DevClientUpdate.model';
+import { freshUrl, isDevClientLauncher, loadedCommit, type MainUpdate } from './devClientUpdates.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from './devClientUpdates.core';
 import { fetchWithin } from '@stage-labs/client/timing';
 

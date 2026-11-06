@@ -6,7 +6,7 @@ import {
   statusUrl,
   type MainUpdate,
   type PreviewManifest,
-} from '../components/settings/DevClientUpdate.model';
+} from './devClientUpdates.model';
 
 export type UpdateRequest = (url: string, headers: Record<string, string>) => Promise<{ body: string; contentType: string }>;
 

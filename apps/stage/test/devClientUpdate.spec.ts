@@ -1,13 +1,13 @@
 import { describe, expect, test } from 'bun:test';
+import { mainUpdateMessage } from '../components/settings/DevClientUpdate.model';
 import {
   compatibleMainUrl,
   freshUrl,
   isDevClientLauncher,
   loadedCommit,
-  mainUpdateMessage,
   parsePreviewManifest,
   previewFromStatus,
-} from '../components/settings/DevClientUpdate.model';
+} from '../lib/devClientUpdates.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from '../lib/devClientUpdates.core';
 
 const PROJECT = 'https://u.expo.dev/1707f2db-c2b8-4c91-9341-27b1d57d355f';

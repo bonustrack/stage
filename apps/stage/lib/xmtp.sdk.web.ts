@@ -30,8 +30,8 @@ import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { withNestedReactions } from './feedOrder.model';
 import { withMainThreadWasm } from './xmtp.wasm.web';
-import { webGroupMetaPolicy } from './groupPolicyWeb.model';
-import { webConsentState, webListOptions } from './consentWeb.model';
+import { webGroupMetaPolicy } from './xmtp.sdk.web.groupPolicy';
+import { webConsentState, webListOptions } from './xmtp.sdk.web.consent';
 import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';
 import {
   NO_GROUP_ADMINS,

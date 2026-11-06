@@ -1,17 +1,10 @@
 import { hasRemoteImages, mailHtmlBlocks, mailTextBlocks, type MailBlock } from '@stage-labs/client/mail/mailHtml';
-import { mailAddressOf, type MailIndex } from '@stage-labs/client/mail/mailbox';
+import { mailAddressOf } from '@stage-labs/client/mail/mailbox';
 import type { MailAttachment, ParsedMail } from '@stage-labs/client/mail/mime';
 import { decodeWords, parseAddress } from '@stage-labs/client/mail/mimeHeaders';
 import { bytesToBase64 } from '@stage-labs/client/text/base64';
+import { mailReadKey, type InboxEntry } from '../../lib/mail.core';
 import { fileCardModel } from '../media/fileCard.model';
-
-export interface InboxEntry {
-  label: string;
-  id: string;
-  ts: number;
-  size: number;
-  index: MailIndex | null;
-}
 
 export interface InboxRow {
   key: string;
@@ -37,14 +30,9 @@ export interface MailBody {
   attachments: MailAttachmentRow[];
 }
 
-const MAX_READ_KEYS = 2000;
 const INLINE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 const MAIL_ID_TS = /^(\d{13})-/;
 const UNSAFE_FILE_CHARS = /[\\/:*?"<>|]/g;
-
-export function mailReadKey(label: string, id: string): string {
-  return `${label}/${id}`;
-}
 
 export function senderLabel(from: string): string {
   const address = parseAddress(decodeWords(from));
@@ -73,20 +61,6 @@ function inboxRow(entry: InboxEntry, read: ReadonlySet<string>, showTo: boolean)
 
 export function inboxRows(entries: readonly InboxEntry[], read: ReadonlySet<string>, mailboxCount: number): InboxRow[] {
   return [...entries].sort((a, b) => b.ts - a.ts || b.id.localeCompare(a.id)).map((entry) => inboxRow(entry, read, mailboxCount > 1));
-}
-
-export function withReadKey(keys: readonly string[], key: string): readonly string[] {
-  if (keys.includes(key)) return keys;
-  return [...keys, key].slice(-MAX_READ_KEYS);
-}
-
-export function parseReadKeys(raw: string): readonly string[] | undefined {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((key): key is string => typeof key === 'string') : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 export function mailReceivedAt(id: string): number | null {

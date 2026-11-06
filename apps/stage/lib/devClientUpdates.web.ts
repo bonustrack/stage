@@ -1,4 +1,4 @@
-import type { MainUpdate } from '../components/settings/DevClientUpdate.model';
+import type { MainUpdate } from './devClientUpdates.model';
 
 export function devClientInfo(): { runtime: string | null; updateId: string | null; gitHash: string | null } | null {
   return null;

@@ -3,7 +3,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import type { ComposerState } from '../composer/state';
-import type { ShareDestination } from './share.model';
+import type { ShareDestination } from '../../lib/shareDestination.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { Column, Row } from '../layout';
 

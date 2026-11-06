@@ -1,6 +1,6 @@
 import { getActiveViemAccount } from './accounts';
 import { linkProxyBase } from './linkProxy';
-import type { X402Accept } from './useLinkPreview';
+import type { X402Accept } from '@stage-labs/client/x402';
 import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from '@stage-labs/client/x402/payment';
 
 export interface X402PayResult {

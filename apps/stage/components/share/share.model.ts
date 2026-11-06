@@ -4,6 +4,7 @@ import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import type { IncomingShare, SharedFile } from '../../lib/incomingShare.types';
 import { attachmentMimeType } from '../../lib/attachmentFiles';
 import type { Attachment } from '../composer/types';
+import type { ShareDestination } from '../../lib/shareDestination.model';
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
@@ -78,14 +79,6 @@ export function sharedAttachments(share: Extract<IncomingShare, { status: 'ready
   });
 }
 
-export interface ShareDestination {
-  convId: string;
-  title: string;
-  peerAddress: string | null;
-  avatarUri: string | null;
-  lastBubbleTs: number | null;
-}
-
 function destinationOf(row: CachedChannelRow, cleared: ClearedChats): ShareDestination | null {
   if (row.consent !== 'allowed' || typeof row.title !== 'string') return null;
   if (typeof row.groupName === 'string' && isSyncGroupName(row.groupName)) return null;
@@ -100,11 +93,6 @@ function destinationOf(row: CachedChannelRow, cleared: ClearedChats): ShareDesti
     avatarUri: typeof row.avatarUri === 'string' ? row.avatarUri : null,
     lastBubbleTs,
   };
-}
-
-export function acceptedShareConsent(group: boolean, hidden: boolean | undefined, consent: string | null): boolean {
-  if (hidden === true) return false;
-  return group && hidden !== undefined ? true : consent === 'allowed';
 }
 
 export function mergeShareRows<T extends { convId: string }>(previous: readonly T[] | null, updates: readonly T[] | null): T[] {

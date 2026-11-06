@@ -4,7 +4,7 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { FormField } from '../FormField';
-import type { ShareDestination } from './share.model';
+import type { ShareDestination } from '../../lib/shareDestination.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { Column } from '../layout';
 

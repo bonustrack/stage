@@ -1,17 +1,16 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { ParsedMail } from '@stage-labs/client/mail/mime';
-import { mailReadKey, parseReadKeys, withReadKey } from '../components/inbox/Inbox.model';
-import { getSelectedAccount } from './accounts';
+import { getActiveAccount, getSelectedAccount } from './accounts';
 import { useAccountEpoch } from './accountEpoch';
 import { getAccountSelection, subscribeAccountSelection, useAccountSelection } from './accountSelection';
 import { linkProxyBase } from './linkProxy';
 import { ownedStageLabel } from './mailKey';
-import { mailboxKey, makeMailAccess, type InboxState, type Mailbox } from './mail.core';
+import { mailReadKey, mailboxKey, makeMailAccess, parseReadKeys, withReadKey, type InboxState, type Mailbox } from './mail.core';
 import { createValueStore } from './persistedStore';
 import { getQueryClient } from './queryClient';
 import { reported } from './errorPolicy';
-import { signingKeyForRecord } from './xmtp.signing.core';
+import { lazySigningKeyForRecord, signingKeyForRecord } from './xmtp.signing.core';
 
 export type { InboxState, Mailbox } from './mail.core';
 
@@ -88,4 +87,17 @@ export function useReadMail(): ReadonlySet<string> {
 
 export function markMailRead(label: string, id: string): void {
   void readStore.update((keys) => withReadKey(keys, mailReadKey(label, id))).catch(reported('mail.read'));
+}
+
+async function syncOwnMailKey(): Promise<void> {
+  const rec = await getActiveAccount();
+  if (rec === null) return;
+  await access.ensureOwnKey(rec, async () => (await lazySigningKeyForRecord(rec)).signMessage);
+}
+
+export function useOwnMailKey(enabled: boolean): void {
+  const epoch = useAccountEpoch();
+  useEffect(() => {
+    if (enabled) void syncOwnMailKey().catch(reported('mail.key'));
+  }, [enabled, epoch]);
 }

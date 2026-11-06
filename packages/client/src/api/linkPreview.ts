@@ -1,0 +1,55 @@
+import { parseX402Challenge, type X402Challenge } from '../x402/challenge';
+
+interface LinkPreview {
+  url: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  siteName?: string;
+  favicon?: string;
+  imageOrigin?: string;
+  faviconOrigin?: string;
+}
+
+export type LinkPreviewResult = LinkPreview | X402Challenge;
+
+export function isX402(r: LinkPreviewResult | null): r is X402Challenge {
+  return !!r && 'kind' in r && r.kind === 'x402';
+}
+
+function str(j: Record<string, unknown>, key: string): string | undefined {
+  const v = j[key];
+  return typeof v === 'string' ? v : undefined;
+}
+
+function ogPreviewFrom(j: Record<string, unknown>, url: string): LinkPreview | null {
+  if (typeof j.title !== 'string' && typeof j.image !== 'string') return null;
+  return {
+    url: str(j, 'url') ?? url,
+    title: str(j, 'title'),
+    description: str(j, 'description'),
+    image: str(j, 'image'),
+    siteName: str(j, 'siteName'),
+    favicon: str(j, 'favicon'),
+    imageOrigin: str(j, 'imageOrigin'),
+    faviconOrigin: str(j, 'faviconOrigin'),
+  };
+}
+
+function linkPreviewFrom(j: Record<string, unknown>, url: string): LinkPreviewResult | null {
+  if (typeof j.error === 'string' && !('accepts' in j)) return null;
+  if (j.kind === 'x402') return parseX402Challenge(j, typeof j.endpoint === 'string' ? j.endpoint : '');
+  return ogPreviewFrom(j, url);
+}
+
+export async function fetchLinkPreview(proxyBase: string, url: string): Promise<LinkPreviewResult | null> {
+  try {
+    const res = await fetch(`${proxyBase}/preview?url=${encodeURIComponent(url)}`, {
+      headers: { Accept: 'application/json', 'x-stage-client': '1' },
+    });
+    if (!res.ok) return null;
+    return linkPreviewFrom((await res.json()) as Record<string, unknown>, url);
+  } catch {
+    return null;
+  }
+}

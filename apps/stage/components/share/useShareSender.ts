@@ -9,7 +9,7 @@ import { capabilities } from '../../lib/capabilities';
 import { conversationSharePath } from '../../lib/links';
 import { stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { currentShareDraft, makeShareSender } from './shareSend.model';
-import type { ShareDestination } from './share.model';
+import type { ShareDestination } from '../../lib/shareDestination.model';
 
 export interface ShareSelection {
   destination: ShareDestination;

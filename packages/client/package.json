@@ -62,6 +62,7 @@
     "./image/stripMetadata": "./src/image/stripMetadata.ts",
     "./api/ens": "./src/api/ens.ts",
     "./api/github": "./src/api/github.ts",
+    "./api/linkPreview": "./src/api/linkPreview.ts",
     "./text/markdown": "./src/text/markdown.ts",
     "./text/codeBlocks": "./src/text/codeBlocks.ts",
     "./text/base64": "./src/text/base64.ts",

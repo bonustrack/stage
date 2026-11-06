@@ -4,16 +4,13 @@ import { parseMail } from '@stage-labs/client/mail/mime';
 import {
   inboxRows,
   mailBody,
-  mailReadKey,
   mailReceivedAt,
-  parseReadKeys,
   safeFileName,
   senderLabel,
   subjectLabel,
   visibleBlocks,
-  withReadKey,
-  type InboxEntry,
 } from '../components/inbox/Inbox.model';
+import { mailReadKey, parseReadKeys, withReadKey, type InboxEntry } from '../lib/mail.core';
 
 const index = (from: string, subject: string): MailIndex => ({
   envelopeFrom: 'bounce@example.com',

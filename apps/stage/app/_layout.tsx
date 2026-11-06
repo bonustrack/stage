@@ -20,7 +20,7 @@ import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/pushRegister';
 import { ensureActiveAccount } from '../lib/xmtp.recover.core';
-import { useOwnMailKey } from '../lib/mailKey';
+import { useOwnMailKey } from '../lib/mail';
 import { ensureMessagingStreamSync } from '../lib/messaging/streamSync';
 import { getOrCreateXmtpClient } from '../lib/xmtp.client';
 import { QueryClientProvider } from '@tanstack/react-query';
