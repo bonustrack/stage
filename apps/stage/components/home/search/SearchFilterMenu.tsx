@@ -8,7 +8,7 @@ import type { AppIconName } from '../../appIcons';
 import { Avatar } from '../../Avatar';
 import { AccountAvatar } from '../../AccountAvatarButton';
 import { MenuHeading, MenuRow } from '../../MenuRows';
-import { PickerNote, PickerRow, PickerSearch } from '../../conversation/SidebarSection';
+import { PickerNote, PickerRow, PickerSearch } from '../../PickerRows';
 import { peerLabel, usePeerProfiles } from '../../../lib/peerProfiles';
 import { GROUPING_FIELDS } from '../../../lib/grouping.model';
 import { memberNamesOf, useKnownFieldValues } from '../listing';

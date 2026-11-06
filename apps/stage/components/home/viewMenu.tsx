@@ -3,7 +3,7 @@ import type { LayoutChangeEvent } from 'react-native';
 import { useRouter } from 'expo-router';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
 import { IconSettingsSliderVer } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSettingsSliderVer';
-import { PickerRow } from '../conversation/SidebarSection';
+import { PickerRow } from '../PickerRows';
 import { AppIcon } from '../widgets';
 import { HoverIconButton } from '../hover';
 import { MenuHeading, MenuRow } from '../MenuRows';

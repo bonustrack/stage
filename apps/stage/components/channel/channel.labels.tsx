@@ -7,15 +7,8 @@ import { appIcon } from '../widgets';
 import { GROUPING_FIELDS } from '../../lib/grouping.model';
 import { FormField } from '../FormField';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
-import {
-  PickerList,
-  PickerNote,
-  PickerRow,
-  PickerSearch,
-  SectionNote,
-  SidebarSection,
-  type SectionDraft,
-} from '../conversation/SidebarSection';
+import { PickerList, PickerNote, PickerRow, PickerSearch } from '../PickerRows';
+import { SectionNote, SidebarSection, type SectionDraft } from '../conversation/SidebarSection';
 import { selectedFirst, tagSearch, type ListEdits } from '../conversation/SidebarSection.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';

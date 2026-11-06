@@ -11,7 +11,7 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuRow } from '../MenuRows';
 import { useKnownFieldValues } from './listing';
 import { FIELD_SECTIONS } from '../channel/channel.labels';
-import { PickerList, PickerNote, PickerSearch } from '../conversation/SidebarSection';
+import { PickerList, PickerNote, PickerSearch } from '../PickerRows';
 import { tagSearch } from '../conversation/SidebarSection.model';
 import { includesKey } from '@stage-labs/client/collections';
 import { useHover } from '../hover';
