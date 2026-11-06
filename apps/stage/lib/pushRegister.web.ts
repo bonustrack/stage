@@ -117,6 +117,11 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
   if (input) await runPushRegistration(input);
 }
 
+export async function registerCachedClientPush(): Promise<void> {
+  const client = getCachedXmtpClient();
+  if (client) await registerPushWithServer(client);
+}
+
 export async function prepareSenderFilters(client: PushClient, topic: string, timing?: SendTiming): Promise<void> {
   const input = pushInput(client);
   if (!input) throw new Error('Sender filter account is not ready');

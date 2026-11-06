@@ -1,7 +1,6 @@
 import { ACTIVE_TAB, createTabLock, type TabLock, type TabRole } from './tabLock.core';
 import { capabilities } from './capabilities';
-import { getCachedXmtpClient } from './xmtp.state.web';
-import { attempt } from './errorPolicy';
+import { clientSlot } from './xmtp.state.web';
 import { useStoreValue } from './storeCore';
 
 const XMTP_TAB_LOCK = 'stage.xmtp';
@@ -9,11 +8,8 @@ const XMTP_TAB_LOCK = 'stage.xmtp';
 let tabLock: TabLock | null = null;
 
 function stepDown(): void {
-  const client = getCachedXmtpClient();
-  if (client)
-    attempt(() => {
-      client.close();
-    }, 'cleanup');
+  const client = clientSlot.get();
+  if (client) clientSlot.discard(client);
   capabilities.reload();
 }
 

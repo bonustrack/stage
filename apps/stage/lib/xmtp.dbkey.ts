@@ -56,5 +56,3 @@ export async function wipeXmtpStore(accountId: string, dbDirName: string): Promi
     await deleteLegacyDbKey();
   }
 }
-
-export { deleteDbFiles, ensureDbDir } from './xmtp.dbkeyFs';

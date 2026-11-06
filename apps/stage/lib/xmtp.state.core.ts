@@ -47,17 +47,24 @@ export function resetSharedXmtpState(): void {
 
 const READY_CAP_MS = 60_000;
 
-interface ClientSlot<C> {
+export interface ClientSlot<C> {
   get: () => C | null;
   getOrCreate: (create: () => Promise<C>) => Promise<C>;
   waitForReady: () => Promise<boolean>;
   reset: () => void;
+  discard: (client: C) => void;
 }
 
-export function createClientSlot<C>(onReset: () => void, discard?: (client: C) => void): ClientSlot<C> {
+export function createClientSlot<C>(onReset: () => void, close?: (client: C) => void): ClientSlot<C> {
   let cached: C | null = null;
   let inFlight: Promise<C> | null = null;
   let generation = 0;
+  const discard = (client: C): void => {
+    if (close)
+      attempt(() => {
+        close(client);
+      }, 'cleanup');
+  };
   return {
     get: () => cached,
     getOrCreate: async (create) => {
@@ -67,10 +74,7 @@ export function createClientSlot<C>(onReset: () => void, discard?: (client: C) =
       const pending = (async (): Promise<C> => {
         const client = await create();
         if (generation !== started) {
-          if (discard)
-            attempt(() => {
-              discard(client);
-            }, 'cleanup');
+          discard(client);
           throw new AccountChangedError('The account changed while messaging was starting.');
         }
         cached = client;
@@ -89,10 +93,12 @@ export function createClientSlot<C>(onReset: () => void, discard?: (client: C) =
       return cached !== null;
     },
     reset: () => {
+      if (cached) discard(cached);
       generation += 1;
       cached = null;
       inFlight = null;
       onReset();
     },
+    discard,
   };
 }

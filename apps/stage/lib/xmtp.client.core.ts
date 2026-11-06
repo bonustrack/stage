@@ -1,5 +1,6 @@
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
-import type { XmtpEnv } from './xmtp.types';
+import type { HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
+import type { FinalizeClient } from './xmtp.recover.core';
 import { report, reported } from './errorPolicy';
 import { NoAccountError } from './accountSelection';
 
@@ -13,6 +14,35 @@ export function installationsOf(list: { id: string; createdAt: number | undefine
   return list
     .map((i) => ({ id: i.id, createdAt: i.createdAt, current: i.id === currentId }))
     .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+}
+
+export interface GroupName {
+  id: string;
+  name: string;
+}
+
+export interface PushSdk<C> {
+  inboxId: (client: C) => string | null;
+  signWithInstallationKey: (client: C, text: string) => Promise<Uint8Array>;
+  topics: (client: C) => Promise<string[]>;
+  hmacKeys: (client: C, topic?: string) => Promise<HmacKeysByTopic>;
+  groupNames: (client: C) => Promise<GroupName[]>;
+}
+
+interface ClientReads<C> {
+  selfAddressOf: (client: C) => string | null;
+  syncPreferences: (client: C) => Promise<unknown>;
+  installations: (client: C) => Promise<{ id: string; createdAt: number | undefined }[]>;
+  installationIdOf: (client: C) => string | undefined;
+  revoke: (client: C, account: AccountRecord, installationId: string) => Promise<void>;
+}
+
+export interface ClientSdk<C> extends ClientReads<C> {
+  build: (rec: AccountRecord, finalize: FinalizeClient<C>) => Promise<C>;
+  isRegistered: (address: string) => Promise<boolean>;
+  forgetStore: (accountId: string) => Promise<void>;
+  forgetSaved: (accountId: string) => Promise<void>;
+  push: PushSdk<C>;
 }
 
 interface AccountPort {
@@ -29,17 +59,12 @@ interface StorePort {
   forgetSaved: (accountId: string) => Promise<void>;
 }
 
-interface ClientPort<C> {
+interface ClientPort<C> extends ClientReads<C> {
   get: () => C | null;
   getOrCreate: (create: () => Promise<C>) => Promise<C>;
-  build: (rec: AccountRecord, env: XmtpEnv) => Promise<C>;
+  build: (rec: AccountRecord) => Promise<C>;
   ready?: (client: C) => Promise<void>;
   dispose: () => void;
-  selfAddressOf: (client: C) => string | null;
-  syncPreferences: (client: C) => Promise<unknown>;
-  installations: (client: C) => Promise<{ id: string; createdAt: number | undefined }[]>;
-  installationIdOf: (client: C) => string | undefined;
-  revoke: (client: C, account: AccountRecord, installationId: string) => Promise<void>;
 }
 
 export interface LifecycleDeps<C> {
@@ -50,19 +75,19 @@ export interface LifecycleDeps<C> {
 }
 
 function accountSwitching<C>(deps: LifecycleDeps<C>): {
-  switchToAccount: (id: string, env?: XmtpEnv) => Promise<C>;
+  switchToAccount: (id: string) => Promise<C>;
   deleteAccount: (id: string) => Promise<void>;
   resetActiveXmtpStore: () => Promise<void>;
 } {
   const { accounts, store, client } = deps;
   return {
-    async switchToAccount(id, env = 'production') {
+    async switchToAccount(id) {
       const rec = (await accounts.list()).find((a) => a.id === id);
       if (!rec) throw new Error('Account not found.');
       client.dispose();
       await accounts.setActive(id);
       try {
-        const built = await client.getOrCreate(() => client.build(rec, env));
+        const built = await client.getOrCreate(() => client.build(rec));
         deps.bumpEpoch();
         if (client.ready) void client.ready(built).catch(reported('xmtp.push'));
         return built;
@@ -93,7 +118,6 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
 export function makeClientLifecycle<C>(
   deps: LifecycleDeps<C>,
 ): ReturnType<typeof accountSwitching<C>> & {
-  getOrCreateXmtpClient: (env?: XmtpEnv) => Promise<C>;
   xmtpClient: () => Promise<C>;
   cachedSelfEthAddress: () => string | null;
   selfEthAddress: () => Promise<string | null>;
@@ -102,22 +126,21 @@ export function makeClientLifecycle<C>(
   revokeXmtpInstallation: (installationId: string) => Promise<void>;
 } {
   const { accounts, client } = deps;
-  const getOrCreateXmtpClient = async (env: XmtpEnv = 'production'): Promise<C> => {
+  const createForActive = async (): Promise<C> => {
     let created = false;
     const built = await client.getOrCreate(async () => {
       const account = await accounts.active();
       if (!account) throw new NoAccountError();
-      const value = await client.build(account, env);
+      const value = await client.build(account);
       created = true;
       return value;
     });
     if (created && client.ready) void client.ready(built).catch(reported('xmtp.push'));
     return built;
   };
-  const xmtpClient = async (): Promise<C> => client.get() ?? (await getOrCreateXmtpClient('production'));
+  const xmtpClient = async (): Promise<C> => client.get() ?? (await createForActive());
   return {
     ...accountSwitching(deps),
-    getOrCreateXmtpClient,
     xmtpClient,
     cachedSelfEthAddress() {
       const cached = client.get();

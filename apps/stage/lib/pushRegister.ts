@@ -82,6 +82,11 @@ export async function registerPushWithServer(client: PushClient): Promise<void> 
   await runPushRegistration(pushInput(client));
 }
 
+export async function registerCachedClientPush(): Promise<void> {
+  const client = getCachedXmtpClient();
+  if (client) await registerPushWithServer(client);
+}
+
 export async function prepareSenderFilters(client: PushClient, topic: string, timing?: SendTiming): Promise<void> {
   await runSenderFilterPublication(pushInput(client), topic, timing);
 }

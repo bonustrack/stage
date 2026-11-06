@@ -3,7 +3,7 @@ import { makeValue } from './storeCore';
 import { bumpAccountEpoch } from './accountEpoch';
 import { waitForXmtpReady } from './xmtp.state';
 import { sdk } from './xmtp.sdk';
-import { historyServer } from './historyServer';
+import { historyServerUrl } from './historyServer';
 import { markHistoryImported } from './dmRoutes';
 import {
   historyProblemMessage,
@@ -40,7 +40,7 @@ export const useHistorySyncPhase = phase.use;
 
 async function requestHistorySync(): Promise<void> {
   const client = await sdk.client();
-  await sdk.history.sendSyncRequest(client, await historyServer());
+  await sdk.history.sendSyncRequest(client, historyServerUrl());
 }
 
 async function syncHistoryGroups(): Promise<void> {

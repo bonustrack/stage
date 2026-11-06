@@ -19,6 +19,7 @@ import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
 import { nativeGroupMetaPolicy, nativeMessageOf } from './xmtp.sdk.native.shapes';
 import { xmtpClient } from './xmtp.client';
 import { getCachedXmtpClient } from './xmtp.state';
+import { XMTP_ENV } from './xmtp.types';
 import {
   NO_GROUP_ADMINS,
   NO_GROUP_INFO,
@@ -238,7 +239,7 @@ async function messageTarget(client: NativeClient, messageId: string): Promise<M
 }
 
 async function keyPackageErrors(_client: NativeClient, installationIds: string[]): Promise<(string | null | undefined)[]> {
-  const { statuses } = await staticKeyPackageStatuses('production', installationIds as InstallationIds);
+  const { statuses } = await staticKeyPackageStatuses(XMTP_ENV, installationIds as InstallationIds);
   return [...statuses.values()].map((s) => s.validationError);
 }
 

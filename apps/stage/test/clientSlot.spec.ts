@@ -68,4 +68,21 @@ describe('createClientSlot', () => {
     expect(slot.get()).toBeNull();
     expect(discarded).toEqual(['obsolete']);
   });
+  test('reset closes the cached client before the shared state resets', async () => {
+    const log: string[] = [];
+    const slot = createClientSlot<string>(
+      () => {
+        log.push('reset');
+      },
+      (client) => {
+        log.push(`close:${client}`);
+      },
+    );
+    slot.reset();
+    expect(log).toEqual(['reset']);
+    await slot.getOrCreate(() => Promise.resolve('client-a'));
+    slot.reset();
+    expect(log).toEqual(['reset', 'close:client-a', 'reset']);
+    expect(slot.get()).toBeNull();
+  });
 });

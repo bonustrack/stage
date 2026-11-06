@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
 import { makeValue } from '../storeCore';
 import { useAccountEpoch } from '../accountEpoch';
-import { getOrCreateXmtpClient, syncPreferences } from '../xmtp.client';
+import { syncPreferences, xmtpClient } from '../xmtp.client';
 import { NoAccountError } from '../accountSelection';
 import { getXmtpBootstrapPhase, isActiveConv } from '../xmtp.state.core';
 import { isSyncConv } from '../sync/group';
@@ -199,7 +199,7 @@ interface Refreshers {
   reconcile: () => Promise<void>;
 }
 
-function makeRefreshers(client: Awaited<ReturnType<typeof getOrCreateXmtpClient>>, selfInboxId: string, run: SyncRun): Refreshers {
+function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInboxId: string, run: SyncRun): Refreshers {
   let lastRefreshAt = 0;
   const THROTTLE_MS = 30_000;
   const paintFrom = async (convs: Conversation[]): Promise<boolean> => {
@@ -310,7 +310,7 @@ function subscribeLiveStreams(run: SyncRun, r: Refreshers, selfInboxId: string):
 
 async function initSync(run: SyncRun): Promise<void> {
   try {
-    const client = await getOrCreateXmtpClient('production');
+    const client = await xmtpClient();
     clearTimeout(run.initTimer);
     const selfInboxId = client.inboxId;
     const r = makeRefreshers(client, selfInboxId, run);

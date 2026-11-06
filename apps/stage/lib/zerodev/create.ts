@@ -1,7 +1,7 @@
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
 import { addSmartAccount, loadAccounts, loadAccountsForWrite, nextSmartHdIndex, setActiveAccountId, type AccountRecord } from '../accounts';
-import { isXmtpRegistered } from '../xmtp.client';
+import { clientSdk } from '../xmtp.clientSdk';
 import { ensurePrimaryPhrase, smartOwnerSigner } from './keyring';
 import { reserveSmartHdIndex } from './hdIndexStore';
 import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
@@ -17,7 +17,7 @@ export interface RestoredSmartAccount {
 const FRESH_SEARCH_LIMIT = 32;
 
 async function identityInUse(publicClient: PublicClient, address: `0x${string}`): Promise<boolean> {
-  const [code, registered] = await Promise.all([publicClient.getCode({ address }), isXmtpRegistered(address)]);
+  const [code, registered] = await Promise.all([publicClient.getCode({ address }), clientSdk.isRegistered(address)]);
   return (code !== undefined && code !== '0x') || registered;
 }
 
