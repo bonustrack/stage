@@ -51,7 +51,7 @@ src/
   zerodev/     # Kernel smart accounts: configuration, ECDSA owner validator, HD derivation
   wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error/confirm/wording
   api/         # read-only clients: ens, defillama, github link detection
-  routing/     # deep links and handle parsing
+  routing/     # stage link grammar, app route list, deep links and handle parsing
   embed/       # link/embed detection, link cards
   image/       # EXIF/metadata stripping before upload
   text/        # markdown helpers, code blocks
