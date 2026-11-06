@@ -1,5 +1,6 @@
 import {
   DEFAULT_SEED,
+  grayscaleFromHex,
   grayscaleHex,
   type ThemeSeed,
   type AccentLevel,
@@ -101,4 +102,15 @@ export function seedColorHex(seeds: ThemeSeeds, scheme: Scheme, key: SeedColorKe
   if (key === 'foreground') return seed.surface.foreground;
   if (key === 'accent') return seed.accent.primary;
   return grayscaleHex(seed.grayscale, scheme);
+}
+
+export function withSeedColor(seeds: ThemeSeeds, scheme: Scheme, key: SeedColorKey, hex: string): ThemeSeeds | null {
+  const value = hex.trim().toLowerCase();
+  if (!isHex(value)) return null;
+  const seed = cloneSeed(seeds[scheme]);
+  if (key === 'background') seed.surface.background = value;
+  else if (key === 'foreground') seed.surface.foreground = value;
+  else if (key === 'accent') seed.accent.primary = value;
+  else seed.grayscale = grayscaleFromHex(value, scheme);
+  return { ...seeds, [scheme]: seed };
 }

@@ -11,16 +11,9 @@ import {
   type Density,
   type BaseSize,
 } from '@stage-labs/kit/tokens';
-import {
-  derivePalette,
-  grayscaleFromHex,
-  type ThemeSeed,
-  type AccentLevel,
-  type GrayscaleShade,
-  type GrayscaleTint,
-} from '@stage-labs/kit/theme-derive';
+import { derivePalette, type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint } from '@stage-labs/kit/theme-derive';
 import { createValueStore } from './persistedStore';
-import { cloneSeed, defaultSeeds, migrateSeeds, type SeedColorKey, type ThemeSeeds } from './colorOverrides.model';
+import { cloneSeed, defaultSeeds, migrateSeeds, withSeedColor, type SeedColorKey, type ThemeSeeds } from './colorOverrides.model';
 
 export type { ThemePreference, SeedColorKey };
 export { isHex, seedColorHex } from './colorOverrides.model';
@@ -121,14 +114,8 @@ function editSeed(scheme: Scheme, edit: (seed: ThemeSeed) => void): void {
 }
 
 export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {
-  const v = hex.trim().toLowerCase();
-  if (!/^#([0-9a-f]{6})$/.test(v)) return;
-  editSeed(scheme, (seed) => {
-    if (key === 'background') seed.surface.background = v;
-    else if (key === 'foreground') seed.surface.foreground = v;
-    else if (key === 'accent') seed.accent.primary = v;
-    else seed.grayscale = grayscaleFromHex(v, scheme);
-  });
+  const next = withSeedColor(seeds.get(), scheme, key, hex);
+  if (next !== null) seeds.set(next);
 }
 
 export function setAccentLevel(scheme: Scheme, level: AccentLevel): void {
