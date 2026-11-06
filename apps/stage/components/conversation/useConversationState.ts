@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { inboxIdOfUri, lineOfConv, userUriOf } from '@stage-labs/client/xmtp/line';
@@ -10,8 +10,7 @@ import { markConvRead } from '../../lib/channelsCache';
 import { isAppInFront, subscribeAppInFront } from '../../lib/appInFront';
 import { useConvConsentState } from '../../lib/messaging/useConvConsent';
 import { inboxEthAddresses } from '../../lib/xmtp.identity';
-import { setActiveConversation } from '../../modules/stage-pill';
-import { setActiveConvId } from '../../lib/xmtp.state.core';
+import { showConversation } from '../../lib/activeConversation';
 import { isCoarsePointer } from '../layout/webLayout';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -61,18 +60,7 @@ function useActiveConvSuppression(convId: string | undefined): void {
   useFocusEffect(
     useCallback(() => {
       if (!activeConvId) return;
-      setActiveConversation(activeConvId);
-      setActiveConvId(activeConvId);
-      const sub = AppState.addEventListener('change', (s) => {
-        const open = s === 'active' ? activeConvId : null;
-        setActiveConversation(open);
-        setActiveConvId(open);
-      });
-      return () => {
-        sub.remove();
-        setActiveConversation(null);
-        setActiveConvId(null);
-      };
+      return showConversation(activeConvId);
     }, [activeConvId]),
   );
 }

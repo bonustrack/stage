@@ -31,7 +31,7 @@ import { shareUrlFor } from '@stage-labs/client/routing/stageLinks';
 import { HoverIconButton } from '../hover';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
-import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
+import { deleteForEveryone } from '../../lib/ownDeletes';
 import { report } from '../../lib/errorPolicy';
 import { useAddChatFrameToDashboard, type AddChatFrame } from '../../lib/frames/addToDashboard';
 import { frameOf } from '../../lib/frames/frame.model';
@@ -44,12 +44,10 @@ import { type TextField } from '@stage-labs/kit/react-native/text-field';
 
 async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promise<void> {
   if (!(await capabilities.confirm(deleteConfirmOf(asAdmin)))) return;
-  await markOwnDelete(messageId);
   try {
-    await xmtpDeleteMessage(messageId);
+    await deleteForEveryone(messageId, xmtpDeleteMessage);
   } catch (err) {
     report('message.delete', err);
-    await unmarkOwnDelete(messageId);
     capabilities.toast('Couldn’t delete the message');
   }
 }
