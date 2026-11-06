@@ -19,8 +19,7 @@ import {
 } from '@stage-labs/client/xmtp/summarizeRow';
 import { deletedTextOf, isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
 import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
-import { ownDeletesReady } from '../ownDeletes';
-import { fetchSuperAdmins } from './groupDetails';
+import { deleteRightsOf } from './deleteRights';
 import { rowCreatedTs, type ConvRow } from './convRow.model';
 import type { ChannelRow, GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
 import { dmRoutesReady, dmRowIdOf } from '../dmRoutes';
@@ -53,9 +52,7 @@ function lastBubbleTsOf(msgs: RowMessage[], dm: boolean): number | null {
   return bubble?.sentNs ? Math.floor(bubble.sentNs / 1_000_000) : null;
 }
 
-const NO_SUPER_ADMINS: ReadonlySet<string> = new Set();
-
-async function rowDeleteRights(
+function rowDeleteRights(
   conv: Conversation,
   dm: boolean,
   msgs: StreamedMessage[],
@@ -63,11 +60,7 @@ async function rowDeleteRights(
   selfInboxId: string,
 ): Promise<DeleteRights> {
   const hasRequests = !dm && msgs.some((m) => isDeleteRequestType(m.contentTypeId));
-  const [ownDeletes, superAdmins] = await Promise.all([
-    ownDeletesReady(),
-    hasRequests ? fetchSuperAdmins(conv.id, inboxToAddr).catch(recover('conversation.superAdmins', NO_SUPER_ADMINS)) : NO_SUPER_ADMINS,
-  ]);
-  return { ownDeletes, superAdmins, selfInboxId };
+  return deleteRightsOf(hasRequests ? { convId: conv.id, inboxToAddr, where: 'conversation.superAdmins' } : null, selfInboxId);
 }
 
 function previewOfMessage(last: StreamedMessage | undefined, dm: boolean, msgs: StreamedMessage[], rights: DeleteRights): string {

@@ -6,10 +6,8 @@ import { PAGE_SIZE } from '../xmtp.resync';
 import { deletedMessages, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { isDeleteRequest } from '@stage-labs/client/xmtp/entryPayload';
 import { isSearchable } from '@stage-labs/client/xmtp/visibility';
-import { ownDeletesReady } from '../ownDeletes';
 import { convMembers } from '../xmtp.identity';
-import { recover } from '../errorPolicy';
-import { fetchSuperAdmins } from './groupDetails';
+import { deleteRightsOf } from './deleteRights';
 import { sleep } from '@stage-labs/client/timing';
 
 const SEARCH_MAX_PAGES = 25;
@@ -69,17 +67,12 @@ function shouldStopScan(capped: boolean, state: ScanState, pageLen: number, page
   return false;
 }
 
-const NO_SUPER_ADMINS: ReadonlySet<string> = new Set();
-
 async function searchDeleteRights(conv: ConvHandle, line: string): Promise<DeleteRights> {
   const convId = convIdOfLine(line);
-  const [ownDeletes, superAdmins] = await Promise.all([
-    ownDeletesReady(),
-    convId && sdk.isGroup(conv)
-      ? fetchSuperAdmins(convId, (await convMembers(conv)).inboxToAddr).catch(recover('search.superAdmins', NO_SUPER_ADMINS))
-      : NO_SUPER_ADMINS,
-  ]);
-  return { ownDeletes, superAdmins, selfInboxId: (await sdk.client()).inboxId };
+  const admins =
+    convId && sdk.isGroup(conv) ? { convId, inboxToAddr: (await convMembers(conv)).inboxToAddr, where: 'search.superAdmins' } : null;
+  const rights = await deleteRightsOf(admins, null);
+  return { ...rights, selfInboxId: (await sdk.client()).inboxId };
 }
 
 export async function searchLocalHistory(
