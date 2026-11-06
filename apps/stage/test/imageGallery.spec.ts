@@ -5,6 +5,8 @@ import { isEditableTarget } from '../components/keys/keys.model';
 interface Att {
   kind: string;
   url: string;
+  mime?: string;
+  name?: string;
 }
 interface Entry {
   id: string;
@@ -38,6 +40,21 @@ describe('chat image gallery', () => {
   test('lists the images of the chat oldest first, in attachment order within a message', () => {
     expect(urls(items)).toEqual(['a', 'b', 'c', 'd']);
     expect(items.map((i) => i.key)).toEqual(['m1#0', 'm2#0', 'm2#2', 'm4#0']);
+  });
+
+  test('lists what the feed shows as an image, by MIME first and never an SVG', () => {
+    const mixed: Entry[] = [
+      {
+        id: 'm1',
+        atts: [
+          { kind: 'file', url: 'typed', mime: 'image/png' },
+          { kind: 'image', url: 'clip', mime: 'video/mp4' },
+          { kind: 'image', url: 'vector', name: 'logo.svg' },
+          { kind: 'image', url: 'plain' },
+        ],
+      },
+    ];
+    expect(urls(galleryItemsOf(mixed, (e) => e.atts))).toEqual(['typed', 'plain']);
   });
 
   test('keys an item by its message and attachment index', () => {

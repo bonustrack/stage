@@ -1,7 +1,8 @@
 import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { resolveRemoteAttachment } from '../../lib/xmtp.attachmentSdk';
-import type { ChatAttachment as Attachment } from './attachment';
+import { useLocalAttachment } from '../../lib/localAttachmentCache';
+import { attachmentSource, type AttachmentSource, type ChatAttachment as Attachment } from './attachment';
 
 const WEB_PLAYABLE_MIME: Readonly<Record<string, string>> = { 'audio/m4a': 'audio/mp4' };
 
@@ -47,4 +48,16 @@ export function useRemoteAttachment(remote: Attachment['remote']): {
       void refetch();
     },
   };
+}
+
+export function useAttachmentUri(
+  att: Attachment | undefined,
+  msgId: string | undefined,
+  index: number | undefined,
+): AttachmentSource & { retry: () => void } {
+  const local = useLocalAttachment(msgId, index, att?.remote);
+  const remote = useRemoteAttachment(att?.remote);
+  const source =
+    att === undefined ? { uri: null, mime: undefined, failed: false } : attachmentSource(att, inlineAttachmentUrl(att), local, remote);
+  return { ...source, retry: remote.retry };
 }

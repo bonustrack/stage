@@ -14,7 +14,7 @@ import { frameLocked, type FrameMessageHandler } from '../../lib/frames/frame.mo
 import type { FrameKeys } from '../../lib/frames/frameKeys';
 import { usePalette } from '../../lib/theme';
 import { isCoarsePointer } from '../layout/webLayout';
-import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
+import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import {
   FRAME_PREVIEW_BAR,
   FRAME_PREVIEW_BORDER,
@@ -243,7 +243,7 @@ export function FramePreview({
   consentAllowed?: boolean;
 }): React.ReactElement {
   return (
-    <Column margin={{ top: 4, bottom: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+    <Column margin={{ top: 4, bottom: 6 }} maxWidth={FEED_CONTENT_WIDTH} style={{ alignSelf: 'stretch' }}>
       <FrameTile frame={frame} line={line} messageId={messageId} disabled={frameLocked(frame, consentAllowed)} menu />
     </Column>
   );

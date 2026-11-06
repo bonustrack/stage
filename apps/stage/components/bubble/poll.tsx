@@ -9,7 +9,7 @@ import {
 } from './poll.model';
 import type { Poll } from './poll.model';
 import { usePalette, withAlpha } from '../../lib/theme';
-import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
+import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import { useState } from 'react';
 import { FormField } from '../FormField';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -161,7 +161,7 @@ export function PollView({
   };
   const blocks = pollQuestionBlocks(poll.questions, votes, ownVotes);
   return (
-    <Column margin={{ top: 8 }} gap={12} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+    <Column margin={{ top: 8 }} gap={12} maxWidth={FEED_CONTENT_WIDTH} style={{ alignSelf: 'stretch' }}>
       <Column gap={12}>
         {blocks.map((block, qi) => (
           <PollQuestionView key={`q-${qi}`} block={block} qi={qi} colors={colors} onVote={onVote} />

@@ -7,7 +7,7 @@ import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-
 import { usePalette } from '../../lib/theme';
 import { timeAgo } from '../../lib/format';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
+import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { Column, Row } from '../layout';
@@ -150,7 +150,7 @@ export function SigRequestCard({
       padding={12}
       margin={{ top: 8 }}
       gap={8}
-      maxWidth={ATTACHMENT_MAX_WIDTH}
+      maxWidth={FEED_CONTENT_WIDTH}
       style={{ alignSelf: 'stretch' }}
     >
       <Row align="center" gap={8}>
@@ -178,7 +178,7 @@ export function ReceiptBox({ dark, title, children }: { dark: boolean; title: st
       padding={12}
       margin={{ top: 8 }}
       gap={6}
-      maxWidth={ATTACHMENT_MAX_WIDTH}
+      maxWidth={FEED_CONTENT_WIDTH}
       style={{ alignSelf: 'stretch', borderWidth: 1, borderColor: dark ? 'rgba(120,200,120,0.4)' : 'rgba(60,160,60,0.35)' }}
     >
       <Row align="center" gap={8}>

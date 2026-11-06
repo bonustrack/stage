@@ -30,23 +30,3 @@ export function fileCardModel(a: { name?: string; mime?: string; size?: number; 
   const subtitle = [fileTypeLabel(a.name, a.mime), fileSizeLabel(a.size)].filter(Boolean).join(' · ');
   return { title, subtitle };
 }
-
-export function attachmentPreview(
-  att: { mime?: string },
-  local: { uri: string; mime?: string } | undefined,
-  remote: { uri: string | null; mime?: string },
-): { uri: string | null; mime: string | undefined } {
-  return { uri: local?.uri ?? remote.uri, mime: remote.mime ?? local?.mime ?? att.mime };
-}
-
-export function isSvgAttachment(att: { mime?: string; name?: string }): boolean {
-  return /^image\/svg/i.test(att.mime?.trim() ?? '') || /\.svgz?$/i.test(att.name?.trim() ?? '');
-}
-
-export function resolvedAttachmentKind(att: { kind: string; mime?: string; name?: string }): string {
-  if (isSvgAttachment(att)) return 'file';
-  if (att.mime?.startsWith('image/')) return 'image';
-  if (att.mime?.startsWith('audio/')) return 'audio';
-  if (att.mime?.startsWith('video/')) return 'video';
-  return att.kind;
-}

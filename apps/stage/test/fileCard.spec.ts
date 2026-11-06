@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { fileCardModel, fileSizeLabel, resolvedAttachmentKind } from '../components/media/fileCard.model';
+import { fileCardModel, fileSizeLabel } from '../components/media/fileCard.model';
+import { attachmentKind as resolvedAttachmentKind } from '../components/media/attachment';
 
 describe('file card', () => {
   test('describes the file type and size', () => {

@@ -3,9 +3,18 @@ import type { ImageLoadEventData, NativeSyntheticEvent } from 'react-native';
 import { getImageSize } from '@stage-labs/kit/react-native/image';
 import type { VideoSize } from '@stage-labs/kit/react-native/video';
 import { ignore } from '../../lib/errorPolicy';
-import { VIDEO_PLACEHOLDER_RATIO, mediaAspectRatio, validSize } from './imageBox.model';
+import { VIDEO_PLACEHOLDER_RATIO, mediaAspectRatio, validSize, type ImageSize } from './imageBox.model';
 
-type ImageLoaded = (event: NativeSyntheticEvent<ImageLoadEventData>) => void;
+type ImageLoadEvent = NativeSyntheticEvent<ImageLoadEventData>;
+type ImageLoaded = (event: ImageLoadEvent) => void;
+
+export function readNaturalSize(event: ImageLoadEvent, uri: string, apply: (size: ImageSize) => boolean): void {
+  const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
+    const size = validSize(measured);
+    return size !== undefined && apply(size);
+  };
+  if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');
+}
 
 export function useImageAspectRatio(uri: string): { aspectRatio: number; onLoad: ImageLoaded } {
   const [natural, setNatural] = useState<{ uri: string; aspectRatio: number }>();
@@ -14,13 +23,11 @@ export function useImageAspectRatio(uri: string): { aspectRatio: number; onLoad:
   const onLoad = useCallback<ImageLoaded>(
     (event) => {
       if (currentUri.current !== uri) return;
-      const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
-        const size = validSize(measured);
-        if (!size || currentUri.current !== uri) return false;
+      readNaturalSize(event, uri, (size) => {
+        if (currentUri.current !== uri) return false;
         setNatural({ uri, aspectRatio: mediaAspectRatio(size) });
         return true;
-      };
-      if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');
+      });
     },
     [uri],
   );

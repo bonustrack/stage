@@ -6,6 +6,7 @@ import { getImageSize, Image, type ImageResizeMethod } from '@stage-labs/kit/rea
 import { ignore, ignored } from '../../lib/errorPolicy';
 import { useStableCallback } from '../useStableCallback';
 import { validSize } from './imageBox.model';
+import { readNaturalSize } from './mediaAspect';
 import { dataUriDecodeSize, viewerResizeMethod } from './imageDecode.model';
 import {
   clampOffset,
@@ -197,12 +198,10 @@ export function ZoomableImage({
   );
   const onLoad = useCallback(
     (event: NativeSyntheticEvent<ImageLoadEventData>) => {
-      const learn = (measured: { width?: number; height?: number } | undefined): boolean => {
-        const size = validSize(measured);
-        if (size) z.natural.value = size;
-        return size !== undefined;
-      };
-      if (!learn(event.nativeEvent.source)) ignore(getImageSize(uri).then(learn), 'ui');
+      readNaturalSize(event, uri, (size) => {
+        z.natural.value = size;
+        return true;
+      });
     },
     [z, uri],
   );

@@ -1,9 +1,8 @@
-export const ATTACHMENT_MAX_WIDTH = 400;
 export const ATTACHMENT_MAX_HEIGHT = 400;
 export const ATTACHMENT_GAP = 4;
 export const VIDEO_PLACEHOLDER_RATIO = 16 / 9;
 
-interface ImageSize {
+export interface ImageSize {
   width: number;
   height: number;
 }

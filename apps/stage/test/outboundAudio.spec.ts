@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import { makeLocalAttachmentCache } from '../lib/localAttachmentCache.core';
-import { attachmentPreview, resolvedAttachmentKind } from '../components/media/fileCard.model';
+import { attachmentKind as resolvedAttachmentKind, attachmentSource } from '../components/media/attachment';
 import { planSendSteps, unsentDraft } from '../components/composer/send.model';
 import { voiceFileMeta } from '../components/composer/voice.model';
 import type { Attachment } from '../components/composer/types';
@@ -54,8 +54,8 @@ describe('outgoing audio previews', () => {
       expect(early).toEqual({ uri: 'blob:voice', mime });
       const guessedKind = attachmentKindOf({ filename: audio.name });
       if (mime.startsWith('audio/webm')) expect(guessedKind).toBe('video');
-      const preview = attachmentPreview({}, early, { uri: null });
-      expect(preview).toEqual(early);
+      const preview = attachmentSource({ remote: REMOTE }, '', early, { uri: null, isError: false });
+      expect(preview).toEqual({ uri: 'blob:voice', mime, failed: false });
       expect(resolvedAttachmentKind({ kind: guessedKind, mime: preview.mime })).toBe('audio');
       sent.resolve('echo');
       cache.remember(await result, previews);
@@ -99,11 +99,14 @@ describe('outgoing audio previews', () => {
 
   test('decrypted metadata remains authoritative and uncached incoming previews are unchanged', () => {
     const local = { uri: 'blob:local', mime: 'audio/webm' };
-    const remote = { uri: 'blob:remote', mime: 'audio/webm;codecs=opus' };
-    expect(attachmentPreview({}, local, remote)).toEqual({ uri: local.uri, mime: remote.mime });
-    expect(attachmentPreview({}, undefined, remote)).toEqual(remote);
-    expect(attachmentPreview({ mime: 'audio/m4a' }, undefined, { uri: null })).toEqual({ uri: null, mime: 'audio/m4a' });
-    expect(attachmentPreview({}, undefined, { uri: null })).toEqual({ uri: null, mime: undefined });
+    const remote = { uri: 'blob:remote', mime: 'audio/webm;codecs=opus', isError: false };
+    const pending = { uri: null, isError: false };
+    const sent = { remote: REMOTE };
+    const source = (uri: string | null, mime: string | undefined) => ({ uri, mime, failed: false });
+    expect(attachmentSource(sent, '', local, remote)).toEqual(source(local.uri, remote.mime));
+    expect(attachmentSource(sent, '', undefined, remote)).toEqual(source(remote.uri, remote.mime));
+    expect(attachmentSource({ ...sent, mime: 'audio/m4a' }, '', undefined, pending)).toEqual(source(null, 'audio/m4a'));
+    expect(attachmentSource(sent, '', undefined, pending)).toEqual(source(null, undefined));
   });
 
   test('mixed uploads preserve their own MIME and indexes without relabeling real videos', () => {

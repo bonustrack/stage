@@ -11,10 +11,10 @@ import { BLOCK_GAP, MESSAGE_LINK_STYLE, findLinks } from './markdown';
 import type { LinkPress } from '../links/linkProps.types';
 import type { ChatAttachment } from '../media/attachment';
 import { bubbleLinkProps } from '../links/linkProps';
-import { AttachmentView, RemoteAttachmentResolver } from '../media/attachments';
-import { inlineAttachmentUrl } from '../media/attachmentUri';
+import { ResolvedAttachment } from '../media/attachments';
 import { galleryKeyOf } from '../media/imageGallery.model';
-import { ATTACHMENT_GAP, ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
+import { ATTACHMENT_GAP } from '../media/imageBox.model';
+import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import { HighlightText } from './HighlightText';
 import { CodeBlock } from './CodeBlock';
 import { splitCodeBlocks } from '@stage-labs/client/text/codeBlocks';
@@ -162,11 +162,7 @@ function BubbleAttachment({
   entryId: string;
   fg: string;
 }): React.ReactElement {
-  const galleryKey = galleryKeyOf(entryId, index);
-  if (att.remote) {
-    return <RemoteAttachmentResolver att={att} fg={fg} msgId={entryId} index={index} galleryKey={galleryKey} />;
-  }
-  return <AttachmentView att={att} fg={fg} fullUrl={inlineAttachmentUrl(att)} galleryKey={galleryKey} />;
+  return <ResolvedAttachment att={att} fg={fg} msgId={entryId} index={index} galleryKey={galleryKeyOf(entryId, index)} />;
 }
 
 export function BubbleAttachments({
@@ -180,7 +176,7 @@ export function BubbleAttachments({
 }): React.ReactElement | null {
   if (atts.length === 0) return null;
   return (
-    <Column margin={{ top: 4, bottom: 6 }} gap={ATTACHMENT_GAP} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+    <Column margin={{ top: 4, bottom: 6 }} gap={ATTACHMENT_GAP} maxWidth={FEED_CONTENT_WIDTH} style={{ alignSelf: 'stretch' }}>
       {atts.map((a, i) => (
         <Column key={a.id ?? `${entryId}-att-${i}`}>
           <BubbleAttachment att={a} index={i} entryId={entryId} fg={fg} />
@@ -293,7 +289,7 @@ export function BubbleEmbeds({ cardLinks, dark }: { cardLinks: CardLink[]; dark:
   return (
     <>
       {cardLinks.map((card) => (
-        <Column key={`${card.kind}:${card.url}`} margin={{ top: 6 }} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+        <Column key={`${card.kind}:${card.url}`} margin={{ top: 6 }} maxWidth={FEED_CONTENT_WIDTH} style={{ alignSelf: 'stretch' }}>
           {embedNode(card, dark)}
         </Column>
       ))}
@@ -330,7 +326,7 @@ export function ReplyPreview({
       disabled={!onPress}
       style={({ pressed }) => ({
         alignSelf: 'stretch',
-        maxWidth: ATTACHMENT_MAX_WIDTH,
+        maxWidth: FEED_CONTENT_WIDTH,
         borderLeftWidth: 2,
         borderLeftColor: sub,
         paddingLeft: 6,

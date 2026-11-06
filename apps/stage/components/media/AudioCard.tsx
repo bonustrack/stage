@@ -19,7 +19,7 @@ import { callOwnsAudio } from '../../lib/calls.audio.core';
 import { AudioSeekBar } from './AudioSeekBar';
 import { IconTileRow } from './MediaCard';
 import { audioCardModel } from './audioCard.model';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import type { ChatAttachment as Attachment } from './attachment';
 import { Column, Row } from '../layout';
 
@@ -49,7 +49,7 @@ export function AudioCard({ att, uri }: { att: Attachment; uri: string }): React
   const download = useDownload(uri, model.fileName, att.mime);
 
   return (
-    <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}>
+    <Card dark={scheme === 'dark'} background={pal.bg} padding={12} style={{ width: '100%', maxWidth: FEED_CONTENT_WIDTH }}>
       <Column testID="audio-card" gap={8}>
         <IconTileRow
           title={model.title}

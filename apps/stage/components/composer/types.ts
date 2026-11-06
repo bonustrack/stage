@@ -1,12 +1,11 @@
 import type { EntryPayload } from '@stage-labs/client/xmtp/entryPayload';
+import type { ChatAttachment } from '../media/attachment';
 
-export interface Attachment {
+export interface Attachment extends ChatAttachment {
   id: string;
   url: string;
-  kind: string;
   mime: string;
   size: number;
-  name?: string;
 }
 
 export interface OptimisticEntry {

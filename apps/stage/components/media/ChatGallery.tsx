@@ -1,10 +1,9 @@
 import { createContext, useContext, useState } from 'react';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { ImageViewer } from './ImageViewer';
-import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import { useStableCallback } from '../useStableCallback';
 import { attachmentsOf, type ChatAttachment as Attachment } from './attachment';
-import { inlineAttachmentUrl, useRemoteAttachment } from './attachmentUri';
+import { useAttachmentUri } from './attachmentUri';
 import { galleryItemsOf, galleryStep, type GalleryItem } from './imageGallery.model';
 import { useGalleryKeys } from './galleryKeys';
 
@@ -24,11 +23,8 @@ export function ChatGalleryProvider({
 }
 
 function useChatImageUri(image: ChatImage | null): string | null {
-  const local = useLocalAttachment(image?.entryId, image?.index, image?.att.remote);
-  const remote = useRemoteAttachment(image?.att.remote);
-  if (!image) return null;
-  if (local) return local.uri;
-  return image.att.remote ? (remote.uri ?? '') : inlineAttachmentUrl(image.att);
+  const { uri } = useAttachmentUri(image?.att, image?.entryId, image?.index);
+  return image === null ? null : (uri ?? '');
 }
 
 export function ChatImageViewer({

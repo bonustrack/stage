@@ -6,7 +6,7 @@ import { TokenAvatar } from '../token/TokenAvatar';
 import { usePayerBalance, type PayerBalance } from '../../lib/txPayer';
 import { usePalette, withAlpha } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
+import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import { bubbleLinkProps } from '../links/linkProps';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { useState } from 'react';
@@ -149,7 +149,7 @@ export function PaymentCard({
       padding={12}
       margin={{ top: 8 }}
       gap={8}
-      maxWidth={ATTACHMENT_MAX_WIDTH}
+      maxWidth={FEED_CONTENT_WIDTH}
       style={{ alignSelf: 'stretch' }}
     >
       <Row align="center" justify="spaceBetween" gap={8}>

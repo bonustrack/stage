@@ -9,10 +9,9 @@ import { ImageLoading, MessengerImageAttachment } from './ImageAttachment';
 import { IconTileRow, MediaCard } from './MediaCard';
 import { useVideoAspectRatio } from './mediaAspect';
 import { usePalette } from '../../lib/theme';
-import { attachmentPreview, fileCardModel, resolvedAttachmentKind } from './fileCard.model';
-import { useLocalAttachment } from '../../lib/localAttachmentCache';
-import type { ChatAttachment as Attachment } from './attachment';
-import { useRemoteAttachment } from './attachmentUri';
+import { fileCardModel } from './fileCard.model';
+import { attachmentKind, type ChatAttachment as Attachment } from './attachment';
+import { useAttachmentUri } from './attachmentUri';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { openFile } from '../../lib/fileOpen';
 import { Column } from '../layout';
@@ -38,7 +37,7 @@ export function AttachmentView({
   fg: string;
   galleryKey?: string;
 }): React.ReactElement {
-  const kind = resolvedAttachmentKind(att);
+  const kind = attachmentKind(att);
   if (kind === 'image') return <MessengerImageAttachment uri={fullUrl} galleryKey={galleryKey} />;
   if (kind === 'video') return <MessengerVideoAttachment uri={fullUrl} />;
   if (kind === 'audio') return <AudioCard att={att} uri={fullUrl} />;
@@ -119,7 +118,7 @@ function AttachmentPending({ label, fg, compact }: { label: string; fg: string; 
   );
 }
 
-export function RemoteAttachmentResolver({
+export function ResolvedAttachment({
   att,
   fg,
   msgId,
@@ -132,17 +131,13 @@ export function RemoteAttachmentResolver({
   index?: number;
   galleryKey?: string;
 }): React.ReactElement {
-  const local = useLocalAttachment(msgId, index, att.remote);
-  const remote = useRemoteAttachment(att.remote);
-  const { uri, mime } = attachmentPreview(att, local, remote);
+  const { uri, mime, failed, retry } = useAttachmentUri(att, msgId, index);
   const label = att.name ?? 'attachment';
-  const kind = resolvedAttachmentKind(att);
+  const kind = attachmentKind(att);
   const compact = kind === 'file';
 
-  if (remote.isError && !local) {
-    return <AttachmentRetry label={label} fg={fg} onRetry={remote.retry} compact={compact} />;
-  }
-  if (!uri && kind === 'image') return <ImageLoading />;
-  if (!uri) return <AttachmentPending label={label} fg={fg} compact={compact} />;
+  if (failed) return <AttachmentRetry label={label} fg={fg} onRetry={retry} compact={compact} />;
+  if (uri === null && kind === 'image') return <ImageLoading />;
+  if (uri === null) return <AttachmentPending label={label} fg={fg} compact={compact} />;
   return <AttachmentView att={{ ...att, mime }} fullUrl={uri} fg={fg} galleryKey={galleryKey} />;
 }
