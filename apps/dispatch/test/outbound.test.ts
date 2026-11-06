@@ -62,6 +62,11 @@ describe('node outbound filter', () => {
       'https://stage.box.../',
       'https://localhost../',
       'https://printer.local../',
+      'https://nas.lan/',
+      'https://box.home.arpa/',
+      'https://localhost.localdomain/',
+      'https://[::ffff:7f00:1]/',
+      'https://example.123/',
     ];
     for (const url of blocked) expect([url, allowedTarget(url)]).toEqual([url, false]);
   });

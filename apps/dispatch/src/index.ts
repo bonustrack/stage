@@ -5,10 +5,11 @@ import {
   NODE_REQUEST_MAX_BYTES,
   NODE_SIGNATURE_HEADERS,
   NODE_TIMEOUT_MS,
-  clientRateKey,
   isNodeId,
   nodeScriptName,
 } from '@stage-labs/client/nodes/hosting';
+import { readCappedBytes } from '@stage-labs/client/net/cappedBody';
+import { clientIp, clientRateKey } from '@stage-labs/client/net/clientIp';
 
 const NULL_BODY = new Set([204, 205]);
 const CALLER_HEADERS = [
@@ -74,24 +75,13 @@ async function over(limiter: RateLimit | undefined, key: string): Promise<boolea
 }
 
 async function limited(request: Request, id: string, deps: DispatchDeps): Promise<boolean> {
-  return (await over(deps.limiter, clientRateKey(request.headers.get('cf-connecting-ip') ?? 'unknown'))) || over(deps.nodeLimiter, id);
+  return (await over(deps.limiter, clientRateKey(clientIp(request.headers)))) || over(deps.nodeLimiter, id);
 }
 
 async function cappedBody(response: Response): Promise<Blob | null> {
   if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return null;
-  const reader: ReadableStreamDefaultReader<Uint8Array> | undefined = response.body?.getReader();
-  if (reader === undefined) return new Blob([]);
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  for (let part = await reader.read(); !part.done; part = await reader.read()) {
-    size += part.value.byteLength;
-    if (size > NODE_REPLY_MAX_BYTES) {
-      await reader.cancel();
-      return null;
-    }
-    chunks.push(part.value);
-  }
-  return new Blob(chunks);
+  const bytes = await readCappedBytes(response.body, NODE_REPLY_MAX_BYTES, 'reject');
+  return bytes === null ? null : new Blob([bytes]);
 }
 
 const passable = (status: number): boolean => (status >= 200 && status < 300) || (status >= 400 && status < 600);

@@ -138,6 +138,8 @@ describe('node url safety', () => {
       'https://localhost..',
       'https://nas.local..',
       'https://printer.local...',
+      'https://[fec0::1]',
+      'https://[2001:db8::ffff:7f00:1]',
     ];
     for (const url of blocked) expect([url, nodeUrlOf(url)]).toEqual([url, { ok: false, problem: 'local' }]);
     expect(nodeUrlOf('https://172.32.0.1').ok).toBe(true);

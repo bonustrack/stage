@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { ed25519 } from '@noble/curves/ed25519';
 import { utf8ToBytes } from '@noble/hashes/utils';
-import { clientRateKey, hostedNodeUrl, isNodeId, nodeIdOf, nodeScriptName } from '../src/nodes/hosting';
+import { hostedNodeUrl, isNodeId, nodeIdOf, nodeScriptName } from '../src/nodes/hosting';
+import { clientRateKey } from '../src/net/clientIp';
 import { nodeKeyId } from '../src/nodes/protocol';
 import { deleteNode, nodeCodeTooLarge, ownNodeUrl, publishNode } from '../src/nodes/publish';
 import { base64url, base64urlBytes, isStrongNodeKey, nodeSigningText } from '../src/nodes/signing';

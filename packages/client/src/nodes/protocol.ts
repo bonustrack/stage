@@ -14,23 +14,11 @@ import {
   type FrameContent,
   type FrameMessage,
 } from '../xmtp/frame.schema';
+import { isPublicHost } from '../net/publicHost';
 import { NODE_CAPABILITIES_HEADER, NODE_REPLY_MAX_BYTES, NODE_SIGNATURE_HEADERS, NODE_TIMEOUT_MS } from './hosting';
 import { base64url, nodeSigningText } from './signing';
 
 const MAX_URL_CHARS = 2048;
-const LOCAL_SUFFIXES = ['.localhost', '.local', '.localdomain', '.internal', '.lan', '.home.arpa'];
-const PRIVATE_V4: readonly (readonly [number, number, number])[] = [
-  [0, 0, 255],
-  [10, 0, 255],
-  [127, 0, 255],
-  [169, 254, 254],
-  [172, 16, 31],
-  [192, 168, 168],
-  [100, 64, 127],
-  [198, 18, 19],
-];
-const PRIVATE_V6 = /^(?:f[c-f]|64:ff9b:|2002:|::ffff:0:)/;
-const NUMERIC_LABEL = /^(?:\d+|0x[0-9a-f]*)$/;
 const UNRESERVED = /^[A-Za-z0-9\-._~]$/;
 const STREAM_TYPES = /\b(?:jsonl|ndjson|x-ndjson|jsonlines)\b/i;
 
@@ -63,41 +51,6 @@ type ReadEnd = 'done' | 'too-large' | 'invalid';
 
 type Push = (value: unknown) => boolean;
 
-function v4Octets(host: string): number[] | null {
-  const parts = host.split('.');
-  if (parts.length !== 4 || parts.some((part) => !/^\d{1,3}$/.test(part))) return null;
-  const octets = parts.map(Number);
-  return octets.every((octet) => octet <= 255) ? octets : null;
-}
-
-function privateV4([a, b]: readonly number[]): boolean {
-  if (a === undefined || b === undefined) return true;
-  return a >= 224 || PRIVATE_V4.some(([first, low, high]) => a === first && b >= low && b <= high);
-}
-
-function mappedV4(host: string): number[] | null {
-  const dotted = /^::(?:ffff:)?(\d+\.\d+\.\d+\.\d+)$/.exec(host)?.[1];
-  if (dotted !== undefined) return v4Octets(dotted);
-  const hex = /^::(?:ffff:)?([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(host);
-  if (hex?.[1] === undefined || hex[2] === undefined) return null;
-  const high = parseInt(hex[1], 16);
-  const low = parseInt(hex[2], 16);
-  return [high >> 8, high & 255, low >> 8, low & 255];
-}
-
-function privateV6(host: string): boolean {
-  if (host === '::' || host === '::1' || PRIVATE_V6.test(host)) return true;
-  const v4 = mappedV4(host);
-  return v4 !== null && privateV4(v4);
-}
-
-function isPublicHost(host: string): boolean {
-  if (host.includes(':')) return !privateV6(host);
-  const v4 = v4Octets(host);
-  if (v4 !== null || NUMERIC_LABEL.test(host.slice(host.lastIndexOf('.') + 1))) return v4 !== null && !privateV4(v4);
-  return host.includes('.') && !LOCAL_SUFFIXES.some((suffix) => host.endsWith(suffix));
-}
-
 function canonicalPart(part: string): string {
   return part.replace(/%([0-9a-fA-F]{2})|[ "<>\\^`{|}[\]]/g, (match: string, hex: string | undefined) => {
     if (hex === undefined) return encodeURIComponent(match);
@@ -120,11 +73,7 @@ export function nodeUrlOf(raw: string): NodeUrl {
   if (url === null || /[^\x21-\x7e]/.test(url.host)) return { ok: false, problem: 'invalid' };
   if (url.protocol !== 'https:') return { ok: false, problem: 'insecure' };
   if (url.username !== '' || url.password !== '') return { ok: false, problem: 'credentials' };
-  const host = url.hostname
-    .toLowerCase()
-    .replace(/^\[|\]$/g, '')
-    .replace(/\.+$/, '');
-  if (!isPublicHost(host)) return { ok: false, problem: 'local' };
+  if (!isPublicHost(url.hostname)) return { ok: false, problem: 'local' };
   const href = `https://${url.host}${canonicalPart(url.pathname)}${canonicalPart(url.search)}`;
   return href.length > MAX_URL_CHARS ? { ok: false, problem: 'invalid' } : { ok: true, url: href, host: url.host };
 }

@@ -1,5 +1,5 @@
 import { BUNDLER_HOST, PROXY_ORIGIN, PROXY_ROUTES, isStageClient } from '@stage-labs/client/endpoints';
-import { clientRateKey } from '@stage-labs/client/nodes/hosting';
+import { clientIp, clientRateKey } from '@stage-labs/client/net/clientIp';
 import { handleBundler } from './bundler.ts';
 import { fetchPage } from './fetchPage.ts';
 import { fetchImage, parseWidth } from './fetchImage.ts';
@@ -26,12 +26,8 @@ const hits = new Map<string, { count: number; reset: number }>();
 
 type RateBudget = 'preview' | 'img' | 'settle' | 'history' | 'names' | 'attachments' | 'nodes';
 
-function clientIp(request: Request): string {
-  return request.headers.get('cf-connecting-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-}
-
 function rateLimited(request: Request, budget: RateBudget): boolean {
-  const key = `${budget}:${clientIp(request)}`;
+  const key = `${budget}:${clientIp(request.headers)}`;
   const now = Date.now();
   const e = hits.get(key);
   if (!e || now > e.reset) {
@@ -167,7 +163,7 @@ function mailWiring(env: ProxyEnv): MailWiring | null {
 function routeMail(request: Request, env: ProxyEnv): Promise<Response> | Response {
   const wiring = mailWiring(env);
   if (wiring === null) return json({ error: 'mail is not configured' }, 503);
-  return handleMail(request, { ...wiring, limiter: env.MAIL_REQUESTS, clientIp: clientIp(request) });
+  return handleMail(request, { ...wiring, limiter: env.MAIL_REQUESTS, clientIp: clientIp(request.headers) });
 }
 
 const CLIENT_ROUTES: ReadonlyMap<string, (request: Request, ctx: ExecutionContext) => Promise<Response>> = new Map([
@@ -181,7 +177,12 @@ function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Resp
   return handleHistory(request, env.HISTORY_ARCHIVES);
 }
 
-async function limitedBy(request: Request, budget: RateBudget, limiter: RateLimit | undefined, key = clientIp(request)): Promise<boolean> {
+async function limitedBy(
+  request: Request,
+  budget: RateBudget,
+  limiter: RateLimit | undefined,
+  key = clientIp(request.headers),
+): Promise<boolean> {
   if (rateLimited(request, budget)) return true;
   return limiter !== undefined && !(await limiter.limit({ key })).success;
 }
@@ -196,7 +197,7 @@ function routeNodes(request: Request, env: ProxyEnv): Promise<Response> {
   return handleNodes(request, {
     api: cloudflareApi(env.NODES_CF_API_TOKEN, env.NODES_CF_ACCOUNT_ID),
     limited: async () =>
-      (await limitedBy(request, 'nodes', env.NODE_PUBLISHES, clientRateKey(clientIp(request)))) ||
+      (await limitedBy(request, 'nodes', env.NODE_PUBLISHES, clientRateKey(clientIp(request.headers)))) ||
       (env.NODE_PUBLISHES_ALL !== undefined && !(await env.NODE_PUBLISHES_ALL.limit({ key: 'all' })).success),
   });
 }
