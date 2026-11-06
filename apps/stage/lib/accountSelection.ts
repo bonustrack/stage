@@ -1,5 +1,5 @@
 import { makeValue } from './storeCore';
-import { getAccountEpoch } from './accountEpoch';
+import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
 
 export class NoAccountError extends Error {
   constructor() {
@@ -75,4 +75,23 @@ export function accountScope(): AccountScope {
   const epoch = getAccountEpoch();
   const selection = getAccountSelection();
   return { accountId: activeId.get(), epoch, ...scopeOf(() => epoch === getAccountEpoch() && selection === getAccountSelection()) };
+}
+
+export interface SignalledAccountScope extends AccountScope {
+  signal: AbortSignal;
+}
+
+export async function withAccountScope<T>(run: (scope: SignalledAccountScope) => Promise<T>): Promise<T> {
+  const controller = new AbortController();
+  const abort = (): void => {
+    controller.abort();
+  };
+  const stopEpoch = subscribeAccountEpoch(abort);
+  const stopSelection = version.subscribe(abort);
+  try {
+    return await run({ ...accountScope(), signal: controller.signal });
+  } finally {
+    stopEpoch();
+    stopSelection();
+  }
 }

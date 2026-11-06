@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { AccountChangedError, accountScope, accountSelectionChanged, selectionScope } from '../lib/accountSelection';
+import { AccountChangedError, accountScope, accountSelectionChanged, selectionScope, withAccountScope } from '../lib/accountSelection';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
 
 describe('account scopes', () => {
@@ -22,5 +22,22 @@ describe('account scopes', () => {
     expect(() => {
       scope.assertCurrent();
     }).toThrow(AccountChangedError);
+  });
+
+  test('a signalled scope aborts on a switch or a client reset and stops listening when the work ends', async () => {
+    for (const change of [bumpAccountEpoch, accountSelectionChanged]) {
+      const signals: AbortSignal[] = [];
+      await withAccountScope(async (scope) => {
+        signals.push(scope.signal);
+        expect(scope.signal.aborted).toBe(false);
+        change();
+        expect(scope.signal.aborted).toBe(true);
+        expect(scope.current()).toBe(false);
+      });
+      const idle = await withAccountScope(async (scope) => scope.signal);
+      change();
+      expect(idle.aborted).toBe(false);
+      expect(signals).toHaveLength(1);
+    }
   });
 });

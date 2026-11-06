@@ -52,7 +52,7 @@ import {
   type MemberHistory,
 } from './newChat.model';
 import { capabilities } from '../../lib/capabilities';
-import { ignored, reported } from '../../lib/errorPolicy';
+import { reported } from '../../lib/errorPolicy';
 import { setDraftValue } from '../../lib/drafts';
 import { useClearedChats } from '../../lib/sync/clearedChats';
 import { createValueStore } from '../../lib/persistedStore';
@@ -66,8 +66,7 @@ import { createGroup } from '../../lib/xmtp.groups';
 import { getConvConsentState } from '../../lib/xmtp.conv';
 import { subscribeCachedRows } from '../../lib/channelsCache';
 import { uploadAttachments } from '../../lib/xmtp.attachments';
-import { schedulePushTopicRefresh, warmSenderFilters } from '../../lib/pushRegister';
-import { xmtpClient } from '../../lib/xmtp.client';
+import { schedulePushTopicRefresh, warmSendPath } from '../../lib/pushRegister';
 import { useActiveAccountRecord, useSelfAddress } from '../../lib/messaging/account';
 import { mentionLabelOf } from '../conversation/convTitle';
 import { Column, PAGE_GUTTER, Row } from '../layout';
@@ -301,7 +300,7 @@ export function NewChatScreen(): React.ReactElement {
   };
   const drafting = draft.text.trim() !== '' || draft.pending.length > 0;
   useEffect(() => {
-    if (drafting) void xmtpClient().then(warmSenderFilters).catch(ignored(undefined, 'optional'));
+    if (drafting) warmSendPath();
   }, [drafting, draft.text, draft.pending.length]);
   const recipients = useRecipients(drafting, draftKey, metadata.assigned, account?.address ?? null);
   const selectedMetadata = memberChatMetadata(metadata, recipients.picked, account?.address ?? null);

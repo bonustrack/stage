@@ -1,5 +1,5 @@
 import { usePushEnabled } from '../../lib/pushPref';
-import { isPushSupported } from '../../lib/pushRegister';
+import { isPushSupported } from '../../lib/pushNotify';
 import { applyPush } from '../../lib/pushToggle';
 import { SettingsToggleRow } from './SettingsPage';
 

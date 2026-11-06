@@ -3,7 +3,7 @@ import { subscribeChannelUpdates } from '../feed/merge';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { refreshConv } from './queries';
 import { startReadSync } from '../sync/readSync';
-import { startPushClear } from '../pushRegister';
+import { startPush } from '../pushRegister';
 
 const OUTBOX_FLUSH_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -19,7 +19,7 @@ export function ensureMessagingStreamSync(): void {
   started = true;
   subscribeChannelUpdates(refreshChannel);
   startReadSync();
-  startPushClear();
+  startPush();
   void flushDmOutbox();
   setInterval(() => {
     void flushDmOutbox();

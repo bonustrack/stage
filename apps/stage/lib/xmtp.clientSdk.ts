@@ -14,6 +14,8 @@ import { nativeInstallationCreatedAtMs } from './xmtp.sdk.native.shapes';
 import { forgetStorageIndex } from './storageIndexStore';
 import { recover } from './errorPolicy';
 
+export type XmtpClient = Client;
+
 type InstallationId = Parameters<Client['revokeInstallations']>[1][number];
 
 const REGISTERED_BUILD_TIMEOUT_MS = 20_000;

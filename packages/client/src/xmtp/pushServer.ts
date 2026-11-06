@@ -3,6 +3,7 @@ import { bytesToHex } from '@noble/hashes/utils';
 import { hexToBytes, type Hex } from 'viem';
 import { stableOwnerSignature } from '../accounts/keys';
 import { bytesToBase64 } from '../text/base64';
+import { isSyncGroupName } from './sync/group';
 
 export const PUSH_RPC = {
   register: 'RegisterInstallation',
@@ -89,6 +90,14 @@ const GROUP_TOPIC = /\/g-([0-9a-fA-F]+)\//;
 export function groupIdOfTopic(topic: string): string | null {
   const match = GROUP_TOPIC.exec(topic);
   return match?.[1]?.toLowerCase() ?? null;
+}
+
+export function withoutSyncGroups(topics: readonly string[], groups: readonly { id: string; name: string }[]): string[] {
+  const hidden = new Set(groups.filter((group) => isSyncGroupName(group.name)).map((group) => group.id.toLowerCase()));
+  return topics.filter((topic) => {
+    const groupId = groupIdOfTopic(topic);
+    return groupId === null || !hidden.has(groupId);
+  });
 }
 
 export function isWelcomeTopic(topic: string): boolean {

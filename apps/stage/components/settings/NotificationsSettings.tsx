@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
-import { getPushPermission, isPushSupported } from '../../lib/pushRegister';
+import { getPushPermission, isPushSupported } from '../../lib/pushNotify';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { SettingsButtonRow, SettingsGroup, SettingsPage } from './SettingsPage';
 import { PUSH_UNAVAILABLE, PushToggleRow } from './PushToggleRow';

@@ -19,7 +19,7 @@ import { LUMA_REC709, luminance, parseHex } from '@stage-labs/kit/color-math';
 import { fontName } from '@stage-labs/kit/tokens';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
-import { usePushDeepLinks } from '../lib/pushRegister';
+import { usePushDeepLinks } from '../lib/pushNotify';
 import { useOwnMailKey } from '../lib/mail';
 import { bootMessaging, useMessagingBoot } from '../lib/messaging/boot';
 import { QueryClientProvider } from '@tanstack/react-query';

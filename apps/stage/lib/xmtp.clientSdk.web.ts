@@ -27,7 +27,7 @@ import { historyServerUrl } from './historyServer';
 import { forgetFeeds } from './feedSnapshot';
 import { forgetStorageIndex } from './storageIndexStore';
 
-type XmtpClient = Client<unknown>;
+export type XmtpClient = Client<unknown>;
 
 const savedKeysFor = (id: string): { address: string; env: string; installation: string; inbox: string } => ({
   address: `xmtp.address.${id}`,

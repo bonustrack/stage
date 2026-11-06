@@ -1,5 +1,6 @@
 import { setPushEnabled } from './pushPref';
-import { isPushSupported, registerPushWithServer, requestPushPermission, unregisterPushFromServer } from './pushRegister';
+import { isPushSupported, requestPushPermission } from './pushNotify';
+import { registerPushWithServer, unregisterPushFromServer } from './pushRegister';
 import { xmtpClient } from './xmtp.client';
 import { capabilities } from './capabilities';
 import { report } from './errorPolicy';
