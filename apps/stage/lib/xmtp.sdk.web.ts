@@ -26,7 +26,7 @@ import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/x
 import { encodeDeleteMessage } from '@stage-labs/client/xmtp/deleteMessage';
 import { xmtpClient } from './xmtp.client.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
-import { withNestedReactions } from './feedOrder.model';
+import { withNestedReactions } from './feed/order.model';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import { webGroupMetaPolicy } from './xmtp.sdk.web.groupPolicy';
 import { webConsentState, webListOptions, xmtpConsentOf } from './xmtp.sdk.web.consent';

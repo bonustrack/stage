@@ -3,7 +3,7 @@ import { AppState, Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { inboxIdOfUri, lineOfConv, userUriOf } from '@stage-labs/client/xmtp/line';
-import { useXmtpFeed } from '../../lib/xmtp.feed';
+import { useXmtpFeed } from '../../lib/feed/useXmtpFeed';
 import { xmtpReply } from '../../lib/xmtp.messages';
 import { useConvDetails, useConvRow } from '../../lib/messaging/queries';
 import { isGroupRow, memberAddressesOf } from '../../lib/messaging/convRow.model';

@@ -4,12 +4,12 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { convOfLine, sdk } from '../xmtp.sdk';
 import { isShownInFeed } from '@stage-labs/client/xmtp/visibility';
 import { latestConvMessages, olderConvMessages } from '../xmtp.messages';
-import { PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from '../xmtp.resync';
+import { PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from './resync';
 import { feedCache, activeFeedLines } from '../xmtp.state.core';
-import { isFeedLoaded, markFeedLoaded, takeFreshFeed, trackFirstPageLoad } from '../feedLines';
-import { cachedFeed, rememberFeed } from '../feedSnapshot';
+import { isFeedLoaded, markFeedLoaded, takeFreshFeed, trackFirstPageLoad } from './lines';
+import { cachedFeed, rememberFeed } from './snapshot';
 import { perfLog, perfTime } from '../perf';
-import { messagingKeys } from './queries';
+import { messagingKeys } from '../messaging/queries';
 import { report, reported, recover, ignored } from '../errorPolicy';
 
 function feedLatest(line: string): HistoryEntry | undefined {

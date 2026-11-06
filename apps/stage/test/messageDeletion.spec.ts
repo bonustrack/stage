@@ -8,7 +8,7 @@ import {
   replyQuoteOf,
 } from '../components/conversation/messageDeletion.model';
 import { bubbleMenuItems } from '../components/conversation/bubbleMenu.model';
-import { mergeFeedEntries } from '../lib/feedOrder.model';
+import { mergeFeedEntries } from '../lib/feed/order.model';
 import { entry } from './helpers';
 
 const ME = 'xmtp:me';

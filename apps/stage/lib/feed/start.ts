@@ -1,5 +1,5 @@
-import { createValueStore } from './persistedStore';
-import { feedStartOf, parseFeedStarts, withFeedStart, type FeedStart } from './feedStart.model';
+import { createValueStore } from '../persistedStore';
+import { feedStartOf, parseFeedStarts, withFeedStart, type FeedStart } from './start.model';
 
 const store = createValueStore<FeedStart[]>({
   key: 'feed.reachedStart',

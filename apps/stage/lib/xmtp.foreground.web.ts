@@ -1,4 +1,4 @@
-import { resyncActiveFeeds } from './xmtp.resync';
+import { resyncActiveFeeds } from './feed/resync';
 import type { StreamStatus } from './xmtp.types';
 
 let visibilityHandler: (() => void) | null = null;

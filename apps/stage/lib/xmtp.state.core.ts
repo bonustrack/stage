@@ -1,7 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
 import { makeListeners, makeValue } from './storeCore';
-import { resetFeedLines } from './feedLines';
+import { resetFeedLines } from './feed/lines';
 import { attempt } from './errorPolicy';
 import { sleep } from '@stage-labs/client/timing';
 import { AccountChangedError } from './accountSelection';
@@ -44,7 +44,7 @@ export const feedCache = {
   },
 };
 
-export { activeFeedLines } from './feedLines';
+export { activeFeedLines } from './feed/lines';
 
 let activeConvId: string | null = null;
 

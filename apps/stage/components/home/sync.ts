@@ -19,7 +19,7 @@ import {
 import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { summarizeConversation } from '../../lib/messaging/conversation';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { afterFirstPages } from '../../lib/feedLines';
+import { afterFirstPages } from '../../lib/feed/lines';
 import { getPeerName } from '../../lib/peerProfiles';
 import { hydratePeerProfiles } from '../../lib/peerProfileCache';
 import { perfLog, perfTime } from '../../lib/perf';

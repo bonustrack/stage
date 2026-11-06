@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { activeFeedLines, holdFeedLine, isFeedLoaded, markFeedLoaded, resetFeedLines } from '../lib/feedLines';
+import { activeFeedLines, holdFeedLine, isFeedLoaded, markFeedLoaded, resetFeedLines } from '../lib/feed/lines';
 
 describe('holdFeedLine', () => {
   test('a line stays active until its last holder lets go', () => {

@@ -1,13 +1,13 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { convOfLine, sdk } from './xmtp.sdk';
-import { latestConvMessages } from './xmtp.messages';
+import { convOfLine, sdk } from '../xmtp.sdk';
+import { latestConvMessages } from '../xmtp.messages';
 import { isShownInFeed } from '@stage-labs/client/xmtp/visibility';
-import { feedCache, activeFeedLines } from './xmtp.state.core';
-import { recover, report, reported } from './errorPolicy';
-import { mergeFeedEntries, settleCachedFeed, type FeedMerge } from './feedOrder.model';
-import { markFeedStart } from './feedStart';
-import { makeListeners } from './storeCore';
-import { syncVisibleChannels } from './channelVisibility';
+import { feedCache, activeFeedLines } from '../xmtp.state.core';
+import { recover, report, reported } from '../errorPolicy';
+import { mergeFeedEntries, settleCachedFeed, type FeedMerge } from './order.model';
+import { markFeedStart } from './start';
+import { makeListeners } from '../storeCore';
+import { syncVisibleChannels } from '../channelVisibility';
 
 export const PAGE_SIZE = 20;
 

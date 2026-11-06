@@ -8,7 +8,7 @@ import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { CountTag } from '../../CountTag';
 import { NewChatAction } from '../NewChatAction';
 import type { Row as ChannelRowData } from '../model';
-import { prefetchFeed } from '../../../lib/messaging/feedQuery';
+import { prefetchFeed } from '../../../lib/feed/load';
 import { useSafeAreaInsets } from '../../layout/safeArea';
 import { useHomeView } from '../../../lib/homeView';
 import { useWebTabRail } from '../../layout/webLayout';

@@ -10,7 +10,7 @@ import { useChannelFields } from '../../../lib/channelFields';
 import { RowChannelMenu, rowAvatarAddress, rowMenuOpener, rowPreview, rowTitle } from '../parts';
 import type { RowMenu } from '../state';
 import type { Row as ChannelRowData } from '../model';
-import { prefetchFeed } from '../../../lib/messaging/feedQuery';
+import { prefetchFeed } from '../../../lib/feed/load';
 import { getDraft } from '../../../lib/drafts';
 import { conversationLinkOf } from '../../../lib/links';
 import { channelTimestamp } from '../../../lib/format';

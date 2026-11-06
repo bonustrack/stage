@@ -15,7 +15,7 @@ import { GroupHeader, useGroupHover } from './GroupHeader';
 import { isGroupHeader, type HomeListItem } from './groups.model';
 import { toggleGroupCollapsed } from '../../lib/channelGroups';
 import { resetXmtpDatabase } from '../../lib/deviceAccount';
-import { prefetchFeed } from '../../lib/messaging/feedQuery';
+import { prefetchFeed } from '../../lib/feed/load';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { getPeerName, isPeerResolved, peerLabel } from '../../lib/peerProfiles';
 import { getDraft } from '../../lib/drafts';

@@ -4,7 +4,7 @@ import { setAppForeground, subscribeXmtpPush } from '../modules/stage-pill';
 import { dismissConvNotifications, markBackgroundDelivered } from './pushNotify';
 import { XMTP_APP_GROUP } from './xmtp.dbkeyFs';
 import { getCachedXmtpClient } from './xmtp.state';
-import { resyncActiveFeeds, syncInboxOnce } from './xmtp.resync';
+import { resyncActiveFeeds, syncInboxOnce } from './feed/resync';
 import type { StreamStatus } from './xmtp.types';
 import { attempt, ignored, reported } from './errorPolicy';
 

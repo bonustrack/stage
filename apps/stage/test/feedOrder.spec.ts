@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { mergeFeedEntries, settleCachedFeed, withNestedReactions } from '../lib/feedOrder.model';
+import { mergeFeedEntries, settleCachedFeed, withNestedReactions } from '../lib/feed/order.model';
 import { entry } from './helpers';
 
 const addedYou = entry('added-you', { ts: '2026-09-25T14:04:06.017Z' });

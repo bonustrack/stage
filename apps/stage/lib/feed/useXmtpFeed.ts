@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { useAccountEpoch } from './accountEpoch';
-import { getOrCreateXmtpClient } from './xmtp.client';
-import { feedCache } from './xmtp.state.core';
-import { holdFeedLine, isFeedLoaded } from './feedLines';
-import { ensureGlobalStream } from './xmtp.stream';
-import { getQueryClient } from './queryClient';
-import { messagingKeys } from './messaging/queries';
-import { ensureFeedQueryBridge, loadFeedFirstPage, loadFeedOlderPage } from './messaging/feedQuery';
-import type { XmtpFeedStatus } from './xmtp.types';
-import { report, reported } from './errorPolicy';
-import { feedStartId, useFeedStartId } from './feedStart';
-import { cachedSelfInboxId, rememberSelfInboxId } from './feedSnapshot';
-import { isAtFeedStart } from './feedStart.model';
+import { useAccountEpoch } from '../accountEpoch';
+import { getOrCreateXmtpClient } from '../xmtp.client';
+import { feedCache } from '../xmtp.state.core';
+import { holdFeedLine, isFeedLoaded } from './lines';
+import { ensureGlobalStream } from '../xmtp.stream';
+import { getQueryClient } from '../queryClient';
+import { messagingKeys } from '../messaging/queries';
+import { ensureFeedQueryBridge, loadFeedFirstPage, loadFeedOlderPage } from './load';
+import type { XmtpFeedStatus } from '../xmtp.types';
+import { report, reported } from '../errorPolicy';
+import { feedStartId, useFeedStartId } from './start';
+import { cachedSelfInboxId, rememberSelfInboxId } from './snapshot';
+import { isAtFeedStart } from './start.model';
 
 const EMPTY: HistoryEntry[] = [];
 

@@ -36,7 +36,7 @@ import { accountClient } from './xmtp.account';
 import { setChannelHidden } from './sync/hiddenChannels';
 import { forgetChannelAccess } from './channelAccess';
 import { reconcileHiddenConsent, rememberOwnGroup } from './channelVisibility';
-import { markFreshFeed } from './feedLines';
+import { markFreshFeed } from './feed/lines';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 

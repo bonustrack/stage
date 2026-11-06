@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { FEED_START_LIMIT, feedStartOf, isAtFeedStart, parseFeedStarts, withFeedStart, type FeedStart } from '../lib/feedStart.model';
+import { FEED_START_LIMIT, feedStartOf, isAtFeedStart, parseFeedStarts, withFeedStart, type FeedStart } from '../lib/feed/start.model';
 
 describe('feed start memory', () => {
   test('keeps one first message per chat and only the most recent chats', () => {

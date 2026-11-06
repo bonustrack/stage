@@ -1,7 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { persistenceBackend, sealedCache } from './cache';
-import { currentAccountId } from './accounts';
-import { knownActiveAccountId } from './accountSelection';
+import { persistenceBackend, sealedCache } from '../cache';
+import { currentAccountId } from '../accounts';
+import { knownActiveAccountId } from '../accountSelection';
 import {
   EMPTY_SNAPSHOT,
   decodeSnapshot,
@@ -11,8 +11,8 @@ import {
   withLine,
   withSelf,
   type FeedSnapshot,
-} from './feedSnapshot.model';
-import { recover, reported } from './errorPolicy';
+} from './snapshot.model';
+import { recover, reported } from '../errorPolicy';
 
 const WRITE_DELAY_MS = 1_000;
 

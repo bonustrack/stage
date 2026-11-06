@@ -10,7 +10,7 @@ import {
   snapshotEntries,
   withLine,
   withSelf,
-} from '../lib/feedSnapshot.model';
+} from '../lib/feed/snapshot.model';
 import { entry } from './helpers';
 
 const ids = (entries: readonly HistoryEntry[]): string[] => entries.map((e) => e.id);

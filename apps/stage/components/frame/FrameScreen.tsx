@@ -9,7 +9,7 @@ import { menuPointBelowEnd } from '../AnchoredMenu';
 import { HoverIconButton } from '../hover';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../lib/messaging/useConvConsent';
-import { useXmtpFeed } from '../../lib/xmtp.feed';
+import { useXmtpFeed } from '../../lib/feed/useXmtpFeed';
 import { frameLocked, frameOf } from '../../lib/frames/frame.model';
 import { useFrameMessage } from '../../lib/frames/frameMessage';
 import type { FrameNav } from '../../lib/frames/frameStacks';
