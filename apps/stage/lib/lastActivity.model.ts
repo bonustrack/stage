@@ -7,10 +7,6 @@ export type ActivityPreferences = Record<HomeView, LastActivity>;
 
 export const DEFAULT_LAST_ACTIVITY: ActivityPreferences = { chats: 'all', board: 'all' };
 
-export function isLastActivity(value: unknown): value is LastActivity {
-  return LAST_ACTIVITY_WINDOWS.some((window) => window === value);
-}
-
 export function lastActivityCutoff(window: LastActivity, now: number): number | null {
   return window === 'all' ? null : now - Number.parseInt(window, 10) * 86_400_000;
 }

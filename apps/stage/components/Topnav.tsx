@@ -8,6 +8,8 @@ import { Column, Row, STICKY_UNDER_CHROME, PAGE_GUTTER, stickyAt } from './layou
 export const TOPNAV_HEIGHT = 52;
 export const TOPNAV_FADE = 8;
 
+export const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
+
 const FADE_OVERLAY = { position: 'absolute', left: 0, right: 0, zIndex: 2 } as const;
 
 export function TopnavFade({ stickyTop, top = 0 }: { stickyTop?: string; top?: number }): React.ReactElement {

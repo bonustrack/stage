@@ -319,7 +319,8 @@
         "apps/stage/components/bubble/question.tsx",
         "apps/stage/components/bubble/reactions.tsx",
         "apps/stage/components/home/labelbar.tsx",
-        "apps/stage/components/home/topnavRight.tsx"
+        "apps/stage/components/home/topnavRight.tsx",
+        "apps/stage/components/home/viewMenu.tsx"
       ],
       "rules": {
         "react/rules-of-hooks": "error",

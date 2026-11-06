@@ -140,17 +140,15 @@ function useCardArrows({
   columns,
   openIndex,
   openConvId,
-  paused,
   onMove,
 }: {
   columns: readonly BoardColumn<ChannelRowData>[];
   openIndex: number;
   openConvId: string | null;
-  paused: boolean;
   onMove: (key: string) => void;
 }): void {
   const router = useRouter();
-  useArrowKeys(useWebTabRail() && openConvId !== null && !paused, ALL_ARROWS, (arrow) => {
+  useArrowKeys(useWebTabRail() && openConvId !== null, ALL_ARROWS, (arrow) => {
     const card = boardArrowMove(columns, openIndex, openConvId, arrow);
     if (card === null) return;
     onMove(card.key);
@@ -209,12 +207,10 @@ export function BoardLanes({
   columns,
   pinned,
   actions,
-  filtering,
 }: {
   columns: BoardColumn<ChannelRowData>[];
   pinned: readonly string[];
   actions: ColumnActions;
-  filtering: boolean;
 }): React.ReactElement {
   const { bottom } = useSafeAreaInsets();
   const [frame, setFrame] = useState({ width: 0, height: 0 });
@@ -238,7 +234,6 @@ export function BoardLanes({
     columns,
     openIndex,
     openConvId,
-    paused: filtering,
     onMove: (key) => {
       setOpenedFrom(key);
       revealColumn(columns.findIndex((column) => column.key === key));

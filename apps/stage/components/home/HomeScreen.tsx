@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { MenuPoint } from '../AnchoredMenu.model';
-import type { HomeMenuState } from './topnavRight';
+import { useMemo } from 'react';
 import type { SimultaneousRefs } from '../layout/simultaneousRefs';
 import { usePathname, useRouter } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -33,14 +31,9 @@ export function HomeScreen({
 }: { panRef?: SimultaneousRefs; pane?: boolean; board?: boolean } = {}): React.ReactElement | null {
   const splitHome = useWebTabRail() && pane !== true;
   const accountEpoch = useAccountEpoch();
-  const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const menu = useMemo(() => ({ anchor, setAnchor }), [anchor]);
-  useEffect(() => {
-    setAnchor(null);
-  }, [accountEpoch]);
   if (splitHome) return board ? null : <NewChatScreen key={accountEpoch} />;
-  if (board) return <BoardScreen pane={pane === true} menu={menu} />;
-  return <ChannelsHome panRef={panRef} pane={pane === true} menu={menu} />;
+  if (board) return <BoardScreen pane={pane === true} />;
+  return <ChannelsHome panRef={panRef} pane={pane === true} />;
 }
 
 export function BoardHome(): React.ReactElement | null {
@@ -49,7 +42,7 @@ export function BoardHome(): React.ReactElement | null {
   return here || opened ? <HomeScreen board /> : null;
 }
 
-function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane: boolean; menu: HomeMenuState }): React.ReactElement {
+function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boolean }): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const dark = useEffectiveColorScheme() === 'dark';
@@ -57,9 +50,8 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const st = useHomeState();
   const { pinned, rowMenu } = st;
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
-  const [filtering, setFiltering] = useState(false);
   const listing = useHomeListing('chats');
-  const { rows, query, setQuery, searchText, matches, cleared, sort, orders, profilesVersion, draftsVersion } = listing;
+  const { rows, query, searchText, matches, cleared, sort, orders, profilesVersion, draftsVersion } = listing;
   const { groupBy } = listing.view;
   const statusOrder = groupingOrderOf('status', orders);
   const labelOrder = groupingOrderOf('label', orders);
@@ -89,7 +81,7 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     [list.grouped, visibleRows, pinned],
   );
   const drag = useHomeDrag(list.items, groupBy === 'category', pinned, visiblePinned);
-  useRowArrows({ rows: list.rows, items: list.items, activePath, router, listRef: st.scroll.listRef, paused: filtering });
+  useRowArrows({ rows: list.rows, items: list.items, activePath, router, listRef: st.scroll.listRef });
   const renderRow = useChannelRowRenderer(router, st.setRowMenu, {
     channelProfilesVersion: profilesVersion,
     draftsVersion,
@@ -119,14 +111,11 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
         onToggleUnread={toggleUnread}
         onClearAll={clearAllFilters}
         query={query}
-        setQuery={setQuery}
-        onFilterMenu={setFiltering}
         listExtraData={listExtraData}
         scroll={st.scroll}
         renderRow={renderRow}
         wrapList={(node) => <HomeDragLists drag={drag}>{node}</HomeDragLists>}
         pane={pane}
-        menu={menu}
       />
       <RowChannelMenu
         menu={rowMenu}

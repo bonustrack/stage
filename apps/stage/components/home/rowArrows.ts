@@ -19,17 +19,15 @@ export function useRowArrows({
   activePath,
   router,
   listRef,
-  paused,
 }: {
   rows: readonly Row[];
   items: readonly HomeListItem[];
   activePath: string;
   router: RowRouter;
   listRef: React.RefObject<VirtualListHandle | null>;
-  paused: boolean;
 }): void {
   const open = rows.find((row) => isActiveConversationPath(activePath, row.convId, row.peerAddress)) ?? null;
-  useArrowKeys(open !== null && !paused, VERTICAL_ARROWS, (arrow) => {
+  useArrowKeys(open !== null, VERTICAL_ARROWS, (arrow) => {
     const next = stepRow(rows, open?.convId ?? null, arrow);
     if (next === null) return;
     prefetchFeed(lineOfConv(next.convId));

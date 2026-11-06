@@ -14,7 +14,7 @@ import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { LabelChip } from '../LabelChip';
-import { SearchTopnavBar } from '../SearchTopnavBar';
+import { SearchField } from '../search/SearchField';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 import { useAccountEpoch } from '../../lib/accountEpoch';
@@ -161,21 +161,16 @@ function ListHeader({
   storage: StorageState;
   hidden: ReadonlySet<string>;
 }): React.ReactElement {
-  const { link: head, sub, border } = usePalette();
   return (
     <Column gap={12} padding={{ top: LIST_TOP_GAP, bottom: 8 }}>
-      <SearchTopnavBar
-        field
+      <SearchField
         inline
-        persistent
+        muted="sub"
         query={query}
         setQuery={onQuery}
         onClose={() => {
           onQuery('');
         }}
-        head={head}
-        sub={sub}
-        border={border}
         placeholder="Search files"
       />
       <TypeChips filter={filter} onFilter={onFilter} />

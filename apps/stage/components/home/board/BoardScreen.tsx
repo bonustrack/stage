@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
-import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../../Topnav';
-import { FilterSearch } from '../search/FilterSearch';
-import { resetBoardQuery, useHomeListing, useHomeQuery } from '../listing';
-import { useHomeTopnav, useSearchOpen } from '../list';
-import type { HomeMenuState } from '../topnavRight';
+import { TOPNAV_FADE, TOPNAV_HEIGHT, TopnavFade, UNDER_TOPNAV } from '../../Topnav';
+import { resetBoardQuery, useHomeListing } from '../listing';
+import { HomeSearch } from '../HomeSearch';
+import { HomeTopnav } from '../HomeTopnav';
 import { HomeError, HomeSpinner } from '../parts';
 import { useChannelsSyncError } from '../../../lib/messaging/channelsSync';
 import { peerLabel } from '../../../lib/peerProfiles';
@@ -20,7 +19,7 @@ import { addBoardColumn, deleteBoardColumn, dropCard, dropColumn, renameBoardCol
 import { BoardLanes, type ColumnActions } from './BoardLanes';
 import { Column, ScreenScroll } from '../../layout';
 
-function BoardBody({ filtering }: { filtering: boolean }): React.ReactElement {
+function BoardBody(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
   const { rows, pinned, cleared, orders, view, sort, matches, profilesVersion } = useHomeListing('board');
@@ -58,34 +57,13 @@ function BoardBody({ filtering }: { filtering: boolean }): React.ReactElement {
       if (columnsEditable(columnBy)) addBoardColumn(columns, order, name, columnBy);
     },
   };
-  return <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} filtering={filtering} />;
+  return <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} />;
 }
-function BoardFrame({
-  pane,
-  query,
-  setQuery,
-  onFilterMenu,
-  menu,
-  children,
-}: {
-  pane: boolean;
-  query: string;
-  setQuery: (query: string) => void;
-  onFilterMenu: (open: boolean) => void;
-  children: React.ReactNode;
-  menu: HomeMenuState;
-}): React.ReactElement {
-  const { text, link, border } = usePalette();
+function BoardFrame({ pane, children }: { pane: boolean; children: React.ReactNode }): React.ReactElement {
   const wide = useWebTabRail();
-  const search = useSearchOpen(query, setQuery);
-  const slot = useHomeTopnav({ scope: 'board', pane, query, setQuery, onFilterMenu, menu }, search, wide);
   const [laneHeight, setLaneHeight] = useState(0);
   const scroll = useRef<React.ComponentRef<typeof ScreenScroll>>(null);
-  const openSearch = (): void => {
-    scroll.current?.scrollToOffset({ offset: 0, animated: false });
-    search.open();
-  };
-  const topnav = pane ? (slot.override ?? <Topnav inline right={slot.right} />) : null;
+  const topnav = pane ? <HomeTopnav view="board" pane /> : null;
   if (wide)
     return (
       <>
@@ -102,18 +80,13 @@ function BoardFrame({
           setLaneHeight(event.nativeEvent.layout.height);
         }}
       >
-        <TopnavFade stickyTop={`${TOPNAV_HEIGHT}px`} />
+        <TopnavFade stickyTop={UNDER_TOPNAV} />
         <ScreenScroll ref={scroll} contentContainerStyle={{ paddingTop: TOPNAV_FADE }} keyboardShouldPersistTaps="handled">
-          <FilterSearch
-            key={search.key}
-            autoFocus={search.key > 0}
-            query={query}
-            setQuery={setQuery}
-            onClose={search.close}
-            onOpen={openSearch}
-            head={link}
-            sub={text}
-            border={border}
+          <HomeSearch
+            view="board"
+            onOpen={() => {
+              scroll.current?.scrollToOffset({ offset: 0, animated: false });
+            }}
           />
           <Column height={laneHeight}>{children}</Column>
         </ScreenScroll>
@@ -127,16 +100,14 @@ function useBoardHeight(): number | undefined {
   if (Platform.OS !== 'web') return undefined;
   return height - TOPNAV_HEIGHT - chrome;
 }
-export function BoardScreen({ pane, menu }: { pane: boolean; menu: HomeMenuState }): React.ReactElement {
-  const [query, setQuery] = useHomeQuery('board');
+export function BoardScreen({ pane }: { pane: boolean }): React.ReactElement {
   useEffect(() => resetBoardQuery, []);
-  const [filtering, setFiltering] = useState(false);
   const height = useBoardHeight();
   const windowHeight = !pane && height !== undefined;
   return (
     <Column weight={windowHeight ? undefined : 1} height={windowHeight ? height : undefined} surface="surface">
-      <BoardFrame pane={pane} query={query} setQuery={setQuery} onFilterMenu={setFiltering} menu={menu}>
-        <BoardBody filtering={filtering} />
+      <BoardFrame pane={pane}>
+        <BoardBody />
       </BoardFrame>
     </Column>
   );

@@ -8,7 +8,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/tabs/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
-import { useTopnavSlot } from '../../components/tabs/topnavSlots';
+import { HomeTopnav } from '../../components/home/HomeTopnav';
 import {
   TAB_BADGE_POSITION,
   TAB_BADGE_SIZE,
@@ -17,7 +17,7 @@ import {
   WebTabRail,
   chatsTabOpensNewChat,
 } from '../../components/tabs/WebTabRail';
-import { useRememberHomeView } from '../../components/tabs/boardHome';
+import { useBoardHome, useRememberHomeView } from '../../components/tabs/boardHome';
 import { homeViewAt } from '../../components/tabs/splitRoutes';
 import { HIDDEN_TAB_ROUTES, PAGES, TAB_BAR_PAGES, tabPageAt } from '../../components/tabs/pages';
 import { routeRendersPage } from '../../components/tabs/pageRenderer';
@@ -32,11 +32,12 @@ import { useOpenNewChat } from '../../components/home/newChatFocus';
 import { Column } from '../../components/layout';
 
 function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }): React.ReactElement {
-  const slot = useTopnavSlot();
-  if (slot?.override) return <>{slot.override}</>;
+  const boardHome = useBoardHome();
+  const home = rail ? null : Platform.OS === 'web' ? homeViewAt(pathname) : boardHome ? 'board' : 'chats';
+  if (home !== null) return <HomeTopnav view={home} pane={false} />;
   const title = rail ? tabPageAt(pathname)?.label : undefined;
   const left = title === undefined ? undefined : <Text text={title} size="xl" fontWeight="semibold" />;
-  return <Topnav left={left} right={slot?.right} />;
+  return <Topnav left={left} />;
 }
 
 function PagerOverlay({

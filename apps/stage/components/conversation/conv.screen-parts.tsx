@@ -18,7 +18,7 @@ import { capabilities } from '../../lib/capabilities';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
 import { previewOf } from './feed-helpers';
 import { canDeleteMessage, isAdminDelete, deleteConfirmOf } from './messageDeletion.model';
-import { SearchTopnavBar } from '../SearchTopnavBar';
+import { TopnavSearch } from '../search/TopnavSearch';
 import { RequestActionBar } from './RequestActionBar';
 import { canApproveConversation, canComposeConversation, composerAccess } from './consent.model';
 import type { useConversationState } from './useConversationState';
@@ -213,18 +213,14 @@ export function ConversationSearchTopnav({
   setQuery: (s: string) => void;
   onClose: () => void;
 }): React.ReactElement {
-  const { text: sub, link: head, border } = usePalette();
   const topInset = useSafeAreaInsets().top;
   return (
     <Column style={pinnedTop(2)}>
-      <SearchTopnavBar
+      <TopnavSearch
         ref={searchInputRef}
-        border={border}
         query={query}
         setQuery={setQuery}
         onClose={onClose}
-        head={head}
-        sub={sub}
         placeholder="Search this conversation"
         topInset={topInset}
       />

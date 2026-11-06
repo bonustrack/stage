@@ -1,7 +1,7 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { CHANNEL_PRIORITIES, categoryOf, priorityOf } from '@stage-labs/client/xmtp/labels';
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
-import { homeSortSchema, type HomeSort, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
+import type { HomeSort, HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { compareNames } from '../../lib/format';
 import type { HomeView } from '../../lib/homeView';
 import { GROUPING_FIELDS, groupValueOf } from '../../lib/grouping.model';
@@ -20,19 +20,6 @@ export const SORT_LABELS: Record<HomeSort['by'], string> = {
 
 export function homeSortOf(view: HomeViewContent): HomeSort {
   return (view.view === 'board' ? view.boardSort : view.chatsSort) ?? DEFAULT_SORT[view.view];
-}
-
-export function homeSortEdit(view: HomeViewContent, id: string): HomeViewEdit | null {
-  const current = homeSortOf(view);
-  const by = homeSortSchema.shape.by.safeParse(id.slice('sort:'.length));
-  const direction = homeSortSchema.shape.direction.safeParse(id.slice('direction:'.length));
-  const sort =
-    id.startsWith('sort:') && by.success
-      ? { ...current, by: by.data }
-      : id.startsWith('direction:') && direction.success
-        ? { ...current, direction: direction.data }
-        : null;
-  return sort === null ? null : { [view.view === 'board' ? 'boardSort' : 'chatsSort']: sort };
 }
 
 interface SortableRow extends ChannelListRow {
