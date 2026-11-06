@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { isChatCleared, isRowCleared, revivesClearedChat, mergeClearedChats } from '../src/xmtp/sync/clear';
+import { isChatCleared, isRowCleared, mergeClearedChats } from '../src/xmtp/sync/clear';
+import { revivesRow } from '../src/xmtp/visibility';
 import { isSyncGroupName, syncGroupName, pickPublishGroup, isOwnSyncGroup, type SyncGroupFacts } from '../src/xmtp/sync/group';
 import { isNewerSyncState, type SyncMessage } from '../src/xmtp/sync/kind';
 import { isSyncType, parseSyncState, collectSyncReplay, type SyncReplay } from '../src/xmtp/sync/registry';
@@ -158,11 +159,12 @@ describe('deleted chats', () => {
   });
 
   test('reactions and read receipts never bring a deleted chat back', () => {
-    expect(revivesClearedChat('reaction')).toBe(false);
-    expect(revivesClearedChat('readReceipt')).toBe(false);
-    expect(revivesClearedChat('text')).toBe(true);
-    expect(revivesClearedChat('remoteStaticAttachment')).toBe(true);
-    expect(revivesClearedChat(undefined)).toBe(true);
+    const revives = (contentTypeId: string | undefined): boolean => revivesRow({ contentTypeId, content: {} }, true);
+    expect(revives('reaction')).toBe(false);
+    expect(revives('readReceipt')).toBe(false);
+    expect(revives('text')).toBe(true);
+    expect(revives('remoteStaticAttachment')).toBe(true);
+    expect(revives(undefined)).toBe(true);
   });
 
   test('a row is judged by its last real message, not a later reaction', () => {

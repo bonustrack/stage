@@ -1,7 +1,7 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { latestConvMessages } from './xmtp.messages';
-import { isControlBody } from './xmtp.types';
+import { isShownInFeed } from '@stage-labs/client/xmtp/visibility';
 import { feedCache, activeFeedLines } from './xmtp.state.core';
 import { recover, report, reported } from './errorPolicy';
 import { mergeFeedEntries, settleCachedFeed, type FeedMerge } from './feedOrder.model';
@@ -22,7 +22,7 @@ function applyMerge(line: string, merged: FeedMerge, always: boolean): FeedMerge
 }
 
 function shown(entries: readonly HistoryEntry[]): HistoryEntry[] {
-  return entries.filter((e) => !isControlBody(e.text));
+  return entries.filter(isShownInFeed);
 }
 
 export function mergeIntoFeed(line: string, entries: readonly HistoryEntry[]): FeedMerge {

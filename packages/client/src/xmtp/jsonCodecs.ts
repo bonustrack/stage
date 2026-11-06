@@ -54,21 +54,8 @@ export const CALL_INVITE_CODEC = jsonCodec(CALL_INVITE_CONTENT_TYPE, callInviteT
 
 export const CALL_SIGNAL_CODEC = jsonCodec(CALL_SIGNAL_CONTENT_TYPE, () => undefined, callSignalSchema, 'xmtp.callSignal', false);
 
-const FRAME_CODEC = jsonCodec(FRAME_CONTENT_TYPE, frameFallbackText, frameContentSchema, 'xmtp.frame');
+export const FRAME_CODEC = jsonCodec(FRAME_CONTENT_TYPE, frameFallbackText, frameContentSchema, 'xmtp.frame');
 
 export const FRAME_ACTION_CODEC = jsonCodec(FRAME_ACTION_CONTENT_TYPE, frameActionFallbackText, frameActionSchema, 'xmtp.frameAction');
 
 export const DELETE_REQUEST_CODEC = jsonCodec(STAGE_DELETE_CONTENT_TYPE, () => undefined, deleteMessageSchema, 'xmtp.deleteRequest', false);
-
-export const STAGE_JSON_CODECS = [
-  POLL_CODEC,
-  SIGNATURE_REQUEST_CODEC,
-  SIGNATURE_REFERENCE_CODEC,
-  WALLET_SEND_CALLS_CODEC,
-  ...Object.values(SYNC_CODECS),
-  CALL_INVITE_CODEC,
-  CALL_SIGNAL_CODEC,
-  FRAME_CODEC,
-  FRAME_ACTION_CODEC,
-  DELETE_REQUEST_CODEC,
-];

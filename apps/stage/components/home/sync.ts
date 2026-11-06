@@ -18,7 +18,6 @@ import {
 } from '../../lib/xmtp.conv';
 import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
 import { summarizeConversation } from '../../lib/messaging/conversation';
-import { isControlBody } from '../../lib/xmtp.types';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { afterFirstPages } from '../../lib/feedLines';
 import { getPeerName } from '../../lib/peerProfiles';
@@ -31,12 +30,10 @@ import { mergePaintedRows, visibleRowsDiff, type Row } from './model';
 import { schedulePushTopicRefresh } from '../../lib/pushRegister';
 import { report, recover, attempt } from '../../lib/errorPolicy';
 import { presentInboundNotification } from '../../lib/pushNotify';
-import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { revivesClearedChat } from '@stage-labs/client/xmtp/sync/clear';
-import { isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
-import { isCallSignalType } from '@stage-labs/client/xmtp/call';
+import { arrivalEffect, countsAsUnread, isRowCandidate, revivesRow } from '@stage-labs/client/xmtp/visibility';
 import { isChannelHidden, loadHiddenChannels, subscribeHiddenChannels } from '../../lib/sync/hiddenChannels';
 import { getActiveAccount } from '../../lib/accounts';
 
@@ -98,23 +95,13 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
   };
 }
 
-function rowPreviewOf(msg: StreamedMessage): string {
-  try {
-    return previewOfXmtpContent(msg.content, msg.contentTypeId);
-  } catch {
-    return `[${msg.contentTypeId ?? 'unknown'}]`;
-  }
-}
-
 function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
-    if (isCancelled() || !msg || isCallSignalType(msg.contentTypeId) || isChannelHidden(streamConvId)) return;
-    if (isDeleteRequestType(msg.contentTypeId)) {
-      onMiss(streamConvId);
-      return;
-    }
-    if (typeof msg.content === 'string' && isControlBody(msg.content)) return;
+    if (isCancelled() || !msg || isChannelHidden(streamConvId)) return;
+    const effect = arrivalEffect(msg);
+    if (effect === 'refresh') onMiss(streamConvId);
+    if (effect !== 'row') return;
     const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
     const lastPreview = rowPreviewOf(msg).slice(0, ROW_PREVIEW_MAX_CHARS);
 
@@ -134,7 +121,8 @@ function applyToRows(
   const prev = homeRows();
   if (!prev) return unchanged;
   const target = prev.find((r) => r.convId === msgConvId);
-  if (target?.peerAddress != null && isGroupUpdateTypeId(msg.contentTypeId)) return unchanged;
+  const dm = target?.peerAddress != null;
+  if (target !== undefined && !isRowCandidate(msg, dm)) return unchanged;
   const result = applyInbound(
     prev,
     {
@@ -143,13 +131,13 @@ function applyToRows(
       sentNs: msg.sentNs,
       lastTs,
       lastPreview,
-      countsAsUnread: !isGroupUpdateTypeId(msg.contentTypeId) && !alreadyCounted(msg.id),
+      countsAsUnread: countsAsUnread(msg) && !alreadyCounted(msg.id),
     },
     (cur) => ({
       avatarAddress: cur.peerAddress ?? cur.avatarAddress,
       lastSenderAddress: cur.inboxToAddr[msg.senderInboxId] ?? null,
       lastFromSelf: msg.senderInboxId === cur.selfInboxId,
-      lastBubbleTs: revivesClearedChat(msg.contentTypeId) ? lastTs : cur.lastBubbleTs,
+      lastBubbleTs: revivesRow(msg, dm) ? lastTs : cur.lastBubbleTs,
     }),
   );
   if (result === null) return { needsRefresh: true, notify: null };

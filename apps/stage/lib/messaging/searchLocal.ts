@@ -1,11 +1,10 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
-import { isControlBody } from '../xmtp.types';
 import { latestConvMessages, olderConvMessages, type ConvHandle } from '../xmtp.messages';
 import { convOfLine, sdk } from '../xmtp.sdk';
 import { PAGE_SIZE } from '../xmtp.resync';
 import { deletedMessages, isDeleteRequest, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
-import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
+import { isSearchable } from '@stage-labs/client/xmtp/visibility';
 import { ownDeletesReady } from '../ownDeletes';
 import { convMembers } from '../xmtp.identity';
 import { recover } from '../errorPolicy';
@@ -21,9 +20,7 @@ export interface SearchScanResult {
 }
 
 function matches(e: HistoryEntry, needle: string): boolean {
-  if (!e.text) return false;
-  if (isControlBody(e.text) || isCallSignalEntry(e)) return false;
-  return e.text.toLowerCase().includes(needle);
+  return isSearchable(e) && (e.text ?? '').toLowerCase().includes(needle);
 }
 
 interface ScanState {
@@ -50,7 +47,7 @@ function collectPageHits(mapped: HistoryEntry[], needle: string, state: ScanStat
   for (const e of mapped) {
     if (state.seen.has(e.id)) continue;
     state.seen.add(e.id);
-    if (!deleted.has(e.id) && !isDeleteRequest(e) && matches(e, needle)) {
+    if (!deleted.has(e.id) && matches(e, needle)) {
       state.hits.push(e);
       if (state.hits.length >= SEARCH_MAX_RESULTS) {
         state.truncated = true;

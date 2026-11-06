@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { STAGE_JSON_CODECS, SYNC_CODECS } from '../src/xmtp/jsonCodecs';
+import { SYNC_CODECS } from '../src/xmtp/jsonCodecs';
+import { STAGE_JSON_CODECS } from '../src/xmtp/contentTypes';
 import { isSyncType, type SyncKind } from '../src/xmtp/sync/registry';
 
 const WIRE: Record<SyncKind, { typeId: string; fallback: string; json: string }> = {

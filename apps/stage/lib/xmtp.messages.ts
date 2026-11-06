@@ -1,6 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { isXmtpDeletableType } from '@stage-labs/client/xmtp/deleteMessage';
+import { isXmtpDeletableType } from '@stage-labs/client/xmtp/contentTypes';
 import { buildReaction, buildVote, buildOpenAnswer, type ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import { openVoteKey, type PollContent } from '@stage-labs/client/xmtp/poll';
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';

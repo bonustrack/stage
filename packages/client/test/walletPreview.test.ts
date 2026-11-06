@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { encodeFunctionData, erc20Abi } from 'viem';
-import { previewOfXmtpContent } from '../src/xmtp/humanize';
+import { previewOfXmtpContent } from '../src/xmtp/contentTypes';
 import type { WalletSendCallsContent } from '../src/xmtp/tx';
 
 const USDC_BASE = '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';

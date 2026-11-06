@@ -26,7 +26,7 @@ import {
 import { isCoarsePointer } from '../layout/webLayout';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
+import { isSystemEntry } from '@stage-labs/client/xmtp/entryPayload';
 import { deletedMessages, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
 import { useOwnDeletes } from '../../lib/ownDeletes';

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { previewOfXmtpContent } from '../src/xmtp/humanize';
+import { previewOfXmtpContent } from '../src/xmtp/contentTypes';
 import { buildOpenAnswer, buildReaction, buildVote } from '../src/xmtp/builders';
 import { openVoteKey } from '../src/xmtp/poll-tally';
 

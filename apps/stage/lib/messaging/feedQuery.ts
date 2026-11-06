@@ -2,7 +2,7 @@ import { getQueryClient } from '../queryClient';
 import { getAccountEpoch } from '../accountEpoch';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { convOfLine, sdk } from '../xmtp.sdk';
-import { isControlBody } from '../xmtp.types';
+import { isShownInFeed } from '@stage-labs/client/xmtp/visibility';
 import { latestConvMessages, olderConvMessages } from '../xmtp.messages';
 import { PAGE_SIZE, mergeLatestIntoFeed, mergePageIntoFeed, refreshLatestPage, syncInboxOnce } from '../xmtp.resync';
 import { feedCache, activeFeedLines } from '../xmtp.state.core';
@@ -15,7 +15,7 @@ import { report, reported, recover, ignored } from '../errorPolicy';
 function feedLatest(line: string): HistoryEntry | undefined {
   const slice = feedCache.get(line);
   if (!slice) return undefined;
-  return slice.find((e) => !isControlBody(e.text));
+  return slice.find(isShownInFeed);
 }
 
 function entryNs(e: HistoryEntry): number {
@@ -50,7 +50,7 @@ async function reconcileOnOpen(line: string): Promise<void> {
     if (!conv) return;
     const [storeLatest] = await latestConvMessages(conv, line, 1);
     if (!storeLatest) return;
-    if (isControlBody(storeLatest.text)) return;
+    if (!isShownInFeed(storeLatest)) return;
     const feed = feedLatest(line);
     if (feed?.id === storeLatest.id) return;
     const page = await latestConvMessages(conv, line, PAGE_SIZE);

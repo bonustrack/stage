@@ -1,12 +1,10 @@
 import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
-import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
-import { lineOfConv } from '@stage-labs/client/xmtp/line';
+import { attachedFilesOf } from '@stage-labs/client/xmtp/contentTypes';
 import { sdk } from '../../lib/xmtp.sdk';
 import { resolveRemoteAttachment } from '../../lib/xmtp.attachments';
 import { openFile } from '../../lib/fileOpen';
 import type { StoredFile } from '../../lib/storageIndex.model';
-import { attachmentsOf } from '../bubble/helpers';
 import { inlineAttachmentUrl } from '../media/attachmentUri';
 
 export class FileUnavailableError extends Error {
@@ -26,15 +24,15 @@ export async function openStoredFile(file: StoredFile): Promise<void> {
   if (!message) throw new FileUnavailableError();
   const row = sdk.rowOf(message);
   if (isDeletedPlaceholderType(row.contentTypeId)) throw new FileUnavailableError();
-  if (shortTypeId(row.contentTypeId) === 'remoteStaticAttachment' && file.index === 0) {
-    await openRemote(row.content as RemoteAttachmentInfo, file);
-    return;
-  }
-  const att = attachmentsOf(sdk.envelopeOf(message, lineOfConv(file.convId)))[file.index];
+  const att = attachedFilesOf(row.contentTypeId, row.content)[file.index];
   if (att?.remote) {
-    await openRemote(att.remote, file);
+    await openRemote(att.remote as RemoteAttachmentInfo, file);
     return;
   }
   if (att?.dataB64 === undefined) throw new FileUnavailableError();
-  openFile({ url: inlineAttachmentUrl(att), mime: att.mime, name: att.name ?? file.name });
+  openFile({
+    url: inlineAttachmentUrl({ kind: 'file', dataB64: att.dataB64, mime: att.mime }),
+    mime: att.mime,
+    name: att.name ?? file.name,
+  });
 }

@@ -5,9 +5,9 @@ import { convOfLine, sdk } from '../xmtp.sdk';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { rowMessagesOf } from '../xmtp.messages';
 import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
-import { isControlBody, type XmtpConsent } from '../xmtp.types';
-import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
-import { revivesClearedChat } from '@stage-labs/client/xmtp/sync/clear';
+import type { XmtpConsent } from '../xmtp.types';
+import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
+import { isRowCandidate, isSystemMessage, onlyHiddenMessages, revivesRow } from '@stage-labs/client/xmtp/visibility';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import {
   channelRowTitle,
@@ -18,7 +18,6 @@ import {
   type StreamedMessage,
 } from '@stage-labs/client/xmtp/summarizeRow';
 import { deletedTextOf, isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
-import { isCallSignalType } from '@stage-labs/client/xmtp/call';
 import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { ownDeletesReady } from '../ownDeletes';
 import { fetchSuperAdmins } from './groupDetails';
@@ -44,16 +43,7 @@ export interface ConversationView extends ConvRow, GroupTags {
 }
 
 function isMembershipNoise(m: RowMessage, dm: boolean): boolean {
-  return dm && isGroupUpdateTypeId(m.contentTypeId);
-}
-
-function isRowCandidate(m: RowMessage, dm: boolean): boolean {
-  return (
-    !(typeof m.content === 'string' && isControlBody(m.content)) &&
-    !isMembershipNoise(m, dm) &&
-    !isDeleteRequestType(m.contentTypeId) &&
-    !isCallSignalType(m.contentTypeId)
-  );
+  return dm && isSystemMessage(m);
 }
 
 function pickLastMessage(msgs: StreamedMessage[], dm: boolean): StreamedMessage | undefined {
@@ -65,12 +55,12 @@ const ROW_LOOKBACK = 20;
 async function recentRowMessages(conv: Conversation, dm: boolean): Promise<StreamedMessage[]> {
   const limit = dm ? 6 : 2;
   const msgs = await rowMessagesOf(conv, limit).catch(recover('conversation.rowMessages', []));
-  const onlyHidden = msgs.length === limit && msgs.every((m) => isDeleteRequestType(m.contentTypeId) || isCallSignalType(m.contentTypeId));
+  const onlyHidden = msgs.length === limit && onlyHiddenMessages(msgs);
   return onlyHidden ? rowMessagesOf(conv, ROW_LOOKBACK).catch(recover('conversation.rowMessages', msgs)) : msgs;
 }
 
 function lastBubbleTsOf(msgs: RowMessage[], dm: boolean): number | null {
-  const bubble = msgs.find((m) => isRowCandidate(m, dm) && revivesClearedChat(m.contentTypeId));
+  const bubble = msgs.find((m) => revivesRow(m, dm));
   return bubble?.sentNs ? Math.floor(bubble.sentNs / 1_000_000) : null;
 }
 
@@ -95,11 +85,7 @@ function previewOfMessage(last: StreamedMessage | undefined, dm: boolean, msgs: 
   if (!last || isMembershipNoise(last, dm)) return '';
   const deletedBy = deletedRowBy(last, msgs, rights);
   if (deletedBy) return deletedTextOf(deletedBy);
-  try {
-    return previewOfXmtpContent(last.content, last.contentTypeId);
-  } catch {
-    return `[${last.contentTypeId ?? 'unknown'}]`;
-  }
+  return rowPreviewOf(last);
 }
 
 interface GroupRowData {
@@ -194,7 +180,7 @@ export async function summarizeConversation(
   const markedUnread = await resolveMarkedUnread(convId, {
     lastReadNs,
     unreadCount,
-    hasLast: !!last && !isGroupUpdateTypeId(last.contentTypeId),
+    hasLast: !!last && !isSystemMessage(last),
     lastFromSelf,
   });
   return {

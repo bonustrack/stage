@@ -2,12 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { patchRowSent } from '../../lib/channelsCache';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isDeleteRequest, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
+import type { DeletedMessages } from '@stage-labs/client/xmtp/deletions';
+import { isFeedBubble } from '@stage-labs/client/xmtp/visibility';
 import type { VirtualListHandle } from '../layout';
-import { isReaction } from './feed-helpers';
-import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
 import { deletedViewCache } from './messageDeletion.model';
-import { isLeftOnlyUpdate } from './systemNames.model';
 import { optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
 import { useStableCallback } from '../useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
@@ -41,7 +39,7 @@ function useFeedBubbles(events: HistoryEntry[], myUri: string, deletedIds: Delet
   const liveBubbles = useMemo(
     () =>
       events
-        .filter((e) => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e) && !isCallSignalEntry(e))
+        .filter((e) => isFeedBubble(e))
         .map((e) => {
           const by = deletedIds.get(e.id);
           return by ? deletedView(e, by) : e;

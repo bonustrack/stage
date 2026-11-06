@@ -45,12 +45,6 @@ export function mergeClearedChats(local: ClearedChats, incoming: ClearedChats): 
   return merged;
 }
 
-const SILENT_TYPE_IDS: readonly string[] = ['reaction', 'readReceipt'];
-
-export function revivesClearedChat(typeId: string | undefined): boolean {
-  return typeId === undefined || !SILENT_TYPE_IDS.includes(typeId);
-}
-
 export function isChatCleared(cleared: ClearedChats, peerAddress: string | null | undefined, lastTsMs: number | null): boolean {
   if (!peerAddress) return false;
   const clearedAt = cleared[peerAddress.toLowerCase()];

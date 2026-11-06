@@ -1,6 +1,6 @@
 import type { HistoryEntry } from '../types';
-import { isSystemEntry } from './envelope';
-import { LEAVE_REQUEST_TYPE_ID, isGroupUpdateTypeId } from './humanize';
+import { isSystemEntry } from './entryPayload';
+import { isSystemMessage } from './visibility';
 import { inboxIdOfUri } from './line';
 import {
   DELETED_MESSAGE_TYPE_ID,
@@ -11,7 +11,6 @@ import {
   isDeletedPlaceholderType,
   type DeletedBy,
 } from './deleteMessage';
-import { shortTypeId } from './typeId';
 import type { StreamedMessage } from './summarizeRow';
 
 interface DeletionPayload {
@@ -107,8 +106,7 @@ export function deletedEntryView(entry: HistoryEntry, by: DeletedBy = deletedByO
 export function deletedRowBy(last: StreamedMessage, recent: readonly StreamedMessage[], rights: DeleteRights = {}): DeletedBy | null {
   if (isDeletedPlaceholderType(last.contentTypeId)) return deletedByOfContent(last.content);
   if (rights.ownDeletes?.has(last.id)) return ownDeleteBy(last.senderInboxId, rights.selfInboxId);
-  const typeId = shortTypeId(last.contentTypeId);
-  if (isGroupUpdateTypeId(typeId) || typeId === LEAVE_REQUEST_TYPE_ID) return null;
+  if (isSystemMessage(last)) return null;
   const found = recent
     .filter((m) => isDeleteRequestType(m.contentTypeId) && deleteTargetOfContent(m.content) === last.id)
     .map((m) => deleteAuthority(m.senderInboxId === last.senderInboxId, m.senderInboxId, rights.superAdmins ?? NO_IDS));

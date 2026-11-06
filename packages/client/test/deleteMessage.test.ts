@@ -7,11 +7,10 @@ import {
   encodeDeleteMessageBytes,
   isDeleteRequestType,
   isDeletedPlaceholderType,
-  isXmtpDeletableType,
 } from '../src/xmtp/deleteMessage';
 import { envelopeOf } from '../src/xmtp/envelope';
 import { xmtpMessage } from './fixtures/decoded-messages';
-import { previewOfXmtpContent } from '../src/xmtp/humanize';
+import { isXmtpDeletableType, previewOfXmtpContent } from '../src/xmtp/contentTypes';
 import { countUnreadEntries } from '../src/xmtp/summarizeRow';
 
 const MESSAGE_ID = 'c2c22efb7a1d9b0e4f2c1a3b5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80';

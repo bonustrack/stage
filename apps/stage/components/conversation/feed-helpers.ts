@@ -57,11 +57,6 @@ export function planUprightRestore(args: {
   return userDragged || restoredSaved ? 'skip' : 'newest';
 }
 
-export function isReaction(e: HistoryEntry): boolean {
-  const p = e.payload as { reactTo?: string } | undefined;
-  return Boolean(p?.reactTo);
-}
-
 export function previewOf(e: HistoryEntry): string {
   const text = e.text ? humanizeMentions(e.text).slice(0, 80) : '';
   if (text) return text;

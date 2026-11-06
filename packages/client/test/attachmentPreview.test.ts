@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { attachmentEmojiPreview, attachmentsPreview, previewOfXmtpContent } from '../src/xmtp/humanize';
+import { attachmentEmojiPreview, attachmentsPreview } from '../src/xmtp/humanize';
+import { previewOfXmtpContent } from '../src/xmtp/contentTypes';
 
 const remote = (filename: string) => ({ url: 'https://example.com/blob', contentDigest: 'x', filename });
 

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
-import { groupUpdateInboxIds, humanizeGroupUpdated, previewOfXmtpContent } from '../src/xmtp/humanize';
+import { groupUpdateInboxIds, humanizeGroupUpdated } from '../src/xmtp/humanize';
+import { previewOfXmtpContent } from '../src/xmtp/contentTypes';
 
 const blob = (labels: string[], github?: string): string => JSON.stringify({ v: 1, labels, ...(github ? { github } : {}) });
 

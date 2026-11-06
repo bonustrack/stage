@@ -20,17 +20,6 @@ export const STAGE_DELETE_CONTENT_TYPE: XmtpContentTypeId = {
 
 export const STAGE_DELETE_TYPE_ID = STAGE_DELETE_CONTENT_TYPE.typeId;
 
-const XMTP_DELETABLE_TYPE_IDS: readonly string[] = [
-  'text',
-  'markdown',
-  'reply',
-  'attachment',
-  'remoteStaticAttachment',
-  'multiRemoteStaticAttachment',
-  'transactionReference',
-  'walletSendCalls',
-];
-
 export const DELETED_MESSAGE_TYPE_ID = 'deletedMessage';
 
 export const DELETED_MESSAGE_TEXT = 'Message deleted';
@@ -140,10 +129,6 @@ export const DELETE_MESSAGE_CODEC = {
 export function isDeleteRequestType(contentTypeId: string | undefined | null): boolean {
   const typeId = shortTypeId(contentTypeId);
   return typeId === DELETE_MESSAGE_TYPE_ID || typeId === STAGE_DELETE_TYPE_ID;
-}
-
-export function isXmtpDeletableType(contentTypeId: string | undefined | null): boolean {
-  return XMTP_DELETABLE_TYPE_IDS.includes(shortTypeId(contentTypeId));
 }
 
 export function isDeletedPlaceholderType(contentTypeId: string | undefined | null): boolean {

@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { parseMentions } from '@stage-labs/client/xmtp/mentions';
-import { isLeftOnlyUpdate, memberNamer, unknownSystemLineInboxIds, withMemberNames } from '../components/conversation/systemNames.model';
+import { memberNamer, unknownSystemLineInboxIds, withMemberNames } from '../components/conversation/systemNames.model';
+import { isLeftOnlyUpdate } from '@stage-labs/client/xmtp/visibility';
 
 const PEER = '0x59445094F08D01213bd6ba7215a6ab7a4bc29a4a';
 const OTHER = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';

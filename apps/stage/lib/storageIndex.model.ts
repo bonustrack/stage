@@ -1,7 +1,6 @@
 import { deleteTargetOfContent, isDeleteRequestType, isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { validRemoteAttachment } from '@stage-labs/client/xmtp/envelope';
-import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
+import { attachedFilesOf } from '@stage-labs/client/xmtp/contentTypes';
 
 export const FILE_PAGE_SIZE = 20;
 export const DELETED_LIMIT = 2_000;
@@ -43,11 +42,6 @@ export interface ScanFindings {
 
 export const NO_FINDINGS: ScanFindings = { files: [], deletedIds: [], foreignDeletes: [] };
 
-interface FilePart {
-  name?: unknown;
-  size?: unknown;
-}
-
 export function emptyIndex(inboxId: string): StorageIndex {
   return { inboxId, cursorNs: 0, files: [], deleted: [], retry: {} };
 }
@@ -62,32 +56,8 @@ function byteCount(value: unknown): number {
   return Number.NaN;
 }
 
-function base64Bytes(data: string): number {
-  const padding = data.endsWith('==') ? 2 : data.endsWith('=') ? 1 : 0;
-  return Math.max(0, Math.floor((data.length * 3) / 4) - padding);
-}
-
-function inlineSize(content: { dataB64?: unknown }): number {
-  return typeof content.dataB64 === 'string' ? base64Bytes(content.dataB64) : Number.NaN;
-}
-
 function objectOf(content: unknown): Record<string, unknown> | null {
   return typeof content === 'object' && content !== null ? (content as Record<string, unknown>) : null;
-}
-
-function partsOf(typeId: string, content: Record<string, unknown>): FilePart[] {
-  if (typeId === 'reply') {
-    const remote = validRemoteAttachment(content.remote);
-    return remote === undefined ? [] : [{ name: remote.filename, size: byteCount(remote.contentLength) }];
-  }
-  if (typeId === 'attachment') return [{ name: content.filename, size: inlineSize(content) }];
-  if (typeId === 'remoteStaticAttachment') return [{ name: content.filename, size: byteCount(content.contentLength) }];
-  if (typeId !== 'multiRemoteStaticAttachment' && typeId !== 'multiRemoteAttachment') return [];
-  const list = Array.isArray(content.attachments) ? (content.attachments as unknown[]) : [];
-  return list.map((item) => {
-    const info = objectOf(item) ?? {};
-    return { name: info.filename, size: byteCount(info.contentLength) };
-  });
 }
 
 function fileName(name: unknown, index: number, count: number): string {
@@ -96,9 +66,7 @@ function fileName(name: unknown, index: number, count: number): string {
 }
 
 export function filesOfMessage(m: ScannedMessage): StoredFile[] {
-  const content = objectOf(m.content);
-  if (content === null) return [];
-  const parts = partsOf(shortTypeId(m.contentTypeId), content);
+  const parts = attachedFilesOf(m.contentTypeId, m.content);
   const sentMs = Math.floor(m.sentNs / 1_000_000);
   return parts.map((part, index) => {
     const size = byteCount(part.size);

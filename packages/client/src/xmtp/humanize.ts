@@ -3,20 +3,7 @@ import { shortAddress } from '../identity/format';
 import { describeAppDataChange } from './appDataChange';
 import { withChannelLabels } from './channelRefs';
 import { MENTION_RE } from './mentions';
-import {
-  DELETED_MESSAGE_TEXT,
-  DELETED_MESSAGE_TYPE_ID,
-  DELETE_MESSAGE_TYPE_ID,
-  STAGE_DELETE_TYPE_ID,
-  deletedByOfContent,
-  deletedTextOf,
-} from './deleteMessage';
-import { shortTypeId } from './typeId';
-import { CALL_INVITE_CONTENT_TYPE, CALL_SIGNAL_CONTENT_TYPE, callPreviewText } from './call';
-import { parseOpenVote, parseVoteKey } from './poll-tally';
-import { paymentRequestPreview, receiptTitle, type TransactionReferenceContent, type WalletSendCallsContent } from './tx';
-import { frameActionText } from './frame';
-import type { CanonicalReply } from './message';
+
 interface FieldChange {
   fieldName: string;
   oldValue?: string;
@@ -40,14 +27,6 @@ function describeFieldChange(f: FieldChange): string {
   if (f.fieldName === 'app_data') return describeAppDataChange(f.oldValue, f.newValue);
   return `changed ${f.fieldName.replace(/_/g, ' ')}`;
 }
-
-export const GROUP_UPDATE_TYPE_ID = 'group_updated';
-
-export function isGroupUpdateTypeId(typeId: string | undefined): boolean {
-  return typeId === GROUP_UPDATE_TYPE_ID;
-}
-
-export const LEAVE_REQUEST_TYPE_ID = 'leave_request';
 
 export const LEFT_CHANNEL_TEXT = 'left the channel';
 
@@ -114,79 +93,6 @@ export function humanizeMentions(text: string): string {
   return named.replace(MENTION_RE, (_m, addr: string) => `@${shortAddress(addr)}`);
 }
 
-function previewReply(decoded: unknown): string {
-  const text = (decoded as CanonicalReply | null)?.text;
-  return text ? humanizeMentions(text) : '[reply]';
-}
-
-function previewPoll(decoded: unknown): string {
-  const p = decoded as { question?: string; questions?: { question?: string }[] };
-  const title = p.questions?.[0]?.question ?? p.question;
-  return title ? `Poll: ${title}` : '[poll]';
-}
-
-const POLL_VOTE_PREVIEW = 'Voted in a poll';
-const POLL_ANSWER_PREVIEW = 'Answered a poll';
-
-function previewReaction(decoded: unknown): string {
-  const content = (decoded as { content?: string } | null)?.content ?? '👍';
-  if (parseOpenVote(content)) return POLL_ANSWER_PREVIEW;
-  return parseVoteKey(content) ? POLL_VOTE_PREVIEW : content;
-}
-
-function previewFrame(decoded: unknown): string {
-  const title = (decoded as { title?: unknown } | null)?.title;
-  return typeof title === 'string' && title.trim() !== '' ? `Frame: ${title.trim()}` : 'Frame';
-}
-
-function stringOf(value: unknown): string | undefined {
-  return typeof value === 'string' ? value : undefined;
-}
-
-function recordOf(value: unknown): Record<string, unknown> {
-  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
-}
-
-function previewFrameAction(decoded: unknown): string {
-  const content = recordOf(decoded);
-  const action = recordOf(content.action);
-  const label = stringOf(content.label) ?? '';
-  const name = stringOf(action.name) ?? '';
-  const userMessage = stringOf(action.userMessage);
-  if (`${label}${name}${userMessage ?? ''}`.trim() === '') return '[frame action]';
-  return frameActionText({ label, action: { name, userMessage } });
-}
-
-const PREVIEW_HANDLERS: Record<string, (decoded: unknown) => string> = {
-  [GROUP_UPDATE_TYPE_ID]: (decoded) => humanizeGroupUpdated(decoded as GroupUpdatedContent),
-  [LEAVE_REQUEST_TYPE_ID]: () => LEFT_CHANNEL_TEXT,
-  reaction: previewReaction,
-  poll: previewPoll,
-  frame: previewFrame,
-  frameAction: previewFrameAction,
-  reply: previewReply,
-  attachment: previewSingleAttachment,
-  remoteStaticAttachment: previewSingleAttachment,
-  multiRemoteStaticAttachment: previewMultiRemote,
-  multiRemoteAttachment: previewMultiRemote,
-  [DELETED_MESSAGE_TYPE_ID]: (decoded) => deletedTextOf(deletedByOfContent(decoded)),
-  [DELETE_MESSAGE_TYPE_ID]: () => DELETED_MESSAGE_TEXT,
-  [STAGE_DELETE_TYPE_ID]: () => DELETED_MESSAGE_TEXT,
-  [CALL_INVITE_CONTENT_TYPE.typeId]: callPreviewText,
-  [CALL_SIGNAL_CONTENT_TYPE.typeId]: callPreviewText,
-  walletSendCalls: (decoded) => paymentRequestPreview(decoded as WalletSendCallsContent | null),
-  transactionReference: (decoded) => receiptTitle(decoded as TransactionReferenceContent | null),
-  signatureRequest: () => 'Signature request',
-  signatureReference: () => 'Signed',
-};
-
-export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
-  const typeId = contentTypeId ? shortTypeId(contentTypeId) : 'unknown';
-  if (typeof decoded === 'string') return humanizeMentions(decoded);
-  const handler = PREVIEW_HANDLERS[typeId];
-  return handler ? handler(decoded) : `[${typeId}]`;
-}
-
 export type AttachmentKind = 'image' | 'audio' | 'video' | 'file';
 
 export interface AttachmentMeta {
@@ -222,15 +128,6 @@ export function attachmentsPreview(items: readonly AttachmentMeta[]): string {
   if (rest.length === 0) return `Sent ${KIND_NOUNS[first].one}`;
   const noun = rest.every((k) => k === first) ? KIND_NOUNS[first].many : 'attachments';
   return `Sent ${rest.length + 1} ${noun}`;
-}
-
-function previewSingleAttachment(decoded: unknown): string {
-  return attachmentsPreview(decoded ? [decoded] : []);
-}
-
-function previewMultiRemote(decoded: unknown): string {
-  const content = decoded as { attachments?: AttachmentMeta[] } | null | undefined;
-  return attachmentsPreview(content?.attachments ?? []);
 }
 
 function matchesKind(mime: string, ext: string, mimePrefix: string, exts: string[]): boolean {

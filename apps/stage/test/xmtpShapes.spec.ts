@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { ReactionAction, ReactionSchema } from '@xmtp/browser-sdk';
 import { envelopeOf } from '@stage-labs/client/xmtp/envelope';
-import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { previewOfXmtpContent } from '@stage-labs/client/xmtp/contentTypes';
 import { nativeGroupMetaPolicy, nativeInstallationCreatedAtMs, nativeMessageOf } from '../lib/xmtp.sdk.native.shapes';
 import { webMessageOf } from '../lib/xmtp.sdk.web.message';
 

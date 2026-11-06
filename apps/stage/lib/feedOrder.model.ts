@@ -1,6 +1,6 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
-import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
+import { isSystemEntry } from '@stage-labs/client/xmtp/entryPayload';
 import { uniqueBy } from '@stage-labs/client/collections';
 
 export interface FeedMerge {

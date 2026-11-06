@@ -14,7 +14,7 @@ import {
 import { FRAME_MAX_CHARS, frameActionSchema, frameContentSchema } from '../src/xmtp/frame.schema';
 import { envelopeOf } from '../src/xmtp/envelope';
 import { xmtpMessage } from './fixtures/decoded-messages';
-import { previewOfXmtpContent } from '../src/xmtp/humanize';
+import { previewOfXmtpContent } from '../src/xmtp/contentTypes';
 
 const NS = 1_717_000_000_000 * 1_000_000;
 

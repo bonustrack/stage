@@ -1,11 +1,10 @@
 import { IdentifierKind, type Signer } from '@xmtp/browser-sdk';
 import { hexToBytes } from 'viem';
-import { DELETE_MESSAGE_CODEC } from '@stage-labs/client/xmtp/deleteMessage';
-import { STAGE_JSON_CODECS } from '@stage-labs/client/xmtp/jsonCodecs';
+import { stageCodecsFor } from '@stage-labs/client/xmtp/contentTypes';
 import type { AccountRecord } from './accounts';
 import { lazySigningKeyForRecord } from './xmtp.signing.core';
 
-export const XMTP_CODECS = [...STAGE_JSON_CODECS, DELETE_MESSAGE_CODEC];
+export const XMTP_CODECS = stageCodecsFor('web');
 
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {
   const key = await lazySigningKeyForRecord(rec);

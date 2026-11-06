@@ -1,7 +1,5 @@
 import { shortAddress } from '../identity/format';
-import { isGroupUpdateTypeId } from './humanize';
-import { isDeleteRequestType } from './deleteMessage';
-import { isCallSignalType } from './call';
+import { countsAsUnread } from './visibility';
 
 export const ROW_PREVIEW_MAX_CHARS = 200;
 
@@ -9,6 +7,7 @@ export interface UnreadCountEntry {
   sentNs?: number;
   senderInboxId?: string;
   contentTypeId?: string;
+  content?: unknown;
 }
 
 export interface RowMessage {
@@ -26,13 +25,7 @@ export function countUnreadEntries(entries: readonly UnreadCountEntry[], lastRea
   let unreadCount = 0;
   for (const m of entries) {
     if (!m.sentNs || m.sentNs <= lastReadNs) break;
-    if (
-      m.senderInboxId === selfInboxId ||
-      isGroupUpdateTypeId(m.contentTypeId) ||
-      isDeleteRequestType(m.contentTypeId) ||
-      isCallSignalType(m.contentTypeId)
-    )
-      continue;
+    if (m.senderInboxId === selfInboxId || !countsAsUnread({ contentTypeId: m.contentTypeId, content: m.content })) continue;
     unreadCount += 1;
   }
   return unreadCount;
