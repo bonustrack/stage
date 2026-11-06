@@ -8,26 +8,36 @@ import { usePullToRefresh } from './PullToRefresh';
 import type { SimultaneousRefs } from '../../layout/simultaneousRefs';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { walletTotalUsd, tokenRowModel } from './model';
+import { walletTotalUsd } from './model';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
 import { useWalletFocused } from '../../tabs/useWalletFocused';
 import { tokenRowId } from '@stage-labs/client/wallet/tokens';
-import { TokenAvatar } from './tokenAvatar';
-import { TokenRowBody } from '../TokenRowView';
-import { fmtUsd, fmtBalance } from '@stage-labs/client/wallet/format';
+import { TokenAvatar } from '../../token/TokenAvatar';
+import { TokenRowBody } from '../../token/TokenRowBody';
+import { tokenRowModel } from '../../token/token.model';
 import { Column, ScreenScroll, PAGE_GUTTER, Row } from '../../layout';
 
 const TOKEN_AVATAR_SIZE = 44;
 const TOKEN_BADGE_SIZE = 20;
+const TOKEN_BADGE_RING = 2.5;
 
 const TokenRow = memo(function TokenRow({ r, border, bg }: { r: AssetRow; border: string; bg: string }): React.ReactElement {
   return (
     <Row padding={{ y: 14 }} align="center" gap={12}>
-      <TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} bg={bg} border={border} size={TOKEN_AVATAR_SIZE} badgeSize={TOKEN_BADGE_SIZE} />
+      <TokenAvatar
+        logoUrl={r.logoUrl}
+        chainId={r.chainId}
+        size={TOKEN_AVATAR_SIZE}
+        badgeSize={TOKEN_BADGE_SIZE}
+        badge="corner"
+        logoBackground={border}
+        badgeBackground={border}
+        ring={{ color: bg, width: TOKEN_BADGE_RING }}
+      />
       <Column weight={1}>
-        <TokenRowBody {...tokenRowModel(r, { fmtUsd, fmtBalance })} />
+        <TokenRowBody {...tokenRowModel(r, 'wallet')} />
       </Column>
     </Row>
   );

@@ -1,14 +1,14 @@
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Avatar } from '../Avatar';
-import { AppModal } from '../AppModal';
+import { Avatar } from '../../Avatar';
+import { AppModal } from '../../AppModal';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
-import { useContacts } from '../../lib/useContacts';
-import { usePalette } from '../../lib/theme';
+import { usePeerProfiles, peerLabel } from '../../../lib/peerProfiles';
+import { useContacts } from '../../../lib/useContacts';
+import { usePalette } from '../../../lib/theme';
 import { IconGroup1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconGroup1';
-import { Column, Row } from '../layout';
+import { Column, Row } from '../../layout';
 
 export function RecipientRow({
   address,

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { fetchUsdPrice, fmtUsdValue } from '../src/wallet/prices';
+import { fetchUsdPrice } from '../src/wallet/prices';
+import { fmtUsdValue } from '../src/wallet/format';
 
 const realFetch = globalThis.fetch;
 let requests: string[] = [];

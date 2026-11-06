@@ -4,15 +4,15 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
-import { shortAddress } from '@stage-labs/client/identity/format';
-import { DANGER, usePalette } from '../../lib/theme';
-import { useSafeAreaInsets } from '../layout/safeArea';
-import { openInBubbleLink } from '../../lib/capabilities';
-import { bubbleLinkProps } from '../bubble/linkProps';
+import { viemChainName, WALLET_CHAIN_ID } from '@stage-labs/client/wallet/chains';
+import type { PersonLookup } from '@stage-labs/client/identity/personLookup';
+import { DANGER, usePalette } from '../../../lib/theme';
+import { useSafeAreaInsets } from '../../layout/safeArea';
+import { openInBubbleLink } from '../../../lib/capabilities';
+import { bubbleLinkProps } from '../../bubble/linkProps';
 import { RecipientRow } from './send.recipient';
-import { networkName, recipientSummary, type RecipientState } from './recipient.model';
-import type { SendTxState } from './send.public';
-import { Column, Row, PAGE_GUTTER } from '../layout';
+import type { SendTxState } from './send.model';
+import { Column, Row, PAGE_GUTTER } from '../../layout';
 
 export function WalletFooter({
   border,
@@ -57,8 +57,8 @@ export function WalletFooter({
   );
 }
 
-export function TxStatus(props: { txState: SendTxState; txHash: Hex | null; txChainId: number; txErr: string | null }): React.ReactElement {
-  const { txState, txHash, txChainId, txErr } = props;
+export function TxStatus(props: { txState: SendTxState; txHash: Hex | null; txErr: string | null }): React.ReactElement {
+  const { txState, txHash, txErr } = props;
   return (
     <>
       {txHash ? (
@@ -66,7 +66,7 @@ export function TxStatus(props: { txState: SendTxState; txHash: Hex | null; txCh
           <Text size="3xs" color="secondary">
             {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
           </Text>
-          <Pressable {...bubbleLinkProps(explorerTxUrl(txChainId, txHash), openInBubbleLink)} hitSlop={6}>
+          <Pressable {...bubbleLinkProps(explorerTxUrl(WALLET_CHAIN_ID, txHash), openInBubbleLink)} hitSlop={6}>
             <Text size="3xs" color="link">
               {txHash.slice(0, 10)}…{txHash.slice(-8)}
             </Text>
@@ -99,30 +99,27 @@ export function SendReview({
   amount,
   symbol,
   secondaryLabel,
-  chainId,
 }: {
-  recipient: RecipientState;
+  recipient: PersonLookup;
   amount: string;
   symbol: string;
   secondaryLabel?: string;
-  chainId: number;
 }): React.ReactElement | null {
   const { border } = usePalette();
-  const summary = recipientSummary(recipient, shortAddress);
-  if (summary === null) return null;
+  if (recipient.kind !== 'resolved') return null;
   return (
     <Column gap={16}>
       <Title level={3}>Confirm send</Title>
       <Column background={border} radius="lg" padding={16} gap={12}>
         <ReviewLine label="Amount" value={`${amount} ${symbol}`} secondary={secondaryLabel} />
-        <ReviewLine label="Network" value={networkName(chainId)} />
+        <ReviewLine label="Network" value={viemChainName(WALLET_CHAIN_ID) ?? `Chain ${WALLET_CHAIN_ID}`} />
       </Column>
       <Column gap={8}>
         <Text text="To" size="xs" color="secondary" />
-        <RecipientRow address={summary.address} label={summary.label} />
+        <RecipientRow address={recipient.address} label={recipient.label} />
         <Column background={border} radius="lg" padding={16} gap={6}>
           <Text text="Full address" size="3xs" color="secondary" />
-          <Text text={summary.address} size="xs" fontFamily="mono" color="text" selectable />
+          <Text text={recipient.address} size="xs" fontFamily="mono" color="text" selectable />
           <Text text="Check every character before you send. Transfers cannot be reversed." size="3xs" color="secondary" />
         </Column>
       </Column>
