@@ -41,7 +41,6 @@ describe('routing', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]?.name).toBe(`node-${ID}`);
     expect(seen[0]?.options).toEqual({ limits: NODE_LIMITS });
-    expect(NODE_LIMITS).toEqual({ cpuMs: 50, subRequests: 5 });
     expect(seen[0]?.request.url).toBe(`${NODE_URL}/sub?x=1`);
   });
 

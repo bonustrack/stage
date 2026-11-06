@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { verifyMessage, type Hex } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { claimMessage } from '@stage-labs/client/identity/stageNames';
@@ -9,6 +9,7 @@ import { mailboxFetch } from '../src/mailBox.ts';
 import { REJECT_INACTIVE, receiveMail, type IncomingMail } from '../src/mailReceive.ts';
 import { handleNames } from '../src/names.ts';
 import type { NamesChain, NamesDeps } from '../src/namesTypes.ts';
+import { restoreFetch, stubFetch } from './fakeFetch.ts';
 import { memoryStorage, type MemoryStorage } from './memoryArchive.ts';
 
 const BASE = 'https://proxy.stage.box';
@@ -20,7 +21,7 @@ const LABEL = 'alice1';
 
 const owners = new Map<string, Hex>();
 const boxes = new Map<string, MemoryStorage>();
-const failing = { issue: false, mailbox: 0 };
+const failing = { issue: false, mailbox: 0, mailboxCalls: 0 };
 
 const signer =
   (account: PrivateKeyAccount) =>
@@ -30,6 +31,7 @@ const signer =
 function mailbox(label: string): { fetch(input: string, init?: RequestInit): Promise<Response> } {
   return {
     fetch: (input, init) => {
+      failing.mailboxCalls += 1;
       if (failing.mailbox > 0) {
         failing.mailbox -= 1;
         return Promise.reject(new Error('object unavailable'));
@@ -77,7 +79,7 @@ async function claim(fields: { signedKey?: Hex; sentKey?: Hex; account?: Private
   });
   const body = { label: LABEL, address: account.address, issuedAt, signature, mailKey: fields.sentKey ?? fields.signedKey };
   const request = new Request(`${BASE}/names/claim`, { method: 'POST', body: JSON.stringify(body) });
-  return handleNames(request, { chain, store: memoryNames(), mailbox, now: () => NOW });
+  return handleNames(request, { chain, store: memoryNames(), mailbox, now: () => NOW, sleep: () => Promise.resolve() });
 }
 
 async function deliver(to: string): Promise<string[]> {
@@ -112,13 +114,11 @@ beforeEach(() => {
   boxes.clear();
   failing.issue = false;
   failing.mailbox = 0;
-  spyOn(globalThis, 'fetch').mockImplementation(((input: string | URL | Request, init?: RequestInit) =>
-    handleMail(new Request(input, init), mailDeps)) as typeof fetch);
+  failing.mailboxCalls = 0;
+  stubFetch((request) => handleMail(request, mailDeps));
 });
 
-afterEach(() => {
-  (globalThis.fetch as unknown as { mockRestore(): void }).mockRestore();
-});
+afterEach(restoreFetch);
 
 describe('mail key in the name claim', () => {
   test('a claim with a key activates the mailbox once the name is issued', async () => {
@@ -154,15 +154,19 @@ describe('mail key in the name claim', () => {
     expect(boxes.get(LABEL)?.data.has('key') ?? false).toBe(false);
   });
 
-  test('a failing mailbox is retried, and reported when it never stores the key', async () => {
-    failing.mailbox = 2;
-    expect(((await (await claim({ signedKey: await mailKeyOf(ALICE) })).json()) as { mailKey: string }).mailKey).toBe('stored');
-    owners.clear();
-    boxes.clear();
-    failing.mailbox = 3;
+  test('a mailbox that fails once is retried and stores the key', async () => {
+    failing.mailbox = 1;
+    const res = await claim({ signedKey: await mailKeyOf(ALICE) });
+    expect(((await res.json()) as { mailKey: string }).mailKey).toBe('stored');
+    expect(boxes.get(LABEL)?.data.has('key')).toBe(true);
+  });
+
+  test('a mailbox that never stores the key is retried, then reported, and the name is still issued', async () => {
+    failing.mailbox = Number.POSITIVE_INFINITY;
     const res = await claim({ signedKey: await mailKeyOf(ALICE) });
     expect(res.status).toBe(200);
     expect(((await res.json()) as { mailKey: string }).mailKey).toBe('failed');
+    expect(failing.mailboxCalls).toBeGreaterThan(1);
     expect(owners.get(LABEL)).toBe(ALICE.address);
   });
 });

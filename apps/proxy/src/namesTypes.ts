@@ -18,4 +18,5 @@ export interface NamesDeps {
   store: NamesStore;
   mailbox?: (label: string) => ObjectStub;
   now?: () => number;
+  sleep?: (ms: number) => Promise<void>;
 }

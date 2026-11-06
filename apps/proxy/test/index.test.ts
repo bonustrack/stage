@@ -65,47 +65,54 @@ describe('client route preflight', () => {
   });
 });
 
+const REFUSAL_CAP = 1_000;
+
+async function callsUntilRefused(next: (attempt: number) => Promise<Response>): Promise<number> {
+  for (let attempt = 0; attempt < REFUSAL_CAP; attempt++) {
+    if ((await next(attempt)).status === 429) return attempt;
+  }
+  throw new Error('the route was never rate limited');
+}
+
+const from = (ip: string): Record<string, string> => ({ 'cf-connecting-ip': ip });
+const upload = (ip: string): Promise<Response> =>
+  call('/xmtp-history/production/upload', { method: 'POST', headers: from(ip), body: 'archive' });
+
 describe('rate limits', () => {
   test('name lookups do not use up the history upload budget', async () => {
-    const headers = { 'cf-connecting-ip': '203.0.113.7' };
-    const lookups = await Promise.all(Array.from({ length: 61 }, () => call('/names/status?address=0x0', { headers })));
-    expect(lookups.at(-1)?.status).toBe(429);
-    const upload = await call('/xmtp-history/production/upload', { method: 'POST', headers, body: 'archive' });
-    expect(upload.status).toBe(503);
+    await callsUntilRefused(() => call('/names/status?address=0x0', { headers: from('203.0.113.7') }));
+    expect((await upload('203.0.113.7')).status).toBe(503);
   });
 
   test('settle refuses other methods before it counts the request', async () => {
-    const headers = { 'cf-connecting-ip': '203.0.113.21' };
-    const refused = await Promise.all(Array.from({ length: 61 }, () => call('/x402-settle', { headers })));
-    expect(refused.map((res) => res.status)).toEqual(Array.from({ length: 61 }, () => 405));
+    const budget = await callsUntilRefused(() => call('/x402-settle', { method: 'POST', headers: from('203.0.113.20') }));
+    const headers = from('203.0.113.21');
+    const refused = await Promise.all(Array.from({ length: budget + 1 }, () => call('/x402-settle', { headers })));
+    expect(refused.every((res) => res.status === 405)).toBe(true);
     expect(await refused[0]?.json()).toEqual({ error: 'method not allowed' });
+    expect((await call('/x402-settle', { method: 'POST', headers })).status).toBe(400);
   });
 
-  test('image requests have their own budget', async () => {
-    const headers = { 'cf-connecting-ip': '203.0.113.22' };
-    const answers = await Promise.all(Array.from({ length: 61 }, () => call('/img', { headers })));
-    expect(answers[0]?.status).toBe(400);
-    expect(answers.at(-1)?.status).toBe(429);
-    expect(await answers.at(-1)?.json()).toEqual({ error: 'rate limited' });
+  test('image requests have their own budget, counted even when the request is invalid', async () => {
+    const headers = from('203.0.113.22');
+    expect((await call('/img', { headers })).status).toBe(400);
+    await callsUntilRefused(() => call('/img', { headers }));
+    const refused = await call('/img', { headers });
+    expect(await refused.json()).toEqual({ error: 'rate limited' });
+    expect((await call('/names/status?address=0x0', { headers })).status).not.toBe(429);
   });
 
   test('history reads do not use up the upload budget', async () => {
-    const headers = { 'cf-connecting-ip': '203.0.113.23' };
+    const budget = await callsUntilRefused(() => upload('203.0.113.24'));
+    const headers = from('203.0.113.23');
     const file = `/xmtp-history/production/files/${'0'.repeat(8)}-0000-0000-0000-${'0'.repeat(12)}`;
-    const reads = await Promise.all(Array.from({ length: 61 }, () => call(file, { headers })));
+    const reads = await Promise.all(Array.from({ length: budget + 1 }, () => call(file, { headers })));
     expect(reads.every((res) => res.status === 503)).toBe(true);
-    const uploads = await Promise.all(
-      Array.from({ length: 61 }, () => call('/xmtp-history/production/upload', { method: 'POST', headers, body: 'x' })),
-    );
-    expect(uploads[0]?.status).toBe(503);
-    expect(uploads.at(-1)?.status).toBe(429);
+    expect((await upload('203.0.113.23')).status).toBe(503);
   });
 
   test('rate limits key on the Cloudflare client IP, never on x-forwarded-for', async () => {
-    const answers = await Promise.all(
-      Array.from({ length: 61 }, (_, index) => call('/img', { headers: { 'x-forwarded-for': `198.51.100.${index}` } })),
-    );
-    expect(answers.at(-1)?.status).toBe(429);
+    await callsUntilRefused((attempt) => call('/img', { headers: { 'x-forwarded-for': `198.51.100.${attempt % 250}` } }));
   });
 });
 

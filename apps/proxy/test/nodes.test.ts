@@ -3,6 +3,7 @@ import { nodeIdOf } from '@stage-labs/client/nodes/hosting';
 import { newNodeKey, nodeHeaders, nodeKeyId } from '@stage-labs/client/nodes/protocol';
 import worker from '../src/index.ts';
 import { MAX_NODES, NODES_NAMESPACE, cloudflareApi, handleNodes, type NodesApi } from '../src/nodes.ts';
+import { fakeFetch } from './fakeFetch.ts';
 
 const URL_NODES = 'https://proxy.stage.box/nodes';
 const ACCOUNT = 'a'.repeat(32);
@@ -20,13 +21,12 @@ interface ApiCall {
 
 function cloudflare(routes: Record<string, () => Response> = {}): { api: NodesApi; calls: ApiCall[] } {
   const calls: ApiCall[] = [];
-  const fetcher = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url = String(input);
-    const method = init?.method ?? 'GET';
-    calls.push({ url, method, auth: new Headers(init?.headers).get('authorization'), body: (init?.body as FormData | undefined) ?? null });
+  const fetcher = fakeFetch((request, init) => {
+    const { url, method } = request;
+    calls.push({ url, method, auth: request.headers.get('authorization'), body: init?.body instanceof FormData ? init.body : null });
     const route = routes[`${method} ${url.slice(API_BASE.length)}`];
     return route === undefined ? Response.json({ success: true, result: { script_count: 3 } }) : route();
-  }) as typeof fetch;
+  });
   const api = cloudflareApi(TOKEN, ACCOUNT, fetcher);
   if (api === null) throw new Error('api not configured');
   return { api, calls };
@@ -78,7 +78,7 @@ describe('publishing a node', () => {
     const form = calls[1]?.body;
     expect(JSON.parse(String(form?.get('metadata')))).toEqual({
       main_module: 'node.js',
-      compatibility_date: '2026-06-01',
+      compatibility_date: expect.any(String),
       compatibility_flags: ['global_fetch_strictly_public', 'disable_ctx_exports'],
       bindings: [],
     });

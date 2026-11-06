@@ -134,11 +134,11 @@ async function issueName(body: ClaimBody, deps: NamesDeps): Promise<Hex | Respon
 const MAIL_KEY_ATTEMPTS = 3;
 const MAIL_KEY_RETRY_MS = 250;
 
-async function savedWithRetries(save: () => Promise<number>): Promise<boolean> {
+async function savedWithRetries(save: () => Promise<number>, wait: (ms: number) => Promise<void>): Promise<boolean> {
   for (let attempt = 1; attempt <= MAIL_KEY_ATTEMPTS; attempt++) {
     const status = await save().catch(() => 0);
     if (status === 204 || status === 409) return true;
-    if (attempt < MAIL_KEY_ATTEMPTS) await sleep(MAIL_KEY_RETRY_MS);
+    if (attempt < MAIL_KEY_ATTEMPTS) await wait(MAIL_KEY_RETRY_MS);
   }
   return false;
 }
@@ -148,7 +148,8 @@ async function saveClaimedMailKey(body: ClaimBody, deps: NamesDeps): Promise<{ m
   const { mailbox } = deps;
   if (publicKey === undefined || !isMailboxLabel(label)) return {};
   const key = { publicKey, owner: body.address.toLowerCase(), issuedAt: body.issuedAt };
-  if (mailbox !== undefined && (await savedWithRetries(() => saveMailKey(mailbox(label), key)))) return { mailKey: 'stored' };
+  const wait = deps.sleep ?? sleep;
+  if (mailbox !== undefined && (await savedWithRetries(() => saveMailKey(mailbox(label), key), wait))) return { mailKey: 'stored' };
   console.error('names claim: mail key not stored', label);
   return { mailKey: 'failed' };
 }
