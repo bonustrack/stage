@@ -16,7 +16,7 @@ import { ConversationSidebarToggle } from '../conversation/ConversationSidebarTo
 import { ChatColumn, FooterDock } from '../conversation/FooterDock';
 import { includesKey, toggleKey, uniqueKeys } from '../conversation/SidebarSection.model';
 import { RecipientBar } from './RecipientBar';
-import { NewChatMetadata } from './NewChatMetadata';
+import { NewChatMetadata, NewChatStatus } from './NewChatMetadata';
 import { NewChatProject } from './NewChatProject';
 import { setNewChatProject, useNewChatDefaults } from './newChatDefaults';
 import {
@@ -259,7 +259,9 @@ function NewChatForm({
         busy={creating}
         onSubmit={onSubmit}
       />
-      <NewChatProject value={metadata.category} onChange={setNewChatProject} flush={rounded} />
+      <NewChatProject value={metadata.category} onChange={setNewChatProject} flush={rounded}>
+        <NewChatStatus value={metadata} onChange={setMetadata} />
+      </NewChatProject>
     </Column>
   );
 }

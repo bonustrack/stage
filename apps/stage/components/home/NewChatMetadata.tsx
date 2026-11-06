@@ -60,7 +60,19 @@ function MetadataChip({
   );
 }
 
-const isEmpty = (value: Metadata): boolean => value.status === null && value.labels.length === 0 && value.assigned.length === 0;
+export function NewChatStatus({ value, onChange }: { value: Metadata; onChange: (next: Metadata) => void }): React.ReactElement | null {
+  if (value.status === null) return null;
+  return (
+    <MetadataChip
+      field="status"
+      label={value.status}
+      icon={FIELD_SECTIONS.status.icon}
+      onRemove={() => {
+        onChange({ ...value, status: null });
+      }}
+    />
+  );
+}
 
 export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange: (next: Metadata) => void }): React.ReactElement | null {
   const anchored = useAnchoredMenus();
@@ -70,20 +82,10 @@ export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange
     onChange({ ...value, labels });
     if (labels.length === 0) setAnchor(null);
   };
-  if (isEmpty(value)) return null;
+  if (value.labels.length === 0 && value.assigned.length === 0) return null;
   return (
     <>
       <Row wrap gap={8} padding={{ x: PAGE_GUTTER, top: 12, bottom: 4 }}>
-        {value.status === null ? null : (
-          <MetadataChip
-            field="status"
-            label={value.status}
-            icon={FIELD_SECTIONS.status.icon}
-            onRemove={() => {
-              onChange({ ...value, status: null });
-            }}
-          />
-        )}
         {value.labels.map((label) => (
           <MetadataChip
             key={label}
