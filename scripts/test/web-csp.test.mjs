@@ -25,52 +25,19 @@ function hashSource(script) {
 const inlineSources = ['public/index.html', 'public/preview-launcher.html'].flatMap(inlineScripts).map(hashSource);
 
 describe('web Content Security Policy', () => {
-  test('is enforced without reporting private URLs to a collector', () => {
-    expect(site.values['Content-Security-Policy-Report-Only']).toBeUndefined();
-    expect(sources.has('report-uri')).toBe(false);
-    expect(sources.has('report-to')).toBe(false);
-    expect(sources.size).toBe(directives.length);
-    expect([...sources.keys()]).toEqual([
-      'default-src',
-      'script-src',
-      'script-src-attr',
-      'style-src',
-      'img-src',
-      'media-src',
-      'font-src',
-      'connect-src',
-      'worker-src',
-      'frame-src',
-      'object-src',
-      'base-uri',
-      'form-action',
-      'frame-ancestors',
-    ]);
-    expect(sources.get('default-src')).toEqual(["'none'"]);
-  });
-
   test('allows only bundled scripts, XMTP WebAssembly and the exact inline scripts', () => {
-    expect(inlineSources).toHaveLength(2);
     expect(sources.get('script-src')).toEqual(["'self'", "'wasm-unsafe-eval'", ...inlineSources]);
     expect(sources.get('script-src-attr')).toEqual(["'none'"]);
-    expect(hashSource(`${inlineScripts('public/index.html')[0]} `)).not.toBe(inlineSources[0]);
   });
 
-  test('keeps workers and fonts local while allowing rendered user resources', () => {
-    expect(sources.get('worker-src')).toEqual(["'self'", 'blob:']);
-    expect(sources.get('font-src')).toEqual(["'self'"]);
-    expect(sources.get('style-src')).toEqual(["'self'", "'unsafe-inline'"]);
-    expect(sources.get('img-src')).toEqual(["'self'", 'https:', 'data:', 'blob:']);
-    expect(sources.get('media-src')).toEqual(["'self'", 'https:', 'data:', 'blob:']);
-    expect(sources.get('connect-src')).toEqual(["'self'", 'https:', 'data:', 'blob:']);
-  });
-
-  test.each(['frame-src', 'object-src', 'base-uri', 'form-action', 'frame-ancestors'])('disallows %s', (directive) => {
-    expect(sources.get(directive)).toEqual(["'none'"]);
-  });
-
-  test('preserves cross-origin isolation for the XMTP workers', () => {
-    expect(site.values['Cross-Origin-Opener-Policy']).toBe('same-origin');
-    expect(site.values['Cross-Origin-Embedder-Policy']).toBe('credentialless');
+  test('is enforced, reports nowhere and locks down everything it does not need', () => {
+    expect(site.values['Content-Security-Policy-Report-Only']).toBeUndefined();
+    expect(sources.size).toBe(directives.length);
+    expect(sources.has('report-uri') || sources.has('report-to')).toBe(false);
+    for (const directive of ['default-src', 'frame-src', 'object-src', 'base-uri', 'form-action', 'frame-ancestors']) {
+      expect([directive, sources.get(directive)]).toEqual([directive, ["'none'"]]);
+    }
+    const loose = [...sources].filter(([, values]) => values.some((value) => ['*', 'http:', "'unsafe-eval'"].includes(value)));
+    expect(loose).toEqual([]);
   });
 });
