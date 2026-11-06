@@ -87,25 +87,31 @@ export default function XmtpConversation(): React.ReactElement {
     <ConversationShell bg={bg}>
       <ChatColumn style={memberList ? RIGHT_PANE_PAD : null}>
         <ConversationFeed
-          c={c}
+          feed={c.feed}
+          bubbles={c.bubbles}
+          conv={c.conv}
           convId={convId}
           bottomInset={composerH}
           searchSlot={
-            searchOpen && searchQuery.trim().length >= 2 ? <ConversationSearch line={c.activeLine} query={searchQuery} c={c} /> : undefined
+            searchOpen && searchQuery.trim().length >= 2 ? (
+              <ConversationSearch line={c.feed.line} query={searchQuery} bubbles={c.bubbles} />
+            ) : undefined
           }
         />
       </ChatColumn>
       {searchOpen ? (
         <ConversationSearchTopnav searchInputRef={searchInputRef} query={searchQuery} setQuery={setSearchQuery} onClose={closeSearch} />
       ) : (
-        <ConversationTopnav c={c} convId={convId} />
+        <ConversationTopnav conv={c.conv} overflow={c.overflow} convId={convId} />
       )}
       <FooterDock height={composerH} onHeight={onFooterHeight} memberList={memberList}>
-        <ConversationFooter c={c} convId={convId} />
+        <ConversationFooter conv={c.conv} composer={c.composer} scroll={c.feed.scroll} convId={convId} />
       </FooterDock>
-      {memberList ? <ConversationSidebar convId={convId} isGroup={c.isGroup} peerAddress={c.peerAddr} /> : null}
+      {memberList ? <ConversationSidebar convId={convId} isGroup={c.conv.isGroup} peerAddress={c.conv.peerAddr} /> : null}
       <ConversationOverlays
-        c={c}
+        conv={c.conv}
+        overflow={c.overflow}
+        messageMenu={c.messageMenu}
         convId={convId}
         onOpenSearch={() => {
           setSearchQuery('');

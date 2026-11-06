@@ -19,7 +19,8 @@ import { canDeleteMessage, isAdminDelete, deleteConfirmOf } from './messageDelet
 import { TopnavSearch } from '../search/TopnavSearch';
 import { RequestActionBar } from './RequestActionBar';
 import { canApproveConversation, canComposeConversation, composerAccess } from './consent.model';
-import type { useConversationState } from './useConversationState';
+import type { ComposerSlice, ConvSummary, FeedSlice, MessageMenuSlice, OverflowSlice } from './useConversationState';
+import { gatedAsChannel } from './convKind.model';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { ComposerDock } from './FooterDock';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -79,13 +80,19 @@ function ChannelAccessNotice({ outside }: { outside: boolean }): React.ReactElem
   );
 }
 
-type Conv = ReturnType<typeof useConversationState>;
-
-export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
+export function ConversationTopnav({
+  conv,
+  overflow,
+  convId,
+}: {
+  conv: ConvSummary;
+  overflow: OverflowSlice;
+  convId: string;
+}): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
-  const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
+  const { isGroup, peerAddr, groupImage } = conv;
   const back = (): void => {
     router.replace(homeRoute());
   };
@@ -98,7 +105,7 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
         isGroup={isGroup}
         border={border}
         head={head}
-        title={convTitle(c)}
+        title={convTitle(conv)}
         onPress={() => {
           if (isGroup) router.push(channelProfileLinkOf(convId));
           else if (peerAddr) router.push(profileLinkOf(peerAddr));
@@ -114,8 +121,8 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
           placement="below"
           role="button"
           onPress={(e) => {
-            setOverflowAnchor(menuPointOf(e));
-            setOverflowOpen(true);
+            overflow.setAnchor(menuPointOf(e));
+            overflow.setOpen(true);
           }}
         />
       </Row>
@@ -123,27 +130,33 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
   );
 }
 
-export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
+export function ConversationFooter({
+  conv,
+  composer,
+  scroll,
+  convId,
+}: {
+  conv: ConvSummary;
+  composer: ComposerSlice;
+  scroll: FeedSlice['scroll'];
+  convId: string;
+}): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { border: rowBg } = usePalette();
+  const { showJump, setShowJump, scrollToNewest, markAtBottom, jumpToMessage } = scroll;
   const {
-    showJump,
-    setShowJump,
-    scrollToNewest,
-    markAtBottom,
-    activeLine,
+    line,
     mentionCandidates,
     replyingTo,
     setReplyingTo,
     autoFocusNonce,
-    jumpToMessage,
     onOptimistic,
     onSent,
     consent,
     consentKnown,
     markConsentAllowed,
-  } = c;
-  const isGroup = c.peerAddr === null;
+  } = composer;
+  const isGroup = gatedAsChannel(conv.kind);
   const access = useGroupAccess(convId, isGroup);
   const requestPending = canApproveConversation(consent, isGroup, access);
   const composerShown = consentKnown && canComposeConversation(consent, isGroup, composerAccess(access, consent));
@@ -178,9 +191,9 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
       {composerShown ? (
         <MessengerComposer
           dark={dark}
-          xmtpLine={activeLine}
+          xmtpLine={line}
           mentionCandidates={mentionCandidates}
-          suggestContacts={c.peerAddr !== null}
+          suggestContacts={conv.kind === 'dm'}
           replyingTo={replyingTo ?? undefined}
           autoFocusNonce={autoFocusNonce}
           onClearReply={() => {
@@ -224,13 +237,20 @@ export function ConversationSearchTopnav({
   );
 }
 
-function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
+function ConversationMessageMenu({
+  conv,
+  menu,
+  convId,
+}: {
+  conv: ConvSummary;
+  menu: MessageMenuSlice;
+  convId: string;
+}): React.ReactElement {
+  const { isGroup, peerAddr } = conv;
   const {
-    isGroup,
-    peerAddr,
-    menuFor,
-    setMenuFor,
-    menuAnchor,
+    target: menuFor,
+    setTarget: setMenuFor,
+    anchor: menuAnchor,
     onReact,
     setReplyTarget,
     senderEthOf,
@@ -238,7 +258,7 @@ function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): Re
     myUri,
     deletedIds,
     isSuperAdmin,
-  } = c;
+  } = menu;
   const addFrame = useAddChatFrameToDashboard();
   return (
     <BubbleActionMenu
@@ -281,15 +301,20 @@ function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): Re
 }
 
 export function ConversationOverlays({
-  c,
+  conv,
+  overflow,
+  messageMenu,
   convId,
   onOpenSearch,
 }: {
-  c: Conv;
+  conv: ConvSummary;
+  overflow: OverflowSlice;
+  messageMenu: MessageMenuSlice;
   convId: string;
   onOpenSearch: () => void;
 }): React.ReactElement {
-  const { overflowOpen, setOverflowOpen, overflowAnchor, isGroup } = c;
+  const { open: overflowOpen, setOpen: setOverflowOpen, anchor: overflowAnchor } = overflow;
+  const { isGroup } = conv;
   const rights = useChannelEditRights(convId, isGroup);
   const [editOpen, setEditOpen] = useState(false);
   const canEdit = isGroup && canEditGroup(rights);
@@ -319,14 +344,14 @@ export function ConversationOverlays({
             setEditOpen(false);
           }}
           convId={convId}
-          name={c.groupName}
-          description={c.groupDescription}
-          imageUrl={c.groupImage}
+          name={conv.groupName}
+          description={conv.groupDescription}
+          imageUrl={conv.groupImage}
           rights={rights}
-          labels={c.groupLabels}
+          labels={conv.groupLabels}
         />
       ) : null}
-      <ConversationMessageMenu c={c} convId={convId} />
+      <ConversationMessageMenu conv={conv} menu={messageMenu} convId={convId} />
     </>
   );
 }

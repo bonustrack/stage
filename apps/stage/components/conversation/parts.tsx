@@ -17,7 +17,7 @@ import { AnchoredOverlay, MENU_WIDTH, useAnchoredMenus } from '../AnchoredMenu';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
-import type { MenuAnchor } from '../bubble/props';
+import type { MenuAnchor } from '../bubble/model';
 import { useHover } from '../hover';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { TitleText } from '../TitleText';

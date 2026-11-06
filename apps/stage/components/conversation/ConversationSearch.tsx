@@ -2,15 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { useFeedRenderItem } from './useFeedRenderItem';
+import { useFeedRenderItem, type BubbleFeed } from './useFeedRenderItem';
 import { searchLocalHistory, type SearchScanResult } from '../../lib/messaging/searchLocal';
-import type { useConversationState } from './useConversationState';
 import { usePalette } from '../../lib/theme';
 import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';
 
-type ConvState = ReturnType<typeof useConversationState>;
-
-export function ConversationSearch({ line, query, c }: { line: string; query: string; c: ConvState }): React.ReactElement {
+export function ConversationSearch({ line, query, bubbles }: { line: string; query: string; bubbles: BubbleFeed }): React.ReactElement {
   const { text: sub, bg } = usePalette();
   const [result, setResult] = useState<SearchScanResult>({ hits: [], truncated: false });
   const [scanning, setScanning] = useState(false);
@@ -18,7 +15,7 @@ export function ConversationSearch({ line, query, c }: { line: string; query: st
 
   const q = query.trim();
 
-  const { renderItem, extraData } = useFeedRenderItem(c, q);
+  const { renderItem, extraData } = useFeedRenderItem(bubbles, result.hits, q);
 
   useEffect(() => {
     const epoch = ++scanEpoch.current;

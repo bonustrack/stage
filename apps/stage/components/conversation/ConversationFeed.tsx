@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ConversationIntro } from './ConversationIntro';
 import { feedOrientation } from './feedOrientation';
-import { useFeedRenderItem } from './useFeedRenderItem';
-import type { useConversationState } from './useConversationState';
+import { useFeedRenderItem, type BubbleFeed } from './useFeedRenderItem';
+import type { ConvSummary, FeedSlice } from './useConversationState';
 import { usePalette } from '../../lib/theme';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { TOPNAV_HEIGHT } from '../Topnav';
@@ -13,8 +13,6 @@ import { RetryNotice } from '../chrome/RetryNotice';
 import { Column, VirtualList } from '../layout';
 
 const FEED_ESTIMATED_ROW = 80;
-
-type ConvState = ReturnType<typeof useConversationState>;
 
 function FeedOlderEdge({
   loading,
@@ -81,21 +79,25 @@ function FeedPending({
 }
 
 export function ConversationFeed({
-  c,
+  feed,
+  bubbles,
+  conv,
   convId,
   bottomInset = 0,
   searchSlot,
 }: {
-  c: ConvState;
+  feed: FeedSlice;
+  bubbles: BubbleFeed;
+  conv: ConvSummary;
   convId: string;
   bottomInset?: number;
   searchSlot?: React.ReactNode;
 }): React.ReactElement {
-  const { hasMore, loadingOlder, status, listRef, allBubbles } = c;
+  const { hasMore, loadingOlder, status, scroll, bubbles: allBubbles } = feed;
   const { text: sub, link: head } = usePalette();
   const topPad = useSafeAreaInsets().top + TOPNAV_HEIGHT;
-  const { renderItem, extraData } = useFeedRenderItem(c);
-  const intro = <ConversationIntro c={c} convId={convId} />;
+  const { renderItem, extraData } = useFeedRenderItem(bubbles, allBubbles);
+  const intro = <ConversationIntro conv={conv} convId={convId} />;
   const rows = useMemo(() => feedOrientation.rows(allBubbles), [allBubbles]);
   const empty = rows.length === 0 && (status !== 'open' || hasMore);
   const slowOpen = useSlowOpen(empty);
@@ -110,25 +112,25 @@ export function ConversationFeed({
   }
 
   if (empty) {
-    return <FeedPending failed={status === 'error'} slow={slowOpen} color={head} style={loaderFill} onRetry={c.retryFeed} />;
+    return <FeedPending failed={status === 'error'} slow={slowOpen} color={head} style={loaderFill} onRetry={feed.retryFeed} />;
   }
 
-  const olderEdge = <FeedOlderEdge loading={loadingOlder && c.showJump} sub={sub} hasMore={hasMore} intro={intro} />;
-  const o = feedOrientation.orient(c.pageOlder, topPad + 24, 24 + bottomInset, olderEdge);
+  const olderEdge = <FeedOlderEdge loading={loadingOlder && scroll.showJump} sub={sub} hasMore={hasMore} intro={intro} />;
+  const o = feedOrientation.orient(scroll.pageOlder, topPad + 24, 24 + bottomInset, olderEdge);
 
   return (
     <ChatGalleryProvider entries={allBubbles}>
       <VirtualList
         key={convId}
-        ref={listRef}
+        ref={scroll.listRef}
         data={rows}
         extraData={extraData}
         inverted={o.inverted}
         anchor={feedOrientation.listAnchor}
-        stickToEnd={c.stickToNewest}
+        stickToEnd={scroll.stickToNewest}
         estimatedItemSize={FEED_ESTIMATED_ROW}
-        maintainVisibleContentPosition={feedOrientation.positionHold(c.showJump)}
-        keyExtractor={c.rowKeyOf}
+        maintainVisibleContentPosition={feedOrientation.positionHold(scroll.showJump)}
+        keyExtractor={feed.rowKeyOf}
         windowSize={11}
         initialNumToRender={feedOrientation.firstBatch(rows.length)}
         maxToRenderPerBatch={10}
@@ -138,7 +140,7 @@ export function ConversationFeed({
         onStartReached={o.onStartReached}
         onStartReachedThreshold={0.5}
         contentContainerStyle={o.contentPadding}
-        {...c.feedListEvents}
+        {...scroll.feedListEvents}
         scrollEventThrottle={16}
         onScrollToIndexFailed={() => undefined}
         renderItem={renderItem}

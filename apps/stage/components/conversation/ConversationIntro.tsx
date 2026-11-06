@@ -9,7 +9,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { useRouter } from 'expo-router';
 import { usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
-import type { useConversationState } from './useConversationState';
+import type { ConvSummary } from './useConversationState';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 function IntroLabelChips({ labels, fg, bg }: { labels: string[]; fg: string; bg: string }): React.ReactElement | null {
@@ -23,14 +23,8 @@ function IntroLabelChips({ labels, fg, bg }: { labels: string[]; fg: string; bg:
   );
 }
 
-export function ConversationIntro({
-  c,
-  convId,
-}: {
-  c: ReturnType<typeof useConversationState>;
-  convId: string;
-}): React.ReactElement | null {
-  const { isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels } = c;
+export function ConversationIntro({ conv, convId }: { conv: ConvSummary; convId: string }): React.ReactElement | null {
+  const { isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels } = conv;
   const { text: fg, link: head, border, inputBg } = usePalette();
   const router = useRouter();
   if (isGroup) {

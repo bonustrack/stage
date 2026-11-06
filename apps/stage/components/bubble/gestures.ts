@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { Vibration, type View } from 'react-native';
 import { Gesture, type GestureType } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from 'expo-router/js-stack';
-import { initialMenuAnchor, type MenuAnchor } from './props';
+import { initialMenuAnchor, type MenuAnchor } from './model';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation } from 'react-native-reanimated';
 

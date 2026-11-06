@@ -9,6 +9,7 @@ import { capabilities } from '../../lib/capabilities';
 import { knownActiveAccountId } from '../../lib/accountSelection';
 import { lineOfDmPeer } from '@stage-labs/client/xmtp/line';
 import { MessengerBubble } from '../bubble/MessengerBubble';
+import type { BubbleModel } from '../bubble/model';
 import { ComposerEditor } from '../composer/editor';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { PeerTopnav } from './PeerTopnav';
@@ -28,6 +29,24 @@ function entryOf(item: OutboxItem): HistoryEntry {
     from: PENDING_MY_URI,
     to: item.address,
     text: item.text,
+  };
+}
+
+function pendingModelOf(entry: HistoryEntry, dark: boolean, senderEthAddress: string | null): BubbleModel {
+  return {
+    entry,
+    source: entry,
+    dark,
+    myUri: PENDING_MY_URI,
+    senderEthAddress,
+    pending: true,
+    replyTarget: false,
+    interactive: false,
+    signable: false,
+    signing: false,
+    payable: false,
+    paying: false,
+    selectable: false,
   };
 }
 
@@ -119,7 +138,7 @@ export function PendingConversation({
       <ChatColumn>
         <Column weight={1} justify="end" padding={{ top: TOPNAV_HEIGHT }}>
           {queued.map((item) => (
-            <MessengerBubble key={item.id} entry={entryOf(item)} dark={dark} pending myUri={PENDING_MY_URI} senderEthAddress={myAddress} />
+            <MessengerBubble key={item.id} model={pendingModelOf(entryOf(item), dark, myAddress)} />
           ))}
           <Text size="2xs" color={pal.text} textAlign="center" style={{ paddingHorizontal: 24, paddingVertical: 12, opacity: 0.6 }}>
             {pendingBanner(reason, peerName)}

@@ -5,7 +5,7 @@ import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { inboxIdOfUri, lineOfConv, userUriOf } from '@stage-labs/client/xmtp/line';
 import { useXmtpFeed } from '../../lib/feed/useXmtpFeed';
 import { useConvDetails, useConvRow } from '../../lib/messaging/queries';
-import { isGroupRow, memberAddressesOf } from '../../lib/messaging/convRow.model';
+import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { markConvRead } from '../../lib/channelsCache';
 import { isAppInFront, subscribeAppInFront } from '../../lib/appInFront';
 import { useConvConsentState } from '../../lib/messaging/useConvConsent';
@@ -20,7 +20,7 @@ import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
 import { useOwnDeletes } from '../../lib/ownDeletes';
 import { useChannelRoles } from '../channel/channel.detail';
 import { useLiveChannelLabels } from '../channel/channel.labels';
-import type { MenuAnchor } from '../bubble/props';
+import type { MenuAnchor } from '../bubble/model';
 import { callRecordsOf } from '../bubble/callCard.model';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
@@ -29,6 +29,8 @@ import { useTxSignLayer } from './useTxSignLayer';
 import { makeSeenCheck } from './markRead.model';
 import { useFeedBubbles, useOutboundLayer } from './useOutboundLayer';
 import { useFeedScroll } from './useFeedScroll';
+import { useBubbleFeed } from './useBubbleFeed';
+import { convKindOf } from './convKind.model';
 import { useClearedChats } from '../../lib/sync/clearedChats';
 import { entriesAfterClear, feedReachedClear, countFromOthers } from './feed-helpers';
 import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
@@ -144,8 +146,10 @@ function useConvFields(convId: string | undefined) {
   const row = useConvRow(convId);
   const { description } = useConvDetails(convId, row);
   const memberAddrs = useMemo(() => memberAddressesOf(row), [row]);
-  const isGroup = isGroupRow(row);
+  const kind = convKindOf(row);
+  const isGroup = kind === 'group';
   return {
+    kind,
     peerAddr: row?.peerAddress ?? null,
     memberAddrs,
     inboxToAddr: row?.inboxToAddr ?? NO_MAP,
@@ -240,15 +244,23 @@ function useConvPeople(events: HistoryEntry[], fields: ReturnType<typeof useConv
   return { senderEthOf, profilesVersion, mentionCandidates };
 }
 
+function useConvSummary(convId: string | undefined, fields: ReturnType<typeof useConvFields>) {
+  const { kind, isGroup, peerAddr, groupName, groupImage, groupDescription } = fields;
+  const groupLabels = useLiveChannelLabels(convId);
+  return { kind, isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels };
+}
+
+export type ConvSummary = ReturnType<typeof useConvSummary>;
+
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const { feed, inboxId, fields } = useConvFeed(convId, focus);
   const { activeLine, events, myUri } = feed;
-  const { peerAddr, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = fields;
+  const { inboxToAddr, isGroup } = fields;
+  const conv = useConvSummary(convId, fields);
 
   const menus = useConvMenus(convId);
   const { consent, consentKnown, markAllowed: markConsentAllowed } = useConsentGate(convId);
   const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
-  const groupLabels = useLiveChannelLabels(convId);
 
   const people = useConvPeople(events, fields, inboxId);
 
@@ -262,32 +274,92 @@ export function useConversationState(convId: string | undefined, focus: string |
   const scroll = useFeedScroll(convId, allBubbles, feed.loadOlder);
   const outbound = useOutboundLayer(setOutbound, myUri, convId, activeLine, scroll.followNewest);
 
+  const bubbles = useBubbleFeed(
+    {
+      events,
+      reactions,
+      profilesVersion: people.profilesVersion,
+      replyingTo: menus.replyingTo,
+      menuFor: menus.menuFor,
+      myUri,
+      consentAllowed,
+      senderEthOf: people.senderEthOf,
+      deletedIds,
+      confirmedIds,
+      jumpHighlightId: scroll.jumpHighlightId,
+      selectedForCopy: menus.selectedForCopy,
+      optimisticReactions: reactionsLayer.optimisticReactions,
+      optimisticRemovals: reactionsLayer.optimisticRemovals,
+      ownReactions,
+      votes: votesLayer.displayVotes,
+      ownVotes: votesLayer.displayOwnVotes,
+      openAnswers: votesLayer.displayOpenAnswers,
+      callRecords,
+      signingIds: txSignLayer.signingIds,
+      payingIds: txSignLayer.payingIds,
+    },
+    {
+      onReact: reactionsLayer.onReact,
+      setReplyTarget: menus.setReplyTarget,
+      setMenuAnchor: menus.setMenuAnchor,
+      setMenuFor: menus.setMenuFor,
+      jumpToMessage: scroll.jumpToMessage,
+      onVote: votesLayer.onVote,
+      onOpenAnswer: votesLayer.onOpenAnswer,
+      onSign: txSignLayer.onSign,
+      onPay: txSignLayer.onPay,
+      setSelectedForCopy: menus.setSelectedForCopy,
+    },
+  );
+
   return {
-    ...feed,
-    ...menus,
-    ...outbound,
-    confirmedIds,
-    allBubbles,
-    rowKeyOf,
-    ...reactionsLayer,
-    ...votesLayer,
-    ...txSignLayer,
-    ...people,
-    ...scroll,
-    peerAddr,
-    groupName,
-    groupImage,
-    groupDescription,
-    groupLabels,
-    isGroup,
-    reactions,
-    ownReactions,
-    callRecords,
-    deletedIds,
-    isSuperAdmin,
-    consent,
-    consentKnown,
-    consentAllowed,
-    markConsentAllowed,
+    conv,
+    feed: {
+      line: activeLine,
+      status: feed.status,
+      hasMore: feed.hasMore,
+      loadingOlder: feed.loadingOlder,
+      retryFeed: feed.retryFeed,
+      bubbles: allBubbles,
+      rowKeyOf,
+      scroll,
+    },
+    bubbles,
+    composer: {
+      line: activeLine,
+      autoFocusNonce: feed.autoFocusNonce,
+      mentionCandidates: people.mentionCandidates,
+      replyingTo: menus.replyingTo,
+      setReplyingTo: menus.setReplyingTo,
+      onOptimistic: outbound.onOptimistic,
+      onSent: outbound.onSent,
+      consent,
+      consentKnown,
+      markConsentAllowed,
+    },
+    overflow: {
+      open: menus.overflowOpen,
+      setOpen: menus.setOverflowOpen,
+      anchor: menus.overflowAnchor,
+      setAnchor: menus.setOverflowAnchor,
+    },
+    messageMenu: {
+      target: menus.menuFor,
+      setTarget: menus.setMenuFor,
+      anchor: menus.menuAnchor,
+      onReact: reactionsLayer.onReact,
+      setReplyTarget: menus.setReplyTarget,
+      senderEthOf: people.senderEthOf,
+      setSelectedForCopy: menus.setSelectedForCopy,
+      myUri,
+      deletedIds,
+      isSuperAdmin,
+    },
   };
 }
+
+export type ConversationState = ReturnType<typeof useConversationState>;
+export type FeedSlice = ConversationState['feed'];
+export type ComposerSlice = ConversationState['composer'];
+export type OverflowSlice = ConversationState['overflow'];
+export type MessageMenuSlice = ConversationState['messageMenu'];
