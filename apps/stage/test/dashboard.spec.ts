@@ -8,7 +8,7 @@ import {
   type DashboardHeight,
   type DashboardWidget,
   type DashboardWidth,
-} from '@stage-labs/client/xmtp/readState';
+} from '@stage-labs/client/xmtp/sync/dashboard';
 import {
   FRAME_ADD_TOASTS,
   HEIGHT_OPTIONS,

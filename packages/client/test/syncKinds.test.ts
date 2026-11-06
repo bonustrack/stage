@@ -1,21 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  isChatCleared,
-  isRowCleared,
-  revivesClearedChat,
-  isSyncGroupName,
-  isSyncType,
-  mergeClearedChats,
-  parseSyncState,
-  shouldApplyReadState,
-  syncGroupName,
-  collectSyncReplay,
-  pickPublishGroup,
-  isOwnSyncGroup,
-  type SyncGroupFacts,
-  type SyncMessage,
-  type SyncReplay,
-} from '../src/xmtp/readState';
+import { isChatCleared, isRowCleared, revivesClearedChat, mergeClearedChats } from '../src/xmtp/sync/clear';
+import { isSyncGroupName, syncGroupName, pickPublishGroup, isOwnSyncGroup, type SyncGroupFacts } from '../src/xmtp/sync/group';
+import { isNewerSyncState, type SyncMessage } from '../src/xmtp/sync/kind';
+import { isSyncType, parseSyncState, collectSyncReplay, type SyncReplay } from '../src/xmtp/sync/registry';
 
 const ME = 'inbox-me';
 const STRANGER = 'inbox-stranger';
@@ -62,12 +49,12 @@ describe('sync group identity', () => {
   });
 });
 
-describe('shouldApplyReadState', () => {
+describe('isNewerSyncState', () => {
   test('newer wins, equal or older is ignored', () => {
-    expect(shouldApplyReadState(undefined, 5)).toBe(true);
-    expect(shouldApplyReadState(4, 5)).toBe(true);
-    expect(shouldApplyReadState(5, 5)).toBe(false);
-    expect(shouldApplyReadState(6, 5)).toBe(false);
+    expect(isNewerSyncState(undefined, 5)).toBe(true);
+    expect(isNewerSyncState(4, 5)).toBe(true);
+    expect(isNewerSyncState(5, 5)).toBe(false);
+    expect(isNewerSyncState(6, 5)).toBe(false);
   });
 });
 
@@ -225,12 +212,11 @@ describe('restored sync groups', () => {
       { contentTypeId: CLEAR, content: { cleared: { '0xaa': 3, '0xbb': 8 } }, sentNs: 15 },
       { contentTypeId: 'xmtp.org/text:1.0', content: 'hi', sentNs: 16 },
     ]);
-    expect(replay.reads).toEqual([
+    expect(replay.read).toEqual([
       { convId: 'a', lastReadNs: 9, markedUnread: false, at: 4 },
       { convId: 'b', lastReadNs: 7, markedUnread: false, at: 1 },
     ]);
-    expect(replay.cleared).toEqual({ '0xaa': 5, '0xbb': 8 });
-    expect(replay.latestNs).toBe(16);
+    expect(replay.clear.cleared).toEqual({ '0xaa': 5, '0xbb': 8 });
   });
 
   test('keeps pins from the last full order onwards, in time order', () => {
@@ -240,7 +226,7 @@ describe('restored sync groups', () => {
       { contentTypeId: PIN, content: { convId: 'z', pinned: true, at: 4 }, sentNs: 3 },
       { contentTypeId: PIN, content: { convId: 'w', pinned: true, at: 2, order: ['w'] }, sentNs: 4 },
     ]);
-    expect(replay.pins.map((p) => p.convId)).toEqual(['y', 'z']);
+    expect(replay.pin.map((p) => p.convId)).toEqual(['y', 'z']);
   });
 
   test('keeps the newest board order by its own clock, not by arrival', () => {
@@ -250,8 +236,8 @@ describe('restored sync groups', () => {
       { contentTypeId: BOARD, content: { order: ['label:c'], at: 7 }, sentNs: 3 },
       { contentTypeId: BOARD, content: { order: [''], at: 12 }, sentNs: 4 },
     ]);
-    expect(replay.latest.board).toEqual({ order: ['label:b'], at: 9 });
-    expect(replayOf([]).latest.board).toBeNull();
+    expect(replay.board).toEqual({ order: ['label:b'], at: 9 });
+    expect(replayOf([]).board).toBeNull();
   });
 
   test('keeps the newest category order by its own clock, not by arrival', () => {
@@ -261,9 +247,9 @@ describe('restored sync groups', () => {
       { contentTypeId: CATEGORY, content: { order: ['category:b'], at: 9 }, sentNs: 2 },
       { contentTypeId: 'stage.box/boardState:1.0', content: { order: ['label:c'], at: 12 }, sentNs: 3 },
     ]);
-    expect(replay.latest.categoryOrder).toEqual({ order: ['category:b'], at: 9 });
-    expect(replay.latest.board).toEqual({ order: ['label:c'], at: 12 });
-    expect(replayOf([]).latest.categoryOrder).toBeNull();
+    expect(replay.categoryOrder).toEqual({ order: ['category:b'], at: 9 });
+    expect(replay.board).toEqual({ order: ['label:c'], at: 12 });
+    expect(replayOf([]).categoryOrder).toBeNull();
   });
 
   test('keeps the newest search by its own clock, not by arrival', () => {
@@ -280,9 +266,9 @@ describe('restored sync groups', () => {
       { contentTypeId: SEARCH, content: search('c', 7), sentNs: 3 },
       { contentTypeId: SEARCH, content: { query: 'd', at: 12 }, sentNs: 4 },
     ]);
-    expect(replay.latest.search).toEqual(search('b', 9));
-    expect(replay.latest.board).toBeNull();
-    expect(replayOf([]).latest.search).toBeNull();
+    expect(replay.search).toEqual(search('b', 9));
+    expect(replay.board).toBeNull();
+    expect(replayOf([]).search).toBeNull();
   });
 
   test('keeps the newest home view by its own clock, not by arrival', () => {
@@ -294,8 +280,8 @@ describe('restored sync groups', () => {
       { contentTypeId: VIEW, content: view('category', 7), sentNs: 3 },
       { contentTypeId: VIEW, content: view('owner', 12), sentNs: 4 },
     ]);
-    expect(replay.latest.homeView).toEqual(view('assignee', 9));
-    expect(replayOf([]).latest.homeView).toBeNull();
+    expect(replay.homeView).toEqual(view('assignee', 9));
+    expect(replayOf([]).homeView).toBeNull();
   });
 
   test('keeps the newest dashboard by its own clock and never reads it as a board', () => {
@@ -314,11 +300,11 @@ describe('restored sync groups', () => {
       { contentTypeId: DASHBOARD, content: { widgets: [], at: NOW + DAY_MS + 1 }, sentNs: 4 },
       { contentTypeId: DASHBOARD, content: { widgets: [frame('d')] }, sentNs: 5 },
     ]);
-    expect(replay.latest.dashboard).toEqual({ widgets: [frame('b', 'full', 2)], at: 9 });
-    expect(replay.latest.board).toBeNull();
+    expect(replay.dashboard).toEqual({ widgets: [frame('b', 'full', 2)], at: 9 });
+    expect(replay.board).toBeNull();
     expect(isSyncType(DASHBOARD, 'board')).toBe(false);
     expect(isSyncType(DASHBOARD, 'dashboard')).toBe(true);
-    expect(replayOf([]).latest.dashboard).toBeNull();
+    expect(replayOf([]).dashboard).toBeNull();
   });
 
   test('replays the latest supplied sort choices across newer legacy snapshots', () => {
@@ -334,16 +320,15 @@ describe('restored sync groups', () => {
       { contentTypeId: VIEW, content: { ...base, chatsSort: { by: 'unknown' }, at: 13 }, sentNs: 5 },
     ];
     const expected = { ...base, groupBy: 'category', at: 12, chatsSort: { by: 'priority', direction: 'asc' }, boardSort };
-    expect(replayOf(messages).latest.homeView).toEqual(expected);
-    expect(replayOf([...messages].reverse()).latest.homeView).toEqual(expected);
-    expect(replayOf(messages, 2).latest.homeView).toEqual({ ...base, groupBy: 'category', at: 12 });
+    expect(replayOf(messages).homeView).toEqual(expected);
+    expect(replayOf([...messages].reverse()).homeView).toEqual(expected);
+    expect(replayOf(messages, 2).homeView).toEqual({ ...base, groupBy: 'category', at: 12 });
   });
 
   test('skips messages at or before the cursor', () => {
     const replay = replayOf([{ contentTypeId: READ, content: { convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }, sentNs: 10 }], 10);
-    expect(replay.reads).toEqual([]);
-    expect(replay.cleared).toBeNull();
-    expect(replay.latestNs).toBe(10);
+    expect(replay.read).toEqual([]);
+    expect(replay.clear.cleared).toBeNull();
   });
 });
 
@@ -392,11 +377,11 @@ describe('sync group trust', () => {
       { contentTypeId: BOARD, content: { order: ['label:x'], at: 9 }, senderInboxId: STRANGER, sentNs: 5 },
     ];
     const replay = collectSyncReplay(messages, 0, MINE);
-    expect(replay.reads).toEqual([{ convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }]);
-    expect(replay.cleared).toBeNull();
-    expect(replay.pins).toEqual([]);
-    expect(replay.latest.board).toBeNull();
-    expect(collectSyncReplay(messages, 0, { ...MINE, inboxId: '' }).reads).toEqual([]);
+    expect(replay.read).toEqual([{ convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }]);
+    expect(replay.clear.cleared).toBeNull();
+    expect(replay.pin).toEqual([]);
+    expect(replay.board).toBeNull();
+    expect(collectSyncReplay(messages, 0, { ...MINE, inboxId: '' }).read).toEqual([]);
   });
 
   test('ignores states dated more than a day ahead', () => {
@@ -408,9 +393,9 @@ describe('sync group trust', () => {
       { contentTypeId: BOARD, content: { order: ['label:now'], at: NOW + DAY_MS }, sentNs: 5 },
       { contentTypeId: BOARD, content: { order: ['label:late'], at: NOW + DAY_MS + 1 }, sentNs: 6 },
     ]);
-    expect(replay.reads).toEqual([{ convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }]);
-    expect(replay.cleared).toEqual({ '0xbb': NOW });
-    expect(replay.pins).toEqual([]);
-    expect(replay.latest.board).toEqual({ order: ['label:now'], at: NOW + DAY_MS });
+    expect(replay.read).toEqual([{ convId: 'a', lastReadNs: 5, markedUnread: false, at: 2 }]);
+    expect(replay.clear.cleared).toEqual({ '0xbb': NOW });
+    expect(replay.pin).toEqual([]);
+    expect(replay.board).toEqual({ order: ['label:now'], at: NOW + DAY_MS });
   });
 });

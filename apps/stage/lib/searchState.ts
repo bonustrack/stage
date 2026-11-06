@@ -1,4 +1,4 @@
-import { searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/readState';
+import { searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/sync/search';
 import { createValueStore } from './persistedStore';
 import { jsonWith, makeListeners } from './storeCore';
 import {

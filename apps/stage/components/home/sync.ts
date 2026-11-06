@@ -34,7 +34,7 @@ import { presentInboundNotification } from '../../lib/pushNotify';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
+import { revivesClearedChat } from '@stage-labs/client/xmtp/sync/clear';
 import { isDeleteRequestType } from '@stage-labs/client/xmtp/deleteMessage';
 import { isCallSignalType } from '@stage-labs/client/xmtp/call';
 import { isChannelHidden, loadHiddenChannels, subscribeHiddenChannels } from '../../lib/hiddenChannels';

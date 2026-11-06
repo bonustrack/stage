@@ -1,4 +1,4 @@
-import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/readState';
+import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import { createValueStore } from './persistedStore';
 import { makeListeners } from './storeCore';
 

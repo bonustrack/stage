@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { applyGroupMeta, applyInbound } from '@stage-labs/client/xmtp/channelsCache';
-import { DEFAULT_HOME_VIEW, type HomeSort } from '@stage-labs/client/xmtp/readState';
+import { DEFAULT_HOME_VIEW, type HomeSort } from '@stage-labs/client/xmtp/sync/homeView';
 import { boardColumns, orderedColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
 import { groupRows, isGroupHeader } from '../components/home/groups.model';
 import { deriveSortedRows, type Row } from '../components/home/model';

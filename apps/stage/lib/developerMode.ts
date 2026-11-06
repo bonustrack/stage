@@ -3,7 +3,7 @@ import {
   developerModeSchema,
   mergeDeveloperMode,
   type DeveloperModeContent,
-} from '@stage-labs/client/xmtp/readState';
+} from '@stage-labs/client/xmtp/sync/developerMode';
 import { getSelectedAccount } from './accounts';
 import { subscribeAccountEpoch } from './accountEpoch';
 import { accountScope, getAccountSelection, subscribeAccountSelection } from './accountSelection';

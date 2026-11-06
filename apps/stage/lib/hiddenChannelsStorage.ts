@@ -1,4 +1,4 @@
-import { hiddenChannelsSchema } from '@stage-labs/client/xmtp/readState';
+import { hiddenChannelsSchema } from '@stage-labs/client/xmtp/sync/clear';
 import { appStorage } from '../platform/storage';
 import { jsonWith } from './storeCore';
 

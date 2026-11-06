@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { isRowCleared } from '@stage-labs/client/xmtp/readState';
+import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
 import { SearchTopnavBar } from '../../SearchTopnavBar';
 import { useWebTabRail } from '../../layout/webLayout';
 import { getPeerDisplayName, getPeerHandle } from '../../../lib/peerProfiles';

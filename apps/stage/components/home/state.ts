@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { HomeViewContent } from '@stage-labs/client/xmtp/readState';
+import type { HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import type { VirtualListHandle } from '../layout';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { useChannelGroups } from '../../lib/channelGroups';

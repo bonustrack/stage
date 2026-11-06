@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { DEFAULT_HOME_VIEW } from '@stage-labs/client/xmtp/readState';
+import { DEFAULT_HOME_VIEW } from '@stage-labs/client/xmtp/sync/homeView';
 import {
   CHANNELS_OVERFLOW_ITEMS,
   homeActivityMenu,

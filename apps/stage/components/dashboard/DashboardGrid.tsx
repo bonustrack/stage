@@ -10,7 +10,7 @@ import Animated, {
   type SharedValue,
 } from 'react-native-reanimated';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import type { DashboardWidget } from '@stage-labs/client/xmtp/readState';
+import type { DashboardWidget } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { HOLD_MS, MOVE_SLOP, lift, lockScrollOnLift, setDragging, settle, suppressNextClick } from './dragLift';
 import { changeDashboard } from '../../lib/dashboard';

@@ -4,7 +4,7 @@ import { useIsFocused } from 'expo-router';
 import { nodeRequestOf, type FrameMessageHandler, type FrameOut } from '../components/frame/frame.model';
 import { loadNode, sendNodeMessage, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
-import type { LiveSource } from '@stage-labs/client/xmtp/readState';
+import type { LiveSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import { FRAME_ADD_TOASTS } from '../components/dashboard/dashboard.model';
 import {
   EMPTY_LIVE,

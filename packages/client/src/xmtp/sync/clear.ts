@@ -1,0 +1,85 @@
+import { z } from 'zod';
+import { defineSyncKind } from './kind';
+
+export type ClearedChats = Record<string, number>;
+
+export const hiddenChannelsSchema = z.record(z.string().min(1), z.object({ hidden: z.boolean(), at: z.number().nonnegative() }));
+export type HiddenChannels = z.infer<typeof hiddenChannelsSchema>;
+
+const clearStateSchema = z.object({
+  cleared: z.record(z.string().min(1), z.number().nonnegative()),
+  hidden: hiddenChannelsSchema.optional().catch(undefined),
+});
+
+export type ClearStateContent = z.infer<typeof clearStateSchema>;
+
+export interface ClearReplay {
+  cleared: ClearedChats | null;
+  hidden: HiddenChannels | null;
+}
+
+export function mergeHiddenChannels(local: HiddenChannels, incoming: HiddenChannels): HiddenChannels {
+  const merged = { ...local };
+  for (const [id, state] of Object.entries(incoming)) {
+    const previous = merged[id];
+    if (!previous || state.at > previous.at || (state.at === previous.at && state.hidden)) merged[id] = state;
+  }
+  return merged;
+}
+
+export function mergeClearedChats(local: ClearedChats, incoming: ClearedChats): ClearedChats {
+  const merged: ClearedChats = {};
+  for (const [peer, at] of [...Object.entries(local), ...Object.entries(incoming)]) {
+    const key = peer.toLowerCase();
+    merged[key] = Math.max(merged[key] ?? 0, at);
+  }
+  return merged;
+}
+
+const SILENT_TYPE_IDS: readonly string[] = ['reaction', 'readReceipt'];
+
+export function revivesClearedChat(typeId: string | undefined): boolean {
+  return typeId === undefined || !SILENT_TYPE_IDS.includes(typeId);
+}
+
+export function isChatCleared(cleared: ClearedChats, peerAddress: string | null | undefined, lastTsMs: number | null): boolean {
+  if (!peerAddress) return false;
+  const clearedAt = cleared[peerAddress.toLowerCase()];
+  return clearedAt !== undefined && (lastTsMs ?? 0) <= clearedAt;
+}
+
+export interface ClearableRow {
+  peerAddress: string | null;
+  lastTs: number | null;
+  lastBubbleTs?: number | null;
+}
+
+export function isRowCleared(cleared: ClearedChats, row: ClearableRow): boolean {
+  const revivalTs = row.lastBubbleTs === undefined ? row.lastTs : row.lastBubbleTs;
+  return isChatCleared(cleared, row.peerAddress, revivalTs);
+}
+
+function clearedUpTo(cleared: ClearedChats, maxAt: number): ClearedChats {
+  return Object.fromEntries(Object.entries(cleared).filter(([, at]) => at <= maxAt));
+}
+
+function hiddenUpTo(hidden: HiddenChannels, maxAt: number): HiddenChannels {
+  return Object.fromEntries(Object.entries(hidden).filter(([, state]) => state.at <= maxAt));
+}
+
+function mergedVisibility(states: readonly ClearStateContent[], maxAt: number): ClearReplay {
+  let cleared: ClearedChats | null = null;
+  let hidden: HiddenChannels | null = null;
+  for (const state of states) {
+    cleared = mergeClearedChats(cleared ?? {}, clearedUpTo(state.cleared, maxAt));
+    if (state.hidden !== undefined) hidden = mergeHiddenChannels(hidden ?? {}, hiddenUpTo(state.hidden, maxAt));
+  }
+  return { cleared, hidden };
+}
+
+export const CLEAR_SYNC = defineSyncKind({
+  typeId: 'clearState',
+  schema: clearStateSchema,
+  fallback: 'Stage deleted chats',
+  replay: mergedVisibility,
+});

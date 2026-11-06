@@ -1,4 +1,6 @@
-import { isSyncGroupName, type HiddenChannels, type SyncContents, type SyncReplay } from '@stage-labs/client/xmtp/readState';
+import type { HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
+import type { SyncContents, SyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { applyRemoteClearedChats, loadClearedChats } from './clearedChats';
 import { applyRemoteHiddenChannels, loadHiddenChannels } from './hiddenChannels';
 import { sdk } from './xmtp.sdk';
@@ -12,8 +14,8 @@ export async function loadChatVisibility(accountId: string): Promise<SyncContent
 }
 
 export async function applyRemoteChatVisibility(accountId: string, replay: SyncReplay): Promise<void> {
-  if (replay.cleared !== null) await applyRemoteClearedChats(accountId, replay.cleared);
-  if (replay.hidden !== null) await applyRemoteHiddenChannels(accountId, replay.hidden);
+  if (replay.clear.cleared !== null) await applyRemoteClearedChats(accountId, replay.clear.cleared);
+  if (replay.clear.hidden !== null) await applyRemoteHiddenChannels(accountId, replay.clear.hidden);
   if ((await getActiveAccount())?.id === accountId) await reconcileHiddenConsent(await accountClient(accountId));
 }
 

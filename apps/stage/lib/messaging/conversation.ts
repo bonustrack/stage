@@ -7,7 +7,7 @@ import { rowMessagesOf } from '../xmtp.messages';
 import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
 import { isControlBody, type XmtpConsent } from '../xmtp.types';
 import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
-import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
+import { revivesClearedChat } from '@stage-labs/client/xmtp/sync/clear';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import {
   channelRowTitle,

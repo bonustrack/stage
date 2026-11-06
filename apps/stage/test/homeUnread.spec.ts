@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/readState';
+import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import { deriveSortedRows, unreadRowCount, visibleUnreadCount, type Row } from '../components/home/model';
 import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
 import { ALICE, NAMES, SELF } from './searchFixtures';

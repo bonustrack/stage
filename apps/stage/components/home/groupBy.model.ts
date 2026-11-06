@@ -1,5 +1,5 @@
 import { categoryOf } from '@stage-labs/client/xmtp/labels';
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 
 export interface GroupableRow {
   peerAddress?: string | null;

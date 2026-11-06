@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import type { Client } from '@xmtp/react-native-sdk';
 import { getAllPushTopics, getHmacKeys } from '@xmtp/react-native-sdk';
 import { groupIdOfTopic, type HmacKeysByTopic, type PushPlatform } from '@stage-labs/client/xmtp/pushServer';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import { dismissConvNotifications, getDeviceFcmToken } from './pushNotify';
 import { convIdOfNotificationData } from './pushNotify.model';
 import {

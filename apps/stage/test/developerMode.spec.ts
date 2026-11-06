@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
-import { DEFAULT_DEVELOPER_MODE, type DeveloperModeContent } from '@stage-labs/client/xmtp/readState';
+import { DEFAULT_DEVELOPER_MODE, type DeveloperModeContent } from '@stage-labs/client/xmtp/sync/developerMode';
 import { editDeveloperMode } from '../lib/syncedSettings.model';
 
 const values = new Map<string, string>();

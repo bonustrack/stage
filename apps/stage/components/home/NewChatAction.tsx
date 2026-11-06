@@ -1,4 +1,4 @@
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { HoverIconButton } from '../hover';
 import { usePalette } from '../../lib/theme';

@@ -1,4 +1,6 @@
-import { collectSyncReplay, type DeveloperModeContent, type SyncGroupState } from '@stage-labs/client/xmtp/readState';
+import type { DeveloperModeContent } from '@stage-labs/client/xmtp/sync/developerMode';
+import type { SyncGroupState } from '@stage-labs/client/xmtp/sync/group';
+import { collectSyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { appStorage } from '../platform/storage';
 import { applyRemoteDeveloperMode, loadDeveloperMode } from './developerMode';
 import { createVisibilityPublisher } from './pendingVisibility';
@@ -33,7 +35,7 @@ async function replayGroup(context: AccountClient, group: SyncGroupState): Promi
     context.assertCurrent();
     const messages = (await sdk.messages(conv, { limit: PAGE_SIZE, order: 'desc', afterNs: cursor, beforeNs })).map(sdk.rowOf);
     context.assertCurrent();
-    const state = collectSyncReplay(messages, cursor, { inboxId: context.client.inboxId ?? '', nowMs: Date.now() }).latest.developerMode;
+    const state = collectSyncReplay(messages, cursor, { inboxId: context.client.inboxId ?? '', nowMs: Date.now() }).developerMode;
     if (state !== null) await applyRemoteDeveloperMode(context.account.id, state);
     if (messages.length === 0) break;
     latest = messages.reduce((max, message) => Math.max(max, message.sentNs), latest);

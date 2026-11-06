@@ -1,11 +1,10 @@
-import {
-  shouldApplyReadState,
-  type BoardStateContent,
-  type LatestKind,
-  type SyncContents,
-  type SyncReplay,
-} from '@stage-labs/client/xmtp/readState';
-import { SYNC_CODECS, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
+import type { OrderStateContent } from '@stage-labs/client/xmtp/sync/order';
+import { isNewerSyncState } from '@stage-labs/client/xmtp/sync/kind';
+import type { SyncContents, SyncReplay } from '@stage-labs/client/xmtp/sync/registry';
+
+type LatestKind = 'board' | 'categoryOrder' | 'search' | 'homeView' | 'dashboard' | 'developerMode';
+import { SYNC_CODECS } from '@stage-labs/client/xmtp/jsonCodecs';
+import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 import { sendSyncState, type SyncTarget } from './syncTarget';
 import { applyRemoteBoardOrder, loadBoardOrder, onBoardOrderChanged, type AccountOrderChange } from './boardOrder';
 import { applyRemoteCategoryOrder, loadCategoryOrder, onCategoryOrderChanged } from './channelGroups';
@@ -29,7 +28,7 @@ interface SettingsSync {
   publishDeveloperMode: (accountId: string) => void;
 }
 
-function stampOrderState(sync: SettingsSync, key: string, order: readonly string[]): BoardStateContent {
+function stampOrderState(sync: SettingsSync, key: string, order: readonly string[]): OrderStateContent {
   const at = Date.now();
   sync.localAt.set(key, at);
   return { order: [...order], at };
@@ -59,7 +58,8 @@ function latestWins<K extends LatestKind>(
       });
     },
     apply: async (accountId, replay) => {
-      const state = replay.latest[kind];
+      const latest: { [L in LatestKind]: SyncContents[L] | null } = replay;
+      const state = latest[kind];
       if (state !== null) await setting.apply(accountId, state);
     },
     publishTo: async (target, accountId) => {
@@ -85,7 +85,7 @@ function orderWins(
       });
     },
     apply: async (accountId, state) => {
-      if (!shouldApplyReadState(sync.localAt.get(kind), state.at)) return;
+      if (!isNewerSyncState(sync.localAt.get(kind), state.at)) return;
       sync.localAt.set(kind, state.at);
       await setting.apply(accountId, state.order);
     },

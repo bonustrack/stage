@@ -1,16 +1,10 @@
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { applyReadUpTo, applyUnread, type CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
-import {
-  collectSyncReplay,
-  isSyncType,
-  pickPublishGroup,
-  shouldApplyReadState,
-  type PinStateContent,
-  type ReadStateContent,
-  type SyncGroupState,
-  type SyncOwner,
-  type SyncReplay,
-} from '@stage-labs/client/xmtp/readState';
+import type { ReadStateContent } from '@stage-labs/client/xmtp/sync/read';
+import type { PinStateContent } from '@stage-labs/client/xmtp/sync/pin';
+import { pickPublishGroup, type SyncGroupState, type SyncOwner } from '@stage-labs/client/xmtp/sync/group';
+import { isNewerSyncState } from '@stage-labs/client/xmtp/sync/kind';
+import { collectSyncReplay, isSyncType, type SyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { replaySyncGroups } from './readSyncReplay';
 import { syncTarget, sendSyncState, type SyncTarget } from './syncTarget';
 import { getActiveAccount } from './accounts';
@@ -43,7 +37,8 @@ import { registerHiddenConv } from './xmtp.state.core';
 import { afterFirstPages } from './feedLines';
 import { subscribeAllMessages } from './xmtp.stream';
 import type { StreamMsg } from './xmtp.types';
-import { SYNC_CODECS, type JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
+import { SYNC_CODECS } from '@stage-labs/client/xmtp/jsonCodecs';
+import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 import { report, reported } from './errorPolicy';
 
 const CATCH_UP_GAP_MS = 10_000;
@@ -92,7 +87,7 @@ async function applyReadStates(remote: readonly ReadStateContent[]): Promise<voi
   const reads = await Promise.all(remote.map(async (state) => ({ ...state, convId: await rowIdOfConv(state.convId) })));
   const applied: ReadStateContent[] = [];
   for (const state of reads) {
-    if (!shouldApplyReadState(localAt.get(readKey(state.convId)), state.at)) continue;
+    if (!isNewerSyncState(localAt.get(readKey(state.convId)), state.at)) continue;
     localAt.set(readKey(state.convId), state.at);
     await setLastReadNs(state.convId, Math.max(await getLastReadNs(state.convId), state.lastReadNs));
     await setMarkedUnreadFlag(state.convId, state.markedUnread);
@@ -107,15 +102,15 @@ async function applyReadStates(remote: readonly ReadStateContent[]): Promise<voi
 async function applyPinStates(remote: readonly PinStateContent[]): Promise<void> {
   for (const state of await Promise.all(remote.map(pinStateForRows))) {
     const key = state.order === undefined ? pinKey(state.convId) : PIN_ORDER_KEY;
-    if (!shouldApplyReadState(localAt.get(key), state.at)) continue;
+    if (!isNewerSyncState(localAt.get(key), state.at)) continue;
     localAt.set(key, state.at);
     await applyRemotePinState(state);
   }
 }
 
 async function applyReplay(accountId: string, replay: SyncReplay): Promise<void> {
-  await applyReadStates(replay.reads);
-  await applyPinStates(replay.pins);
+  await applyReadStates(replay.read);
+  await applyPinStates(replay.pin);
   await applyRemoteChatVisibility(accountId, replay);
   for (const setting of LATEST_WINS) await setting.apply(accountId, replay);
 }

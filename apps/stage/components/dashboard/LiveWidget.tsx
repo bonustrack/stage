@@ -1,6 +1,6 @@
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { nodeUrlOf } from '@stage-labs/client/nodes/protocol';
-import type { LiveSource } from '@stage-labs/client/xmtp/readState';
+import type { LiveSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { FrameSurface } from '../frame/FramePreview';
 import type { FrameMessageHandler } from '../frame/frame.model';

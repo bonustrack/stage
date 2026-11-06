@@ -2,7 +2,7 @@ import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { movedKey, savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { CHANNEL_FIELD_NOUNS, MAX_LABEL_LEN } from '@stage-labs/client/xmtp/labels';
-import { DEFAULT_HOME_VIEW, type GroupKey, type HomeSort } from '@stage-labs/client/xmtp/readState';
+import { DEFAULT_HOME_VIEW, type GroupKey, type HomeSort } from '@stage-labs/client/xmtp/sync/homeView';
 import { homeSortOf, sortHomeRows } from '../sort.model';
 import { NO_GROUP_TITLES, bucketRows, groupTitleOf, groupValuesOf, type GroupableRow, type NameOf } from '../groupBy.model';
 import { compareNames } from '../../../lib/format';

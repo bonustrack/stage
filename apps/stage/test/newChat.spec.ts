@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import {
   MAX_SHOWN_RECIPIENTS,
   NO_MEMBER_HISTORY,

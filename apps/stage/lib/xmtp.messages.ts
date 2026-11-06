@@ -19,8 +19,8 @@ import {
   WALLET_SEND_CALLS_CODEC,
   TRANSACTION_REFERENCE_CODEC,
   FRAME_ACTION_CODEC,
-  type JsonCodec,
 } from '@stage-labs/client/xmtp/jsonCodecs';
+import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 
 export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 

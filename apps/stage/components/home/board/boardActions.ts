@@ -1,5 +1,5 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { setBoardOrder } from '../../../lib/boardOrder';
 import { moveCategory, setCategoryOrder } from '../../../lib/channelGroups';
 import { isCategoryKey } from '../../../lib/channelGroups.model';

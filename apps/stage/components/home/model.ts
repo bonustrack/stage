@@ -1,17 +1,15 @@
 import { filterChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import type { ConversationView } from '../../lib/messaging/conversation';
+import { isRowCleared, type ClearableRow, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import {
   GROUP_KEYS,
   homeSortSchema,
   homeViewSchema,
-  isRowCleared,
-  type ClearableRow,
-  type ClearedChats,
   type GroupKey,
   type HomeSort,
   type HomeViewContent,
   type HomeViewEdit,
-} from '@stage-labs/client/xmtp/readState';
+} from '@stage-labs/client/xmtp/sync/homeView';
 import type { AppIconName, MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../profile/ProfileScreen.model';
 import { GROUP_BY_LABELS } from './groupBy.model';

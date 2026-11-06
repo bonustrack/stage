@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { collectSyncReplay } from '@stage-labs/client/xmtp/readState';
+import { collectSyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { XmtpConsent } from '../lib/xmtp.types';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
@@ -503,7 +503,7 @@ describe('departed channels across devices', () => {
       'dash-group',
       [{ id: 'dash-group', active: true, createdAtNs: 1 }],
       async (state) => {
-        replayed = state.latest.dashboard;
+        replayed = state.dashboard;
       },
       () => undefined,
     );

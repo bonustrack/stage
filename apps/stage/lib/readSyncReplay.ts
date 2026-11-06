@@ -1,4 +1,5 @@
-import { collectSyncReplay, isSyncType, type SyncGroupState, type SyncReplay } from '@stage-labs/client/xmtp/readState';
+import type { SyncGroupState } from '@stage-labs/client/xmtp/sync/group';
+import { collectSyncReplay, isSyncType, type SyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { appStorage } from '../platform/storage';
 import type { AccountClient } from './xmtp.account';

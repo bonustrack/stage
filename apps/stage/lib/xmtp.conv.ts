@@ -1,5 +1,5 @@
 import { classifyKeyPackageStatuses } from '@stage-labs/client/xmtp/clientErrors';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { channelConsent, loadHiddenChannels, setChannelHidden } from './hiddenChannels';
 import { accountClient, type AccountClient } from './xmtp.account';

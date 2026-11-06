@@ -1,4 +1,5 @@
-import { isRowCleared, isSyncGroupName } from '@stage-labs/client/xmtp/readState';
+import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { getAccountEpoch } from './accountEpoch';
 import { channelAccess } from './channelVisibility';

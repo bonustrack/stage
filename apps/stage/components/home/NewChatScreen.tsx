@@ -3,7 +3,7 @@ import { Platform, useWindowDimensions } from 'react-native';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { errorMessage } from '@stage-labs/client/errors';
-import { isRowCleared } from '@stage-labs/client/xmtp/readState';
+import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { handSendTo } from '../composer/handoff';

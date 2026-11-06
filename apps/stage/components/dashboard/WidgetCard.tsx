@@ -1,5 +1,5 @@
 import { deleteNode } from '@stage-labs/client/nodes/publish';
-import { DASHBOARD_LIVE_KIND, liveSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/readState';
+import { DASHBOARD_LIVE_KIND, liveSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/sync/dashboard';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';

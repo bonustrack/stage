@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { Platform, useWindowDimensions } from 'react-native';
-import { isRowCleared } from '@stage-labs/client/xmtp/readState';
+import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../../Topnav';
 import { FilterSearch, memberNamesOf } from '../search/FilterSearch';
 import { searchFilterSources, searchFilterValues } from '../search/searchFilter.model';

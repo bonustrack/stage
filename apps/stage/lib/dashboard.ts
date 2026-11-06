@@ -6,7 +6,7 @@ import {
   type DashboardWidget,
   type DashboardWidth,
   type LiveSource,
-} from '@stage-labs/client/xmtp/readState';
+} from '@stage-labs/client/xmtp/sync/dashboard';
 import {
   addFrameWidget,
   addLiveWidget,

@@ -1,4 +1,4 @@
-import { mergeHiddenChannels, type HiddenChannels } from '@stage-labs/client/xmtp/readState';
+import { mergeHiddenChannels, type HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
 import { createValueStore } from './persistedStore';
 import { makeListeners } from './storeCore';
 import type { XmtpConsent } from './xmtp.types';

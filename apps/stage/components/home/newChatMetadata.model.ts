@@ -1,5 +1,5 @@
 import { addLabel, assignedAddresses, categoryOf, parseObject } from '@stage-labs/client/xmtp/labels';
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { includesKey } from '../conversation/SidebarSection.model';
 
 export interface NewChatMetadata {

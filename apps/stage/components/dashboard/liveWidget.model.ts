@@ -3,7 +3,7 @@ import { NODE_CODE_MAX_BYTES, NODES_HOST } from '@stage-labs/client/nodes/hostin
 import { ownNodeUrl, type PublishProblem } from '@stage-labs/client/nodes/publish';
 import { frameContentSchema, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import type { FrameApplied } from '../../lib/frameSession';
-import type { LiveSource } from '@stage-labs/client/xmtp/readState';
+import type { LiveSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import { frameRenders } from '../frame/frame.model';
 
 export const LIVE_REFRESH_MS = 60_000;

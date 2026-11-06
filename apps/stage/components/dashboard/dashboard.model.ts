@@ -9,7 +9,7 @@ import {
   type DashboardWidget,
   type DashboardWidth,
   type LiveSource,
-} from '@stage-labs/client/xmtp/readState';
+} from '@stage-labs/client/xmtp/sync/dashboard';
 
 export const DASHBOARD_ROW = 128;
 export const DASHBOARD_GAP = 12;

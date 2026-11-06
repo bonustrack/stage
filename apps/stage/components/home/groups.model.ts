@@ -1,4 +1,4 @@
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { compareNames } from '../../lib/format';
 import { categorySectionOrderWith } from '../../lib/channelGroups.model';

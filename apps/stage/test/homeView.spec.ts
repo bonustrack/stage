@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { collectSyncReplay, DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/readState';
+import { DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
+import { collectSyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSettings.model';
 import { homeSortOf } from '../components/home/sort.model';
 import { selectAccount } from './activeAccount';
@@ -71,7 +72,7 @@ describe('home view sorting', () => {
       senderInboxId: 'self',
       sentNs: i + 1,
     }));
-    const incoming = collectSyncReplay(log, 0, { inboxId: 'self', nowMs: 100 }).latest.homeView;
+    const incoming = collectSyncReplay(log, 0, { inboxId: 'self', nowMs: 100 }).homeView;
     expect(incoming).not.toBeNull();
     if (incoming === null) throw new Error('Missing home view replay');
     await applyRemoteHomeView('catch-up-sorts', incoming);

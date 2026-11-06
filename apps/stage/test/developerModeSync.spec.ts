@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, jest, mock, test } from 'bun:test';
-import { mergeDeveloperMode, DEFAULT_DEVELOPER_MODE, type DeveloperModeContent } from '@stage-labs/client/xmtp/readState';
+import { mergeDeveloperMode, DEFAULT_DEVELOPER_MODE, type DeveloperModeContent } from '@stage-labs/client/xmtp/sync/developerMode';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
 
 let activeId = 'a';

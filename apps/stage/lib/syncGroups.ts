@@ -1,4 +1,4 @@
-import { isOwnSyncGroup, syncGroupName, type SyncGroupState, type SyncOwner } from '@stage-labs/client/xmtp/readState';
+import { isOwnSyncGroup, syncGroupName, type SyncGroupState, type SyncOwner } from '@stage-labs/client/xmtp/sync/group';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { recover } from './errorPolicy';
 

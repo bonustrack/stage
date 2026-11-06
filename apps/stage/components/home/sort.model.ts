@@ -1,7 +1,7 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { CHANNEL_PRIORITIES, categoryOf, priorityOf } from '@stage-labs/client/xmtp/labels';
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
-import { homeSortSchema, type HomeSort, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/readState';
+import { homeSortSchema, type HomeSort, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
 import { compareNames } from '../../lib/format';
 
 const DEFAULT_SORT: Record<HomeViewContent['view'], HomeSort> = {

@@ -1,5 +1,5 @@
 import { isPeerHandleSegment } from '@stage-labs/client/routing/handles';
-import type { HomeViewContent } from '@stage-labs/client/xmtp/readState';
+import type { HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { isOnboardingRoute } from '../onboarding/nextRoute.model';
 import { MENU_PAGES } from './menuPages';
 

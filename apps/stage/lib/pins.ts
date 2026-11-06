@@ -1,5 +1,5 @@
 import { movedPinOrder, pinOrderAfterRemote, toggledPinOrder, type PinOrder } from '@stage-labs/client/xmtp/pinOrder';
-import type { PinStateContent } from '@stage-labs/client/xmtp/readState';
+import type { PinStateContent } from '@stage-labs/client/xmtp/sync/pin';
 import { createValueStore } from './persistedStore';
 import { makeListeners } from './storeCore';
 

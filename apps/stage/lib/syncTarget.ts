@@ -1,6 +1,6 @@
 import { sdk } from './xmtp.sdk';
 import type { AccountClient } from './xmtp.account';
-import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
+import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 
 export interface SyncTarget {
   context: AccountClient;

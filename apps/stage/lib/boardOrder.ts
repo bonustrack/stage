@@ -1,4 +1,4 @@
-import { boardOrderSchema } from '@stage-labs/client/xmtp/readState';
+import { boardOrderSchema } from '@stage-labs/client/xmtp/sync/order';
 import { createValueStore } from './persistedStore';
 import { jsonWith, makeListeners } from './storeCore';
 

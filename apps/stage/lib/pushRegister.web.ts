@@ -1,6 +1,6 @@
 import type { Client } from '@xmtp/browser-sdk';
 import { groupIdOfTopic, groupTopicOf, type HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import {
   makePushClear,
   makeTopicRefresh,

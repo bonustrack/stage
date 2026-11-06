@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/readState';
+import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
 import { reported } from './errorPolicy';
 import { createValueStore } from './persistedStore';
 import { jsonWith, makeListeners, makeValue, useStoreValue } from './storeCore';

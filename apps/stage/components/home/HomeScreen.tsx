@@ -16,7 +16,7 @@ import { useChannelsSync } from './sync';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
 import { useHomeFilters } from './labelbar';
 import { searchBarLabels, type Row } from './model';
-import { isRowCleared } from '@stage-labs/client/xmtp/readState';
+import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
 import { parseSearchFilter, searchFilterSources, searchFilterValues, searchRowMatcher } from './search/searchFilter.model';
 import { memberNamesOf } from './search/FilterSearch';
 import { useClearedChats } from '../../lib/clearedChats';

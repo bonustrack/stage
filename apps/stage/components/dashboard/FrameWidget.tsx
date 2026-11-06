@@ -4,7 +4,7 @@ import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import type { DashboardSource } from '@stage-labs/client/xmtp/readState';
+import type { DashboardSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { FrameTile } from '../frame/FramePreview';
 import { chatLabelOf } from '../storage/StorageScreen.model';
