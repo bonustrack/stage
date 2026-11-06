@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import type { AccountRecord } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
 import { revealActiveRecoveryPhrase } from '../../lib/zerodev/keyring';
-import { createValueStore } from '../../lib/persistedStore';
+import { markWalletBackedUp } from '../../lib/walletBackup';
 import {
   BACKUP_PHRASE_COPY,
   SHOW_PHRASE_COPY,
@@ -20,20 +19,6 @@ import { IconShieldCheck } from '@central-icons-react-native/round-outlined-radi
 import { SettingsButtonRow } from './SettingsPage';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, Row } from '../layout';
-
-const BACKED_UP_KEY = ['walletBackedUp'] as const;
-
-const backedUp = createValueStore<boolean>({
-  key: 'wallet.backupDone',
-  default: false,
-  serialize: (v) => (v ? '1' : '0'),
-  deserialize: (raw) => raw === '1',
-});
-
-export function useWalletBackedUp(): boolean | null {
-  const { data } = useQuery({ queryKey: BACKED_UP_KEY, queryFn: () => backedUp.load(), staleTime: Infinity });
-  return data ?? null;
-}
 
 interface PanelProps {
   mode: PhraseRowMode;
@@ -88,7 +73,6 @@ function confirmShow(): Promise<boolean> {
 }
 
 export function RecoveryPhraseRow({ rec, mode }: { rec: AccountRecord; mode: PhraseRowMode }): React.ReactElement {
-  const queryClient = useQueryClient();
   const [phrase, setPhrase] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const hide = useCallback((): void => {
@@ -115,9 +99,8 @@ export function RecoveryPhraseRow({ rec, mode }: { rec: AccountRecord; mode: Phr
 
   const saved = (): void => {
     void (async (): Promise<void> => {
-      await backedUp.setAsync(true);
+      await markWalletBackedUp();
       setPhrase(null);
-      queryClient.setQueryData(BACKED_UP_KEY, true);
       capabilities.toast(BACKUP_PHRASE_COPY.saved);
     })();
   };
