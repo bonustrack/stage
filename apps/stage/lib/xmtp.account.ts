@@ -14,7 +14,7 @@ export async function accountClient(onlyFor?: string) {
     getAccountEpoch() === epoch && sdk.cachedClient() === client && cachedSelfEthAddress()?.toLowerCase() === account.address.toLowerCase();
   const assertCurrent = (): void => {
     if (getAccountEpoch() !== epoch || sdk.cachedClient() !== client) throw new AccountChangedError();
-    if (!current()) throw new AccountChangedError('Messaging client does not match the active account');
+    if (!current()) throw new Error('Messaging client does not match the active account');
   };
   assertCurrent();
   if ((await getActiveAccountStrict())?.id !== account.id) throw new AccountChangedError();

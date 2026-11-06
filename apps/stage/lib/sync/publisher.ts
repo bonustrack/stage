@@ -6,6 +6,7 @@ export interface SyncJob {
   key: string;
   accountId?: string;
   delayMs?: number;
+  durable?: boolean;
   send: () => Promise<void>;
 }
 
@@ -46,16 +47,29 @@ export function createSyncPublisher(isActive: (accountId: string) => Promise<boo
     else schedule(key, next.job.delayMs ?? PUBLISH_DEBOUNCE_MS);
   }
 
-  function retry(key: string, err: unknown): void {
-    if (err instanceof AccountChangedError || err instanceof NoAccountError) return;
-    report('readSync.publish', err);
-    if (RATE_LIMITED.test(String(err))) {
-      paused.add(key);
-      return;
-    }
+  function backOff(key: string): void {
     const attempt = (failures.get(key) ?? 0) + 1;
     failures.set(key, attempt);
     schedule(key, backoffDelay(attempt));
+  }
+
+  function rateLimited(key: string, { job, revision }: Pending): void {
+    if (job.durable === true) {
+      paused.add(key);
+      return;
+    }
+    if (pending.get(key)?.revision === revision) pending.delete(key);
+    else backOff(key);
+  }
+
+  function retry(key: string, sent: Pending, err: unknown): void {
+    if (err instanceof AccountChangedError || err instanceof NoAccountError) {
+      backOff(key);
+      return;
+    }
+    report('readSync.publish', err);
+    if (RATE_LIMITED.test(String(err))) rateLimited(key, sent);
+    else backOff(key);
   }
 
   async function flush(key: string): Promise<void> {
@@ -69,7 +83,7 @@ export function createSyncPublisher(isActive: (accountId: string) => Promise<boo
       failures.delete(key);
       settle(key, revision);
     } catch (err) {
-      retry(key, err);
+      retry(key, current, err);
     } finally {
       running.delete(key);
     }

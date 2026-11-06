@@ -8,6 +8,7 @@ function accountQueue(send: (accountId: string) => Promise<unknown>): (accountId
     publish({
       key: `clear:${accountId}`,
       accountId,
+      durable: true,
       send: async () => {
         await send(accountId);
       },
@@ -110,7 +111,7 @@ test('an inactive account is not published through the current client', async ()
   expect(sent).toEqual(['b']);
 });
 
-test('an account switch during a send keeps the change for the next request instead of retrying', async () => {
+test('an account switch during a send is retried after the backoff', async () => {
   let calls = 0;
   const queue = accountQueue(async () => {
     calls += 1;
@@ -119,11 +120,33 @@ test('an account switch during a send keeps the change for the next request inst
   });
   queue('a');
   await advance(800);
-  await advance(60_000);
   expect(calls).toBe(1);
-  queue('a');
-  await advance(800);
+  await advance(5000);
   expect(calls).toBe(2);
+  await advance(60_000);
+  expect(calls).toBe(2);
+});
+
+test('a rate limited change is dropped and the next change publishes again', async () => {
+  const sent: string[] = [];
+  const publish = createSyncPublisher();
+  const change = (value: string): void => {
+    publish({
+      key: 'board',
+      accountId: 'a',
+      send: async () => {
+        sent.push(value);
+        if (value === 'first') throw new Error('429 too many requests');
+      },
+    });
+  };
+  change('first');
+  await advance(800);
+  await advance(600_000);
+  expect(sent).toEqual(['first']);
+  change('second');
+  await advance(800);
+  expect(sent).toEqual(['first', 'second']);
 });
 
 test('rate limiting stops retries for the session, including later automatic requests', async () => {

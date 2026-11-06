@@ -13,6 +13,7 @@ export interface KindJob<T> {
   key: string;
   accountId?: string;
   delayMs?: number;
+  durable?: boolean;
   content: () => Promise<T | null>;
 }
 
@@ -45,6 +46,7 @@ export function defineAppSyncKind<K extends SyncKind>(spec: KindSpec<K>): AppSyn
         key: job.key,
         ...(job.accountId === undefined ? {} : { accountId: job.accountId }),
         ...(job.delayMs === undefined ? {} : { delayMs: job.delayMs }),
+        ...(job.durable === undefined ? {} : { durable: job.durable }),
         send: async () => {
           const content = await job.content();
           if (content !== null) await sink.withGroup((target) => sendSyncState(target, codec, content), job.accountId);

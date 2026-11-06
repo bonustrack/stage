@@ -18,7 +18,7 @@ export async function applyChatVisibility(accountId: string, state: ClearReplay)
 }
 
 function visibilityJob(accountId: string): KindJob<ClearStateContent> {
-  return { key: `clear:${accountId}`, accountId, content: () => loadChatVisibility(accountId) };
+  return { key: `clear:${accountId}`, accountId, durable: true, content: () => loadChatVisibility(accountId) };
 }
 
 export const CLEAR_KIND = defineAppSyncKind({

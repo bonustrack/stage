@@ -1,5 +1,9 @@
 import { createValueStore } from '../../lib/persistedStore';
+import { appStorage } from '../../platform/storage';
 import { WEB_TAB_RAIL_WIDTH } from './webLayout';
+
+const NOT_KEPT = { get: (): Promise<null> => Promise.resolve(null), set: (): Promise<void> => Promise.resolve() };
+const paneStorage = appStorage.getSync ? appStorage : NOT_KEPT;
 
 export interface PaneWidth {
   get: () => number;
@@ -33,6 +37,7 @@ export function createPaneWidth(opts: PaneWidthOptions): PaneWidth {
   const store = createValueStore<number>({
     key: opts.key,
     default: opts.initial,
+    storage: paneStorage,
     readNow: true,
     deserialize: (raw) => {
       const saved = Number(raw);

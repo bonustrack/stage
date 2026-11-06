@@ -67,7 +67,7 @@ function latestKind<K extends Exclude<LatestKind, 'developerMode'>>(
 }
 
 function developerModeJob(accountId: string): KindJob<SyncContents['developerMode']> {
-  return { key: `developerMode:${accountId}`, accountId, content: () => developerModeSync.load(accountId) };
+  return { key: `developerMode:${accountId}`, accountId, durable: true, content: () => developerModeSync.load(accountId) };
 }
 
 const DEVELOPER_MODE_KIND = defineAppSyncKind({
