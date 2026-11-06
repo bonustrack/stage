@@ -17,9 +17,6 @@ import {
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useContentColor } from './content-color';
 import { useKitPalette, useKitScheme } from './theme-context';
-import { loadKitFonts } from './fonts.load';
-
-loadKitFonts();
 
 export type { TextAlign, TextFontFamily, TextSizeToken, TextVariant, TextWeight };
 

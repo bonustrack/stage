@@ -7,9 +7,6 @@ import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { WithChecks } from './control-trigger';
 import { Icon } from './icon';
 import { useKitScheme } from './theme-context';
-import { loadKitFonts } from './fonts.load';
-
-loadKitFonts();
 
 export type CheckBoxDisplayStyle = 'checkbox' | 'switch';
 

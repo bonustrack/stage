@@ -18,10 +18,10 @@ export interface TextDefaultPalette {
 }
 
 export const TEXT_FONTS: Record<TextWeight, string> = {
-  normal: 'Calibre-Medium',
-  medium: 'Calibre-Medium',
-  semibold: 'Calibre-Semibold',
-  bold: 'Calibre-Semibold',
+  normal: fontName.sans,
+  medium: fontName.sans,
+  semibold: fontName.head,
+  bold: fontName.head,
 };
 
 export function resolveTextSize(size: TextSizeToken | undefined, variant: TextVariant | undefined): number {

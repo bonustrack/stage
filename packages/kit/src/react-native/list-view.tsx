@@ -2,11 +2,8 @@ import { Children, isValidElement, type ReactNode } from 'react';
 import { Pressable, View, Text as RNText, type ViewStyle } from 'react-native';
 import { FLEX_ALIGN, borderStyleEntries, type ResolvedBoxBorder } from '../layout';
 import { FONT_SIZE, fontName, schemePalette, type SchemePalette } from '../tokens';
-import { loadKitFonts } from './fonts.load';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useKitScheme } from './theme-context';
-
-loadKitFonts();
 
 export type ListItemAlign = 'start' | 'center' | 'end';
 

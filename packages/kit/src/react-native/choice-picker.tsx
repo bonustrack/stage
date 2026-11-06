@@ -8,9 +8,6 @@ import { CheckboxBox, checkboxColors } from './check-box';
 import { WithChecks } from './control-trigger';
 import { TextField } from './text-field';
 import { useKitScheme } from './theme-context';
-import { loadKitFonts } from './fonts.load';
-
-loadKitFonts();
 
 export interface ChoiceOption {
   label: string;

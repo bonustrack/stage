@@ -1,15 +1,20 @@
-import { KIT_FONT_STYLE_ID, KIT_FONTS } from './fonts';
+import { KIT_FONT_FACES, KIT_FONT_STYLE_ID, fontFaceCss, type KitFontFace } from './fonts.faces';
 
-function addFontFaces(doc: Document): void {
-  if (doc.getElementById(KIT_FONT_STYLE_ID)) return;
+function styleElement(doc: Document): HTMLStyleElement {
+  const found = doc.getElementById(KIT_FONT_STYLE_ID);
+  if (found instanceof HTMLStyleElement) return found;
   const style = doc.createElement('style');
   style.id = KIT_FONT_STYLE_ID;
-  style.textContent = Object.entries(KIT_FONTS)
-    .map(([family, source]) => `@font-face { font-family: '${family}'; src: url('${source}') format('truetype'); }`)
-    .join('\n');
-  doc.head.appendChild(style);
+  doc.head.append(style);
+  return style;
+}
+
+export function setKitFontFaces(faces: readonly KitFontFace[]): void {
+  if (typeof document === 'undefined') return;
+  styleElement(document).textContent = faces.map(fontFaceCss).join('\n');
 }
 
 export function loadKitFonts(): void {
-  if (typeof document !== 'undefined') addFontFaces(document);
+  if (typeof document === 'undefined' || document.getElementById(KIT_FONT_STYLE_ID)) return;
+  setKitFontFaces(KIT_FONT_FACES);
 }

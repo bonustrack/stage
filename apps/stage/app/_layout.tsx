@@ -16,6 +16,7 @@ import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { bootKitFonts, useKitFontsLoaded } from '../lib/kitFonts';
 import { LUMA_REC709, luminance, parseHex } from '@stage-labs/kit/color-math';
+import { fontName } from '@stage-labs/kit/tokens';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/pushRegister';
@@ -55,11 +56,11 @@ if (Platform.OS === 'web' && !isBrowserExtension() && !isOnboardingRoute(current
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
   TextAny.defaultProps = TextAny.defaultProps ?? {};
-  TextAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextAny.defaultProps.style];
+  TextAny.defaultProps.style = [{ fontFamily: fontName.sans }, TextAny.defaultProps.style];
   TextAny.defaultProps.selectable = true;
   const TextInputAny = TextInput as unknown as { defaultProps?: Record<string, unknown> };
   TextInputAny.defaultProps = TextInputAny.defaultProps ?? {};
-  TextInputAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextInputAny.defaultProps.style];
+  TextInputAny.defaultProps.style = [{ fontFamily: fontName.sans }, TextInputAny.defaultProps.style];
 })();
 
 function isDarkBg(hex: string): boolean {

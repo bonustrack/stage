@@ -13,9 +13,6 @@ import { CONTROL_RADIUS_DEFAULT, RADIUS_FULL } from '../tokens';
 import { accessibilityProps, weightStyle } from './a2ui-props';
 import { useKitScheme } from './theme-context';
 import type { TextFieldInputType, TextFieldProps } from './text-field.types';
-import { loadKitFonts } from './fonts.load';
-
-loadKitFonts();
 
 type ContentSizeEvent = Parameters<NonNullable<TextInputProps['onContentSizeChange']>>[0];
 

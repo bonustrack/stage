@@ -4,9 +4,6 @@ import { controlColors, textFieldStyle } from '../control.styles';
 import { accessibilityProps, weightStyle } from './a2ui-props';
 import { useKitScheme } from './theme-context';
 import type { TextFieldProps } from './text-field.types';
-import { loadKitFonts } from './fonts.load';
-
-loadKitFonts();
 
 function useNonce(nonce: number | undefined, run: () => void): void {
   useEffect(() => {
