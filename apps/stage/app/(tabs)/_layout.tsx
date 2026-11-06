@@ -9,15 +9,8 @@ import { usePalette } from '../../lib/theme';
 import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
-import {
-  TAB_BADGE_POSITION,
-  TAB_BADGE_SIZE,
-  TAB_ICON_FRAME,
-  TAB_ICONS,
-  WebTabBar,
-  WebTabRail,
-  chatsTabOpensNewChat,
-} from '../../components/tabs/WebTabRail';
+import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRail';
+import { chatsTabOpensNewChat } from '../../components/tabs/WebTabRail.model';
 import { useRememberHomeView } from '../../components/tabs/boardHome';
 import { BOARD_ROUTE } from '../../components/tabs/splitRoutes';
 import { isMenuPageRoute } from '../../components/tabs/menuPages';
