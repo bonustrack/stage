@@ -1,10 +1,12 @@
 import { ignored } from './errorPolicy';
 import { linkProxyBase } from './linkProxy';
 import { FetchTimeoutError, fetchWithin } from '@stage-labs/client/timing';
+import { PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
 
-const UPLOAD_URL = `${linkProxyBase()}/attachments`;
+const UPLOAD_URL = `${linkProxyBase()}${PROXY_ROUTES.attachments}`;
 const UPLOAD_TIMEOUT_MS = 60_000;
-export const MAX_UPLOAD_BYTES = 100_000_000;
+export const MAX_UPLOAD_BYTES = UPLOAD_MAX_BYTES;
+const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / 1_000_000;
 
 const SWARM_GATEWAY = 'https://download.gateway.ethswarm.org/bzz/';
 const SWARM_LINK = /^https:\/\/[^/]+\/bzz\/([0-9a-f]{64}(?:[0-9a-f]{64})?)\/?$/i;
@@ -32,7 +34,7 @@ export function resolveUploadResponse(status: number, body: { id?: string } | nu
 
 export function assertUploadSize(bytes: number, filename: string): void {
   if (bytes > MAX_UPLOAD_BYTES) {
-    throw new Error(`Couldn't send "${filename}": the file is too large (over 100 MB). Try a smaller file.`);
+    throw new Error(`Couldn't send "${filename}": the file is too large (over ${MAX_UPLOAD_MB} MB). Try a smaller file.`);
   }
 }
 

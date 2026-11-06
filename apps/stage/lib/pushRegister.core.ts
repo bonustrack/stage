@@ -18,6 +18,7 @@ import { makeSenderFilterPublisher, maintainPushPaths } from '@stage-labs/client
 import { timeSendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 import { memoized } from './storeCore';
 import { fetchWithin } from '@stage-labs/client/timing';
+import { PUSH_ORIGIN } from '@stage-labs/client/endpoints';
 
 export type { PushTopics } from '@stage-labs/client/xmtp/pushRegistration';
 import { onReadStateChanged } from './channelsCache';
@@ -28,7 +29,7 @@ import { afterFirstPages } from './feedLines';
 import { envBaseUrl } from './env';
 import { signingKeyForRecord } from './xmtp.signing.core';
 
-const PUSH_SERVER_URL = envBaseUrl(process.env.EXPO_PUBLIC_PUSH_SERVER_URL, 'https://push.stage.box');
+const PUSH_SERVER_URL = envBaseUrl(process.env.EXPO_PUBLIC_PUSH_SERVER_URL, PUSH_ORIGIN);
 const CLEAR_DEBOUNCE_MS = 1_500;
 const HTTP_CONFLICT = 409;
 

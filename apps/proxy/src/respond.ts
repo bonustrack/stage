@@ -1,3 +1,5 @@
+import { STAGE_CLIENT_HEADER } from '@stage-labs/client/endpoints';
+
 export type HeaderMap = Record<string, string>;
 
 const SERVED_BY: HeaderMap = { 'x-served-by': 'worker' };
@@ -11,7 +13,7 @@ export function corsHeaders(methods: string, allowHeaders = 'content-type'): Hea
   };
 }
 
-export const CLIENT_CORS = corsHeaders('GET, POST, OPTIONS', 'content-type, x-stage-client');
+export const CLIENT_CORS = corsHeaders('GET, POST, OPTIONS', `content-type, ${STAGE_CLIENT_HEADER}`);
 
 export function jsonResponse(body: unknown, status: number, headers: HeaderMap): Response {
   return new Response(JSON.stringify(body), {

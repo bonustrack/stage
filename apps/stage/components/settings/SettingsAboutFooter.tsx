@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import { errorMessage } from '@stage-labs/client/errors';
+import { BUNDLER_ORIGIN } from '@stage-labs/client/endpoints';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { GithubLogo } from '../bubble/linkCards';
@@ -151,7 +152,7 @@ function DevClientUpdate(): React.ReactElement | null {
         </Text>
       ) : null}
       {!info.runtime ? <Text {...FOOTER_TEXT}>This dev client has no known native runtime.</Text> : null}
-      <Pressable accessibilityRole="link" {...bubbleLinkProps('https://bundler.stage.box/', openInBubbleLink)} pressedOpacity={0.6}>
+      <Pressable accessibilityRole="link" {...bubbleLinkProps(`${BUNDLER_ORIGIN}/`, openInBubbleLink)} pressedOpacity={0.6}>
         <Text {...FOOTER_TEXT} color="link" style={{ textDecorationLine: 'underline' }}>
           Dev-client downloads
         </Text>

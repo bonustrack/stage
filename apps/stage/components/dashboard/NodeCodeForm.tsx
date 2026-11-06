@@ -4,6 +4,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { RENDERER_CAPABILITIES } from '../../lib/frameSession';
 import { loadNode, newNodeKey, nodeUrlOf, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import { deleteNode, publishNode } from '@stage-labs/client/nodes/publish';
+import { NODES_HOST, NODE_LIMITS } from '@stage-labs/client/nodes/hosting';
 import { FormField } from '../FormField';
 import { FrameSurface } from '../frame/FramePreview';
 import { capabilities } from '../../lib/capabilities';
@@ -16,8 +17,8 @@ import { Column, Row } from '../layout';
 import { sleep } from '@stage-labs/client/timing';
 
 const NOTE =
-  'Stage runs this code at nodes.stage.box in its own sandbox: no secrets, only public https calls, ' +
-  '50 ms of CPU and 5 requests per call. Anyone with the link can call it. Removing the widget deletes the node.';
+  `Stage runs this code at ${NODES_HOST} in its own sandbox: no secrets, only public https calls, ` +
+  `${NODE_LIMITS.cpuMs} ms of CPU and ${NODE_LIMITS.subRequests} requests per call. Anyone with the link can call it. Removing the widget deletes the node.`;
 const PLACEHOLDER = [
   'export default {',
   "  fetch: () => Response.json([{ version: 'v1.0', createSurface: {",

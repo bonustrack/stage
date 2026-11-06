@@ -1,5 +1,5 @@
 import type { NodeProblem, NodeResult, NodeUrlProblem } from '@stage-labs/client/nodes/protocol';
-import { NODES_HOST } from '@stage-labs/client/nodes/hosting';
+import { NODE_CODE_MAX_BYTES, NODES_HOST } from '@stage-labs/client/nodes/hosting';
 import { ownNodeUrl, type PublishProblem } from '@stage-labs/client/nodes/publish';
 import { frameContentSchema, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import type { FrameApplied } from '../../lib/frameSession';
@@ -39,7 +39,7 @@ export const NODE_URL_HINTS: Readonly<Record<NodeUrlProblem, string>> = {
 };
 
 const PUBLISH_PROBLEM_TEXT: Readonly<Record<PublishProblem, string>> = {
-  'too-large': 'The code is over 64 KB',
+  'too-large': `The code is over ${NODE_CODE_MAX_BYTES / 1024} KB`,
   refused: 'The code was refused',
   busy: 'Too many tries, wait a minute',
   full: 'Stage hosts no more nodes for now',

@@ -1,16 +1,17 @@
-import { NODE_PUBLISH_PATH, clientRateKey } from '@stage-labs/client/nodes/hosting';
-import { BUNDLER_HOST, handleBundler } from './bundler.ts';
+import { BUNDLER_HOST, PROXY_ORIGIN, PROXY_ROUTES, isStageClient } from '@stage-labs/client/endpoints';
+import { clientRateKey } from '@stage-labs/client/nodes/hosting';
+import { handleBundler } from './bundler.ts';
 import { fetchPage } from './fetchPage.ts';
 import { fetchImage, parseWidth } from './fetchImage.ts';
 import { parseMeta } from './parse.ts';
 import { proxyPreviewImages } from './imgProxy.ts';
 import { parseSettleBody, settleX402 } from './settle.ts';
 import { SsrfError } from './ssrf.ts';
-import { HISTORY_PREFIX, handleHistory } from './historyStore.ts';
+import { handleHistory } from './historyStore.ts';
 import { handleAttachments, isAttachmentPath, r2AttachmentStore } from './attachments.ts';
-import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
-import { NAMES_PREFIX, configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
-import { MAIL_PREFIX, handleMail, type MailChain } from './mailApi.ts';
+import { handlePush } from './pushProxy.ts';
+import { configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
+import { handleMail, type MailChain } from './mailApi.ts';
 import { mailboxStub } from './mailBox.ts';
 import { receiveMail, type IncomingMail } from './mailReceive.ts';
 import { cloudflareApi, handleNodes } from './nodes.ts';
@@ -76,11 +77,11 @@ async function cached(cacheUrl: string, ctx: ExecutionContext, fresh: () => Prom
 }
 
 async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
-  if (request.headers.get('x-stage-client') !== '1') return json({ error: 'forbidden' }, 403);
+  if (!isStageClient(request.headers)) return json({ error: 'forbidden' }, 403);
   if (rateLimited(request, 'preview')) return json({ error: 'rate limited' }, 429);
   const url = new URL(request.url).searchParams.get('url')?.trim() ?? '';
   if (!url) return json({ error: 'url query param required' }, 400);
-  return cached(`https://proxy.stage.box/preview?url=${encodeURIComponent(url)}`, ctx, async () => {
+  return cached(`${PROXY_ORIGIN}${PROXY_ROUTES.preview}?url=${encodeURIComponent(url)}`, ctx, async () => {
     const page = await fetchPage(url);
     if (!page) return json({ error: 'no previewable content' }, 422);
     return json(previewPayload(page, request), 200, { 'x-cache': 'MISS', 'cache-control': `public, max-age=${CACHE_TTL}` });
@@ -93,7 +94,7 @@ async function handleImg(request: Request, ctx: ExecutionContext): Promise<Respo
   const url = params.get('url')?.trim() ?? '';
   if (!url) return json({ error: 'url query param required' }, 400);
   const width = parseWidth(params.get('w'));
-  return cached(`https://proxy.stage.box/img?url=${encodeURIComponent(url)}&w=${width ?? ''}`, ctx, async () => {
+  return cached(`${PROXY_ORIGIN}${PROXY_ROUTES.img}?url=${encodeURIComponent(url)}&w=${width ?? ''}`, ctx, async () => {
     const img = await fetchImage(url, width);
     if (!img) return json({ error: 'not a fetchable image' }, 422);
     return new Response(img.body, {
@@ -170,9 +171,9 @@ function routeMail(request: Request, env: ProxyEnv): Promise<Response> | Respons
 }
 
 const CLIENT_ROUTES: ReadonlyMap<string, (request: Request, ctx: ExecutionContext) => Promise<Response>> = new Map([
-  ['/preview', handlePreview],
-  ['/img', handleImg],
-  ['/x402-settle', handleSettle],
+  [PROXY_ROUTES.preview, handlePreview],
+  [PROXY_ROUTES.img, handleImg],
+  [PROXY_ROUTES.settle, handleSettle],
 ]);
 
 function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Response {
@@ -202,11 +203,11 @@ function routeNodes(request: Request, env: ProxyEnv): Promise<Response> {
 
 function routePrefixed(request: Request, env: ProxyEnv, pathname: string): Promise<Response> | Response | null {
   if (isAttachmentPath(pathname)) return routeAttachments(request, env);
-  if (pathname === NODE_PUBLISH_PATH) return routeNodes(request, env);
-  if (pathname.startsWith(HISTORY_PREFIX)) return routeHistory(request, env);
-  if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
-  if (pathname.startsWith(MAIL_PREFIX)) return routeMail(request, env);
-  if (!pathname.startsWith(NAMES_PREFIX)) return null;
+  if (pathname === PROXY_ROUTES.nodes) return routeNodes(request, env);
+  if (pathname.startsWith(PROXY_ROUTES.history)) return routeHistory(request, env);
+  if (pathname.startsWith(PROXY_ROUTES.push)) return handlePush(request);
+  if (pathname.startsWith(PROXY_ROUTES.mail)) return routeMail(request, env);
+  if (!pathname.startsWith(PROXY_ROUTES.names)) return null;
   if (rateLimited(request, 'names')) return json({ error: 'rate limited' }, 429);
   return handleNamesRequest(request, env);
 }
@@ -215,7 +216,7 @@ export default {
   async fetch(request: Request, env: ProxyEnv, ctx: ExecutionContext): Promise<Response> {
     const { hostname, pathname } = new URL(request.url);
     if (hostname === BUNDLER_HOST) return handleBundler(request);
-    if (pathname === '/health') {
+    if (pathname === PROXY_ROUTES.health) {
       return new Response('ok', { headers: { 'content-type': 'text/plain', ...BASE_HEADERS } });
     }
     const clientRoute = CLIENT_ROUTES.get(pathname);

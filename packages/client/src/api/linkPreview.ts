@@ -1,4 +1,5 @@
 import { parseX402Challenge, type X402Challenge } from '../x402/challenge';
+import { PROXY_ROUTES, STAGE_CLIENT_HEADERS } from '../endpoints';
 
 interface LinkPreview {
   url: string;
@@ -44,8 +45,8 @@ function linkPreviewFrom(j: Record<string, unknown>, url: string): LinkPreviewRe
 
 export async function fetchLinkPreview(proxyBase: string, url: string): Promise<LinkPreviewResult | null> {
   try {
-    const res = await fetch(`${proxyBase}/preview?url=${encodeURIComponent(url)}`, {
-      headers: { Accept: 'application/json', 'x-stage-client': '1' },
+    const res = await fetch(`${proxyBase}${PROXY_ROUTES.preview}?url=${encodeURIComponent(url)}`, {
+      headers: { Accept: 'application/json', ...STAGE_CLIENT_HEADERS },
     });
     if (!res.ok) return null;
     return linkPreviewFrom((await res.json()) as Record<string, unknown>, url);

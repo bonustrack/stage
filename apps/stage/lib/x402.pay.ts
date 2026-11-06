@@ -2,6 +2,7 @@ import { getActiveViemAccount } from './accounts';
 import { linkProxyBase } from './linkProxy';
 import type { X402Accept } from '@stage-labs/client/x402';
 import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from '@stage-labs/client/x402/payment';
+import { PROXY_ROUTES, STAGE_CLIENT_HEADERS } from '@stage-labs/client/endpoints';
 
 export interface X402PayResult {
   ok: boolean;
@@ -17,9 +18,9 @@ function assertExactChallenge(accept: X402Accept): void {
 }
 
 async function settlePayment(resource: string, paymentHeader: string): Promise<X402PayResult> {
-  const res = await fetch(`${linkProxyBase()}/x402-settle`, {
+  const res = await fetch(`${linkProxyBase()}${PROXY_ROUTES.settle}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'x-stage-client': '1' },
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...STAGE_CLIENT_HEADERS },
     body: JSON.stringify({ url: resource, paymentHeader }),
   });
   if (!res.ok) return { ok: false, status: res.status };

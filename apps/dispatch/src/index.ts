@@ -1,8 +1,15 @@
-import { NODE_REPLY_MAX_BYTES, clientRateKey, isNodeId, nodeScriptName } from '@stage-labs/client/nodes/hosting';
+import {
+  NODE_CAPABILITIES_HEADER,
+  NODE_LIMITS,
+  NODE_REPLY_MAX_BYTES,
+  NODE_REQUEST_MAX_BYTES,
+  NODE_SIGNATURE_HEADERS,
+  NODE_TIMEOUT_MS,
+  clientRateKey,
+  isNodeId,
+  nodeScriptName,
+} from '@stage-labs/client/nodes/hosting';
 
-export const NODE_LIMITS = { cpuMs: 50, subRequests: 5 };
-export const REQUEST_MAX_BYTES = 64 * 1024;
-const NODE_TIMEOUT_MS = 10_000;
 const NULL_BODY = new Set([204, 205]);
 const CALLER_HEADERS = [
   'cookie',
@@ -27,7 +34,9 @@ const CALLER_HEADERS = [
 const HEADERS: Record<string, string> = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, OPTIONS',
-  'access-control-allow-headers': 'content-type, stage-key, stage-timestamp, stage-signature, stage-a2ui-capabilities',
+  'access-control-allow-headers': ['content-type', ...Object.values(NODE_SIGNATURE_HEADERS), NODE_CAPABILITIES_HEADER]
+    .join(', ')
+    .toLowerCase(),
   'access-control-max-age': '86400',
   'content-type': 'application/json; charset=utf-8',
   'cache-control': 'no-store',
@@ -57,7 +66,7 @@ function bodyTooLarge(request: Request): boolean {
   if (request.body === null) return false;
   const raw = request.headers.get('content-length');
   const size = raw === null ? Number.NaN : Number(raw);
-  return !(Number.isSafeInteger(size) && size >= 0 && size <= REQUEST_MAX_BYTES);
+  return !(Number.isSafeInteger(size) && size >= 0 && size <= NODE_REQUEST_MAX_BYTES);
 }
 
 async function over(limiter: RateLimit | undefined, key: string): Promise<boolean> {

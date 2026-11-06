@@ -1,9 +1,8 @@
+import { PROXY_ROUTES, PUSH_ORIGIN } from '@stage-labs/client/endpoints';
 import { isPushRpc, pushRpcPath } from '@stage-labs/client/xmtp/pushServer';
 import { corsHeaders, corsResponse } from './respond.ts';
 
-export const PUSH_PREFIX = '/xmtp-push/';
-
-const UPSTREAM = 'https://push.stage.box';
+const PUSH_PREFIX = PROXY_ROUTES.push;
 const MAX_BODY_BYTES = 2_000_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 
@@ -12,7 +11,7 @@ const PUSH_CORS_HEADERS = corsHeaders('POST, OPTIONS');
 export function parsePushRoute(pathname: string, method: string): string | null {
   if (!pathname.startsWith(PUSH_PREFIX) || method !== 'POST') return null;
   const rpc = pathname.slice(PUSH_PREFIX.length);
-  return isPushRpc(rpc) ? `${UPSTREAM}${pushRpcPath(rpc)}` : null;
+  return isPushRpc(rpc) ? `${PUSH_ORIGIN}${pushRpcPath(rpc)}` : null;
 }
 
 export async function handlePush(request: Request): Promise<Response> {

@@ -10,9 +10,10 @@ import {
 } from '@stage-labs/client/mail/mailbox';
 import type { ArchiveStub } from './historyStore.ts';
 import { mailboxCall, readMailKey, saveMailKey } from './mailBox.ts';
+import { PROXY_ROUTES, type MailOp } from '@stage-labs/client/endpoints';
 import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
 
-export const MAIL_PREFIX = '/mail/';
+const MAIL_PREFIX = PROXY_ROUTES.mail;
 
 const CORS = corsHeaders('GET, POST, DELETE, OPTIONS', 'content-type, authorization');
 const SIGNATURE = /^0x[0-9a-fA-F]+$/;
@@ -186,7 +187,7 @@ const closeBox = withAccess(async ({ stub, owner }) => {
   return corsResponse(CORS, null, 204);
 });
 
-const ROUTES: Record<string, Handler> = {
+const ROUTES: Readonly<Record<string, Handler | undefined>> = {
   'POST key': registerKey,
   'GET key': keyStatus,
   'POST challenge': challenge,
@@ -195,7 +196,7 @@ const ROUTES: Record<string, Handler> = {
   'GET message': readMail,
   'DELETE message': deleteMail,
   'DELETE box': closeBox,
-};
+} satisfies Partial<Record<`${'GET' | 'POST' | 'DELETE'} ${MailOp}`, Handler>>;
 
 export async function handleMail(request: Request, deps: MailDeps): Promise<Response> {
   if (request.method === 'OPTIONS') return corsResponse(CORS, null, 204);

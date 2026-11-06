@@ -1,4 +1,5 @@
-const PROJECT_URL = 'https://u.expo.dev/1707f2db-c2b8-4c91-9341-27b1d57d355f';
+import { BUNDLER_ORIGIN, EAS_UPDATES_URL, PREVIEW_LAUNCHER_PATH } from '@stage-labs/client/endpoints';
+const PROJECT_URL = EAS_UPDATES_URL;
 const STATUS_URL = 'https://api.github.com/repos/bonustrack/stage/commits';
 const SHA = /^[0-9a-f]{40}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -75,7 +76,7 @@ export function previewFromStatus(value: unknown): { gitHash: string; url: strin
   if (preview?.state !== 'success' || typeof preview.target_url !== 'string')
     throw new Error('The main update is not published yet. Try again after its Preview check finishes.');
   const launcher = new URL(preview.target_url);
-  if (launcher.origin !== 'https://bundler.stage.box' || launcher.pathname !== '/preview-launcher.html')
+  if (launcher.origin !== BUNDLER_ORIGIN || launcher.pathname !== PREVIEW_LAUNCHER_PATH)
     throw new Error('The main preview link is not a Stage launcher.');
   return { gitHash: data.sha, url: immutablePreviewUrl(launcher.searchParams.get('u') ?? '') };
 }

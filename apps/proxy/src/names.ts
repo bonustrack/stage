@@ -8,8 +8,9 @@ import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
 import { CLIENT_CORS as CORS, corsResponse, jsonResponse } from './respond.ts';
 import { sleep } from '@stage-labs/client/timing';
+import { PROXY_ROUTES, namesPath, type NamesOp } from '@stage-labs/client/endpoints';
 
-export const NAMES_PREFIX = '/names/';
+const NAMES_PREFIX = PROXY_ROUTES.names;
 
 export interface NamesEnv {
   NAMES_OPERATOR_KEY?: string;
@@ -172,14 +173,18 @@ async function claim(request: Request, deps: NamesDeps): Promise<Response> {
   return reply({ name: stageNameOf(body.label), txHash, ...(await saveClaimedMailKey(body, deps)) });
 }
 
+type NamesHandler = (request: Request, deps: NamesDeps) => Promise<Response>;
+
+const ROUTES: Readonly<Record<string, NamesHandler | undefined>> = {
+  'GET status': (request, deps) => status(new URL(request.url), deps),
+  'GET check': (request, deps) => check(new URL(request.url), deps),
+  'GET resolve': (request, deps) => resolve(new URL(request.url), deps),
+  'POST claim': claim,
+} satisfies Partial<Record<`${'GET' | 'POST'} ${NamesOp}`, NamesHandler>>;
+
 async function route(request: Request, deps: NamesDeps): Promise<Response> {
-  const url = new URL(request.url);
-  const path = url.pathname.slice(NAMES_PREFIX.length);
-  if (path === 'status' && request.method === 'GET') return status(url, deps);
-  if (path === 'check' && request.method === 'GET') return check(url, deps);
-  if (path === 'resolve' && request.method === 'GET') return resolve(url, deps);
-  if (path === 'claim' && request.method === 'POST') return claim(request, deps);
-  return reply({ error: 'not found' }, 404);
+  const handler = ROUTES[`${request.method} ${new URL(request.url).pathname.slice(NAMES_PREFIX.length)}`];
+  return handler === undefined ? reply({ error: 'not found' }, 404) : handler(request, deps);
 }
 
 export async function handleNames(request: Request, deps: NamesDeps): Promise<Response> {
@@ -215,7 +220,7 @@ const NOT_CONFIGURED = (): Response => reply({ error: 'name registration is not 
 export function handleNamesRequest(request: Request, env: NamesEnv): Promise<Response> {
   const namesChain = configuredChain(env);
   if (!namesChain || !env.NAMES_KV || !env.NAMES_CLAIMS) return Promise.resolve(NOT_CONFIGURED());
-  const isClaim = new URL(request.url).pathname === `${NAMES_PREFIX}claim` && request.method === 'POST';
+  const isClaim = new URL(request.url).pathname === namesPath('claim') && request.method === 'POST';
   if (isClaim) return env.NAMES_CLAIMS.get(env.NAMES_CLAIMS.idFromName(CLAIMS_OBJECT_NAME)).fetch(request);
   return handleNames(request, { chain: namesChain, store: kvStore(env.NAMES_KV) });
 }

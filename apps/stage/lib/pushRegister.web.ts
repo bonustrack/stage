@@ -20,9 +20,10 @@ import { getCachedXmtpClient } from './xmtp.state.web';
 import { getAccountEpoch } from './accountEpoch';
 import { isBrowserExtension } from './extension';
 import { type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
+import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
 
 function proxiedRpcUrl(method: string): string {
-  return `${linkProxyBase()}/xmtp-push/${method}`;
+  return `${linkProxyBase()}${PROXY_ROUTES.push}${method}`;
 }
 
 type PushClient = Pick<

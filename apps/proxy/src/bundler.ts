@@ -1,14 +1,12 @@
+import { BUNDLER_ORIGIN, EAS_UPDATES_URL, previewLauncherUrl } from '@stage-labs/client/endpoints';
 import { branchFromPath, branchPath, channelKey } from './branchChannel.ts';
 
-const EAS_PROJECT_ID = '1707f2db-c2b8-4c91-9341-27b1d57d355f';
 const DEFAULT_RUNTIME_VERSION = '1.0.0';
 const DEFAULT_PLATFORM = 'android';
 const DEFAULT_BRANCH = 'main';
 const STATIC_FILES = new Set(['/index.html', '/preview-launcher.html', '/favicon.svg']);
 
-export const BUNDLER_HOST = 'bundler.stage.box';
-
-const NO_BRANCH_MESSAGE = `No branch in this URL. Load https://${BUNDLER_HOST}/<branch>, for example https://${BUNDLER_HOST}/${DEFAULT_BRANCH}`;
+const NO_BRANCH_MESSAGE = `No branch in this URL. Load ${BUNDLER_ORIGIN}/<branch>, for example ${BUNDLER_ORIGIN}/${DEFAULT_BRANCH}`;
 
 function isExpoClient(request: Request): boolean {
   return request.headers.has('expo-platform');
@@ -20,7 +18,7 @@ export function isBrowserRequest(request: Request): boolean {
 }
 
 export function manifestUrl(channel: string, request: Request): string {
-  const target = new URL(`https://u.expo.dev/${EAS_PROJECT_ID}`);
+  const target = new URL(EAS_UPDATES_URL);
   target.searchParams.set('channel-name', channel);
   target.searchParams.set('runtime-version', request.headers.get('expo-runtime-version') ?? DEFAULT_RUNTIME_VERSION);
   target.searchParams.set('platform', request.headers.get('expo-platform') ?? DEFAULT_PLATFORM);
@@ -38,9 +36,7 @@ export async function handleBundler(request: Request): Promise<Response> {
   const branch = branchFromRequest(pathname, expoClient);
   if (!branch) return expoClient ? new Response(NO_BRANCH_MESSAGE, { status: 404 }) : fetch(request);
   if (isBrowserRequest(request)) {
-    const deepTarget = `https://${BUNDLER_HOST}${branchPath(branch)}`;
-    const launcher = `https://${BUNDLER_HOST}/preview-launcher.html?u=${encodeURIComponent(deepTarget)}`;
-    return Response.redirect(launcher, 302);
+    return Response.redirect(previewLauncherUrl(`${BUNDLER_ORIGIN}${branchPath(branch)}`), 302);
   }
   const headers = new Headers(request.headers);
   headers.delete('host');

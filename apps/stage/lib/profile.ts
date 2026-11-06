@@ -11,6 +11,7 @@ import {
 } from '@stage-labs/client/profile/setup';
 import { namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
+import { STAGE_CLIENT_HEADERS, namesPath } from '@stage-labs/client/endpoints';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
 import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
 import {
@@ -134,7 +135,7 @@ export async function saveBasenameProfile(address: string, name: string, changes
 
 export type { NameCheck } from '@stage-labs/client/profile/setup';
 
-const HEADERS = { 'content-type': 'application/json', 'x-stage-client': '1' };
+const HEADERS = { 'content-type': 'application/json', ...STAGE_CLIENT_HEADERS };
 
 async function signForAccount(account: ProfileAccount, message: string): Promise<Hex> {
   const signed = await signFrom(
@@ -146,7 +147,7 @@ async function signForAccount(account: ProfileAccount, message: string): Promise
 }
 
 export function checkStageName(label: string): Promise<NameCheck> {
-  return profileRequest(`${linkProxyBase()}/names/check?label=${encodeURIComponent(label)}`, { headers: HEADERS }, async (res) => {
+  return profileRequest(`${linkProxyBase()}${namesPath('check')}?label=${encodeURIComponent(label)}`, { headers: HEADERS }, async (res) => {
     if (!res.ok) throw new Error(`name service responded ${res.status}`);
     return parseNameCheck(await res.json());
   });
@@ -165,7 +166,7 @@ async function claimForAccount(account: ProfileAccount, label: string): Promise<
   const signature = await signForAccount(account, claimMessage({ label, address, issuedAt, mailKey }));
   assertCurrent();
   const name = await profileRequest(
-    `${linkProxyBase()}/names/claim`,
+    `${linkProxyBase()}${namesPath('claim')}`,
     { method: 'POST', headers: HEADERS, body: JSON.stringify({ label, address, issuedAt, signature, mailKey }) },
     async (res) => {
       const body = parseNameClaim(await res.json());

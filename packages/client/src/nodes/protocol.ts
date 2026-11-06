@@ -14,11 +14,10 @@ import {
   type FrameContent,
   type FrameMessage,
 } from '../xmtp/frame.schema';
-import { NODE_REPLY_MAX_BYTES } from './hosting';
+import { NODE_CAPABILITIES_HEADER, NODE_REPLY_MAX_BYTES, NODE_SIGNATURE_HEADERS, NODE_TIMEOUT_MS } from './hosting';
 import { base64url, nodeSigningText } from './signing';
 
 const MAX_URL_CHARS = 2048;
-const NODE_TIMEOUT_MS = 10_000;
 const LOCAL_SUFFIXES = ['.localhost', '.local', '.localdomain', '.internal', '.lan', '.home.arpa'];
 const PRIVATE_V4: readonly (readonly [number, number, number])[] = [
   [0, 0, 255],
@@ -34,7 +33,6 @@ const PRIVATE_V6 = /^(?:f[c-f]|64:ff9b:|2002:|::ffff:0:)/;
 const NUMERIC_LABEL = /^(?:\d+|0x[0-9a-f]*)$/;
 const UNRESERVED = /^[A-Za-z0-9\-._~]$/;
 const STREAM_TYPES = /\b(?:jsonl|ndjson|x-ndjson|jsonlines)\b/i;
-const CAPABILITIES_HEADER = 'Stage-A2UI-Capabilities';
 
 export type NodeUrlProblem = 'invalid' | 'insecure' | 'credentials' | 'local';
 
@@ -142,7 +140,11 @@ export function nodeKeyId(key: string): string {
 export function nodeHeaders(method: string, url: string, body: string, key: string, nowMs: number): Record<string, string> {
   const timestamp = String(Math.floor(nowMs / 1000));
   const signature = ed25519.sign(utf8ToBytes(nodeSigningText(method, url, timestamp, body)), hexToBytes(key));
-  return { 'Stage-Key': nodeKeyId(key), 'Stage-Timestamp': timestamp, 'Stage-Signature': base64url(signature) };
+  return {
+    [NODE_SIGNATURE_HEADERS.key]: nodeKeyId(key),
+    [NODE_SIGNATURE_HEADERS.timestamp]: timestamp,
+    [NODE_SIGNATURE_HEADERS.signature]: base64url(signature),
+  };
 }
 
 export function nodeRequestBody(request: NodeRequest, capabilities?: Record<string, unknown>): string {
@@ -305,7 +307,7 @@ async function callNode(method: 'GET' | 'POST', rawUrl: string, key: string, bod
   const timeout = AbortSignal.timeout(NODE_TIMEOUT_MS);
   const headers: Record<string, string> = { Accept: 'application/json', ...nodeHeaders(method, node.url, body, key, Date.now()) };
   if (method === 'POST') headers['Content-Type'] = 'application/json';
-  if (capabilities !== undefined) headers[CAPABILITIES_HEADER] = JSON.stringify(capabilities);
+  if (capabilities !== undefined) headers[NODE_CAPABILITIES_HEADER] = JSON.stringify(capabilities);
   try {
     const response = await fetch(node.url, {
       method,

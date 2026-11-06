@@ -1,15 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  ATTACHMENTS_PATH,
-  MAX_ATTACHMENT_BYTES,
-  handleAttachments,
-  newAttachmentId,
-  parseAttachmentRoute,
-  r2AttachmentStore,
-  type AttachmentStore,
-} from '../src/attachments.ts';
+import { PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
+import { handleAttachments, newAttachmentId, parseAttachmentRoute, r2AttachmentStore, type AttachmentStore } from '../src/attachments.ts';
 
 const ORIGIN = 'https://proxy.stage.box';
+const ATTACHMENTS_PATH = PROXY_ROUTES.attachments;
+const MAX_ATTACHMENT_BYTES = UPLOAD_MAX_BYTES;
 const ID = 'A'.repeat(32);
 
 function randomBytes(length: number): Uint8Array {

@@ -1,10 +1,9 @@
 import { concatBytes } from 'viem';
+import { HISTORY_ENVS, PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
 import { corsHeaders, corsResponse } from './respond.ts';
 
-export const HISTORY_PREFIX = '/xmtp-history/';
-
-const HISTORY_ENVS: ReadonlySet<string> = new Set(['production', 'dev']);
-const MAX_UPLOAD_BYTES = 100_000_000;
+const HISTORY_PREFIX = PROXY_ROUTES.history;
+const HISTORY_ENV_NAMES: ReadonlySet<string> = new Set(HISTORY_ENVS);
 export const MAX_ARCHIVE_BYTES = 1_000_000_000;
 const CHUNK_BYTES = 1_000_000;
 export const ARCHIVE_TTL_MS = 3 * 24 * 60 * 60 * 1000;
@@ -48,7 +47,7 @@ function routeIn(env: string, segments: string[], method: string): HistoryRoute 
 export function parseHistoryRoute(pathname: string, method: string): HistoryRoute | null {
   if (!pathname.startsWith(HISTORY_PREFIX)) return null;
   const [env, ...segments] = pathname.slice(HISTORY_PREFIX.length).split('/');
-  if (env === undefined || !HISTORY_ENVS.has(env)) return null;
+  if (env === undefined || !HISTORY_ENV_NAMES.has(env)) return null;
   return routeIn(env, segments, method);
 }
 
@@ -200,7 +199,7 @@ function declaredSize(raw: string | null): number | null | Response {
 }
 
 async function appendTo(request: Request, storage: ArchiveStorage, state: ArchiveState, size: number | null): Promise<Response> {
-  const room = size === null ? MAX_UPLOAD_BYTES : Math.min(MAX_UPLOAD_BYTES, size - state.bytes);
+  const room = size === null ? UPLOAD_MAX_BYTES : Math.min(UPLOAD_MAX_BYTES, size - state.bytes);
   const written = await writeChunks(storage, request.body, state.count, room);
   if (written === null) return plain('archive too large', 413);
   if (written.bytes === 0) return plain('empty archive', 400);

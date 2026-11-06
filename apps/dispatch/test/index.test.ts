@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import worker, { NODE_LIMITS, REQUEST_MAX_BYTES, dispatchNode, type DispatchDeps } from '../src/index.ts';
+import { NODE_LIMITS, NODE_REQUEST_MAX_BYTES } from '@stage-labs/client/nodes/hosting';
+import worker, { dispatchNode, type DispatchDeps } from '../src/index.ts';
 
 const ID = '0123456789abcdef0123456789abcdef';
 const NODE_URL = `https://nodes.stage.box/${ID}`;
@@ -122,7 +123,7 @@ describe('abuse limits', () => {
 
   test('caps request bodies and needs their length', async () => {
     const { nodes, seen } = namespace(() => new Response(CARD));
-    const big = 'x'.repeat(REQUEST_MAX_BYTES + 1);
+    const big = 'x'.repeat(NODE_REQUEST_MAX_BYTES + 1);
     expect(
       (await call(new Request(NODE_URL, { method: 'POST', body: big, headers: { 'content-length': String(big.length) } }), { nodes }))
         .status,
