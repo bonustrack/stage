@@ -12,7 +12,7 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { capabilities } from '../../lib/capabilities';
 import { setDeveloperMode } from '../../lib/developerMode';
 import { reported } from '../../lib/errorPolicy';
-import { setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference } from '../../lib/theme';
+import { chooseTheme, useEffectiveColorScheme, useThemeChoice } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { useInstallations } from '../../lib/deviceAccount';
 import { prefetchInbox, useMailboxes } from '../../lib/mail';
@@ -113,8 +113,7 @@ function HubRows({
 
 function PreferencesGroup(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const pref = useThemePreference();
-  const custom = useCustomTheme();
+  const theme = useThemeChoice();
   const developerMode = useDeveloperModeStatus();
   return (
     <SettingsGroup title="Preferences">
@@ -123,19 +122,17 @@ function PreferencesGroup(): React.ReactElement {
         <Column width={260}>
           <Tabs
             tabs={THEME_TABS}
-            selectedIndex={custom ? -1 : THEME_OPTIONS.findIndex((o) => o.value === pref)}
+            selectedIndex={THEME_OPTIONS.findIndex((o) => o.value === theme)}
             dark={dark}
             onChange={(index) => {
               const v = THEME_OPTIONS[index]?.value;
-              if (v === undefined) return;
-              setCustomTheme(false);
-              void setThemePreference(v);
+              if (v !== undefined) chooseTheme(v);
             }}
           />
         </Column>
       </ListViewItem>
       <PushToggleRow unsupportedNote={PUSH_UNAVAILABLE} />
-      <HubRows group="preferences" values={{ appearance: custom ? 'Custom colors' : undefined }} />
+      <HubRows group="preferences" values={{ appearance: theme === 'custom' ? 'Custom colors' : undefined }} />
       <SettingsToggleRow
         label="Developer mode"
         name="developer-mode"

@@ -21,8 +21,8 @@ import {
 import { AppModal } from '../AppModal';
 import { ColorPicker } from '@stage-labs/kit/react-native/color-picker';
 import { isHex } from '../../lib/theme';
-import type { AccentLevel, GrayscaleShade, GrayscaleTint } from '@stage-labs/kit/theme-derive';
-import { fontSize, type Density, type RadiusName, type BaseSize } from '@stage-labs/kit/tokens';
+import { ACCENT_LEVELS, GRAYSCALE_SHADES, GRAYSCALE_TINTS } from '@stage-labs/kit/theme-derive';
+import { BASE_SIZES, DENSITIES, RADIUS_NAMES, fontSize } from '@stage-labs/kit/tokens';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { Column, Row } from '../layout';
 
@@ -32,13 +32,6 @@ const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [
   ['accent-primary', 'accent'],
   ['grayscale', 'grayscale'],
 ];
-
-const DENSITY_OPTS: readonly Density[] = ['compact', 'normal', 'spacious'];
-const RADIUS_OPTS: readonly RadiusName[] = ['pill', 'round', 'soft', 'sharp'];
-const BASE_SIZE_OPTS: readonly BaseSize[] = [14, 15, 16, 17, 18];
-const ACCENT_LEVEL_OPTS: readonly AccentLevel[] = [0, 1, 2, 3];
-const TINT_OPTS: readonly GrayscaleTint[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-const SHADE_OPTS: readonly GrayscaleShade[] = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
 
 function SeedSwatch({
   name,
@@ -218,7 +211,7 @@ export function ColorTokens(): React.ReactElement {
 
       <SeedChoice
         name="accent-level"
-        options={ACCENT_LEVEL_OPTS}
+        options={ACCENT_LEVELS}
         value={seed.accent.level}
         onSelect={(v) => {
           setAccentLevel(scheme, v);
@@ -227,7 +220,7 @@ export function ColorTokens(): React.ReactElement {
       />
       <SeedChoice
         name="grayscale-tint"
-        options={TINT_OPTS}
+        options={GRAYSCALE_TINTS}
         value={seed.grayscale.tint}
         onSelect={(v) => {
           setGrayscaleTint(scheme, v);
@@ -236,7 +229,7 @@ export function ColorTokens(): React.ReactElement {
       />
       <SeedChoice
         name="grayscale-shade"
-        options={SHADE_OPTS}
+        options={GRAYSCALE_SHADES}
         value={seed.grayscale.shade ?? 0}
         onSelect={(v) => {
           setGrayscaleShade(scheme, v);
@@ -267,9 +260,9 @@ export function ColorTokens(): React.ReactElement {
         </Row>
       </Column>
 
-      <SeedChoice name="density" options={DENSITY_OPTS} value={seeds.density} onSelect={setSeedDensity} p={p} />
-      <SeedChoice name="radius" options={RADIUS_OPTS} value={seeds.radius} onSelect={setSeedRadius} p={p} />
-      <SeedChoice name="text-size" options={BASE_SIZE_OPTS} value={seeds.baseSize} onSelect={setSeedBaseSize} p={p} />
+      <SeedChoice name="density" options={DENSITIES} value={seeds.density} onSelect={setSeedDensity} p={p} />
+      <SeedChoice name="radius" options={RADIUS_NAMES} value={seeds.radius} onSelect={setSeedRadius} p={p} />
+      <SeedChoice name="text-size" options={BASE_SIZES} value={seeds.baseSize} onSelect={setSeedBaseSize} p={p} />
     </Column>
   );
 }

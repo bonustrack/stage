@@ -91,8 +91,16 @@ export const useThemeSeeds = (): ThemeSeeds => seeds.use();
 
 export const useCustomTheme = (): boolean => custom.use();
 
-export function setCustomTheme(on: boolean): void {
-  custom.set(on);
+export type ThemeChoice = ThemePreference | 'custom';
+
+export function useThemeChoice(): ThemeChoice {
+  const pref = useThemePreference();
+  return useCustomTheme() ? 'custom' : pref;
+}
+
+export function chooseTheme(choice: ThemeChoice): void {
+  custom.set(choice === 'custom');
+  if (choice !== 'custom') void setThemePreference(choice);
 }
 
 function patchSeeds(patch: Partial<ThemeSeeds>): void {

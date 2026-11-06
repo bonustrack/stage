@@ -4,9 +4,12 @@ import { formatHex, hexToHsl, hslToHex, parseHex } from './color-math';
 
 export { parseHex };
 
-export type AccentLevel = 0 | 1 | 2 | 3;
-export type GrayscaleTint = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-export type GrayscaleShade = -4 | -3 | -2 | -1 | 0 | 1 | 2 | 3 | 4;
+export const ACCENT_LEVELS = [0, 1, 2, 3] as const;
+export type AccentLevel = (typeof ACCENT_LEVELS)[number];
+export const GRAYSCALE_TINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export type GrayscaleTint = (typeof GRAYSCALE_TINTS)[number];
+export const GRAYSCALE_SHADES = [-4, -3, -2, -1, 0, 1, 2, 3, 4] as const;
+export type GrayscaleShade = (typeof GRAYSCALE_SHADES)[number];
 
 export interface AccentColor {
   primary: string;

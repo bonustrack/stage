@@ -227,7 +227,9 @@ export const fontFamily = {
 
 export const fontName = { sans: fontFamily.sans[0], head: fontFamily.head[0], mono: fontFamily.mono[0] } as const;
 
-export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
+export const RADIUS_NAMES = ['pill', 'round', 'soft', 'sharp'] as const;
+
+export type RadiusName = (typeof RADIUS_NAMES)[number];
 
 export const RADIUS_SCALE: Record<RadiusName, number> = { pill: RADIUS_FULL, round: 16, soft: 12, sharp: 0 } as const;
 
@@ -258,7 +260,9 @@ export function resolveBoxRadius(r: number | string): number | string {
   return typeof r === 'string' && isRadiusValue(r) ? BOX_RADIUS_SCALE[r] : r;
 }
 
-export type Density = 'compact' | 'normal' | 'spacious';
+export const DENSITIES = ['compact', 'normal', 'spacious'] as const;
+
+export type Density = (typeof DENSITIES)[number];
 
 export const DENSITY_SCALE: Record<Density, { paddingX: number; paddingY: number; gap: number }> = {
   compact: { paddingX: 10, paddingY: 6, gap: 6 },
@@ -268,7 +272,9 @@ export const DENSITY_SCALE: Record<Density, { paddingX: number; paddingY: number
 
 export const DENSITY_DEFAULT: Density = 'normal';
 
-export type BaseSize = 14 | 15 | 16 | 17 | 18;
+export const BASE_SIZES = [14, 15, 16, 17, 18] as const;
+
+export type BaseSize = (typeof BASE_SIZES)[number];
 
 export const BASE_SIZE_DEFAULT: BaseSize = 15;
 
