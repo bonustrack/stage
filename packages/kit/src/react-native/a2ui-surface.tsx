@@ -16,7 +16,6 @@ import type { ComponentInfo } from '../a2ui/catalog';
 import { childRefKinds, fitsRenderLimits, type RenderLimits } from '../a2ui/structure';
 import type { A2uiAccessibility } from './a2ui-props';
 import {
-  SortHandleContext,
   SurfaceContext,
   asEnum,
   asNumber,
@@ -30,7 +29,7 @@ import {
   type SurfaceContextValue,
 } from './a2ui-context';
 import { KIT_RENDERERS } from './a2ui-renderers';
-import { SortableHandle, SortableScope } from './sortable';
+import { A2uiSortHandle, A2uiSortScope } from './a2ui-renderers.sortable';
 import { useContentColor } from './content-color';
 import { useKitPalette, useKitScheme } from './theme-context';
 
@@ -79,20 +78,13 @@ export function A2uiSurface({
     mediaUrl,
     onActionError,
   };
-  const root = <A2uiNode key={version < 0 ? 'none' : 'root'} id={ROOT_ID} scope={ROOT_SCOPE} />;
   return (
     <SurfaceContext.Provider value={value}>
-      {hasSortableList(surface.components.values()) ? <SortableScope style={SORT_SCOPE}>{root}</SortableScope> : root}
+      <A2uiSortScope components={surface.components.values()}>
+        <A2uiNode key={version < 0 ? 'none' : 'root'} id={ROOT_ID} scope={ROOT_SCOPE} />
+      </A2uiSortScope>
     </SurfaceContext.Provider>
   );
-}
-
-const SORT_SCOPE = { flexGrow: 1 };
-
-function hasSortableList(components: Iterable<ComponentInstance>): boolean {
-  for (const component of components)
-    if (component.component === 'List' && component.sortable !== undefined && component.sortable !== false) return true;
-  return false;
 }
 
 function resolveAccessibility(ctx: SurfaceContextValue, raw: JsonValue | undefined, scope: Scope): A2uiAccessibility | undefined {
@@ -178,7 +170,6 @@ function ResolvedNode({
   scope: Scope;
   render: A2uiRenderer;
 }): React.ReactElement {
-  const handleId = useContext(SortHandleContext);
   const dark = useKitScheme() === 'dark';
   const palette = useKitPalette();
   const contentColor = useContentColor();
@@ -216,8 +207,7 @@ function ResolvedNode({
       ctx.client.write(ctx.surfaceId, pointer, value);
     },
   };
-  const node = render(renderContext);
-  return handleId === instance.id ? <SortableHandle>{node}</SortableHandle> : <>{node}</>;
+  return <A2uiSortHandle id={instance.id}>{render(renderContext)}</A2uiSortHandle>;
 }
 
 const PLAIN_TEXT_PROPS = new Set(['id', 'component', 'text', 'catalogId']);

@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { isEventAction } from '../a2ui/protocol';
 import { failingChecks } from './a2ui-props';
-import { useModalClose } from './modal';
+import { useA2uiAction } from './a2ui-action';
 import { CheckBox } from './check-box';
 import { ChoicePicker, type ChoiceOption } from './choice-picker';
 import { DateTimeInput } from './date-time-input';
@@ -35,14 +34,6 @@ function optionsOf(value: unknown): ChoiceOption[] {
     const entry = option as Record<string, unknown>;
     return [{ label: asString(entry.label), value: asString(entry.value) }];
   });
-}
-
-export function useA2uiAction(ctx: RenderContext): (action?: unknown) => void {
-  const closeModal = useModalClose();
-  return (action = ctx.instance.action) => {
-    const result = ctx.dispatch(action);
-    if (result?.ok === true && isEventAction(action)) closeModal?.();
-  };
 }
 
 function A2uiTextField({ ctx }: { ctx: RenderContext }): React.ReactElement {

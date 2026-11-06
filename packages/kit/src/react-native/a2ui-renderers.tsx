@@ -39,7 +39,8 @@ import {
 } from './a2ui-context';
 import { chartRenderer } from './a2ui-renderers.chart';
 import { isSortableList, listBoxProps, sortableListRenderer } from './a2ui-renderers.sortable';
-import { INPUT_RENDERERS, useA2uiAction } from './a2ui-renderers.inputs';
+import { useA2uiAction } from './a2ui-action';
+import { INPUT_RENDERERS } from './a2ui-renderers.inputs';
 import { OVERLAY_RENDERERS, withLabelTooltip } from './a2ui-renderers.overlay';
 import { a2uiLinkProps } from './a2ui-link';
 

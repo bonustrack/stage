@@ -4,7 +4,7 @@ import type { JsonValue } from '../a2ui/protocol';
 import type { ScreenRect } from './dom';
 import { asBoolean, asEnum, asOptionalString, asString, colorOf, commonProps, iconNameOf, type RenderContext } from './a2ui-context';
 import { accessibilityProps, weightStyle } from './a2ui-props';
-import { useA2uiAction } from './a2ui-renderers.inputs';
+import { useA2uiAction } from './a2ui-action';
 import { Icon } from './icon';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from './menu';
 import { contextMenuProps } from './context-menu';
