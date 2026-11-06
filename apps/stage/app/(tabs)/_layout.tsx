@@ -7,7 +7,7 @@ import { TAB_BAR_HEIGHT } from '../../components/layout/webChrome.core';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
-import { TabsPager } from '../../components/tabs/SwipeTabs';
+import { TabsPager } from '../../components/tabs/TabsPager';
 import { Topnav } from '../../components/Topnav';
 import { HomeTopnav } from '../../components/home/HomeTopnav';
 import {

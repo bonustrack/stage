@@ -1,5 +1,5 @@
 import { usePathname } from 'expo-router';
-import { PAGER_SCREENS } from './SwipeTabs.config';
+import { PAGER_SCREENS } from './pagerScreens';
 import { PAGER_ORDER, homeTabIndex } from './pages';
 import { useBoardHome } from './boardHome';
 import { Column } from '../layout';

@@ -21,7 +21,7 @@ import { useGroupedRows, useHomeState } from './state';
 import { HomeDragLists, useHomeDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { useChannelFields } from '../../lib/channelFields';
-import { useTabFocused } from '../tabs/useWalletFocused';
+import { useTabFocused } from '../tabs/useTabFocused';
 import { PAGES } from '../tabs/pages';
 import { Column } from '../layout';
 

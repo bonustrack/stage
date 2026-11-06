@@ -5,7 +5,7 @@ import type { GestureType } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
 import { useBoardHome } from './boardHome';
-import { PAGER_SCREENS } from './SwipeTabs.config';
+import { PAGER_SCREENS } from './pagerScreens';
 import { PAGER_ORDER, PAGES, homeTabIndex } from './pages';
 import { Column } from '../layout';
 

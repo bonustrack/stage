@@ -12,7 +12,8 @@ import { walletTotalUsd } from './model';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../../lib/peerProfiles';
 import { DANGER, usePalette } from '../../../lib/theme';
-import { useWalletFocused } from '../../tabs/useWalletFocused';
+import { useTabFocused } from '../../tabs/useTabFocused';
+import { PAGES } from '../../tabs/pages';
 import { tokenRowId } from '@stage-labs/client/wallet/tokens';
 import { TokenAvatar } from '../../token/TokenAvatar';
 import { TokenRowBody } from '../../token/TokenRowBody';
@@ -84,7 +85,7 @@ function WalletTokens({
 export function WalletScreen({ panRef }: { panRef?: SimultaneousRefs } = {}): React.ReactElement {
   const router = useRouter();
   const { link: head, bg, border } = usePalette();
-  const focused = useWalletFocused();
+  const focused = useTabFocused(PAGES.wallet.href);
 
   const address = useActiveAccountRecord()?.address ?? '';
   const portfolio = useWalletPortfolio(address, focused);
