@@ -7,7 +7,7 @@ import {
   stepRow,
   type ArrowKeyEvent,
   type ArrowKeyTarget,
-} from '../components/arrowKeys.model';
+} from '../components/keys/arrowKeys.model';
 
 const press = (key: string, extra: Partial<ArrowKeyEvent> = {}): ArrowKeyEvent => ({
   key,

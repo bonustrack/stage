@@ -31,7 +31,7 @@ import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useStoreValue } from '../../lib/storeCore';
 import { useChannelEditRights } from './channel.detail';
-import { useSearchFilterSources } from '../FilterSearch';
+import { useSearchFilterSources } from '../home/search/FilterSearch';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
 import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';

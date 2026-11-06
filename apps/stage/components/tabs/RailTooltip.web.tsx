@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { hideRailTooltip, hoverRect, showRailTooltip, tooltipLabel, tooltipState, type TooltipPlacement } from '../../lib/railTooltip';
+import { hideRailTooltip, hoverRect, showRailTooltip, tooltipLabel, tooltipState, type TooltipPlacement } from '../system/railTooltip';
 
 export function RailTooltip({
   label,

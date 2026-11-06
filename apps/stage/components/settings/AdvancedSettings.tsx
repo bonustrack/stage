@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 import { errorMessage } from '@stage-labs/client/errors';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
+import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { switchToAccount, deleteAccount, getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';

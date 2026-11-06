@@ -13,7 +13,7 @@ import {
   visibleBlocks,
   withReadKey,
   type InboxEntry,
-} from '../components/settings/Inbox.model';
+} from '../components/inbox/Inbox.model';
 
 const index = (from: string, subject: string): MailIndex => ({
   envelopeFrom: 'bounce@example.com',

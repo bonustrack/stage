@@ -6,7 +6,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Row, STICKY_TOP, PAGE_GUTTER } from '../layout';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { HoverTint } from '../hover';

@@ -5,7 +5,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useHomeView } from '../../lib/homeView';
 import { NewChatAction } from './NewChatAction';
 import { Eyebrow } from '../Eyebrow';
-import { UnreadBadge } from '../UnreadBadge';
+import { UnreadBadge } from '../chatRow/UnreadBadge';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { groupKeysOf, listKeyOf, type ChannelGroupHeader, type HomeListItem } from './groups.model';

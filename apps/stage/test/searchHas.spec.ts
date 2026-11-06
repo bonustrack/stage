@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'bun:test';
-import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
-import { HAS_OPTIONS, parseSearchFilter, searchFilterValues, searchRowMatcher, type FilterRow } from '../components/searchFilter.model';
+import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
+import {
+  HAS_OPTIONS,
+  parseSearchFilter,
+  searchFilterValues,
+  searchRowMatcher,
+  type FilterRow,
+} from '../components/home/search/searchFilter.model';
 
 const row = (convId: string, labels?: string[]): FilterRow => ({
   convId,

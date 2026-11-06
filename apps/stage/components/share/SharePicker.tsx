@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { ChannelRow } from '../ChannelRow';
+import { ChannelRow } from '../chatRow/ChannelRow';
 import { FormField } from '../FormField';
 import type { ShareDestination } from './share.model';
 import { useEffectiveColorScheme } from '../../lib/theme';

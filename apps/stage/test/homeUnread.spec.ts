@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/readState';
 import { deriveSortedRows, unreadRowCount, visibleUnreadCount, type Row } from '../components/home/model';
-import { parseSearchFilter, searchRowMatcher } from '../components/searchFilter.model';
+import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
 import { ALICE, NAMES, SELF } from './searchFixtures';
 
 function row(convId: string, unreadCount: number, fields: Partial<Row> = {}): Row {

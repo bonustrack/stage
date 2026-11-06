@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { bytesToBase64 } from '@stage-labs/client/text/base64';
-import { dataUriDecodeSize, viewerResizeMethod } from '../components/imageDecode.model';
+import { dataUriDecodeSize, viewerResizeMethod } from '../components/media/imageDecode.model';
 
 function be(value: number, length: number): number[] {
   return Array.from({ length }, (_, k) => (value >> (8 * (length - 1 - k))) & 0xff);

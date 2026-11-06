@@ -1,5 +1,5 @@
 import { filterChannelRows, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
-import type { ConversationView } from '../../modules/messaging/conversation';
+import type { ConversationView } from '../../lib/messaging/conversation';
 import {
   GROUP_KEYS,
   homeSortSchema,
@@ -13,10 +13,10 @@ import {
   type HomeViewEdit,
 } from '@stage-labs/client/xmtp/readState';
 import type { AppIconName, MenuItem } from '../appIcons';
-import { COPY_ADDRESS_ITEM } from '../ProfileScreen.model';
+import { COPY_ADDRESS_ITEM } from '../profile/ProfileScreen.model';
 import { GROUP_BY_LABELS } from './groupBy.model';
 import { homeSortEdit, homeSortOf, SORT_LABELS, sortHomeRows } from './sort.model';
-import { labelColumnKey, orderedColumns } from '../board/BoardScreen.model';
+import { labelColumnKey, orderedColumns } from './board/BoardScreen.model';
 import { LAST_ACTIVITY_WINDOWS, lastActivityLabel, type LastActivity } from './activity.model';
 
 export const NO_MESSAGES_PREVIEW = '(no messages yet)';

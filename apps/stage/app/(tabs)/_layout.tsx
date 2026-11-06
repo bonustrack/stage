@@ -2,11 +2,11 @@ import { FONT_SIZE } from '@stage-labs/kit/tokens';
 import { usePathname, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import { Tabs } from '../../lib/navigation';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../../components/layout/safeArea';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { usePalette } from '../../lib/theme';
-import { TabsPager } from '../../components/SwipeTabs';
+import { TabsPager } from '../../components/tabs/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import {
@@ -21,7 +21,7 @@ import {
 import { useRememberHomeView } from '../../components/tabs/boardHome';
 import { BOARD_ROUTE } from '../../components/tabs/splitRoutes';
 import { isMenuPageRoute } from '../../components/tabs/menuPages';
-import { useWebTabRail } from '../../lib/webLayout';
+import { useWebTabRail } from '../../components/layout/webLayout';
 import { useVisibleUnreadCount } from '../../components/home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';

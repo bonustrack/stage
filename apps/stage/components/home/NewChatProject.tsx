@@ -9,7 +9,7 @@ import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius
 import { AnchoredMenu, menuPointAbove, useAnchoredMenus } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuRow } from '../MenuRows';
-import { useSearchFilterSources } from '../FilterSearch';
+import { useSearchFilterSources } from './search/FilterSearch';
 import { FIELD_SECTIONS } from '../channel/channel.labels';
 import { PickerList, PickerNote, PickerSearch } from '../conversation/SidebarSection';
 import { includesKey, tagSearch } from '../conversation/SidebarSection.model';

@@ -13,7 +13,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { uploadAvatar } from '../../lib/profile';
 import { addLabel, removeLabel } from '@stage-labs/client/xmtp/labels';
-import { refreshConv } from '../../modules/messaging/queries';
+import { refreshConv } from '../../lib/messaging/queries';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { updateGroupMeta } from '../../lib/xmtp.groups';
 import { ChannelLabelsEditor, writeLabels } from './channel.labels';

@@ -1,4 +1,4 @@
-import { SUGGESTED_CONTACTS, suggestedContacts } from '../SuggestedContacts.model';
+import { SUGGESTED_CONTACTS, suggestedContacts } from '../contacts/SuggestedContacts.model';
 import { isStringList } from '@stage-labs/client/collections';
 import { reactorsLabel } from '../conversation/reactors.model';
 import { uniqueKeys } from '../conversation/SidebarSection.model';

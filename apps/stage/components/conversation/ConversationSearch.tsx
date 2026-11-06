@@ -3,7 +3,7 @@ import { ActivityIndicator } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useFeedRenderItem } from './useFeedRenderItem';
-import { searchLocalHistory, type SearchScanResult } from '../../modules/messaging/searchLocal';
+import { searchLocalHistory, type SearchScanResult } from '../../lib/messaging/searchLocal';
 import type { useConversationState } from './useConversationState';
 import { usePalette } from '../../lib/theme';
 import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';

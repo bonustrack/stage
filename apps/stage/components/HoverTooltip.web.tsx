@@ -1,8 +1,8 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { View } from 'react-native';
-import { isShown, keyTarget, modalOpen } from './keyEvents.web';
-import { shortcutKey, shortcutOf, type Shortcut } from './shortcuts.model';
-import { hideRailTooltip, hoverRect, showRailTooltip, tooltipLabel, tooltipState, type TooltipPlacement } from '../lib/railTooltip';
+import { isShown, keyTarget, modalOpen } from './keys/keyEvents.web';
+import { shortcutKey, shortcutOf, type Shortcut } from './keys/shortcuts.model';
+import { hideRailTooltip, hoverRect, showRailTooltip, tooltipLabel, tooltipState, type TooltipPlacement } from './system/railTooltip';
 
 function useShortcut(shortcut: Shortcut | undefined, onShortcut: (() => void) | undefined): React.RefObject<View | null> {
   const node = useRef<View>(null);

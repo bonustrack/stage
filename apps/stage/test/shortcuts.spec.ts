@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { shortcutKey, shortcutOf, type ShortcutKeyEvent, type ShortcutTarget } from '../components/shortcuts.model';
+import { shortcutKey, shortcutOf, type ShortcutKeyEvent, type ShortcutTarget } from '../components/keys/shortcuts.model';
 
 const press = (key: string, extra: Partial<ShortcutKeyEvent> = {}): ShortcutKeyEvent => ({
   key,

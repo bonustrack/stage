@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isGroupRow, listedConvRow, memberAddressesOf, rowCreatedTs, sameConvRow } from '../modules/messaging/convRow.model';
+import { isGroupRow, listedConvRow, memberAddressesOf, rowCreatedTs, sameConvRow } from '../lib/messaging/convRow.model';
 
 describe('listedConvRow', () => {
   test('a listed direct chat gives the peer and its address map', () => {

@@ -3,7 +3,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useRouter } from 'expo-router';
 import { usePalette } from '../lib/theme';
 import { usePeerProfiles, peerAvatarUrl } from '../lib/peerProfiles';
-import { useActiveAccountRecord } from '../modules/messaging/account';
+import { useActiveAccountRecord } from '../lib/messaging/account';
 import { SETTINGS_ROUTE } from '../lib/routes';
 import { Column } from './layout';
 

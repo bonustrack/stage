@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { channelMenuItems } from '../components/ChannelMenu.model';
+import { channelMenuItems } from '../components/chatRow/ChannelMenu.model';
 
 describe('channelMenuItems', () => {
   test('a channel with search matches the legacy item list', () => {

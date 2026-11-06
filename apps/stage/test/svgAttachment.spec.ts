@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isSvgAttachment, resolvedAttachmentKind } from '../components/bubble/fileCard.model';
+import { isSvgAttachment, resolvedAttachmentKind } from '../components/media/fileCard.model';
 
 describe('SVG attachments', () => {
   test('are recognised by type or by name', () => {

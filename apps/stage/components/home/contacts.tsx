@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { isAddress } from 'viem';
 import { Eyebrow } from '../Eyebrow';
 import { EmptyState } from '../chrome/EmptyState';
-import { ChannelRow } from '../ChannelRow';
+import { ChannelRow } from '../chatRow/ChannelRow';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
 import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';

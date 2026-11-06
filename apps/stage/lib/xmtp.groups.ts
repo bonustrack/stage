@@ -31,7 +31,7 @@ import { uniqueBy } from '@stage-labs/client/collections';
 import { getCachedRows, setCachedRows, type CachedRow } from './channelsCache';
 import { convOfLine, sdk } from './xmtp.sdk';
 import { notAGroup } from './xmtp.sdk.core';
-import { groupRowMeta } from '../modules/messaging/conversation';
+import { groupRowMeta } from './messaging/conversation';
 import { report, reported } from './errorPolicy';
 import { accountClient } from './xmtp.account';
 import { setChannelHidden } from './hiddenChannels';

@@ -6,9 +6,9 @@ import {
   matchesLastActivity,
   parseLastActivity,
 } from '../components/home/activity.model';
-import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
+import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
 import { deriveSortedRows } from '../components/home/model';
-import { parseSearchFilter, searchRowMatcher } from '../components/searchFilter.model';
+import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
 import { group } from './searchFixtures';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
 

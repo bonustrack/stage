@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { SUGGESTED_CONTACTS, SUGGESTED_SUBTITLE, suggestedContacts, suggestedSubtitle } from '../components/SuggestedContacts.model';
+import {
+  SUGGESTED_CONTACTS,
+  SUGGESTED_SUBTITLE,
+  suggestedContacts,
+  suggestedSubtitle,
+} from '../components/contacts/SuggestedContacts.model';
 
 const POOL = ['0xAAaa000000000000000000000000000000000001', '0xBBbb000000000000000000000000000000000002'];
 

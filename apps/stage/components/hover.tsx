@@ -3,7 +3,7 @@ import type { GestureResponderEvent, LayoutChangeEvent, ViewStyle } from 'react-
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { HoverTooltip } from './HoverTooltip';
-import type { Shortcut } from './shortcuts.model';
+import type { Shortcut } from './keys/shortcuts.model';
 import { usePalette } from '../lib/theme';
 import { Column } from './layout';
 

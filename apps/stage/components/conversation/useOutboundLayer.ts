@@ -9,7 +9,7 @@ import { isCallSignalEntry } from '@stage-labs/client/xmtp/call';
 import { deletedViewCache } from './messageDeletion.model';
 import { isLeftOnlyUpdate } from './systemNames.model';
 import { optimisticRowPreview, outboundView, pendingFromMe, recordSent, settleOutbound, type OutboundState } from './outboundRows.model';
-import { useStableCallback } from '../../lib/useStableCallback';
+import { useStableCallback } from '../useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
 import { useUploadedAttachments } from '../../lib/localAttachmentCache';
 import type { OptimisticEntry } from '../composer/types';

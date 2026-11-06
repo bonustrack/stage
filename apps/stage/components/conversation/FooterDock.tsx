@@ -1,8 +1,8 @@
 import { Platform, type StyleProp, type ViewStyle } from 'react-native';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
-import { useReportBottomChrome } from '../../lib/bottomChrome';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useReportBottomChrome } from '../layout/bottomChrome';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { Column, RIGHT_PANE_INSET, pinnedBottom } from '../layout';
 
 export function ChatColumn({ style, children }: { style?: StyleProp<ViewStyle>; children?: React.ReactNode }): React.ReactElement {

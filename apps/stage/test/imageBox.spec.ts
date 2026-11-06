@@ -5,7 +5,7 @@ import {
   mediaAspectRatio,
   mediaMaxWidth,
   validSize,
-} from '../components/bubble/imageBox.model';
+} from '../components/media/imageBox.model';
 
 describe('attachment layout', () => {
   test('media retain landscape, portrait and square ratios', () => {

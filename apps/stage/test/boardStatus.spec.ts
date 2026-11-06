@@ -13,7 +13,7 @@ import {
   orderedColumns,
   renamedColumnOrder,
   renameTarget,
-} from '../components/board/BoardScreen.model';
+} from '../components/home/board/BoardScreen.model';
 
 const row = (convId: string, status?: string | null) => ({
   convId,

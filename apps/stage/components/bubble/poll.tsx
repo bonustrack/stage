@@ -9,7 +9,7 @@ import {
 } from './poll.model';
 import type { Poll } from './helpers';
 import { usePalette, withAlpha } from '../../lib/theme';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
 import { useState } from 'react';
 import { FormField } from '../FormField';
 import { Button } from '@stage-labs/kit/react-native/button';

@@ -5,11 +5,11 @@ import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { XMTP_USER_PREFIX, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
 import { xmtpReply } from '../../lib/xmtp.messages';
-import { useConvDetails, useConvRow } from '../../modules/messaging/queries';
-import { isGroupRow, memberAddressesOf } from '../../modules/messaging/convRow.model';
+import { useConvDetails, useConvRow } from '../../lib/messaging/queries';
+import { isGroupRow, memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { markConvRead } from '../../lib/channelsCache';
 import { isAppInFront, subscribeAppInFront } from '../../lib/appInFront';
-import { useConvConsentState } from '../../modules/messaging/useConvConsent';
+import { useConvConsentState } from '../../lib/messaging/useConvConsent';
 import { inboxEthAddresses } from '../../lib/xmtp.identity';
 import { setActiveConversation } from '../../modules/stage-pill';
 import { setActiveConvId } from '../../lib/xmtp.state.core';
@@ -23,7 +23,7 @@ import {
   peekFeedAnchor,
   type FeedAnchor,
 } from '../../lib/scrollPos';
-import { isCoarsePointer } from '../../lib/webLayout';
+import { isCoarsePointer } from '../layout/webLayout';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';

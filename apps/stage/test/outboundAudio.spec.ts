@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import { makeLocalAttachmentCache } from '../lib/localAttachmentCache.core';
-import { attachmentPreview, resolvedAttachmentKind } from '../components/bubble/fileCard.model';
+import { attachmentPreview, resolvedAttachmentKind } from '../components/media/fileCard.model';
 import { planSendSteps, unsentDraft } from '../components/composer/send.model';
 import { voiceFileMeta } from '../components/composer/voice.model';
 import type { Attachment } from '../components/composer/types';

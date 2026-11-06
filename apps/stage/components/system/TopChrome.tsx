@@ -3,7 +3,7 @@ import { usePathname } from 'expo-router';
 import { isRailRoute } from '../tabs/splitRoutes';
 import { isOnboardingRoute } from '../onboarding/nextRoute.model';
 import { usePalette } from '../../lib/theme';
-import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
+import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../layout/webLayout';
 import { Column, pinnedEdges } from '../layout';
 
 const DRAG_REGION = { dataSet: { stagedrag: '1' } };

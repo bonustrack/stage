@@ -205,7 +205,7 @@
               {
                 "name": "react-native-safe-area-context",
                 "importNames": ["useSafeAreaInsets"],
-                "message": "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset."
+                "message": "Use useSafeAreaInsets from '@/components/layout/safeArea' so the desktop title bar counts as a top inset."
               },
               {
                 "name": "react-native",
@@ -253,7 +253,7 @@
         "apps/stage/components/layout/**",
         "apps/stage/app/_layout.tsx",
         "apps/stage/components/HoverTooltip.web.tsx",
-        "apps/stage/components/accounts/QrScanner.web.tsx",
+        "apps/stage/components/qr/QrScanner.web.tsx",
         "apps/stage/components/bubble/ReactionTooltip.tsx",
         "apps/stage/components/bubble/gestures.ts",
         "apps/stage/components/call/CallButtons.tsx",
@@ -269,7 +269,7 @@
       "rules": { "core/no-restricted-syntax": "off" }
     },
     {
-      "files": ["apps/stage/lib/safeArea.ts"],
+      "files": ["apps/stage/components/layout/safeArea.ts"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -317,9 +317,9 @@
     {
       "files": [
         "apps/stage/components/bubble/AudioCard.tsx",
-        "apps/stage/components/bubble/ChatGallery.tsx",
-        "apps/stage/components/bubble/ImageAttachment.tsx",
-        "apps/stage/components/bubble/attachments.tsx",
+        "apps/stage/components/media/ChatGallery.tsx",
+        "apps/stage/components/media/ImageAttachment.tsx",
+        "apps/stage/components/media/attachments.tsx",
         "apps/stage/components/bubble/content.parts.tsx",
         "apps/stage/components/bubble/poll.tsx",
         "apps/stage/components/bubble/question.tsx",

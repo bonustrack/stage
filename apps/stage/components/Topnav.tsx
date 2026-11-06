@@ -1,6 +1,6 @@
 import { usePalette } from '../lib/theme';
 import { usePathname } from 'expo-router';
-import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../lib/webLayout';
+import { useWebTabRail, WEB_TAB_RAIL_WIDTH } from './layout/webLayout';
 import { isSplitRoute } from './tabs/splitRoutes';
 import { GradientFade } from './GradientFade';
 import { Column, Row, STICKY_UNDER_CHROME, PAGE_GUTTER, stickyAt } from './layout';

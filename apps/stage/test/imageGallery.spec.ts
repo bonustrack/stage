@@ -6,7 +6,7 @@ import {
   galleryStep,
   isEditableTarget,
   type GalleryKeyEvent,
-} from '../components/bubble/imageGallery.model';
+} from '../components/media/imageGallery.model';
 
 interface Att {
   kind: string;

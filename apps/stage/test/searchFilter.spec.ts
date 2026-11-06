@@ -6,8 +6,8 @@ import {
   searchFilterToken,
   searchRowMatcher,
   type FilterRow,
-} from '../components/searchFilter.model';
-import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
+} from '../components/home/search/searchFilter.model';
+import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
 import { ALICE, BOB, NAMES, SELF, group } from './searchFixtures';
 
 const namesOf = (address: string): string[] => NAMES[address] ?? [];

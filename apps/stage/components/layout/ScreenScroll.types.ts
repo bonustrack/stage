@@ -1,5 +1,5 @@
 import type { ScrollViewProps } from 'react-native';
-import type { SimultaneousRefs } from '../SwipeTabs.types';
+import type { SimultaneousRefs } from './simultaneousRefs';
 import type { VirtualListHandle } from './VirtualList.types';
 
 export type ScreenScrollHandle = Pick<VirtualListHandle, 'scrollToOffset'>;

@@ -1,5 +1,5 @@
 import type { FlatListProps } from 'react-native';
-import type { SimultaneousRefs } from '../SwipeTabs.types';
+import type { SimultaneousRefs } from './simultaneousRefs';
 
 type SharedFlatListProps<T> = Pick<
   FlatListProps<T>,

@@ -3,7 +3,7 @@ import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { Text } from '@stage-labs/kit/react-native/text';
 import Markdown from 'react-native-markdown-display';
 import { messageCardLinks } from './markdown.model';
-import { isAttachmentSummary } from './fileCard.model';
+import { isAttachmentSummary } from '../media/fileCard.model';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf } from '@stage-labs/client/xmtp/deleteMessage';
 import { deletedByOf, isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';

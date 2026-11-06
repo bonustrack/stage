@@ -4,8 +4,8 @@ import { getClearedChats, primeClearedChats, subscribeClearedChats } from '../..
 import { getDraft, loadDrafts, subscribeDrafts } from '../../lib/drafts';
 import { getSearchState, primeSearchState, subscribeSearchState } from '../../lib/searchState';
 import { useStoreValue } from '../../lib/storeCore';
-import { memberNamesOf } from '../FilterSearch';
-import { parseSearchFilter, searchRowMatcher } from '../searchFilter.model';
+import { memberNamesOf } from './search/FilterSearch';
+import { parseSearchFilter, searchRowMatcher } from './search/searchFilter.model';
 import { visibleUnreadCount } from './model';
 import { homeRows } from './state';
 import { useLastActivityCutoff } from '../../lib/lastActivity';

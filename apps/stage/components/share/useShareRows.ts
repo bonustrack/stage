@@ -3,7 +3,7 @@ import { accountClient } from '../../lib/xmtp.account';
 import { assertShareAccount } from '../../lib/shareDestination';
 import { getCachedRows, hydrateCachedRows, subscribeCachedRows, type CachedRow } from '../../lib/channelsCache';
 import { listVisibleConversations, syncConversationsFromNetwork } from '../../lib/xmtp.conv';
-import { summarizeConversation } from '../../modules/messaging/conversation';
+import { summarizeConversation } from '../../lib/messaging/conversation';
 import { mergeShareRows } from './share.model';
 
 async function fetchShareRows(accountId: string, epoch: number, network: boolean): Promise<{ rows: CachedRow[]; failed: boolean }> {

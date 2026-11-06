@@ -1,7 +1,7 @@
 import { Children, cloneElement, isValidElement, type ComponentProps, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { useConvRows } from '../../modules/messaging/queries';
+import { useConvRows } from '../../lib/messaging/queries';
 import { channelLinkText } from '@stage-labs/client/xmtp/channelLinks';
 import { conversationLinkOf } from '../../lib/links';
 import { useEffectiveColorScheme } from '../../lib/theme';

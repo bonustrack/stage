@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { ParsedMail } from '@stage-labs/client/mail/mime';
-import { mailReadKey, parseReadKeys, withReadKey } from '../components/settings/Inbox.model';
+import { mailReadKey, parseReadKeys, withReadKey } from '../components/inbox/Inbox.model';
 import { getSelectedAccount } from './accounts';
 import { useAccountEpoch } from './accountEpoch';
 import { getAccountSelection, subscribeAccountSelection, useAccountSelection } from './accountSelection';

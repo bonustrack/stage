@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { contactNameModel } from '../components/ContactsScreen.model';
+import { contactNameModel } from '../components/contacts/ContactsScreen.model';
 
 const SHORT = '0x1234…abcd';
 

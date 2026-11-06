@@ -4,8 +4,8 @@ import { Platform, useWindowDimensions } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { desktopTitleBarInset } from '../../lib/webLayout';
+import { useSafeAreaInsets } from '../layout/safeArea';
+import { desktopTitleBarInset } from '../layout/webLayout';
 import { SIGNUP_ROUTE } from '../onboarding/nextRoute.model';
 import { ScrollingBanner } from './ScrollingBanner';
 import {

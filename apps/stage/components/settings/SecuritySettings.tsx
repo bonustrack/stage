@@ -5,7 +5,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
 import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
+import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
 import { RecoveryPhraseRow, useWalletBackedUp } from './RecoveryPhraseRow';
 import { securityRows } from './SecuritySettings.model';

@@ -7,7 +7,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import type { ProfileImage } from './Onboarding.profile.model';
 import { FormField } from '../FormField';
 import { OnboardingCard } from './OnboardingCard';
-import { PROFILE_AVATAR_SIZE } from '../ProfileCover';
+import { PROFILE_AVATAR_SIZE } from '../profile/ProfileCover';
 import { usePalette } from '../../lib/theme';
 import { SquareImagePicker } from '../SquareImagePicker';
 import { EMPTY_DETAILS, profileDetailsProblem, type ProfileDetails } from './Onboarding.profile.model';

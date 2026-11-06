@@ -13,7 +13,7 @@ import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HIGHLIGHT_BG } from '../../lib/uiColors';
-import { useCopiedFlag } from '../../lib/useCopiedFlag';
+import { useCopiedFlag } from '../useCopiedFlag';
 import { MONO_FONT } from './helpers';
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, Row } from '../layout';

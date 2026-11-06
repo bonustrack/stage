@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../../components/layout/safeArea';
 import { StackHeader } from '../../components/chrome/StackHeader';
 import { AddMembersForm } from '../../components/channel/AddMembers';
 import { Column, ScreenScroll } from '../../components/layout';

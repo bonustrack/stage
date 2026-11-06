@@ -69,7 +69,7 @@ mock.module('../lib/channelsCache', () => ({
   setCachedRows: () => undefined,
   patchRowConsent: () => undefined,
 }));
-mock.module('../modules/messaging/conversation', () => ({ groupRowMeta: async () => null }));
+mock.module('../lib/messaging/conversation', () => ({ groupRowMeta: async () => null }));
 mock.module('../lib/xmtp.sdk', () => ({
   convOfLine: async (line: string) => {
     const conv = convs.find((c) => line === lineOfConv(c.id));

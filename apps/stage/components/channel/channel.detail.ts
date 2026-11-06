@@ -2,15 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { fetchGroupRoles, messagingKeys, refreshConv, useConvDetails, useConvRow } from '../../modules/messaging/queries';
-import { memberAddressesOf } from '../../modules/messaging/convRow.model';
+import { fetchGroupRoles, messagingKeys, refreshConv, useConvDetails, useConvRow } from '../../lib/messaging/queries';
+import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { groupEditRights, leaveGroupConv, removeGroupMembers } from '../../lib/xmtp.groups';
 import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
-import { LEAVE_CHANNEL_CONFIRM } from '../ChannelMenu.model';
+import { LEAVE_CHANNEL_CONFIRM } from '../chatRow/ChannelMenu.model';
 import { homeRoute } from '../tabs/boardHome';
 
 function convIdOf(line: string): string {

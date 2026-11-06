@@ -16,7 +16,7 @@ export default defineConfig({
           'lib/**/*.web.{ts,tsx}',
           'lib/xmtp.stripGuard.ts',
           'components/**/*.web.{ts,tsx}',
-          'modules/**/*.{ts,tsx}',
+          'modules/*/index.ts',
           'platform/**/*.ts',
           'plugins/**/*.{js,ts}',
           'scripts/**/*.js',

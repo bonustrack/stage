@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { parseHandle } from '@stage-labs/client/routing/handles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { usePalette } from '../../lib/theme';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { profileLinkOf } from '../../lib/links';

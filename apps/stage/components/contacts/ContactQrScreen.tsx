@@ -9,7 +9,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { StackHeader } from '../chrome/StackHeader';
 import { FormField } from '../FormField';
-import { QrScanner } from '../accounts/QrScanner';
+import { QrScanner } from '../qr/QrScanner';
 import { getSelectedAccount } from '../../lib/accounts';
 import { getAccountSelection, useAccountSelection } from '../../lib/accountSelection';
 import { capabilities } from '../../lib/capabilities';

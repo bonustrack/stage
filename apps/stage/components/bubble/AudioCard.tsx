@@ -17,9 +17,9 @@ import { downloadFile } from '../../lib/fileDownload';
 import { SEEK_THUMB } from '../../lib/uiColors';
 import { callOwnsAudio } from '../../lib/calls.audio.core';
 import { AudioSeekBar } from './AudioSeekBar';
-import { IconTileRow } from '../MediaCard';
+import { IconTileRow } from '../media/MediaCard';
 import { audioCardModel } from './audioCard.model';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
 import type { Attachment } from './helpers';
 import { Column, Row } from '../layout';
 

@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { acceptsColumnMove, boardColumns, columnMovable, orderedColumns } from '../components/board/BoardScreen.model';
+import { acceptsColumnMove, boardColumns, columnMovable, orderedColumns } from '../components/home/board/BoardScreen.model';
 import { groupRows, isGroupHeader, listKeyOf, rowsOf, type HomeListItem } from '../components/home/groups.model';
 import {
   NO_GROUPS_PREFS,

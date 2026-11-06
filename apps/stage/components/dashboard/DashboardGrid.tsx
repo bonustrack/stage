@@ -12,10 +12,10 @@ import Animated, {
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import type { DashboardWidget } from '@stage-labs/client/xmtp/readState';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { HOLD_MS, MOVE_SLOP, lift, lockScrollOnLift, setDragging, settle, suppressNextClick } from '../dragLift';
+import { HOLD_MS, MOVE_SLOP, lift, lockScrollOnLift, setDragging, settle, suppressNextClick } from './dragLift';
 import { changeDashboard } from '../../lib/dashboard';
 import { usePalette } from '../../lib/theme';
-import { isCoarsePointer } from '../../lib/webLayout';
+import { isCoarsePointer } from '../layout/webLayout';
 import {
   DASHBOARD_GAP,
   DASHBOARD_ROW,

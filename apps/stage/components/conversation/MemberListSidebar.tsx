@@ -6,7 +6,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
 import { HoverTooltip } from '../HoverTooltip';
-import { useSelfAddress } from '../ProfileScreen.parts';
+import { useSelfAddress } from '../profile/ProfileScreen.parts';
 import {
   assignedEntries,
   memberChanges,
@@ -21,8 +21,8 @@ import { SectionNote, SidebarSection } from './SidebarSection';
 import { applyListEdits, hasListEdits, type ListEdits } from './SidebarSection.model';
 import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';
 import { addGroupMembers, removeGroupMembers, updateGroupAssigned } from '../../lib/xmtp.groups';
-import { patchConvDetails, refreshConv, useConvDetails, useConvRow } from '../../modules/messaging/queries';
-import { memberAddressesOf } from '../../modules/messaging/convRow.model';
+import { patchConvDetails, refreshConv, useConvDetails, useConvRow } from '../../lib/messaging/queries';
+import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { errorLine } from '@stage-labs/client/errors';
 import { capabilities } from '../../lib/capabilities';

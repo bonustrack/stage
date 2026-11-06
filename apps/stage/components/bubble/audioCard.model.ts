@@ -1,4 +1,4 @@
-import { fileSizeLabel } from './fileCard.model';
+import { fileSizeLabel } from '../media/fileCard.model';
 
 const VOICE_NOTE_NAME = /^voice([-_.]|$)/i;
 

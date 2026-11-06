@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Shortcut } from './shortcuts.model';
+import type { Shortcut } from './keys/shortcuts.model';
 
 export function HoverTooltip({
   children,

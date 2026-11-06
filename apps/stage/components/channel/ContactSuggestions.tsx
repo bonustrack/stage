@@ -5,7 +5,7 @@ import { ON_PRIMARY_COLOR } from '../../lib/uiColors';
 import { usePalette } from '../../lib/theme';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { Contact } from '../../lib/useContacts';
-import { ChannelRow } from '../ChannelRow';
+import { ChannelRow } from '../chatRow/ChannelRow';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { Column, Row } from '../layout';
 

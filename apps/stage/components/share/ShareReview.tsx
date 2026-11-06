@@ -1,6 +1,6 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { ChannelRow } from '../ChannelRow';
+import { ChannelRow } from '../chatRow/ChannelRow';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import type { ComposerState } from '../composer/state';
 import type { ShareDestination } from './share.model';

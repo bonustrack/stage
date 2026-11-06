@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { ProfileScreen } from '../../components/ProfileScreen';
+import { ProfileScreen } from '../../components/profile/ProfileScreen';
 import { ChannelProfile } from '../../components/channel/ChannelProfile';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useEffectiveColorScheme } from '../../lib/theme';

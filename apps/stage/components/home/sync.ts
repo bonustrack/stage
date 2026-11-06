@@ -17,7 +17,7 @@ import {
   isFreshOwnGroup,
 } from '../../lib/xmtp.conv';
 import { hydrateCachedRows, setCachedRows } from '../../lib/channelsCache';
-import { summarizeConversation } from '../../modules/messaging/conversation';
+import { summarizeConversation } from '../../lib/messaging/conversation';
 import { isControlBody } from '../../lib/xmtp.types';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { afterFirstPages } from '../../lib/feedLines';

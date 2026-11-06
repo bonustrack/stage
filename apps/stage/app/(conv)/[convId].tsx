@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Animated as RNAnimated } from 'react-native';
 import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { PendingConversation } from '../../components/PendingConversation';
+import { PendingConversation } from '../../components/conversation/PendingConversation';
 import { RetryNotice } from '../../components/chrome/RetryNotice';
 import { ConversationFeed } from '../../components/conversation/ConversationFeed';
 import { ConversationSearch } from '../../components/conversation/ConversationSearch';

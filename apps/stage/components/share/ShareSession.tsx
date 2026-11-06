@@ -7,7 +7,7 @@ import { fileInputs } from '../composer/send.model';
 import { prepareAttachments, forgetAttachments } from '../../lib/xmtp.attachments';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { knownActiveAccountId, subscribeCachedRows } from '../../lib/channelsCache';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
+import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { useClearedChats } from '../../lib/clearedChats';
 import { useStoreValue } from '../../lib/storeCore';
 import { checkShareDestination } from '../../lib/shareDestination';

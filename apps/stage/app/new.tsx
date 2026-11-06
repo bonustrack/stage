@@ -1,7 +1,7 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { newChatMetadata, newChatParams } from '../components/home/newChatMetadata.model';
 import { NewChatScreen } from '../components/home/NewChatScreen';
-import { useWebTabRail } from '../lib/webLayout';
+import { useWebTabRail } from '../components/layout/webLayout';
 import { useAccountEpoch } from '../lib/accountEpoch';
 import { useHomeViewLoaded } from '../lib/homeView';
 import { useBoardHome } from '../components/tabs/boardHome';

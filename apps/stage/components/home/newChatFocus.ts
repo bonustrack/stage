@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
-import { useWebTabRail } from '../../lib/webLayout';
+import { useWebTabRail } from '../layout/webLayout';
 import { useBoardHome } from '../tabs/boardHome';
 import { newChatNav } from './newChat.model';
 import { newChatParams, NO_NEW_CHAT_METADATA, type NewChatMetadata } from './newChatMetadata.model';

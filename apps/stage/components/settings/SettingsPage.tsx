@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { Platform } from 'react-native';
-import type { SimultaneousRefs } from '../SwipeTabs.types';
+import type { SimultaneousRefs } from '../layout/simultaneousRefs';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { SETTINGS_ROUTE } from '../../lib/routes';
 import { useEffectiveColorScheme, usePalette, type ThemePreference } from '../../lib/theme';
 import type { FontPreviewScope } from '../../lib/fontChoice';

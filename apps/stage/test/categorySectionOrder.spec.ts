@@ -6,7 +6,7 @@ import {
   keptColumnOrder,
   orderedColumns,
   renamedColumnOrder,
-} from '../components/board/BoardScreen.model';
+} from '../components/home/board/BoardScreen.model';
 import { groupRows, isGroupHeader } from '../components/home/groups.model';
 import { homeDragModel } from '../components/home/listDrag.model';
 import type { Row } from '../components/home/model';

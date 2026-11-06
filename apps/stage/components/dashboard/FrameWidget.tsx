@@ -14,7 +14,7 @@ import { useFrameMessage } from '../../lib/frameMessage';
 import { conversationLinkOf } from '../../lib/links';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { storageChatOf } from '../../lib/storage';
-import { useConvConsentState, useGroupAccess } from '../../modules/messaging/useConvConsent';
+import { useConvConsentState, useGroupAccess } from '../../lib/messaging/useConvConsent';
 import { Unavailable, WidgetHeader, type WidgetGrip } from './widgetParts';
 import { Column } from '../layout';
 

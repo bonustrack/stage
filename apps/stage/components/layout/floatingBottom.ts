@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
-import { useBottomChromeHeight } from '../../lib/bottomChrome';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useBottomChromeHeight } from './bottomChrome';
+import { useSafeAreaInsets } from './safeArea';
 import { PAGE_GUTTER } from './gutter';
 
 const NATIVE_BOTTOM_GAP = 96;

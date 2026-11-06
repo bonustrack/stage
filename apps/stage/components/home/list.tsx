@@ -1,21 +1,21 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
-import { MessagingSetupBanner } from '../system/HistorySync';
+import { MessagingSetupBanner } from './MessagingSetupBanner';
 import { LabelFilterBar } from './labelbar';
-import { FilterSearch } from '../FilterSearch';
-import { parseSearchFilter, setSearchQueryText, type FilterScope } from '../searchFilter.model';
+import { FilterSearch } from './search/FilterSearch';
+import { parseSearchFilter, setSearchQueryText, type FilterScope } from './search/searchFilter.model';
 import { HomeContactResults } from './contacts';
 import { HomeTopnavRight, type HomeMenuState } from './topnavRight';
 import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
 import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
 import { useBoardHome } from '../tabs/boardHome';
-import { SuggestedContacts } from '../SuggestedContacts';
+import { SuggestedContacts } from '../contacts/SuggestedContacts';
 import { usePalette } from '../../lib/theme';
 import { homeRows, type ScrollRefs } from './state';
 import { listKeyOf, type HomeListItem } from './groups.model';
 import type { Row } from './model';
 import { attempt } from '../../lib/errorPolicy';
-import { useWebTabRail } from '../../lib/webLayout';
+import { useWebTabRail } from '../layout/webLayout';
 import { HoverIconButton } from '../hover';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { capabilities } from '../../lib/capabilities';
@@ -28,7 +28,7 @@ const WIDE_LIST_CONTENT = { paddingBottom: 24 };
 const HEADER_LAYER = { zIndex: 1 };
 
 interface ChannelsListProps {
-  panRef?: import('../SwipeTabs.types').SimultaneousRefs;
+  panRef?: import('../layout/simultaneousRefs').SimultaneousRefs;
   items: HomeListItem[];
   barLabels: string[];
   placeholder?: React.ReactElement | null;

@@ -14,9 +14,9 @@ import { IconVolumeFull } from '@central-icons-react-native/round-outlined-radiu
 import type { CallSession } from '@stage-labs/client/xmtp/callMachine';
 import { Avatar } from '../Avatar';
 import { HoverIconButton } from '../hover';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { usePalette } from '../../lib/theme';
-import { useWebTabRail } from '../../lib/webLayout';
+import { useWebTabRail } from '../layout/webLayout';
 import { leaveCall, screenShareSupported, toggleCamera, toggleMic, toggleScreen } from '../../lib/calls';
 import { setCallMinimized, type CallLinkStatus, type CallMedia, type CallView } from '../../lib/calls.store';
 import { toggleSpeaker, useAudioRoutes } from '../../lib/calls.media';

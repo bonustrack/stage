@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { configuredFieldOptions } from '../components/channel/channelFieldOptions.model';
 import { uniqueKeys } from '../components/conversation/SidebarSection.model';
-import { searchFilterSources } from '../components/searchFilter.model';
+import { searchFilterSources } from '../components/home/search/searchFilter.model';
 import { group } from './searchFixtures';
 
 const rows = [

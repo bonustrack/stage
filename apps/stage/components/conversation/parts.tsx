@@ -9,7 +9,7 @@ import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { REACT_PRESETS } from '../bubble/helpers';
 import { usePalette } from '../../lib/theme';
 import { useDeveloperMode } from '../../lib/developerMode';
-import { useWebTabRail } from '../../lib/webLayout';
+import { useWebTabRail } from '../layout/webLayout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { menuPlacement, STRIP_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
 import { bubbleMenuItems } from './bubbleMenu.model';

@@ -13,8 +13,8 @@ import { setCallMinimized, useCallView } from '../../lib/calls.store';
 import { ignore } from '../../lib/errorPolicy';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { callCardModel, callLiveOf, type CallCardModel, type CallRecord } from './callCard.model';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
-import { IconTileRow } from '../MediaCard';
+import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
+import { IconTileRow } from '../media/MediaCard';
 import { Column } from '../layout';
 
 const TICK_MS = 1_000;

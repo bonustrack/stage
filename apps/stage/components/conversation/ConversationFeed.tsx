@@ -16,11 +16,11 @@ import {
 import { useFeedRenderItem } from './useFeedRenderItem';
 import type { useConversationState } from './useConversationState';
 import { usePalette } from '../../lib/theme';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { attempt } from '../../lib/errorPolicy';
-import { ChatGalleryProvider } from '../bubble/ChatGallery';
+import { ChatGalleryProvider } from '../media/ChatGallery';
 import { useChatColumnFill } from './ConversationSidebar';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { Column, VirtualList } from '../layout';

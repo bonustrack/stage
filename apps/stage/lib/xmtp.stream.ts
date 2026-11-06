@@ -7,7 +7,7 @@ import { mergeIntoFeed, resyncActiveFeeds } from './xmtp.resync';
 import { foregroundWatch } from './xmtp.foreground';
 import { dmRoutesReady, isImportedReplay, routeConvId } from './dmRoutes';
 import { afterFirstPages } from './feedLines';
-import { reconcileOnArrival, feedLatestNs } from '../modules/messaging/feedQuery';
+import { reconcileOnArrival, feedLatestNs } from './messaging/feedQuery';
 import { report, reported } from './errorPolicy';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { reconcileHiddenConsent } from './channelVisibility';

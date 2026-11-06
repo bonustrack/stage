@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fileCardModel, fileSizeLabel, isAttachmentSummary, resolvedAttachmentKind } from '../components/bubble/fileCard.model';
+import { fileCardModel, fileSizeLabel, isAttachmentSummary, resolvedAttachmentKind } from '../components/media/fileCard.model';
 
 describe('file card', () => {
   test('hides the fallback text of attachment messages only', () => {

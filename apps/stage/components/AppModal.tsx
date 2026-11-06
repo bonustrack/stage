@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Modal } from '@stage-labs/kit/react-native/modal';
-import { useWebTabRail } from '../lib/webLayout';
+import { useWebTabRail } from './layout/webLayout';
 
 export function AppModal({
   visible,

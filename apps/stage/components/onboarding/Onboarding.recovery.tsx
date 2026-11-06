@@ -1,8 +1,8 @@
 import { ProfileStep } from './Onboarding.profile';
 import { profileSetupFrom, type ProfileSetup } from './Onboarding.profile.model';
 import type { EditableProfile } from '../../lib/onboarding.core';
-import { UsernameField, useUsernameInput } from '../UsernameField';
-import { usernameReady } from '../UsernameField.model';
+import { UsernameField, useUsernameInput } from '../profile/UsernameField';
+import { usernameReady } from '../profile/UsernameField.model';
 import { FormField } from '../FormField';
 
 export function ProfileRecoveryStep({

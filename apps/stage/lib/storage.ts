@@ -9,7 +9,7 @@ import type { StreamMsg, XmtpConsent } from './xmtp.types';
 import { getActiveAccountId } from './accounts';
 import { getAccountEpoch, useAccountEpoch } from './accountEpoch';
 import { getCachedRows, knownActiveAccountId } from './channelsCache';
-import { listedConvRow } from '../modules/messaging/convRow.model';
+import { listedConvRow } from './messaging/convRow.model';
 import { makeListeners, useStoreValue } from './storeCore';
 import { report, reported } from './errorPolicy';
 import { onStorageIndexForgotten, readStorageIndex, writeStorageIndex } from './storageIndexStore';

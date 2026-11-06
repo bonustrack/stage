@@ -12,9 +12,9 @@ import {
   renamedColumnOrder,
   renameTarget,
   searchedColumns,
-} from '../components/board/BoardScreen.model';
+} from '../components/home/board/BoardScreen.model';
 import { configuredFieldOptions } from '../components/channel/channelFieldOptions.model';
-import { searchFilterSources } from '../components/searchFilter.model';
+import { searchFilterSources } from '../components/home/search/searchFilter.model';
 
 const row = (convId: string, category?: string) => ({
   convId,

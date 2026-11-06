@@ -12,8 +12,8 @@ import { WidgetHeader } from '../dashboard/widgetParts';
 import { GradientFade } from '../GradientFade';
 import { HoverIconButton } from '../hover';
 import { usePalette } from '../../lib/theme';
-import { isCoarsePointer } from '../../lib/webLayout';
-import { ATTACHMENT_MAX_WIDTH } from '../bubble/imageBox.model';
+import { isCoarsePointer } from '../layout/webLayout';
+import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
 import {
   FRAME_PREVIEW_BAR,
   FRAME_PREVIEW_BORDER,

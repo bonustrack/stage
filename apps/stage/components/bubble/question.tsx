@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { Question } from './helpers';
 import { usePalette } from '../../lib/theme';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
 import { Column } from '../layout';
 
 function useQuestionState(question: Question, onAnswer: (label: string) => void) {

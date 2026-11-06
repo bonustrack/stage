@@ -4,7 +4,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { DropdownMenu, DropdownMenuSheet } from '@stage-labs/kit/react-native/menu';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
 import { dismissContextMenuProps } from '@stage-labs/kit/react-native/context-menu';
-import { documentScroll, isCoarsePointer, useWebTabRail } from '../lib/webLayout';
+import { documentScroll, isCoarsePointer, useWebTabRail } from './layout/webLayout';
 import { MENU_GAP } from './menuStyle';
 import { Modal } from '@stage-labs/kit/react-native/modal';
 

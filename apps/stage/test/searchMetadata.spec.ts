@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
+import { boardColumns, searchedColumns } from '../components/home/board/BoardScreen.model';
 import {
   FILTER_FIELDS,
   PRIORITY_OPTIONS,
@@ -9,7 +9,7 @@ import {
   searchFilterValues,
   searchRowMatcher,
   type FilterRow,
-} from '../components/searchFilter.model';
+} from '../components/home/search/searchFilter.model';
 import { ALICE, BOB, NAMES, group } from './searchFixtures';
 
 const rows: FilterRow[] = [

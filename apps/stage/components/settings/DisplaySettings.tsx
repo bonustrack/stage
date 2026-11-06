@@ -1,7 +1,7 @@
 import { setThemePreference, setCustomTheme, useCustomTheme, useThemePreference } from '../../lib/theme';
 import { FONT_CHOICES, setFontChoice, useFontChoice } from '../../lib/fontChoice';
 import { useFontPreviews } from '../../lib/kitFonts';
-import { ColorTokens } from '../system/ColorTokens';
+import { ColorTokens } from './ColorTokens';
 import { SettingsGroup, SettingsPage, SettingsSectionLabel, SettingsThemeRow, THEME_OPTIONS } from './SettingsPage';
 import { IconColorSwatch } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColorSwatch';
 import { Column, PAGE_GUTTER } from '../layout';

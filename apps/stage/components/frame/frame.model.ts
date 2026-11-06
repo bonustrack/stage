@@ -7,7 +7,7 @@ import type { NodeRequest } from '@stage-labs/client/nodes/protocol';
 import type { SurfaceNav, TransportMetadata } from '@stage-labs/kit/a2ui/client';
 import type { RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 import { a2uiSnapshot } from '@stage-labs/kit/a2ui/snapshot';
-import { ATTACHMENT_MAX_HEIGHT } from '../bubble/imageBox.model';
+import { ATTACHMENT_MAX_HEIGHT } from '../media/imageBox.model';
 
 export const FRAME_ROUTE = '/frame';
 

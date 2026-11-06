@@ -6,7 +6,7 @@ import { resolveRemoteAttachment } from '../../lib/xmtp.attachments';
 import { openFile } from '../../lib/fileOpen';
 import type { StoredFile } from '../../lib/storageIndex.model';
 import { attachmentsOf } from '../bubble/helpers';
-import { inlineAttachmentUrl } from '../bubble/attachmentUri';
+import { inlineAttachmentUrl } from '../media/attachmentUri';
 
 export class FileUnavailableError extends Error {
   constructor() {

@@ -7,7 +7,7 @@ import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-
 import { usePalette } from '../../lib/theme';
 import { timeAgo } from '../../lib/format';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { Column, Row } from '../layout';

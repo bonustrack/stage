@@ -1,5 +1,5 @@
 import { fileKey, type StoredFile } from '../../lib/storageIndex.model';
-import { fileSizeLabel } from '../bubble/fileCard.model';
+import { fileSizeLabel } from '../media/fileCard.model';
 
 export type StorageKind = 'image' | 'document' | 'audio' | 'video' | 'other';
 

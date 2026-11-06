@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { PAGE_INTRO_MAX_WIDTH, PAGE_INTRO_TYPE } from '../chrome/PageIntro.model';
+import { PAGE_INTRO_MAX_WIDTH, PAGE_INTRO_TYPE } from './PageIntro.model';
 import { Column } from '../layout';
 
 const CENTER = { textAlign: 'center' } as const;

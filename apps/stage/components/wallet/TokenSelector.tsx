@@ -11,7 +11,7 @@ import { AppModal } from '../AppModal';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { TokenRowBody } from './TokenRowView';
 import { usePalette } from '../../lib/theme';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
+import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { useAssetRows } from './screen/data';
 import { tokenChangeText, tokenPriceText, type TokenChoice } from './screen/model';
 import { NETWORK_LOGO, MAINNET_NETWORK_LOGO, type AssetRow } from '@stage-labs/client/wallet/assets';

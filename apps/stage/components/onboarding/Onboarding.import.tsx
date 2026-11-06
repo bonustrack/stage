@@ -8,8 +8,8 @@ import { Row } from '../layout';
 import { FormField } from '../FormField';
 import { OnboardingCard } from './OnboardingCard';
 import { usePalette, DANGER } from '../../lib/theme';
-import { QrScanner } from '../accounts/QrScanner';
-import { parseImportInput } from '../accounts/ImportAccountPanel.model';
+import { QrScanner } from '../qr/QrScanner';
+import { parseImportInput } from './importInput.model';
 import {
   replaceWordAt,
   typePhrase,

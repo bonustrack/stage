@@ -10,7 +10,7 @@ import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage
 import { usePalette, withAlpha } from '../../lib/theme';
 import { timeAgo } from '../../lib/format';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
-import { PaymentCard } from '../PaymentCard';
+import { PaymentCard } from './PaymentCard';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
 import { tokenLogoUrl, useDecodedCall, useTxTime, useUsdValue } from '../../lib/txDisplay';
 import { chainIdToNumber, explorerTxUrl, receiptTitle, requestAmountOf, txAmountLabel, type TxAmount } from '@stage-labs/client/xmtp/tx';

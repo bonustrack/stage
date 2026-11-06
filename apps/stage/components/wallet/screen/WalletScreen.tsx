@@ -1,11 +1,11 @@
 import { useCallback, memo } from 'react';
-import { useActiveAccountRecord } from '../../../modules/messaging/account';
+import { useActiveAccountRecord } from '../../../lib/messaging/account';
 import { useWalletPortfolio } from './data';
 import { WalletBalanceCard } from './BalanceCard';
 import { useBalanceCurrency } from './currency';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
-import { usePullToRefresh } from '../../tabs/PullToRefresh';
-import type { SimultaneousRefs } from '../../SwipeTabs.types';
+import { usePullToRefresh } from './PullToRefresh';
+import type { SimultaneousRefs } from '../../layout/simultaneousRefs';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { walletTotalUsd, tokenRowModel } from './model';

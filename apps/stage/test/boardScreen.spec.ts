@@ -24,7 +24,7 @@ import {
   renameTarget,
   renamedColumnOrder,
   searchedColumns,
-} from '../components/board/BoardScreen.model';
+} from '../components/home/board/BoardScreen.model';
 
 interface TestRow {
   convId: string;

@@ -4,7 +4,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { pollQuestionsInFeed } from '@stage-labs/client/xmtp/poll-feed';
 import type { PollOpenAnswers, PollOwnVotes, PollVotes } from '../bubble/poll.model';
 import { useReconciledMap } from '../../lib/mapReconcile';
-import { useStableCallback } from '../../lib/useStableCallback';
+import { useStableCallback } from '../useStableCallback';
 
 type Votes = Map<string, PollVotes>;
 type Own = Map<string, PollOwnVotes>;

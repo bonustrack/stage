@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { parseSearchFilter, searchFilterToken, searchFilterValues, searchRowMatcher } from '../components/searchFilter.model';
+import { parseSearchFilter, searchFilterToken, searchFilterValues, searchRowMatcher } from '../components/home/search/searchFilter.model';
 import { ALICE, BOB, NAMES, group } from './searchFixtures';
 
 const rows = [

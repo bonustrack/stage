@@ -1,4 +1,4 @@
-import { memberNames, type FilterRow } from '../components/searchFilter.model';
+import { memberNames, type FilterRow } from '../components/home/search/searchFilter.model';
 
 export const SELF = '0xself';
 export const ALICE = '0xa11ce00000000000000000000000000000000001';

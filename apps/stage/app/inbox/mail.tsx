@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { EmptyState } from '../../components/chrome/EmptyState';
-import { MailView } from '../../components/settings/MailView';
+import { MailView } from '../../components/inbox/MailView';
 import { DeveloperModeGate } from '../../components/settings/DeveloperModeGate';
 
 export default function MailRoute(): React.ReactElement {

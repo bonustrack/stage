@@ -18,7 +18,7 @@ import {
   type MailKeyPair,
 } from '@stage-labs/client/mail/mailbox';
 import { parseMail, type ParsedMail } from '@stage-labs/client/mail/mime';
-import type { InboxEntry } from '../components/settings/Inbox.model';
+import type { InboxEntry } from '../components/inbox/Inbox.model';
 import { report, reported } from './errorPolicy';
 import { memoized } from './storeCore';
 

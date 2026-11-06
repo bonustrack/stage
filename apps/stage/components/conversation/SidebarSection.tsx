@@ -10,7 +10,7 @@ import { FormField } from '../FormField';
 import { AnchoredMenu, anchorRect, useAnchoredMenus } from '../AnchoredMenu';
 import { useHover } from '../hover';
 import { usePalette, withAlpha } from '../../lib/theme';
-import { isCoarsePointer } from '../../lib/webLayout';
+import { isCoarsePointer } from '../layout/webLayout';
 import { hasListEdits, listEdits, pickerAnchorOf, pickerWidth, toggleKey, type ListEdits, type PickerAnchor } from './SidebarSection.model';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconMagnifyingGlass } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMagnifyingGlass';
