@@ -13,30 +13,28 @@ import {
   TAB_BADGE_POSITION,
   TAB_BADGE_SIZE,
   TAB_ICON_FRAME,
-  TAB_ICONS,
   WebTabBar,
   WebTabRail,
   chatsTabOpensNewChat,
 } from '../../components/tabs/WebTabRail';
 import { useRememberHomeView } from '../../components/tabs/boardHome';
-import { BOARD_ROUTE } from '../../components/tabs/splitRoutes';
-import { isMenuPageRoute } from '../../components/tabs/menuPages';
+import { homeViewAt } from '../../components/tabs/splitRoutes';
+import { HIDDEN_TAB_ROUTES, PAGES, TAB_BAR_PAGES, tabPageAt } from '../../components/tabs/pages';
+import { routeRendersPage } from '../../components/tabs/pageRenderer';
+import { appIcon } from '../../components/widgets';
 import { useWebTabRail } from '../../components/layout/webLayout';
 import { useVisibleUnreadCount } from '../../components/home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';
-import { SETTINGS_ROUTE } from '../../lib/routes';
 import { Landing } from '../../components/landing/Landing';
 import { useAccountGate } from '../../lib/accountGate';
 import { useOpenNewChat } from '../../components/home/newChatFocus';
 import { Column } from '../../components/layout';
 
-const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet' };
-
 function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }): React.ReactElement {
   const slot = useTopnavSlot();
   if (slot?.override) return <>{slot.override}</>;
-  const title = rail ? WIDE_TAB_TITLES[pathname] : undefined;
+  const title = rail ? tabPageAt(pathname)?.label : undefined;
   const left = title === undefined ? undefined : <Text text={title} size="xl" fontWeight="semibold" />;
   return <Topnav left={left} right={slot?.right} />;
 }
@@ -54,9 +52,8 @@ function PagerOverlay({
   rail: boolean;
   pathname: string;
 }): React.ReactElement | null {
-  if (isMenuPageRoute(pathname)) return null;
+  if (routeRendersPage(pathname)) return null;
   if (Platform.OS === 'web') {
-    if (pathname.startsWith('/settings')) return null;
     return (
       <Column weight={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
         {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname} />}
@@ -154,17 +151,21 @@ export default function TabsLayout(): React.ReactElement {
           tabBarIconStyle: TAB_ICON_FRAME,
         }}
       >
-        {TAB_ICONS.map(([name, icon]) => (
+        {TAB_BAR_PAGES.map((page) => (
           <Tabs.Screen
-            key={name}
-            name={name}
-            listeners={name === 'index' ? chatsTabListeners : undefined}
+            key={page.tabRoute}
+            name={page.tabRoute}
+            listeners={page.id === 'chats' ? chatsTabListeners : undefined}
             options={{
-              tabBarAccessibilityLabel: name === 'index' ? 'Chats' : name === 'contacts' ? 'Contacts' : 'Wallet',
+              tabBarAccessibilityLabel: page.label,
               tabBarIcon: ({ focused }) => (
-                <Glyph icon={icon} size={24} color={focused || (name === 'index' && pathname === BOARD_ROUTE) ? active : inactive} />
+                <Glyph
+                  icon={appIcon(page.icon)}
+                  size={24}
+                  color={focused || (page.id === 'chats' && pathname === PAGES.board.href) ? active : inactive}
+                />
               ),
-              ...(name === 'index' ? chatsTabBadge(pal, unreadBadge) : {}),
+              ...(page.id === 'chats' ? chatsTabBadge(pal, unreadBadge) : {}),
             }}
           />
         ))}
@@ -181,17 +182,18 @@ export default function TabsLayout(): React.ReactElement {
           listeners={{
             tabPress: (e) => {
               e.preventDefault();
-              router.navigate(SETTINGS_ROUTE);
+              router.navigate(PAGES.settings.href);
             },
           }}
         />
-        <Tabs.Screen name="board" options={{ href: null }} />
-        <Tabs.Screen name="settings" options={{ href: null }} />
+        {HIDDEN_TAB_ROUTES.map((name) => (
+          <Tabs.Screen key={name} name={name} options={{ href: null }} />
+        ))}
       </Tabs>
       <PagerOverlay
         insetTop={insets.top}
         tabBarHeight={tabBarHeight}
-        topnavHidden={rail && (pathname === '/' || pathname === BOARD_ROUTE)}
+        topnavHidden={rail && homeViewAt(pathname) !== null}
         rail={rail}
         pathname={pathname}
       />

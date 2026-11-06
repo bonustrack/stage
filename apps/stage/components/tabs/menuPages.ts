@@ -1,28 +1,32 @@
-import type { AppIconName } from '../appIcons';
+import { isPathUnder } from '@stage-labs/client/routing/routes';
+import { MENU_PAGES, pageAt, type MenuPage } from './pages';
 
-interface MenuPage {
-  href: string;
-  label: string;
-  icon: AppIconName;
+function shownWith(page: MenuPage, developerMode: boolean): boolean {
+  return !page.menu.devOnly || developerMode;
 }
 
-export const INBOX_ROUTE = '/inbox';
+export function settingsMenuPages(developerMode: boolean, hasMailbox: boolean): readonly MenuPage[] {
+  return MENU_PAGES.filter((page) => shownWith(page, developerMode) && (page.menu.needsMailbox !== true || hasMailbox));
+}
 
-export const MENU_PAGES: readonly MenuPage[] = [
-  { href: '/contacts', label: 'Contacts', icon: 'IconGroup1' },
-  { href: '/dashboard', label: 'Dashboard', icon: 'IconBento' },
-  { href: '/storage', label: 'Storage', icon: 'IconFolder1' },
-  { href: INBOX_ROUTE, label: 'Inbox', icon: 'IconEmail1' },
-];
-
-export function menuPagesFor(hasMailbox: boolean, developerMode: boolean): readonly MenuPage[] {
-  return MENU_PAGES.filter((page) => page.href === '/contacts' || (developerMode && (hasMailbox || page.href !== INBOX_ROUTE)));
+export function railMenuPages(developerMode: boolean): readonly MenuPage[] {
+  return MENU_PAGES.filter((page) => page.tabBar !== true && shownWith(page, developerMode));
 }
 
 export function isMenuPageOpen(pathname: string, href: string): boolean {
-  return pathname === href || pathname.startsWith(`${href}/`);
+  return isPathUnder(pathname, href);
 }
 
 export function isMenuPageRoute(pathname: string): boolean {
-  return MENU_PAGES.some((page) => isMenuPageOpen(pathname, page.href));
+  return pageAt(pathname)?.menu !== undefined;
+}
+
+function spokenList(items: readonly string[]): string {
+  const last = items.at(-1);
+  return items.length < 2 || last === undefined ? items.join('') : `${items.slice(0, -1).join(', ')} and ${last}`;
+}
+
+export function developerModeDescription(): string {
+  const pages = MENU_PAGES.filter((page) => page.menu.devOnly).map((page) => page.label);
+  return `Show ${spokenList(['Check sync', ...pages])} on all your devices.`;
 }

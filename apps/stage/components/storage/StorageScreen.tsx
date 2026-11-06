@@ -21,7 +21,7 @@ import { report } from '../../lib/errorPolicy';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useOwnDeletes } from '../../lib/ownDeletes';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { SETTINGS_ROUTE } from '../../lib/routes';
+import { PAGES } from '../tabs/pages';
 import { useWebTabRail } from '../layout/webLayout';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { forgetStorageFile, retryStorage, storageChatOf, storageFileGone, useStorage, type StorageState } from '../../lib/storageIndex';
@@ -270,7 +270,7 @@ function StorageBody(): React.ReactElement {
   );
   return (
     <Column surface="surface" weight={1}>
-      <StackHeader title="Storage" backTo={SETTINGS_ROUTE} back={!rail} />
+      <StackHeader title="Storage" backTo={PAGES.settings.href} back={!rail} />
       <VirtualList
         data={rows}
         keyExtractor={(row) => row.key}

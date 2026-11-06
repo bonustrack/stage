@@ -35,7 +35,7 @@ import { applyPush } from './NotificationsSettings';
 import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { settingsSection } from './settingsCatalog.model';
-import { menuPagesFor } from '../tabs/menuPages';
+import { settingsMenuPages } from '../tabs/menuPages';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
@@ -165,7 +165,7 @@ function MoreGroup(): React.ReactElement {
   const address = useActiveAccountRecord()?.address;
   const boxes = useMailboxes().data;
   const developerMode = useDeveloperMode();
-  const pages = useWebTabRail() ? [] : menuPagesFor((boxes?.length ?? 0) > 0, developerMode);
+  const pages = useWebTabRail() ? [] : settingsMenuPages(developerMode, (boxes?.length ?? 0) > 0);
   useEffect(() => {
     if (developerMode && boxes !== undefined) prefetchInbox(boxes);
   }, [boxes, developerMode]);

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'expo-router';
 import { makeListeners, useStoreValue } from '../../lib/storeCore';
 import { useWebTabRail } from '../layout/webLayout';
 import { useBoardHome } from '../tabs/boardHome';
+import { PAGES, ROUTES } from '../tabs/pages';
 import { newChatNav } from './newChat.model';
 import { newChatParams, NO_NEW_CHAT_METADATA, type NewChatMetadata } from './newChatMetadata.model';
 
@@ -11,7 +12,7 @@ let requested = 0;
 let handled = 0;
 const listeners = makeListeners();
 
-const NEW_CHAT_PATHS: ReadonlySet<string> = new Set(['/', '/new']);
+const NEW_CHAT_PATHS: ReadonlySet<string> = new Set([PAGES.chats.href, ROUTES.newChat]);
 
 export function requestNewChatFocus(): void {
   requested += 1;

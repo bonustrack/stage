@@ -17,7 +17,8 @@ import { channelTimestamp } from '../../../lib/format';
 import { usePalette } from '../../../lib/theme';
 import { capabilities } from '../../../lib/capabilities';
 import { useWebTabRail } from '../../layout/webLayout';
-import { BOARD_ROUTE, channelRouteConvId } from '../../tabs/splitRoutes';
+import { channelRouteConvId } from '../../tabs/splitRoutes';
+import { PAGES } from '../../tabs/pages';
 import { boardCardPress, cardsRightPadding, type BoardColumn } from './BoardScreen.model';
 import type { MarkedNode } from '../../keys/arrowKeys.model';
 import { CARD_GAP, COLUMN_PADDING } from './BoardColumnEdit';
@@ -89,7 +90,7 @@ function BoardCard({
             }
             const press = boardCardPress(openConvId, item.convId);
             if (press === 'close') {
-              capabilities.backTo(BOARD_ROUTE);
+              capabilities.backTo(PAGES.board.href);
               return;
             }
             onOpen();

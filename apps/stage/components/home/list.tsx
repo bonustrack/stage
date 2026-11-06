@@ -19,6 +19,7 @@ import { useWebTabRail } from '../layout/webLayout';
 import { HoverIconButton } from '../hover';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { capabilities } from '../../lib/capabilities';
+import { ROUTES } from '../tabs/pages';
 import { useLastActivity } from '../../lib/lastActivity';
 import { Column, VirtualList } from '../layout';
 
@@ -78,7 +79,7 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
               role="button"
               label="Scan contact QR code"
               onPress={() => {
-                capabilities.navigate('/scan');
+                capabilities.navigate(ROUTES.scan);
               }}
             />
           }

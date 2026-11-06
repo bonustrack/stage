@@ -13,7 +13,7 @@ import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { switchToAccount } from '../../lib/xmtp.client';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { loadAccounts, getActiveAccountId, type AccountRecord } from '../../lib/accounts';
-import { IMPORT_ROUTE, SIGNUP_ROUTE } from '../onboarding/nextRoute.model';
+import { ROUTES } from '../tabs/pages';
 import { report, reported } from '../../lib/errorPolicy';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconPeopleAdd } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPeopleAdd';
@@ -84,7 +84,7 @@ export function MenuSheet({
   }, [visible]);
   usePeerProfiles(accounts.map((a) => a.address));
 
-  function go(href: typeof SIGNUP_ROUTE | typeof IMPORT_ROUTE): void {
+  function go(href: typeof ROUTES.signup | typeof ROUTES.import): void {
     onClose();
     router.navigate(href);
   }
@@ -112,7 +112,7 @@ export function MenuSheet({
         icon={IconPeopleAdd}
         label="New account"
         onPress={() => {
-          go(SIGNUP_ROUTE);
+          go(ROUTES.signup);
         }}
       />
       <MenuRow
@@ -120,7 +120,7 @@ export function MenuSheet({
         icon={IconQrCode}
         label="Import account"
         onPress={() => {
-          go(IMPORT_ROUTE);
+          go(ROUTES.import);
         }}
       />
     </AnchoredMenu>

@@ -11,7 +11,7 @@ import { useWebTabRail } from '../layout/webLayout';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { inboxRows, type InboxRow } from './Inbox.model';
 import { SettingsGroup, SettingsPage } from '../settings/SettingsPage';
-import { INBOX_ROUTE } from '../tabs/menuPages';
+import { PAGES } from '../tabs/pages';
 import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEmail1';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, Row, PAGE_GUTTER } from '../layout';
@@ -20,7 +20,7 @@ const ROW_PADDING = { paddingTop: 12, paddingBottom: 12, paddingLeft: 14, paddin
 const DOT = 8;
 
 function mailRoute(label: string, id: string): string {
-  return `${INBOX_ROUTE}/mail?label=${encodeURIComponent(label)}&id=${encodeURIComponent(id)}`;
+  return `${PAGES.inbox.href}/mail?label=${encodeURIComponent(label)}&id=${encodeURIComponent(id)}`;
 }
 
 function InboxRowView({ row }: { row: InboxRow }): React.ReactElement {

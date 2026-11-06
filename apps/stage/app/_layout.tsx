@@ -11,7 +11,7 @@ import { Platform, Text, TextInput } from 'react-native';
 import { RootStack, currentRoute, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore } from '../lib/navigation';
 import { isBrowserExtension } from '../lib/extension';
 import { usePathname } from 'expo-router';
-import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
+import { isOnboardingRoute, isRestorableRoute } from '../components/tabs/pages';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { bootKitFonts, useKitFontsLoaded } from '../lib/kitFonts';
@@ -113,7 +113,7 @@ function RootLayoutInner(): React.ReactElement {
   useDeepLinks();
   useDocumentScrollRestore();
 
-  const restore = useRestoreGate();
+  const restore = useRestoreGate(isRestorableRoute);
 
   usePushDeepLinks();
 

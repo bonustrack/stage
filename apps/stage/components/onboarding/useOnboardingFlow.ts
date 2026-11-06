@@ -6,7 +6,7 @@ import type { ProfileSetup } from './Onboarding.profile.model';
 import type { Stage } from './flow';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRunner';
-import { IMPORT_ROUTE } from './nextRoute.model';
+import { ROUTES } from '../tabs/pages';
 import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
 
 export type Step = 'username' | 'profile' | 'import' | 'setup' | 'edit';
@@ -46,7 +46,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   const [pending, setPending] = useState<Choice | null>(null);
   const [profileRecovery, setProfileRecovery] = useState<EditableProfile | null>(null);
   const runner = useSetupRunner(onDone);
-  const atImportRoute = usePathname() === IMPORT_ROUTE;
+  const atImportRoute = usePathname() === ROUTES.import;
   const step: Step = runner.recovering && flowStep !== 'edit' ? 'setup' : flowStep === 'username' && atImportRoute ? 'import' : flowStep;
 
   const start = (choice: Choice): void => {

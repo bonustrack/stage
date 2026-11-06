@@ -15,12 +15,6 @@ let restoredTarget: string | null = null;
 let persistResumed = false;
 let reachedTarget = false;
 
-const UNRESTORABLE = new Set(['', '/', '/accounts', '/wallet', '/settings']);
-
-function isRestorable(path: string): boolean {
-  return !UNRESTORABLE.has(path) && !path.startsWith('/(tabs)');
-}
-
 async function readSavedRoute(): Promise<string | null> {
   const saved = await appStorage.get(STORAGE_KEY);
   ignore(appStorage.delete(STORAGE_KEY), 'cleanup');
@@ -37,7 +31,7 @@ interface RestoreGate {
   ready: boolean;
 }
 
-export function useRestoreGate(): RestoreGate {
+export function useRestoreGate(isRestorable: (path: string) => boolean): RestoreGate {
   const pathname = usePathname();
   const navState = useRootNavigationState();
   const [ready, setReady] = useState(false);

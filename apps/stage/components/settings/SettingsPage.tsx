@@ -1,15 +1,15 @@
 import type { ReactNode } from 'react';
-import { Platform } from 'react-native';
 import type { SimultaneousRefs } from '../layout/simultaneousRefs';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { SETTINGS_ROUTE } from '../../lib/routes';
+import { PAGES } from '../tabs/pages';
 import { useEffectiveColorScheme, usePalette, type ThemePreference } from '../../lib/theme';
 import type { FontPreviewScope } from '../../lib/fontChoice';
 import { StackHeader } from '../chrome/StackHeader';
+import { renderedByRoute } from '../tabs/pageRenderer';
 import { Eyebrow } from '../Eyebrow';
 import { AppIcon, type AppIconRef } from '../widgets';
 import type { AppIconName } from '../appIcons';
@@ -143,7 +143,7 @@ export function SettingsThemeRow(props: {
 export function SettingsPage({
   title,
   root = false,
-  backTo = SETTINGS_ROUTE,
+  backTo = PAGES.settings.href,
   back,
   panRef,
   keyboardShouldPersistTaps,
@@ -169,7 +169,7 @@ export function SettingsPage({
   return (
     <Column surface="surface" weight={1}>
       {root ? (
-        Platform.OS === 'web' ? (
+        renderedByRoute('settings') ? (
           <StackHeader title={title} />
         ) : null
       ) : (

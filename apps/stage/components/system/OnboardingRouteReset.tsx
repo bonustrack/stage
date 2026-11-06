@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { router, useGlobalSearchParams, usePathname, useRootNavigationState } from 'expo-router';
-import { isOnboardingRoute, nextRouteFor, signupHref } from '../onboarding/nextRoute.model';
+import { nextRouteFor, signupHref } from '../onboarding/nextRoute.model';
+import { PAGES, isOnboardingRoute } from '../tabs/pages';
 import { currentRoute, prettifyRouteQuery } from '../../lib/navigation';
 
 export function OnboardingRouteReset({ ready, showing }: { ready: boolean; showing: boolean }): null {
@@ -9,7 +10,7 @@ export function OnboardingRouteReset({ ready, showing }: { ready: boolean; showi
   const navReady = useRootNavigationState()?.key !== undefined;
   const active = ready && showing && navReady;
   useEffect(() => {
-    if (!active || isOnboardingRoute(pathname) || pathname === '/') return;
+    if (!active || isOnboardingRoute(pathname) || pathname === PAGES.chats.href) return;
     router.replace(signupHref(nextRouteFor(currentRoute(pathname))));
   }, [active, pathname]);
   useEffect(() => {

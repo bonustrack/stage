@@ -13,7 +13,7 @@ import { RetryNotice } from '../chrome/RetryNotice';
 import { mailBody, mailDataUri, mailDateLabel, mailReceivedAt, subjectLabel, visibleBlocks, type MailAttachmentRow } from './Inbox.model';
 import { MailBlocks } from './MailBlocks';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from '../settings/SettingsPage';
-import { INBOX_ROUTE } from '../tabs/menuPages';
+import { PAGES } from '../tabs/pages';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { IconFileDownload } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileDownload';
 import { Column, Row, PAGE_GUTTER } from '../layout';
@@ -154,7 +154,7 @@ function MailBodyState({ label, id }: { label: string; id: string }): React.Reac
 
 export function MailView({ label, id }: { label: string; id: string }): React.ReactElement {
   return (
-    <SettingsPage title="Mail" backTo={INBOX_ROUTE}>
+    <SettingsPage title="Mail" backTo={PAGES.inbox.href}>
       <MailBodyState label={label} id={id} />
     </SettingsPage>
   );

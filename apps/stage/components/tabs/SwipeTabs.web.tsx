@@ -1,11 +1,12 @@
 import { usePathname } from 'expo-router';
-import { PAGES, TAB_ORDER, homeTabIndex } from './SwipeTabs.config';
+import { PAGER_SCREENS } from './SwipeTabs.config';
+import { PAGER_ORDER, homeTabIndex } from './pages';
 import { useBoardHome } from './boardHome';
 import { Column } from '../layout';
 
 export function TabsPager(): React.ReactElement {
-  const name = TAB_ORDER[homeTabIndex(usePathname(), useBoardHome())] ?? 'index';
-  const Body = PAGES[name];
+  const id = PAGER_ORDER[homeTabIndex(usePathname(), useBoardHome())] ?? 'chats';
+  const Body = PAGER_SCREENS[id];
   return (
     <Column weight={1}>
       <Body />

@@ -30,7 +30,7 @@ import { HomeDragLists, useHomeDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
 import { useChannelFields } from '../../lib/channelFields';
 import { useTabFocused } from '../tabs/useWalletFocused';
-import { BOARD_ROUTE } from '../tabs/splitRoutes';
+import { PAGES } from '../tabs/pages';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
 import { Column } from '../layout';
 
@@ -52,8 +52,8 @@ export function HomeScreen({
 }
 
 export function BoardHome(): React.ReactElement | null {
-  const here = usePathname() === BOARD_ROUTE;
-  const opened = useTabFocused(BOARD_ROUTE);
+  const here = usePathname() === PAGES.board.href;
+  const opened = useTabFocused(PAGES.board.href);
   return here || opened ? <HomeScreen board /> : null;
 }
 

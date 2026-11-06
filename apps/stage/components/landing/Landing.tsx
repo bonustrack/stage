@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { desktopTitleBarInset } from '../layout/webLayout';
-import { SIGNUP_ROUTE } from '../onboarding/nextRoute.model';
+import { ROUTES } from '../tabs/pages';
 import { ScrollingBanner } from './ScrollingBanner';
 import {
   BANNER_HEIGHT,
@@ -139,7 +139,7 @@ function HeroAction(): React.ReactElement {
           tintFg={HERO_WHITE}
           accessibilityLabel="Get started"
           onPress={() => {
-            router.navigate(SIGNUP_ROUTE);
+            router.navigate(ROUTES.signup);
           }}
         />
       </Column>

@@ -27,6 +27,7 @@ import { setHomeView, useHomeViewOf } from '../../lib/homeView';
 import { homeRouteOf } from '../tabs/splitRoutes';
 import { capabilities } from '../../lib/capabilities';
 import { profileLinkOf } from '../../lib/links';
+import { PAGES } from '../tabs/pages';
 import { memo, useEffect, useState } from 'react';
 import { SearchFilterMenu } from './search/SearchFilterMenu';
 import { searchFilterCount, type FilterScope } from './search/searchFilter.model';
@@ -275,7 +276,7 @@ export function HomeTopnavRight({ head, ...filter }: HomeFilterProps & { head: s
       });
     },
     settings: () => {
-      router.push('/settings');
+      router.push(PAGES.settings.href);
     },
   };
   return (

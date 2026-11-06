@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { usePalette } from '../lib/theme';
 import { usePeerProfiles, peerAvatarUrl } from '../lib/peerProfiles';
 import { useActiveAccountRecord } from '../lib/messaging/account';
-import { SETTINGS_ROUTE } from '../lib/routes';
+import { PAGES } from './tabs/pages';
 import { Column } from './layout';
 
 export function AccountAvatar({ size }: { size: number }): React.ReactElement {
@@ -21,7 +21,7 @@ export function AccountAvatarButton({ size = 28 }: { size?: number }): React.Rea
     <Pressable
       accessibilityLabel="Settings"
       onPress={() => {
-        router.navigate(SETTINGS_ROUTE);
+        router.navigate(PAGES.settings.href);
       }}
       hitSlop={8}
     >

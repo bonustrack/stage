@@ -10,7 +10,8 @@ import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
 import { ProfileRecoveryStep } from './Onboarding.recovery';
 import { useOnboardingFlow } from './useOnboardingFlow';
-import { safeNextRoute, IMPORT_ROUTE } from './nextRoute.model';
+import { safeNextRoute } from './nextRoute.model';
+import { ROUTES } from '../tabs/pages';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconArrowRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRight';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -61,7 +62,7 @@ function UsernameStep({
           label="Or import"
           disabled={busy}
           onPress={() => {
-            router.navigate(IMPORT_ROUTE);
+            router.navigate(ROUTES.import);
           }}
         />
       }

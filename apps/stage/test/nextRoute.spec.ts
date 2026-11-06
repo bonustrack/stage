@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { isOnboardingRoute, nextRouteFor, safeNextRoute, signupHref } from '../components/onboarding/nextRoute.model';
+import { nextRouteFor, safeNextRoute, signupHref } from '../components/onboarding/nextRoute.model';
+import { isOnboardingRoute } from '../components/tabs/pages';
 
 describe('safeNextRoute', () => {
   test('keeps in-app routes and falls back to home for anything else', () => {

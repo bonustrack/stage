@@ -1,38 +1,12 @@
-import type { Href } from 'expo-router';
 import { BoardHome, HomeScreen } from '../home/HomeScreen';
 import { WalletScreen } from '../wallet/screen/WalletScreen';
 import { SettingsMenu } from '../settings/SettingsHub';
-import { BOARD_ROUTE } from './splitRoutes';
-import { isMenuPageRoute } from './menuPages';
+import type { PagerPageId } from './pages';
 import type { SimultaneousRefs } from '../layout/simultaneousRefs';
 
-export const TAB_ORDER = ['index', 'board', 'wallet', 'settings'] as const;
-export type TabName = (typeof TAB_ORDER)[number];
-
-export const TAB_HREF: Record<TabName | 'contacts', Href> = {
-  index: '/',
-  board: BOARD_ROUTE,
-  contacts: '/contacts',
-  wallet: '/wallet',
-  settings: '/settings',
-};
-
-export const PAGES: Record<TabName, (props: { panRef?: SimultaneousRefs }) => React.ReactElement | null> = {
-  index: HomeScreen,
+export const PAGER_SCREENS: Record<PagerPageId, (props: { panRef?: SimultaneousRefs }) => React.ReactElement | null> = {
+  chats: HomeScreen,
   board: BoardHome,
   wallet: WalletScreen,
   settings: SettingsMenu,
 };
-
-function indexOfPathname(pathname: string): number {
-  if (pathname === '/' || pathname === '') return 0;
-  if (pathname === BOARD_ROUTE) return 1;
-  if (pathname.startsWith('/wallet')) return 2;
-  if (pathname.startsWith('/settings') || isMenuPageRoute(pathname)) return 3;
-  return 0;
-}
-
-export function homeTabIndex(pathname: string, boardHome: boolean): number {
-  const index = indexOfPathname(pathname);
-  return index === 0 && boardHome ? TAB_ORDER.indexOf('board') : index;
-}

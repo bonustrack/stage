@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { Redirect, useIsFocused } from 'expo-router';
 import { retryDeveloperMode, useDeveloperMode, useDeveloperModeLoaded, useDeveloperModeLoadFailed } from '../../lib/developerMode';
-import { SETTINGS_ROUTE } from '../../lib/routes';
+import { PAGES } from '../tabs/pages';
 import { RetryNotice } from '../chrome/RetryNotice';
 
 export function DeveloperModeGate({ children }: { children: ReactElement }): ReactElement | null {
@@ -12,5 +12,5 @@ export function DeveloperModeGate({ children }: { children: ReactElement }): Rea
   if (failed && focused) return <RetryNotice message="Developer mode could not be loaded." onRetry={retryDeveloperMode} />;
   if (!loaded) return null;
   if (enabled) return children;
-  return focused ? <Redirect href={SETTINGS_ROUTE} /> : null;
+  return focused ? <Redirect href={PAGES.settings.href} /> : null;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
+import { PAGES } from '../components/tabs/pages';
 import {
-  BOARD_ROUTE,
   channelRouteConvId,
   homeRouteOf,
   homeViewAt,
@@ -50,7 +50,7 @@ describe('isSplitRoute', () => {
   });
 
   test('the board page keeps the rail but not the channels pane, its channels still split', () => {
-    expect(isSplitRoute(BOARD_ROUTE)).toBe(false);
+    expect(isSplitRoute(PAGES.board.href)).toBe(false);
     expect(isSplitRoute('/channel/abc')).toBe(true);
     expect(isSplitRoute('/new')).toBe(true);
   });

@@ -1,7 +1,7 @@
 import { SUGGESTED_CONTACTS, suggestedContacts } from '../contacts/SuggestedContacts.model';
 import { isStringList, uniqueKeys } from '@stage-labs/client/collections';
 import { reactorsLabel } from '../conversation/reactors.model';
-import { BOARD_ROUTE } from '../tabs/splitRoutes';
+import { PAGES, newChatHref, type ROUTES } from '../tabs/pages';
 import { CHANNEL_NAME_MAX } from '../channel/EditChannelModal.model';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -42,14 +42,12 @@ export function newChatDraftKey(account: { id: string } | null): string | null {
 }
 
 interface NewChatNav {
-  href: '/' | '/new';
+  href: typeof PAGES.chats.href | typeof ROUTES.newChat;
   push: boolean;
 }
 
 export function newChatNav(wide: boolean, board: boolean, pathname: string): NewChatNav {
-  if (!wide) return { href: '/new', push: true };
-  if (!board) return { href: '/', push: false };
-  return { href: '/new', push: pathname === BOARD_ROUTE };
+  return { href: newChatHref(wide, board), push: !wide || (board && pathname === PAGES.board.href) };
 }
 
 export function membersDraftKey(draftKey: string | null): string | null {
