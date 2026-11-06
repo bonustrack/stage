@@ -14,7 +14,7 @@ Before a native release, verify account creation and restore, ECDSA wallet signi
 
 ## React Compiler rollout
 
-Expo enables React Compiler for the chat presentation files listed in `apps/stage/react-compiler-sources.cjs`. Babel reads that list, and the React Hooks lint rules run on the same files through the react override in the root `.oxlintrc.json`, so update both together: expanding the rollout also expands its diagnostics. The initial scope covers attachment, poll, reaction and home navigation presentation on web and native, not the Kit package, wallet, messaging orchestration or imperative feed and gesture code. Existing manual memoization is retained.
+Expo enables React Compiler for the chat presentation files listed in the react override of the root `.oxlintrc.json`. `apps/stage/babel.config.js` reads that list, and the React Hooks lint rules run on the same files, so expanding the rollout also expands its diagnostics. The initial scope covers attachment, poll, reaction and home navigation presentation on web and native, not the Kit package, wallet, messaging orchestration or imperative feed and gesture code. Existing manual memoization is retained.
 
 The compiler generates memoization during the build, not a persistent message or attachment cache. Validate interactions on both platforms before expanding the list; build output alone does not establish a performance improvement.
 

@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import typographyRule from './typography-rule.mjs';
+import { layoutRules } from './layout-rules.mjs';
 
 const TEXT_ROLE_HINT = {
   link: 'role="link" (or drop it - default text is already the head colour)',
@@ -225,5 +226,12 @@ const errorPolicyRule = {
 
 export default {
   meta: { name: 'stage' },
-  rules: { ...stageThemeNative.rules, ...keyringGuardRule, ...nativeSeamRule, ...errorPolicyRule, 'no-custom-font-size': typographyRule },
+  rules: {
+    ...stageThemeNative.rules,
+    ...keyringGuardRule,
+    ...nativeSeamRule,
+    ...errorPolicyRule,
+    ...layoutRules,
+    'no-custom-font-size': typographyRule,
+  },
 };

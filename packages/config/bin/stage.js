@@ -53,39 +53,7 @@ function run(bin, args) {
   return res.status ?? 1;
 }
 
-const LINT_VALUE_FLAGS = new Set([
-  '-c',
-  '--config',
-  '--tsconfig',
-  '-A',
-  '--allow',
-  '-W',
-  '--warn',
-  '-D',
-  '--deny',
-  '--ignore-path',
-  '--ignore-pattern',
-  '--max-warnings',
-  '-f',
-  '--format',
-  '--debug',
-  '--threads',
-  '--report-unused-disable-directives-severity',
-]);
 const LINTABLE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
-
-function parseLintArgs(argv) {
-  const paths = [];
-  let changed = false;
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    const name = arg.split('=')[0];
-    if (!arg.startsWith('-')) paths.push(arg);
-    else if (name === '--changed') changed = true;
-    else if (!arg.includes('=') && LINT_VALUE_FLAGS.has(name) && i + 1 < argv.length) i += 1;
-  }
-  return { paths, changed };
-}
 
 function git(args) {
   const res = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -108,13 +76,8 @@ function changedFiles() {
   return [...files].filter((file) => LINTABLE.test(file) && existsSync(resolve(cwd, file)));
 }
 
-function oxlintTargets(paths, files) {
-  if (files) return [...files, '--no-error-on-unmatched-pattern'];
-  return paths.length > 0 ? [] : ['.'];
-}
-
-async function cmdLint(argv) {
-  const { paths, changed } = parseLintArgs(argv);
+function cmdLint(argv) {
+  const changed = argv.includes('--changed');
   const rest = argv.filter((arg) => arg !== '--changed');
   const files = changed ? changedFiles() : null;
   if (changed && !files) return 2;
@@ -126,7 +89,8 @@ async function cmdLint(argv) {
     process.stderr.write(`stage lint: no .oxlintrc.json found in ${cwd}\n`);
     return 1;
   }
-  return run(localBin('oxlint'), ['--type-aware', ...oxlintTargets(paths, files), ...rest]);
+  const targets = files ? [...files, '--no-error-on-unmatched-pattern'] : [];
+  return run(localBin('oxlint'), ['--type-aware', ...targets, ...rest]);
 }
 
 function cmdFmt(argv) {
@@ -173,8 +137,7 @@ async function main() {
   }
   let status = 1;
   if (sub === 'lint') {
-    stageConfigPath();
-    status = await cmdLint(argv);
+    status = cmdLint(argv);
   } else if (sub === 'fmt') {
     status = cmdFmt(argv);
   } else if (sub === 'knip') {
