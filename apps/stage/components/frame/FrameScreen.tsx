@@ -10,9 +10,10 @@ import { HoverIconButton } from '../hover';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../lib/messaging/useConvConsent';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
-import { frameOf } from '../../lib/frames/frame.model';
+import { frameLocked, frameOf } from '../../lib/frames/frame.model';
 import { useFrameMessage } from '../../lib/frames/frameMessage';
 import type { FrameNav } from '../../lib/frames/frameStacks';
+import { conversationLinkOf } from '../../lib/links';
 import { usePalette } from '../../lib/theme';
 import type { XmtpConsent } from '../../lib/xmtp.types';
 import { useSafeAreaInsets } from '../layout/safeArea';
@@ -87,13 +88,13 @@ function FramePageMenu({
   frame,
   convId,
   messageId,
-  consent,
+  locked,
   onRefresh,
 }: {
   frame: FrameContent | null;
   convId: string;
   messageId: string;
-  consent: XmtpConsent | null | undefined;
+  locked: boolean;
   onRefresh: () => void;
 }): React.ReactElement | null {
   const { text } = usePalette();
@@ -103,7 +104,7 @@ function FramePageMenu({
       frame={frame}
       convId={convId}
       messageId={messageId}
-      onRefresh={consent === 'allowed' ? onRefresh : undefined}
+      onRefresh={locked ? undefined : onRefresh}
       trigger={(open) => (
         <Column margin={{ left: 'auto' }}>
           <HoverIconButton
@@ -126,16 +127,17 @@ function FrameBody({
   chat,
   frame,
   consent,
+  locked,
   insetBottom,
   navigation,
 }: {
   chat: ChatFrame;
   frame: FrameContent;
   consent: XmtpConsent | null | undefined;
+  locked: boolean;
   insetBottom: number;
   navigation: FrameNavigation;
 }): React.ReactElement {
-  const gated = consent !== 'allowed';
   const notice = consent === 'unknown' || consent === 'denied';
   const viewport = useFillViewport();
   return (
@@ -143,7 +145,7 @@ function FrameBody({
       <FrameView
         frame={frame}
         sessionKey={chat.keys.session}
-        disabled={gated}
+        disabled={locked}
         onMessage={chat.onMessage}
         untilTap={chat.node !== null}
         navigation={navigation}
@@ -160,35 +162,48 @@ function FrameBody({
   );
 }
 
-export function FrameScreen({ convId, messageId }: { convId: string; messageId: string }): React.ReactElement {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
+function useSentFrame(convId: string, messageId: string): { line: string; sent: FrameContent | null; loading: boolean } {
   const line = lineOfConv(convId);
   const feed = useXmtpFeed(line, true);
   const fromFeed = useMemo(() => frameOf(feed.events.find((e) => e.id === messageId)), [feed.events, messageId]);
   const lookup = fromFeed === null && feed.status !== 'loading';
   const stored = useFrameMessage(convId, messageId, lookup);
   const sent = fromFeed ?? (stored?.state === 'ready' ? stored.frame : null);
-  const chat = `/channel/${convId}`;
+  return { line, sent, loading: feed.status === 'loading' || (lookup && stored === undefined) };
+}
+
+export function FrameScreen({ convId, messageId }: { convId: string; messageId: string }): React.ReactElement {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { line, sent, loading } = useSentFrame(convId, messageId);
+  const chatLink = useMemo(() => conversationLinkOf(convId), [convId]);
   const canGoBack = router.canGoBack();
   const leave = useCallback(() => {
     if (canGoBack) router.back();
-    else router.replace(chat);
-  }, [router, canGoBack, chat]);
+    else router.replace(chatLink);
+  }, [router, canGoBack, chatLink]);
   const chatFrame = useChatFrame(sent, line, messageId, leave);
   const { frame, refresh } = chatFrame;
   const consent = useConvConsentState(convId);
+  const locked = sent !== null && frameLocked(sent, consent === 'allowed');
   const screens = useFrameScreens(frame, chatFrame.keys.stack, leave);
-  const menu = <FramePageMenu frame={sent} convId={convId} messageId={messageId} consent={consent} onRefresh={refresh} />;
+  const menu = <FramePageMenu frame={sent} convId={convId} messageId={messageId} locked={locked} onRefresh={refresh} />;
   return (
     <Column surface="surface" weight={1}>
-      <StackHeader title={screens.title} backTo={canGoBack ? undefined : chat} onBack={screens.onBack} trailing={menu} />
+      <StackHeader title={screens.title} backTo={canGoBack ? undefined : chatLink} onBack={screens.onBack} trailing={menu} />
       <ScreenScroll ref={screens.scrollRef} contentContainerStyle={FILL_STYLE} keyboardShouldPersistTaps="handled">
         {frame !== null ? (
-          <FrameBody chat={chatFrame} frame={frame} consent={consent} insetBottom={insets.bottom} navigation={screens.navigation} />
+          <FrameBody
+            chat={chatFrame}
+            frame={frame}
+            consent={consent}
+            locked={locked}
+            insetBottom={insets.bottom}
+            navigation={screens.navigation}
+          />
         ) : (
           <Column padding={PAGE_GUTTER}>
-            {feed.status === 'loading' || (lookup && stored === undefined) ? (
+            {loading ? (
               <Column padding={24} align="center">
                 <Spinner />
               </Column>

@@ -1,5 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Linking, type AlertButton } from 'react-native';
 import { reported } from './errorPolicy';
 import { internalLinkPath, isAllowedLinkScheme } from './safeOpenLink';
@@ -14,7 +14,7 @@ export interface ConfirmOptions {
 export interface Capabilities {
   navigate(to: string): void;
   back(): void;
-  backTo(to: string): void;
+  backTo(to: Href): void;
   copyToClipboard(text: string): void | Promise<void>;
   copy(label: string, value: string): void;
   toast(message: string): void;

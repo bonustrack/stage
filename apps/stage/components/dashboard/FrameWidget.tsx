@@ -11,6 +11,7 @@ import { FrameTile } from '../frame/FramePreview';
 import { chatLabelOf } from '../storage/StorageScreen.model';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { capabilities } from '../../lib/capabilities';
+import { frameLocked } from '../../lib/frames/frame.model';
 import { useFrameMessage } from '../../lib/frames/frameMessage';
 import { conversationLinkOf } from '../../lib/links';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
@@ -80,7 +81,7 @@ function FrameBody({ source, isGroup }: { source: DashboardSource; isGroup: bool
       frame={message.frame}
       line={lineOfConv(conversationId)}
       messageId={messageId}
-      disabled={consent !== 'allowed'}
+      disabled={frameLocked(message.frame, consent === 'allowed')}
       fill
       onSent={toastSent}
     />
