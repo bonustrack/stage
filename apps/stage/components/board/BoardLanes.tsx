@@ -121,6 +121,7 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
         group="cards"
         itemIds={column.rows.map((row) => row.convId)}
         keyboard={false}
+        disabled={drafting}
         style={SHRINK}
         accepts={acceptsCardMove}
         placeAt={actions.placeCard}
@@ -135,14 +136,19 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
               <BoardNewChannel
                 key={epoch}
                 by={columnBy}
-                columnKey={column.key}
-                title={label}
+                column={column}
+                columns={columns}
+                pinned={pinned}
+                editable={actions.editable}
+                placeholder={placeholder}
+                onOpen={onOpen}
                 onClose={() => {
                   setDrafting(false);
                 }}
               />
-            ) : null}
-            <ColumnCards column={column} pinned={pinned} editable={actions.editable} placeholder={placeholder} onOpen={onOpen} />
+            ) : (
+              <ColumnCards column={column} pinned={pinned} editable={actions.editable} placeholder={placeholder} onOpen={onOpen} />
+            )}
           </ColumnFrame>
         )}
       </SortableList>

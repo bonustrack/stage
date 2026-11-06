@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { createGroupWith } from '@stage-labs/client/xmtp/groups';
-import { boardChannelDraft, boardChannelNameProblem } from '../components/board/BoardNewChannel.model';
+import { boardChannelDraft, boardChannelNameProblem, boardChannelRows } from '../components/board/BoardNewChannel.model';
 
 const self = `0x${'1'.repeat(40)}`;
 const assignee = `0x${'ab'.repeat(20)}`;
@@ -48,6 +48,43 @@ describe('inline board channel creation', () => {
     expect(boardChannelNameProblem('😀'.repeat(26))).toBe('Name is too long.');
     expect(boardChannelNameProblem('Two\nlines')).toBe('Name cannot span several lines.');
     expect(boardChannelNameProblem('stage.sync:private')).toBe('Choose another channel name.');
+  });
+
+  test('shows the pending card instead of an early matching stream row, without hiding existing same-name cards', () => {
+    const base = { groupName: 'Task', peerAddress: null, priority: null, category: null, status: 'To-do', labels: [], assigned: [] };
+    const rows = [
+      { ...base, convId: 'existing' },
+      { ...base, convId: 'early' },
+      { ...base, convId: 'other-title', groupName: 'Other task' },
+      { ...base, convId: 'other-status', status: 'Done' },
+      { ...base, convId: 'other-project', category: 'Stage' },
+      { ...base, convId: 'other-label', labels: ['Bug'] },
+      { ...base, convId: 'other-assignee', assigned: [assignee] },
+      { ...base, convId: 'other-priority', priority: 'High' },
+      { ...base, convId: 'dm', peerAddress: assignee },
+    ];
+    const pending = { name: 'Task', appData: '{"v":1,"status":"To-do"}', existingIds: new Set(['existing']), convId: null };
+    expect(boardChannelRows(rows, pending)).toEqual(rows.filter((row) => row.convId !== 'early'));
+    expect(boardChannelRows(rows, null)).toBe(rows);
+    expect(rows).toHaveLength(9);
+  });
+
+  test('uses only the returned conversation ID after creation settles and restores other matching arrivals', () => {
+    const rows = ['existing', 'early', 'concurrent'].map((convId) => ({
+      convId,
+      groupName: 'Task',
+      peerAddress: null,
+      priority: null,
+      category: null,
+      status: null,
+      labels: [],
+      assigned: [],
+    }));
+    const pending = { name: 'Task', appData: undefined, existingIds: new Set(['existing']), convId: null };
+    expect(boardChannelRows(rows, pending).map((row) => row.convId)).toEqual(['existing']);
+    expect(boardChannelRows(rows, { ...pending, convId: 'early' }).map((row) => row.convId)).toEqual(['existing', 'concurrent']);
+    expect(boardChannelRows(rows, { ...pending, convId: 'not-streamed' })).toEqual(rows);
+    expect(boardChannelRows(rows, null)).toBe(rows);
   });
 
   test('reuses the normal creation validator with a self-only member and one atomic metadata payload', async () => {

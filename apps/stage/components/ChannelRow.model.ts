@@ -2,6 +2,8 @@ import type { FontSizeName } from '@stage-labs/kit/tokens';
 import { withChannelLabels } from '@stage-labs/client/xmtp/channelRefs';
 import { highlightSegments } from './HighlightText.model';
 
+export const WRAPPED_TITLE_LINE_HEIGHT = 22;
+
 interface ChannelTitleSegment {
   text: string;
   emphasized?: boolean;

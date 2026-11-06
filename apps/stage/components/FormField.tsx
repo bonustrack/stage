@@ -30,6 +30,8 @@ interface FormFieldProps {
   labelTrailing?: ReactNode;
   hint?: string;
   hintTone?: 'secondary' | 'success' | 'danger';
+  appearance?: 'filled' | 'plain';
+  style?: TextFieldProps['style'];
 }
 
 export function useFocusOnOpen(): RefObject<ComponentRef<typeof TextField> | null> {
@@ -48,6 +50,14 @@ export function useFocusOnOpen(): RefObject<ComponentRef<typeof TextField> | nul
 export function useFieldColors(): { background: string; text: string; placeholder: string } {
   const { border, link, sub } = usePalette();
   return { background: border, text: link, placeholder: sub };
+}
+
+function plainInputProps(inputProps: NativeInputProps | undefined) {
+  return {
+    accessibility: { label: inputProps?.accessibilityLabel },
+    onKeyPress: inputProps?.onKeyPress,
+    returnKeyType: inputProps?.returnKeyType,
+  };
 }
 
 export function FormField({
@@ -70,12 +80,16 @@ export function FormField({
   labelTrailing,
   hint,
   hintTone,
+  appearance = 'filled',
+  style,
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const line = multiline === true ? {} : { ref: inputRef, variant, inputType, autoFocus, onSubmit };
   return (
     <TextField
-      appearance="filled"
+      appearance={appearance}
+      style={style}
+      {...(appearance === 'plain' ? plainInputProps(inputProps) : {})}
       label={label}
       value={value}
       onChangeText={onChangeText}

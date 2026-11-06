@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
-import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { List } from '@stage-labs/kit/react-native/list';
 import { SortableItem } from '@stage-labs/kit/react-native/sortable';
@@ -14,14 +13,14 @@ import { prefetchFeed } from '../../modules/messaging/feedQuery';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf } from '../../lib/links';
 import { channelTimestamp } from '../../lib/format';
-import { usePalette } from '../../lib/theme';
+import { BoardCardFrame } from './BoardCardFrame';
 import { capabilities } from '../../lib/capabilities';
 import { useWebTabRail } from '../../lib/webLayout';
 import { BOARD_ROUTE, channelRouteConvId } from '../tabs/splitRoutes';
 import { boardCardPress, cardsRightPadding, type BoardColumn } from './BoardScreen.model';
 import type { MarkedNode } from '../arrowKeys.model';
 import { CARD_GAP, COLUMN_PADDING } from './BoardColumnEdit';
-import { Column, GUTTER_SCROLLBAR, gutterScrollbarWidth } from '../layout';
+import { GUTTER_SCROLLBAR, gutterScrollbarWidth } from '../layout';
 
 type BoardRouter = ReturnType<typeof useRouter>;
 export const cardDataSet = (columnKey: string, convId: string): MarkedNode => ({ dataSet: { boardcard: convId, boardcolumn: columnKey } });
@@ -48,7 +47,6 @@ function BoardCard({
   const router = useRouter();
   const pathname = usePathname();
   const panel = useWebTabRail();
-  const { bg, link } = usePalette();
   const openConvId = channelRouteConvId(pathname);
   const draftText = getDraft(item.convId);
   const fields = useChannelFields('board');
@@ -57,12 +55,7 @@ function BoardCard({
   const title = rowTitle(item);
   return (
     <SortableItem itemId={item.convId} disabled={!editable} onHold={openMenu}>
-      <Column
-        {...cardDataSet(columnKey, item.convId)}
-        surface="surface"
-        radius={BLOCK_RADIUS_DEFAULT}
-        style={{ overflow: 'hidden', borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : bg }}
-      >
+      <BoardCardFrame mark={cardDataSet(columnKey, item.convId)} selected={(panel && openConvId === item.convId) || menu !== null}>
         <ChannelRow
           title={title.text}
           placeholderTitle={title.placeholder}
@@ -105,24 +98,20 @@ function BoardCard({
             setMenu(null);
           }}
         />
-      </Column>
+      </BoardCardFrame>
     </SortableItem>
   );
 }
 
-export function ColumnCards({
-  column,
-  pinned,
-  editable,
-  placeholder,
-  onOpen,
-}: {
+export interface ColumnCardsProps {
   column: BoardColumn<ChannelRowData>;
   pinned: readonly string[];
   editable: boolean;
   placeholder: React.ReactNode;
   onOpen: (key: string) => void;
-}): React.ReactElement | null {
+}
+
+export function ColumnCards({ column, pinned, editable, placeholder, onOpen }: ColumnCardsProps): React.ReactElement | null {
   if (column.rows.length === 0 && placeholder === null) return null;
   return (
     <List

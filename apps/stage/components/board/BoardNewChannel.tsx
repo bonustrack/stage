@@ -1,21 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
 import { errorMessage } from '@stage-labs/client/errors';
-import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
+import { fontName, fontSize } from '@stage-labs/kit/tokens';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { FormField, useFocusOnOpen } from '../FormField';
+import { ChannelRow } from '../ChannelRow';
+import { WRAPPED_TITLE_LINE_HEIGHT } from '../ChannelRow.model';
 import { HoverIconButton } from '../hover';
-import { Column, Row } from '../layout';
+import { Column, Row, PAGE_GUTTER } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { createGroup } from '../../lib/xmtp.groups';
 import { schedulePushTopicRefresh } from '../../lib/pushRegister';
+import { useChannelFields } from '../../lib/channelFields';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { rememberOwnGroup } from '../../modules/messaging/useConvConsent';
-import { boardChannelDraft, boardChannelNameProblem } from './BoardNewChannel.model';
-import { COLUMN_PADDING } from './BoardColumnEdit';
+import { boardChannelDraft, boardChannelNameProblem, boardChannelRows, type BoardPendingChannel } from './BoardNewChannel.model';
+import { CARD_GAP, COLUMN_PADDING } from './BoardColumnEdit';
+import { BoardCardFrame } from './BoardCardFrame';
+import { ColumnCards, type ColumnCardsProps } from './BoardCard';
+import type { BoardColumn } from './BoardScreen.model';
+import { NO_MESSAGES_PREVIEW, type Row as ChannelRowData } from '../home/model';
+
+const TITLE_INPUT_STYLE = {
+  minHeight: WRAPPED_TITLE_LINE_HEIGHT,
+  lineHeight: WRAPPED_TITLE_LINE_HEIGHT,
+  fontSize: fontSize('md'),
+  fontFamily: fontName.sans,
+  paddingHorizontal: 0,
+  paddingVertical: 0,
+  borderRadius: 0,
+};
 
 export function NewChannelButton({ title, onPress }: { title: string; onPress: () => void }): React.ReactElement {
   const { sub } = usePalette();
@@ -35,28 +53,24 @@ export function NewChannelButton({ title, onPress }: { title: string; onPress: (
   );
 }
 
-export function BoardNewChannel({
-  by,
-  columnKey,
-  title,
-  onClose,
-}: {
+interface BoardNewChannelProps extends ColumnCardsProps {
   by: GroupKey;
-  columnKey: string;
-  title: string;
+  columns: readonly BoardColumn<ChannelRowData>[];
   onClose: () => void;
-}): React.ReactElement {
+}
+
+function useBoardChannelCreation({ by, column, columns, onClose }: BoardNewChannelProps) {
   const account = useActiveAccountRecord();
-  const { text } = usePalette();
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
+  const [pending, setPending] = useState<BoardPendingChannel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
-  const input = useFocusOnOpen();
-  useEffect(() => {
-    if (!creating) input.current?.focus();
-  }, [creating]);
   const problem = boardChannelNameProblem(name);
+  const confirmed = pending !== null && pending.convId !== null && column.rows.some((row) => row.convId === pending.convId);
+  useEffect(() => {
+    if (confirmed) onClose();
+  }, [confirmed]);
   const close = (): void => {
     if (!busy.current) onClose();
   };
@@ -65,70 +79,123 @@ export function BoardNewChannel({
     busy.current = true;
     setCreating(true);
     setError(null);
-    const draft = boardChannelDraft(by, columnKey, title, name, account.address);
+    const draft = boardChannelDraft(by, column.key, column.label, name, account.address);
+    const submitted = {
+      name: draft.name,
+      appData: draft.appData,
+      existingIds: new Set(columns.flatMap((c) => c.rows.map((r) => r.convId))),
+      convId: null,
+    };
+    setPending(submitted);
     schedulePushTopicRefresh(10_000);
     try {
       const created = await createGroup(draft.members, draft.appData, draft.name);
       rememberOwnGroup(created.id);
-      onClose();
+      setPending({ ...submitted, convId: created.id });
     } catch (err) {
       setError(errorMessage(err));
       busy.current = false;
       setCreating(false);
     }
   };
-  return (
-    <Column padding={{ right: COLUMN_PADDING }}>
-      <Column surface="surface" radius={BLOCK_RADIUS_DEFAULT} padding={8} gap={8}>
-        <FormField
-          label="Channel name"
-          placeholder="Enter a channel name"
-          value={name}
-          onChangeText={(value) => {
-            setName(value);
-            setError(null);
-          }}
-          inputRef={input}
-          disabled={creating}
-          hint={error ?? (name.trim() === '' ? undefined : (problem ?? undefined))}
-          hintTone="danger"
-          onSubmit={() => {
-            void submit();
-          }}
-          inputProps={{
-            accessibilityLabel: 'Channel name',
-            blurOnSubmit: false,
-            returnKeyType: 'done',
-            onKeyPress: (event) => {
-              if (event.nativeEvent.key === 'Escape') close();
-            },
-          }}
-        />
-        <Row align="center" gap={8}>
-          <Button
-            label="Add channel"
-            accessibilityLabel="Add channel"
-            size="sm"
-            color="primary"
-            variant="solid"
-            disabled={account === null || problem !== null}
-            loading={creating}
-            aria-busy={creating}
-            onPress={() => {
-              void submit();
-            }}
-          />
-          <Button
-            uniform
-            size="sm"
-            variant="borderless"
-            accessibilityLabel="Cancel"
-            disabled={creating}
-            iconStart={<Glyph icon={IconCrossMedium} size={20} color={text} />}
-            onPress={close}
-          />
-        </Row>
-      </Column>
+  return {
+    name,
+    changeName: (value: string): void => {
+      setName(value);
+      setError(null);
+    },
+    submitted: creating,
+    pending,
+    confirmed,
+    note: error ?? (name.trim() === '' ? null : problem),
+    disabled: account === null || problem !== null,
+    close,
+    submit,
+  };
+}
+
+type BoardCreation = ReturnType<typeof useBoardChannelCreation>;
+
+function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; columnKey: string }): React.ReactElement {
+  const { text, link } = usePalette();
+  const fields = useChannelFields('board');
+  const input = useFocusOnOpen();
+  useEffect(() => {
+    if (!creation.submitted) input.current?.focus();
+  }, [creation.submitted]);
+  const titleInput = creation.submitted ? undefined : (
+    <Column weight={1} minWidth={0}>
+      <FormField
+        appearance="plain"
+        style={{ ...TITLE_INPUT_STYLE, color: link }}
+        value={creation.name}
+        onChangeText={creation.changeName}
+        inputRef={input}
+        onSubmit={() => {
+          void creation.submit();
+        }}
+        inputProps={{
+          accessibilityLabel: 'Channel name',
+          returnKeyType: 'done',
+          onKeyPress: (event) => {
+            if (event.nativeEvent.key === 'Escape') creation.close();
+          },
+        }}
+      />
     </Column>
+  );
+  return (
+    <Column gap={CARD_GAP} padding={{ right: COLUMN_PADDING }}>
+      <BoardCardFrame pending={creation.submitted} mark={{ dataSet: { boarddraft: columnKey } }}>
+        <ChannelRow
+          title={creation.pending?.name ?? creation.name}
+          titleContent={titleInput}
+          hideAvatar={!fields.avatar}
+          square
+          lastPreview={NO_MESSAGES_PREVIEW}
+          showPreview={fields.lastMessage}
+          wrapTitle
+        />
+      </BoardCardFrame>
+      {creation.submitted ? null : (
+        <>
+          {creation.note === null ? null : (
+            <Text text={creation.note} size="2xs" color="danger" style={{ paddingHorizontal: PAGE_GUTTER }} />
+          )}
+          <Row align="center" gap={8}>
+            <Button
+              label="Add channel"
+              accessibilityLabel="Add channel"
+              size="sm"
+              color="primary"
+              variant="solid"
+              disabled={creation.disabled}
+              onPress={() => {
+                void creation.submit();
+              }}
+            />
+            <Button
+              uniform
+              size="sm"
+              variant="borderless"
+              accessibilityLabel="Cancel"
+              iconStart={<Glyph icon={IconCrossMedium} size={20} color={text} />}
+              onPress={creation.close}
+            />
+          </Row>
+        </>
+      )}
+    </Column>
+  );
+}
+
+export function BoardNewChannel(props: BoardNewChannelProps): React.ReactElement {
+  const creation = useBoardChannelCreation(props);
+  const column = { ...props.column, rows: boardChannelRows(props.column.rows, creation.confirmed ? null : creation.pending) };
+  return (
+    <>
+      {creation.confirmed ? null : <NewChannelCard creation={creation} columnKey={column.key} />}
+      <ColumnCards {...props} column={column} />
+    </>
   );
 }
