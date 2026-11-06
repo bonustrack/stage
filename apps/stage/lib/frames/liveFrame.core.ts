@@ -1,19 +1,8 @@
-import type { NodeRequest, NodeResult } from '@stage-labs/client/nodes/protocol';
-import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
-import { nodeRequestOf, type FrameOut } from '../../components/frame/frame.model';
-import { EMPTY_LIVE, liveProblemText, liveStateAfter, type LiveState } from '../../components/dashboard/liveWidget.model';
-import { streamInto } from './frameSession';
+import type { FrameContent } from '@stage-labs/client/xmtp/frame';
+import type { FrameOut } from './frame.model';
+import { EMPTY_LIVE, type LiveState } from './live.model';
+import type { LiveCall, LiveEngine } from './liveEngine';
 import { makeListeners } from '../storeCore';
-
-type OnMessage = (message: FrameMessage) => void;
-
-interface LiveFrameDeps {
-  load: (url: string, key: string, onMessage: OnMessage) => Promise<NodeResult>;
-  send: (url: string, key: string, request: NodeRequest, onMessage: OnMessage) => Promise<NodeResult>;
-  newKey: () => string;
-  now: () => number;
-  toast: (message: string) => void;
-}
 
 interface LiveFrameEntry {
   key: string;
@@ -21,62 +10,56 @@ interface LiveFrameEntry {
   calls: number;
 }
 
-interface LiveFrames {
-  frameOf: (id: string) => FrameContent | null;
+export interface LiveFrames {
+  frameOf: (sessionKey: string) => FrameContent | null;
   clear: () => void;
   subscribe: (listener: () => void) => () => void;
-  refresh: (id: string, sent: FrameContent, url: string) => Promise<void>;
-  send: (id: string, sent: FrameContent, url: string, out: FrameOut) => Promise<void>;
+  refresh: (sessionKey: string, sent: FrameContent, url: string) => Promise<void>;
+  send: (sessionKey: string, sent: FrameContent, url: string, out: FrameOut) => Promise<void>;
 }
 
-export function makeLiveFrames(deps: LiveFrameDeps): LiveFrames {
+export function makeLiveFrames(engine: LiveEngine, newKey: () => string): LiveFrames {
   const entries = new Map<string, LiveFrameEntry>();
   const { notify, subscribe } = makeListeners();
-  const entryOf = (id: string, sent: FrameContent): LiveFrameEntry => {
-    const known = entries.get(id);
+  const entryOf = (sessionKey: string, sent: FrameContent): LiveFrameEntry => {
+    const known = entries.get(sessionKey);
     if (known !== undefined) return known;
-    const entry = { key: deps.newKey(), state: { ...EMPTY_LIVE, frame: sent }, calls: 0 };
-    entries.set(id, entry);
+    const entry = { key: newKey(), state: { ...EMPTY_LIVE, frame: sent }, calls: 0 };
+    entries.set(sessionKey, entry);
     return entry;
   };
-  const call = async (
-    id: string,
-    sent: FrameContent,
-    load: boolean,
-    run: (key: string, onMessage: OnMessage) => Promise<NodeResult>,
-  ): Promise<void> => {
-    const entry = entryOf(id, sent);
+  const call = async (sessionKey: string, sent: FrameContent, url: string, live: LiveCall): Promise<void> => {
+    const entry = entryOf(sessionKey, sent);
     entry.calls += 1;
     const ticket = entry.calls;
-    const { result, applied } = await streamInto(
-      id,
-      load,
-      (frame) => {
-        if (entries.get(id) !== entry) return;
-        entry.state = { ...entry.state, frame };
-        notify();
+    const current = (): boolean => entries.get(sessionKey) === entry;
+    const { result, next } = await engine.run(
+      {
+        sessionKey,
+        node: { url, key: entry.key },
+        read: () => entry.state,
+        show: (frame) => {
+          if (!current()) return;
+          entry.state = { ...entry.state, frame };
+          notify();
+        },
       },
-      (onMessage) => run(entry.key, onMessage),
+      live,
     );
-    if (entries.get(id) !== entry) return;
-    if (ticket !== entry.calls && (!result.ok || load)) return;
-    const next = liveStateAfter(entry.state, result, deps.now(), applied);
-    const problem = liveProblemText(next);
-    if (problem !== null) {
-      deps.toast(`${load ? 'Could not refresh' : 'Could not send'}: ${problem.toLowerCase()}`);
-      return;
-    }
+    if (!current()) return;
+    if (ticket !== entry.calls && (!result.ok || live.load)) return;
+    if (engine.toastProblem(next, live.load)) return;
     entry.state = next;
     notify();
   };
   return {
-    frameOf: (id) => entries.get(id)?.state.frame ?? null,
+    frameOf: (sessionKey) => entries.get(sessionKey)?.state.frame ?? null,
     clear: () => {
       entries.clear();
       notify();
     },
     subscribe,
-    refresh: (id, sent, url) => call(id, sent, true, (key, onMessage) => deps.load(url, key, onMessage)),
-    send: (id, sent, url, out) => call(id, sent, false, (key, onMessage) => deps.send(url, key, nodeRequestOf(out), onMessage)),
+    refresh: (sessionKey, sent, url) => call(sessionKey, sent, url, { load: true }),
+    send: (sessionKey, sent, url, out) => call(sessionKey, sent, url, { load: false, out }),
   };
 }

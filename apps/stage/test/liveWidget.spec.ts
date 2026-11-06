@@ -2,22 +2,24 @@ import { describe, expect, test } from 'bun:test';
 import { newNodeKey, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import { ownNodeUrl } from '@stage-labs/client/nodes/publish';
 import {
+  NODE_URL_HINTS,
+  livePreviewOf,
+  liveStatusText,
+  ownsHostedNode,
+  publishProblemText,
+} from '../components/dashboard/liveWidget.model';
+import { liveConfirmOf } from '../lib/frames/dashboard.model';
+import {
   EMPTY_LIVE,
   LIVE_REFRESH_MS,
-  NODE_URL_HINTS,
-  liveConfirmOf,
-  livePreviewOf,
   liveProblemText,
   liveRefetchInterval,
   liveRefreshDelay,
   liveSnapshotJson,
   liveSnapshotOf,
   liveStateAfter,
-  liveStatusText,
-  ownsHostedNode,
-  publishProblemText,
   type LiveState,
-} from '../components/dashboard/liveWidget.model';
+} from '../lib/frames/live.model';
 import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
 import { REFUSED_MESSAGES, titleMessages } from './frameFixtures';
 

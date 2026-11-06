@@ -1,9 +1,8 @@
+import { NODES_HOST } from '@stage-labs/client/nodes/hosting';
 import {
   DASHBOARD_FRAME_KIND,
-  DASHBOARD_HEIGHTS,
   DASHBOARD_LIVE_KIND,
   DASHBOARD_MAX_WIDGETS,
-  DASHBOARD_WIDTHS,
   type DashboardHeight,
   type DashboardSource,
   type DashboardWidget,
@@ -11,23 +10,10 @@ import {
   type LiveSource,
 } from '@stage-labs/client/xmtp/sync/dashboard';
 
-export const DASHBOARD_ROW = 128;
-export const DASHBOARD_GAP = 12;
-const WIDE_GRID_MIN = 560;
-const SPAN: Readonly<Record<DashboardWidth, number>> = { full: 4, half: 2, quarter: 1 };
-const WIDTH_LABEL: Readonly<Record<DashboardWidth, string>> = { full: 'Full', half: 'Half', quarter: 'Quarter' };
-
 interface WidgetSize {
   w?: DashboardWidth;
   h?: DashboardHeight;
 }
-
-function heightLabel(h: number): string {
-  return `${h * DASHBOARD_ROW}\u00a0px`;
-}
-
-export const WIDTH_OPTIONS = DASHBOARD_WIDTHS.map((value) => ({ value, label: WIDTH_LABEL[value] }));
-export const HEIGHT_OPTIONS = DASHBOARD_HEIGHTS.map((value) => ({ value, label: heightLabel(value) }));
 
 export function canAddWidget(widgets: readonly DashboardWidget[]): boolean {
   return widgets.length < DASHBOARD_MAX_WIDGETS;
@@ -42,6 +28,16 @@ export const FRAME_ADD_TOASTS: Readonly<Record<FrameWidgetAdd, string>> = {
   exists: 'Already on your dashboard',
   full: 'Your dashboard is full',
 };
+
+const HOSTED_NODE_NOTE = 'That code does not see your account. Images it shows load from their own sites, which see your IP address.';
+
+export function liveConfirmOf(host: string): { title: string; message: string; confirmLabel: string } {
+  const message =
+    host === NODES_HOST
+      ? `It runs code a Stage user put on ${host}, every minute while your Dashboard is open. ${HOSTED_NODE_NOTE}`
+      : `It loads from ${host} every minute while your Dashboard is open. That site sees your IP address, not your account.`;
+  return { title: 'Add a live widget?', message, confirmLabel: 'Add' };
+}
 
 function sameSource(widget: DashboardWidget, source: DashboardSource): boolean {
   if (widget.kind !== DASHBOARD_FRAME_KIND) return false;
@@ -103,106 +99,4 @@ export function moveWidget(widgets: DashboardWidget[], id: string, targetId: str
   const next = widgets.filter((_, i) => i !== from);
   next.splice(to, 0, moved);
   return next;
-}
-
-export function gridColumns(width: number): number {
-  return width >= WIDE_GRID_MIN ? 4 : 2;
-}
-
-export function widgetSpan(width: DashboardWidth, columns: number): number {
-  return Math.min(SPAN[width], columns);
-}
-
-export interface WidgetCell {
-  col: number;
-  row: number;
-  span: number;
-  rows: number;
-}
-
-export interface GridLayout {
-  columns: number;
-  rows: number;
-  cells: WidgetCell[];
-}
-
-function isFree(taken: readonly boolean[][], cell: WidgetCell): boolean {
-  for (let row = cell.row; row < cell.row + cell.rows; row++) {
-    for (let col = cell.col; col < cell.col + cell.span; col++) {
-      if (taken[row]?.[col] === true) return false;
-    }
-  }
-  return true;
-}
-
-function occupy(taken: boolean[][], cell: WidgetCell): void {
-  for (let row = cell.row; row < cell.row + cell.rows; row++) {
-    const line = taken[row] ?? [];
-    for (let col = cell.col; col < cell.col + cell.span; col++) line[col] = true;
-    taken[row] = line;
-  }
-}
-
-function firstFit(taken: readonly boolean[][], span: number, rows: number, columns: number): WidgetCell {
-  for (let row = 0; row < taken.length; row++) {
-    for (let col = 0; col + span <= columns; col++) {
-      const cell = { col, row, span, rows };
-      if (isFree(taken, cell)) return cell;
-    }
-  }
-  return { col: 0, row: taken.length, span, rows };
-}
-
-export function packWidgets(widgets: readonly DashboardWidget[], columns: number): GridLayout {
-  const taken: boolean[][] = [];
-  const cells = widgets.map((widget) => {
-    const cell = firstFit(taken, widgetSpan(widget.w, columns), widget.h, columns);
-    occupy(taken, cell);
-    return cell;
-  });
-  return { columns, rows: taken.length, cells };
-}
-
-export interface WidgetRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export function cellRects(layout: GridLayout, width: number): WidgetRect[] {
-  const column = width / layout.columns;
-  return layout.cells.map((cell) => ({
-    x: cell.col * column,
-    y: cell.row * DASHBOARD_ROW,
-    width: cell.span * column,
-    height: cell.rows * DASHBOARD_ROW,
-  }));
-}
-
-function contains(rect: WidgetRect, x: number, y: number): boolean {
-  'worklet';
-  return x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height;
-}
-
-function distance(rect: WidgetRect, x: number, y: number): number {
-  'worklet';
-  return Math.hypot(rect.x + rect.width / 2 - x, rect.y + rect.height / 2 - y);
-}
-
-export function dropTarget(rects: readonly WidgetRect[], x: number, y: number, from: number): number {
-  'worklet';
-  let nearest = from;
-  let best = Number.POSITIVE_INFINITY;
-  for (let i = 0; i < rects.length; i++) {
-    const rect = rects[i];
-    if (rect === undefined) continue;
-    if (contains(rect, x, y)) return i;
-    const d = distance(rect, x, y);
-    if (d < best) {
-      best = d;
-      nearest = i;
-    }
-  }
-  return nearest;
 }

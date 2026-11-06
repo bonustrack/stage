@@ -35,8 +35,8 @@ import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
 import { report } from '../../lib/errorPolicy';
-import { frameOf } from '../frame/frame.model';
-import { addChatFrameToDashboard } from '../frame/frameDashboard';
+import { useAddChatFrameToDashboard, type AddChatFrame } from '../../lib/frames/addToDashboard';
+import { frameOf } from '../../lib/frames/frame.model';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
@@ -56,11 +56,16 @@ async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promis
   }
 }
 
-function frameAdder(convId: string, entry: HistoryEntry | null, close: () => void): (() => void) | undefined {
+function frameAdder(
+  add: AddChatFrame | undefined,
+  convId: string,
+  entry: HistoryEntry | null,
+  close: () => void,
+): (() => void) | undefined {
   const frame = frameOf(entry ?? undefined);
-  if (entry === null || frame === null) return undefined;
+  if (add === undefined || entry === null || frame === null) return undefined;
   return () => {
-    void addChatFrameToDashboard(convId, entry.id, frame);
+    void add(convId, entry.id, frame);
     close();
   };
 }
@@ -242,6 +247,7 @@ function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): Re
     deletedIds,
     isSuperAdmin,
   } = c;
+  const addFrame = useAddChatFrameToDashboard();
   return (
     <BubbleActionMenu
       target={menuFor}
@@ -266,7 +272,7 @@ function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): Re
         if (menuFor) setSelectedForCopy(menuFor.id);
         setMenuFor(null);
       }}
-      onAddToDashboard={frameAdder(convId, menuFor, () => {
+      onAddToDashboard={frameAdder(addFrame, convId, menuFor, () => {
         setMenuFor(null);
       })}
       onShareLink={() => {

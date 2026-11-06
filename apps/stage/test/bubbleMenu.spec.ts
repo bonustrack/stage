@@ -15,13 +15,13 @@ describe('bubbleMenuItems', () => {
     expect(bubbleMenuItems(true, { selectText: false }).map((i) => i.label)).toEqual(['Reply', 'Copy', 'Share link']);
   });
 
-  test('a frame can be added to the dashboard, before Share link', () => {
-    expect(bubbleMenuItems(true, { selectText: false, frame: true, developerMode: true })).toContainEqual({
+  test('a frame that can be added to the dashboard offers it before Share link', () => {
+    expect(bubbleMenuItems(true, { selectText: false, addToDashboard: true })).toContainEqual({
       id: 'addToDashboard',
       icon: 'IconBento',
       label: 'Add to dashboard',
     });
-    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, frame: true, developerMode: true }).map((i) => i.id)).toEqual([
+    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, addToDashboard: true }).map((i) => i.id)).toEqual([
       'reply',
       'copy',
       'addToDashboard',
@@ -31,17 +31,14 @@ describe('bubbleMenuItems', () => {
     expect(bubbleMenuItems(true, { selectText: false }).map((i) => i.id)).not.toContain('addToDashboard');
   });
 
-  test('a frame keeps normal actions but hides Add to dashboard unless developer mode is on', () => {
-    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, frame: true }).map((i) => i.id)).toEqual([
+  test('without the dashboard action the menu keeps only the normal actions', () => {
+    expect(bubbleMenuItems(true, { selectText: false, canDelete: true, addToDashboard: false }).map((i) => i.id)).toEqual([
       'reply',
       'copy',
       'shareLink',
       'delete',
     ]);
-    expect(bubbleMenuItems(false, { selectText: false, frame: true, developerMode: false }).map((i) => i.id)).toEqual([
-      'reply',
-      'shareLink',
-    ]);
+    expect(bubbleMenuItems(false, { selectText: false, addToDashboard: false }).map((i) => i.id)).toEqual(['reply', 'shareLink']);
   });
 
   test('message without text offers only Reply and Share link', () => {

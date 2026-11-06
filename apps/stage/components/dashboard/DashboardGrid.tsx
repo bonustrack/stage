@@ -14,18 +14,10 @@ import type { DashboardWidget } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { HOLD_MS, MOVE_SLOP, lift, lockScrollOnLift, setDragging, settle, suppressNextClick } from './dragLift';
 import { changeDashboard } from '../../lib/frames/dashboard';
+import { moveWidget } from '../../lib/frames/dashboard.model';
 import { usePalette } from '../../lib/theme';
 import { isCoarsePointer } from '../layout/webLayout';
-import {
-  DASHBOARD_GAP,
-  DASHBOARD_ROW,
-  cellRects,
-  dropTarget,
-  gridColumns,
-  moveWidget,
-  packWidgets,
-  type WidgetRect,
-} from './dashboard.model';
+import { DASHBOARD_GAP, DASHBOARD_ROW, cellRects, dropTarget, gridColumns, packWidgets, type WidgetRect } from './grid.model';
 import { WidgetCard, WidgetMenu } from './WidgetCard';
 import type { WidgetGrip } from './widgetParts';
 import { Column, PAGE_GUTTER } from '../layout';

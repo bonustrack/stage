@@ -7,14 +7,7 @@ import {
   type DashboardWidth,
   type LiveSource,
 } from '@stage-labs/client/xmtp/sync/dashboard';
-import {
-  addFrameWidget,
-  addLiveWidget,
-  frameWidgetAdd,
-  liveWidgetAdd,
-  removedLiveIds,
-  type FrameWidgetAdd,
-} from '../../components/dashboard/dashboard.model';
+import { addFrameWidget, addLiveWidget, frameWidgetAdd, liveWidgetAdd, removedLiveIds, type FrameWidgetAdd } from './dashboard.model';
 import { forgetLiveSnapshots } from './liveSnapshots';
 import { syncedSetting } from '../sync/setting';
 import { editDashboard, receiveDashboard } from '../syncedSettings.model';

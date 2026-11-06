@@ -6,6 +6,7 @@ import { OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { DashboardSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
+import { FrameHeader } from '../frame/FrameHeader';
 import { FrameTile } from '../frame/FramePreview';
 import { chatLabelOf } from '../storage/StorageScreen.model';
 import { useAccountEpoch } from '../../lib/accountEpoch';
@@ -15,7 +16,7 @@ import { conversationLinkOf } from '../../lib/links';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { storageChatOf } from '../../lib/storageIndex';
 import { useConvConsentState, useGroupAccess } from '../../lib/messaging/useConvConsent';
-import { Unavailable, WidgetHeader, type WidgetGrip } from './widgetParts';
+import { Unavailable, type WidgetGrip } from './widgetParts';
 import { Column } from '../layout';
 
 const CHAT_STALE_MS = 5 * 60_000;
@@ -98,7 +99,7 @@ export function FrameWidget({
   const chat = useWidgetChat(source.conversationId);
   return (
     <Column weight={1} gap={6}>
-      {grip(<WidgetHeader title={chat.title} onOpen={chat.open} onMenu={onMenu} />)}
+      {grip(<FrameHeader title={chat.title} onOpen={chat.open} onMenu={onMenu} />)}
       <FrameBody source={source} isGroup={chat.isGroup} />
     </Column>
   );

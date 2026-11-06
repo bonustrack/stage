@@ -26,7 +26,7 @@ import { FramePreview } from '../frame/FramePreview';
 import { CallCard } from './CallCard';
 import type { CallRecord } from './callCard.model';
 import type { MessengerBubbleProps } from './props';
-import { frameOf, isFrameActionEntry } from '../frame/frame.model';
+import { frameOf, isFrameActionEntry } from '../../lib/frames/frame.model';
 import { bubbleTimestamp } from '../../lib/format';
 import {
   BubbleAttachments,

@@ -1,9 +1,9 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { SettingsPage } from '../settings/SettingsPage';
 import { useDashboard, useDashboardLoaded } from '../../lib/frames/dashboard';
+import { canAddWidget } from '../../lib/frames/dashboard.model';
 import { useWebTabRail } from '../layout/webLayout';
 import { AddLiveWidgetButton } from './AddLiveWidget';
-import { canAddWidget } from './dashboard.model';
 import { DashboardGrid } from './DashboardGrid';
 import { Column, PAGE_GUTTER } from '../layout';
 

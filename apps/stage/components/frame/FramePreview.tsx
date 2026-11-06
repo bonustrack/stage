@@ -8,9 +8,10 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconFullScreen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFullScreen';
-import { WidgetHeader } from '../dashboard/widgetParts';
 import { GradientFade } from '../GradientFade';
 import { HoverIconButton } from '../hover';
+import { frameLocked, type FrameMessageHandler } from '../../lib/frames/frame.model';
+import type { FrameKeys } from '../../lib/frames/frameKeys';
 import { usePalette } from '../../lib/theme';
 import { isCoarsePointer } from '../layout/webLayout';
 import { ATTACHMENT_MAX_WIDTH } from '../media/imageBox.model';
@@ -20,12 +21,11 @@ import {
   FRAME_PREVIEW_FADE,
   FRAME_PREVIEW_PADDING,
   frameLinkOf,
-  frameLocked,
   frameMoreBelow,
   framePreviewCap,
   frameScreenTitle,
-  type FrameMessageHandler,
 } from './frame.model';
+import { FrameHeader } from './FrameHeader';
 import { FrameView } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
@@ -103,8 +103,7 @@ function FullScreenButton({ onPress }: { onPress: () => void }): React.ReactElem
 
 export function FrameSurface({
   frame,
-  stackId,
-  sessionKey = stackId,
+  keys,
   onMessage,
   untilTap,
   disabled,
@@ -112,8 +111,7 @@ export function FrameSurface({
   onFullScreen,
 }: {
   frame: FrameContent;
-  stackId: string;
-  sessionKey?: string;
+  keys: FrameKeys;
   onMessage?: FrameMessageHandler;
   untilTap?: boolean;
   disabled?: boolean;
@@ -121,7 +119,7 @@ export function FrameSurface({
   onFullScreen?: () => void;
 }): React.ReactElement {
   const pal = usePalette();
-  const navigation = useFrameStack(stackId, frame);
+  const navigation = useFrameStack(keys.stack, frame);
   const { screen, depth, navigate } = navigation;
   const fade = useScrollFade(screen);
   const [hovered, setHovered] = useState(false);
@@ -165,7 +163,7 @@ export function FrameSurface({
       >
         <FrameView
           frame={frame}
-          sessionKey={sessionKey}
+          sessionKey={keys.session}
           disabled={disabled}
           onMessage={onMessage}
           untilTap={untilTap}
@@ -211,13 +209,12 @@ export function FrameTile({
           convId={convId}
           messageId={messageId}
           onRefresh={disabled === true ? undefined : chat.refresh}
-          trigger={(open) => <WidgetHeader title={chat.node?.host} onMenu={open} />}
+          trigger={(open) => <FrameHeader title={chat.node?.host} onMenu={open} />}
         />
       ) : null}
       <FrameSurface
         frame={chat.frame ?? frame}
-        stackId={messageId}
-        sessionKey={chat.sessionKey}
+        keys={chat.keys}
         onMessage={chat.onMessage}
         untilTap={chat.node !== null}
         disabled={disabled}

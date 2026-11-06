@@ -7,19 +7,15 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import type { SpacingValue } from '@stage-labs/kit/layout';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { report } from '../../lib/errorPolicy';
-import {
-  activateFrameSessionHost,
-  frameSession,
-  rejectAgentCall,
-  releaseFrameSession,
-  setFrameSessionHost,
-  type FrameSessionHost,
-} from '../../lib/frames/frameSession';
+import type { FrameMessageHandler } from '../../lib/frames/frame.model';
+import type { FrameSessionHost } from '../../lib/frames/frameSession';
+import type { FrameNav } from '../../lib/frames/frameStacks';
+import { frameSessions } from '../../lib/frames/runtime';
 import { openInBubbleLink } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { ResetBoundary } from '../bubble/boundary';
 import { Column } from '../layout';
-import { frameMediaUrl, type FrameMessageHandler, type FrameNav } from './frame.model';
+import { frameMediaUrl } from './frame.model';
 
 export interface FrameNavigation {
   screen: string;
@@ -72,7 +68,7 @@ function useSessionHost(sessionKey: string, props: FrameViewProps): () => void {
       send: (message, client, metadata) => {
         const { onMessage } = latest.current;
         if (onMessage === undefined) {
-          if ('callAgentFunction' in message) rejectAgentCall(sessionKey, message.callAgentFunction.functionCallId);
+          if ('callAgentFunction' in message) frameSessions.rejectAgentCall(sessionKey, message.callAgentFunction.functionCallId);
           return;
         }
         const label = 'action' in message ? tapLabel(client, message.action) : undefined;
@@ -87,19 +83,19 @@ function useSessionHost(sessionKey: string, props: FrameViewProps): () => void {
         openInBubbleLink(url);
       },
     };
-    return setFrameSessionHost(sessionKey, host.current);
+    return frameSessions.setHost(sessionKey, host.current);
   }, [sessionKey]);
   useEffect(() => {
-    releaseFrameSession(sessionKey);
+    frameSessions.release(sessionKey);
   }, [sessionKey, props.disabled]);
   return () => {
-    if (host.current !== null) activateFrameSessionHost(sessionKey, host.current);
+    if (host.current !== null) frameSessions.activateHost(sessionKey, host.current);
   };
 }
 
 export function FrameView(props: FrameViewProps): React.ReactElement {
   const { frame, sessionKey, navigation, disabled, padding } = props;
-  const client = frameSession(sessionKey, frame);
+  const client = frameSessions.clientFor(sessionKey, frame);
   const activate = useSessionHost(sessionKey, props);
   return (
     <Column

@@ -3,9 +3,10 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { xmtpSendFrameAction } from '../../lib/xmtp.messages';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
-import { engageFrameSession, rejectAgentCall } from '../../lib/frames/frameSession';
-import { refreshLiveFrame, sendToLiveFrame, useChatFrameKey, useLiveFrame } from '../../lib/frames/liveFrame';
-import { frameActionContent, frameNodeOf, type FrameMessageHandler, type FrameNodeLink, type FrameOut } from './frame.model';
+import { frameActionContent, frameNodeOf, type FrameMessageHandler, type FrameNodeLink, type FrameOut } from '../../lib/frames/frame.model';
+import type { FrameKeys } from '../../lib/frames/frameKeys';
+import { refreshLiveFrame, sendToLiveFrame, useChatFrameKeys, useLiveFrame } from '../../lib/frames/liveFrame';
+import { frameSessions } from '../../lib/frames/runtime';
 
 async function sendFrameActionToChat(line: string, messageId: string, out: FrameOut): Promise<boolean> {
   const content = frameActionContent(messageId, out);
@@ -26,22 +27,23 @@ async function sendFrameActionToChat(line: string, messageId: string, out: Frame
 export interface ChatFrame {
   frame: FrameContent | null;
   node: FrameNodeLink | null;
-  sessionKey: string;
+  keys: FrameKeys;
   onMessage: FrameMessageHandler;
   refresh: () => void;
 }
 
 export function useChatFrame(frame: FrameContent | null, line: string, messageId: string, onSent?: () => void): ChatFrame {
   const node = useMemo(() => (frame === null ? null : frameNodeOf(frame)), [frame]);
-  const live = useLiveFrame(messageId);
-  const sessionKey = useChatFrameKey(messageId);
+  const keys = useChatFrameKeys(messageId);
+  const sessionKey = keys.session;
+  const live = useLiveFrame(sessionKey);
   const onMessage = useCallback<FrameMessageHandler>(
     async (out) => {
       const { message } = out;
       if (frame !== null && node !== null) {
-        if ('action' in message) engageFrameSession(sessionKey);
+        if ('action' in message) frameSessions.engage(sessionKey);
         await sendToLiveFrame(messageId, frame, node.url, out);
-      } else if ('callAgentFunction' in message) rejectAgentCall(sessionKey, message.callAgentFunction.functionCallId);
+      } else if ('callAgentFunction' in message) frameSessions.rejectAgentCall(sessionKey, message.callAgentFunction.functionCallId);
       else if ('error' in message) report('frame.a2ui', new Error(`${message.error.code}: ${message.error.message}`));
       else if ('action' in message && (await sendFrameActionToChat(line, messageId, out))) onSent?.();
     },
@@ -49,8 +51,8 @@ export function useChatFrame(frame: FrameContent | null, line: string, messageId
   );
   const refresh = useCallback(() => {
     if (frame === null || node === null) return;
-    engageFrameSession(sessionKey);
+    frameSessions.engage(sessionKey);
     void refreshLiveFrame(messageId, frame, node.url);
   }, [frame, node, messageId, sessionKey]);
-  return { frame: node === null ? frame : (live ?? frame), node, sessionKey, onMessage, refresh };
+  return { frame: node === null ? frame : (live ?? frame), node, keys, onMessage, refresh };
 }

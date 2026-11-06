@@ -3,7 +3,7 @@ import { deletedTextOf, type DeletedBy } from '@stage-labs/client/xmtp/deleteMes
 import { deletedByOf, deletedEntryView, isDeletableEntry, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import type { ConfirmOptions } from '../../lib/capabilities';
 import { previewOf } from './feed-helpers';
-import { isFrameActionEntry } from '../frame/frame.model';
+import { isFrameActionEntry } from '../../lib/frames/frame.model';
 
 const DELETE_MESSAGE_CONFIRM: ConfirmOptions = {
   title: 'Delete message?',

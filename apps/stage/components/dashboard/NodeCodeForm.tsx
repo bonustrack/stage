@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { RENDERER_CAPABILITIES } from '../../lib/frames/frameSession';
-import { loadNode, newNodeKey, nodeUrlOf, type NodeResult } from '@stage-labs/client/nodes/protocol';
+import { newNodeKey, nodeUrlOf, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import { deleteNode, publishNode } from '@stage-labs/client/nodes/publish';
 import { NODES_HOST, NODE_LIMITS } from '@stage-labs/client/nodes/hosting';
 import { FormField } from '../FormField';
@@ -10,9 +9,12 @@ import { FrameSurface } from '../frame/FramePreview';
 import { capabilities } from '../../lib/capabilities';
 import { ignore } from '../../lib/errorPolicy';
 import { linkProxyBase } from '../../lib/linkProxy';
-import { addLivePreview } from '../../lib/frames/liveWidget';
+import { addLivePreview } from '../../lib/frames/addToDashboard';
+import { frameKeysOf, type FrameKeys } from '../../lib/frames/frameKeys';
+import type { LivePreview } from '../../lib/frames/live.model';
+import { frameNodes } from '../../lib/frames/nodeTransport';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { livePreviewOf, publishProblemText, type LivePreview } from './liveWidget.model';
+import { livePreviewOf, publishProblemText } from './liveWidget.model';
 import { Column, Row } from '../layout';
 import { sleep } from '@stage-labs/client/timing';
 
@@ -40,10 +42,10 @@ function buttonLabel(busy: boolean, ready: boolean): string {
 }
 
 async function loadFresh(url: string, key: string): Promise<NodeResult> {
-  const first = await loadNode(url, key, { capabilities: RENDERER_CAPABILITIES });
+  const first = await frameNodes.load({ url, key });
   if (first.ok || first.status !== 404) return first;
   await sleep(FRESH_RETRY_MS);
-  return loadNode(url, key, { capabilities: RENDERER_CAPABILITIES });
+  return frameNodes.load({ url, key });
 }
 
 async function publishAndLoad(key: string, code: string): Promise<Published | string> {
@@ -75,7 +77,7 @@ function useUnaddedNodeCleanup(key: string): { track: (work: Promise<unknown>) =
   };
 }
 
-function PublishedNode({ node, stackId }: { node: Published; stackId: string }): React.ReactElement {
+function PublishedNode({ node, keys }: { node: Published; keys: FrameKeys }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   return (
     <Column gap={6}>
@@ -94,7 +96,7 @@ function PublishedNode({ node, stackId }: { node: Published; stackId: string }):
           }}
         />
       </Row>
-      <FrameSurface frame={node.frame} stackId={stackId} />
+      <FrameSurface frame={node.frame} keys={keys} />
     </Column>
   );
 }
@@ -122,8 +124,10 @@ export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactEle
 
   const add = async (node: Published): Promise<void> => {
     setBusy(true);
-    if (await addLivePreview(node, key, 'dashboard.addNode', cleanup.keep)) onDone();
-    else setBusy(false);
+    const outcome = await addLivePreview(node, key);
+    if (outcome === 'added') cleanup.keep();
+    if (outcome === null) setBusy(false);
+    else onDone();
   };
 
   const submit = (): void => {
@@ -149,7 +153,7 @@ export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactEle
         hint={hint ?? undefined}
         hintTone="danger"
       />
-      {ready ? <PublishedNode node={published} stackId={`node:${key}`} /> : null}
+      {ready ? <PublishedNode node={published} keys={frameKeysOf({ kind: 'codePreview', nodeKey: key })} /> : null}
       <Text text={NOTE} size="xs" color="secondary" />
       <Button
         label={buttonLabel(busy, ready)}

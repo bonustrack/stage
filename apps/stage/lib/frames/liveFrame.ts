@@ -1,46 +1,29 @@
-import { useCallback } from 'react';
-import { loadNode, newNodeKey, sendNodeMessage } from '@stage-labs/client/nodes/protocol';
+import { useCallback, useMemo } from 'react';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
-import type { FrameOut } from '../../components/frame/frame.model';
-import { getAccountEpoch, subscribeAccountEpoch, useAccountEpoch } from '../accountEpoch';
-import { capabilities } from '../capabilities';
-import { clearFrameSessions, RENDERER_CAPABILITIES } from './frameSession';
-import { makeLiveFrames } from './liveFrame.core';
+import { getAccountEpoch, useAccountEpoch } from '../accountEpoch';
 import { useStoreValue } from '../storeCore';
+import type { FrameOut } from './frame.model';
+import { frameKeysOf, type FrameKeys } from './frameKeys';
+import { chatFrames } from './runtime';
 
-const frames = makeLiveFrames({
-  load: (url, key, onMessage) => loadNode(url, key, { capabilities: RENDERER_CAPABILITIES, onMessage }),
-  send: (url, key, request, onMessage) => sendNodeMessage(url, key, request, { capabilities: RENDERER_CAPABILITIES, onMessage }),
-  newKey: newNodeKey,
-  now: () => Date.now(),
-  toast: (message) => {
-    capabilities.toast(message);
-  },
-});
-
-subscribeAccountEpoch(() => {
-  frames.clear();
-  clearFrameSessions();
-});
-
-function slotOf(epoch: number, messageId: string): string {
-  return `${epoch}:${messageId}`;
+function chatFrameKeys(epoch: number, messageId: string): FrameKeys {
+  return frameKeysOf({ kind: 'chat', epoch, messageId });
 }
 
-export function useChatFrameKey(messageId: string): string {
-  return slotOf(useAccountEpoch(), messageId);
-}
-
-export function useLiveFrame(messageId: string): FrameContent | null {
+export function useChatFrameKeys(messageId: string): FrameKeys {
   const epoch = useAccountEpoch();
-  const read = useCallback(() => frames.frameOf(slotOf(epoch, messageId)), [epoch, messageId]);
-  return useStoreValue(frames.subscribe, read);
+  return useMemo(() => chatFrameKeys(epoch, messageId), [epoch, messageId]);
+}
+
+export function useLiveFrame(sessionKey: string): FrameContent | null {
+  const read = useCallback(() => chatFrames.frameOf(sessionKey), [sessionKey]);
+  return useStoreValue(chatFrames.subscribe, read);
 }
 
 export function refreshLiveFrame(messageId: string, sent: FrameContent, url: string): Promise<void> {
-  return frames.refresh(slotOf(getAccountEpoch(), messageId), sent, url);
+  return chatFrames.refresh(chatFrameKeys(getAccountEpoch(), messageId).session, sent, url);
 }
 
 export function sendToLiveFrame(messageId: string, sent: FrameContent, url: string, out: FrameOut): Promise<void> {
-  return frames.send(slotOf(getAccountEpoch(), messageId), sent, url, out);
+  return chatFrames.send(chatFrameKeys(getAccountEpoch(), messageId).session, sent, url, out);
 }

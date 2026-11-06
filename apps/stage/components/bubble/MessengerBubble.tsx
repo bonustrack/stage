@@ -11,7 +11,7 @@ import { ReactionsRow } from './reactions';
 import { contextMenuProps } from '@stage-labs/kit/react-native/context-menu';
 import { usePalette } from '../../lib/theme';
 import { isDeletedPlaceholder } from '@stage-labs/client/xmtp/deletions';
-import { isFrameActionEntry } from '../frame/frame.model';
+import { isFrameActionEntry } from '../../lib/frames/frame.model';
 import { useBubbleGestures } from './gestures';
 import { MessageSelection } from './MessageSelection';
 import { messageInteraction, type MessageInteraction } from './messageInteraction.model';

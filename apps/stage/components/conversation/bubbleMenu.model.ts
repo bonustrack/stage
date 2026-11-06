@@ -4,18 +4,13 @@ type BubbleMenuItem = MenuItem<'reply' | 'copy' | 'select' | 'addToDashboard' | 
 
 export function bubbleMenuItems(
   hasText: boolean,
-  {
-    selectText,
-    canDelete = false,
-    frame = false,
-    developerMode = false,
-  }: { selectText: boolean; canDelete?: boolean; frame?: boolean; developerMode?: boolean },
+  { selectText, canDelete = false, addToDashboard = false }: { selectText: boolean; canDelete?: boolean; addToDashboard?: boolean },
 ): BubbleMenuItem[] {
   const items: (BubbleMenuItem | false)[] = [
     { id: 'reply', icon: 'IconArrowUndoUp', label: 'Reply' },
     hasText && { id: 'copy', icon: 'IconSquareBehindSquare1', label: 'Copy' },
     hasText && selectText && { id: 'select', icon: 'IconFileBend', label: 'Select' },
-    frame && developerMode && { id: 'addToDashboard', icon: 'IconBento', label: 'Add to dashboard' },
+    addToDashboard && { id: 'addToDashboard', icon: 'IconBento', label: 'Add to dashboard' },
     { id: 'shareLink', icon: 'IconPaperPlane', label: 'Share link' },
     canDelete && { id: 'delete', icon: 'IconTrashCan', label: 'Delete', danger: true },
   ];

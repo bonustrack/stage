@@ -10,11 +10,13 @@ import { HoverIconButton } from '../hover';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useConvConsentState } from '../../lib/messaging/useConvConsent';
 import { useXmtpFeed } from '../../lib/xmtp.feed';
+import { frameOf } from '../../lib/frames/frame.model';
 import { useFrameMessage } from '../../lib/frames/frameMessage';
+import type { FrameNav } from '../../lib/frames/frameStacks';
 import { usePalette } from '../../lib/theme';
 import type { XmtpConsent } from '../../lib/xmtp.types';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { frameOf, frameScreenTitle, type FrameNav } from './frame.model';
+import { frameScreenTitle } from './frame.model';
 import { FrameView, type FrameNavigation } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
@@ -38,8 +40,8 @@ function useFillViewport(): { ref: RefObject<View | null>; onLayout: () => void;
   return { ref, onLayout, minHeight: top === null ? undefined : Math.max(0, height - top) };
 }
 
-function useFrameScreens(frame: FrameContent | null, messageId: string, leave: () => void) {
-  const { screen, depth, navigate: step } = useFrameStack(messageId, frame);
+function useFrameScreens(frame: FrameContent | null, stackKey: string, leave: () => void) {
+  const { screen, depth, navigate: step } = useFrameStack(stackKey, frame);
   const back = useCallback((): boolean => {
     if (depth === 0) return false;
     step({ kind: 'close' });
@@ -140,7 +142,7 @@ function FrameBody({
     <View ref={viewport.ref} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
       <FrameView
         frame={frame}
-        sessionKey={chat.sessionKey}
+        sessionKey={chat.keys.session}
         disabled={gated}
         onMessage={chat.onMessage}
         untilTap={chat.node !== null}
@@ -176,7 +178,7 @@ export function FrameScreen({ convId, messageId }: { convId: string; messageId: 
   const chatFrame = useChatFrame(sent, line, messageId, leave);
   const { frame, refresh } = chatFrame;
   const consent = useConvConsentState(convId);
-  const screens = useFrameScreens(frame, messageId, leave);
+  const screens = useFrameScreens(frame, chatFrame.keys.stack, leave);
   const menu = <FramePageMenu frame={sent} convId={convId} messageId={messageId} consent={consent} onRefresh={refresh} />;
   return (
     <Column surface="surface" weight={1}>

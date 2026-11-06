@@ -7,9 +7,8 @@ import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuRow } from '../MenuRows';
 import { capabilities } from '../../lib/capabilities';
-import { frameNodeOf } from './frame.model';
-import { addChatFrameToDashboard } from './frameDashboard';
-import { useDeveloperMode } from '../../lib/developerMode';
+import { useAddChatFrameToDashboard } from '../../lib/frames/addToDashboard';
+import { frameNodeOf } from '../../lib/frames/frame.model';
 
 export function FrameMenuRows({
   url,
@@ -22,7 +21,6 @@ export function FrameMenuRows({
   onAddToDashboard?: () => void;
   onClose: () => void;
 }): React.ReactElement {
-  const developerMode = useDeveloperMode();
   return (
     <>
       {onRefresh === undefined ? null : (
@@ -45,7 +43,7 @@ export function FrameMenuRows({
           }}
         />
       )}
-      {!developerMode || onAddToDashboard === undefined ? null : (
+      {onAddToDashboard === undefined ? null : (
         <MenuRow
           icon={IconBento}
           label="Add to dashboard"
@@ -73,12 +71,12 @@ export function ChatFrameMenu({
   trigger: (open: (anchor: MenuPoint) => void) => React.ReactElement;
 }): React.ReactElement | null {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const developerMode = useDeveloperMode();
+  const addToDashboard = useAddChatFrameToDashboard();
   const node = frameNodeOf(frame);
   const close = (): void => {
     setAnchor(null);
   };
-  if (!developerMode && node === null) return null;
+  if (addToDashboard === undefined && node === null) return null;
   return (
     <>
       {trigger(setAnchor)}
@@ -88,9 +86,13 @@ export function ChatFrameMenu({
             url={node?.url}
             onRefresh={node === null ? undefined : onRefresh}
             onClose={close}
-            onAddToDashboard={() => {
-              void addChatFrameToDashboard(convId, messageId, frame);
-            }}
+            onAddToDashboard={
+              addToDashboard === undefined
+                ? undefined
+                : () => {
+                    void addToDashboard(convId, messageId, frame);
+                  }
+            }
           />
         </AnchoredMenu>
       )}

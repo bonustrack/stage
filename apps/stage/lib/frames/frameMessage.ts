@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
+import { deletedMessages } from '@stage-labs/client/xmtp/deletions';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { frameIsDeleted, frameOf } from '../../components/frame/frame.model';
+import { frameOf } from './frame.model';
 import { useAccountEpoch } from '../accountEpoch';
 import { recover } from '../errorPolicy';
 import { ownDeletesReady } from '../ownDeletes';
@@ -21,11 +22,8 @@ async function deletedLater(line: string, entry: HistoryEntry, sentNs: number): 
   const conv = await convOfLine(line);
   if (!conv) return false;
   const later = await sdk.messages(conv, { limit: DELETE_SCAN_LIMIT, afterNs: sentNs, order: 'asc' });
-  return frameIsDeleted(
-    entry,
-    later.map((m) => sdk.envelopeOf(m, line)),
-    await ownDeletesReady(),
-  );
+  const entries = [entry, ...later.map((m) => sdk.envelopeOf(m, line))];
+  return deletedMessages(entries, { ownDeletes: await ownDeletesReady() }).has(entry.id);
 }
 
 async function inChat(client: Awaited<ReturnType<typeof sdk.client>>, own: string | null | undefined, convId: string): Promise<boolean> {

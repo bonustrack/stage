@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import type { NodeRequest, NodeResult } from '@stage-labs/client/nodes/protocol';
 import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
-import { clearFrameSessions, frameSession } from '../lib/frames/frameSession';
+import { makeFrameSessions } from '../lib/frames/frameSession';
+import { makeLiveEngine } from '../lib/frames/liveEngine';
 import { makeLiveFrames } from '../lib/frames/liveFrame.core';
 import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf, titleMessages } from './frameFixtures';
 
@@ -37,26 +38,32 @@ function harness() {
   const toasts: string[] = [];
   let answer: Answer = streamed(NEXT);
   let keys = 0;
-  const frames = makeLiveFrames({
-    load: (url, key, onMessage) => {
+  const sessions = makeFrameSessions();
+  const transport = {
+    load: ({ url, key }: { url: string; key: string }, options: { onMessage?: OnMessage } = {}) => {
       calls.push({ method: 'GET', url, key });
-      return answer(onMessage, true);
+      return answer(options.onMessage ?? (() => undefined), true);
     },
-    send: (url, key, request, onMessage) => {
+    send: ({ url, key }: { url: string; key: string }, request: NodeRequest, onMessage: OnMessage) => {
       calls.push({ method: 'POST', url, key, request });
       return answer(onMessage, false);
     },
-    newKey: () => {
-      keys += 1;
-      return `key${keys}`;
-    },
+  };
+  const engine = makeLiveEngine({
+    sessions,
+    transport,
     now: () => 5_000,
     toast: (message) => {
       toasts.push(message);
     },
   });
+  const frames = makeLiveFrames(engine, () => {
+    keys += 1;
+    return `key${keys}`;
+  });
   return {
     frames,
+    sessions,
     calls,
     toasts,
     reply: (next: Answer) => {
@@ -66,10 +73,6 @@ function harness() {
 }
 
 describe('live frames in chats', () => {
-  beforeEach(() => {
-    clearFrameSessions();
-  });
-
   test('nothing is shown or called before a tap', () => {
     const h = harness();
     expect(h.frames.frameOf('m1')).toBeNull();
@@ -91,7 +94,7 @@ describe('live frames in chats', () => {
 
   test('a streamed load shows each rendered step before the reply ends', async () => {
     const h = harness();
-    frameSession('m1', SENT);
+    h.sessions.clientFor('m1', SENT);
     const rest = Promise.withResolvers<undefined>();
     const seen: (FrameContent | null)[] = [];
     h.frames.subscribe(() => {
@@ -134,7 +137,7 @@ describe('live frames in chats', () => {
 
   test('a reply of A2UI messages applies to the live client, keeps local edits and updates the shown frame', async () => {
     const h = harness();
-    const client = frameSession('m1', SENT);
+    const client = h.sessions.clientFor('m1', SENT);
     client.write('main', '/note', 'typed');
     const price = {
       version: 'v1.0',
@@ -156,12 +159,12 @@ describe('live frames in chats', () => {
         },
       },
     ]);
-    expect(shown === null ? null : frameSession('m1', shown)).toBe(client);
+    expect(shown === null ? null : h.sessions.clientFor('m1', shown)).toBe(client);
   });
 
   test('a reply of function answers alone changes nothing that is stored', async () => {
     const h = harness();
-    frameSession('m1', SENT);
+    h.sessions.clientFor('m1', SENT);
     h.reply(streamed([{ version: 'v1.0', agentFunctionResponse: { functionCallId: 'unknown', value: 1 } }]));
     await h.frames.send('m1', SENT, NODE, tapOf('quote'));
     expect(h.frames.frameOf('m1')).toEqual(SENT);
