@@ -1,10 +1,6 @@
-export const DISPLAY_NAME_MAX = 64;
-export const DESCRIPTION_MAX = 280;
+import type { ProfileText } from './profileText.model';
 
-export interface ProfileDraft {
-  displayName: string;
-  description: string;
-}
+export type ProfileDraft = ProfileText;
 
 export interface ProfileCurrent {
   displayName?: string;
@@ -13,13 +9,6 @@ export interface ProfileCurrent {
 
 export function draftFrom(current: ProfileCurrent): ProfileDraft {
   return { displayName: current.displayName ?? '', description: current.description ?? '' };
-}
-
-export function draftProblem(draft: ProfileDraft): string | null {
-  if (draft.displayName.trim().length > DISPLAY_NAME_MAX) return `Name is limited to ${DISPLAY_NAME_MAX} characters.`;
-  if (draft.description.trim().length > DESCRIPTION_MAX) return `About is limited to ${DESCRIPTION_MAX} characters.`;
-  if (/[\r\n]/.test(draft.displayName)) return 'Name cannot span several lines.';
-  return null;
 }
 
 export function changedFields(current: ProfileCurrent, draft: ProfileDraft): { displayName?: string; description?: string } {

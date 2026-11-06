@@ -10,9 +10,10 @@ import {
   localLabelProblem,
   normalizeLabel,
   sanitizeLabelInput,
+  usernameHint,
+  usernameStatus,
   type ClaimState,
-} from '../settings/ProfileSettings.claim.model';
-import { usernameHint, usernameStatus } from './UsernameField.model';
+} from './username.model';
 import { IconArrowLeftRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeftRight';
 import { IconCircleCheck } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCircleCheck';
 import { IconCircleX } from '@central-icons-react-native/round-filled-radius-1-stroke-2/IconCircleX';

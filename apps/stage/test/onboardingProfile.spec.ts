@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  EMPTY_DETAILS,
-  profileDetailsProblem,
-  profileSetupFrom,
-  type ProfileDetails,
-} from '../components/onboarding/Onboarding.profile.model';
+import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from '../components/onboarding/Onboarding.profile.model';
 
 const image = { uri: 'file:///a.png', mime: 'image/png' };
 const details = (over: Partial<ProfileDetails>): ProfileDetails => ({ ...EMPTY_DETAILS, ...over });
@@ -27,15 +22,5 @@ describe('profileSetupFrom', () => {
       description: 'Builder',
       image,
     });
-  });
-});
-
-describe('profileDetailsProblem', () => {
-  test('only the length and line limits produce a problem', () => {
-    expect(profileDetailsProblem(EMPTY_DETAILS)).toBeNull();
-    expect(profileDetailsProblem(details({ displayName: 'Less', description: 'Hi', image }))).toBeNull();
-    expect(profileDetailsProblem(details({ displayName: 'x'.repeat(65) }))).toMatch(/limited/);
-    expect(profileDetailsProblem(details({ displayName: 'two\nlines' }))).toMatch(/several lines/);
-    expect(profileDetailsProblem(details({ description: 'x'.repeat(281) }))).toMatch(/About is limited/);
   });
 });

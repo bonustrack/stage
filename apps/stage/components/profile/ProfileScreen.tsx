@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../../lib/theme';
 import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
@@ -16,19 +15,13 @@ import { ProfileActions, useSelfAddress } from './ProfileScreen.parts';
 import { PROFILE_AVATAR_SIZE, ProfileCover, ProfileCoverBar, ProfileCoverMenu } from './ProfileCover';
 import { CommonChannels } from './CommonChannels';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { EditProfileModal } from '../settings/EditProfileModal';
+import { useEditProfile } from './useEditProfile';
 import { CENTERED } from '../RoundIconButton';
 import { Column, ScreenScroll, PAGE_GUTTER } from '../layout';
 
 function EditProfileButton({ background }: { background: string }): React.ReactElement {
-  const address = useActiveAccountRecord()?.address ?? null;
-  const handle = getPeerHandle(address);
   const dark = useEffectiveColorScheme() === 'dark';
-  const [editing, setEditing] = useState(false);
-  const onEdit = (): void => {
-    if (address && handle) setEditing(true);
-    else capabilities.navigate('/settings/profile');
-  };
+  const editProfile = useEditProfile(true);
   return (
     <>
       <Button
@@ -39,18 +32,9 @@ function EditProfileButton({ background }: { background: string }): React.ReactE
         tintBg={background}
         tintPressedBg={background}
         style={{ ...CENTERED, borderColor: background }}
-        onPress={onEdit}
+        onPress={editProfile.open}
       />
-      {address && handle ? (
-        <EditProfileModal
-          visible={editing}
-          onClose={() => {
-            setEditing(false);
-          }}
-          address={address}
-          handle={handle}
-        />
-      ) : null}
+      {editProfile.modal}
     </>
   );
 }

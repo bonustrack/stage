@@ -3,11 +3,10 @@ import { useEffect, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { UsernameField, useUsernameInput } from '../profile/UsernameField';
-import { USERNAME_COPY, usernameReady } from '../profile/UsernameField.model';
-import { normalizeLabel } from './ProfileSettings.claim.model';
-import { OnboardingCard } from '../onboarding/OnboardingCard';
+import { USERNAME_COPY, normalizeLabel, usernameReady } from '../profile/username.model';
+import { IntroCard } from '../chrome/IntroCard';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { claimStageName, ownedStageName, setUpStageName } from '../../lib/profile';
+import { claimAndSetUpStageName, ownedStageName, setUpStageName } from '../../lib/profile';
 
 function useOwnedLabel(address: string): string | null {
   const [owned, setOwned] = useState<string | null>(null);
@@ -46,9 +45,9 @@ function SetPrimaryCard({ address, label, onDone }: { address: string; label: st
     <Button label={`Use @${label}`} block size="lg" color="primary" variant="solid" dark={dark} loading={busy} onPress={run} />
   );
   return (
-    <OnboardingCard title={USERNAME_COPY.title} about={SET_PRIMARY_ABOUT} footer={footer}>
+    <IntroCard title={USERNAME_COPY.title} about={SET_PRIMARY_ABOUT} footer={footer}>
       {error ? <Text text={error} size="xs" color="secondary" /> : null}
-    </OnboardingCard>
+    </IntroCard>
   );
 }
 
@@ -69,8 +68,7 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
     setState({ label, phase: 'claiming' });
     void (async (): Promise<void> => {
       try {
-        await claimStageName(label);
-        await setUpStageName(address, label);
+        await claimAndSetUpStageName(address, label);
         setState({ label, phase: 'claimed' });
         onClaimed();
       } catch (err) {
@@ -93,8 +91,8 @@ function ClaimForm({ address, onClaimed }: { address: string; onClaimed: () => v
     />
   );
   return (
-    <OnboardingCard title={USERNAME_COPY.title} about={USERNAME_COPY.about} footer={footer}>
+    <IntroCard title={USERNAME_COPY.title} about={USERNAME_COPY.about} footer={footer}>
       <UsernameField input={input} busy={busy} />
-    </OnboardingCard>
+    </IntroCard>
   );
 }

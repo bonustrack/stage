@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { usernameHint, usernameReady, usernameStatus } from '../components/profile/UsernameField.model';
+import { usernameHint, usernameReady, usernameStatus } from '../components/profile/username.model';
 
 describe('usernameReady', () => {
   test('only an available username enables the action', () => {

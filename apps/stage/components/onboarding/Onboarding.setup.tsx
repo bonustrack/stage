@@ -2,7 +2,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { OnboardingCard, SkipLink } from './OnboardingCard';
+import { IntroCard, SkipLink } from '../chrome/IntroCard';
 import type { HistoryControls } from './useSetupRunner';
 import { DANGER, usePalette } from '../../lib/theme';
 import type { Stage } from './flow';
@@ -153,7 +153,7 @@ export function SetupStep({
   const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
   const link = SetupLink({ busy, setupErr, onBack, history });
   return (
-    <OnboardingCard
+    <IntroCard
       title={setupTitle(setupErr, plan)}
       about={historyHint ?? setupHint(setupErr)}
       footer={actions}
@@ -176,6 +176,6 @@ export function SetupStep({
           />
         ))}
       </Column>
-    </OnboardingCard>
+    </IntroCard>
   );
 }

@@ -6,11 +6,12 @@ import { Image } from '@stage-labs/kit/react-native/image';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import type { ProfileImage } from './Onboarding.profile.model';
 import { FormField } from '../FormField';
-import { OnboardingCard } from './OnboardingCard';
+import { IntroCard } from '../chrome/IntroCard';
 import { PROFILE_AVATAR_SIZE } from '../profile/ProfileCover';
 import { usePalette } from '../../lib/theme';
 import { SquareImagePicker } from '../SquareImagePicker';
-import { EMPTY_DETAILS, profileDetailsProblem, type ProfileDetails } from './Onboarding.profile.model';
+import { EMPTY_DETAILS, type ProfileDetails } from './Onboarding.profile.model';
+import { profileTextProblem } from '../profile/profileText.model';
 import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
 import { Column } from '../layout';
 
@@ -66,7 +67,7 @@ export function ProfileStep({
 }): React.ReactElement {
   const pal = usePalette();
   const [details, setDetails] = useState<ProfileDetails>(initial);
-  const problem = profileDetailsProblem(details);
+  const problem = profileTextProblem(details);
   const footer = (
     <Button
       variant="primary"
@@ -84,7 +85,7 @@ export function ProfileStep({
     />
   );
   return (
-    <OnboardingCard title={PROFILE_TITLE} about={PROFILE_ABOUT} footer={footer}>
+    <IntroCard title={PROFILE_TITLE} about={PROFILE_ABOUT} footer={footer}>
       {before}
       <PicturePicker
         image={details.image}
@@ -117,6 +118,6 @@ export function ProfileStep({
           {problem}
         </Text>
       )}
-    </OnboardingCard>
+    </IntroCard>
   );
 }

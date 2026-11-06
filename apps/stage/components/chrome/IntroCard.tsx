@@ -9,7 +9,7 @@ const CENTER = { textAlign: 'center' } as const;
 
 const ACTIONS_GAP = 20;
 
-export function OnboardingCard({
+export function IntroCard({
   title,
   about,
   footer,

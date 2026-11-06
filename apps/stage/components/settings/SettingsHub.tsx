@@ -30,7 +30,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useWebTabRail } from '../layout/webLayout';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
-import { EditProfileModal } from './EditProfileModal';
+import { useEditProfile } from '../profile/useEditProfile';
 import { applyPush } from './NotificationsSettings';
 import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
@@ -49,15 +49,11 @@ function IdentityHero(): React.ReactElement | null {
   const address = rec?.address ?? null;
   usePeerProfiles([address]);
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const [editing, setEditing] = useState(false);
+  const editProfile = useEditProfile(true);
   if (rec === null || address === null) return null;
   const short = shortAddress(address);
   const handle = getPeerHandle(address);
   const sub = [handle ? displayHandle(handle) : null, short].filter((p) => p !== null).join(' · ');
-  const edit = (): void => {
-    if (handle) setEditing(true);
-    else capabilities.navigate(settingsSection('profile').href);
-  };
   return (
     <Column gap={16} padding={{ x: PAGE_GUTTER, top: 24 }}>
       <Row align="center" gap={16}>
@@ -68,7 +64,7 @@ function IdentityHero(): React.ReactElement | null {
         </Column>
       </Row>
       <Row gap={8}>
-        <Button label="Edit profile" size="md" color="secondary" variant="solid" dark={dark} onPress={edit} />
+        <Button label="Edit profile" size="md" color="secondary" variant="solid" dark={dark} onPress={editProfile.open} />
         <Button
           label="Switch account"
           size="md"
@@ -87,16 +83,7 @@ function IdentityHero(): React.ReactElement | null {
           setAnchor(null);
         }}
       />
-      {handle ? (
-        <EditProfileModal
-          visible={editing}
-          onClose={() => {
-            setEditing(false);
-          }}
-          address={address}
-          handle={handle}
-        />
-      ) : null}
+      {editProfile.modal}
     </Column>
   );
 }

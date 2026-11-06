@@ -6,7 +6,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row } from '../layout';
 import { FormField } from '../FormField';
-import { OnboardingCard } from './OnboardingCard';
+import { IntroCard } from '../chrome/IntroCard';
 import { usePalette, DANGER } from '../../lib/theme';
 import { QrScanner } from '../qr/QrScanner';
 import { parseImportInput } from './importInput.model';
@@ -255,7 +255,7 @@ export function ImportStep({
     />
   );
   return (
-    <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
+    <IntroCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
       {scanning ? (
         <QrScanner dark={dark} onScan={onScan} />
       ) : scanned ? (
@@ -265,6 +265,6 @@ export function ImportStep({
       ) : (
         phraseField
       )}
-    </OnboardingCard>
+    </IntroCard>
   );
 }

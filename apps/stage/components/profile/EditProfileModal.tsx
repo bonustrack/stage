@@ -10,7 +10,8 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { getPeerAvatar, getPeerDescription, getPeerDisplayName, invalidatePeerProfile } from '../../lib/peerProfiles';
 import { saveBasenameProfile, type ProfileChanges } from '../../lib/profile';
-import { changedFields, draftFrom, draftProblem, hasChanges, type ProfileDraft } from './ProfileSettings.edit.model';
+import { changedFields, draftFrom, hasChanges, type ProfileDraft } from './editProfile.model';
+import { profileTextProblem } from './profileText.model';
 import { Column } from '../layout';
 
 function pictureChanges(picture: PictureChoice): Pick<ProfileChanges, 'image' | 'removeImage'> {
@@ -40,7 +41,7 @@ function EditProfileSection({
     setDraft(draftFrom(current));
   }, [current.displayName, current.description]);
 
-  const problem = draftProblem(draft);
+  const problem = profileTextProblem(draft);
   const dirty = hasChanges(current, draft, picture.kind !== 'keep');
 
   const save = (): void => {

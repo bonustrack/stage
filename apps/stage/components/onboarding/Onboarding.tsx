@@ -2,7 +2,7 @@ import { router, useLocalSearchParams, useRouter } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { RailTooltip } from '../tabs/RailTooltip';
-import { pageTopPadding } from './PageIntro.model';
+import { pageTopPadding } from '../chrome/PageIntro.model';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SetupStep } from './Onboarding.setup';
@@ -14,9 +14,9 @@ import { safeNextRoute, IMPORT_ROUTE } from './nextRoute.model';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconArrowRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRight';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { OnboardingCard, SkipLink } from './OnboardingCard';
+import { IntroCard, SkipLink } from '../chrome/IntroCard';
 import { UsernameField, useUsernameInput } from '../profile/UsernameField';
-import { USERNAME_COPY, usernameReady } from '../profile/UsernameField.model';
+import { USERNAME_COPY, usernameReady } from '../profile/username.model';
 import { Column } from '../layout';
 
 export interface OnboardingProps {
@@ -52,7 +52,7 @@ function UsernameStep({
     />
   );
   return (
-    <OnboardingCard
+    <IntroCard
       title={USERNAME_COPY.title}
       about={USERNAME_COPY.about}
       footer={footer}
@@ -67,7 +67,7 @@ function UsernameStep({
       }
     >
       <UsernameField input={input} busy={busy} />
-    </OnboardingCard>
+    </IntroCard>
   );
 }
 
