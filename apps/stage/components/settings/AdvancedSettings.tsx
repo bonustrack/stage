@@ -1,10 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
 import { errorMessage } from '@stage-labs/client/errors';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
-import { switchToAccount, deleteAccount, getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
+import { removeAccountFromDevice, resetXmtpDatabase, useXmtpIdentity } from '../../lib/deviceAccount';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { useAccountEpoch } from '../../lib/accountEpoch';
-import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
+import type { AccountRecord } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
@@ -12,31 +10,16 @@ import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outl
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
 function confirmReset(): void {
-  void capabilities
-    .confirm({
-      title: 'Reset XMTP database',
-      message:
-        'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone. A fresh installation is created on next launch.',
-      confirmLabel: 'Reset',
-      destructive: true,
-    })
-    .then(async (ok) => {
-      if (!ok) return;
-      await resetActiveXmtpStore();
-      capabilities.reload();
-    });
+  void resetXmtpDatabase({
+    title: 'Reset XMTP database',
+    message:
+      'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone. A fresh installation is created on next launch.',
+  });
 }
 
 async function removeAndMoveOn(id: string): Promise<void> {
   try {
-    await deleteAccount(id);
-    const next = (await getActiveAccount())?.id;
-    if (next === undefined) {
-      capabilities.reload(true);
-      return;
-    }
-    await switchToAccount(next);
-    capabilities.navigate('/');
+    await removeAccountFromDevice(id);
   } catch (err) {
     report('settings.removeAccount', err);
     capabilities.alert('Could not remove account', errorMessage(err));
@@ -57,23 +40,8 @@ function confirmRemove(rec: AccountRecord): void {
     });
 }
 
-interface XmtpIdentity {
-  addr: string;
-  inbox: string;
-  install: string;
-}
-
-const NO_IDENTITY: XmtpIdentity = { addr: '', inbox: '', install: '' };
-
-async function fetchXmtpIdentity(): Promise<XmtpIdentity> {
-  const client = await getOrCreateXmtpClient('production');
-  const address = await selfEthAddress();
-  return { addr: address ?? '', inbox: client.inboxId, install: client.installationId ?? '' };
-}
-
 function IdentityGroup(): React.ReactElement | null {
-  const epoch = useAccountEpoch();
-  const { data: id = NO_IDENTITY } = useQuery({ queryKey: ['xmtpIdentity', epoch], queryFn: fetchXmtpIdentity, staleTime: Infinity });
+  const id = useXmtpIdentity();
   const rows = [
     { label: 'XMTP address', value: id.addr, short: shortAddress(id.addr) },
     { label: 'Inbox id', value: id.inbox, short: shortAddress(id.inbox) },

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Tabs } from '@stage-labs/kit/react-native/tabs';
@@ -15,10 +14,9 @@ import { setDeveloperMode } from '../../lib/developerMode';
 import { reported } from '../../lib/errorPolicy';
 import { setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { listXmtpInstallations } from '../../lib/xmtp.client';
+import { useInstallations } from '../../lib/deviceAccount';
 import { prefetchInbox, useMailboxes } from '../../lib/mail';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useWebTabRail } from '../layout/webLayout';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { useEditProfile } from '../profile/useEditProfile';
@@ -84,14 +82,7 @@ function IdentityHero(): React.ReactElement | null {
 }
 
 function useDeviceCount(): number | null {
-  const epoch = useAccountEpoch();
-  const { data } = useQuery({
-    queryKey: ['xmtpInstallations', epoch],
-    queryFn: async () => (await listXmtpInstallations()).length,
-    staleTime: 60_000,
-    retry: false,
-  });
-  return data ?? null;
+  return useInstallations().data?.length ?? null;
 }
 
 const THEME_TABS = THEME_OPTIONS.map((o) => ({ title: o.label }));

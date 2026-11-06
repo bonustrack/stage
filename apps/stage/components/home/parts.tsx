@@ -14,7 +14,7 @@ import { useSortableActive } from '@stage-labs/kit/react-native/sortable';
 import { GroupHeader, useGroupHover } from './GroupHeader';
 import { isGroupHeader, type HomeListItem } from './groups.model';
 import { toggleGroupCollapsed } from '../../lib/channelGroups';
-import { resetActiveXmtpStore } from '../../lib/xmtp.client';
+import { resetXmtpDatabase } from '../../lib/deviceAccount';
 import { prefetchFeed } from '../../lib/messaging/feedQuery';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { getPeerName, isPeerResolved, peerLabel } from '../../lib/peerProfiles';
@@ -253,11 +253,7 @@ const RESET_MESSAGE =
   'but messages stored on this device are gone and a new device slot is used. An account supports ten.';
 
 function confirmReset(): void {
-  void (async (): Promise<void> => {
-    if (!(await capabilities.confirm({ title: RESET_TITLE, message: RESET_MESSAGE, confirmLabel: 'Reset', destructive: true }))) return;
-    await resetActiveXmtpStore();
-    capabilities.reload();
-  })();
+  void resetXmtpDatabase({ title: RESET_TITLE, message: RESET_MESSAGE });
 }
 
 export function HomeError({ error, dark, fg }: { error: string; dark: boolean; fg: string }): React.ReactElement {

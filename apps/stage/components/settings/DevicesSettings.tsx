@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { AppIcon } from '../widgets';
-import { listXmtpInstallations, revokeXmtpInstallation } from '../../lib/xmtp.client';
+import { revokeInstallation, useInstallations } from '../../lib/deviceAccount';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useActiveAccountRecord } from '../../lib/messaging/account';
 import type { XmtpInstallation } from '../../lib/xmtp.client.core';
 import { capabilities } from '../../lib/capabilities';
@@ -43,25 +42,6 @@ function SessionRow({ inst, busy, onRevoke }: { inst: XmtpInstallation; busy: bo
   );
 }
 
-function useSessions(): { list: XmtpInstallation[] | null; error: boolean; reload: () => Promise<void> } {
-  const epoch = useAccountEpoch();
-  const [list, setList] = useState<XmtpInstallation[] | null>(null);
-  const [error, setError] = useState(false);
-  const reload = useCallback(async (): Promise<void> => {
-    setError(false);
-    try {
-      setList(await listXmtpInstallations());
-    } catch {
-      setList([]);
-      setError(true);
-    }
-  }, []);
-  useEffect(() => {
-    void reload();
-  }, [reload, epoch]);
-  return { list, error, reload };
-}
-
 function confirmRevoke(inst: XmtpInstallation, run: () => void): void {
   void capabilities
     .confirm({
@@ -77,22 +57,22 @@ function confirmRevoke(inst: XmtpInstallation, run: () => void): void {
     });
 }
 
-function sessionsNote(list: XmtpInstallation[] | null, error: boolean): string | null {
-  if (list === null) return 'Loading sessions…';
+function sessionsNote(list: XmtpInstallation[] | undefined, error: boolean): string | null {
   if (error) return 'Messaging is not ready yet. Open a chat first, then come back.';
+  if (list === undefined) return 'Loading sessions…';
   return list.length === 0 ? 'No active sessions.' : null;
 }
 
 function DeviceSessions(): React.ReactElement {
-  const { list, error, reload } = useSessions();
+  const sessions = useInstallations('always');
+  const list = sessions.data;
   const [busy, setBusy] = useState<string | null>(null);
   const revoke = (inst: XmtpInstallation): void => {
     confirmRevoke(inst, () => {
       setBusy(inst.id);
-      void revokeXmtpInstallation(inst.id)
+      void revokeInstallation(inst.id)
         .then(() => {
           capabilities.toast('Session revoked');
-          return reload();
         })
         .catch(() => {
           capabilities.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.');
@@ -102,10 +82,10 @@ function DeviceSessions(): React.ReactElement {
         });
     });
   };
-  const note = sessionsNote(list, error);
+  const note = sessionsNote(list, sessions.isError);
   return (
     <SettingsGroup title="Sessions" footnote="Every device signed in to this inbox. Revoke the ones you do not use.">
-      {note !== null || list === null ? (
+      {note !== null || list === undefined ? (
         <SettingsValueRow label={note ?? ''} value="" />
       ) : (
         list.map((inst) => (
