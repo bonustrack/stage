@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useWindowDimensions, type TextStyle } from 'react-native';
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
 import { errorMessage } from '@stage-labs/client/errors';
 import { fontName, fontSize } from '@stage-labs/kit/tokens';
@@ -8,7 +9,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { FormField, useFocusOnOpen } from '../FormField';
-import { ChannelRow } from '../ChannelRow';
+import { Avatar } from '../Avatar';
 import { WRAPPED_TITLE_LINE_HEIGHT } from '../ChannelRow.model';
 import { HoverIconButton } from '../hover';
 import { Column, Row, PAGE_GUTTER } from '../layout';
@@ -25,7 +26,7 @@ import { ColumnCards, type ColumnCardsProps } from './BoardCard';
 import type { BoardColumn } from './BoardScreen.model';
 import type { Row as ChannelRowData } from '../home/model';
 
-const TITLE_INPUT_STYLE = {
+const TITLE_INPUT_STYLE: TextStyle = {
   minHeight: WRAPPED_TITLE_LINE_HEIGHT,
   lineHeight: WRAPPED_TITLE_LINE_HEIGHT,
   fontSize: fontSize('md'),
@@ -33,6 +34,8 @@ const TITLE_INPUT_STYLE = {
   paddingHorizontal: 0,
   paddingVertical: 0,
   borderRadius: 0,
+  includeFontPadding: false,
+  textAlignVertical: 'center',
 };
 
 export function NewChannelButton({ title, onPress }: { title: string; onPress: () => void }): React.ReactElement {
@@ -117,45 +120,51 @@ function useBoardChannelCreation({ by, column, columns, onClose }: BoardNewChann
 type BoardCreation = ReturnType<typeof useBoardChannelCreation>;
 
 function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; columnKey: string }): React.ReactElement {
-  const { text, link } = usePalette();
+  const { text, link, border } = usePalette();
+  const { fontScale } = useWindowDimensions();
   const fields = useChannelFields('board');
   const input = useFocusOnOpen();
   useEffect(() => {
     if (!creation.submitted) input.current?.focus();
   }, [creation.submitted]);
   const titleInput = creation.submitted ? undefined : (
-    <Column weight={1} minWidth={0}>
-      <FormField
-        appearance="plain"
-        style={{ ...TITLE_INPUT_STYLE, color: link }}
-        value={creation.name}
-        onChangeText={creation.changeName}
-        inputRef={input}
-        autoFocus
-        onSubmit={() => {
-          void creation.submit();
-        }}
-        inputProps={{
-          accessibilityLabel: 'Channel name',
-          returnKeyType: 'done',
-          onKeyPress: (event) => {
-            if (event.nativeEvent.key === 'Escape') creation.close();
-          },
-        }}
-      />
-    </Column>
+    <FormField
+      appearance="plain"
+      style={{ ...TITLE_INPUT_STYLE, height: WRAPPED_TITLE_LINE_HEIGHT * fontScale, color: link }}
+      value={creation.name}
+      onChangeText={creation.changeName}
+      inputRef={input}
+      autoFocus
+      rows={1}
+      onSubmit={() => {
+        void creation.submit();
+      }}
+      inputProps={{
+        accessibilityLabel: 'Channel name',
+        returnKeyType: 'done',
+        onKeyPress: (event) => {
+          if (event.nativeEvent.key === 'Escape') creation.close();
+        },
+      }}
+    />
   );
   return (
     <Column gap={CARD_GAP} padding={{ right: COLUMN_PADDING }}>
       <BoardCardFrame pending={creation.submitted} mark={{ dataSet: { boarddraft: columnKey } }}>
-        <ChannelRow
-          title={creation.pending?.name ?? creation.name}
-          titleContent={titleInput}
-          hideAvatar={!fields.avatar}
-          square
-          showPreview={false}
-          wrapTitle
-        />
+        <Row padding={{ x: PAGE_GUTTER, y: 9 }} align="center" gap={12}>
+          {fields.avatar ? <Avatar size={44} square style={{ backgroundColor: border }} /> : null}
+          <Column weight={1} minWidth={0}>
+            {titleInput ?? (
+              <Text
+                text={creation.pending?.name ?? creation.name}
+                size="md"
+                fontWeight="medium"
+                color="link"
+                style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}
+              />
+            )}
+          </Column>
+        </Row>
       </BoardCardFrame>
       {creation.submitted ? null : (
         <>
