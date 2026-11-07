@@ -7,7 +7,7 @@ import { SortableHandle, SortableItem, SortableList, SortableScope } from '@stag
 import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { CountTag } from '../../CountTag';
 import { NewChatAction } from '../NewChatAction';
-import type { CachedRow as ChannelRowData } from '../../../lib/cachedRows.model';
+import type { CachedRow } from '../../../lib/cachedRows.model';
 import { prefetchFeed } from '../../../lib/feed/load';
 import { useSafeAreaInsets } from '../../layout/safeArea';
 import { useHomeView } from '../../../lib/homeView';
@@ -57,8 +57,8 @@ function BoardColumnView({
   actions,
   onOpen,
 }: {
-  column: BoardColumn<ChannelRowData>;
-  columns: readonly BoardColumn<ChannelRowData>[];
+  column: BoardColumn<CachedRow>;
+  columns: readonly BoardColumn<CachedRow>[];
   maxHeight?: DimensionValue;
   pinned: readonly string[];
   actions: ColumnActions;
@@ -142,7 +142,7 @@ function useCardArrows({
   openConvId,
   onMove,
 }: {
-  columns: readonly BoardColumn<ChannelRowData>[];
+  columns: readonly BoardColumn<CachedRow>[];
   openIndex: number;
   openConvId: string | null;
   onMove: (key: string) => void;
@@ -167,7 +167,7 @@ function LaneColumns({
   actions,
   onOpen,
 }: {
-  columns: BoardColumn<ChannelRowData>[];
+  columns: BoardColumn<CachedRow>[];
   pinned: readonly string[];
   laneHeight: number;
   actions: ColumnActions;
@@ -208,7 +208,7 @@ export function BoardLanes({
   pinned,
   actions,
 }: {
-  columns: BoardColumn<ChannelRowData>[];
+  columns: BoardColumn<CachedRow>[];
   pinned: readonly string[];
   actions: ColumnActions;
 }): React.ReactElement {

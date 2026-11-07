@@ -4,7 +4,7 @@ import { compareNames } from '../../lib/format';
 import { categorySectionOrderWith } from '../../lib/channelGroups.model';
 import { DM_SECTION, NO_SECTION, groupHeaderId, sectionKeyOf } from '../../lib/grouping.model';
 import { noGroupTitle, bucketRows, type Bucket, type NameOf } from './groupBy.model';
-import type { CachedRow as Row } from '../../lib/cachedRows.model';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import { unreadRowCount } from './listing.model';
 
 export interface ChannelGroupHeader {
@@ -20,7 +20,7 @@ interface GroupHeaderItem {
   header: ChannelGroupHeader;
 }
 
-export type HomeListItem = (Row & { listKey?: string }) | GroupHeaderItem;
+export type HomeListItem = (CachedRow & { listKey?: string }) | GroupHeaderItem;
 
 const DM_GROUP = { key: DM_SECTION, title: 'Direct messages' };
 
@@ -36,8 +36,8 @@ export function isGroupHeader(item: HomeListItem): item is GroupHeaderItem {
   return (item as GroupHeaderItem).header !== undefined;
 }
 
-export function rowsOf(items: readonly HomeListItem[]): Row[] {
-  return items.filter((item): item is Row => !isGroupHeader(item));
+export function rowsOf(items: readonly HomeListItem[]): CachedRow[] {
+  return items.filter((item): item is CachedRow => !isGroupHeader(item));
 }
 
 export const listKeyOf = (item: HomeListItem): string => (isGroupHeader(item) ? item.convId : (item.listKey ?? item.convId));
@@ -77,7 +77,7 @@ function orderedBuckets<R extends GroupRow>(rows: readonly R[], by: GroupKey, na
     : sections;
 }
 
-function uniqueListItems(bucket: Bucket<Row>, seen: Set<string>): HomeListItem[] {
+function uniqueListItems(bucket: Bucket<CachedRow>, seen: Set<string>): HomeListItem[] {
   return bucket.rows.map((row) => {
     if (!seen.has(row.convId)) {
       seen.add(row.convId);
@@ -88,7 +88,7 @@ function uniqueListItems(bucket: Bucket<Row>, seen: Set<string>): HomeListItem[]
 }
 
 export function groupRows(
-  rows: readonly Row[],
+  rows: readonly CachedRow[],
   by: GroupKey,
   collapsed: ReadonlySet<string>,
   expandAll: boolean,

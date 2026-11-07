@@ -5,7 +5,7 @@ import { revealMarked, useArrowKeys } from '../keys/keys';
 import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../keys/keys.model';
 import type { VirtualListHandle } from '../layout';
 import type { HomeListItem } from './groups.model';
-import type { CachedRow as Row } from '../../lib/cachedRows.model';
+import type { CachedRow } from '../../lib/cachedRows.model';
 
 interface RowRouter {
   push: (to: { pathname: string; params: { convId: string } }) => void;
@@ -20,7 +20,7 @@ export function useRowArrows({
   router,
   listRef,
 }: {
-  rows: readonly Row[];
+  rows: readonly CachedRow[];
   items: readonly HomeListItem[];
   activePath: string;
   router: RowRouter;

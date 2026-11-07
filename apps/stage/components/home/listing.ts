@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import type { HomeSort, HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { useHomeRows } from '../../lib/messaging/homeRows';
-import type { CachedRow as HomeRow } from '../../lib/cachedRows.model';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import { usePinnedOrder } from '../../lib/sync/pins';
 import { useClearedChats } from '../../lib/sync/clearedChats';
 import { getPeerDisplayName, getPeerHandle, usePeerProfiles } from '../../lib/peerProfiles';
@@ -44,14 +44,14 @@ export function useHomeQuery(view: HomeView): [string, (query: string) => void] 
   return view === 'board' ? [board, boardQuery.set] : [chats, setSearchQuery];
 }
 
-function profileAddresses(view: HomeView, rows: readonly HomeRow[], members: readonly string[], byAssignee: boolean): (string | null)[] {
+function profileAddresses(view: HomeView, rows: readonly CachedRow[], members: readonly string[], byAssignee: boolean): (string | null)[] {
   if (view === 'board')
     return [...rows.map((r) => r.lastSenderAddress), ...members, ...(byAssignee ? rows.flatMap((r) => r.assigned) : [])];
   return [...members, ...rows.flatMap((r) => [r.avatarAddress, r.peerAddress, r.lastSenderAddress, ...(byAssignee ? r.assigned : [])])];
 }
 
 export interface HomeListing {
-  rows: HomeRow[] | null;
+  rows: CachedRow[] | null;
   pinned: readonly string[];
   cleared: ClearedChats;
   view: HomeViewContent;

@@ -6,7 +6,7 @@ import { SortableItem } from '@stage-labs/kit/react-native/sortable';
 import { ChannelRow } from '../../chatRow/ChannelRow';
 import { RowChannelMenu, chatRowProps, rowMenuOpener, type RowMenu } from '../../chatRow/chatRow';
 import { useChannelFields } from '../../../lib/channelFields';
-import type { CachedRow as ChannelRowData } from '../../../lib/cachedRows.model';
+import type { CachedRow } from '../../../lib/cachedRows.model';
 import { getDraft } from '../../../lib/drafts';
 import { conversationLinkOf } from '../../../lib/links';
 import { usePalette } from '../../../lib/theme';
@@ -35,7 +35,7 @@ function BoardCard({
   editable,
   onOpen,
 }: {
-  item: ChannelRowData;
+  item: CachedRow;
   pinned: boolean;
   columnKey: string;
   editable: boolean;
@@ -95,7 +95,7 @@ export function ColumnCards({
   placeholder,
   onOpen,
 }: {
-  column: BoardColumn<ChannelRowData>;
+  column: BoardColumn<CachedRow>;
   pinned: readonly string[];
   editable: boolean;
   placeholder: React.ReactNode;

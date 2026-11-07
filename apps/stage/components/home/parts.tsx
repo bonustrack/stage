@@ -14,7 +14,7 @@ import { toggleGroupCollapsed } from '../../lib/channelGroups';
 import { resetXmtpDatabase } from '../../lib/deviceAccount';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/links';
-import type { CachedRow as RowT } from '../../lib/cachedRows.model';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import { DANGER } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -23,7 +23,7 @@ import { reported } from '../../lib/errorPolicy';
 import { Column } from '../layout';
 
 interface ChannelRowItemProps {
-  item: RowT;
+  item: CachedRow;
   router: { push: (to: { pathname: string; params: { convId: string } }) => void };
   setRowMenu: (m: RowMenu) => void;
   query?: string;

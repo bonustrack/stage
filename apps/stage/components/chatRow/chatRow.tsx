@@ -1,6 +1,6 @@
 import { Vibration } from 'react-native';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import type { CachedRow as HomeRow } from '../../lib/cachedRows.model';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import type { ChannelFields } from '../../lib/channelFields.model';
 import { peerLabel } from '../../lib/peerProfiles';
 import { prefetchFeed } from '../../lib/feed/load';
@@ -12,7 +12,7 @@ import { ChannelRowFields } from './ChannelRowFields';
 import type { ChannelRow } from './ChannelRow';
 import { rowPreviewText } from './chatRow.model';
 
-export function chatPreview(row: HomeRow): string {
+export function chatPreview(row: CachedRow): string {
   const sender = row.lastSenderAddress;
   return rowPreviewText({
     preview: row.lastPreview,
@@ -41,7 +41,7 @@ type ChatRowProps = Pick<
   | 'onPressIn'
 >;
 
-export function chatRowProps(row: HomeRow, shown: { pinned: boolean; fields: ChannelFields; draftText: string }): ChatRowProps {
+export function chatRowProps(row: CachedRow, shown: { pinned: boolean; fields: ChannelFields; draftText: string }): ChatRowProps {
   const title = rowTitle(row);
   return {
     title: title.text,

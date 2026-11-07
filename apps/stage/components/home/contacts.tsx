@@ -9,11 +9,11 @@ import { usePersonLookup } from '../../lib/resolveHandle';
 import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
 import { usePeerProfiles, getPeerName, peerLabel } from '../../lib/peerProfiles';
 import { conversationSlugLinkOf, dmLinkOf } from '../../lib/links';
-import type { CachedRow as HomeRow } from '../../lib/cachedRows.model';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
 
-function existingPeers(rows: readonly HomeRow[] | null): { address: string; convId: string }[] {
+function existingPeers(rows: readonly CachedRow[] | null): { address: string; convId: string }[] {
   const peers = (rows ?? []).flatMap(({ peerAddress: address, convId }) => (address && convId ? [{ address, convId }] : []));
   return uniqueBy(peers, (p) => p.address.toLowerCase());
 }
@@ -96,7 +96,7 @@ export function HomeContactResults({
 }: {
   query: string;
   noChannels: boolean;
-  rows: readonly HomeRow[] | null;
+  rows: readonly CachedRow[] | null;
 }): React.ReactElement | null {
   const q = query.trim();
   const existing = useMemo(() => existingPeers(chats), [chats]);

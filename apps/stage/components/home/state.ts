@@ -7,7 +7,7 @@ import { groupRows, rowsOf, type HomeListItem } from './groups.model';
 import type { NameOf } from './groupBy.model';
 import { CHANNELS_SCROLL_KEY } from '../../lib/scrollPos';
 import type { RowMenu } from '../chatRow/chatRow';
-import type { CachedRow as Row } from '../../lib/cachedRows.model';
+import type { CachedRow } from '../../lib/cachedRows.model';
 
 interface HomeState {
   rowMenu: RowMenu | null;
@@ -28,11 +28,11 @@ export function useHomeState(): HomeState {
 interface GroupedRows {
   grouped: boolean;
   items: HomeListItem[];
-  rows: Row[];
+  rows: CachedRow[];
 }
 
 export function useGroupedRows(
-  visibleRows: Row[],
+  visibleRows: CachedRow[],
   searchText: string,
   groupBy: HomeViewContent['groupBy'],
   nameOf: NameOf,
