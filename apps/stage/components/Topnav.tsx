@@ -41,9 +41,7 @@ export function Topnav({
 }): React.ReactElement {
   const { border } = usePalette();
   const pathname = usePathname();
-  const rail = useWebTabRail() && inline !== true;
-  const railOverlaps = rail && !isSplitRoute(pathname);
-
+  const railOverlaps = useWebTabRail() && inline !== true && !isSplitRoute(pathname);
   const bar = (
     <Row
       height={TOPNAV_HEIGHT}

@@ -1,6 +1,6 @@
 import type { ChannelMemberRole } from './channel.parts.model';
 import { type ListEdits } from './SidebarSection.model';
-import { includesKey } from '@stage-labs/client/collections';
+import { includesKey, uniqueBy } from '@stage-labs/client/collections';
 import { compareNames } from '../../lib/format';
 
 type MemberAdminRole = 'superAdmin' | 'admin';
@@ -41,18 +41,14 @@ export function memberListEntries(
   roles: Record<string, ChannelMemberRole> = {},
 ): MemberListEntry[] {
   const roleOf = new Map(Object.entries(roles).map(([address, role]) => [address.toLowerCase(), role]));
-  const seen = new Set<string>();
-  const entries: MemberListEntry[] = [];
-  for (const address of addresses) {
-    const key = address.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const name = nameOf(address) ?? '';
-    const entry = name === '' ? { address, name: shortOf(address), named: false } : { address, name, named: true };
-    const admin = memberAdminMark(roleOf.get(key));
-    entries.push(admin === undefined ? entry : { ...entry, admin });
-  }
-  return entries.sort(compareEntries);
+  return uniqueBy(addresses, (address) => address.toLowerCase())
+    .map((address): MemberListEntry => {
+      const name = nameOf(address) ?? '';
+      const entry = name === '' ? { address, name: shortOf(address), named: false } : { address, name, named: true };
+      const admin = memberAdminMark(roleOf.get(address.toLowerCase()));
+      return admin === undefined ? entry : { ...entry, admin };
+    })
+    .sort(compareEntries);
 }
 
 export function memberChanges(members: readonly string[], wanted: ListEdits): ListEdits {

@@ -13,6 +13,7 @@ import {
   setSeedRadius,
   setSeedBaseSize,
   resetOverrides,
+  isHex,
   setAccentLevel,
   setGrayscaleTint,
   setGrayscaleShade,
@@ -20,7 +21,6 @@ import {
 } from '../../lib/theme';
 import { AppModal } from '../AppModal';
 import { ColorPicker } from '@stage-labs/kit/react-native/color-picker';
-import { isHex } from '../../lib/theme';
 import { ACCENT_LEVELS, GRAYSCALE_SHADES, GRAYSCALE_TINTS } from '@stage-labs/kit/theme-derive';
 import { BASE_SIZES, DENSITIES, RADIUS_NAMES, fontName, fontSize } from '@stage-labs/kit/tokens';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
@@ -165,6 +165,8 @@ function SeedChoice<T extends string | number>({
   );
 }
 
+const DERIVED_KEYS = ['bg', 'border', 'text', 'sub', 'link', 'inputBg'] as const;
+
 interface GalleryPalette {
   dark: boolean;
   head: string;
@@ -240,18 +242,9 @@ export function ColorTokens(): React.ReactElement {
       <Column margin={{ top: 20 }}>
         <Eyebrow color={p.sub}>DERIVED</Eyebrow>
         <Row margin={{ top: 8 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
-          {(
-            [
-              ['bg', palette.bg],
-              ['border', palette.border],
-              ['text', palette.text],
-              ['sub', palette.sub],
-              ['link', palette.link],
-              ['inputBg', palette.inputBg],
-            ] as readonly (readonly [string, string])[]
-          ).map(([k, c]) => (
+          {DERIVED_KEYS.map((k) => (
             <Column key={k} align="center" gap={2}>
-              <Column width={32} height={32} background={c} style={{ borderRadius: 8, borderWidth: 1, borderColor: p.border }} />
+              <Column width={32} height={32} background={palette[k]} style={{ borderRadius: 8, borderWidth: 1, borderColor: p.border }} />
               <Text color={p.sub} size="3xs">
                 {k}
               </Text>

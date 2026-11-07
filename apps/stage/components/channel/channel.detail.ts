@@ -9,18 +9,13 @@ import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '../../li
 import { capabilities } from '../../lib/capabilities';
 import { leaveChannel as leaveChannelFlow } from './channelActions';
 
-function requireConvId(convId: string | undefined): string {
-  if (!convId) throw new Error('Conversation not found');
-  return convId;
-}
-
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
 
 const NO_MAP: Record<string, string> = {};
 
 function useMemberDirectory(
-  convId: string | undefined,
+  convId: string,
   row: ReturnType<typeof useConvRow>,
 ): { members: string[]; memberNames: Names; memberRoles: Roles } {
   const [memberNames, setMemberNames] = useState<Names>({});
@@ -42,17 +37,6 @@ function useMemberDirectory(
   return { members, memberNames, memberRoles };
 }
 
-async function runTask(mark: (on: boolean) => void, failTitle: string, task: () => Promise<void>): Promise<void> {
-  mark(true);
-  try {
-    await task();
-  } catch (e) {
-    capabilities.alert(failTitle, errorMessage(e));
-  } finally {
-    mark(false);
-  }
-}
-
 export function confirmMemberRemoval(names: string[]): Promise<boolean> {
   const who = names.length === 1 ? (names[0] ?? '') : `${names.length} members`;
   return capabilities.confirm({
@@ -63,7 +47,7 @@ export function confirmMemberRemoval(names: string[]): Promise<boolean> {
   });
 }
 
-export function useChannelDetail(convId: string | undefined) {
+export function useChannelDetail(convId: string) {
   const router = useRouter();
   const row = useConvRow(convId);
   const { description } = useConvDetails(convId, row);
@@ -74,20 +58,18 @@ export function useChannelDetail(convId: string | undefined) {
 
   const removeMember = async (addr: string): Promise<void> => {
     if (!(await confirmMemberRemoval([shortAddress(addr)]))) return;
-    await runTask(
-      (on) => {
-        setRemoving(on ? addr.toLowerCase() : null);
-      },
-      'Remove member failed',
-      async () => {
-        const id = requireConvId(convId);
-        await removeGroupMembers(id, [addr]);
-        refreshConv(id);
-      },
-    );
+    setRemoving(addr.toLowerCase());
+    try {
+      await removeGroupMembers(convId, [addr]);
+      refreshConv(convId);
+    } catch (e) {
+      capabilities.alert('Remove member failed', errorMessage(e));
+    } finally {
+      setRemoving(null);
+    }
   };
 
-  const leaveChannel = (): Promise<void> => leaveChannelFlow(convId ?? '', 'chat', router, setLeaving);
+  const leaveChannel = (): Promise<void> => leaveChannelFlow(convId, 'chat', router, setLeaving);
 
   return {
     ...directory,

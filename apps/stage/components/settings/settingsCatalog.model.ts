@@ -33,7 +33,7 @@ type HubSectionId = {
   [K in SettingsSectionId]: (typeof SETTINGS_SECTIONS)[K] extends { readonly hub: object } ? K : never;
 }[SettingsSectionId];
 
-export interface HubRow {
+interface HubRow {
   readonly id: SettingsSectionId;
   readonly href: string;
   readonly label: string;

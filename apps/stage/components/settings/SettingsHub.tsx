@@ -40,9 +40,8 @@ function IdentityHero(): React.ReactElement | null {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const editProfile = useEditProfile(true);
   if (rec === null || address === null) return null;
-  const short = shortAddress(address);
   const handle = getPeerHandle(address);
-  const sub = [handle ? displayHandle(handle) : null, short].filter((p) => p !== null).join(' · ');
+  const sub = handle ? `${displayHandle(handle)} · ${shortAddress(address)}` : shortAddress(address);
   return (
     <Column gap={16} padding={{ x: PAGE_GUTTER, top: 24 }}>
       <Row align="center" gap={16}>
@@ -75,10 +74,6 @@ function IdentityHero(): React.ReactElement | null {
       {editProfile.modal}
     </Column>
   );
-}
-
-function useDeviceCount(): number | null {
-  return useInstallations().data?.length ?? null;
 }
 
 const THEME_TABS = THEME_OPTIONS.map((o) => ({ title: o.label }));
@@ -135,7 +130,7 @@ function PreferencesGroup(): React.ReactElement {
 }
 
 function MoreGroup(): React.ReactElement {
-  const count = useDeviceCount();
+  const count = useInstallations().data?.length ?? null;
   const address = useActiveAccountRecord()?.address;
   const boxes = useMailboxes().data;
   const developerMode = useDeveloperModeStatus() === 'on';

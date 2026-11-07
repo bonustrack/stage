@@ -11,7 +11,7 @@ export function walletDeployLabel(d: WalletDeployState): string {
   return 'Unknown';
 }
 
-export interface WalletValueRow {
+interface WalletValueRow {
   label: string;
   value: string;
 }

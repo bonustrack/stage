@@ -94,14 +94,10 @@ export function MenuSheet({
   function onSwitch(id: string): void {
     onClose();
     if (id === activeId) return;
-    void (async () => {
-      try {
-        await switchToAccount(id);
-      } catch (err) {
-        report('menu.switchAccount', err);
-        capabilities.alert('Switch failed', errorMessage(err));
-      }
-    })();
+    void switchToAccount(id).catch((err: unknown) => {
+      report('menu.switchAccount', err);
+      capabilities.alert('Switch failed', errorMessage(err));
+    });
   }
 
   return (
@@ -110,7 +106,6 @@ export function MenuSheet({
         <AccountSwitchRow key={a.id} account={a} active={a.id === activeId} onSwitch={onSwitch} />
       ))}
       <MenuRow
-        key="new-account"
         icon={IconPeopleAdd}
         label="New account"
         onPress={() => {
@@ -118,7 +113,6 @@ export function MenuSheet({
         }}
       />
       <MenuRow
-        key="import"
         icon={IconQrCode}
         label="Import account"
         onPress={() => {

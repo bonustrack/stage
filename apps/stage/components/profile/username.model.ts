@@ -1,6 +1,6 @@
 import { describeLabelProblem, stageLabelOf, validateStageLabel } from '@stage-labs/client/identity/stageNames';
 
-export type ClaimPhase = 'idle' | 'checking' | 'available' | 'unavailable' | 'invalid' | 'claiming' | 'claimed' | 'failed';
+type ClaimPhase = 'idle' | 'checking' | 'available' | 'unavailable' | 'invalid' | 'claiming' | 'claimed' | 'failed';
 
 export interface ClaimState {
   label: string;

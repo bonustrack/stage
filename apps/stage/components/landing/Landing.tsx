@@ -55,11 +55,6 @@ function StageLogo({ size, color }: { size: number; color: string }): React.Reac
   );
 }
 
-interface Frame {
-  width: number;
-  height: number;
-}
-
 function BoxLayer({ layer, width, heroHeight }: { layer: HeroBoxLayer; width: number; heroHeight: number }): React.ReactElement {
   const [boxes] = useState<HeroBox[]>(() => heroBoxes(layer.count, width, HERO_LAYOUT.boxFrameHeight, Math.random));
   return (
@@ -78,7 +73,7 @@ function BoxLayer({ layer, width, heroHeight }: { layer: HeroBoxLayer; width: nu
   );
 }
 
-function HeroBackdrop({ width, height }: Frame): React.ReactElement {
+function HeroBackdrop({ width, height }: { width: number; height: number }): React.ReactElement {
   return (
     <>
       <Column

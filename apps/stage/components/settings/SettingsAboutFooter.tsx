@@ -21,18 +21,12 @@ function commitUrl(gitHash: string): string | undefined {
   return gitHash === 'dev' || gitHash.length === 0 ? undefined : `${STAGE_GITHUB_URL}/commit/${gitHash}`;
 }
 
-interface BuildMeta {
-  gitHash: string;
-  commitTime: string;
-  buildProfile: string;
-}
-
 function extraString(extra: Record<string, unknown>, key: string, fallback: string): string {
   const v = extra[key];
   return typeof v === 'string' && v.length > 0 ? v : fallback;
 }
 
-function buildMeta(): BuildMeta {
+function buildMeta(): { gitHash: string; commitTime: string; buildProfile: string } {
   const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
   return {
     gitHash: extraString(extra, 'gitHash', 'dev'),

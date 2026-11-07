@@ -20,7 +20,7 @@ interface BadgeBelow extends TokenAvatarBase {
   badge: 'below';
 }
 
-export type TokenAvatarProps = CornerBadge | BadgeBelow;
+type TokenAvatarProps = CornerBadge | BadgeBelow;
 
 export function TokenAvatar(props: TokenAvatarProps): React.ReactElement {
   const { logoUrl, chainId, size, badgeSize } = props;

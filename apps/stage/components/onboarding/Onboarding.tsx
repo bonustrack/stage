@@ -20,7 +20,7 @@ import { UsernameField, useUsernameInput } from '../profile/UsernameField';
 import { USERNAME_COPY, usernameReady } from '../profile/username.model';
 import { Column } from '../layout';
 
-export interface OnboardingProps {
+interface OnboardingProps {
   mode: OnboardingMode;
   onDone: () => void;
 }

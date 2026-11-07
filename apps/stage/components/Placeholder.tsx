@@ -13,11 +13,7 @@ export function PlaceholderBlock({
   onCard?: boolean;
 }): React.ReactElement {
   const { border } = usePalette();
-  return onCard ? (
-    <Column width={width} height={height} radius="full" surface="surface" />
-  ) : (
-    <Column width={width} height={height} radius="full" background={border} />
-  );
+  return <Column width={width} height={height} radius="full" {...(onCard ? { surface: 'surface' as const } : { background: border })} />;
 }
 
 export function PlaceholderBar({

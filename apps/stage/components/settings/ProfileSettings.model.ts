@@ -1,7 +1,7 @@
 import type { OnchainProfileSource } from '@stage-labs/client/identity/onchainProfile';
 import { isStageName } from '@stage-labs/client/identity/stageNames';
 
-export interface ProfileState {
+interface ProfileState {
   address: string | null;
   name?: string;
   source?: OnchainProfileSource;

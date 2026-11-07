@@ -3,7 +3,7 @@ import { EDIT_CHANNEL_ITEM, LEAVE_CHANNEL_ITEM } from '../chatRow/ChannelMenu.mo
 
 export type ChannelMemberRole = 'owner' | 'admin' | 'member' | undefined;
 
-export interface MemberRowBadge {
+interface MemberRowBadge {
   role: 'owner' | 'admin';
   label: string;
 }

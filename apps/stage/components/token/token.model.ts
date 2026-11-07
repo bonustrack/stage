@@ -2,9 +2,9 @@ import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { fmtBalance, fmtUsd } from '@stage-labs/client/wallet/format';
 import { stampTokenUrl } from '@stage-labs/kit/avatar';
 
-export type TokenRowAsset = Pick<AssetRow, 'symbol' | 'name' | 'balance' | 'priceUsd' | 'change24h'>;
+type TokenRowAsset = Pick<AssetRow, 'symbol' | 'name' | 'balance' | 'priceUsd' | 'change24h'>;
 
-export type TokenRowLayout = 'wallet' | 'picker';
+type TokenRowLayout = 'wallet' | 'picker';
 
 const TOKEN_LOGO_PX = 32;
 
@@ -20,11 +20,11 @@ export interface TokenRowFields {
   change: string;
 }
 
-export function tokenPriceText(r: Pick<TokenRowAsset, 'priceUsd' | 'symbol'>): string {
+function tokenPriceText(r: Pick<TokenRowAsset, 'priceUsd' | 'symbol'>): string {
   return r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
 }
 
-export function tokenChangeText(change24h: number | null): string {
+function tokenChangeText(change24h: number | null): string {
   return change24h === null ? '' : `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`;
 }
 

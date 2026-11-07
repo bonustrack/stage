@@ -2,12 +2,7 @@ import { english } from 'viem/accounts';
 
 const SUGGESTION_LIMIT = 6;
 
-interface PhraseToken {
-  word: string;
-  complete: boolean;
-}
-
-function currentToken(text: string): PhraseToken {
+function currentToken(text: string): { word: string; complete: boolean } {
   const complete = /\s$/.test(text) || text.length === 0;
   const parts = text
     .trim()
@@ -17,7 +12,7 @@ function currentToken(text: string): PhraseToken {
   return { word: complete || last === undefined ? '' : last.toLowerCase(), complete };
 }
 
-function suggestWords(prefix: string, wordlist: readonly string[] = english, limit = SUGGESTION_LIMIT): string[] {
+function suggestWords(prefix: string, wordlist: readonly string[], limit: number): string[] {
   const clean = prefix.toLowerCase();
   if (clean.length === 0) return [];
   const matches: string[] = [];
@@ -30,7 +25,7 @@ function suggestWords(prefix: string, wordlist: readonly string[] = english, lim
   return matches;
 }
 
-export interface WordSpan {
+interface WordSpan {
   word: string;
   start: number;
   end: number;
@@ -58,12 +53,7 @@ export function visibleSuggestions(word: string, wordlist: readonly string[] = e
     .slice(0, limit);
 }
 
-function applyCompletion(text: string, word: string): string {
-  const trimmed = text.replace(/\S+$/, '');
-  return `${trimmed}${word} `;
-}
-
-function hasWordWithPrefix(prefix: string, wordlist: readonly string[] = english): boolean {
+function hasWordWithPrefix(prefix: string, wordlist: readonly string[]): boolean {
   return wordlist.some((word) => word.startsWith(prefix));
 }
 
@@ -83,7 +73,7 @@ function acceptTypedLetter(previous: string, next: string, wordlist: readonly st
   return startsNextWord ? `${previous} ${char}` : previous;
 }
 
-function acceptTypedChar(previous: string, next: string, wordlist: readonly string[] = english): string {
+function acceptTypedChar(previous: string, next: string, wordlist: readonly string[]): string {
   if (!isSingleTypedChar(previous, next)) return next;
   if (/\s$/.test(next)) return acceptTypedSpace(previous, wordlist) ? next : previous;
   if (!looksLikePhrase(next)) return next;
@@ -93,11 +83,6 @@ function acceptTypedChar(previous: string, next: string, wordlist: readonly stri
 export interface PhraseTyping {
   text: string;
   pending: string;
-}
-
-function uniqueWord(prefix: string, wordlist: readonly string[]): string | null {
-  const matches = suggestWords(prefix, wordlist, 2);
-  return matches.length === 1 ? (matches[0] ?? null) : null;
 }
 
 function absorbsPending(state: PhraseTyping, next: string): boolean {
@@ -137,9 +122,9 @@ function editOutsideTyping(previous: string, next: string): PhraseTyping | null 
 
 function fillUniqueWord(text: string, wordlist: readonly string[]): PhraseTyping {
   const token = currentToken(text);
-  const word = uniqueWord(token.word, wordlist);
-  if (word === null) return { text, pending: '' };
-  return { text: applyCompletion(text, word), pending: word.slice(token.word.length) };
+  const [word, other] = suggestWords(token.word, wordlist, 2);
+  if (word === undefined || other !== undefined) return { text, pending: '' };
+  return { text: `${text.replace(/\S+$/, '')}${word} `, pending: word.slice(token.word.length) };
 }
 
 export function typePhrase(state: PhraseTyping, next: string, wordlist: readonly string[] = english): PhraseTyping {

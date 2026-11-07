@@ -26,7 +26,7 @@ export type Choice =
   | { kind: 'restore'; phrase: string }
   | { kind: 'importKey'; pk: Hex };
 
-export interface SetupRunner {
+interface SetupRunner {
   busy: boolean;
   stage: Stage;
   setupErr: SetupErr | null;

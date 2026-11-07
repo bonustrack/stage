@@ -91,14 +91,9 @@ function SetupActions({
   onRetry: () => void;
   history: HistoryControls;
 }): React.ReactElement | null {
-  if (setupErr === null) {
-    return history.stalled ? (
-      <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" onPress={history.retry} />
-    ) : null;
-  }
-  return (
-    <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />
-  );
+  if (setupErr === null && !history.stalled) return null;
+  const retry = setupErr === null ? { onPress: history.retry } : { disabled: busy, onPress: onRetry };
+  return <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" {...retry} />;
 }
 
 function SetupLink({

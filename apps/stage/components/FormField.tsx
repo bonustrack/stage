@@ -59,48 +59,19 @@ export function useFieldColors(): { background: string; text: string; placeholde
 }
 
 export function FormField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
   multiline,
   rows = 3,
-  disabled,
   inputType,
   variant,
-  inputProps,
   inputRef,
   autoFocus,
   onSubmit,
-  leading,
-  trailing,
-  trailingWidth,
-  labelTrailing,
-  hint,
-  hintTone,
+  ...field
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const line = multiline === true ? {} : { ref: inputRef, variant, inputType, autoFocus, onSubmit };
   return (
-    <TextField
-      appearance="filled"
-      label={label}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      dark={dark}
-      disabled={disabled}
-      variant={multiline === true ? 'longText' : undefined}
-      rows={rows}
-      inputProps={inputProps}
-      {...line}
-      leading={leading}
-      trailing={trailing}
-      trailingWidth={trailingWidth}
-      labelTrailing={labelTrailing}
-      hint={hint}
-      hintTone={hintTone}
-    />
+    <TextField appearance="filled" {...field} dark={dark} variant={multiline === true ? 'longText' : undefined} rows={rows} {...line} />
   );
 }
 

@@ -4,7 +4,7 @@ import { CHANNEL_FIELD_NOUNS, type ChannelField } from '@stage-labs/client/xmtp/
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
-import { leaveGroupConv, setGroupCategory, setGroupField } from '../../lib/xmtp.groups';
+import { leaveGroupConv, setGroupField } from '../../lib/xmtp.groups';
 import { blockRequestConv, checkConvSync, unacceptConv } from '../../lib/xmtp.conv';
 import { markConvRead } from '../../lib/channelsCache';
 import { markChatCleared } from '../../lib/sync/clearedChats';
@@ -20,12 +20,6 @@ interface ChannelRouter {
 export function toastLabelError(e: unknown, what = 'labels'): void {
   if (e instanceof LabelPermissionError) capabilities.toast(e.message);
   else capabilities.toast(`Could not update ${what}. Try again.`);
-}
-
-export function setChannelCategory(convId: string, category: string | null): void {
-  void setGroupCategory(lineOfConv(convId), category).catch((e: unknown) => {
-    toastLabelError(e, `the ${CHANNEL_FIELD_NOUNS.category}`);
-  });
 }
 
 export function setChannelField(convId: string, field: ChannelField, value: string | null): void {

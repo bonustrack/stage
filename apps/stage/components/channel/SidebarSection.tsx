@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { CountTag } from '../CountTag';
 import { Eyebrow } from '../Eyebrow';
 import { AnchoredMenu, anchorRect, useAnchoredMenus } from '../AnchoredMenu';
-import { hoverRevealed, useHover } from '../hover';
+import { HoverTint, hoverRevealed, useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { hasListEdits, listEdits, pickerAnchorOf, pickerWidth, type ListEdits, type PickerAnchor } from './SidebarSection.model';
 import { toggleKey } from '@stage-labs/client/collections';
@@ -142,7 +142,6 @@ export function SidebarSection({
   const anchored = useAnchoredMenus();
   const [anchor, setAnchor] = useState<PickerAnchor | null>(null);
   const [open, setOpen] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [opened, setOpened] = useState<string[]>([]);
   const [draft, setDraft] = useState<string[]>([]);
@@ -167,31 +166,27 @@ export function SidebarSection({
     if (single === true) finish(toggleKey(draft, key, true));
     else setDraft((list) => toggleKey(list, key));
   };
-  const penShown = open || focused || hoverRevealed(hovered);
   return (
-    <Column
-      onPointerEnter={() => {
-        setHovered(true);
-      }}
-      onPointerLeave={() => {
-        setHovered(false);
-      }}
-    >
-      <SectionHeader
-        title={title}
-        icon={icon}
-        count={count}
-        editLabel={editLabel}
-        penShown={penShown}
-        onEdit={canEdit ? start : undefined}
-        onFocusChange={setFocused}
-      />
-      {children}
-      {open ? (
-        <AnchoredMenu visible onClose={close} anchor={anchor?.point ?? null}>
-          <Column width={pickerWidth(anchored, anchor)}>{renderPicker({ draft, toggle })}</Column>
-        </AnchoredMenu>
-      ) : null}
-    </Column>
+    <HoverTint>
+      {(hovered) => (
+        <>
+          <SectionHeader
+            title={title}
+            icon={icon}
+            count={count}
+            editLabel={editLabel}
+            penShown={open || focused || hoverRevealed(hovered)}
+            onEdit={canEdit ? start : undefined}
+            onFocusChange={setFocused}
+          />
+          {children}
+          {open ? (
+            <AnchoredMenu visible onClose={close} anchor={anchor?.point ?? null}>
+              <Column width={pickerWidth(anchored, anchor)}>{renderPicker({ draft, toggle })}</Column>
+            </AnchoredMenu>
+          ) : null}
+        </>
+      )}
+    </HoverTint>
   );
 }

@@ -56,33 +56,24 @@ const IDENTITY_ROWS = [
   { label: 'Installation id', key: 'install' },
 ] as const;
 
-const IDENTITY_TITLE = 'XMTP identity';
-const IDENTITY_FOOTNOTE = 'Tap a value to copy it.';
-
 function IdentityGroup(): React.ReactElement | null {
   const id = useXmtpIdentity();
-  if (id === null)
-    return (
-      <SettingsGroup title={IDENTITY_TITLE} footnote={IDENTITY_FOOTNOTE}>
-        {IDENTITY_ROWS.map((r) => (
-          <SettingsValuePlaceholderRow key={r.label} label={r.label} />
-        ))}
-      </SettingsGroup>
-    );
-  const rows = IDENTITY_ROWS.map((r) => ({ label: r.label, value: id[r.key] })).filter((r) => r.value !== '');
-  if (rows.length === 0) return null;
+  const rows = id === null ? [] : IDENTITY_ROWS.map((r) => ({ label: r.label, value: id[r.key] })).filter((r) => r.value !== '');
+  if (id !== null && rows.length === 0) return null;
   return (
-    <SettingsGroup title={IDENTITY_TITLE} footnote={IDENTITY_FOOTNOTE}>
-      {rows.map((r) => (
-        <SettingsValueRow
-          key={r.label}
-          label={r.label}
-          value={shortAddress(r.value)}
-          onPress={() => {
-            capabilities.copy(r.label, r.value);
-          }}
-        />
-      ))}
+    <SettingsGroup title="XMTP identity" footnote="Tap a value to copy it.">
+      {id === null
+        ? IDENTITY_ROWS.map((r) => <SettingsValuePlaceholderRow key={r.label} label={r.label} />)
+        : rows.map((r) => (
+            <SettingsValueRow
+              key={r.label}
+              label={r.label}
+              value={shortAddress(r.value)}
+              onPress={() => {
+                capabilities.copy(r.label, r.value);
+              }}
+            />
+          ))}
     </SettingsGroup>
   );
 }

@@ -4,7 +4,7 @@ import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { PAGES } from '../tabs/pages';
-import { useEffectiveColorScheme, usePalette, type ThemePreference } from '../../lib/theme';
+import { usePalette, type ThemePreference } from '../../lib/theme';
 import type { FontPreviewScope } from '../../lib/fontChoice';
 import { StackPage } from '../chrome/StackPage';
 import { SETTINGS_SECTIONS, type SettingsSectionId } from './settingsCatalog.model';
@@ -195,15 +195,14 @@ export function SettingsGroup({
   footnote?: string;
   children: ReactNode;
 }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const listDark = useKitScheme() === 'dark';
+  const dark = useKitScheme() === 'dark';
   const { border } = usePalette();
   return (
     <Column>
       {title === undefined ? <Column height={24} /> : <SettingsSectionLabel>{title}</SettingsSectionLabel>}
       <Column margin={{ x: PAGE_GUTTER }} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
         <Card dark={dark} background={border} padding={0}>
-          <ListView dark={listDark}>{children}</ListView>
+          <ListView dark={dark}>{children}</ListView>
         </Card>
       </Column>
       {footnote === undefined ? null : (

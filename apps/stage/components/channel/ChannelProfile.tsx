@@ -9,7 +9,7 @@ import { useSelfAddress } from '../../lib/messaging/account';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, DANGER, usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
-import { channelProfileMenuItems, memberRowModel, type ChannelMemberRole, type MemberRowBadge } from './channel.parts.model';
+import { channelProfileMenuItems, memberRowModel, type ChannelMemberRole } from './channel.parts.model';
 import { ChannelAssignees, ChannelMembersSection } from './MemberListSidebar';
 import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
@@ -94,29 +94,6 @@ function ChannelTitle({ name, description }: { name: string | null; description:
   );
 }
 
-function MemberBadge({
-  badge,
-  border,
-  sub,
-  dark,
-}: {
-  badge: MemberRowBadge;
-  border: string;
-  sub: string;
-  dark: boolean;
-}): React.ReactElement {
-  const owner = badge.role === 'owner';
-  return (
-    <Badge
-      label={badge.label}
-      fontWeight="medium"
-      color={owner ? MEMBER_OWNER_FG : sub}
-      background={owner ? MEMBER_OWNER_BG : border}
-      dark={dark}
-    />
-  );
-}
-
 function MemberRow({
   item,
   isSelf,
@@ -159,7 +136,15 @@ function MemberRow({
               <Text size="md" variant="caption" text={model.addressLine} color="secondary" truncate />
             )}
           </Column>
-          {model.badge === undefined ? null : <MemberBadge badge={model.badge} border={border} sub={sub} dark={dark} />}
+          {model.badge === undefined ? null : (
+            <Badge
+              label={model.badge.label}
+              fontWeight="medium"
+              color={model.badge.role === 'owner' ? MEMBER_OWNER_FG : sub}
+              background={model.badge.role === 'owner' ? MEMBER_OWNER_BG : border}
+              dark={dark}
+            />
+          )}
           {isSelf ? null : (
             <Button
               color="primary"

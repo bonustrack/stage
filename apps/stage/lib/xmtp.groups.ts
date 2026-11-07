@@ -216,21 +216,16 @@ async function writeRowLabels(line: string, next: (labels: string[]) => string[]
   }
 }
 
-export async function addGroupLabel(line: string, label: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => addLabel(labels, label));
-}
+export const addGroupLabel = (line: string, label: string): Promise<string[]> => writeRowLabels(line, (labels) => addLabel(labels, label));
 
-export async function moveGroupLabel(line: string, from: string | null, to: string | null): Promise<string[]> {
-  return writeRowLabels(line, (labels) => moveLabel(labels, from, to));
-}
+export const moveGroupLabel = (line: string, from: string | null, to: string | null): Promise<string[]> =>
+  writeRowLabels(line, (labels) => moveLabel(labels, from, to));
 
-export async function removeGroupLabel(line: string, label: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => removeLabel(labels, label));
-}
+export const removeGroupLabel = (line: string, label: string): Promise<string[]> =>
+  writeRowLabels(line, (labels) => removeLabel(labels, label));
 
-export async function renameGroupLabel(line: string, from: string, to: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => renameLabels(labels, from, to));
-}
+export const renameGroupLabel = (line: string, from: string, to: string): Promise<string[]> =>
+  writeRowLabels(line, (labels) => renameLabels(labels, from, to));
 
 export async function setGroupField(
   line: string,
@@ -245,10 +240,6 @@ export async function setGroupField(
   } finally {
     refreshGroupRow(convId);
   }
-}
-
-export function setGroupCategory(line: string, category: string | null): Promise<string | null> {
-  return setGroupField(line, 'category', category);
 }
 
 function knownLabels(): string[] {

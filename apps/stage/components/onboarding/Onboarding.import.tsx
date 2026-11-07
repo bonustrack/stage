@@ -58,11 +58,7 @@ function inputHint(text: string, err: string | null): InputHint {
   if (!looksLikePhrase(text)) return null;
   const invalid = invalidWords(text);
   if (invalid.length > 0) return { text: `Not in the word list: ${invalid.join(', ')}`, danger: true };
-  const count = text
-    .trim()
-    .split(/\s+/)
-    .filter((w) => w.length > 0).length;
-  return count > 0 ? { text: `${count} of 12 to 24 words`, danger: false } : null;
+  return { text: `${text.trim().split(/\s+/).length} of 12 to 24 words`, danger: false };
 }
 
 function PhraseField({

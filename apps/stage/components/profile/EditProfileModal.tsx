@@ -10,7 +10,7 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { getPeerAvatar, getPeerDescription, getPeerDisplayName, invalidatePeerProfile } from '../../lib/peerProfiles';
 import { saveBasenameProfile, type ProfileChanges } from '../../lib/profile';
-import { changedFields, draftFrom, hasChanges, type ProfileDraft } from './editProfile.model';
+import { changedFields, draftFrom, hasChanges } from './editProfile.model';
 import { profileTextProblem } from './profileText.model';
 import { Column } from '../layout';
 
@@ -33,7 +33,7 @@ function EditProfileSection({
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const current = { displayName: getPeerDisplayName(address), description: getPeerDescription(address) };
-  const [draft, setDraft] = useState<ProfileDraft>(() => draftFrom(current));
+  const [draft, setDraft] = useState(() => draftFrom(current));
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 

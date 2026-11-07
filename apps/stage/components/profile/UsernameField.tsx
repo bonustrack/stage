@@ -5,7 +5,7 @@ import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { HoverTooltip } from '../HoverTooltip';
 import { Column } from '../layout';
-import { usePalette } from '../../lib/theme';
+import { usePalette, type Palette } from '../../lib/theme';
 import { randomUsername } from '@stage-labs/client/identity/stageNames';
 import {
   claimStatusTone,
@@ -55,8 +55,6 @@ function useNameAvailability(label: string, setState: (next: ClaimState) => void
   }, [label]);
 }
 
-type Pal = ReturnType<typeof usePalette>;
-
 const STATUS_ICON = 24;
 const SHUFFLE_ICON = 16;
 const NOOP = (): void => undefined;
@@ -82,7 +80,8 @@ export function useUsernameInput(initialLabel = ''): UsernameInput {
 
 const SHUFFLE_LABEL = 'Random username';
 
-function ShuffleButton({ pal, disabled, onPick }: { pal: Pal; disabled: boolean; onPick: (label: string) => void }): React.ReactElement {
+function ShuffleButton({ disabled, onPick }: { disabled: boolean; onPick: (label: string) => void }): React.ReactElement {
+  const { sub } = usePalette();
   return (
     <HoverTooltip label={SHUFFLE_LABEL}>
       <Pressable
@@ -91,13 +90,13 @@ function ShuffleButton({ pal, disabled, onPick }: { pal: Pal; disabled: boolean;
           if (!disabled) onPick(randomUsername());
         }}
       >
-        <Glyph icon={IconArrowLeftRight} size={SHUFFLE_ICON} color={pal.sub} />
+        <Glyph icon={IconArrowLeftRight} size={SHUFFLE_ICON} color={sub} />
       </Pressable>
     </HoverTooltip>
   );
 }
 
-function StatusMark({ state, label, pal }: { state: ClaimState; label: string; pal: Pal }): React.ReactElement | undefined {
+function StatusMark({ state, label, pal }: { state: ClaimState; label: string; pal: Palette }): React.ReactElement | undefined {
   const status = usernameStatus(state, label);
   if (status === null) return undefined;
   if (status.kind === 'checking') return <Spinner size={STATUS_ICON} color={pal.sub} />;
@@ -123,7 +122,7 @@ export function UsernameField({ input, busy }: { input: UsernameInput; busy: boo
         setRaw(sanitizeLabelInput(t));
       }}
       disabled={busy}
-      labelTrailing={<ShuffleButton pal={pal} disabled={busy} onPick={setRaw} />}
+      labelTrailing={<ShuffleButton disabled={busy} onPick={setRaw} />}
       inputProps={{ autoCapitalize: 'none', autoCorrect: false }}
       trailing={StatusMark({ state, label, pal })}
       hint={usernameHint(state, label)}

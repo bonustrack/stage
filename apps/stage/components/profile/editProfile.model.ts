@@ -1,18 +1,16 @@
 import type { ProfileText } from './profileText.model';
 
-export type ProfileDraft = ProfileText;
-
-export interface ProfileCurrent {
+interface ProfileCurrent {
   displayName?: string;
   description?: string;
 }
 
-export function draftFrom(current: ProfileCurrent): ProfileDraft {
+export function draftFrom(current: ProfileCurrent): ProfileText {
   return { displayName: current.displayName ?? '', description: current.description ?? '' };
 }
 
-export function changedFields(current: ProfileCurrent, draft: ProfileDraft): { displayName?: string; description?: string } {
-  const out: { displayName?: string; description?: string } = {};
+export function changedFields(current: ProfileCurrent, draft: ProfileText): ProfileCurrent {
+  const out: ProfileCurrent = {};
   const name = draft.displayName.trim();
   const about = draft.description.trim();
   if (name !== (current.displayName ?? '')) out.displayName = name;
@@ -20,6 +18,6 @@ export function changedFields(current: ProfileCurrent, draft: ProfileDraft): { d
   return out;
 }
 
-export function hasChanges(current: ProfileCurrent, draft: ProfileDraft, imagePicked: boolean): boolean {
+export function hasChanges(current: ProfileCurrent, draft: ProfileText, imagePicked: boolean): boolean {
   return imagePicked || Object.keys(changedFields(current, draft)).length > 0;
 }

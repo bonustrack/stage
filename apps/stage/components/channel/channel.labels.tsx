@@ -40,11 +40,8 @@ export function useLiveChannelLabels(convId: string | undefined): string[] {
   return useMemo(() => (key === '' ? NO_LABELS : key.split('\n')), [key]);
 }
 
-function useLiveChannelField(convId: string | undefined, field: ChannelField): string | null {
-  const read = useCallback(
-    (): string | null => channelFieldOf(field, convId === undefined ? undefined : homeRowOf(convId)?.[field]),
-    [convId, field],
-  );
+function useLiveChannelField(convId: string, field: ChannelField): string | null {
+  const read = useCallback((): string | null => channelFieldOf(field, homeRowOf(convId)?.[field]), [convId, field]);
   return useStoreValue(subscribeCachedRows, read);
 }
 

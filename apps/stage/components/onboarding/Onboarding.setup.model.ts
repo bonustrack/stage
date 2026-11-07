@@ -1,6 +1,6 @@
 import type { Stage } from '../../lib/onboarding';
 
-export type SetupRetry = 'restart' | 'messaging' | 'create';
+type SetupRetry = 'restart' | 'messaging' | 'create';
 
 export interface SetupErr {
   message: string;

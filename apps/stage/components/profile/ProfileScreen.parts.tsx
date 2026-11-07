@@ -2,7 +2,6 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { Palette } from '../../lib/theme';
-
 import { appIcon } from '../widgets';
 import { PEER_PROFILE_ACTIONS, type PeerAction } from './ProfileScreen.model';
 import { Column, Row } from '../layout';

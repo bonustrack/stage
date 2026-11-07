@@ -95,15 +95,7 @@ export function MenuHeading({ text }: { text: string }): React.ReactElement {
 
 export type OverflowMenuItem<Id extends string = string> = MenuItem<Id, AppIconRef>;
 
-export type MenuAction = (() => void) | { opensModal: true; run: () => void };
-
-export type MenuActions<Id extends string> = Record<Id, MenuAction>;
-
-function runAfterClose(onClose: () => void, action: MenuAction): void {
-  onClose();
-  if (typeof action === 'function') action();
-  else setTimeout(action.run, 0);
-}
+export type MenuActions<Id extends string> = Record<Id, (() => void) | { opensModal: true; run: () => void }>;
 
 export function MenuItems<Id extends string>({
   items,
@@ -125,29 +117,14 @@ export function MenuItems<Id extends string>({
           selected={item.selected}
           divider={item.danger === true && index > 0}
           onPress={() => {
-            runAfterClose(onClose, actions[item.id]);
+            const action = actions[item.id];
+            onClose();
+            if (typeof action === 'function') action();
+            else setTimeout(action.run, 0);
           }}
         />
       ))}
     </>
-  );
-}
-
-function OverflowMenuItems<Id extends string>({
-  anchor,
-  onClose,
-  items,
-  actions,
-}: {
-  anchor: MenuPoint | null;
-  onClose: () => void;
-  items: readonly OverflowMenuItem<Id>[];
-  actions: MenuActions<Id>;
-}): React.ReactElement {
-  return (
-    <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
-      <MenuItems items={items} actions={actions} onClose={onClose} />
-    </AnchoredMenu>
   );
 }
 
@@ -189,6 +166,9 @@ export function OverflowMenu<Id extends string>({
   size?: number;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
+  const close = (): void => {
+    setAnchor(null);
+  };
   return (
     <>
       <OverflowButton
@@ -199,14 +179,9 @@ export function OverflowMenu<Id extends string>({
           setAnchor(menuPointBelow(e));
         }}
       />
-      <OverflowMenuItems
-        anchor={anchor}
-        onClose={() => {
-          setAnchor(null);
-        }}
-        items={items}
-        actions={actions}
-      />
+      <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
+        <MenuItems items={items} actions={actions} onClose={close} />
+      </AnchoredMenu>
     </>
   );
 }
@@ -223,6 +198,9 @@ export function RoundOverflowMenu<Id extends string>({
   background?: string;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
+  const close = (): void => {
+    setAnchor(null);
+  };
   return (
     <>
       <RoundIconButton
@@ -234,14 +212,9 @@ export function RoundOverflowMenu<Id extends string>({
           setAnchor(menuPointBelowEnd(e));
         }}
       />
-      <OverflowMenuItems
-        anchor={anchor}
-        onClose={() => {
-          setAnchor(null);
-        }}
-        items={items}
-        actions={actions}
-      />
+      <AnchoredMenu visible={anchor !== null} onClose={close} anchor={anchor}>
+        <MenuItems items={items} actions={actions} onClose={close} />
+      </AnchoredMenu>
     </>
   );
 }
