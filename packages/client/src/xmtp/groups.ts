@@ -21,7 +21,7 @@ export async function currentMemberAddresses(
   });
 }
 
-export function isNoInboxError(msg: string): boolean {
+function isNoInboxError(msg: string): boolean {
   return NO_INBOX_RE.test(msg);
 }
 
@@ -45,11 +45,11 @@ function createFailed(err: unknown): Error {
 
 const NOT_ON_XMTP = "One or more addresses aren't on XMTP yet, so they can't be added.";
 
-export function mapCreateGroupError(err: unknown): Error {
+function mapCreateGroupError(err: unknown): Error {
   return isNoInboxError(errorMessage(err)) ? new Error(NOT_ON_XMTP) : createFailed(err);
 }
 
-export function mapAddMembersError(err: unknown): Error {
+function mapAddMembersError(err: unknown): Error {
   const msg = errorMessage(err);
   if (isNoInboxError(msg)) return new Error(NOT_ON_XMTP);
   if (isPermissionError(msg)) return new Error('Only a channel admin can add members.');
@@ -172,7 +172,7 @@ export function canEditGroup(rights: GroupEditRights): boolean {
   return rights.name || rights.description || rights.image || rights.appData;
 }
 
-export function mapUpdateGroupError(err: unknown): Error {
+function mapUpdateGroupError(err: unknown): Error {
   const msg = errorMessage(err);
   return new Error(isPermissionError(msg) ? "You don't have permission to edit this channel." : msg);
 }

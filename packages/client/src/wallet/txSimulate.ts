@@ -24,7 +24,7 @@ export interface SimCall {
   error?: { message?: string; data?: string };
 }
 
-export function humanizeRevert(raw: string): string {
+function humanizeRevert(raw: string): string {
   const s = raw.trim();
   const lc = s.toLowerCase();
   if (lc.includes('insufficient funds')) return 'insufficient ETH for value + gas';
@@ -39,7 +39,7 @@ export function humanizeRevert(raw: string): string {
   return s;
 }
 
-export function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
+function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
   const d = returnData && returnData !== '0x' ? returnData : undefined;
   if (d?.startsWith('0x08c379a0')) {
     try {
@@ -64,7 +64,7 @@ function nativeMeta(chainId: number): { symbol: string; decimals: number } {
   return { symbol: hit?.symbol ?? 'ETH', decimals: hit?.decimals ?? 18 };
 }
 
-export function formatAmount(raw: bigint, decimals: number): string {
+function formatAmount(raw: bigint, decimals: number): string {
   if (raw < 0n) raw = -raw;
   const base = 10n ** BigInt(decimals);
   const whole = raw / base;
@@ -75,7 +75,7 @@ export function formatAmount(raw: bigint, decimals: number): string {
   return `${whole.toString()}.${fs}`;
 }
 
-export function insufficientEthReason(balanceWei: bigint, valueWei: bigint, chainId: number): string {
+function insufficientEthReason(balanceWei: bigint, valueWei: bigint, chainId: number): string {
   const { symbol, decimals } = nativeMeta(chainId);
   return `insufficient ${symbol} (have ${formatAmount(balanceWei, decimals)}, need ${formatAmount(valueWei, decimals)})`;
 }
@@ -145,12 +145,7 @@ function buildMove(key: string, delta: bigint, chainId: number): AssetMove {
   };
 }
 
-export function parseAssetChanges(
-  calls: SimCall[],
-  from: string,
-  chainId: number,
-  topValue?: string,
-): { in: AssetMove[]; out: AssetMove[] } {
+function parseAssetChanges(calls: SimCall[], from: string, chainId: number, topValue?: string): { in: AssetMove[]; out: AssetMove[] } {
   const me = from.toLowerCase();
   const net = netTransfers(calls, me);
 

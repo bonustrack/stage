@@ -19,7 +19,7 @@ export function x402AssetForAvatar(accept: X402Accept): string {
   return accept.asset ?? zeroAddress;
 }
 
-export function formatAtomic(amount: string, decimals: number): string | undefined {
+function formatAtomic(amount: string, decimals: number): string | undefined {
   if (!/^\d+$/.test(amount)) return undefined;
   if (decimals === 0) return amount;
   const padded = amount.padStart(decimals + 1, '0');
@@ -60,7 +60,7 @@ function isSpoofChar(c: number): boolean {
   );
 }
 
-export function sanitizeTokenName(name: string): string {
+function sanitizeTokenName(name: string): string {
   let out = '';
   for (const ch of name) {
     const c = ch.codePointAt(0);

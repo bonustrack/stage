@@ -48,7 +48,7 @@ function matchTier(candidate: MentionCandidate, q: string): number {
   return candidate.address.toLowerCase().includes(q) ? 2 : -1;
 }
 
-export function matchMembers<T extends MentionCandidate>(candidates: T[], query: string, limit = 6): T[] {
+function matchMembers<T extends MentionCandidate>(candidates: T[], query: string, limit = 6): T[] {
   const q = query.toLowerCase();
   if (!q) return candidates.slice(0, limit);
   const tiers: T[][] = [[], [], []];

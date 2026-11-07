@@ -16,7 +16,7 @@ const ESCAPED_PREFIX = CHANNEL_URL_PREFIX.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&'
 
 const CHANNEL_REF_RE = new RegExp(`\\[#([^\\]\\n]+)\\]\\(${ESCAPED_PREFIX}([^\\s/?#()]+)\\)`, 'g');
 
-export function channelRefLabel(name: string): string {
+function channelRefLabel(name: string): string {
   const label = name
     .replace(/[[\]()]/g, '')
     .replace(/\s+/g, ' ')

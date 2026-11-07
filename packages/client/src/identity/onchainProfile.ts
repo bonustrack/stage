@@ -71,7 +71,7 @@ function nonEmpty(value: string): string | undefined {
   return trimmed === '' ? undefined : trimmed;
 }
 
-export function baseCoinType(chainId: number): string {
+function baseCoinType(chainId: number): string {
   return ((0x80000000 | chainId) >>> 0).toString(16).toUpperCase();
 }
 
@@ -81,7 +81,7 @@ export function baseReverseNode(address: string): Hex {
   return keccak256(encodePacked(['bytes32', 'bytes32'], [chainReverseNode, addressNode]));
 }
 
-export function usableAvatarUri(value: string | null | undefined): string | undefined {
+function usableAvatarUri(value: string | null | undefined): string | undefined {
   const trimmed = value?.trim() ?? '';
   if (/^(https?:\/\/|ipfs:\/\/|data:image\/)/i.test(trimmed)) return trimmed;
   return undefined;

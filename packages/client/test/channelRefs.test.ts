@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { channelRefLabel, channelRefToken, channelRefsOf, splitChannelRefs, withChannelLabels } from '../src/xmtp/channelRefs';
+import { channelRefToken, channelRefsOf, splitChannelRefs, withChannelLabels } from '../src/xmtp/channelRefs';
 import { humanizeMentions } from '../src/xmtp/humanize';
 
 const CONV = '9f2c4e1ab37d4c0e8f1a2b3c4d5e6f70';
@@ -11,8 +11,8 @@ describe('channelRefToken', () => {
   });
 
   test('keeps link syntax and a leading hash out of the label', () => {
-    expect(channelRefLabel('# Ops [eu] (night)\nshift')).toBe('Ops eu night shift');
-    expect(channelRefLabel(' [] ')).toBe('channel');
+    expect(channelRefToken(CONV, '# Ops [eu] (night)\nshift')).toBe(`[#Ops eu night shift](https://stage.box/#/channel/${CONV})`);
+    expect(channelRefToken(CONV, ' [] ')).toBe(`[#channel](https://stage.box/#/channel/${CONV})`);
   });
 
   test('round trips through channelRefsOf', () => {

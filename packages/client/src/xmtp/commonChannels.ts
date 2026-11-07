@@ -42,7 +42,7 @@ export type ChannelAvatarSeed = (row: CommonChannelRow) => string | null;
 
 const defaultAvatarSeed: ChannelAvatarSeed = (row) => str(row.avatarAddress);
 
-export function commonChannelFromRow(
+function commonChannelFromRow(
   row: CommonChannelRow,
   members: string[],
   avatarSeedOf: ChannelAvatarSeed = defaultAvatarSeed,

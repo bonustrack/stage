@@ -1,6 +1,6 @@
 export type AmountUnit = 'primary' | 'usd';
 
-export function parsePositiveAmount(amount: string): number | null {
+function parsePositiveAmount(amount: string): number | null {
   const raw = typeof amount === 'string' ? amount.trim() : '';
   if (!raw) return null;
   const n = Number(raw);
@@ -8,7 +8,7 @@ export function parsePositiveAmount(amount: string): number | null {
   return n;
 }
 
-export function trimDecimalString(value: string): string {
+function trimDecimalString(value: string): string {
   return value.replace(/0+$/, '').replace(/\.$/, '');
 }
 

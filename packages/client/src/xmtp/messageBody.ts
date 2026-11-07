@@ -34,7 +34,7 @@ export function mentionAddresses(text: string): string[] {
   return parseMentions(text).flatMap((seg) => (seg.type === 'mention' ? [seg.address] : []));
 }
 
-export function withMentionLabels(text: string, labelOf: (address: string) => string): string {
+function withMentionLabels(text: string, labelOf: (address: string) => string): string {
   return parseMentions(withChannelLabels(text))
     .map((seg) => (seg.type === 'mention' ? labelOf(seg.address) : seg.text))
     .join('');

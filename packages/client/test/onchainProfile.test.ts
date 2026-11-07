@@ -1,21 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  avatarCacheKey,
-  baseCoinType,
-  baseReverseNode,
-  resolveBasenameProfile,
-  resolveOnchainProfile,
-  usableAvatarUri,
-} from '../src/identity/onchainProfile';
+import { avatarCacheKey, baseReverseNode, resolveBasenameProfile, resolveOnchainProfile } from '../src/identity/onchainProfile';
 import type { PublicClient } from 'viem';
 
 const ALICE = '0x00000000000000000000000000000000000000A1';
 
 describe('basename reverse nodes', () => {
-  test('encodes the Base chain id as ENSIP-11 coin type', () => {
-    expect(baseCoinType(8453)).toBe('80002105');
-  });
-
   test('matches the reverse node OnchainKit derives for a known address', () => {
     expect(baseReverseNode('0x8c8F1a1e1bFdb15E7ed562efc84e5A588E68aD73')).toBe(
       '0xcd18b9f82b690bdf732816fe0b9796635191f97e59bcebbef4eba6e05a39da05',
@@ -26,15 +15,6 @@ describe('basename reverse nodes', () => {
     expect(baseReverseNode(ALICE)).toBe(baseReverseNode(ALICE.toLowerCase()));
     expect(baseReverseNode(ALICE)).toMatch(/^0x[0-9a-f]{64}$/);
     expect(baseReverseNode(ALICE)).not.toBe(baseReverseNode('0x00000000000000000000000000000000000000A2'));
-  });
-});
-
-describe('avatar and name helpers', () => {
-  test('keeps only fetchable avatar URIs', () => {
-    expect(usableAvatarUri(' https://x/y.png ')).toBe('https://x/y.png');
-    expect(usableAvatarUri('ipfs://bafy')).toBe('ipfs://bafy');
-    expect(usableAvatarUri('eip155:1/erc721:0xabc/1')).toBeUndefined();
-    expect(usableAvatarUri(null)).toBeUndefined();
   });
 });
 
@@ -64,6 +44,15 @@ describe('resolveBasenameProfile', () => {
       avatar: 'ipfs://pic',
       source: 'basename',
     });
+  });
+
+  test('keeps only fetchable avatar URIs', async () => {
+    const avatarOf = async (avatar: string): Promise<string | undefined> =>
+      (await resolveBasenameProfile(fakeClient({ name: 'tony.base.eth', addr: ALICE, text: { avatar } }), ALICE))?.avatar;
+    expect(await avatarOf(' https://x/y.png ')).toBe('https://x/y.png');
+    expect(await avatarOf('ipfs://bafy')).toBe('ipfs://bafy');
+    expect(await avatarOf('eip155:1/erc721:0xabc/1')).toBeUndefined();
+    expect(await avatarOf('')).toBeUndefined();
   });
 
   test('avatar cache keys change with the record and are absent without one', () => {

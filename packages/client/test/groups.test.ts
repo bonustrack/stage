@@ -1,18 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import {
   validMemberAddresses,
-  isNoInboxError,
-  isPermissionError,
   requireValidMembers,
-  mapCreateGroupError,
-  mapAddMembersError,
   createGroupWith,
   addGroupMembersWith,
   groupRoleOf,
   superAdminInboxIds,
   groupEditRightsOf,
   canEditGroup,
-  mapUpdateGroupError,
   updateGroupMetaWith,
   UNKNOWN_GROUP_POLICY,
   missingInstallationIds,
@@ -33,19 +28,6 @@ describe('validMemberAddresses', () => {
   });
 });
 
-describe('error classification', () => {
-  test('isNoInboxError', () => {
-    expect(isNoInboxError('no inbox found')).toBe(true);
-    expect(isNoInboxError('cannot find user')).toBe(true);
-    expect(isNoInboxError(LIBXMTP_ADDRESS_NOT_FOUND)).toBe(true);
-    expect(isNoInboxError('boom')).toBe(false);
-  });
-  test('isPermissionError', () => {
-    expect(isPermissionError('only admin allowed')).toBe(true);
-    expect(isPermissionError('boom')).toBe(false);
-  });
-});
-
 describe('requireValidMembers', () => {
   test('throws on empty', () => {
     expect(() => requireValidMembers(['bad'])).toThrow('Add at least one valid member address.');
@@ -55,28 +37,35 @@ describe('requireValidMembers', () => {
   });
 });
 
-describe('error mappers', () => {
-  test('create no-inbox', () => {
-    expect(mapCreateGroupError(new Error('no inbox')).message).toBe("One or more addresses aren't on XMTP yet, so they can't be added.");
+const NOT_ON_XMTP = "One or more addresses aren't on XMTP yet, so they can't be added.";
+const createFailingWith = (message: string): Promise<unknown> =>
+  createGroupWith(
+    [ADDR_A],
+    (id) => id,
+    () => Promise.reject(new Error(message)),
+    onXmtp,
+  );
+const addFailingWith = (message: string): Promise<void> => addGroupMembersWith([ADDR_A], () => Promise.reject(new Error(message)));
+
+describe('create and add errors', () => {
+  test('a create that finds no inbox says the members are not on XMTP', async () => {
+    for (const message of ['no inbox', 'cannot find user', LIBXMTP_ADDRESS_NOT_FOUND]) {
+      await expect(createFailingWith(message)).rejects.toThrow(NOT_ON_XMTP);
+    }
   });
-  test('create libxmtp address not found', () => {
-    expect(mapCreateGroupError(new Error(LIBXMTP_ADDRESS_NOT_FOUND)).message).toBe(
-      "One or more addresses aren't on XMTP yet, so they can't be added.",
-    );
+  test('any other create failure keeps its reason', async () => {
+    await expect(createFailingWith('boom')).rejects.toThrow("Couldn't create the channel: boom");
   });
-  test('create generic', () => {
-    expect(mapCreateGroupError(new Error('boom')).message).toBe("Couldn't create the channel: boom");
+  test('an add that finds no inbox says the members are not on XMTP', async () => {
+    await expect(addFailingWith('not registered')).rejects.toThrow(NOT_ON_XMTP);
   });
-  test('add no-inbox', () => {
-    expect(mapAddMembersError(new Error('not registered')).message).toBe(
-      "One or more addresses aren't on XMTP yet, so they can't be added.",
-    );
+  test('an add without the right says only an admin can add members', async () => {
+    for (const message of ['admin only', 'only admin allowed']) {
+      await expect(addFailingWith(message)).rejects.toThrow('Only a channel admin can add members.');
+    }
   });
-  test('add permission', () => {
-    expect(mapAddMembersError(new Error('admin only')).message).toBe('Only a channel admin can add members.');
-  });
-  test('add generic', () => {
-    expect(mapAddMembersError(new Error('boom')).message).toBe("Couldn't add members: boom");
+  test('any other add failure keeps its reason', async () => {
+    await expect(addFailingWith('boom')).rejects.toThrow("Couldn't add members: boom");
   });
 });
 
@@ -300,8 +289,13 @@ describe('updateGroupMetaWith', () => {
       "You don't have permission to edit this channel.",
     );
   });
-  test('keeps other errors as they are', () => {
-    expect(mapUpdateGroupError(new Error('network down')).message).toBe('network down');
+  test('keeps other errors as they are', async () => {
+    const ops = {
+      updateName: () => Promise.reject(new Error('network down')),
+      updateImageUrl: () => Promise.resolve(),
+      updateDescription: () => Promise.resolve(),
+    };
+    await expect(updateGroupMetaWith({ name: 'Crew' }, ops)).rejects.toThrow('network down');
   });
 });
 

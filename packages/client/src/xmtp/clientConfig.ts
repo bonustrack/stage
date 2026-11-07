@@ -43,7 +43,7 @@ export interface OpenedClient<C> {
   registered: boolean;
 }
 
-export const OPEN_ATTEMPTS = 5;
+const OPEN_ATTEMPTS = 5;
 const OPEN_RETRY_MS = 800;
 
 function matchesSavedInstallation<C>(deps: PersistedClientDeps<C>, client: C, saved: string | null): boolean {

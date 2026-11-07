@@ -9,7 +9,7 @@ export function isTransferRequest(decoded: DecodedCall | null, isErc20Transfer: 
   return TRANSFER_FNS.has(fn);
 }
 
-export function humanizeAction(decoded: DecodedCall | null): string {
+function humanizeAction(decoded: DecodedCall | null): string {
   const fn = decoded?.functionName;
   if (!fn) return 'Confirm';
   const lower = fn.toLowerCase();

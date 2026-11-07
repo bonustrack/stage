@@ -7,7 +7,7 @@ export interface PublicSendCall {
   data?: Hex;
 }
 
-export function parseSendAmount(amount: string, decimals: number): bigint {
+function parseSendAmount(amount: string, decimals: number): bigint {
   const trimmed = typeof amount === 'string' ? amount.trim() : '';
   let value: bigint;
   try {

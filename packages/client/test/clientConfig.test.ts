@@ -5,14 +5,12 @@ import {
   offlineOpenOptions,
   installationCreatedAtMs,
   openPersistedClient,
-  OPEN_ATTEMPTS,
 } from '../src/xmtp/clientConfig';
-import { dbDirFor } from '../src/accounts/registry';
 
 describe('webXmtpDbPath', () => {
-  test('matches inline derivation', () => {
-    expect(webXmtpDbPath('acct1', 'production')).toBe(`${dbDirFor('acct1')}-production.db3`);
-    expect(webXmtpDbPath('acct1', 'dev')).toBe(`${dbDirFor('acct1')}-dev.db3`);
+  test('keeps the database file name existing installs already use', () => {
+    expect(webXmtpDbPath('acct1', 'production')).toBe('xmtp-acct1-production.db3');
+    expect(webXmtpDbPath('acct1', 'dev')).toBe('xmtp-acct1-dev.db3');
   });
 });
 
@@ -251,7 +249,9 @@ describe('openPersistedClient', () => {
     expect(calls).toEqual(['open', 'close:inst-a']);
   });
 
-  test('defaults to five attempts', () => {
-    expect(OPEN_ATTEMPTS).toBe(5);
+  test('without an attempt count a failing open is still retried, then gives up', async () => {
+    const { d, calls } = deps({ open: () => Promise.reject(new Error('locked')) });
+    await expect(openPersistedClient(d)).rejects.toThrow('locked');
+    expect(calls.filter((c) => c === 'event:open-failed').length).toBeGreaterThan(1);
   });
 });

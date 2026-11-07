@@ -10,15 +10,7 @@ import {
   parseCallSignal,
   type CallSignal,
 } from '../src/xmtp/call';
-import {
-  EMPTY_CALLS,
-  activeCall,
-  joinableCall,
-  reduceCall,
-  type CallEffect,
-  type CallEvent,
-  type CallsState,
-} from '../src/xmtp/callMachine';
+import { EMPTY_CALLS, joinableCall, reduceCall, type CallEffect, type CallEvent, type CallsState } from '../src/xmtp/callMachine';
 
 const CONV = 'conv-1';
 const T0 = 1_700_000_000_000;
@@ -139,7 +131,7 @@ describe('1-1 call', () => {
     net.deliver();
     expect(a.state.session).toBeNull();
     expect(endReasons(a)).toEqual(['ended']);
-    expect(activeCall(a.state, CONV, T0)).toBeNull();
+    expect(joinableCall(a.state, CONV, T0, false)).toBeNull();
   });
 
   test('never rings for a request, an old invite or my own invite', () => {
@@ -149,7 +141,7 @@ describe('1-1 call', () => {
     request.start(a);
     request.deliver();
     expect(b.state.session).toBeNull();
-    expect(activeCall(b.state, CONV, T0)?.callId).toBe('call-0001');
+    expect(joinableCall(b.state, CONV, T0, true)?.callId).toBe('call-0001');
     const old = reduceCall(EMPTY_CALLS, {
       type: 'invite',
       convId: CONV,
@@ -225,7 +217,8 @@ describe('1-1 call', () => {
       allowed: false,
       invite: { callId: 'call-0001', from: 'peer-bbbb', video: false },
     }).state;
-    expect(activeCall(stale, CONV, T0 + CALL_RING_TIMEOUT_MS + 1)?.roster).toEqual({ 'peer-bbbb': 'inbox-b' });
+    expect(joinableCall(stale, CONV, T0 + CALL_RING_TIMEOUT_MS + 1, false)?.roster).toEqual({ 'peer-bbbb': 'inbox-b' });
+    expect(joinableCall(stale, CONV, T0 + CALL_RING_TIMEOUT_MS + 1, true)).toBeNull();
     const again = reduceCall(stale, {
       type: 'start',
       convId: CONV,
@@ -307,8 +300,8 @@ describe('channel mesh', () => {
     net.devices.push(late);
     net.deliver(T0 - 10 * 60_000, T0);
     expect(late.state.session).toBeNull();
-    expect(activeCall(late.state, CONV, T0)?.roster).toEqual({ 'peer-aaaa': 'inbox-a' });
-    expect(activeCall(late.state, CONV, T0 + CALL_STALE_MS)).toBeNull();
+    expect(joinableCall(late.state, CONV, T0, false)?.roster).toEqual({ 'peer-aaaa': 'inbox-a' });
+    expect(joinableCall(late.state, CONV, T0 + CALL_STALE_MS, false)).toBeNull();
     net.join(late);
     net.deliver();
     expect(net.links).toEqual(['peer-aaaa<>peer-zzzz']);
@@ -326,7 +319,7 @@ describe('channel mesh', () => {
     expect(b.state.session?.phase).toBe('joined');
     net.apply(b, { type: 'tick', nowMs: T0 + CALL_RING_TIMEOUT_MS });
     expect(endReasons(b)).toEqual(['no-answer']);
-    expect(activeCall(b.state, CONV, T0)).toBeNull();
+    expect(joinableCall(b.state, CONV, T0, false)).toBeNull();
   });
 
   test('a full call refuses one more person', () => {

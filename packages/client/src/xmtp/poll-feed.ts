@@ -3,7 +3,7 @@ import { votesByPoll, ownVotes, openAnswersByPoll, type VoteEvent } from './poll
 import { normalizeQuestions, type PollQuestion } from './poll';
 import { payloadTypeOf, pollContentOf, reactionOf } from './entryPayload';
 
-export function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
+function voteEventsOf(events: HistoryEntry[]): VoteEvent[] {
   const out: VoteEvent[] = [];
   for (const e of events) {
     const p = reactionOf(e);

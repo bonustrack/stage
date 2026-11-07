@@ -96,7 +96,7 @@ export function nodeHeaders(method: string, url: string, body: string, key: stri
   };
 }
 
-export function nodeRequestBody(request: NodeRequest, capabilities?: Record<string, unknown>): string {
+function nodeRequestBody(request: NodeRequest, capabilities?: Record<string, unknown>): string {
   const metadata = {
     ...(capabilities === undefined ? {} : { a2uiRendererCapabilities: capabilities }),
     ...(request.dataModel === undefined ? {} : { a2uiRendererDataModel: { version: A2UI_MESSAGE_VERSION, surfaces: request.dataModel } }),
@@ -119,13 +119,13 @@ function messagesOf(json: unknown): unknown[] | null {
   return json.version === undefined ? null : [json];
 }
 
-export function loadReplyOf(json: unknown): NodeReply | null {
+function loadReplyOf(json: unknown): NodeReply | null {
   const messages = messagesOf(json);
   const parsed = messages === null ? null : frameContentSchema.safeParse({ messages });
   return parsed?.success === true ? { kind: 'frame', frame: parsed.data } : null;
 }
 
-export function messageReplyOf(json: unknown): NodeReply | null {
+function messageReplyOf(json: unknown): NodeReply | null {
   const messages = json === undefined ? [] : messagesOf(json);
   if (messages === null) return null;
   if (messages.length === 0) return { kind: 'unchanged' };

@@ -99,7 +99,7 @@ function isCallFull(info: CallInfo | undefined): boolean {
   return info !== undefined && Object.keys(info.roster).length >= MAX_CALL_PARTICIPANTS;
 }
 
-export function activeCall(state: CallsState, convId: string, nowMs: number): CallInfo | null {
+function activeCall(state: CallsState, convId: string, nowMs: number): CallInfo | null {
   const info = state.calls[convId];
   if (info === undefined || nowMs - info.lastMs > CALL_STALE_MS) return null;
   return Object.keys(info.roster).length > 0 ? info : null;

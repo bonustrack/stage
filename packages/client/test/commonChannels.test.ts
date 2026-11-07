@@ -1,40 +1,48 @@
 import { describe, expect, test } from 'bun:test';
-import { commonChannelFromRow, resolveCommonChannels, type CommonChannelRow } from '../src/xmtp/commonChannels';
+import { resolveCommonChannels, type ChannelAvatarSeed, type CommonChannel, type CommonChannelRow } from '../src/xmtp/commonChannels';
 
 const PEER = '0xPeerAddress';
 
-describe('commonChannelFromRow', () => {
-  test('maps fields with defaults', () => {
-    const row: CommonChannelRow = { convId: 'c1' };
-    const ch = commonChannelFromRow(row, ['0xA', '0xB']);
-    expect(ch.convId).toBe('c1');
-    expect(ch.title).toBe('Channel');
-    expect(ch.placeholderTitle).toBe(true);
-    expect(ch.avatarUri).toBeNull();
-    expect(ch.memberCount).toBe(3);
-    expect(ch.lastPreview).toBe('');
-    expect(ch.lastFromSelf).toBe(false);
+const shared = async (row: CommonChannelRow, seedOf?: ChannelAvatarSeed): Promise<CommonChannel | undefined> => {
+  const [channel] = await resolveCommonChannels(PEER, [row], () => Promise.resolve([PEER, '0xB']), seedOf);
+  return channel;
+};
+
+describe('a shared channel', () => {
+  test('fills the fields a row leaves out', async () => {
+    expect(await shared({ convId: 'c1' })).toEqual({
+      convId: 'c1',
+      title: 'Channel',
+      placeholderTitle: true,
+      avatarUri: null,
+      avatarAddress: null,
+      memberCount: 3,
+      lastTs: null,
+      lastPreview: '',
+      lastSenderAddress: null,
+      lastFromSelf: false,
+      unreadCount: 0,
+      markedUnread: false,
+    });
   });
 
-  test('uses avatarAddress only when no avatarUri', () => {
-    const withUri = commonChannelFromRow({ convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' }, []);
-    expect(withUri.avatarUri).toBe('ipfs://x');
-    expect(withUri.avatarAddress).toBeNull();
-    const withSeed = commonChannelFromRow({ convId: 'c1', avatarAddress: '0xSeed' }, []);
-    expect(withSeed.avatarAddress).toBe('0xSeed');
+  test('uses avatarAddress only when no avatarUri', async () => {
+    expect(await shared({ convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' })).toMatchObject({
+      avatarUri: 'ipfs://x',
+      avatarAddress: null,
+    });
+    expect((await shared({ convId: 'c1', avatarAddress: '0xSeed' }))?.avatarAddress).toBe('0xSeed');
   });
 
-  test('flags a fallback title, never a real name', () => {
-    expect(commonChannelFromRow({ convId: 'c1', title: '3 members', groupName: '' }, []).placeholderTitle).toBe(true);
-    expect(commonChannelFromRow({ convId: 'c1', title: 'Team', groupName: 'Team' }, []).placeholderTitle).toBe(false);
+  test('flags a fallback title, never a real name', async () => {
+    expect((await shared({ convId: 'c1', title: '3 members', groupName: '' }))?.placeholderTitle).toBe(true);
+    expect((await shared({ convId: 'c1', title: 'Team', groupName: 'Team' }))?.placeholderTitle).toBe(false);
   });
 
-  test('injected avatarSeedOf overrides avatarAddress when no avatarUri (app parity)', () => {
+  test('an avatar seed from the app replaces avatarAddress when there is no avatarUri', async () => {
     const seedOf = (r: CommonChannelRow): string => `seed:${r.convId}`;
-    const withSeed = commonChannelFromRow({ convId: 'c1', avatarAddress: '0xSeed' }, [], seedOf);
-    expect(withSeed.avatarAddress).toBe('seed:c1');
-    const withUri = commonChannelFromRow({ convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' }, [], seedOf);
-    expect(withUri.avatarAddress).toBeNull();
+    expect((await shared({ convId: 'c1', avatarAddress: '0xSeed' }, seedOf))?.avatarAddress).toBe('seed:c1');
+    expect((await shared({ convId: 'c1', avatarUri: 'ipfs://x', avatarAddress: '0xSeed' }, seedOf))?.avatarAddress).toBeNull();
   });
 });
 

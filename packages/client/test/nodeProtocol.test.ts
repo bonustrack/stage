@@ -2,17 +2,7 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { ed25519 } from '@noble/curves/ed25519';
 import { utf8ToBytes } from '@noble/hashes/utils';
 import { base64ToBytes } from '../src/text/base64';
-import {
-  loadNode,
-  loadReplyOf,
-  messageReplyOf,
-  newNodeKey,
-  nodeHeaders,
-  nodeKeyId,
-  nodeRequestBody,
-  nodeUrlOf,
-  sendNodeMessage,
-} from '../src/nodes/protocol';
+import { loadNode, newNodeKey, nodeHeaders, nodeKeyId, nodeUrlOf, sendNodeMessage, type NodeResult } from '../src/nodes/protocol';
 import { nodeSigningText } from '../src/nodes/signing';
 
 const RFC8032_KEY = '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60';
@@ -35,9 +25,9 @@ const VOTE_MESSAGE = { version: 'v1.0', action: VOTE };
 const CAPABILITIES = { 'v1.0': { supportedCatalogIds: [KIT] } };
 const realFetch = globalThis.fetch;
 
-function bytesOf(base64url: string): Uint8Array {
+function bytesOf(base64url: string): Uint8Array<ArrayBuffer> {
   const b64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
-  return base64ToBytes(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
+  return new Uint8Array(base64ToBytes(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
 }
 
 interface Seen {
@@ -170,45 +160,60 @@ describe('node request signing', () => {
   });
 
   test('a node verifies the signature with WebCrypto Ed25519', async () => {
-    const body = nodeRequestBody({ message: VOTE_MESSAGE });
+    const body = JSON.stringify(VOTE_MESSAGE);
     const headers = nodeHeaders('POST', URL_A, body, RFC8032_KEY, NOW);
     const publicKey = await crypto.subtle.importKey('raw', bytesOf(RFC8032_PUBLIC), { name: 'Ed25519' }, false, ['verify']);
-    const signed = utf8ToBytes(nodeSigningText('POST', URL_A, headers['Stage-Timestamp'] ?? '', body));
+    const signed = new TextEncoder().encode(nodeSigningText('POST', URL_A, headers['Stage-Timestamp'] ?? '', body));
     expect(await crypto.subtle.verify({ name: 'Ed25519' }, publicKey, bytesOf(headers['Stage-Signature'] ?? ''), signed)).toBe(true);
   });
 });
 
+const replyWith = (json: unknown): Response => (json === undefined ? new Response(null) : Response.json(json));
+
+async function loaded(json: unknown): Promise<NodeResult> {
+  stubFetch(() => replyWith(json));
+  return loadNode(URL_A, RFC8032_KEY);
+}
+
+async function answered(json: unknown): Promise<NodeResult> {
+  stubFetch(() => replyWith(json));
+  return sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE });
+}
+
 describe('node requests', () => {
-  test('are the A2UI renderer message, with capabilities and the data model in its metadata', () => {
-    expect(JSON.parse(nodeRequestBody({ message: VOTE_MESSAGE }))).toEqual(VOTE_MESSAGE);
-    expect(JSON.parse(nodeRequestBody({ message: VOTE_MESSAGE, dataModel: { main: { price: 1 } } }, CAPABILITIES)).metadata).toEqual({
-      a2uiRendererCapabilities: CAPABILITIES,
-      a2uiRendererDataModel: { version: 'v1.0', surfaces: { main: { price: 1 } } },
+  test('are the A2UI renderer message, with capabilities and the data model in its metadata', async () => {
+    const seen = stubFetch(() => Response.json([]));
+    await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE });
+    await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE, dataModel: { main: { price: 1 } } }, { capabilities: CAPABILITIES });
+    expect(JSON.parse(String(seen[0]?.init.body))).toEqual(VOTE_MESSAGE);
+    expect(JSON.parse(String(seen[1]?.init.body))).toEqual({
+      ...VOTE_MESSAGE,
+      metadata: { a2uiRendererCapabilities: CAPABILITIES, a2uiRendererDataModel: { version: 'v1.0', surfaces: { main: { price: 1 } } } },
     });
   });
 });
 
 describe('node replies', () => {
-  const frame = { kind: 'frame', frame: { messages: MESSAGES } };
+  const frame: NodeResult = { ok: true, reply: { kind: 'frame', frame: { messages: MESSAGES } } };
+  const unchanged: NodeResult = { ok: true, reply: { kind: 'unchanged' } };
+  const invalid: NodeResult = { ok: false, problem: 'invalid' };
   const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'main.1', value: 42 } };
   const call = {
     version: 'v1.0',
     callRendererFunction: { functionCallId: 'f1', callFunction: { '@call': 'formatNumber', catalogId: KIT, args: { value: 1 } } },
   };
 
-  test('a load answers A2UI messages as an array, a messages object or one message', () => {
-    expect(loadReplyOf(MESSAGES)).toEqual(frame);
-    expect(loadReplyOf({ messages: MESSAGES })).toEqual(frame);
-    expect(loadReplyOf(MESSAGES[0])).toEqual(frame);
+  test('a load answers A2UI messages as an array, a messages object or one message', async () => {
+    for (const json of [MESSAGES, { messages: MESSAGES }, MESSAGES[0]]) expect(await loaded(json)).toEqual(frame);
   });
 
-  test('a request answers any agent message, function calls and answers included, and no messages keep the current frame', () => {
-    expect(messageReplyOf([UPDATE])).toEqual({ kind: 'messages', messages: [UPDATE] });
-    expect(messageReplyOf([answer, call, UPDATE])).toEqual({ kind: 'messages', messages: [answer, call, UPDATE] });
-    for (const empty of [[], {}, { messages: [] }, undefined]) expect(messageReplyOf(empty)).toEqual({ kind: 'unchanged' });
+  test('a request answers any agent message, function calls and answers included, and no messages keep the current frame', async () => {
+    expect(await answered([UPDATE])).toEqual({ ok: true, reply: { kind: 'messages', messages: [UPDATE] } });
+    expect(await answered([answer, call, UPDATE])).toEqual({ ok: true, reply: { kind: 'messages', messages: [answer, call, UPDATE] } });
+    for (const empty of [[], {}, { messages: [] }, undefined]) expect(await answered(empty)).toEqual(unchanged);
   });
 
-  test('a load refuses anything but A2UI frame messages', () => {
+  test('a load refuses anything but A2UI frame messages', async () => {
     const refused = [
       null,
       undefined,
@@ -225,10 +230,10 @@ describe('node replies', () => {
       { messages: MESSAGES, title: 'x' },
       [{ version: 'v1.0', createSurface: { surfaceId: 'a', note: 'x'.repeat(70_000) } }],
     ];
-    for (const reply of refused) expect([reply, loadReplyOf(reply)]).toEqual([reply, null]);
+    for (const reply of refused) expect<unknown>([reply, await loaded(reply)]).toEqual([reply, invalid]);
   });
 
-  test('a request refuses anything but A2UI agent messages', () => {
+  test('a request refuses anything but A2UI agent messages', async () => {
     const refused = [
       null,
       'Card',
@@ -238,7 +243,7 @@ describe('node replies', () => {
       [{ version: 'v1.0', agentFunctionResponse: { value: 1 } }],
       [{ version: 'v1.0', callRendererFunction: {} }],
     ];
-    for (const reply of refused) expect([reply, messageReplyOf(reply)]).toEqual([reply, null]);
+    for (const reply of refused) expect<unknown>([reply, await answered(reply)]).toEqual([reply, invalid]);
   });
 });
 
