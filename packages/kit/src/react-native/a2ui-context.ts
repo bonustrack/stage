@@ -2,9 +2,9 @@ import { createContext, type ReactNode } from 'react';
 import type { A2uiClient, DispatchResult } from '../a2ui/client';
 import type { Scope } from '../a2ui/evaluate';
 import type { ComponentInstance, JsonValue, ValidationResult } from '../a2ui/protocol';
-import { borderSpecOf, colorValueOf, type BorderSideSpec, type BorderSpec } from '../a2ui/kit-catalog.coerce';
+import { borderSpecOf, colorValueOf, type BorderSpec } from '../a2ui/kit-catalog.coerce';
 import { BORDER_SIDES } from '../kit-vocabulary';
-import type { ResolvedBoxBorder, ResolvedBoxBorderSide } from '../layout';
+import type { ResolvedBoxBorder } from '../layout';
 import { DENSITY_SCALE, resolvePaletteColor, type KitPalette } from '../tokens';
 import type { A2uiAccessibility } from './a2ui-props';
 import type { IconName, IconProps } from './icon';
@@ -84,16 +84,14 @@ export function colorOf(ctx: RenderContext, value: unknown): string | undefined 
   return paletteColor(ctx, colorValueOf(value));
 }
 
-function resolveBorderSide(ctx: RenderContext, side: BorderSideSpec): ResolvedBoxBorderSide {
-  return { width: side.width, color: paletteColor(ctx, side.color) ?? ctx.palette.border, style: side.style };
-}
-
 export function resolveBorder(ctx: RenderContext, spec: BorderSpec | undefined): ResolvedBoxBorder | undefined {
   if (spec === undefined) return undefined;
   return Object.fromEntries(
     BORDER_SIDES.flatMap((name) => {
       const side = spec[name];
-      return side === undefined ? [] : [[name, resolveBorderSide(ctx, side)]];
+      return side === undefined
+        ? []
+        : [[name, { width: side.width, color: paletteColor(ctx, side.color) ?? ctx.palette.border, style: side.style }]];
     }),
   );
 }

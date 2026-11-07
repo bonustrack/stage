@@ -70,12 +70,6 @@ function useVideoSize(player: ExpoVideoPlayer, frame: React.RefObject<View | nul
   }, [player, frame, onVideoSize]);
 }
 
-function useWebPoster(frame: React.RefObject<View | null>, posterUrl: string | undefined): void {
-  useEffect(() => {
-    setVideoPoster(frame.current, posterUrl ?? '');
-  }, [frame, posterUrl]);
-}
-
 function usePosterVisible(player: ReturnType<typeof useVideoPlayer>, posterUrl: string | undefined): boolean {
   const [showPoster, setShowPoster] = useState(posterUrl !== undefined);
   useEffect(() => {
@@ -105,7 +99,9 @@ export function Video(props: VideoProps): React.ReactElement {
   const frame = useRef<View>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const showPoster = usePosterVisible(player, posterUrl);
-  useWebPoster(frame, posterUrl);
+  useEffect(() => {
+    setVideoPoster(frame.current, posterUrl ?? '');
+  }, [frame, posterUrl]);
   useVideoSize(player, frame, onVideoSize);
 
   return (

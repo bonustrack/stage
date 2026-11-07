@@ -24,9 +24,7 @@ export function KitThemeProvider({ value, scheme, children }: KitThemeProviderPr
 }
 
 function useKitThemeValue(): KitThemeValue {
-  const ctx = useContext(KitThemeContext);
-  if (ctx) return ctx;
-  return { palette: kitPalette('light'), scheme: 'light' };
+  return useContext(KitThemeContext) ?? { palette: kitPalette('light'), scheme: 'light' };
 }
 
 export function useKitPalette(): KitPalette {

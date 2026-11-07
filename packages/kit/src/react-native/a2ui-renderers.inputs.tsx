@@ -67,8 +67,6 @@ function A2uiTextField({ ctx }: { ctx: RenderContext }): React.ReactElement {
   );
 }
 
-const textFieldRenderer = (ctx: RenderContext): ReactNode => <A2uiTextField ctx={ctx} />;
-
 function A2uiCheckBox({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const binding = ctx.binding<boolean>('value');
   const act = useA2uiAction(ctx);
@@ -84,8 +82,6 @@ function A2uiCheckBox({ ctx }: { ctx: RenderContext }): React.ReactElement {
     />
   );
 }
-
-const checkBoxRenderer = (ctx: RenderContext): ReactNode => <A2uiCheckBox ctx={ctx} />;
 
 function choicePickerRenderer(ctx: RenderContext): ReactNode {
   const p = ctx.props;
@@ -138,8 +134,8 @@ function dateTimeRenderer(ctx: RenderContext): ReactNode {
 }
 
 export const INPUT_RENDERERS: A2uiRenderers = {
-  TextField: textFieldRenderer,
-  CheckBox: checkBoxRenderer,
+  TextField: (ctx) => <A2uiTextField ctx={ctx} />,
+  CheckBox: (ctx) => <A2uiCheckBox ctx={ctx} />,
   ChoicePicker: choicePickerRenderer,
   Slider: sliderRenderer,
   DateTimeInput: dateTimeRenderer,

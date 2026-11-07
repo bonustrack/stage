@@ -22,13 +22,7 @@ export function measureElement(node: unknown): ScreenRect | null {
   return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
 }
 
-export interface DragPlatform {
-  measuresSynchronously: boolean;
-  ghostInViewport: boolean;
-  nativeDriver: boolean;
-}
-
-export const DRAG_PLATFORM: DragPlatform = { measuresSynchronously: true, ghostInViewport: true, nativeDriver: false };
+export const DRAG_PLATFORM = { measuresSynchronously: true, ghostInViewport: true, nativeDriver: false };
 
 export function measureElementLater(node: unknown): Promise<ScreenRect | null> {
   return Promise.resolve(measureElement(node));
@@ -71,9 +65,7 @@ function swallowClick(event: Event): void {
   event.preventDefault();
 }
 
-const CLICK_GRACE_MS = 300;
-
-export function swallowNextClick(graceMs = CLICK_GRACE_MS): void {
+export function swallowNextClick(graceMs = 300): void {
   if (typeof document === 'undefined') return;
   document.addEventListener('click', swallowClick, { capture: true, once: true });
   setTimeout(() => {

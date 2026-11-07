@@ -153,9 +153,8 @@ export function ChoicePicker(props: ChoicePickerProps): React.ReactElement {
     weight,
     accessibility,
   } = props;
-  const kit = useKitColors(props.dark, 'static');
-  const dark = kit.dark;
-  const palette = checkboxColors(dark, kit.palette);
+  const { dark, palette: kitColors } = useKitColors(props.dark, 'static');
+  const palette = checkboxColors(dark, kitColors);
   const [query, setQuery] = useState('');
   const [selected, pick] = useSelection(props);
   const chips = displayStyle === 'chips';

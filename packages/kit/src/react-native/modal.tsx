@@ -185,16 +185,12 @@ function panelLayout(side: DialogSide, topInset: number): PanelLayout {
   };
 }
 
-function useModalSide(side: DialogSide): DialogSide {
-  const { width } = useWindowDimensions();
-  return side === 'end' && width < MODAL.sideMinWindow ? 'bottom' : side;
-}
-
 function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
   const { children, title, footer, bottomInset, dark, background, borderColor, dismissable = true } = props;
-  const kit = useKitColors(dark, 'provider');
-  const pal = kit.palette;
-  const side = useModalSide(props.side ?? 'center');
+  const { palette: pal, dark: isDark } = useKitColors(dark, 'provider');
+  const { width } = useWindowDimensions();
+  const requested = props.side ?? 'center';
+  const side = requested === 'end' && width < MODAL.sideMinWindow ? 'bottom' : requested;
   const layout = panelLayout(side, useSafeAreaInsets().top);
   return (
     <Dialog
@@ -202,7 +198,7 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
       onClose={close}
       side={side}
       dismissable={dismissable}
-      header={<ModalHeader title={title} onClose={close} pal={pal} dark={kit.dark} dismissable={dismissable} inset={layout.inset} />}
+      header={<ModalHeader title={title} onClose={close} pal={pal} dark={isDark} dismissable={dismissable} inset={layout.inset} />}
       footer={footer}
       bottomInset={bottomInset}
       animationType="none"

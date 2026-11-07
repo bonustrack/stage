@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { View, type ViewStyle } from 'react-native';
+import { View } from 'react-native';
 import { KIT_PROPS } from '../a2ui/kit-catalog';
 import { coerceProps } from '../a2ui/kit-catalog.props';
 import { isChildTemplate, isEventAction, isFunctionAction } from '../a2ui/protocol';
@@ -48,16 +48,8 @@ function iconNode(value: unknown): ReactNode {
   return name === undefined ? undefined : <Icon name={name} size={ICON_IN_BUTTON} />;
 }
 
-const SHRINK_TO_FIT = { flexShrink: 1 };
-
 function opacityStyle(opacity: number | undefined): { opacity: number } | undefined {
   return opacity === undefined ? undefined : { opacity: Math.max(0, Math.min(1, opacity)) };
-}
-
-function flexStyle(shrink: boolean, opacity: number | undefined): ViewStyle | undefined {
-  if (opacity === undefined) return shrink ? SHRINK_TO_FIT : undefined;
-  const faded = Math.max(0, Math.min(1, opacity));
-  return shrink ? { ...SHRINK_TO_FIT, opacity: faded } : { opacity: faded };
 }
 
 function flexProps(ctx: RenderContext) {
@@ -70,26 +62,20 @@ function flexProps(ctx: RenderContext) {
     gap: gap ?? DEFAULT_GAP,
     background: paletteColor(ctx, background),
     border: resolveBorder(ctx, border),
-    style: flexStyle(typeof kit.width === 'string', opacity),
+    style: typeof kit.width === 'string' ? { flexShrink: 1, ...opacityStyle(opacity) } : opacityStyle(opacity),
     feedback,
   };
 }
 
 function A2uiFlex({ ctx, row = false, children }: { ctx: RenderContext; row?: boolean; children: ReactNode }): React.ReactElement {
   const act = useA2uiAction(ctx);
+  const run = (): void => {
+    act();
+  };
   const { feedback, ...box } = flexProps(ctx);
   const press =
     isEventAction(ctx.instance.action) || isFunctionAction(ctx.instance.action)
-      ? {
-          onPress: () => {
-            act();
-          },
-          disabled: ctx.disabled,
-          feedback,
-          ...a2uiLinkProps(ctx, () => {
-            act();
-          }),
-        }
+      ? { onPress: run, disabled: ctx.disabled, feedback, ...a2uiLinkProps(ctx, run) }
       : {};
   const Flex = row ? Row : Column;
   return (
@@ -158,38 +144,28 @@ function iconRenderer(ctx: RenderContext): ReactNode {
 function A2uiButton({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const p = ctx.props;
   const label = ctx.childText(p.child);
-  const press = useA2uiAction(ctx);
-  const kit = coerceProps(KIT_PROPS.Button, p);
+  const act = useA2uiAction(ctx);
+  const press = (): void => {
+    act();
+  };
+  const { opacity, disabled, ...kit } = coerceProps(KIT_PROPS.Button, p);
   return (
     <Button
       {...commonProps(ctx)}
-      loading={kit.loading}
-      style={opacityStyle(kit.opacity)}
-      variant={kit.variant}
-      color={kit.color}
-      size={kit.size}
-      pill={kit.pill}
-      block={kit.block}
-      uniform={kit.uniform}
+      {...kit}
+      style={opacityStyle(opacity)}
       iconStart={iconNode(p.iconStart)}
       iconEnd={iconNode(p.iconEnd)}
-      disabled={ctx.disabled || kit.disabled}
+      disabled={ctx.disabled || disabled}
       checks={ctx.checks}
       label={label}
-      onPress={() => {
-        press();
-      }}
-      {...a2uiLinkProps(ctx, () => {
-        press();
-      })}
+      onPress={press}
+      {...a2uiLinkProps(ctx, press)}
     >
       {label === undefined ? ctx.child(p.child) : undefined}
     </Button>
   );
 }
-
-const buttonRenderer = (ctx: RenderContext): ReactNode =>
-  withLabelTooltip(ctx, <A2uiButton ctx={ctx} />, ctx.childText(ctx.props.child) === undefined);
 
 function titleRenderer(ctx: RenderContext): ReactNode {
   const kit = coerceProps(KIT_PROPS.Title, ctx.props);
@@ -275,7 +251,7 @@ export const KIT_RENDERERS: A2uiRenderers = {
   Text: textRenderer,
   Image: imageRenderer,
   Icon: iconRenderer,
-  Button: buttonRenderer,
+  Button: (ctx) => withLabelTooltip(ctx, <A2uiButton ctx={ctx} />, ctx.childText(ctx.props.child) === undefined),
   ...INPUT_RENDERERS,
   ...OVERLAY_RENDERERS,
   Title: titleRenderer,

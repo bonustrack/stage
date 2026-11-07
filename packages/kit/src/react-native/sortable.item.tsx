@@ -13,7 +13,7 @@ import {
 } from './sortable.context';
 import { accessibilityProps, useKeyboard, usePan } from './sortable.gesture';
 import { setCursor } from './dom';
-import type { SortCoordinator, SortItemEntry, SortState } from './sortable.store';
+import type { SortCoordinator, SortItemEntry } from './sortable.store';
 
 const DRAGGING_OPACITY = 0.4;
 
@@ -92,9 +92,6 @@ function itemStyle(
   return { transform: [translate], opacity: custom || !dragging ? 1 : DRAGGING_OPACITY };
 }
 
-const isHidden = (state: SortState, listId: string, itemId: string): boolean =>
-  state.hidden.some((entry) => entry.listId === listId && entry.itemId === itemId);
-
 function ItemView({
   list,
   lead,
@@ -111,7 +108,9 @@ function ItemView({
   children: SortableItemProps['children'];
 }): React.ReactElement {
   const dragging = useSortState(list.coordinator, (state) => state.drag?.itemId === lead && state.drag.listId === list.listId);
-  const hidden = useSortState(list.coordinator, (state) => isHidden(state, list.listId, lead));
+  const hidden = useSortState(list.coordinator, (state) =>
+    state.hidden.some((entry) => entry.listId === list.listId && entry.itemId === lead),
+  );
   const custom = typeof children === 'function';
   return (
     <Animated.View ref={item.node} style={[itemStyle(list, item.offset, dragging, custom), style, hidden ? COLLAPSED : null]} {...extra}>

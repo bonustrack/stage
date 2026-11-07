@@ -45,13 +45,10 @@ function a2uiIcon(name: A2uiIconName, style: IconStyle): CentralIcon {
   return typeof target === 'string' ? centralIcon(target, style) : rosterIcon(target.extra, style);
 }
 
-function namedCentralIcon(name: string, style: IconStyle): CentralIcon | undefined {
-  return Object.hasOwn(CENTRAL_ICONS, name) ? rosterIcon(name as CentralIconName, style) : undefined;
-}
-
 function resolveIcon(name: string, style: IconStyle): CentralIcon | undefined {
   if (isKitIconAliasName(name)) return centralIcon(name, style);
-  return isA2uiIconName(name) ? a2uiIcon(name, style) : namedCentralIcon(name, style);
+  if (isA2uiIconName(name)) return a2uiIcon(name, style);
+  return Object.hasOwn(CENTRAL_ICONS, name) ? rosterIcon(name as CentralIconName, style) : undefined;
 }
 
 interface GlyphOfProps {

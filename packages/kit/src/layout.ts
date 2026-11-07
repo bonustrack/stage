@@ -76,31 +76,23 @@ export type BoxStyleEntries = Record<string, string | number>;
 
 function applySpacing(s: BoxStyleEntries, prefix: 'padding' | 'margin', value: number | string | Spacing | undefined): void {
   if (value === undefined) return;
+  const sides: Spacing = typeof value === 'object' ? value : { top: value, right: value, bottom: value, left: value };
   const Top = `${prefix}Top`;
   const Right = `${prefix}Right`;
   const Bottom = `${prefix}Bottom`;
   const Left = `${prefix}Left`;
-
-  if (typeof value === 'number' || typeof value === 'string') {
-    s[Top] = value;
-    s[Right] = value;
-    s[Bottom] = value;
-    s[Left] = value;
-    return;
+  if (sides.x !== undefined) {
+    s[Left] = sides.x;
+    s[Right] = sides.x;
   }
-
-  if (value.x !== undefined) {
-    s[Left] = value.x;
-    s[Right] = value.x;
+  if (sides.y !== undefined) {
+    s[Top] = sides.y;
+    s[Bottom] = sides.y;
   }
-  if (value.y !== undefined) {
-    s[Top] = value.y;
-    s[Bottom] = value.y;
-  }
-  if (value.top !== undefined) s[Top] = value.top;
-  if (value.right !== undefined) s[Right] = value.right;
-  if (value.bottom !== undefined) s[Bottom] = value.bottom;
-  if (value.left !== undefined) s[Left] = value.left;
+  if (sides.top !== undefined) s[Top] = sides.top;
+  if (sides.right !== undefined) s[Right] = sides.right;
+  if (sides.bottom !== undefined) s[Bottom] = sides.bottom;
+  if (sides.left !== undefined) s[Left] = sides.left;
 }
 
 function setIf(s: BoxStyleEntries, key: string, value: string | number | undefined): void {

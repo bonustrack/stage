@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Animated, View, type StyleProp, type ViewStyle } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
-import type { SortDirection, SortMove, SortRect, SortSlot } from '../sortable';
+import type { SortDirection, SortMove, SortRect } from '../sortable';
 import {
   HandleContext,
   ListContext,
@@ -142,9 +142,6 @@ function listSettings(props: SortableListProps): Omit<ListContextValue, 'coordin
   };
 }
 
-const isEmptySlot = (slot: SortSlot | null, listId: string): boolean =>
-  slot?.listId === listId && slot.beforeId === null && slot.afterId === null;
-
 function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): React.ReactElement {
   const { coordinator, listId } = props;
   const settings = listSettings(props);
@@ -178,7 +175,7 @@ function ListBody(props: SortableListProps & { coordinator: SortCoordinator }): 
   );
   const over = useSortState(coordinator, (state) => state.target?.listId === listId);
   const line = useSortState(coordinator, (state) => (state.target?.listId === listId ? state.indicator : null));
-  const empty = useSortState(coordinator, (state) => isEmptySlot(state.slot, listId));
+  const empty = useSortState(coordinator, ({ slot }) => slot?.listId === listId && slot.beforeId === null && slot.afterId === null);
   const { context, lists } = useListContext({ coordinator, listId, items, ...settings });
   const placeholder = empty ? <Placeholder coordinator={coordinator} /> : null;
   const custom = typeof props.children === 'function';

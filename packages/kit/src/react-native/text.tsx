@@ -60,12 +60,6 @@ function baseStyle(p: StyleProps, color: string): TextStyle {
   return { ...base, ...weightStyle(p.weight) };
 }
 
-function useTextColor(color: TextProps['color'], variant: TextVariant | undefined): string {
-  const { palette } = useKitColors(undefined, 'provider');
-  const inherited = useContentColor();
-  return color != null ? resolvePaletteColor(color, palette) : textDefaultColor(variant, palette, inherited);
-}
-
 const PLAIN_LINE_HEIGHT = 1.22;
 const MARKDOWN_BLOCK_GAP = 8;
 const FLOW_BLOCKS = [
@@ -134,7 +128,9 @@ export function Text(props: TextProps): React.ReactElement {
     children,
     ...rest
   } = props;
-  const resolved = useTextColor(color, variant);
+  const { palette } = useKitColors(undefined, 'provider');
+  const inherited = useContentColor();
+  const resolved = color != null ? resolvePaletteColor(color, palette) : textDefaultColor(variant, palette, inherited);
   const base = baseStyle(
     { variant, size, fontWeight, textAlign, italic, lineThrough, fontFamily, letterSpacing, textTransform, weight },
     resolved,

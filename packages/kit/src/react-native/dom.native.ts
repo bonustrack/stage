@@ -1,7 +1,7 @@
 import { Vibration } from 'react-native';
 import type * as Web from './dom';
 
-export type { DragPlatform, ScreenRect, ScrollStep } from './dom';
+export type { ScreenRect, ScrollStep } from './dom';
 
 const release = (): void => undefined;
 

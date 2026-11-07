@@ -132,9 +132,7 @@ export function Image(props: ImageProps): React.ReactElement {
   const { url, headers, description, fit = 'fill', style, resizeMethod, resizeMultiplier, onLoad, onError, accessibility } = props;
   const base = imageBox(props);
   const flattened = style === undefined ? base : StyleSheet.flatten([base, style]);
-  if (url.trim() === '') {
-    return <View style={flattened} {...accessibilityProps(accessibility)} />;
-  }
+  if (url.trim() === '') return <View style={flattened} {...accessibilityProps(accessibility)} />;
   return (
     <RNImage
       source={headers ? { uri: url, headers } : { uri: url }}

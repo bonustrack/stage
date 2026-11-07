@@ -143,22 +143,20 @@ function MenuRows({ ctx, onClose }: { ctx: RenderContext; onClose: () => void })
   const act = useA2uiAction(ctx);
   return (
     <DropdownMenu dark={ctx.dark}>
-      {menuRows(ctx).map((row, index) => {
-        return (
-          <DropdownMenuItem
-            key={index}
-            label={row.label}
-            danger={row.danger}
-            selected={row.selected}
-            dark={ctx.dark}
-            icon={rowLeading(ctx, row)}
-            onPress={() => {
-              onClose();
-              act(row.action);
-            }}
-          />
-        );
-      })}
+      {menuRows(ctx).map((row, index) => (
+        <DropdownMenuItem
+          key={index}
+          label={row.label}
+          danger={row.danger}
+          selected={row.selected}
+          dark={ctx.dark}
+          icon={rowLeading(ctx, row)}
+          onPress={() => {
+            onClose();
+            act(row.action);
+          }}
+        />
+      ))}
     </DropdownMenu>
   );
 }

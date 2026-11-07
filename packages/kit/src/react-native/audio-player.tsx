@@ -176,12 +176,7 @@ function BasicPlayer({
   duration,
   onPlay,
   dark,
-}: {
-  url: string;
-  duration?: number;
-  onPlay?: () => void;
-  dark: boolean;
-}): React.ReactElement {
+}: Pick<AudioPlayerProps, 'url' | 'duration' | 'onPlay'> & { dark: boolean }): React.ReactElement {
   const { playing, position, duration: liveDuration, toggle } = useAudioPlayback(url, { onPlay });
   const lengthMs = liveDuration > 0 ? liveDuration : (duration ?? 0) * 1000;
   const progress = lengthMs > 0 ? Math.min(position / lengthMs, 1) : 0;

@@ -16,9 +16,7 @@ function useNonce(nonce: number | undefined, run: () => void): void {
 function sizeStyle(multiline: boolean, props: TextFieldProps, height: number | undefined): TextStyle {
   const maxH = props.maxHeight as DimensionValue | undefined;
   const minH = props.minHeight as DimensionValue | undefined;
-  if (multiline) {
-    return { minHeight: minH ?? (props.autoGrow === true ? 44 : 88), maxHeight: maxH, height, textAlignVertical: 'top' };
-  }
+  if (multiline) return { minHeight: minH ?? (props.autoGrow === true ? 44 : 88), maxHeight: maxH, height, textAlignVertical: 'top' };
   return { maxHeight: maxH, ...(minH === undefined ? null : { minHeight: minH }) };
 }
 

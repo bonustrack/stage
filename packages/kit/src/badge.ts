@@ -50,12 +50,8 @@ export interface ResolvedBadgeStyle {
 }
 
 function tonedStyle(tone: string, variant: BadgeVariant, fontSize: number): ResolvedBadgeStyle {
-  if (variant === 'soft') {
-    return { background: withAlpha(tone, SOFT_ALPHA), foreground: tone, fontSize };
-  }
-  if (variant === 'outline') {
-    return { background: 'transparent', foreground: tone, fontSize, borderColor: tone };
-  }
+  if (variant === 'soft') return { background: withAlpha(tone, SOFT_ALPHA), foreground: tone, fontSize };
+  if (variant === 'outline') return { background: 'transparent', foreground: tone, fontSize, borderColor: tone };
   return { background: tone, foreground: readableForeground(tone), fontSize };
 }
 
@@ -72,9 +68,7 @@ export function resolveBadgeStyle(
     const fg = color === undefined || isSemanticBadgeColor(color) ? readableForeground(bg) : resolveColor(color, scheme);
     return { background: bg, foreground: fg, fontSize };
   }
-  if (color !== undefined && !isSemanticBadgeColor(color)) {
-    return tonedStyle(resolveColor(color, scheme), variant, fontSize);
-  }
+  if (color !== undefined && !isSemanticBadgeColor(color)) return tonedStyle(resolveColor(color, scheme), variant, fontSize);
   const tone = isSemanticBadgeColor(color) ? color : 'secondary';
   const semantic = BADGE_SEMANTIC_BG[tone];
   if (variant === 'solid') return { background: semantic, foreground: '#ffffff', fontSize };

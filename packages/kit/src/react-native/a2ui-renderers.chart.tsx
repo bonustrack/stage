@@ -8,13 +8,12 @@ import {
   type ChartXAxis,
   type ChartYAxisConfig,
 } from '../chart';
+import { KIT_PROPS } from '../a2ui/kit-catalog';
+import { recordOf } from '../a2ui/kit-catalog.coerce';
+import { coerceProps } from '../a2ui/kit-catalog.props';
 import { CHART_DOMAIN_BOUNDS, CHART_SERIES_TYPES } from '../kit-vocabulary';
 import { Chart } from './chart';
-import { asBoolean, asEnum, asNumber, asOptionalString, colorValueOf, lengthOf, type RenderContext } from './a2ui-context';
-
-function recordOf(value: unknown): Record<string, unknown> | undefined {
-  return typeof value === 'object' && value !== null && !Array.isArray(value) ? Object.fromEntries(Object.entries(value)) : undefined;
-}
+import { asBoolean, asEnum, asNumber, asOptionalString, colorValueOf, type RenderContext } from './a2ui-context';
 
 function datumOf(value: unknown): ChartDatum | undefined {
   const row = recordOf(value);
@@ -82,14 +81,7 @@ export function chartRenderer(ctx: RenderContext): ReactNode {
       series={series}
       xAxis={xAxis}
       yAxis={yAxisOf(p.yAxis)}
-      showYAxis={asBoolean(p.showYAxis)}
-      showLegend={asBoolean(p.showLegend)}
-      showTooltip={asBoolean(p.showTooltip)}
-      barGap={asNumber(p.barGap)}
-      barCategoryGap={asNumber(p.barCategoryGap)}
-      width={lengthOf(p.width)}
-      height={lengthOf(p.height)}
-      aspectRatio={asNumber(p.aspectRatio)}
+      {...coerceProps(KIT_PROPS.Chart, p)}
       flex={ctx.weight}
       dark={ctx.dark}
     />

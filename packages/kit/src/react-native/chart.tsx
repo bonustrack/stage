@@ -89,10 +89,6 @@ const TIP_NAME_GAP = 12;
 const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
 const MAX_NATIVE_AREA = 1_500_000;
 
-function useChartTheme(dark: boolean | undefined): { scheme: Scheme; palette: KitPalette } {
-  return useKitColors(dark, 'matching');
-}
-
 function boxStyle(props: ChartProps): ViewStyle {
   const height = props.height ?? props.size;
   return {
@@ -274,7 +270,7 @@ function ChartBody({ props, model, palette, size: measured }: BodyProps): React.
 }
 
 export function Chart(props: ChartProps): React.ReactElement {
-  const { scheme, palette } = useChartTheme(props.dark);
+  const { scheme, palette } = useKitColors(props.dark, 'matching');
   const model = useChartModel(props, scheme);
   const [size, setSize] = useState<Size | undefined>(() => initialSize(props, model.legend));
   const onLayout = (e: LayoutChangeEvent): void => {

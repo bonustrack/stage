@@ -47,11 +47,6 @@ export interface A2uiSurfaceProps {
   onActionError?: (message: string) => void;
 }
 
-function useSurfaceVersion(client: A2uiClient, surfaceId: string): number {
-  const version = (): number => client.surface(surfaceId)?.version ?? -1;
-  return useSyncExternalStore((listener) => client.subscribe(surfaceId, listener), version, version);
-}
-
 export function A2uiSurface({
   client,
   surfaceId,
@@ -62,7 +57,8 @@ export function A2uiSurface({
   limits,
   onActionError,
 }: A2uiSurfaceProps): React.ReactElement | null {
-  const version = useSurfaceVersion(client, surfaceId);
+  const readVersion = (): number => client.surface(surfaceId)?.version ?? -1;
+  const version = useSyncExternalStore((listener) => client.subscribe(surfaceId, listener), readVersion, readVersion);
   const surface = client.surface(surfaceId);
   const renderable = useMemo(
     () => surface !== undefined && fitsRenderLimits(surface, client.registry, limits),

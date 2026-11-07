@@ -43,9 +43,7 @@ function trackStyle(underline: boolean, c: TabsColors): ViewStyle {
 
 function segmentStyle(underline: boolean, selected: boolean, c: TabsColors): ViewStyle {
   const base: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 6 };
-  if (underline) {
-    return { ...base, paddingVertical: 8, borderBottomWidth: 2, borderBottomColor: selected ? c.activeText : 'transparent' };
-  }
+  if (underline) return { ...base, paddingVertical: 8, borderBottomWidth: 2, borderBottomColor: selected ? c.activeText : 'transparent' };
   return {
     ...base,
     flex: 1,

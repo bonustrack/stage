@@ -43,10 +43,10 @@ export function useKeyboard(list: ListContextValue, itemId: string, node: () => 
 }
 
 function accessibilityActions(list: ListContextValue): { name: SortStep; label: string }[] {
-  const along = list.direction === 'vertical' ? ['Move up', 'Move down'] : ['Move left', 'Move right'];
+  const vertical = list.direction === 'vertical';
   const base: { name: SortStep; label: string }[] = [
-    { name: 'backward', label: along[0] ?? '' },
-    { name: 'forward', label: along[1] ?? '' },
+    { name: 'backward', label: vertical ? 'Move up' : 'Move left' },
+    { name: 'forward', label: vertical ? 'Move down' : 'Move right' },
   ];
   if (list.coordinator.groupSize(list.group) < 2) return base;
   return [...base, { name: 'previousList', label: 'Move to previous list' }, { name: 'nextList', label: 'Move to next list' }];

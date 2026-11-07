@@ -95,8 +95,7 @@ function Handle(props: { color: string }): ReactNode {
   return <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: props.color, alignSelf: 'center', marginBottom: 12 }} />;
 }
 
-function PanelBody(bodyProps: { props: DialogProps; content: ReactNode }): ReactNode {
-  const { props, content } = bodyProps;
+function PanelBody({ props, content }: { props: DialogProps; content: ReactNode }): ReactNode {
   if (props.scroll !== true) return content;
   return (
     <ScrollView

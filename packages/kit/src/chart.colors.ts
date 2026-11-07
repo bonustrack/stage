@@ -236,11 +236,6 @@ export function chartCategoryColor(index: number): string {
   return hueShade(name, CYCLE_SHADES[Math.floor(index / CHART_COLORS.length) % CYCLE_SHADES.length] ?? DEFAULT_SHADE);
 }
 
-function pickScheme(color: ChartColor | undefined, scheme: Scheme): string | undefined {
-  if (color === undefined) return undefined;
-  return typeof color === 'string' ? color : color[scheme];
-}
-
 function solidColor(value: string, scheme: Scheme): string {
   const primitive = chartPrimitiveColor(value, scheme);
   if (primitive !== undefined) return primitive;
@@ -253,7 +248,7 @@ function nextColor(last: ChartColorName | undefined): ChartColorName {
 }
 
 export function chartSeriesColors(colors: readonly (ChartColor | undefined)[], scheme: Scheme): string[] {
-  const picked = colors.map((c) => pickScheme(c, scheme));
+  const picked = colors.map((c) => (c === undefined || typeof c === 'string' ? c : c[scheme]));
   const shared = picked.every((c) => c === picked[0]) ? picked[0] : undefined;
   const used = new Map<ChartColorName, number>();
   let last: ChartColorName | undefined;

@@ -54,18 +54,8 @@ export const semanticColors = {
 } as const;
 
 export function semanticPalette(scheme: 'light' | 'dark'): Record<keyof typeof semanticColors, string> {
-  return {
-    bgColor: semanticColors.bgColor[scheme],
-    borderColor: semanticColors.borderColor[scheme],
-    textColor: semanticColors.textColor[scheme],
-    subColor: semanticColors.subColor[scheme],
-    linkColor: semanticColors.linkColor[scheme],
-    primaryColor: semanticColors.primaryColor[scheme],
-    dangerColor: semanticColors.dangerColor[scheme],
-    successColor: semanticColors.successColor[scheme],
-    inputBgColor: semanticColors.inputBgColor[scheme],
-    toolbarBgColor: semanticColors.toolbarBgColor[scheme],
-  };
+  const entries = Object.entries(semanticColors).map(([role, pair]) => [role, pair[scheme]]);
+  return Object.fromEntries(entries) as Record<keyof typeof semanticColors, string>;
 }
 
 export interface KitPalette {
@@ -106,13 +96,8 @@ export interface ThemeColor {
 
 export type Color = string | ThemeColor;
 
-function isThemeColor(value: Color): value is ThemeColor {
-  return typeof value === 'object' && value !== null;
-}
-
 export function resolveColor(value: Color, scheme: Scheme): string {
-  if (isThemeColor(value)) return value[scheme];
-  return resolveColorToken(value, scheme);
+  return typeof value === 'object' && value !== null ? value[scheme] : resolveColorToken(value, scheme);
 }
 
 export function resolveOptionalColor(value: Color | undefined, scheme: Scheme): string | undefined {
@@ -139,26 +124,6 @@ export const COLOR_TOKENS: readonly ColorToken[] = [
   'surface',
 ];
 
-const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
-  text: 'textColor',
-  secondary: 'subColor',
-  muted: 'subColor',
-  link: 'linkColor',
-  primary: 'primaryColor',
-  danger: 'dangerColor',
-  success: 'successColor',
-  border: 'borderColor',
-  surface: 'bgColor',
-};
-
-export function isColorToken(c: string): c is ColorToken {
-  return Object.hasOwn(COLOR_TOKEN_MAP, c);
-}
-
-export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
-  return isColorToken(c) ? semanticColors[COLOR_TOKEN_MAP[c]][scheme] : c;
-}
-
 const PALETTE_TOKEN_MAP: Record<ColorToken, keyof KitPalette> = {
   text: 'text',
   secondary: 'sub',
@@ -170,6 +135,14 @@ const PALETTE_TOKEN_MAP: Record<ColorToken, keyof KitPalette> = {
   border: 'border',
   surface: 'bg',
 };
+
+export function isColorToken(c: string): c is ColorToken {
+  return Object.hasOwn(PALETTE_TOKEN_MAP, c);
+}
+
+export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
+  return isColorToken(c) ? kitPalette(scheme)[PALETTE_TOKEN_MAP[c]] : c;
+}
 
 export function resolvePaletteColor(c: string, palette: KitPalette): string {
   return isColorToken(c) ? palette[PALETTE_TOKEN_MAP[c]] : c;
