@@ -1,41 +1,12 @@
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { INSTALLATION_LIMIT_MESSAGE, isInstallationLimit } from '@stage-labs/client/xmtp/clientErrors';
-import { attempt, ignored } from './errorPolicy';
+import { attempt } from './errorPolicy';
 import { AccountChangedError } from './accountSelection';
 
 export class XmtpInstallationLimitError extends Error {
   constructor() {
     super(INSTALLATION_LIMIT_MESSAGE);
     this.name = 'XmtpInstallationLimitError';
-  }
-}
-
-export async function withCreateTimeout<C>(
-  run: () => Promise<C>,
-  ms: number,
-  message: string,
-  disposeLate?: (value: C) => void,
-): Promise<C> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let timedOut = false;
-  const started = run();
-  if (disposeLate) {
-    void started
-      .then((value) => {
-        if (timedOut) disposeLate(value);
-      })
-      .catch(ignored(undefined, 'cleanup'));
-  }
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      timedOut = true;
-      reject(new Error(message));
-    }, ms);
-  });
-  try {
-    return await Promise.race<C>([started, timeout]);
-  } finally {
-    if (timer) clearTimeout(timer);
   }
 }
 

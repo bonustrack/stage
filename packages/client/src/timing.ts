@@ -34,6 +34,15 @@ export function settleWithin<T>(work: Promise<T>, ms: number, fallback: T): Prom
   });
 }
 
+const TIMED_OUT = Symbol('timed out');
+
+export async function rejectAfter<T>(work: Promise<T>, ms: number, timedOut: () => Error, disposeLate?: (value: T) => void): Promise<T> {
+  const result = await settleBy<T | typeof TIMED_OUT>(work, Date.now() + ms, TIMED_OUT);
+  if (result !== TIMED_OUT) return result;
+  if (disposeLate) void work.then(disposeLate, () => undefined);
+  throw timedOut();
+}
+
 export interface Backoff {
   baseMs: number;
   maxMs: number;

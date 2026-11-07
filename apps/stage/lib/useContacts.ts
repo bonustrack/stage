@@ -5,7 +5,7 @@ import { sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feed/firstPages';
 import { getCachedRows, subscribeCachedRows } from './channelsCache';
 import type { CachedRow } from './cachedRows.model';
-import { knownActiveAccountId } from './accountSelection';
+import { knownActiveAccountId, knownSelfAddress } from './accountSelection';
 import { usePeerProfiles, peerLabel } from './peerProfiles';
 
 export interface Contact {
@@ -30,7 +30,7 @@ function toSortedContacts(addresses: string[]): Contact[] {
 async function collectAddresses(): Promise<string[]> {
   const client = await sdk.client();
   await afterFirstPages();
-  const self = (knownActiveAccountId() ?? '').toLowerCase();
+  const self = knownSelfAddress() ?? '';
   const convs = await sdk.listConvs(client, ['allowed']);
   await primeConversationMembers(client, convs);
   const set = new Set<string>();
@@ -67,8 +67,8 @@ export function useContacts(exclude: string[], query: string): Contact[] {
 
   const excludeSet = useMemo(() => {
     const set = new Set(exclude.map((a) => a.toLowerCase()));
-    const self = knownActiveAccountId();
-    if (self) set.add(self.toLowerCase());
+    const self = knownSelfAddress();
+    if (self) set.add(self);
     return set;
   }, [exclude]);
 

@@ -4,7 +4,7 @@ import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useContactList } from '../../lib/useContacts';
 import { getCachedRows } from '../../lib/channelsCache';
-import { knownActiveAccountId } from '../../lib/accountSelection';
+import { knownSelfAddress } from '../../lib/accountSelection';
 import { mentionAddresses } from '@stage-labs/client/xmtp/messageBody';
 import { mentionLabelOf as labelOf } from '../TitleText.model';
 import {
@@ -101,7 +101,7 @@ function useCandidatePool(
   const typing = suggestContacts && mentionQuery(pieces, cursor, candidates).range !== null;
   const contacts = useContactList(typing);
   if (!suggestContacts) return candidates;
-  return withContactCandidates(candidates ?? [], contacts, knownActiveAccountId() ?? '');
+  return withContactCandidates(candidates ?? [], contacts, knownSelfAddress() ?? '');
 }
 
 const mentionIdOf = (candidate: MentionCandidate): string => candidate.address;

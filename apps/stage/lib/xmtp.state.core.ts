@@ -1,8 +1,8 @@
 import { createAppDataWriter, type AppDataWriter } from '@stage-labs/client/xmtp/channelMeta';
-import { makeValue } from './storeCore';
+import { makeListeners, makeValue } from './storeCore';
 import { resetFeed } from './feed/cache';
 import { attempt } from './errorPolicy';
-import { sleep } from '@stage-labs/client/timing';
+import { settleWithin } from '@stage-labs/client/timing';
 import { AccountChangedError } from './accountSelection';
 
 export const inboxEthCache = new Map<string, string>();
@@ -66,6 +66,7 @@ export function createClientSlot<C>(onReset: () => void, close?: (client: C) => 
   let cached: C | null = null;
   let inFlight: Promise<C> | null = null;
   let generation = 0;
+  const ready = makeListeners();
   const discard = (client: C): void => {
     if (close)
       attempt(() => {
@@ -85,6 +86,7 @@ export function createClientSlot<C>(onReset: () => void, close?: (client: C) => 
           throw new AccountChangedError('The account changed while messaging was starting.');
         }
         cached = client;
+        ready.notify();
         return client;
       })();
       inFlight = pending;
@@ -95,9 +97,18 @@ export function createClientSlot<C>(onReset: () => void, close?: (client: C) => 
       }
     },
     waitForReady: async () => {
-      const start = Date.now();
-      while (cached === null && Date.now() - start < READY_CAP_MS) await sleep(250);
-      return cached !== null;
+      if (cached !== null) return true;
+      let stop = (): void => undefined;
+      const set = new Promise<boolean>((resolve) => {
+        stop = ready.subscribe(() => {
+          resolve(true);
+        });
+      });
+      try {
+        return await settleWithin(set, READY_CAP_MS, false);
+      } finally {
+        stop();
+      }
     },
     reset: () => {
       if (cached) discard(cached);

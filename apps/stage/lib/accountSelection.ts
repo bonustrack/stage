@@ -35,6 +35,10 @@ export function rememberActiveAccountId(id: string | null): void {
 
 export const knownActiveAccountId = activeId.get;
 
+export function knownSelfAddress(): string | null {
+  return activeId.get()?.toLowerCase() ?? null;
+}
+
 export const subscribeActiveAccountId = activeId.subscribe;
 
 let readActive = (): Promise<string | null> => Promise.resolve(activeId.get());

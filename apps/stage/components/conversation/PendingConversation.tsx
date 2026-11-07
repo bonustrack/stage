@@ -6,7 +6,7 @@ import { pendingBanner, type OutboxItem } from '../../lib/dmOutbox.model';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
-import { knownActiveAccountId } from '../../lib/accountSelection';
+import { knownSelfAddress } from '../../lib/accountSelection';
 import { lineOfDmPeer } from '@stage-labs/client/xmtp/line';
 import { MessengerBubble } from '../bubble/MessengerBubble';
 import type { BubbleModel } from '../bubble/model';
@@ -78,7 +78,7 @@ export function PendingConversation({
 }): React.ReactElement {
   const pal = usePalette();
   const [queued, setQueued] = useState<OutboxItem[]>(() => queuedDmsFor(address));
-  const myAddress = knownActiveAccountId();
+  const myAddress = knownSelfAddress();
   usePeerProfiles([address, myAddress]);
   const peerName = peerLabel(address);
 

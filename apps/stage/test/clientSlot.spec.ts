@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, jest, test } from 'bun:test';
 import { createClientSlot } from '../lib/xmtp.state.core';
 import { AccountChangedError } from '../lib/accountSelection';
 
@@ -18,6 +18,23 @@ describe('createClientSlot', () => {
     expect(builds).toBe(1);
     expect(slot.get()).toBe('client-a');
     expect(await slot.getOrCreate(() => Promise.resolve('unused'))).toBe('client-a');
+  });
+
+  test('waiting for the client ends when one is cached, or with false after a minute', async () => {
+    const slot = createClientSlot<string>(() => undefined);
+    const waiting = slot.waitForReady();
+    await slot.getOrCreate(() => Promise.resolve('client'));
+    expect(await waiting).toBe(true);
+    expect(await slot.waitForReady()).toBe(true);
+    const empty = createClientSlot<string>(() => undefined);
+    jest.useFakeTimers();
+    try {
+      const gaveUp = empty.waitForReady();
+      jest.advanceTimersByTime(60_000);
+      expect(await gaveUp).toBe(false);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   test('a failed build is not ready and a retry builds again', async () => {

@@ -2,13 +2,13 @@ import { Client, PublicIdentity, getAllPushTopics, getHmacKeys } from '@xmtp/rea
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import type { HmacKeysByTopic } from '@stage-labs/client/xmtp/pushServer';
 import { isStoreCorruption as isStoreCorruptionCore } from '@stage-labs/client/xmtp/clientErrors';
-import { settleWithin } from '@stage-labs/client/timing';
+import { rejectAfter, settleWithin } from '@stage-labs/client/timing';
 import { XMTP_CODECS, signerForRecord } from './xmtp.codecs';
 import { whileRegistering } from './xmtp.state.core';
 import { XMTP_ENV } from './xmtp.types';
 import { loadOrCreateDbKey, deleteDbKey, wipeXmtpStore } from './xmtp.dbkey';
 import { ensureDbDir, forgetPushAccount, recordPushAccount } from './xmtp.dbkeyFs';
-import { openWithRecovery, withCreateTimeout, withStoreRecovery, type FinalizeClient, type StoreRecovery } from './xmtp.recover.core';
+import { openWithRecovery, withStoreRecovery, type FinalizeClient, type StoreRecovery } from './xmtp.recover.core';
 import type { ClientSdk, GroupName } from './xmtp.client.core';
 import { nativeInstallationCreatedAtMs } from './xmtp.sdk.native.shapes';
 import { forgetStorageIndex } from './storageIndexStore';
@@ -67,7 +67,7 @@ function createClient(rec: AccountRecord, opts: CreateOpts): Promise<Client> {
   return openWithRecovery({ ...storeOf(rec), freeInstallationSlot: () => freeOldestInstallation(rec) }, async (wiped) => {
     const fresh = wiped ? await storeOptions(rec) : opts;
     const signer = await signerForRecord(rec);
-    return withCreateTimeout(() => Client.create(signer, fresh), CREATE_TIMEOUT_MS, CREATE_TIMEOUT_MESSAGE);
+    return rejectAfter(Client.create(signer, fresh), CREATE_TIMEOUT_MS, () => new Error(CREATE_TIMEOUT_MESSAGE));
   });
 }
 

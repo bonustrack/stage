@@ -1,5 +1,5 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import { settleBy } from '@stage-labs/client/timing';
+import { rejectAfter } from '@stage-labs/client/timing';
 
 export type HistorySyncPhase = 'idle' | 'requesting' | 'waiting' | 'done' | 'timeout' | 'error';
 
@@ -65,10 +65,6 @@ export function timeLeftLabel(msLeft: number): string {
   return `${minutes}:${String(seconds % 60).padStart(2, '0')} left`;
 }
 
-const TIMED_OUT = Symbol('timed out');
-
-export async function within<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
-  const result = await settleBy<T | typeof TIMED_OUT>(work, Date.now() + ms, TIMED_OUT);
-  if (result === TIMED_OUT) throw new HistoryProblem(message);
-  return result;
+export function within<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
+  return rejectAfter(work, ms, () => new HistoryProblem(message));
 }

@@ -17,7 +17,8 @@ import { clientSlot } from './xmtp.state.web';
 import { whileRegistering } from './xmtp.state.core';
 import { XMTP_ENV } from './xmtp.types';
 import { deleteDbKey, wipeXmtpStore } from './xmtp.dbkey';
-import { openFinalizedClient, openWithRecovery, withCreateTimeout, type FinalizeClient } from './xmtp.recover.core';
+import { rejectAfter } from '@stage-labs/client/timing';
+import { openFinalizedClient, openWithRecovery, type FinalizeClient } from './xmtp.recover.core';
 import type { ClientSdk, GroupName } from './xmtp.client.core';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import { guardClientAccess } from './xmtp.clientAccess.web';
@@ -96,10 +97,10 @@ async function openPersisted(
   const signer = await signerForRecord(rec);
   const opened = await openPersistedClient<XmtpClient>({
     open: () =>
-      withCreateTimeout(
-        () => Client.create(signer, { ...opts, disableAutoRegister: true }),
+      rejectAfter(
+        Client.create(signer, { ...opts, disableAutoRegister: true }),
         CREATE_TIMEOUT_MS,
-        CREATE_TIMEOUT_MESSAGE,
+        () => new Error(CREATE_TIMEOUT_MESSAGE),
         clientSlot.discard,
       ),
     isRegistered: (client) => client.isRegistered(),

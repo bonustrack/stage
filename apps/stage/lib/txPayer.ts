@@ -38,6 +38,8 @@ export interface PayerBalance {
 
 const BALANCE_DIGITS = 4;
 
+const UNREADABLE_TOKEN = { decimals: 18, symbol: 'tokens' } as const;
+
 function parseChainId(raw?: string | number): number {
   return raw == null || raw === '' ? 1 : chainIdToNumber(raw);
 }
@@ -60,8 +62,10 @@ async function readOnchain(cid: number, token: string | undefined, addr: Hex): P
   if (token === undefined || !isAddress(token)) return null;
   const raw = await pub.readContract({ address: token, abi: erc20Abi, functionName: 'balanceOf', args: [addr] });
   const [decimals, symbol] = await Promise.all([
-    pub.readContract({ address: token, abi: erc20Abi, functionName: 'decimals' }).catch(ignored(18, 'optional')),
-    pub.readContract({ address: token, abi: erc20Abi, functionName: 'symbol' }).catch(ignored('tokens', 'optional')),
+    pub
+      .readContract({ address: token, abi: erc20Abi, functionName: 'decimals' })
+      .catch(ignored<number>(UNREADABLE_TOKEN.decimals, 'optional')),
+    pub.readContract({ address: token, abi: erc20Abi, functionName: 'symbol' }).catch(ignored<string>(UNREADABLE_TOKEN.symbol, 'optional')),
   ]);
   return { raw, decimals, symbol };
 }
