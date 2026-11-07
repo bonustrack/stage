@@ -9,9 +9,12 @@ import {
   newChatParams,
   NO_NEW_CHAT_FIELDS,
   NO_NEW_CHAT_METADATA,
-  parseNewChatFields,
+  newChatFieldsSchema,
   renamedNewChatFields,
 } from '../components/newChat/newChatMetadata.model';
+import { jsonWith } from '../lib/storeCore';
+
+const parseNewChatFields = jsonWith(newChatFieldsSchema);
 
 const alice = `0x${'1'.repeat(40)}`;
 const bob = `0x${'2'.repeat(40)}`;

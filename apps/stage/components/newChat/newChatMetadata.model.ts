@@ -1,4 +1,5 @@
-import { addLabel, assignedAddresses, categoryOf, parseObject } from '@stage-labs/client/xmtp/labels';
+import { z } from 'zod';
+import { addLabel, assignedAddresses, categoryOf } from '@stage-labs/client/xmtp/labels';
 import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { includesKey } from '@stage-labs/client/collections';
 import { groupValueOf } from '../../lib/grouping.model';
@@ -16,10 +17,7 @@ export type NewChatFields = Pick<NewChatMetadata, 'category'>;
 
 export const NO_NEW_CHAT_FIELDS: NewChatFields = { category: null };
 
-export function parseNewChatFields(raw: string): NewChatFields | undefined {
-  const blob = parseObject(raw);
-  return blob === null ? undefined : { category: categoryOf(blob.category) };
-}
+export const newChatFieldsSchema = z.record(z.unknown()).transform((blob): NewChatFields => ({ category: categoryOf(blob.category) }));
 
 export function renamedNewChatFields(fields: NewChatFields, from: string, to: string | null): NewChatFields {
   if (fields.category === null || fields.category.toLowerCase() !== categoryOf(from)?.toLowerCase()) return fields;

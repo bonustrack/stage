@@ -12,25 +12,8 @@ import { makeListeners, useStoreValue } from './storeCore';
 import { editDeveloperMode } from './syncedSettings.model';
 import { syncedSetting } from './sync/setting';
 
-function parseDeveloperMode(raw: string): DeveloperModeContent {
-  try {
-    const parsed = developerModeSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : DEFAULT_DEVELOPER_MODE;
-  } catch (err) {
-    report('developerMode.parse', err);
-    return DEFAULT_DEVELOPER_MODE;
-  }
-}
-
 const developerMode = syncedSetting<DeveloperModeContent>(
-  {
-    key: 'developer.mode.',
-    default: DEFAULT_DEVELOPER_MODE,
-    deserialize: parseDeveloperMode,
-    serialize: JSON.stringify,
-    perAccount: true,
-    durable: true,
-  },
+  { key: 'developer.mode.', default: DEFAULT_DEVELOPER_MODE, schema: developerModeSchema, perAccount: true, durable: true },
   { receive: mergeDeveloperMode },
 );
 const { prefs } = developerMode;

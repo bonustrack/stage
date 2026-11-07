@@ -1,14 +1,9 @@
 import { useEffect } from 'react';
-import { createValueStore } from './persistedStore';
+import { createValueStore, flagCodec } from './persistedStore';
 import { makeValue } from './storeCore';
 import { reported } from './errorPolicy';
 
-const backedUp = createValueStore<boolean>({
-  key: 'wallet.backupDone',
-  default: false,
-  serialize: (v) => (v ? '1' : '0'),
-  deserialize: (raw) => raw === '1',
-});
+const backedUp = createValueStore<boolean>({ key: 'wallet.backupDone', default: false, ...flagCodec(false) });
 
 const loaded = makeValue(false);
 

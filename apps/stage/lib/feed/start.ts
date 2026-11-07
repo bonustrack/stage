@@ -1,12 +1,7 @@
 import { createValueStore } from '../persistedStore';
-import { feedStartOf, parseFeedStarts, withFeedStart, type FeedStart } from './start.model';
+import { feedStartOf, feedStartsSchema, withFeedStart, type FeedStart } from './start.model';
 
-const store = createValueStore<FeedStart[]>({
-  key: 'feed.reachedStart',
-  default: [],
-  serialize: (starts) => JSON.stringify(starts),
-  deserialize: parseFeedStarts,
-});
+const store = createValueStore<FeedStart[]>({ key: 'feed.reachedStart', default: [], schema: feedStartsSchema });
 
 store.loadAsync();
 

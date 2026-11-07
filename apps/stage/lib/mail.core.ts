@@ -62,15 +62,6 @@ export function withReadKey(keys: readonly string[], key: string): readonly stri
   return [...keys, key].slice(-MAX_READ_KEYS);
 }
 
-export function parseReadKeys(raw: string): readonly string[] | undefined {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((key): key is string => typeof key === 'string') : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 export function mailboxKey(box: Mailbox): string {
   return `${box.accountId}/${box.address.toLowerCase()}/${box.label}`;
 }

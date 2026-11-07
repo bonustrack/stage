@@ -1,6 +1,8 @@
+import { z } from 'zod';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { base64ToBytes, bytesToBase64 } from '@stage-labs/client/text/base64';
 import { attachmentsOf, reactionTargetOf, type EntryAttachment } from '@stage-labs/client/xmtp/entryPayload';
+import { jsonWith } from '../storeCore';
 
 const SNAPSHOT_MESSAGES = 20;
 export const SNAPSHOT_LINES = 40;
@@ -98,13 +100,14 @@ function isLine(value: unknown): value is SnapshotLine {
   return typeof line === 'string' && typeof at === 'number' && Array.isArray(entries) && entries.every(isEntry);
 }
 
+const storedSnapshot = jsonWith(
+  z.object({
+    self: z.string().nullable().catch(null),
+    lines: z.array(z.unknown()).transform((lines) => lines.filter(isLine).slice(0, SNAPSHOT_LINES)),
+  }),
+  decodeValue,
+);
+
 export function decodeSnapshot(text: string): FeedSnapshot | null {
-  try {
-    const parsed = JSON.parse(text, decodeValue) as Partial<FeedSnapshot> | null;
-    if (typeof parsed !== 'object' || parsed === null || !Array.isArray(parsed.lines)) return null;
-    const self = typeof parsed.self === 'string' ? parsed.self : null;
-    return { self, lines: parsed.lines.filter(isLine).slice(0, SNAPSHOT_LINES) };
-  } catch {
-    return null;
-  }
+  return storedSnapshot(text) ?? null;
 }

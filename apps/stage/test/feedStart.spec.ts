@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { FEED_START_LIMIT, feedStartOf, isAtFeedStart, parseFeedStarts, withFeedStart, type FeedStart } from '../lib/feed/start.model';
+import { FEED_START_LIMIT, feedStartOf, feedStartsSchema, isAtFeedStart, withFeedStart, type FeedStart } from '../lib/feed/start.model';
+import { jsonWith } from '../lib/storeCore';
+
+const parseFeedStarts = jsonWith(feedStartsSchema);
 
 describe('feed start memory', () => {
   test('keeps one first message per chat and only the most recent chats', () => {

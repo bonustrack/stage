@@ -1,13 +1,8 @@
-import { createValueStore } from './persistedStore';
+import { createValueStore, flagCodec } from './persistedStore';
 
 const STORAGE_KEY = 'push.enabled';
 
-const store = createValueStore<boolean>({
-  key: STORAGE_KEY,
-  default: true,
-  serialize: (v) => (v ? '1' : '0'),
-  deserialize: (raw) => (raw === '0' || raw === 'false' ? false : true),
-});
+const store = createValueStore<boolean>({ key: STORAGE_KEY, default: true, ...flagCodec(true) });
 
 export const loadPushEnabled = (): Promise<boolean> => store.load();
 

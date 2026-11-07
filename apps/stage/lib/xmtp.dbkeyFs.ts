@@ -1,6 +1,8 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { XmtpEnv } from './xmtp.types';
+import { z } from 'zod';
 import { report, attempt } from './errorPolicy';
+import { jsonWith } from './storeCore';
 
 export interface PushAccount {
   id: string;
@@ -40,6 +42,8 @@ function isPushAccount(value: unknown): value is PushAccount {
   );
 }
 
+const manifestJson = jsonWith(z.array(z.unknown()).transform((items) => items.filter(isPushAccount)));
+
 function manifestFile(): File | null {
   const root = sharedStoreRoot();
   return root ? new File(root, MANIFEST_NAME) : null;
@@ -47,9 +51,7 @@ function manifestFile(): File | null {
 
 function readManifest(file: File): PushAccount[] {
   try {
-    if (!file.exists) return [];
-    const parsed: unknown = JSON.parse(file.textSync());
-    return Array.isArray(parsed) ? parsed.filter(isPushAccount) : [];
+    return file.exists ? (manifestJson(file.textSync()) ?? []) : [];
   } catch {
     return [];
   }

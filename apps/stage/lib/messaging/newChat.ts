@@ -7,7 +7,7 @@ import { getConvConsentState } from '../xmtp.conv';
 import { uploadAttachments } from '../xmtp.attachments';
 import { schedulePushTopicRefresh } from '../pushRegister';
 import type { LocalAttachmentInput } from '../xmtp.types';
-import { NO_MEMBER_HISTORY, parseMemberHistory, startedChatWith, type MemberHistory } from './newChatMembers.model';
+import { NO_MEMBER_HISTORY, memberHistorySchema, startedChatWith, type MemberHistory } from './newChatMembers.model';
 
 const NEW_CHANNEL_PUSH_REFRESH_MS = 10_000;
 const NO_REQUESTS: ReadonlySet<string> = new Set();
@@ -15,7 +15,7 @@ const NO_REQUESTS: ReadonlySet<string> = new Set();
 const memberHistory = createValueStore<MemberHistory>({
   key: 'new-chat.members.',
   default: NO_MEMBER_HISTORY,
-  deserialize: parseMemberHistory,
+  schema: memberHistorySchema,
   serialize: JSON.stringify,
   perAccount: true,
 });

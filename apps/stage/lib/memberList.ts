@@ -1,13 +1,7 @@
-import { createValueStore } from './persistedStore';
+import { createValueStore, flagCodec } from './persistedStore';
 import { makeValue } from './storeCore';
 
-const store = createValueStore<boolean>({
-  key: 'chat.memberList',
-  default: false,
-  readNow: true,
-  serialize: (open) => (open ? '1' : '0'),
-  deserialize: (raw) => raw === '1',
-});
+const store = createValueStore<boolean>({ key: 'chat.memberList', default: false, readNow: true, ...flagCodec(false) });
 
 export const useMemberListOpen = (): boolean => store.use();
 

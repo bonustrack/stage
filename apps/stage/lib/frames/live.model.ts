@@ -1,7 +1,9 @@
+import { z } from 'zod';
 import type { NodeProblem, NodeResult } from '@stage-labs/client/nodes/protocol';
 import { frameContentSchema, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import { frameRenders } from './frame.model';
 import type { FrameApplied } from './frameSession';
+import { jsonWith } from '../storeCore';
 
 export const LIVE_REFRESH_MS = 60_000;
 const LIVE_MAX_BACKOFF_MS = 5 * 60_000;
@@ -71,18 +73,11 @@ export function liveProblemText(state: Pick<LiveState, 'problem' | 'status'>): s
   return state.status === null ? text : `${text} ${state.status}`;
 }
 
-function snapshotJson(raw: string | null): { frame?: unknown; at?: unknown } {
-  try {
-    return (JSON.parse(raw ?? 'null') ?? {}) as { frame?: unknown; at?: unknown };
-  } catch {
-    return {};
-  }
-}
+const storedLiveSnapshot = jsonWith(z.object({ frame: frameContentSchema, at: z.number() }));
 
 export function liveSnapshotOf(raw: string | null): LiveState {
-  const { frame, at } = snapshotJson(raw);
-  const parsed = frameContentSchema.safeParse(frame);
-  return typeof at === 'number' && parsed.success && frameRenders(parsed.data) ? { ...EMPTY_LIVE, frame: parsed.data, at } : EMPTY_LIVE;
+  const stored = raw === null ? undefined : storedLiveSnapshot(raw);
+  return stored !== undefined && frameRenders(stored.frame) ? { ...EMPTY_LIVE, frame: stored.frame, at: stored.at } : EMPTY_LIVE;
 }
 
 export function liveSnapshotJson(state: LiveState): string | null {

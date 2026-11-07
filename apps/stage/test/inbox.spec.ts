@@ -2,7 +2,8 @@ import { describe, expect, test } from 'bun:test';
 import { deriveMailKey, openMailIndex, openMailPart, sealMailIndex, sealMailPart, type MailIndex } from '@stage-labs/client/mail/mailbox';
 import { parseMail } from '@stage-labs/client/mail/mime';
 import { inboxRows, mailBody, mailReceivedAt, senderLabel, subjectLabel, visibleBlocks } from '../components/inbox/Inbox.model';
-import { mailReadKey, parseReadKeys, withReadKey, type InboxEntry } from '../lib/mail.core';
+import { mailReadKey, withReadKey, type InboxEntry } from '../lib/mail.core';
+import { jsonWith, storedStrings } from '../lib/storeCore';
 import { safeFileName } from '@stage-labs/client/files';
 import type { Hex } from 'viem';
 
@@ -72,8 +73,8 @@ describe('inbox list', () => {
     const capped = withReadKey(many, 'new');
     expect(capped.length).toBe(2000);
     expect(capped[0]).toBe('k1');
-    expect(parseReadKeys('["a",1,"b"]')).toEqual(['a', 'b']);
-    expect(parseReadKeys('{')).toBeUndefined();
+    expect(jsonWith(storedStrings)('["a",1,"b"]')).toEqual(['a', 'b']);
+    expect(jsonWith(storedStrings)('{')).toBeUndefined();
   });
 
   test('reads the receive time from the mail id', () => {

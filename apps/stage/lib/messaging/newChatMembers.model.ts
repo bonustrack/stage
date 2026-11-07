@@ -1,4 +1,6 @@
 import { isStringList, uniqueKeys } from '@stage-labs/client/collections';
+import { z } from 'zod';
+import { storedRecordOf } from '../storeCore';
 
 const MEMBER_RE = /^0x[0-9a-f]{40}$/;
 
@@ -30,20 +32,7 @@ function isMemberStat(value: unknown): value is MemberStat {
   );
 }
 
-function memberHistoryOf(parsed: unknown): MemberHistory {
-  if (typeof parsed !== 'object' || parsed === null || !('last' in parsed) || !('stats' in parsed)) return NO_MEMBER_HISTORY;
-  const { last, stats } = parsed;
-  if (!isStringList(last) || typeof stats !== 'object' || stats === null) return NO_MEMBER_HISTORY;
-  return { last, stats: Object.fromEntries(Object.entries(stats).filter((e): e is [string, MemberStat] => isMemberStat(e[1]))) };
-}
-
-export function parseMemberHistory(raw: string): MemberHistory {
-  try {
-    return memberHistoryOf(JSON.parse(raw));
-  } catch {
-    return NO_MEMBER_HISTORY;
-  }
-}
+export const memberHistorySchema = z.object({ last: z.array(z.string()), stats: storedRecordOf(isMemberStat) });
 
 export function startedChatWith(history: MemberHistory, members: readonly string[], at: number): MemberHistory {
   const last = validMembers(members, null);

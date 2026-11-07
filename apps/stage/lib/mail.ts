@@ -6,10 +6,11 @@ import { useAccountEpoch } from './accountEpoch';
 import { getAccountSelection, subscribeAccountSelection, useAccountSelection } from './accountSelection';
 import { linkProxyBase } from './linkProxy';
 import { ownedStageLabel } from './mailKey';
-import { mailReadKey, mailboxKey, makeMailAccess, parseReadKeys, withReadKey, type InboxState, type Mailbox } from './mail.core';
+import { mailReadKey, mailboxKey, makeMailAccess, withReadKey, type InboxState, type Mailbox } from './mail.core';
 import { createValueStore } from './persistedStore';
 import { getQueryClient } from './queryClient';
 import { reported } from './errorPolicy';
+import { storedStrings } from './storeCore';
 import { lazySigningKeyForRecord, signingKeyForRecord } from './accountSigning';
 
 export type { InboxState, Mailbox } from './mail.core';
@@ -28,12 +29,7 @@ subscribeAccountSelection(() => {
   getQueryClient().removeQueries({ queryKey: ['mail'] });
 });
 
-const readStore = createValueStore<readonly string[]>({
-  key: 'mail.read',
-  default: NO_KEYS,
-  deserialize: parseReadKeys,
-  serialize: (keys) => JSON.stringify(keys),
-});
+const readStore = createValueStore<readonly string[]>({ key: 'mail.read', default: NO_KEYS, schema: storedStrings });
 
 export function useMailboxes(): UseQueryResult<Mailbox[]> {
   const epoch = useAccountEpoch();

@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export const FEED_START_LIMIT = 500;
 
 export type FeedStart = readonly [line: string, firstId: string];
@@ -18,11 +20,4 @@ function isFeedStart(value: unknown): value is FeedStart {
   return Array.isArray(value) && value.length === 2 && value.every((v) => typeof v === 'string');
 }
 
-export function parseFeedStarts(raw: string): FeedStart[] | undefined {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(isFeedStart) : undefined;
-  } catch {
-    return undefined;
-  }
-}
+export const feedStartsSchema = z.array(z.unknown()).transform((items) => items.filter(isFeedStart));

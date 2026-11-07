@@ -16,11 +16,14 @@ import {
 } from '../components/newChat/newChat.model';
 import {
   NO_MEMBER_HISTORY,
-  parseMemberHistory,
+  memberHistorySchema,
   rankedCandidates,
   rememberedMembers,
   startedChatWith,
 } from '../lib/messaging/newChatMembers.model';
+import { jsonWith } from '../lib/storeCore';
+
+const readMemberHistory = (raw: string) => jsonWith(memberHistorySchema)(raw) ?? NO_MEMBER_HISTORY;
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
 const SELF = '0x5e1f000000000000000000000000000000000002';
@@ -138,10 +141,10 @@ describe('new chat member memory', () => {
 
   test('saved member history comes back as stored, anything else starts empty', () => {
     const history = startedChatWith(NO_MEMBER_HISTORY, [BOB], 5);
-    expect(parseMemberHistory(JSON.stringify(history))).toEqual(history);
-    expect(parseMemberHistory('nope')).toEqual(NO_MEMBER_HISTORY);
-    expect(parseMemberHistory(JSON.stringify({ last: 'x', stats: {} }))).toEqual(NO_MEMBER_HISTORY);
-    expect(parseMemberHistory(JSON.stringify({ last: [], stats: { [bob]: { count: 'x' } } }))).toEqual({ last: [], stats: {} });
+    expect(readMemberHistory(JSON.stringify(history))).toEqual(history);
+    expect(readMemberHistory('nope')).toEqual(NO_MEMBER_HISTORY);
+    expect(readMemberHistory(JSON.stringify({ last: 'x', stats: {} }))).toEqual(NO_MEMBER_HISTORY);
+    expect(readMemberHistory(JSON.stringify({ last: [], stats: { [bob]: { count: 'x' } } }))).toEqual({ last: [], stats: {} });
   });
 });
 

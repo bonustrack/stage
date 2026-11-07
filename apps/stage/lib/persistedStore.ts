@@ -31,6 +31,17 @@ interface RawStoreOptions<T> extends StoreOptions<T> {
 
 export type ValueStoreOptions<T> = JsonStoreOptions<T> | RawStoreOptions<T>;
 
+const FLAG_WORDS = new Map([
+  ['1', true],
+  ['true', true],
+  ['0', false],
+  ['false', false],
+]);
+
+export function flagCodec(fallback: boolean): Pick<RawStoreOptions<boolean>, 'serialize' | 'deserialize'> {
+  return { serialize: (on) => (on ? '1' : '0'), deserialize: (raw) => FLAG_WORDS.get(raw) ?? fallback };
+}
+
 export interface ValueStore<T> {
   load: () => Promise<T>;
   loadAsync: () => void;
