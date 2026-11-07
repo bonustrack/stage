@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { LiveSource } from '@stage-labs/client/xmtp/sync/dashboard';
-import { getAccountEpoch, useAccountEpoch } from '../accountEpoch';
+import { getAccountEpoch } from '../accountEpoch';
 import { ignore, recover } from '../errorPolicy';
-import { getQueryClient } from '../queryClient';
+import { accountQueryKey, accountQueryKeyAt, getQueryClient, useAccountGeneration } from '../queryClient';
 import { dashboardAccountId } from './dashboard';
 import type { FrameMessageHandler, FrameOut } from './frame.model';
 import { frameKeysOf, type FrameKeys } from './frameKeys';
@@ -18,11 +18,11 @@ const SNAPSHOT_QUERY = 'liveSnapshot';
 type QueryKey = readonly unknown[];
 
 function liveKey(widgetId: string, epoch: number, url: string): QueryKey {
-  return [LIVE_QUERY, widgetId, epoch, url];
+  return accountQueryKeyAt('client', epoch, LIVE_QUERY, widgetId, url);
 }
 
 function snapshotKey(widgetId: string, epoch: number): QueryKey {
-  return [SNAPSHOT_QUERY, widgetId, epoch];
+  return accountQueryKeyAt('client', epoch, SNAPSHOT_QUERY, widgetId);
 }
 
 function widgetKeys(widgetId: string): FrameKeys {
@@ -49,7 +49,7 @@ export function seedLiveWidget(widgetId: string, url: string, state: LiveState):
 }
 
 export function refreshLiveWidget(widgetId: string): void {
-  ignore(getQueryClient().refetchQueries({ queryKey: [LIVE_QUERY, widgetId] }), 'ui');
+  ignore(getQueryClient().refetchQueries({ queryKey: accountQueryKey('client', LIVE_QUERY, widgetId) }), 'ui');
 }
 
 async function loadWidget(key: QueryKey, widgetId: string, epoch: number, source: LiveSource, signal: AbortSignal): Promise<LiveState> {
@@ -73,7 +73,7 @@ export interface LiveWidgetHandle {
 }
 
 export function useLiveWidget(widgetId: string, source: LiveSource, active: boolean): LiveWidgetHandle {
-  const epoch = useAccountEpoch();
+  const epoch = useAccountGeneration('client');
   const key = useMemo(() => liveKey(widgetId, epoch, source.url), [widgetId, epoch, source.url]);
   const keys = useMemo(() => widgetKeys(widgetId), [widgetId]);
   const snapshot = useQuery({

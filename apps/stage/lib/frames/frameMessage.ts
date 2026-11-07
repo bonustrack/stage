@@ -5,7 +5,7 @@ import { deletedMessages } from '@stage-labs/client/xmtp/deletions';
 import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { frameOf } from './frame.model';
-import { useAccountEpoch } from '../accountEpoch';
+import { accountQueryKeyAt, useAccountGeneration } from '../queryClient';
 import { recover } from '../errorPolicy';
 import { ownDeletesReady } from '../ownDeletes';
 import { sdk } from '../xmtp.sdk';
@@ -51,9 +51,9 @@ async function loadFrameMessage(convId: string, messageId: string): Promise<Fram
 }
 
 export function useFrameMessage(convId: string, messageId: string, enabled = true): FrameMessage | undefined {
-  const epoch = useAccountEpoch();
+  const epoch = useAccountGeneration('client');
   const { data } = useQuery({
-    queryKey: ['frameMessage', epoch, convId, messageId],
+    queryKey: accountQueryKeyAt('client', epoch, 'frameMessage', convId, messageId),
     queryFn: () => loadFrameMessage(convId, messageId).catch(recover('frame.message', MISSING)),
     enabled,
     staleTime: READY_STALE_MS,

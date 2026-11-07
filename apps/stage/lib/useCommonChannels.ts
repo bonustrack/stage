@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { getCachedRows, hydrateCachedRows } from './channelsCache';
-import { knownActiveAccountId } from './accountSelection';
 import { convOfLine } from './xmtp.find';
 import { convMembers } from './xmtp.identity';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -13,6 +12,8 @@ import {
   type CommonChannelRow,
 } from '@stage-labs/client/xmtp/commonChannels';
 import { reported } from './errorPolicy';
+import { useKnownActiveAccountId } from './accountSelection';
+import { accountQueryKeyAt, useAccountGeneration } from './queryClient';
 
 const memberSetCache = createMemberSetCache();
 
@@ -31,8 +32,10 @@ async function resolveChannels(peerAddress: string): Promise<CommonChannel[]> {
 
 export function useCommonChannels(peerAddress: string | null): { channels: CommonChannel[]; loading: boolean } {
   const active = !!peerAddress;
+  const selection = useAccountGeneration('selection');
+  const accountId = useKnownActiveAccountId();
   const { data, isLoading } = useQuery({
-    queryKey: ['commonChannels', knownActiveAccountId(), peerAddress?.toLowerCase() ?? ''],
+    queryKey: accountQueryKeyAt('selection', selection, 'commonChannels', accountId, peerAddress?.toLowerCase() ?? ''),
     queryFn: () => resolveChannels(peerAddress ?? ''),
     enabled: active,
     staleTime: 5 * 60_000,

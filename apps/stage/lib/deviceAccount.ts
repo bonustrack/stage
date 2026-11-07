@@ -11,18 +11,17 @@ import {
 import { sdk } from './xmtp.sdk';
 import type { XmtpInstallation } from './xmtp.client.core';
 import { getActiveAccount } from './accounts';
-import { useAccountEpoch } from './accountEpoch';
 import { capabilities } from './capabilities';
-import { getQueryClient } from './queryClient';
+import { accountQueryKey, accountQueryKeyAt, getQueryClient, useAccountGeneration } from './queryClient';
 
 const INSTALLATIONS_KEY = 'xmtpInstallations';
 
 const IDENTITY_KEY = 'xmtpIdentity';
 
 export function useInstallations(refetchOnMount: boolean | 'always' = true): UseQueryResult<XmtpInstallation[]> {
-  const epoch = useAccountEpoch();
+  const epoch = useAccountGeneration('client');
   return useQuery({
-    queryKey: [INSTALLATIONS_KEY, epoch],
+    queryKey: accountQueryKeyAt('client', epoch, INSTALLATIONS_KEY),
     queryFn: listXmtpInstallations,
     staleTime: 60_000,
     retry: false,
@@ -32,7 +31,7 @@ export function useInstallations(refetchOnMount: boolean | 'always' = true): Use
 
 export async function revokeInstallation(installationId: string): Promise<void> {
   await revokeXmtpInstallation(installationId);
-  await getQueryClient().invalidateQueries({ queryKey: [INSTALLATIONS_KEY] });
+  await getQueryClient().invalidateQueries({ queryKey: accountQueryKey('client', INSTALLATIONS_KEY) });
 }
 
 interface XmtpIdentity {
@@ -50,8 +49,11 @@ async function fetchXmtpIdentity(): Promise<XmtpIdentity> {
 }
 
 export function useXmtpIdentity(): XmtpIdentity {
-  const epoch = useAccountEpoch();
-  return useQuery({ queryKey: [IDENTITY_KEY, epoch], queryFn: fetchXmtpIdentity, staleTime: Infinity }).data ?? NO_IDENTITY;
+  const epoch = useAccountGeneration('client');
+  return (
+    useQuery({ queryKey: accountQueryKeyAt('client', epoch, IDENTITY_KEY), queryFn: fetchXmtpIdentity, staleTime: Infinity }).data ??
+    NO_IDENTITY
+  );
 }
 
 export async function resetXmtpDatabase(copy: { title: string; message: string }): Promise<void> {

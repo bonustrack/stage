@@ -8,6 +8,7 @@ import { simulateTx, type SimulateResult } from '@stage-labs/client/wallet/txSim
 import { chainIdToNumber } from '@stage-labs/client/xmtp/tx';
 import { getActiveAccount } from './accounts';
 import { ignored, recover } from './errorPolicy';
+import { accountQueryKeyAt, useAccountGeneration } from './queryClient';
 
 export function useTxSimulation(
   to: string | undefined,
@@ -15,8 +16,9 @@ export function useTxSimulation(
   value: string | undefined,
   chainId: number,
 ): { result: SimulateResult | null; pending: boolean } {
+  const selection = useAccountGeneration('selection');
   const { data: result, isPending } = useQuery({
-    queryKey: ['txSimulate', chainId, to ?? '', data ?? '', value ?? ''],
+    queryKey: accountQueryKeyAt('selection', selection, 'txSimulate', chainId, to ?? '', data ?? '', value ?? ''),
     queryFn: async (): Promise<SimulateResult> => {
       const from = (await getActiveAccount())?.address;
       if (!from) {
@@ -104,8 +106,9 @@ export function usePayerBalance(
   symbol: string | undefined,
   needed?: number,
 ): PayerBalance | null {
+  const selection = useAccountGeneration('selection');
   const { data } = useQuery({
-    queryKey: ['payerBalance', parseChainId(chainId), token ?? '', symbol ?? '', needed ?? -1],
+    queryKey: accountQueryKeyAt('selection', selection, 'payerBalance', parseChainId(chainId), token ?? '', symbol ?? '', needed ?? -1),
     queryFn: () => resolveBalance(chainId, token, symbol, needed),
   });
   return data ?? null;

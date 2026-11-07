@@ -27,7 +27,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { channelProfileLinkOf, conversationSharePath, profileLinkOf } from '../../lib/links';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
 import { EditChannelModal } from '../channel/EditChannelModal';
-import { useChannelEditRights } from '../channel/channel.detail';
+import { useChannelEditRights } from '../../lib/messaging/queries';
 import { shareUrlFor } from '@stage-labs/client/routing/stageLinks';
 import { HoverIconButton } from '../hover';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';

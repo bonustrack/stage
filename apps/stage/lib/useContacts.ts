@@ -5,7 +5,8 @@ import { sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feed/firstPages';
 import { getCachedRows, subscribeCachedRows } from './channelsCache';
 import type { CachedRow } from './cachedRows.model';
-import { knownActiveAccountId, knownSelfAddress } from './accountSelection';
+import { knownSelfAddress, useKnownActiveAccountId } from './accountSelection';
+import { accountQueryKeyAt, useAccountGeneration } from './queryClient';
 import { usePeerProfiles, peerLabel } from './peerProfiles';
 
 export interface Contact {
@@ -48,8 +49,10 @@ async function collectAddresses(): Promise<string[]> {
 }
 
 export function useContactList(enabled: boolean): Contact[] {
+  const selection = useAccountGeneration('selection');
+  const accountId = useKnownActiveAccountId();
   const { data: addresses = NO_ADDRESSES } = useQuery({
-    queryKey: ['allContacts', knownActiveAccountId()],
+    queryKey: accountQueryKeyAt('selection', selection, 'allContacts', accountId),
     queryFn: collectAddresses,
     enabled,
     placeholderData: () => peerAddressesOf(getCachedRows()),

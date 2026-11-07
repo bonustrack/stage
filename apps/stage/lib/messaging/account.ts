@@ -1,11 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { getActiveAccount } from '../accounts';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
-import { useAccountEpoch } from '../accountEpoch';
+import { accountQueryKeyAt, useAccountGeneration } from '../queryClient';
 
 export function useActiveAccountRecord(): AccountRecord | null {
-  const epoch = useAccountEpoch();
-  const { data } = useQuery({ queryKey: ['activeAccount', epoch], queryFn: () => getActiveAccount(), staleTime: Infinity });
+  const epoch = useAccountGeneration('client');
+  const { data } = useQuery({
+    queryKey: accountQueryKeyAt('client', epoch, 'activeAccount'),
+    queryFn: () => getActiveAccount(),
+    staleTime: Infinity,
+  });
   return data ?? null;
 }
 

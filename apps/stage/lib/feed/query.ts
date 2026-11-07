@@ -1,12 +1,12 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { getQueryClient } from '../queryClient';
+import { accountQueryKeyAt, getQueryClient } from '../queryClient';
 import { getAccountEpoch } from '../accountEpoch';
 import { feedCache } from './cache';
 import { holdFeedLine, isFeedLoaded } from './lines';
 import { rememberFeed } from './snapshot';
 
 export function feedQueryKey(account: number, line: string) {
-  return ['xmtp', 'messages', account, line] as const;
+  return accountQueryKeyAt('client', account, 'xmtp', 'messages', line);
 }
 
 export function queriedFeed(account: number, line: string): HistoryEntry[] | undefined {

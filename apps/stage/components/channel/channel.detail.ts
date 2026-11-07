@@ -1,14 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { messagingKeys, refreshConv, useConvDetails, useConvRow } from '../../lib/messaging/queries';
-import { fetchGroupRoles } from '../../lib/messaging/groupDetails';
+import { refreshConv, useChannelEditRights, useChannelRoles, useConvDetails, useConvRow } from '../../lib/messaging/queries';
 import { memberAddressesOf } from '../../lib/messaging/convRow.model';
-import { groupEditRights, removeGroupMembers } from '../../lib/xmtp.groups';
+import { removeGroupMembers } from '../../lib/xmtp.groups';
 import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '../../lib/peerProfiles';
-import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
 import { leaveChannel as leaveChannelFlow } from './channelActions';
 
@@ -21,27 +18,7 @@ function convIdOf(line: string): string {
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
 
-const NO_ROLES: Roles = {};
 const NO_MAP: Record<string, string> = {};
-
-const NO_EDIT_RIGHTS: GroupEditRights = {
-  name: false,
-  description: false,
-  image: false,
-  appData: false,
-  addMembers: false,
-  removeMembers: false,
-};
-
-export function useChannelRoles(convId: string | undefined, inboxToAddr: Record<string, string>): Roles {
-  const inboxIds = Object.keys(inboxToAddr);
-  const { data = NO_ROLES } = useQuery({
-    queryKey: messagingKeys.groupRoles(convId, inboxIds),
-    queryFn: () => fetchGroupRoles(convId ?? '', inboxToAddr),
-    enabled: !!convId && inboxIds.length > 0,
-  });
-  return data;
-}
 
 function useMemberDirectory(
   convId: string | undefined,
@@ -75,15 +52,6 @@ async function runTask(mark: (on: boolean) => void, failTitle: string, task: () 
   } finally {
     mark(false);
   }
-}
-
-export function useChannelEditRights(convId: string | undefined, enabled = true): GroupEditRights {
-  const { data = NO_EDIT_RIGHTS } = useQuery({
-    queryKey: messagingKeys.groupEditRights(convId),
-    queryFn: () => groupEditRights(convId ?? ''),
-    enabled: enabled && !!convId,
-  });
-  return data;
 }
 
 export function confirmMemberRemoval(names: string[]): Promise<boolean> {

@@ -8,7 +8,7 @@ import { linkProxyBase } from './linkProxy';
 import { ownedStageLabel } from './mailKey';
 import { mailReadKey, mailboxKey, makeMailAccess, withReadKey, type InboxState, type Mailbox } from './mail.core';
 import { createValueStore } from './persistedStore';
-import { getQueryClient } from './queryClient';
+import { accountQueryKeyAt, getQueryClient } from './queryClient';
 import { reported } from './errorPolicy';
 import { storedStrings } from './storeCore';
 import { lazySigningKeyForRecord, signingKeyForRecord } from './accountSigning';
@@ -24,23 +24,24 @@ const access = makeMailAccess({
   baseUrl: linkProxyBase,
 });
 
-subscribeAccountSelection(() => {
-  access.clear();
-  getQueryClient().removeQueries({ queryKey: ['mail'] });
-});
+subscribeAccountSelection(access.clear);
 
 const readStore = createValueStore<readonly string[]>({ key: 'mail.read', default: NO_KEYS, schema: storedStrings });
 
 export function useMailboxes(): UseQueryResult<Mailbox[]> {
   const epoch = useAccountEpoch();
   const selection = useAccountSelection();
-  return useQuery({ queryKey: ['mail', selection, 'boxes', epoch], queryFn: () => access.mailboxes(selection), staleTime: 5 * 60_000 });
+  return useQuery({
+    queryKey: accountQueryKeyAt('selection', selection, 'mail', 'boxes', epoch),
+    queryFn: () => access.mailboxes(selection),
+    staleTime: 5 * 60_000,
+  });
 }
 
 const INBOX_STALE_MS = 30_000;
 
 function inboxKey(boxes: readonly Mailbox[], selection: number): readonly unknown[] {
-  return ['mail', selection, 'inbox', ...boxes.map(mailboxKey)];
+  return accountQueryKeyAt('selection', selection, 'mail', 'inbox', ...boxes.map(mailboxKey));
 }
 
 export function useInbox(boxes: readonly Mailbox[] | undefined): UseQueryResult<InboxState> {
@@ -67,7 +68,7 @@ export function useMail(box: Mailbox | undefined, id: string): UseQueryResult<Pa
   const selection = useAccountSelection();
   const activeBox = box?.selection === selection ? box : undefined;
   return useQuery({
-    queryKey: ['mail', selection, 'body', activeBox === undefined ? '' : mailboxKey(activeBox), id],
+    queryKey: accountQueryKeyAt('selection', selection, 'mail', 'body', activeBox === undefined ? '' : mailboxKey(activeBox), id),
     queryFn: () => (activeBox === undefined ? Promise.reject(new Error('No mailbox')) : access.mail(activeBox, id)),
     enabled: activeBox !== undefined,
     staleTime: Infinity,

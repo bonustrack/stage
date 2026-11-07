@@ -14,13 +14,20 @@ import {
   type MemberAdminMark,
   type MemberListEntry,
 } from './MemberListSidebar.model';
-import { confirmMemberRemoval, useChannelRoles, useChannelEditRights } from '../channel/channel.detail';
+import { confirmMemberRemoval } from '../channel/channel.detail';
 import { ChannelFields, ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
 import { SectionNote, SidebarSection } from './SidebarSection';
 import { applyListEdits, hasListEdits, type ListEdits } from './SidebarSection.model';
 import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';
 import { addGroupMembers, removeGroupMembers, updateGroupAssigned } from '../../lib/xmtp.groups';
-import { patchConvDetails, refreshConv, useConvDetails, useConvRow } from '../../lib/messaging/queries';
+import {
+  patchConvDetails,
+  refreshConv,
+  useChannelEditRights,
+  useChannelRoles,
+  useConvDetails,
+  useConvRow,
+} from '../../lib/messaging/queries';
 import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { errorLine } from '@stage-labs/client/errors';

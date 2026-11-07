@@ -56,6 +56,8 @@ export function knownSelfAddress(): string | null {
 
 export const subscribeActiveAccountId = activeId.subscribe;
 
+export const useKnownActiveAccountId = activeId.use;
+
 let readActive = (): Promise<string | null> => Promise.resolve(activeId.get());
 
 export function provideActiveAccountReader(read: () => Promise<string | null>): void {
