@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { ReactionAction, ReactionSchema } from '@xmtp/browser-sdk';
 import { envelopeOf } from '@stage-labs/client/xmtp/envelope';
-import { previewOfXmtpContent } from '@stage-labs/client/xmtp/contentTypes';
+import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { nativeGroupMetaPolicy, nativeInstallationCreatedAtMs, nativeMessageOf } from '../lib/xmtp.sdk.native.shapes';
 import { webMessageOf } from '../lib/xmtp.sdk.web.message';
 
@@ -83,7 +83,7 @@ describe('one message shape from both SDKs', () => {
     const webFile = web('reply', { referenceId: 'r1', content: remote, contentType: () => Promise.reject(new Error('not called')) });
     for (const m of [nativeFile, webFile]) {
       expect(envelopeOf(m, LINE)).toMatchObject({ text: '[file: message.txt]', replyTo: 'r1' });
-      expect(previewOfXmtpContent(m.content, m.contentTypeId)).toBe('[reply]');
+      expect(rowPreviewOf(m)).toBe('[reply]');
     }
   });
 

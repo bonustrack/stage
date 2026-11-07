@@ -10,8 +10,9 @@ import {
 } from '../src/xmtp/deleteMessage';
 import { envelopeOf } from '../src/xmtp/envelope';
 import { xmtpMessage } from './fixtures/decoded-messages';
-import { isXmtpDeletableType, previewOfXmtpContent } from '../src/xmtp/contentTypes';
+import { isXmtpDeletableType } from '../src/xmtp/contentTypes';
 import { countUnreadEntries } from '../src/xmtp/summarizeRow';
+import { previewOf } from './helpers';
 
 const MESSAGE_ID = 'c2c22efb7a1d9b0e4f2c1a3b5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f80';
 
@@ -118,10 +119,10 @@ describe('delete entries in the feed', () => {
   });
 
   test('chat list preview reads Message deleted, or by an admin', () => {
-    expect(previewOfXmtpContent({ deletedBy: 'sender' }, 'deletedMessage')).toBe(DELETED_MESSAGE_TEXT);
-    expect(previewOfXmtpContent({ deletedBy: 'admin' }, 'deletedMessage')).toBe('Message deleted by an admin');
-    expect(previewOfXmtpContent({ messageId: 'm1' }, 'xmtp.org/deleteMessage:1.0')).toBe(DELETED_MESSAGE_TEXT);
-    expect(previewOfXmtpContent({ messageId: 'm1' }, 'stage.box/deleteRequest:1.0')).toBe(DELETED_MESSAGE_TEXT);
+    expect(previewOf({ deletedBy: 'sender' }, 'deletedMessage')).toBe(DELETED_MESSAGE_TEXT);
+    expect(previewOf({ deletedBy: 'admin' }, 'deletedMessage')).toBe('Message deleted by an admin');
+    expect(previewOf({ messageId: 'm1' }, 'xmtp.org/deleteMessage:1.0')).toBe(DELETED_MESSAGE_TEXT);
+    expect(previewOf({ messageId: 'm1' }, 'stage.box/deleteRequest:1.0')).toBe(DELETED_MESSAGE_TEXT);
   });
 
   test('a delete request is never counted as unread', () => {

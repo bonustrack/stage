@@ -1,19 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  attachedFilesOf,
-  previewOfXmtpContent,
-  roleOfType,
-  rowPreviewOf,
-  STAGE_JSON_CODECS,
-  stageCodecsFor,
-} from '../src/xmtp/contentTypes';
+import { attachedFilesOf, roleOfType, rowPreviewOf, stageCodecsFor } from '../src/xmtp/contentTypes';
+import { previewOf, sharedStageCodecs } from './helpers';
 
 const idOf = (codec: { contentType: { authorityId: string; typeId: string } }): string =>
   `${codec.contentType.authorityId}/${codec.contentType.typeId}`;
 
 describe('content type table', () => {
   test('each SDK gets the Stage codecs plus the one it lacks built in', () => {
-    const shared = STAGE_JSON_CODECS.map(idOf);
+    const shared = sharedStageCodecs().map(idOf);
     expect(stageCodecsFor('native').map(idOf)).toEqual([...shared, 'xmtp.org/transactionReference']);
     expect(stageCodecsFor('web').map(idOf)).toEqual([...shared, 'xmtp.org/deleteMessage']);
   });
@@ -28,8 +22,8 @@ describe('content type table', () => {
   });
 
   test('an unknown type previews as its id, and a preview that throws as the message type', () => {
-    expect(previewOfXmtpContent({ a: 1 }, 'somethingNew')).toBe('[somethingNew]');
-    expect(previewOfXmtpContent({ a: 1 }, undefined)).toBe('[unknown]');
+    expect(previewOf({ a: 1 }, 'somethingNew')).toBe('[somethingNew]');
+    expect(previewOf({ a: 1 }, undefined)).toBe('[unknown]');
     expect(rowPreviewOf({ contentTypeId: 'poll', content: null })).toBe('[poll]');
   });
 

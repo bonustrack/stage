@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '../src/types';
 import { NO_TAGS, type AppDataGroup } from '../src/xmtp/channelMeta';
 import type { ChannelRow } from '../src/xmtp/channelsCache';
+import { rowPreviewOf, stageCodecsFor } from '../src/xmtp/contentTypes';
 import { syncCodecOf, type SyncContents, type SyncKind } from '../src/xmtp/sync/registry';
 
 export function entry(id: string, fields: Partial<HistoryEntry> = {}): HistoryEntry {
@@ -10,6 +11,15 @@ export function entry(id: string, fields: Partial<HistoryEntry> = {}): HistoryEn
 export function storedEntry(id: string, fields: object): HistoryEntry {
   const read: HistoryEntry = JSON.parse(JSON.stringify({ ...entry(id), ...fields }));
   return read;
+}
+
+export function previewOf(content: unknown, contentTypeId: string | undefined): string {
+  return rowPreviewOf({ content, contentTypeId });
+}
+
+export function sharedStageCodecs(): ReturnType<typeof stageCodecsFor> {
+  const web = stageCodecsFor('web');
+  return stageCodecsFor('native').filter((codec) => web.includes(codec));
 }
 
 export function fakeFetch(respond: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>): typeof fetch {

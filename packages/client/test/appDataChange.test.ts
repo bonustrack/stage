@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { groupUpdateInboxIds, humanizeGroupUpdated } from '../src/xmtp/humanize';
-import { previewOfXmtpContent } from '../src/xmtp/contentTypes';
+import { previewOf } from './helpers';
 
 const blob = (labels: string[], github?: string): string => JSON.stringify({ v: 1, labels, ...(github ? { github } : {}) });
 
@@ -86,8 +86,8 @@ describe('description changes in appData', () => {
     const changes = [{ fieldName: 'app_data', oldValue: data('Before'), newValue: data('After') }];
     expect(humanizeGroupUpdated({ metadataFieldsChanged: changes })).toBe(notice);
     expect(humanizeGroupUpdated({ metadataFieldChanges: changes })).toBe(notice);
-    expect(previewOfXmtpContent({ metadataFieldsChanged: changes }, 'xmtp.org/group_updated:1.0')).toBe(notice);
-    expect(previewOfXmtpContent({ metadataFieldChanges: changes }, 'group_updated')).toBe(notice);
+    expect(previewOf({ metadataFieldsChanged: changes }, 'xmtp.org/group_updated:1.0')).toBe(notice);
+    expect(previewOf({ metadataFieldChanges: changes }, 'group_updated')).toBe(notice);
     expect(humanizeGroupUpdated({ metadataFieldsChanged: changes, membersAdded: [{ inboxId: 'member' }] }, () => 'Alice')).toBe(
       `${notice} • added Alice`,
     );

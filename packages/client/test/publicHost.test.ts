@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { hostProblem, isPrivateIp, isPublicHost } from '../src/net/publicHost';
+import { hostProblem, isPublicHost } from '../src/net/publicHost';
+
+const isPrivateIp = (host: string): boolean => hostProblem(host) === 'private-ip';
 import { declaredLength, readCappedBytes, readCappedResponse } from '../src/net/cappedBody';
 import { clientIp } from '../src/net/clientIp';
 

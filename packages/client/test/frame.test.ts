@@ -14,7 +14,7 @@ import {
 import { FRAME_MAX_CHARS, frameActionSchema, frameContentSchema } from '../src/xmtp/frame.schema';
 import { envelopeOf } from '../src/xmtp/envelope';
 import { xmtpMessage } from './fixtures/decoded-messages';
-import { previewOfXmtpContent } from '../src/xmtp/contentTypes';
+import { previewOf } from './helpers';
 
 const NS = 1_717_000_000_000 * 1_000_000;
 
@@ -178,16 +178,16 @@ describe('frame envelopes', () => {
 
 describe('frame chat-list previews', () => {
   test('a frame reads as its title, an action as a tap on its label or type', () => {
-    expect(previewOfXmtpContent(frame, 'stage.box/frame:2.0')).toBe('Frame: Weekly report');
-    expect(previewOfXmtpContent({ messages: [] }, 'stage.box/frame:2.0')).toBe('Frame');
-    expect(previewOfXmtpContent(action, 'stage.box/frameAction:2.0')).toBe('Tapped "Approve"');
-    expect(previewOfXmtpContent({ frameId: 'f', action: { name: 'pick' } }, 'stage.box/frameAction:2.0')).toBe('Tapped pick');
-    expect(previewOfXmtpContent({ frameId: 'f', label: '', action: {} }, 'stage.box/frameAction:2.0')).toBe('[frame action]');
-    expect(previewOfXmtpContent(null, 'stage.box/frameAction:2.0')).toBe('[frame action]');
-    expect(previewOfXmtpContent({ frameId: 'f', label: '', action: { name: '', userMessage: ' ' } }, 'stage.box/frameAction:2.0')).toBe(
+    expect(previewOf(frame, 'stage.box/frame:2.0')).toBe('Frame: Weekly report');
+    expect(previewOf({ messages: [] }, 'stage.box/frame:2.0')).toBe('Frame');
+    expect(previewOf(action, 'stage.box/frameAction:2.0')).toBe('Tapped "Approve"');
+    expect(previewOf({ frameId: 'f', action: { name: 'pick' } }, 'stage.box/frameAction:2.0')).toBe('Tapped pick');
+    expect(previewOf({ frameId: 'f', label: '', action: {} }, 'stage.box/frameAction:2.0')).toBe('[frame action]');
+    expect(previewOf(null, 'stage.box/frameAction:2.0')).toBe('[frame action]');
+    expect(previewOf({ frameId: 'f', label: '', action: { name: '', userMessage: ' ' } }, 'stage.box/frameAction:2.0')).toBe(
       '[frame action]',
     );
-    expect(previewOfXmtpContent({ frameId: 'f', action: { name: 'book', userMessage: 'Book table' } }, 'stage.box/frameAction:2.0')).toBe(
+    expect(previewOf({ frameId: 'f', action: { name: 'book', userMessage: 'Book table' } }, 'stage.box/frameAction:2.0')).toBe(
       'Tapped "Book table"',
     );
   });

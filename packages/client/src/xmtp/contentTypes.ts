@@ -196,7 +196,7 @@ export function entryBuilderOf(typeId: string): { build: EntryBuilder; ignoresCo
   return spec.entry === undefined ? undefined : { build: spec.entry, ignoresContent: spec.entryIgnoresContent === true };
 }
 
-export function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
+function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
   const typeId = contentTypeId ? shortTypeId(contentTypeId) : 'unknown';
   if (typeof decoded === 'string') return humanizeMentions(decoded);
   const preview = specOf(typeId).preview;
@@ -220,8 +220,6 @@ export function attachedFilesOf(contentTypeId: string | undefined, content: unkn
 const ALL_CODECS: readonly { codec: StageCodec; onlyOn?: CodecPlatform }[] = Object.values(CONTENT_TYPES).flatMap((spec) =>
   spec.codec === undefined ? [] : [{ codec: spec.codec, onlyOn: spec.codecOnlyOn }],
 );
-
-export const STAGE_JSON_CODECS: readonly StageCodec[] = ALL_CODECS.filter((c) => c.onlyOn === undefined).map((c) => c.codec);
 
 export function stageCodecsFor(platform: CodecPlatform): StageCodec[] {
   return ALL_CODECS.filter((c) => c.onlyOn === undefined || c.onlyOn === platform).map((c) => c.codec);

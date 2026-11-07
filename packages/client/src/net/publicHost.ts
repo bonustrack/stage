@@ -63,10 +63,6 @@ function privateAddress(host: string): boolean {
   return v4 !== null && privateV4(v4);
 }
 
-export function isPrivateIp(host: string): boolean {
-  return privateAddress(normalHost(host));
-}
-
 function blockedName(host: string, blockedDomains: readonly string[]): boolean {
   if (!host.includes('.') || NUMERIC_LABEL.test(host.slice(host.lastIndexOf('.') + 1))) return true;
   if (LOCAL_SUFFIXES.some((suffix) => host.endsWith(suffix))) return true;

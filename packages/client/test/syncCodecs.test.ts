@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { STAGE_JSON_CODECS } from '../src/xmtp/contentTypes';
 import { isSyncType, syncCodecOf, type SyncKind } from '../src/xmtp/sync/registry';
+import { sharedStageCodecs } from './helpers';
 
 const WIRE: Record<SyncKind, { typeId: string; fallback: string; json: string }> = {
   read: {
@@ -70,7 +70,7 @@ describe('device sync wire format', () => {
   }
 
   test('registers silent developer settings alongside existing codecs, and other types are not sync state', () => {
-    const ids = STAGE_JSON_CODECS.map(
+    const ids = sharedStageCodecs().map(
       ({ contentType: t, shouldPush }) => `${t.authorityId}/${t.typeId}:${t.versionMajor}.${t.versionMinor}:${shouldPush()}`,
     );
     expect(ids.toSorted()).toEqual(REGISTRY.toSorted());
