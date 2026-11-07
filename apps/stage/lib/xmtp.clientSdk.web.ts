@@ -234,6 +234,7 @@ async function groupNamesOf(client: XmtpClient): Promise<GroupName[]> {
 
 export const clientSdk: ClientSdk<XmtpClient> = {
   build: buildClient,
+  inboxIdOf: (client) => client.inboxId ?? '',
   selfAddressOf: (client) => client.accountIdentifier?.identifier ?? null,
   syncPreferences: (client) => client.preferences.sync(),
   installations: async (client) =>
@@ -251,7 +252,6 @@ export const clientSdk: ClientSdk<XmtpClient> = {
   forgetStore: deleteDbKey,
   forgetSaved: forgetSavedClient,
   push: {
-    inboxId: (client) => client.inboxId ?? null,
     signWithInstallationKey: (client, text) => client.signWithInstallationKey(text),
     topics: pushTopicsOf,
     hmacKeys: hmacKeysOf,

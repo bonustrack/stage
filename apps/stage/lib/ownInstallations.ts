@@ -16,20 +16,20 @@ const SPACING_MS = 1500;
 async function repairConversation(context: AccountClient, conv: Conv, devices: string[]): Promise<void> {
   const installationsIn = sdk.memberInstallationIds;
   if (!installationsIn) return;
-  const present = await installationsIn(conv, context.client.inboxId ?? '');
+  const present = await installationsIn(conv, sdk.inboxIdOf(context.client));
   if (missingInstallationIds(devices, present).length === 0) return;
   if ((await channelAccess(context, conv)) !== 'member') return;
   const hidden = await loadHiddenChannels(context.account.id);
   context.assertCurrent();
   if (isHiddenChannel(hidden, conv.id)) return;
-  await conv.sync();
+  await sdk.syncConv(conv);
   await sleep(SPACING_MS);
 }
 
 export async function addOwnInstallationsToChats(accountId: string): Promise<void> {
   if (sdk.memberInstallationIds === null) return;
   const context = await accountClient(accountId);
-  const inboxId = context.client.inboxId ?? '';
+  const inboxId = sdk.inboxIdOf(context.client);
   if (inboxId === '') return;
   const devices = (await sdk.installationIdsOf(context.client, inboxId)).map((id) => id.toLowerCase()).sort();
   const hidden = await loadHiddenChannels(accountId);

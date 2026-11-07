@@ -116,6 +116,7 @@ export const clientSdk: ClientSdk<Client> = {
     recordPushAccount({ id: rec.id, address: rec.address, inboxId: client.inboxId, dbDir: rec.dbDir, env: XMTP_ENV });
     return client;
   },
+  inboxIdOf: (client) => client.inboxId,
   selfAddressOf: (client) => client.publicIdentity.identifier,
   syncPreferences: (client) => client.preferences.sync(),
   installations: async (client) =>
@@ -135,7 +136,6 @@ export const clientSdk: ClientSdk<Client> = {
   },
   forgetSaved: forgetStorageIndex,
   push: {
-    inboxId: (client) => client.inboxId,
     signWithInstallationKey: (client, text) => client.signWithInstallationKey(text),
     topics: (client) => getAllPushTopics(client.installationId),
     hmacKeys: hmacKeysOf,

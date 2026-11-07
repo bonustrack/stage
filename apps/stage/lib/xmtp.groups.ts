@@ -111,11 +111,8 @@ export async function updateGroupAssigned(convId: string, assigned: string[]): P
     const group = sdk.appDataGroup(conv) ?? notAGroup();
     return await channelMetaWriter().writeAssigned(group, assigned, async () => {
       const client = await sdk.client();
-      const members = await conv.members();
-      return currentMemberAddresses(
-        assignedAddresses(assigned),
-        members.map((member) => member.inboxId),
-        (address) => sdk.inboxIdOfAddress(client, address),
+      return currentMemberAddresses(assignedAddresses(assigned), await sdk.memberInboxIds(conv), (address) =>
+        sdk.inboxIdOfAddress(client, address),
       );
     });
   } finally {
@@ -126,7 +123,7 @@ export async function updateGroupAssigned(convId: string, assigned: string[]): P
 export async function groupEditRights(convId: string): Promise<GroupEditRights> {
   const group = await requireGroup(lineOfConv(convId));
   const [client, policy, staff] = await Promise.all([sdk.client(), sdk.groupMetaPolicy(group), sdk.groupAdmins(group)]);
-  return groupEditRightsOf(policy, groupRoleOf(client.inboxId ?? '', staff));
+  return groupEditRightsOf(policy, groupRoleOf(sdk.inboxIdOf(client), staff));
 }
 
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {

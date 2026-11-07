@@ -18,6 +18,7 @@ import type { AppDataGroup } from '@stage-labs/client/xmtp/channelMeta';
 import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
 import { nativeGroupMetaPolicy, nativeMessageOf } from './xmtp.sdk.native.shapes';
 import { xmtpClient } from './xmtp.client';
+import { clientSdk } from './xmtp.clientSdk';
 import { getCachedXmtpClient } from './xmtp.state';
 import { XMTP_ENV } from './xmtp.types';
 import {
@@ -268,6 +269,9 @@ async function readNativeLogs(): Promise<string> {
 export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   client: xmtpClient,
   cachedClient: getCachedXmtpClient,
+  inboxIdOf: (client) => clientSdk.inboxIdOf(client),
+  installationIdOf: (client) => clientSdk.installationIdOf(client),
+  syncPreferences: (client) => clientSdk.syncPreferences(client),
   findConv: (client, convId) => client.conversations.findConversation(asConversationId(convId)),
   listConvs: (client, consent) => client.conversations.list(LIST_OPTIONS, undefined, consent),
   syncConvList: (client) => client.conversations.sync(),
@@ -316,8 +320,11 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     processSyncArchive: (client) => client.processSyncArchive(),
   },
   nativeErrorLog,
+  storeChangesInBackground: true,
   isGroup: (conv) => conv instanceof Group,
   isActive: (conv) => conv.isActive(),
+  syncConv: (conv) => conv.sync(),
+  memberInboxIds: async (conv) => (await conv.members()).map((m) => m.inboxId),
   syncState: async (conv) => {
     const [info, paused] = await Promise.all([conv.getDebugInformation(), conv.pausedForVersion()]);
     return {

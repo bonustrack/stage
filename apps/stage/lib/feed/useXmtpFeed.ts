@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { useAccountEpoch } from '../accountEpoch';
 import { xmtpClient } from '../xmtp.client';
+import { sdk } from '../xmtp.sdk';
 import { feedCache, feedGeneration } from './cache';
 import { isFeedLoaded } from './lines';
 import { ensureGlobalStream } from '../xmtp.stream';
@@ -62,8 +63,9 @@ export function useXmtpFeed(
     void xmtpClient()
       .then((c) => {
         if (cancelled || !generation.current()) return;
-        rememberSelfInboxId(c.inboxId);
-        setInboxId(c.inboxId);
+        const inboxId = sdk.inboxIdOf(c);
+        rememberSelfInboxId(inboxId);
+        setInboxId(inboxId);
       })
       .catch(reported('feed.client'));
     setLoadingOlder(false);

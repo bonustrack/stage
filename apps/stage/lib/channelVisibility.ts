@@ -55,7 +55,7 @@ async function reconcileChannel(context: AccountClient, id: string): Promise<voi
   if (state.hidden || (await channelAccess(context, conv)) !== 'member') return;
   if ((await loadHiddenChannels(context.account.id))[id]?.hidden) return;
   context.assertCurrent();
-  await conv.sync();
+  await sdk.syncConv(conv);
 }
 
 async function reconcile(context: AccountClient): Promise<void> {
@@ -100,7 +100,7 @@ async function deniedGroups(context: AccountClient): Promise<Conv[]> {
 
 export async function backfillHiddenChannels(accountId: string): Promise<void> {
   const context = await accountClient(accountId);
-  await context.client.preferences.sync();
+  await sdk.syncPreferences(context.client);
   context.assertCurrent();
   const hidden: HiddenChannels = {};
   for (const conv of await deniedGroups(context)) hidden[conv.id] = { hidden: true, at: 0 };

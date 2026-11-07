@@ -85,6 +85,9 @@ export interface HistoryOps<Cl> {
 interface ClientPrimitives<Cl, C, M> {
   client: () => Promise<Cl>;
   cachedClient: () => Cl | null;
+  inboxIdOf: (client: Cl) => string;
+  installationIdOf: (client: Cl) => string | undefined;
+  syncPreferences: (client: Cl) => Promise<unknown>;
   findConv: (client: Cl, convId: string) => Promise<C | null | undefined>;
   listConvs: (client: Cl, consent?: XmtpConsent[]) => Promise<C[]>;
   syncConvList: (client: Cl) => Promise<unknown>;
@@ -109,11 +112,14 @@ interface ClientPrimitives<Cl, C, M> {
   messageById: (client: Cl, messageId: string) => Promise<M | null | undefined>;
   history: HistoryOps<Cl>;
   nativeErrorLog?: (work: () => Promise<unknown>) => Promise<string>;
+  storeChangesInBackground: boolean;
 }
 
 interface ConvPrimitives<C, M> {
   isGroup: (conv: C) => boolean;
   isActive: (conv: C) => Promise<boolean>;
+  syncConv: (conv: C) => Promise<unknown>;
+  memberInboxIds: (conv: C) => Promise<string[]>;
   syncState: (conv: C) => Promise<SyncState>;
   dmPeerInboxId: (conv: C) => (() => Promise<string>) | null;
   groupName: (conv: C) => Promise<string | undefined>;

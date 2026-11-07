@@ -15,7 +15,7 @@ const session = makeCallSession({
   openPeer,
   view: { get: callView, set: setCallView },
   inbound: makeCallInbound,
-  clientInboxId: async () => (await sdk.client()).inboxId,
+  clientInboxId: async () => sdk.inboxIdOf(await sdk.client()),
   sendJson: (convId, codec, content) => xmtpSendJson(lineOfConv(convId), codec, content),
   toast: (message) => {
     capabilities.toast(message);

@@ -23,14 +23,7 @@ let beforeInstallations: (() => Promise<void>) | undefined;
 const presentDevices = new Map<string, string[]>();
 const messages: RowMessage[] = [];
 const sentTo: string[] = [];
-const client = {
-  inboxId: 'owner',
-  preferences: {
-    sync: async () => {
-      beforePreferences?.();
-    },
-  },
-};
+const client = { inboxId: 'owner' };
 const synced: string[] = [];
 let scans = 0;
 let storageFails = false;
@@ -38,17 +31,6 @@ let beforeFind: (() => Promise<void>) | undefined;
 let beforeMembers: (() => Promise<void>) | undefined;
 let beforeActive: (() => Promise<void>) | undefined;
 let connectedClient = client;
-function withMethods(conv: FakeConv) {
-  return Object.assign(conv, {
-    members: async () => {
-      await beforeMembers?.();
-      return (conv.memberIds ?? ['owner']).map((inboxId) => ({ inboxId }));
-    },
-    sync: async () => {
-      synced.push(conv.id);
-    },
-  });
-}
 let leaveFails = false;
 let leaves = 0;
 const { values } = mockAppStorage({
@@ -69,18 +51,27 @@ mock.module('../lib/channelsCache', () => ({
 mock.module('../lib/messaging/conversation', () => ({ groupRowMeta: async () => null }));
 mock.module('../lib/xmtp.find', () => ({
   convOfLine: async (line: string) => {
-    const conv = convs.find((c) => line === lineOfConv(c.id));
-    return conv ? withMethods(conv) : null;
+    return convs.find((c) => line === lineOfConv(c.id)) ?? null;
   },
 }));
 mock.module('../lib/xmtp.sdk', () => ({
   sdk: {
     client: async () => connectedClient,
     cachedClient: () => connectedClient,
+    inboxIdOf: (c: typeof client) => c.inboxId,
+    syncPreferences: async () => {
+      beforePreferences?.();
+    },
     findConv: async (_client: unknown, id: string) => {
       await beforeFind?.();
-      const conv = convs.find((c) => c.id === id.toLowerCase());
-      return conv ? withMethods(conv) : null;
+      return convs.find((c) => c.id === id.toLowerCase()) ?? null;
+    },
+    memberInboxIds: async (conv: FakeConv) => {
+      await beforeMembers?.();
+      return conv.memberIds ?? ['owner'];
+    },
+    syncConv: async (conv: FakeConv) => {
+      synced.push(conv.id);
     },
     isGroup: (conv: FakeConv) => conv.group,
     isActive: async (conv: FakeConv) => {
@@ -112,7 +103,7 @@ mock.module('../lib/xmtp.sdk', () => ({
     },
     listConvs: async (_client: unknown, consent: XmtpConsent[]) => {
       scans += 1;
-      return convs.filter((c) => consent.includes(c.consent)).map(withMethods);
+      return convs.filter((c) => consent.includes(c.consent));
     },
     syncVisible: async () => {
       synced.push(...convs.filter((c) => c.consent !== 'denied').map((c) => c.id));

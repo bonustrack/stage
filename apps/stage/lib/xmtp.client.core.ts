@@ -22,7 +22,6 @@ export interface GroupName {
 }
 
 export interface PushSdk<C> {
-  inboxId: (client: C) => string | null;
   signWithInstallationKey: (client: C, text: string) => Promise<Uint8Array>;
   topics: (client: C) => Promise<string[]>;
   hmacKeys: (client: C, topic?: string) => Promise<HmacKeysByTopic>;
@@ -38,6 +37,7 @@ interface ClientReads<C> {
 }
 
 export interface ClientSdk<C> extends ClientReads<C> {
+  inboxIdOf: (client: C) => string;
   build: (rec: AccountRecord, finalize: FinalizeClient<C>) => Promise<C>;
   isRegistered: (address: string) => Promise<boolean>;
   forgetStore: (accountId: string) => Promise<void>;

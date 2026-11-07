@@ -73,7 +73,7 @@ async function searchDeleteRights(conv: ConvHandle, line: string): Promise<Delet
   const admins =
     convId && sdk.isGroup(conv) ? { convId, inboxToAddr: (await convMembers(conv)).inboxToAddr, where: 'search.superAdmins' } : null;
   const rights = await deleteRightsOf(admins, null);
-  return { ...rights, selfInboxId: (await sdk.client()).inboxId };
+  return { ...rights, selfInboxId: sdk.inboxIdOf(await sdk.client()) };
 }
 
 export async function searchLocalHistory(

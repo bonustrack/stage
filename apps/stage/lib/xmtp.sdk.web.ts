@@ -25,6 +25,7 @@ import type { AppDataGroup } from '@stage-labs/client/xmtp/channelMeta';
 import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
 import { encodeDeleteMessage } from '@stage-labs/client/xmtp/deleteMessage';
 import { xmtpClient } from './xmtp.client.web';
+import { clientSdk } from './xmtp.clientSdk.web';
 import { getCachedXmtpClient } from './xmtp.state.web';
 import { withNestedReactions } from './feed/order.model';
 import { withMainThreadWasm } from './xmtp.wasm.web';
@@ -233,6 +234,9 @@ async function ethAddressesOf(client: WebClient, inboxIds: string[]): Promise<(s
 export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
   client: xmtpClient,
   cachedClient: getCachedXmtpClient,
+  inboxIdOf: (client) => clientSdk.inboxIdOf(client),
+  installationIdOf: (client) => clientSdk.installationIdOf(client),
+  syncPreferences: (client) => clientSdk.syncPreferences(client),
   findConv: (client, convId) => client.conversations.getConversationById(convId),
   listConvs: (client, consent) => client.conversations.list(webListOptions(consent)),
   syncConvList: (client) => client.conversations.sync(),
@@ -268,8 +272,11 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
     processSyncArchive: (client) => client.processSyncArchive(null),
   },
+  storeChangesInBackground: false,
   isGroup: (conv) => conv instanceof Group,
   isActive: (conv) => conv.isActive(),
+  syncConv: (conv) => conv.sync(),
+  memberInboxIds: async (conv) => (await conv.members()).map((m) => m.inboxId),
   syncState: async (conv) => {
     const [info, paused] = await Promise.all([conv.debugInfo(), conv.pausedForVersion()]);
     return {

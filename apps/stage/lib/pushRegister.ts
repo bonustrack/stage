@@ -128,7 +128,7 @@ async function collectSenderTopics(client: XmtpClient, topic?: string): Promise<
 function pushInput(client: XmtpClient): PushRuntimeInput | null {
   const installationId = installationIdOf(client);
   const accountAddress = clientSdk.selfAddressOf(client);
-  const inboxId = clientSdk.push.inboxId(client);
+  const inboxId = clientSdk.inboxIdOf(client);
   if (!installationId || !accountAddress || !inboxId) return null;
   const epoch = getAccountEpoch();
   return {

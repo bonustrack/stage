@@ -8,6 +8,7 @@ import {
   switchToAccount,
   xmtpClient,
 } from './xmtp.client';
+import { sdk } from './xmtp.sdk';
 import type { XmtpInstallation } from './xmtp.client.core';
 import { getActiveAccount } from './accounts';
 import { useAccountEpoch } from './accountEpoch';
@@ -45,7 +46,7 @@ const NO_IDENTITY: XmtpIdentity = { addr: '', inbox: '', install: '' };
 async function fetchXmtpIdentity(): Promise<XmtpIdentity> {
   const client = await xmtpClient();
   const address = await selfEthAddress();
-  return { addr: address ?? '', inbox: client.inboxId, install: client.installationId ?? '' };
+  return { addr: address ?? '', inbox: sdk.inboxIdOf(client), install: sdk.installationIdOf(client) ?? '' };
 }
 
 export function useXmtpIdentity(): XmtpIdentity {

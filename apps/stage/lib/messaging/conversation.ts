@@ -109,7 +109,7 @@ export async function fetchConvRow(convId: string): Promise<ConvRow | null> {
   if (!conv) return null;
   const members = await convMembers(conv);
   const { groupName, avatarUri } = rowMetaOf(conv, members.peerAddress, await gatherGroupRowData(conv, members));
-  const selfInboxId = (await sdk.client()).inboxId ?? '';
+  const selfInboxId = sdk.inboxIdOf(await sdk.client());
   return { peerAddress: members.peerAddress, groupName, avatarUri, inboxToAddr: members.inboxToAddr, selfInboxId };
 }
 
@@ -140,7 +140,7 @@ export async function summarizeConversation(
   alreadySynced: boolean,
   knownDmIds = NO_KNOWN_DMS,
 ): Promise<ConversationView> {
-  if (!alreadySynced) await conv.sync().catch(reported('conversation.sync'));
+  if (!alreadySynced) await sdk.syncConv(conv).catch(reported('conversation.sync'));
   const consent = sdk.consentOf(conv).catch(recover('conversation.consent', null));
   const members = await convMembers(conv);
   const { peerAddress, inboxToAddr } = members;

@@ -64,7 +64,7 @@ export async function syncActiveGroups(context: AccountClient, groups: readonly 
   for (const group of groups) {
     if (!group.active) continue;
     const { conv } = await syncTarget(context, group.id);
-    await conv.sync().catch(reported('readSync.sync'));
+    await sdk.syncConv(conv).catch(reported('readSync.sync'));
   }
 }
 

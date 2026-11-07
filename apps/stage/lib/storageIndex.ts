@@ -147,7 +147,7 @@ function stopUnless(live: () => boolean): void {
 
 async function startIndex(context: AccountClient): Promise<StorageIndex> {
   const accountId = context.account.id;
-  const inboxId = context.client.inboxId;
+  const inboxId = sdk.inboxIdOf(context.client);
   const stored = await heldIndex(accountId);
   context.assertCurrent();
   const start = stored !== null && stored.inboxId === inboxId ? stored : emptyIndex(inboxId);

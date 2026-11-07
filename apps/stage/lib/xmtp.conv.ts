@@ -63,9 +63,9 @@ export async function findExistingDmWithAddress(address: string): Promise<Existi
     dm = await lookup.find();
   }
   if (!dm) return null;
-  const members = await dm.members().catch(recover('xmtp.dmMembers', []));
+  const members = await sdk.memberInboxIds(dm).catch(recover<string[]>('xmtp.dmMembers', []));
   const peerInboxId = await lookup.peerInboxId().catch(recover('xmtp.dmPeer', undefined));
-  const peerJoined = members.length >= 2 || peerInboxId === client.inboxId;
+  const peerJoined = members.length >= 2 || peerInboxId === sdk.inboxIdOf(client);
   return { convId: routeConvId(dm.id), peerJoined };
 }
 
@@ -82,7 +82,7 @@ export async function repairDmMembership(convId: string, address: string): Promi
     return false;
   }
   const dm = await (await sdk.dmLookup(client, address))?.find();
-  const members = (await dm?.members().catch(recover('xmtp.dmMembers', []))) ?? [];
+  const members = dm ? await sdk.memberInboxIds(dm).catch(recover<string[]>('xmtp.dmMembers', [])) : [];
   return members.length >= 2;
 }
 
@@ -132,10 +132,10 @@ export async function checkConvSync(convId: string): Promise<SyncCheckResult> {
   return runSyncCheck({
     find: () => sdk.findConv(client, convId),
     isActive: sdk.isActive,
-    sync: (conv) => conv.sync(),
+    sync: sdk.syncConv,
     syncInvites: () => sdk.syncConvList(client),
     nativeError: sdk.nativeErrorLog,
-    device: client.installationId.slice(0, 8),
+    device: (sdk.installationIdOf(client) ?? '').slice(0, 8),
     details: async (conv) => {
       const [state, latest] = await Promise.all([sdk.syncState(conv), sdk.messages(conv, { limit: 1, order: 'desc' })]);
       const newestMs = latest[0] ? sdk.sentNsOf(latest[0]) / 1_000_000 : 0;

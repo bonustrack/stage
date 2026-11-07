@@ -28,7 +28,7 @@ const memberIdsByConv = new WeakMap<IdentityConv, Promise<string[]>>();
 function memberIdsOf(conv: IdentityConv): Promise<string[]> {
   const known = memberIdsByConv.get(conv);
   if (known) return known;
-  const ids = conv.members().then((ms) => ms.map((m) => m.inboxId));
+  const ids = sdk.memberInboxIds(conv);
   memberIdsByConv.set(conv, ids);
   ids.catch(() => {
     memberIdsByConv.delete(conv);
@@ -77,7 +77,7 @@ export async function convMembers(conv: IdentityConv): Promise<ConvMembers> {
     }
     const otherAddresses = sdk.isGroup(conv)
       ? memberIds
-          .filter((id) => id !== client.inboxId)
+          .filter((id) => id !== sdk.inboxIdOf(client))
           .map((id) => found[id])
           .filter((a): a is string => !!a)
       : [];

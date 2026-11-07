@@ -35,7 +35,7 @@ export async function syncInboxOnce(maxAgeMs = 3_000): Promise<void> {
 export async function refreshLatestPage(line: string): Promise<HistoryEntry[] | null> {
   const conv = await convOfLine(line);
   if (!conv) return null;
-  if (await sdk.isActive(conv).catch(recover('xmtp.isActive', true))) await conv.sync().catch(reported('xmtp.convSync'));
+  if (await sdk.isActive(conv).catch(recover('xmtp.isActive', true))) await sdk.syncConv(conv).catch(reported('xmtp.convSync'));
   return latestConvMessages(conv, line, PAGE_SIZE);
 }
 

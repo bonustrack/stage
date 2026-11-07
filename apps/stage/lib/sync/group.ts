@@ -43,7 +43,7 @@ function trust(id: string): void {
 }
 
 function ownerOf(context: AccountClient): SyncOwner {
-  return { address: context.account.address, inboxId: context.client.inboxId ?? '' };
+  return { address: context.account.address, inboxId: sdk.inboxIdOf(context.client) };
 }
 
 export function syncInboxOf(context: AccountClient): string {
@@ -53,9 +53,11 @@ export function syncInboxOf(context: AccountClient): string {
 async function ownSyncGroupOf(conv: SyncConv, owner: SyncOwner): Promise<SyncGroupState | null> {
   const name = await sdk.groupName(conv);
   if (name !== syncGroupName(owner.address)) return null;
-  const [active, members] = await Promise.all([sdk.isActive(conv).catch(recover('readSync.isActive', false)), conv.members()]);
+  const [active, memberInboxIds] = await Promise.all([
+    sdk.isActive(conv).catch(recover('readSync.isActive', false)),
+    sdk.memberInboxIds(conv),
+  ]);
   const group: SyncGroupState = { id: conv.id, createdAtNs: sdk.createdAtNs(conv), active };
-  const memberInboxIds = members.map((m) => m.inboxId);
   return isOwnSyncGroup({ ...group, name, addedByInboxId: sdk.addedByInboxId(conv), memberInboxIds }, owner) ? group : null;
 }
 

@@ -56,10 +56,10 @@ async function resolveAccess(context: AccountClient, convId: string, read: () =>
 
 async function membershipAccess(context: AccountClient, conv: Conv): Promise<GroupAccess> {
   if (!sdk.isGroup(conv)) return 'member';
-  const members = await conv.members().catch(recover('xmtp.channelMembers', []));
+  const members = await sdk.memberInboxIds(conv).catch(recover<string[]>('xmtp.channelMembers', []));
   context.assertCurrent();
   if (members.length === 0) return 'checking';
-  if (!members.some((member) => member.inboxId === context.client.inboxId)) return 'outside';
+  if (!members.includes(sdk.inboxIdOf(context.client))) return 'outside';
   const active = await sdk.isActive(conv);
   context.assertCurrent();
   return active ? 'member' : 'waiting';

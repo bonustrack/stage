@@ -42,6 +42,7 @@ mock.module('../lib/xmtp.sdk', () => ({
   sdk: {
     client: async () => client,
     cachedClient: () => client,
+    inboxIdOf: (c: typeof client) => c.inboxId,
     findConv: async (_client: unknown, id: string) => ({ id }),
     messages: async (_conv: unknown, opts: { afterNs?: number; beforeNs?: number; limit: number }) => {
       queries.push(opts);

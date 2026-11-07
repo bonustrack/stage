@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState } from 'react-native';
 import { makeValue } from '../storeCore';
 import { useAccountEpoch } from '../accountEpoch';
 import { syncPreferences, xmtpClient } from '../xmtp.client';
+import { sdk } from '../xmtp.sdk';
 import { NoAccountError } from '../accountSelection';
 import { getXmtpBootstrapPhase, isActiveConv } from '../xmtp.state.core';
 import { isSyncConv } from '../sync/group';
@@ -25,7 +26,6 @@ import { afterFirstPages } from '../feed/firstPages';
 import { getPeerName } from '../peerProfiles';
 import { hydratePeerProfiles } from '../peerProfileCache';
 import { perfLog, perfTime } from '../perf';
-import type { Conversation } from '@xmtp/react-native-sdk';
 import { dmIdsByPeer } from '@stage-labs/client/xmtp/dmRoutes';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { hasHomeRows, homeRows, updateHomeRows, type HomeRow as Row } from './homeRows';
@@ -172,13 +172,13 @@ function maybeNotify(n: NotifyCtx | null, convId: string | null, msgId: string |
 
 const INIT_TIMEOUT_MS = 30_000;
 
-async function summarize(conv: Conversation, selfInboxId: string, alreadySynced = false): Promise<Row> {
+type Conv = Awaited<ReturnType<typeof listVisibleConversations>>[number];
+
+async function summarize(conv: Conv, selfInboxId: string, alreadySynced = false): Promise<Row> {
   return { ...(await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(homeRows() ?? []))) };
 }
 
 const INIT_TIMEOUT_MESSAGE = 'XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.';
-
-const PAINTS_LOCAL_OVER_ROWS = Platform.OS !== 'web';
 
 const syncError = makeValue('');
 
@@ -203,7 +203,7 @@ interface Refreshers {
 function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInboxId: string, run: SyncRun): Refreshers {
   let lastRefreshAt = 0;
   const THROTTLE_MS = 30_000;
-  const paintFrom = async (convs: Conversation[]): Promise<boolean> => {
+  const paintFrom = async (convs: Conv[]): Promise<boolean> => {
     const beforeIds = (homeRows() ?? []).map((r) => r.convId);
     await primeConversationMembers(client, convs);
     const previous = new Map((homeRows() ?? []).map((r) => [r.convId, r]));
@@ -225,7 +225,7 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
   const refresh = async (): Promise<void> => {
     if (run.cancelled) return;
     try {
-      if (PAINTS_LOCAL_OVER_ROWS || !hasHomeRows()) {
+      if (sdk.storeChangesInBackground || !hasHomeRows()) {
         const local = await perfTime('channels.listLocal', listVisibleConversations);
         perfLog('channels.localCount', { count: local.length });
         if (local.length > 0) await perfTime('channels.paintLocal', () => paintFrom(local));
@@ -268,7 +268,7 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
   return { refresh, refreshThrottled, reconcile };
 }
 
-async function onNewConversation(conv: Conversation, selfInboxId: string, run: SyncRun): Promise<void> {
+async function onNewConversation(conv: Conv, selfInboxId: string, run: SyncRun): Promise<void> {
   schedulePushTopicRefresh();
   if (await isSyncConv(conv).catch(recover('home.newConversation', false))) return;
   if ((await getConvConsentState(conv.id).catch(recover('home.newConversation', null))) === 'denied') return;
@@ -319,7 +319,7 @@ async function initSync(run: SyncRun): Promise<void> {
   try {
     const client = await xmtpClient();
     clearTimeout(run.initTimer);
-    const selfInboxId = client.inboxId;
+    const selfInboxId = sdk.inboxIdOf(client);
     const r = makeRefreshers(client, selfInboxId, run);
     await hydratePeerProfiles();
     await afterFirstPages();
