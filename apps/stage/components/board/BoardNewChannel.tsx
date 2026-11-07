@@ -1,7 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
 import { useWindowDimensions, type TextStyle } from 'react-native';
 import type { GroupKey } from '@stage-labs/client/xmtp/readState';
-import { errorMessage } from '@stage-labs/client/errors';
 import { fontName, fontSize } from '@stage-labs/kit/tokens';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -12,19 +10,15 @@ import { FormField, useFocusOnOpen } from '../FormField';
 import { Avatar } from '../Avatar';
 import { WRAPPED_TITLE_LINE_HEIGHT } from '../ChannelRow.model';
 import { HoverIconButton } from '../hover';
+import type { MarkedNode } from '../arrowKeys.model';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 import { usePalette } from '../../lib/theme';
-import { createGroup } from '../../lib/xmtp.groups';
-import { schedulePushTopicRefresh } from '../../lib/pushRegister';
 import { useChannelFields } from '../../lib/channelFields';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
-import { rememberOwnGroup } from '../../modules/messaging/useConvConsent';
-import { boardChannelDraft, boardChannelNameProblem, boardChannelRows, type BoardPendingChannel } from './BoardNewChannel.model';
+import { boardChannelRows, type BoardPendingChannel } from './BoardNewChannel.model';
+import { useBoardChannelCreation } from './useBoardChannelCreation';
 import { CARD_GAP, COLUMN_PADDING } from './BoardColumnEdit';
 import { BoardCardFrame } from './BoardCardFrame';
 import { ColumnCards, type ColumnCardsProps } from './BoardCard';
-import type { BoardColumn } from './BoardScreen.model';
-import type { Row as ChannelRowData } from '../home/model';
 
 const TITLE_INPUT_STYLE: TextStyle = {
   minHeight: WRAPPED_TITLE_LINE_HEIGHT,
@@ -58,139 +52,115 @@ export function NewChannelButton({ title, onPress }: { title: string; onPress: (
 
 interface BoardNewChannelProps extends ColumnCardsProps {
   by: GroupKey;
-  columns: readonly BoardColumn<ChannelRowData>[];
+  rowIds: ReadonlySet<string>;
+  drafting: boolean;
   onClose: () => void;
-}
-
-function useBoardChannelCreation({ by, column, columns, onClose }: BoardNewChannelProps) {
-  const account = useActiveAccountRecord();
-  const [name, setName] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [pending, setPending] = useState<BoardPendingChannel | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const busy = useRef(false);
-  const problem = boardChannelNameProblem(name);
-  const confirmed = pending !== null && pending.convId !== null && column.rows.some((row) => row.convId === pending.convId);
-  useEffect(() => {
-    if (confirmed) onClose();
-  }, [confirmed]);
-  const close = (): void => {
-    if (!busy.current) onClose();
-  };
-  const submit = async (): Promise<void> => {
-    if (busy.current || account === null || problem !== null) return;
-    busy.current = true;
-    setCreating(true);
-    setError(null);
-    const draft = boardChannelDraft(by, column.key, column.label, name, account.address);
-    const submitted = {
-      name: draft.name,
-      appData: draft.appData,
-      existingIds: new Set(columns.flatMap((c) => c.rows.map((r) => r.convId))),
-      convId: null,
-    };
-    setPending(submitted);
-    schedulePushTopicRefresh(10_000);
-    try {
-      const created = await createGroup(draft.members, draft.appData, draft.name);
-      rememberOwnGroup(created.id);
-      setPending({ ...submitted, convId: created.id });
-    } catch (err) {
-      setError(errorMessage(err));
-      busy.current = false;
-      setCreating(false);
-    }
-  };
-  return {
-    name,
-    changeName: (value: string): void => {
-      setName(value);
-      setError(null);
-    },
-    submitted: creating,
-    pending,
-    confirmed,
-    note: error ?? (name.trim() === '' ? null : problem),
-    disabled: account === null || problem !== null,
-    close,
-    submit,
-  };
 }
 
 type BoardCreation = ReturnType<typeof useBoardChannelCreation>;
 
-function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; columnKey: string }): React.ReactElement {
-  const { text, link, border } = usePalette();
-  const { fontScale } = useWindowDimensions();
+function TitleCard({
+  children,
+  pending = false,
+  mark,
+}: {
+  children: React.ReactNode;
+  pending?: boolean;
+  mark: MarkedNode;
+}): React.ReactElement {
+  const { border } = usePalette();
   const fields = useChannelFields('board');
-  const input = useFocusOnOpen();
-  useEffect(() => {
-    if (!creation.submitted) input.current?.focus();
-  }, [creation.submitted]);
-  const titleInput = creation.submitted ? undefined : (
-    <FormField
-      appearance="plain"
-      style={{ ...TITLE_INPUT_STYLE, height: WRAPPED_TITLE_LINE_HEIGHT * fontScale, color: link }}
-      value={creation.name}
-      onChangeText={creation.changeName}
-      inputRef={input}
-      autoFocus
-      rows={1}
-      onSubmit={() => {
-        void creation.submit();
-      }}
-      inputProps={{
-        accessibilityLabel: 'Channel name',
-        returnKeyType: 'done',
-        onKeyPress: (event) => {
-          if (event.nativeEvent.key === 'Escape') creation.close();
-        },
-      }}
-    />
+  return (
+    <BoardCardFrame pending={pending} mark={mark}>
+      <Row padding={{ x: PAGE_GUTTER, y: 9 }} align="center" gap={12}>
+        {fields.avatar ? <Avatar size={44} square style={{ backgroundColor: border }} /> : null}
+        <Column weight={1} minWidth={0}>
+          {children}
+        </Column>
+      </Row>
+    </BoardCardFrame>
   );
+}
+
+function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; columnKey: string }): React.ReactElement {
+  const { text, link } = usePalette();
+  const { fontScale } = useWindowDimensions();
+  const input = useFocusOnOpen();
+  const submit = creation.submit;
   return (
     <Column gap={CARD_GAP} padding={{ right: COLUMN_PADDING }}>
-      <BoardCardFrame pending={creation.submitted} mark={{ dataSet: { boarddraft: columnKey } }}>
-        <Row padding={{ x: PAGE_GUTTER, y: 9 }} align="center" gap={12}>
-          {fields.avatar ? <Avatar size={44} square style={{ backgroundColor: border }} /> : null}
-          <Column weight={1} minWidth={0}>
-            {titleInput ?? (
-              <Text
-                text={creation.pending?.name ?? creation.name}
-                size="md"
-                fontWeight="medium"
-                color="link"
-                style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }}
-              />
-            )}
-          </Column>
-        </Row>
-      </BoardCardFrame>
-      {creation.submitted ? null : (
+      <TitleCard mark={{ dataSet: { boarddraft: columnKey } }}>
+        <FormField
+          appearance="plain"
+          style={{ ...TITLE_INPUT_STYLE, height: WRAPPED_TITLE_LINE_HEIGHT * fontScale, color: link }}
+          value={creation.name}
+          onChangeText={creation.changeName}
+          inputRef={input}
+          autoFocus
+          rows={1}
+          onSubmit={submit}
+          inputProps={{
+            accessibilityLabel: 'Channel name',
+            returnKeyType: 'done',
+            onKeyPress: (event) => {
+              if (event.nativeEvent.key === 'Escape') creation.close();
+            },
+          }}
+        />
+      </TitleCard>
+      {creation.note === null ? null : <Text text={creation.note} size="2xs" color="danger" style={{ paddingHorizontal: PAGE_GUTTER }} />}
+      <Row align="center" gap={8}>
+        <Button
+          label="Add"
+          accessibilityLabel="Add"
+          size="sm"
+          color="primary"
+          variant="solid"
+          disabled={creation.disabled}
+          onPress={submit}
+        />
+        <Button
+          uniform
+          size="sm"
+          variant="borderless"
+          accessibilityLabel="Cancel"
+          style={{ alignSelf: 'center' }}
+          iconStart={<Glyph icon={IconCrossMedium} size={20} color={text} />}
+          onPress={creation.close}
+        />
+      </Row>
+    </Column>
+  );
+}
+
+function PendingChannelCard({ pending, creation }: { pending: BoardPendingChannel; creation: BoardCreation }): React.ReactElement {
+  return (
+    <Column gap={CARD_GAP}>
+      <TitleCard pending={pending.error === null} mark={{ dataSet: { boardpending: String(pending.id) } }}>
+        <Text text={pending.name} size="md" fontWeight="medium" color="link" style={{ lineHeight: WRAPPED_TITLE_LINE_HEIGHT }} />
+      </TitleCard>
+      {pending.error === null ? null : (
         <>
-          {creation.note === null ? null : (
-            <Text text={creation.note} size="2xs" color="danger" style={{ paddingHorizontal: PAGE_GUTTER }} />
-          )}
+          <Text text={pending.error} size="2xs" color="danger" style={{ paddingHorizontal: PAGE_GUTTER }} />
           <Row align="center" gap={8}>
             <Button
-              label="Add"
-              accessibilityLabel="Add"
+              label="Retry"
+              accessibilityLabel={`Retry ${pending.name}`}
               size="sm"
               color="primary"
               variant="solid"
-              disabled={creation.disabled}
               onPress={() => {
-                void creation.submit();
+                creation.retry(pending);
               }}
             />
             <Button
-              uniform
+              label="Cancel"
+              accessibilityLabel={`Dismiss ${pending.name}`}
               size="sm"
               variant="borderless"
-              accessibilityLabel="Cancel"
-              style={{ alignSelf: 'center' }}
-              iconStart={<Glyph icon={IconCrossMedium} size={20} color={text} />}
-              onPress={creation.close}
+              onPress={() => {
+                creation.dismiss(pending.id);
+              }}
             />
           </Row>
         </>
@@ -201,11 +171,15 @@ function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; colu
 
 export function BoardNewChannel(props: BoardNewChannelProps): React.ReactElement {
   const creation = useBoardChannelCreation(props);
-  const column = { ...props.column, rows: boardChannelRows(props.column.rows, creation.confirmed ? null : creation.pending) };
+  const column = { ...props.column, rows: boardChannelRows(props.column.rows, creation.state) };
+  const leading =
+    creation.pending.length === 0
+      ? undefined
+      : creation.pending.map((pending) => <PendingChannelCard key={pending.id} pending={pending} creation={creation} />);
   return (
     <>
-      {creation.confirmed ? null : <NewChannelCard creation={creation} columnKey={column.key} />}
-      <ColumnCards {...props} column={column} />
+      {props.drafting ? <NewChannelCard key={creation.editorKey} creation={creation} columnKey={column.key} /> : null}
+      <ColumnCards {...props} column={column} leading={leading} />
     </>
   );
 }

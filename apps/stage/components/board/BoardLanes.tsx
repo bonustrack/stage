@@ -28,7 +28,7 @@ import { revealMarked, useArrowKeys } from '../arrowKeys';
 import { ALL_ARROWS } from '../arrowKeys.model';
 import { boardArrowMove } from './boardKeys.model';
 import { AddColumn, ColumnFrame, ColumnMenu, ColumnTitle, HEADER_PADDING, RenameHeading } from './BoardColumnEdit';
-import { ColumnCards, cardDataSet, showInPanel } from './BoardCard';
+import { cardDataSet, showInPanel } from './BoardCard';
 import { Column, Row, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR } from '../layout';
 
 const GROW = { flexGrow: 1, flexShrink: 1 };
@@ -53,13 +53,14 @@ function columnMaxHeight(laneHeight: number): DimensionValue | undefined {
 interface BoardColumnProps {
   column: BoardColumn<ChannelRowData>;
   columns: readonly BoardColumn<ChannelRowData>[];
+  rowIds: ReadonlySet<string>;
   maxHeight?: DimensionValue;
   pinned: readonly string[];
   actions: ColumnActions;
   onOpen: (key: string) => void;
 }
 
-function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }: BoardColumnProps): React.ReactElement {
+function BoardColumnView({ column, columns, rowIds, maxHeight, pinned, actions, onOpen }: BoardColumnProps): React.ReactElement {
   const { label } = column;
   const { columnBy } = useHomeView();
   const editable = actions.editable && columnEditable(column.key);
@@ -132,23 +133,20 @@ function BoardColumnView({ column, columns, maxHeight, pinned, actions, onOpen }
         {({ over, placeholder }) => (
           <ColumnFrame over={over} shrink>
             {heading}
-            {drafting ? (
-              <BoardNewChannel
-                key={epoch}
-                by={columnBy}
-                column={column}
-                columns={columns}
-                pinned={pinned}
-                editable={actions.editable}
-                placeholder={placeholder}
-                onOpen={onOpen}
-                onClose={() => {
-                  setDrafting(false);
-                }}
-              />
-            ) : (
-              <ColumnCards column={column} pinned={pinned} editable={actions.editable} placeholder={placeholder} onOpen={onOpen} />
-            )}
+            <BoardNewChannel
+              key={epoch}
+              by={columnBy}
+              column={column}
+              rowIds={rowIds}
+              drafting={drafting}
+              pinned={pinned}
+              editable={actions.editable}
+              placeholder={placeholder}
+              onOpen={onOpen}
+              onClose={() => {
+                setDrafting(false);
+              }}
+            />
           </ColumnFrame>
         )}
       </SortableList>
@@ -184,12 +182,14 @@ function useCardArrows({
 
 function LaneColumns({
   columns,
+  rowIds,
   pinned,
   laneHeight,
   actions,
   onOpen,
 }: {
   columns: BoardColumn<ChannelRowData>[];
+  rowIds: ReadonlySet<string>;
   pinned: readonly string[];
   laneHeight: number;
   actions: ColumnActions;
@@ -215,6 +215,7 @@ function LaneColumns({
           key={column.key}
           column={column}
           columns={columns}
+          rowIds={rowIds}
           pinned={pinned}
           maxHeight={columnMaxHeight(laneHeight)}
           actions={actions}
@@ -227,11 +228,13 @@ function LaneColumns({
 
 export function BoardLanes({
   columns,
+  rowIds,
   pinned,
   actions,
   filtering,
 }: {
   columns: BoardColumn<ChannelRowData>[];
+  rowIds: ReadonlySet<string>;
   pinned: readonly string[];
   actions: ColumnActions;
   filtering: boolean;
@@ -288,7 +291,7 @@ export function BoardLanes({
         scrollEventThrottle={16}
         onContentSizeChange={revealEnd}
       >
-        <LaneColumns columns={columns} pinned={pinned} laneHeight={laneHeight} actions={actions} onOpen={setOpenedFrom} />
+        <LaneColumns columns={columns} rowIds={rowIds} pinned={pinned} laneHeight={laneHeight} actions={actions} onOpen={setOpenedFrom} />
         {actions.editable ? (
           <AddColumn
             columns={columns}

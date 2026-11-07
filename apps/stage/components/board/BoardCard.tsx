@@ -14,6 +14,7 @@ import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf } from '../../lib/links';
 import { channelTimestamp } from '../../lib/format';
 import { BoardCardFrame } from './BoardCardFrame';
+import { boardCardShowsPreview } from './BoardCard.model';
 import { capabilities } from '../../lib/capabilities';
 import { useWebTabRail } from '../../lib/webLayout';
 import { BOARD_ROUTE, channelRouteConvId } from '../tabs/splitRoutes';
@@ -65,7 +66,7 @@ function BoardCard({
           hideAvatar={!fields.avatar}
           wrapTitle
           lastPreview={rowPreview(item)}
-          showPreview={fields.lastMessage}
+          showPreview={boardCardShowsPreview(fields.lastMessage, item.lastPreview, draftText)}
           timestamp={channelTimestamp(item.lastTs)}
           unreadCount={item.unreadCount}
           markedUnread={item.markedUnread}
@@ -109,18 +110,21 @@ export interface ColumnCardsProps {
   editable: boolean;
   placeholder: React.ReactNode;
   onOpen: (key: string) => void;
+  leading?: React.ReactNode;
 }
 
-export function ColumnCards({ column, pinned, editable, placeholder, onOpen }: ColumnCardsProps): React.ReactElement | null {
-  if (column.rows.length === 0 && placeholder === null) return null;
+export function ColumnCards({ column, pinned, editable, placeholder, onOpen, leading }: ColumnCardsProps): React.ReactElement | null {
+  if (column.rows.length === 0 && placeholder === null && leading === undefined) return null;
   return (
     <List
       {...GUTTER_SCROLLBAR}
       gap={CARD_GAP}
+      keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
       style={{ flexGrow: 0, flexShrink: 1 }}
       contentContainerStyle={{ paddingRight: cardsRightPadding(COLUMN_PADDING, gutterScrollbarWidth()) }}
     >
+      {leading}
       {column.rows.map((item) => (
         <BoardCard
           key={item.convId}

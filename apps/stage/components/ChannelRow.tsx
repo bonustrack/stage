@@ -178,7 +178,7 @@ function ChannelRowBody({
   const scheme = useKitScheme();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
-    <Column gap={LINE_GAP} weight={1}>
+    <Column gap={LINE_GAP} weight={params.showPreview ? 1 : undefined}>
       <TitleRow
         params={params}
         scheme={scheme}

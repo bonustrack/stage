@@ -40,6 +40,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
   const rows = useStoreValue(subscribeCachedRows, homeRows);
+  const rowIds = useMemo(() => new Set((rows ?? []).map((row) => row.convId)), [rows]);
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
   const boardOrder = useBoardOrder();
@@ -86,7 +87,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
       if (columnsEditable(columnBy)) addBoardColumn(columns, order, name, columnBy);
     },
   };
-  return <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} filtering={filtering} />;
+  return <BoardLanes key={columnBy} columns={shown} rowIds={rowIds} pinned={pinned} actions={actions} filtering={filtering} />;
 }
 function BoardFrame({
   pane,
