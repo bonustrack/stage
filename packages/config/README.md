@@ -10,7 +10,7 @@ It ships the **generic building blocks only**. Repo-specific topology (monorepo 
 bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 ```
 
-`eslint` is needed only for the `core` oxlint plugin. Version 0.1.0-beta.3 removed the ESLint presets (`eslint/base`, `eslint/single`, `eslint/vue`), the ESLint mode of `stage lint` and the Vue presets: stay on 0.1.0-beta.2 to keep them. Version 0.1.0-beta.7 renamed `stage typecheck` to `stage check` (`bun check`, no `tsc` fallback), added `stage fmt` and removed the madge preset, `stage madge` and `stage-madge`: turn on oxlint's `import/no-cycle` instead. Version 0.1.0-beta.8 runs `stage lint` without a `stage.config.js`, which only `stage check` and `stage knip` read.
+`eslint` is needed only for the `core` oxlint plugin. Version 0.1.0-beta.3 removed the ESLint presets (`eslint/base`, `eslint/single`, `eslint/vue`), the ESLint mode of `stage lint` and the Vue presets: stay on 0.1.0-beta.2 to keep them. Version 0.1.0-beta.7 renamed `stage typecheck` to `stage check` (`bun check`, no `tsc` fallback), added `stage fmt` and removed the madge preset, `stage madge` and `stage-madge`: turn on oxlint's `import/no-cycle` instead. Version 0.1.0-beta.8 runs `stage lint` without a `stage.config.js`, which only `stage check` and `stage knip` read, and `stage check` also checks a workspace's `test/tsconfig.json`.
 
 ## `stage lint`
 
@@ -30,7 +30,7 @@ bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 
 ## `stage check`
 
-Runs `bun check` (Bun 1.4.4 or later, the built-in TypeScript 7 checker) on every workspace of `stage.config.js` that has a `tsconfig.json`, one after the other, and lists the ones that failed. Other flags go to `bun check`.
+Runs `bun check` (Bun 1.4.4 or later, the built-in TypeScript 7 checker) on every workspace of `stage.config.js` that has a `tsconfig.json`, and on the tests of every workspace that has a `test/tsconfig.json`, one after the other, and lists the ones that failed. Other flags go to `bun check`. A workspace's `tsconfig.json` usually includes only its sources, so its global types (such as `bun`) stay out of the app code: give the tests their own `test/tsconfig.json` that extends it, adds the test runner's types and includes the test files.
 
 ## `stage fmt`
 

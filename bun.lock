@@ -21,6 +21,7 @@
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250601.0",
+        "@types/bun": "^1.2.0",
         "wrangler": "^4.100.0",
       },
     },
@@ -33,6 +34,7 @@
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250601.0",
+        "@types/bun": "^1.2.0",
         "wrangler": "^4.100.0",
       },
     },
@@ -111,6 +113,7 @@
       "version": "0.1.5",
       "devDependencies": {
         "@stage-labs/client": "workspace:*",
+        "@types/bun": "^1.2.0",
         "@types/node": "^22.0.0",
         "electron": "44.3.0",
         "electron-builder": "26.15.3",
@@ -164,6 +167,7 @@
       },
       "devDependencies": {
         "@stage-labs/config": "workspace:*",
+        "@types/bun": "^1.2.0",
         "@types/react": "~19.2.0",
         "@types/react-dom": "~19.2.0",
         "expo-modules-core": "~57.0.19",

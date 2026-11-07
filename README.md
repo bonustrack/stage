@@ -57,7 +57,7 @@ Run from the repo root:
 bun run build       # bun run --workspaces --if-present build (only the desktop shell has one)
 bun run test        # bun test --parallel: every test file in the repo, one run
 bun run test:changed  # only the test files affected by changes since origin/main
-bun check           # stage check (bun check per workspace)
+bun check           # stage check (bun check per workspace, and on its tests when it has test/tsconfig.json)
 bun run lint        # stage lint (oxlint with type-aware rules over the whole repo)
 bun run lint:fix    # stage lint --fix
 bun run lint:changed  # lint only the files changed since the upstream branch

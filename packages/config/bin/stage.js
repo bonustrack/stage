@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { existsSync, mkdtempSync, readFileSync, writeFileSync, writeSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { resolve, join } from 'node:path';
+import { dirname, resolve, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -119,13 +119,19 @@ function cmdKnip(argv) {
   return run(localBin('knip'), ['--config', temp, ...argv]);
 }
 
+function checkProjects(path) {
+  const dir = path === '.' ? '' : `${path}/`;
+  return [`${dir}tsconfig.json`, `${dir}test/tsconfig.json`].filter((project) => existsSync(resolve(cwd, project)));
+}
+
 function cmdCheck(stageConfig, argv) {
-  const failed = Object.keys(stageConfig.workspaces).filter((path) => {
-    const project = path === '.' ? 'tsconfig.json' : `${path}/tsconfig.json`;
-    if (!existsSync(resolve(cwd, project))) return false;
-    writeSync(1, `stage check: ${path}\n`);
-    return run('bun', ['check', '--no-script', '-p', project, ...argv]) !== 0;
-  });
+  const failed = Object.keys(stageConfig.workspaces)
+    .flatMap(checkProjects)
+    .map(dirname)
+    .filter((project) => {
+      writeSync(1, `stage check: ${project}\n`);
+      return run('bun', ['check', '--no-script', '-p', `${project}/tsconfig.json`, ...argv]) !== 0;
+    });
   if (failed.length > 0) process.stderr.write(`stage check: failed in ${failed.join(', ')}\n`);
   return failed.length > 0 ? 1 : 0;
 }
