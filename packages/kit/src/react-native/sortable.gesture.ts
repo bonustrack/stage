@@ -3,7 +3,7 @@ import type { AccessibilityActionEvent } from 'react-native';
 import { Gesture, type PanGesture } from 'react-native-gesture-handler';
 import type { SortDirection, SortStep } from '../sortable';
 import type { ListContextValue } from './sortable.context';
-import { isTouchPointer, listenKeys, suppressNextClick } from './sortable.platform';
+import { isCoarsePointer, listenKeys, swallowNextClick } from './dom';
 
 const HOLD_MS = 250;
 const MOVE_SLOP = 6;
@@ -68,7 +68,7 @@ export function usePan(
   onHold: ((point: { x: number; y: number }) => void) | undefined,
   enabled: boolean,
 ): PanGesture {
-  const touch = isTouchPointer();
+  const touch = isCoarsePointer();
   return useMemo(() => {
     const { coordinator, listId } = list;
     const pan = Gesture.Pan()
@@ -92,7 +92,7 @@ export function usePan(
         }
         coordinator.drop();
         if (moved || !touch || onHold === undefined) return;
-        suppressNextClick();
+        swallowNextClick();
         onHold({ x: e.absoluteX, y: e.absoluteY });
       })
       .onFinalize(() => {

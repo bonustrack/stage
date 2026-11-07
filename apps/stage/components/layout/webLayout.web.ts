@@ -5,17 +5,13 @@ import { WEB_SIDEBAR_MIN_WIDTH } from './breakpoints';
 import { setChromeClass } from './webChrome';
 
 export { WEB_TAB_RAIL_WIDTH } from './webChrome.core';
+export { isCoarsePointer } from '@stage-labs/kit/react-native/dom';
 
 const WEB_TOP_BAND = 12;
 
 export function desktopTitleBarInset(): number {
   const inset = (globalThis as DesktopBridgeGlobal).stageDesktop?.titleBarInset;
   return typeof inset === 'number' && Number.isFinite(inset) && inset > 0 ? inset : 0;
-}
-
-export function isCoarsePointer(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
-  return window.matchMedia('(pointer: coarse)').matches;
 }
 
 export function documentScroll(): { x: number; y: number } {

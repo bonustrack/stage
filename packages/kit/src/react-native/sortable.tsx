@@ -15,7 +15,7 @@ import {
 import { useKeyboard } from './sortable.gesture';
 import { BodyLayer } from './body-layer';
 import { LiveItem, Placeholder, type SortableItemProps } from './sortable.item';
-import { setGrabCursor } from './sortable.platform';
+import { setCursor } from './dom';
 import {
   makeSortCoordinator,
   type SortCoordinator,
@@ -244,7 +244,7 @@ function LiveHandle({ children, style }: SortableHandleProps): React.ReactElemen
   const node = useRef<View>(null);
   const read = useMemo(() => () => node.current, []);
   useEffect(() => {
-    setGrabCursor(node.current, enabled);
+    setCursor(node.current, enabled ? 'grab' : '');
   }, [enabled]);
   useKeyboard(list, itemId, read, preview, enabled && list.keyboard);
   return (

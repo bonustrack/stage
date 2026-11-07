@@ -12,7 +12,7 @@ import {
   type ListContextValue,
 } from './sortable.context';
 import { accessibilityProps, useKeyboard, usePan } from './sortable.gesture';
-import { setGrabCursor } from './sortable.platform';
+import { setCursor } from './dom';
 import type { SortCoordinator, SortItemEntry, SortState } from './sortable.store';
 
 const DRAGGING_OPACITY = 0.4;
@@ -184,7 +184,7 @@ function LeadItem({
   const item = useItemNode(list, itemId, undefined);
   const preview = usePreview(children);
   useEffect(() => {
-    if (!handle) setGrabCursor(item.node.current, enabled);
+    if (!handle) setCursor(item.node.current, enabled ? 'grab' : '');
   }, [item, handle, enabled]);
   useKeyboard(list, itemId, item.read, preview, enabled && list.keyboard && !handle);
   const pan = usePan(list, itemId, preview, onHold, enabled);

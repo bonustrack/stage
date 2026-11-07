@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { LayoutChangeEvent, ViewStyle } from 'react-native';
 import { Gesture, GestureDetector, type PanGesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -12,7 +12,8 @@ import Animated, {
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import type { DashboardWidget } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { HOLD_MS, MOVE_SLOP, lift, lockScrollOnLift, setDragging, settle, suppressNextClick } from './dragLift';
+import { swallowNextClick } from '@stage-labs/kit/react-native/dom';
+import { HOLD_MS, MOVE_SLOP, lift, setDragging, settle } from './dragLift';
 import { changeDashboard } from '../../lib/frames/dashboard';
 import { moveWidget } from '../../lib/frames/dashboard.model';
 import { usePalette } from '../../lib/theme';
@@ -80,20 +81,13 @@ interface CellGestureArgs {
   onHold: (anchor: MenuPoint) => void;
 }
 
-function cellPan(
-  { index, rect, rects, position, drag, onDrop, onHold }: CellGestureArgs,
-  node: { current: unknown },
-  touch: boolean,
-): PanGesture {
-  const onLift = (): void => {
-    lift(node.current);
-  };
+function cellPan({ index, rect, rects, position, drag, onDrop, onHold }: CellGestureArgs, touch: boolean): PanGesture {
   const dropped = (from: number, to: number): void => {
-    suppressNextClick();
+    swallowNextClick();
     onDrop(from, to);
   };
   const held = (anchor: MenuPoint): void => {
-    suppressNextClick();
+    swallowNextClick();
     onHold(anchor);
   };
   const pan = Gesture.Pan()
@@ -107,7 +101,7 @@ function cellPan(
       drag.dy.value = e.translationY;
       drag.to.value = index;
       drag.from.value = index;
-      runOnJS(onLift)();
+      runOnJS(lift)();
     })
     .onUpdate((e) => {
       drag.dx.value = e.translationX;
@@ -137,19 +131,13 @@ function cellPan(
   return pan;
 }
 
-function useCellGesture(args: CellGestureArgs): { gesture: PanGesture; holdNode: (el: unknown) => void } {
+function useCellGesture(args: CellGestureArgs): PanGesture {
   const touch = isCoarsePointer();
-  const node = useRef<unknown>(null);
-  const holdNode = useCallback((el: unknown) => {
-    node.current = el;
-    lockScrollOnLift(el);
-  }, []);
   const { index, rect, rects, position, drag, onDrop, onHold } = args;
-  const gesture = useMemo(
-    () => cellPan({ index, rect, rects, position, drag, onDrop, onHold }, node, touch),
+  return useMemo(
+    () => cellPan({ index, rect, rects, position, drag, onDrop, onHold }, touch),
     [index, rect, rects, position, drag, onDrop, onHold, touch],
   );
-  return { gesture, holdNode };
 }
 
 function useCellStyles(
@@ -208,7 +196,7 @@ function DashboardCell({
     [onMenu, widget.id],
   );
   const position = useCellPosition(rect, drops);
-  const { gesture, holdNode } = useCellGesture({ index, rect, rects, position, drag, onDrop, onHold: openMenu });
+  const gesture = useCellGesture({ index, rect, rects, position, drag, onDrop, onHold: openMenu });
   const styles = useCellStyles(index, drag, position, bg);
   const grip = useCallback<WidgetGrip>(
     (handle) => (
@@ -220,7 +208,6 @@ function DashboardCell({
   );
   return (
     <Animated.View
-      ref={holdNode}
       style={[
         { position: 'absolute', width: rect.width, height: rect.height, padding: INSET, borderRadius: BLOCK_RADIUS_DEFAULT },
         styles.cell,

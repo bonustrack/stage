@@ -22,6 +22,19 @@ export function measureElement(node: unknown): ScreenRect | null {
   return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
 }
 
+export interface DragPlatform {
+  measuresSynchronously: boolean;
+  ghostInViewport: boolean;
+}
+
+export const DRAG_PLATFORM: DragPlatform = { measuresSynchronously: true, ghostInViewport: true };
+
+export function measureElementLater(node: unknown): Promise<ScreenRect | null> {
+  return Promise.resolve(measureElement(node));
+}
+
+export const liftFeedback = (): void => undefined;
+
 export function liftToBody(node: unknown): () => void {
   const el = elementOf(node);
   const home = el?.parentNode;
@@ -37,17 +50,19 @@ function blockTouchScroll(event: TouchEvent): void {
   if (event.cancelable) event.preventDefault();
 }
 
+export function setTouchScrollBlocked(on: boolean): void {
+  if (typeof document === 'undefined') return;
+  if (on) document.addEventListener('touchmove', blockTouchScroll, { passive: false });
+  else document.removeEventListener('touchmove', blockTouchScroll);
+}
+
 export function setDocumentDragging(on: boolean): void {
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
   root.style.cursor = on ? 'grabbing' : '';
   root.style.userSelect = on ? 'none' : '';
-  if (on) {
-    window.getSelection()?.removeAllRanges();
-    document.addEventListener('touchmove', blockTouchScroll, { passive: false });
-  } else {
-    document.removeEventListener('touchmove', blockTouchScroll);
-  }
+  if (on) window.getSelection()?.removeAllRanges();
+  setTouchScrollBlocked(on);
 }
 
 function swallowClick(event: Event): void {
@@ -55,7 +70,9 @@ function swallowClick(event: Event): void {
   event.preventDefault();
 }
 
-export function swallowNextClick(graceMs: number): void {
+const CLICK_GRACE_MS = 300;
+
+export function swallowNextClick(graceMs = CLICK_GRACE_MS): void {
   if (typeof document === 'undefined') return;
   document.addEventListener('click', swallowClick, { capture: true, once: true });
   setTimeout(() => {

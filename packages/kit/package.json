@@ -64,6 +64,7 @@
     "./react-native/content-color": "./src/react-native/content-color.tsx",
     "./react-native/date-time-input": "./src/react-native/date-time-input.tsx",
     "./react-native/divider": "./src/react-native/divider.tsx",
+    "./react-native/dom": "./src/react-native/dom-helpers.ts",
     "./react-native/dropdown-menu": "./src/react-native/dropdown-menu.tsx",
     "./react-native/file-picker": "./src/react-native/file-picker.tsx",
     "./react-native/fonts": "./src/react-native/fonts.ts",

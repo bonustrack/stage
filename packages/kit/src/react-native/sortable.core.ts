@@ -13,7 +13,15 @@ import {
   type SortTarget,
 } from '../sortable';
 import { layoutOf, type MeasuredList } from './sortable.measure';
-import { nextFrame, setPageDragging } from './sortable.platform';
+import { setDocumentDragging } from './dom';
+
+export function nextFrame(run: () => void): () => void {
+  if (typeof requestAnimationFrame !== 'function') return () => undefined;
+  const id = requestAnimationFrame(run);
+  return () => {
+    cancelAnimationFrame(id);
+  };
+}
 
 export type SortIndicator = 'preview' | 'line' | 'none' | 'shift' | 'follow';
 
@@ -153,7 +161,7 @@ function settledView({ drag, target, slot, hidden, preview }: SortState): SortSt
 
 export function finish(core: Core, settled = false): void {
   core.stopScroll();
-  setPageDragging(false);
+  setDocumentDragging(false);
   core.restore();
   core.restore = () => undefined;
   core.layouts = [];

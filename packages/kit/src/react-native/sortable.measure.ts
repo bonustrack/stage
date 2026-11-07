@@ -1,6 +1,6 @@
 import type { Animated } from 'react-native';
 import { unionRect, type SortDirection, type SortListLayout, type SortRect } from '../sortable';
-import { measureLater, measureNow } from './sortable.platform';
+import { measureElement, measureElementLater } from './dom';
 
 export interface SortItemEntry {
   node: () => unknown;
@@ -40,14 +40,14 @@ export function layoutOf(list: MeasuredList, rect: SortRect | null, rects: reado
 export function layoutNow(list: MeasuredList): SortListLayout {
   return layoutOf(
     list,
-    measureNow(list.node()),
-    list.itemIds.map((id) => unionRect(blockOf(list, id).map((item) => measureNow(item.node())))),
+    measureElement(list.node()),
+    list.itemIds.map((id) => unionRect(blockOf(list, id).map((item) => measureElement(item.node())))),
   );
 }
 
 export async function layoutLater(list: MeasuredList): Promise<SortListLayout> {
   const rects = await Promise.all(
-    list.itemIds.map(async (id) => unionRect(await Promise.all(blockOf(list, id).map((item) => measureLater(item.node()))))),
+    list.itemIds.map(async (id) => unionRect(await Promise.all(blockOf(list, id).map((item) => measureElementLater(item.node()))))),
   );
-  return layoutOf(list, await measureLater(list.node()), rects);
+  return layoutOf(list, await measureElementLater(list.node()), rects);
 }
