@@ -45,8 +45,7 @@ export function classifyKeyPackageStatuses(validationErrors: (string | null | un
 
 export function convIdFromTopic(topic: string | undefined): string | null {
   if (!topic) return null;
-  const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
-  return m?.[1] ?? null;
+  return /\/g-([0-9a-fA-F]+)\//.exec(topic)?.[1] ?? null;
 }
 
 export const INACTIVE_SEND_MESSAGE =

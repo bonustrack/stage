@@ -1,3 +1,4 @@
+import { baseMime } from '@stage-labs/client/files';
 import { readCappedResponse } from '@stage-labs/client/net/cappedBody';
 import { fetchPublic, SsrfError, UA } from './ssrf.ts';
 
@@ -33,7 +34,7 @@ async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
 }
 
 function imageContentType(res: Response): string | null {
-  const ct = (res.headers.get('content-type') ?? '').split(';')[0]?.trim().toLowerCase() ?? '';
+  const ct = baseMime(res.headers.get('content-type') ?? undefined);
   return ct.startsWith('image/') ? ct : null;
 }
 

@@ -1,6 +1,6 @@
 export const STAGE_NAMES_PARENT = 'stage.base.eth';
-export const STAGE_NAME_MIN_LENGTH = 6;
-export const STAGE_NAME_MAX_LENGTH = 32;
+const STAGE_NAME_MIN_LENGTH = 6;
+const STAGE_NAME_MAX_LENGTH = 32;
 const CLAIM_TTL_MS = 10 * 60 * 1000;
 
 const LABEL_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

@@ -58,9 +58,7 @@ const ONCHAIN_CONCURRENCY = 4;
 const STAMP_LOOKUP_CHUNK = 50;
 
 function notify(s: State): void {
-  s.listeners.forEach((l) => {
-    l();
-  });
+  for (const l of s.listeners) l();
 }
 
 async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string> | null> {
@@ -71,8 +69,7 @@ async function lookupNamesChunk(addrs: string[]): Promise<Record<string, string>
       body: JSON.stringify({ method: 'lookup_addresses', params: addrs }),
     });
     if (!res.ok) return null;
-    const json: unknown = await res.json();
-    return namesFromResult(json);
+    return namesFromResult(await res.json());
   } catch {
     return null;
   }

@@ -18,8 +18,7 @@ function metaContent(html: string, key: string): string | undefined {
   const re = new RegExp(`<meta[^>]*?(?:name|property)=["']${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["'][^>]*?>`, 'i');
   const tag = re.exec(html);
   if (!tag) return undefined;
-  const c = /content=["']([^"']*)["']/i.exec(tag[0]);
-  const content = c?.[1];
+  const content = /content=["']([^"']*)["']/i.exec(tag[0])?.[1];
   return content === undefined ? undefined : decodeEntities(content);
 }
 
@@ -32,8 +31,7 @@ function firstMeta(html: string, keys: string[]): string | undefined {
 }
 
 function titleTag(html: string): string | undefined {
-  const m = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html);
-  const inner = m?.[1];
+  const inner = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html)?.[1];
   return inner === undefined ? undefined : decodeEntities(inner.replace(/\s+/g, ' '));
 }
 
@@ -44,10 +42,9 @@ function faviconLink(html: string): string | undefined {
   while ((m = re.exec(html))) {
     const rel = (m[1] ?? '').toLowerCase();
     if (!/\bicon\b/.test(rel)) continue;
-    const href = /href=["']([^"']+)["']/i.exec(m[0]);
-    const hrefVal = href?.[1];
-    if (hrefVal === undefined) continue;
-    best = decodeEntities(hrefVal);
+    const href = /href=["']([^"']+)["']/i.exec(m[0])?.[1];
+    if (href === undefined) continue;
+    best = decodeEntities(href);
     if (rel === 'icon' || rel === 'shortcut icon') break;
   }
   return best;
@@ -86,14 +83,12 @@ function sameHostUrl(claimed: string | undefined, finalUrl: string): string {
 export function parseMeta(html: string, finalUrl: string): LinkPreview {
   const headEnd = html.search(/<\/head>/i);
   const head = headEnd > 0 ? html.slice(0, headEnd) : html.slice(0, 200_000);
-
   const title = firstMeta(head, ['og:title', 'twitter:title']) ?? titleTag(head);
   const description = firstMeta(head, ['og:description', 'twitter:description', 'description']);
   const rawImage = firstMeta(head, ['og:image:secure_url', 'og:image:url', 'og:image', 'twitter:image', 'twitter:image:src']);
   const siteName = firstMeta(head, ['og:site_name', 'application-name', 'twitter:site']);
   const canonical = sameHostUrl(firstMeta(head, ['og:url']), finalUrl);
   const host = hostOf(finalUrl);
-
   return {
     url: canonical,
     title: title !== undefined && title.length > 0 ? title : host,

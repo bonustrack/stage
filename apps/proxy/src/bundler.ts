@@ -35,9 +35,7 @@ export async function handleBundler(request: Request): Promise<Response> {
   const expoClient = isExpoClient(request);
   const branch = branchFromRequest(pathname, expoClient);
   if (!branch) return expoClient ? new Response(NO_BRANCH_MESSAGE, { status: 404 }) : fetch(request);
-  if (isBrowserRequest(request)) {
-    return Response.redirect(previewLauncherUrl(`${BUNDLER_ORIGIN}${branchPath(branch)}`), 302);
-  }
+  if (isBrowserRequest(request)) return Response.redirect(previewLauncherUrl(`${BUNDLER_ORIGIN}${branchPath(branch)}`), 302);
   const headers = new Headers(request.headers);
   headers.delete('host');
   return fetch(manifestUrl(branch, request), { headers });

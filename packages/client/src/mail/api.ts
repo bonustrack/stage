@@ -29,8 +29,7 @@ const LIST_SCHEMA = z.object({ mails: z.array(z.object({ id: z.string(), ts: z.n
 async function mailCall(proxyBase: string, op: MailOp, query: string, init: RequestInit): Promise<Response> {
   const res = await fetch(`${proxyBase}${mailPath(op)}${query}`, init);
   if (res.ok) return res;
-  const detail = await res.text();
-  throw new Error(`st.box mail ${op} failed (${res.status}): ${detail}`);
+  throw new Error(`st.box mail ${op} failed (${res.status}): ${await res.text()}`);
 }
 
 async function postJson(proxyBase: string, op: MailOp, body: unknown): Promise<unknown> {

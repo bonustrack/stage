@@ -9,9 +9,9 @@ import { ATTACHMENT_CORS, handleAttachments, r2AttachmentStore } from './attachm
 import { PUSH_BODY_MAX_BYTES, PUSH_CORS_HEADERS, handlePush } from './pushProxy.ts';
 import { configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
 import { MAIL_CORS, handleMail, type MailChain } from './mailApi.ts';
-import { mailboxStub } from './mailBox.ts';
 import { receiveMail, type IncomingMail } from './mailReceive.ts';
 import { NODES_CORS, cloudflareApi, handleNodes } from './nodes.ts';
+import { objectNamed, type ObjectStub } from './durableChunks.ts';
 import { limitsAtRouter, overLimit, type RouteLimit } from './rateLimit.ts';
 import { CLIENT_CORS, OPEN_CORS, RATE_LIMITED, corsResponse, jsonResponse, openJson, type HeaderMap } from './respond.ts';
 
@@ -48,7 +48,7 @@ interface ProxyRoute {
 }
 
 interface MailWiring {
-  mailbox: (label: string) => ReturnType<typeof mailboxStub>;
+  mailbox: (label: string) => ObjectStub;
   chain: MailChain;
 }
 
@@ -57,7 +57,7 @@ function mailWiring(env: ProxyEnv): MailWiring | null {
   const boxes = env.MAIL_BOXES;
   if (chain === null || boxes === undefined) return null;
   return {
-    mailbox: (label) => mailboxStub(boxes, label),
+    mailbox: (label) => objectNamed(boxes, label),
     chain: {
       owner: (label) => chain.subnameOwner(label),
       verify: (address, message, signature) => chain.verifyClaim(address, message, signature),
@@ -126,13 +126,7 @@ const ROUTES: readonly ProxyRoute[] = [
     limit: { budget: 'history', methods: ['POST'] },
     handle: (request, { env }) => handleHistory(request, env.HISTORY_ARCHIVES),
   },
-  {
-    path: PROXY_ROUTES.push,
-    match: 'prefix',
-    preflight: PUSH_CORS_HEADERS,
-    maxBody: PUSH_BODY_MAX_BYTES,
-    handle: (request) => handlePush(request),
-  },
+  { path: PROXY_ROUTES.push, match: 'prefix', preflight: PUSH_CORS_HEADERS, maxBody: PUSH_BODY_MAX_BYTES, handle: handlePush },
   {
     path: PROXY_ROUTES.mail,
     match: 'prefix',

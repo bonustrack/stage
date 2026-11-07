@@ -5,8 +5,7 @@ export function branchFromPath(pathname: string): string | null {
   } catch {
     return null;
   }
-  const parts = branch.split('/');
-  return parts.every((part) => part.length > 0 && !part.startsWith('.')) ? branch : null;
+  return branch.split('/').every((part) => part.length > 0 && !part.startsWith('.')) ? branch : null;
 }
 
 export function branchPath(branch: string): string {

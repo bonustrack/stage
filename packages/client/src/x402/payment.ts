@@ -34,10 +34,7 @@ export function x402KnownAsset(accept: X402Accept): { symbol: string; decimals: 
 }
 
 export function x402CanPayInApp(accept: X402Accept): boolean {
-  if (accept.scheme !== 'exact') return false;
-  if (!accept.payTo || !accept.amount || !accept.asset) return false;
-  if (!x402Network(accept.network)) return false;
-  return !!x402KnownAsset(accept);
+  return accept.scheme === 'exact' && !!accept.payTo && !!accept.amount && !!x402Network(accept.network) && !!x402KnownAsset(accept);
 }
 
 export function x402AmountNumber(accept: X402Accept): number | undefined {
@@ -61,14 +58,11 @@ function isSpoofChar(c: number): boolean {
 }
 
 function sanitizeTokenName(name: string): string {
-  let out = '';
-  for (const ch of name) {
-    const c = ch.codePointAt(0);
-    if (c === undefined) continue;
-    if (isSpoofChar(c)) continue;
-    out += ch;
-  }
-  return out.trim().slice(0, 16);
+  return Array.from(name)
+    .filter((ch) => !isSpoofChar(ch.codePointAt(0) ?? 0))
+    .join('')
+    .trim()
+    .slice(0, 16);
 }
 
 export function x402AmountLabel(accept: X402Accept): string | undefined {
@@ -169,9 +163,7 @@ export function buildPaymentHeader(args: {
 export function randomNonce(): string {
   const bytes = new Uint8Array(32);
   const c: Crypto | undefined = globalThis.crypto;
-  if (!c?.getRandomValues) {
-    throw new Error('Secure random unavailable: refusing to build a payment authorization with a weak nonce');
-  }
+  if (!c?.getRandomValues) throw new Error('Secure random unavailable: refusing to build a payment authorization with a weak nonce');
   c.getRandomValues(bytes);
   return bytesToHex(bytes);
 }

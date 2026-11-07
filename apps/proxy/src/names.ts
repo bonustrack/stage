@@ -2,7 +2,8 @@ import { isAddress, type Hex } from 'viem';
 import { claimIsFresh, claimMessage, describeLabelProblem, stageNameOf, validateStageLabel } from '@stage-labs/client/identity/stageNames';
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { isMailboxLabel } from '@stage-labs/client/mail/mailbox';
-import { mailboxStub, saveMailKey } from './mailBox.ts';
+import { saveMailKey } from './mailBox.ts';
+import { objectNamed } from './durableChunks.ts';
 import {
   NAME_CLAIM_REQUEST,
   NAME_TAKEN,
@@ -17,6 +18,7 @@ import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
 import { CLIENT_CORS, guarded, repliesWith } from './respond.ts';
 import { sleep } from '@stage-labs/client/timing';
+import { errorLine } from '@stage-labs/client/errors';
 import { PROXY_ROUTES, namesPath, type NamesOp } from '@stage-labs/client/endpoints';
 
 const NAMES_PREFIX = PROXY_ROUTES.names;
@@ -176,10 +178,7 @@ async function route(request: Request, deps: NamesDeps): Promise<Response> {
 export async function handleNames(request: Request, deps: NamesDeps): Promise<Response> {
   return await guarded(
     () => route(request, deps),
-    (err) => {
-      const detail = err instanceof Error ? (err.message.split('\n')[0] ?? 'unknown error') : String(err);
-      return fail(502, `name service error: ${detail}`);
-    },
+    (err) => fail(502, `name service error: ${errorLine(err)}`),
   );
 }
 
@@ -219,7 +218,7 @@ export class NamesClaims {
       const namesChain = configuredChain(env);
       if (!namesChain || !env.NAMES_KV) return Promise.resolve(NOT_CONFIGURED());
       const boxes = env.MAIL_BOXES;
-      const mailbox = boxes === undefined ? undefined : (label: string) => mailboxStub(boxes, label);
+      const mailbox = boxes === undefined ? undefined : (label: string) => objectNamed(boxes, label);
       return handleNames(request, { chain: namesChain, store: claimsStore(state.storage, kvStore(env.NAMES_KV)), mailbox });
     });
   }

@@ -6,17 +6,14 @@ import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
-const requireFromCwd = createRequire(join(process.cwd(), 'noop.js'));
-
-const SUBS = ['lint', 'fmt', 'check', 'knip'];
+const cwd = process.cwd();
+const requireFromCwd = createRequire(join(cwd, 'noop.js'));
 
 function usage(message) {
   if (message) process.stderr.write(`${message}\n`);
   process.stderr.write(`usage: stage <${SUBS.join('|')}> [...args]\n`);
   process.exit(1);
 }
-
-const cwd = process.cwd();
 
 function stageConfigPath() {
   const p = resolve(cwd, 'stage.config.js');
@@ -28,29 +25,23 @@ function stageConfigPath() {
 }
 
 async function loadStageConfig() {
-  const p = stageConfigPath();
-  const mod = await import(pathToFileURL(p).href);
+  const mod = await import(pathToFileURL(stageConfigPath()).href);
   return mod.default ?? mod.config ?? mod;
 }
 
-function findLocalBin(name) {
+function localBin(name) {
   let dir = cwd;
   for (;;) {
     const candidate = resolve(dir, 'node_modules', '.bin', name);
     if (existsSync(candidate)) return candidate;
     const parent = resolve(dir, '..');
-    if (parent === dir) return null;
+    if (parent === dir) return name;
     dir = parent;
   }
 }
 
-function localBin(name) {
-  return findLocalBin(name) ?? name;
-}
-
 function run(bin, args) {
-  const res = spawnSync(bin, args, { stdio: 'inherit', cwd });
-  return res.status ?? 1;
+  return spawnSync(bin, args, { stdio: 'inherit', cwd }).status ?? 1;
 }
 
 const LINTABLE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
@@ -103,14 +94,15 @@ function cmdFmt(argv) {
 }
 
 function cmdKnip(argv) {
+  const configPath = stageConfigPath();
   const native = ['knip.config.js', 'knip.config.ts', 'knip.config.json', 'knip.json'].find((name) => existsSync(resolve(cwd, name)));
   if (native) {
     process.stderr.write(`stage knip: deferring to native ${native}\n`);
-    return run(localBin('knip'), [...argv]);
+    return run(localBin('knip'), argv);
   }
   const config = [
     `import { buildKnipConfig } from ${JSON.stringify(pathToFileURL(requireFromCwd.resolve('@stage-labs/config/knip')).href)};`,
-    `import cfg from ${JSON.stringify(pathToFileURL(stageConfigPath()).href)};`,
+    `import cfg from ${JSON.stringify(pathToFileURL(configPath).href)};`,
     'export default buildKnipConfig(cfg);',
     '',
   ].join('\n');
@@ -124,8 +116,8 @@ function checkProjects(path) {
   return [`${dir}tsconfig.json`, `${dir}test/tsconfig.json`].filter((project) => existsSync(resolve(cwd, project)));
 }
 
-function cmdCheck(stageConfig, argv) {
-  const failed = Object.keys(stageConfig.workspaces)
+async function cmdCheck(argv) {
+  const failed = Object.keys((await loadStageConfig()).workspaces)
     .flatMap(checkProjects)
     .map(dirname)
     .filter((project) => {
@@ -136,23 +128,14 @@ function cmdCheck(stageConfig, argv) {
   return failed.length > 0 ? 1 : 0;
 }
 
+const COMMANDS = { lint: cmdLint, fmt: cmdFmt, check: cmdCheck, knip: cmdKnip };
+
+const SUBS = Object.keys(COMMANDS);
+
 async function main() {
   const [sub, ...argv] = process.argv.slice(2);
-  if (!sub || !SUBS.includes(sub)) {
-    usage(sub ? `stage: unknown command "${sub}"` : null);
-  }
-  let status = 1;
-  if (sub === 'lint') {
-    status = cmdLint(argv);
-  } else if (sub === 'fmt') {
-    status = cmdFmt(argv);
-  } else if (sub === 'knip') {
-    stageConfigPath();
-    status = cmdKnip(argv);
-  } else if (sub === 'check') {
-    status = cmdCheck(await loadStageConfig(), argv);
-  }
-  process.exit(status);
+  if (!sub || !SUBS.includes(sub)) usage(sub ? `stage: unknown command "${sub}"` : null);
+  process.exit(await COMMANDS[sub](argv));
 }
 
 await main();

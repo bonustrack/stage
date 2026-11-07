@@ -6,10 +6,7 @@ function isPollVote(p: EntryReaction | null, pollOptionCounts: Map<string, numbe
   if (p.custom) return true;
   if (!p.reactTo || !p.emoji) return false;
   const optionCount = pollOptionCounts.get(p.reactTo);
-  if (optionCount === undefined) return false;
-  if (!/^\d+$/.test(p.emoji)) return false;
-  const idx = Number.parseInt(p.emoji, 10);
-  return Number.isInteger(idx) && idx >= 0 && idx < optionCount;
+  return optionCount !== undefined && /^\d+$/.test(p.emoji) && Number.parseInt(p.emoji, 10) < optionCount;
 }
 
 interface ReactionPayload {

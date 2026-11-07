@@ -5,7 +5,13 @@ import { DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, deletedByOfContent } fro
 import { objectOf, stringOf, type CanonicalAttachment, type CanonicalReaction, type CanonicalReply } from './message';
 import { z } from 'zod';
 import type { OutputSchema } from '../validate';
-import { structuredPayload, type EntryAttachment, type RemoteAttachmentRef, type StructuredType } from './entryPayload';
+import {
+  attachmentSummaryOf,
+  structuredPayload,
+  type EntryAttachment,
+  type RemoteAttachmentRef,
+  type StructuredType,
+} from './entryPayload';
 
 export type EntryBuilder = (base: HistoryEntry, typeId: string, decoded: unknown, fallback?: string) => HistoryEntry;
 
@@ -18,19 +24,11 @@ export function safe<T>(fn: () => T): T | undefined {
 }
 
 export const reactionEntry: EntryBuilder = (base, typeId, decoded) => {
-  const r = decoded as CanonicalReaction;
-  const removed = r.removed;
-  if (r.custom) {
-    return {
-      ...base,
-      text: `[vote ${r.content}${removed ? ' (removed)' : ''}]`,
-      payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, schema: 'custom', removed },
-    };
-  }
+  const { reference: reactTo, content: emoji, removed, custom } = decoded as CanonicalReaction;
   return {
     ...base,
-    text: `[react ${r.content}${removed ? ' (removed)' : ''}]`,
-    payload: { contentType: typeId, reactTo: r.reference, emoji: r.content, removed },
+    text: `[${custom ? 'vote' : 'react'} ${emoji}${removed ? ' (removed)' : ''}]`,
+    payload: { contentType: typeId, reactTo, emoji, ...(custom ? { schema: 'custom' as const } : {}), removed },
   };
 };
 
@@ -65,33 +63,25 @@ export const multiRemoteEntry: EntryBuilder = (base, typeId, decoded) => {
     const name = stringOf(objectOf(item)?.filename) ?? `attachment-${i + 1}`;
     return { kind: attachmentKindOf({ filename: name }), name, remote: validRemoteAttachment(item) };
   });
-  const first = attachments[0];
-  const summary =
-    first !== undefined && attachments.length === 1 ? `[${first.kind}: ${first.name}]` : `[${attachments.length} attachments]`;
-  return { ...base, text: summary, payload: { contentType: typeId, attachments } };
+  return { ...base, text: attachmentSummaryOf(attachments), payload: { contentType: typeId, attachments } };
 };
 
 export const replyEntry: EntryBuilder = (base, typeId, decoded, fallback) => {
   const reply = decoded as CanonicalReply;
-  const reference = reply.reference;
   const remote = validRemoteAttachment(reply.remote);
   const nested = remote === undefined ? undefined : safe(() => multiRemoteEntry(base, typeId, { attachments: [remote] }));
   return {
     ...base,
     text: nested?.text ?? reply.text ?? fallback ?? '[reply]',
-    replyTo: reference,
-    payload: { ...objectOf(nested?.payload), contentType: typeId, replyTo: reference },
+    replyTo: reply.reference,
+    payload: { ...objectOf(nested?.payload), contentType: typeId, replyTo: reply.reference },
   };
 };
 
 export const attachmentEntry: EntryBuilder = (base, typeId, decoded) => {
   const a = decoded as CanonicalAttachment;
-  const kind = attachmentKindOf({ mimeType: a.mimeType });
-  return {
-    ...base,
-    text: `[${kind}: ${a.filename ?? 'attachment'}]`,
-    payload: { contentType: typeId, attachments: [{ kind, mime: a.mimeType, name: a.filename, dataB64: a.dataB64 }] },
-  };
+  const attachments = [{ kind: attachmentKindOf({ mimeType: a.mimeType }), mime: a.mimeType, name: a.filename, dataB64: a.dataB64 }];
+  return { ...base, text: attachmentSummaryOf(attachments), payload: { contentType: typeId, attachments } };
 };
 
 export const deleteRequestEntry: EntryBuilder = (base, _typeId, decoded) => ({

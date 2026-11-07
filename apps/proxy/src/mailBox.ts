@@ -1,7 +1,7 @@
 import { sha256, stringToBytes } from 'viem';
 import { isMailId } from '@stage-labs/client/mail/mailbox';
 import { randomHex } from '@stage-labs/client/ids';
-import { objectNamed, putChunks, readChunks, storedChunkKeys, type ObjectNamespace, type ObjectStub } from './durableChunks.ts';
+import { putChunks, readChunks, storedChunkKeys, type ObjectStub } from './durableChunks.ts';
 
 const MAILBOX_URL = 'https://mailbox/';
 const MAILBOX_MAX_BYTES = 512 * 1024 * 1024;
@@ -223,10 +223,6 @@ export async function mailboxFetch(request: Request, storage: MailStorage, now =
   if (handler === undefined) return done(404);
   const body: unknown = await request.json().catch(() => null);
   return handler(storage, isFields(body) ? body : {}, now);
-}
-
-export function mailboxStub<Id>(ns: ObjectNamespace<Id>, label: string): ObjectStub {
-  return objectNamed(ns, label);
 }
 
 export function mailboxCall(stub: ObjectStub, op: string, body: Fields = {}): Promise<Response> {

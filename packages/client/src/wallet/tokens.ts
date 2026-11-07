@@ -11,7 +11,7 @@ function isSentinelOrEmpty(token: string | null | undefined): token is null | un
   return !token || token.toLowerCase() === NATIVE_TOKEN_SENTINEL;
 }
 
-function assetFor(chainId: number, token: string | null | undefined): Asset | undefined {
+export function assetFor(chainId: number, token: string | null | undefined): Asset | undefined {
   if (isSentinelOrEmpty(token)) return ASSETS.find((a) => a.chainId === chainId && a.address === null);
   const lc = token.toLowerCase();
   return ASSETS.find((a) => a.chainId === chainId && a.address?.toLowerCase() === lc);

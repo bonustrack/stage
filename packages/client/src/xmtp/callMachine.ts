@@ -90,6 +90,16 @@ function withSession(state: CallsState, session: CallSession | null): CallsState
   return { ...state, session };
 }
 
+function freshSession(
+  e: { convId: string; dm: boolean; nowMs: number },
+  callId: string,
+  video: boolean,
+  phase: CallSession['phase'],
+  selfPeerId: string | null,
+): CallSession {
+  return { convId: e.convId, callId, dm: e.dm, video, phase, selfPeerId, startedMs: e.nowMs, answered: false, links: {} };
+}
+
 function sessionFor(state: CallsState, convId: string, callId: string): CallSession | null {
   const s = state.session;
   return s !== null && s.convId === convId && s.callId === callId ? s : null;
@@ -122,17 +132,7 @@ function start(state: CallsState, e: Extract<CallEvent, { type: 'start' }>): Cal
     roster: { [e.peerId]: e.selfInboxId },
     lastMs: e.nowMs,
   };
-  const session: CallSession = {
-    convId: e.convId,
-    callId: e.callId,
-    dm: e.dm,
-    video: e.video,
-    phase: 'joined',
-    selfPeerId: e.peerId,
-    startedMs: e.nowMs,
-    answered: false,
-    links: {},
-  };
+  const session = freshSession(e, e.callId, e.video, 'joined', e.peerId);
   const invite = { callId: e.callId, from: e.peerId, video: e.video };
   return step(withSession(withCall(state, info), session), [{ type: 'invite', convId: e.convId, invite }]);
 }
@@ -142,17 +142,7 @@ function join(state: CallsState, e: Extract<CallEvent, { type: 'join' }>): CallS
   const ringing = state.session?.phase === 'ringing' && state.session.convId === e.convId ? state.session : null;
   if (info === undefined || (state.session !== null && ringing === null)) return step(state);
   if (isCallFull(info)) return step(withSession(state, null), [{ type: 'end', reason: 'full' }]);
-  const session: CallSession = {
-    convId: e.convId,
-    callId: info.callId,
-    dm: e.dm,
-    video: info.video,
-    phase: 'joined',
-    selfPeerId: e.peerId,
-    startedMs: e.nowMs,
-    answered: false,
-    links: {},
-  };
+  const session = freshSession(e, info.callId, info.video, 'joined', e.peerId);
   const next = withRoster(state, info, { ...info.roster, [e.peerId]: e.selfInboxId }, e.nowMs);
   const signal: CallSignal = { kind: 'join', callId: info.callId, from: e.peerId };
   return step(withSession(next, session), [{ type: 'send', convId: e.convId, signal }]);
@@ -250,19 +240,7 @@ function onInvite(state: CallsState, e: InviteEvent): CallStep {
   if (spoofed(same, e.invite.from, e.senderInboxId)) return step(state);
   const next = withCall(state, invitedCall(same, e));
   if (!rings(state, e)) return step(next);
-  return step(
-    withSession(next, {
-      convId: e.convId,
-      callId: e.invite.callId,
-      dm: e.dm,
-      video: e.invite.video,
-      phase: 'ringing',
-      selfPeerId: null,
-      startedMs: e.nowMs,
-      answered: false,
-      links: {},
-    }),
-  );
+  return step(withSession(next, freshSession(e, e.invite.callId, e.invite.video, 'ringing', null)));
 }
 
 type SignalEvent = Extract<CallEvent, { type: 'signal' }>;

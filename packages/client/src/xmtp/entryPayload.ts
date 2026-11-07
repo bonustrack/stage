@@ -186,23 +186,7 @@ export function deletedByOf(entry: PayloadHolder | undefined): DeletedBy {
   return fieldOf(entry, 'deletedBy') === 'admin' ? 'admin' : 'sender';
 }
 
-export type MessageKind =
-  | 'deleted'
-  | 'frameAction'
-  | 'poll'
-  | 'txRequest'
-  | 'txReceipt'
-  | 'sigRequest'
-  | 'sigReference'
-  | 'frame'
-  | 'call'
-  | 'hidden'
-  | 'system'
-  | 'reaction'
-  | 'attachments'
-  | 'text';
-
-const KIND_TESTS: readonly [MessageKind, (entry: PayloadHolder) => boolean][] = [
+const KIND_TESTS = [
   ['deleted', isDeletedPlaceholder],
   ['frameAction', isFrameActionEntry],
   ['poll', (e) => pollContentOf(e) !== undefined],
@@ -216,7 +200,9 @@ const KIND_TESTS: readonly [MessageKind, (entry: PayloadHolder) => boolean][] = 
   ['system', isSystemEntry],
   ['reaction', (e) => reactionTargetOf(e) !== undefined],
   ['attachments', hasAttachments],
-];
+] as const satisfies readonly (readonly [string, (entry: PayloadHolder) => boolean])[];
+
+export type MessageKind = (typeof KIND_TESTS)[number][0] | 'text';
 
 export function messageKindOf(entry: PayloadHolder): MessageKind {
   return KIND_TESTS.find(([, test]) => test(entry))?.[0] ?? 'text';

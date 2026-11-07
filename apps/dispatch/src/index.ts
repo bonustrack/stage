@@ -78,18 +78,13 @@ async function limited(request: Request, id: string, deps: DispatchDeps): Promis
   return (await over(deps.limiter, clientRateKey(clientIp(request.headers)))) || over(deps.nodeLimiter, id);
 }
 
-async function cappedBody(response: Response): Promise<Blob | null> {
-  const bytes = await readCappedResponse(response, NODE_REPLY_MAX_BYTES);
-  return bytes === null ? null : new Blob([bytes]);
-}
-
 const passable = (status: number): boolean => (status >= 200 && status < 300) || (status >= 400 && status < 600);
 
 async function relay(response: Response): Promise<Response> {
   if (!passable(response.status)) return fail(502, 'node answered with a redirect or an upgrade');
-  const body = await cappedBody(response);
-  if (body === null) return fail(502, 'node reply too large');
-  return answer(NULL_BODY.has(response.status) ? null : body, response.status);
+  const bytes = await readCappedResponse(response, NODE_REPLY_MAX_BYTES);
+  if (bytes === null) return fail(502, 'node reply too large');
+  return answer(NULL_BODY.has(response.status) ? null : new Blob([bytes]), response.status);
 }
 
 function anonymous(request: Request): Request {

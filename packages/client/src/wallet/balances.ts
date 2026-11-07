@@ -33,7 +33,6 @@ export async function fetchWalletPortfolio(addr: string): Promise<PortfolioRead>
       : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] },
   );
   const balances = await publicClientFor(WALLET_CHAIN_ID).multicall({ contracts: calls, allowFailure: false });
-
   const ids = [...new Set([...WALLET_ASSETS.flatMap((a) => a.priceId ?? []), BTC_PRICE_ID])];
   const [current, changes] = await Promise.all([
     settledPrices(getCurrentPrices(ids)),
@@ -48,16 +47,14 @@ export async function fetchWalletPortfolio(addr: string): Promise<PortfolioRead>
 }
 
 function buildAssetRow(a: Asset, raw: bigint, prices: Record<string, UsdQuote>, changes: Record<string, number>): AssetRow {
-  const balance = a.address === null ? formatEther(raw) : formatUnits(raw, a.decimals);
   const price = a.priceId === undefined ? undefined : prices[a.priceId];
-  const change24h = a.priceId === undefined ? null : (changes[a.priceId] ?? null);
   return {
     symbol: a.symbol,
     name: a.name,
     chainId: a.chainId,
-    balance,
+    balance: a.address === null ? formatEther(raw) : formatUnits(raw, a.decimals),
     priceUsd: price?.usd ?? null,
-    change24h,
+    change24h: a.priceId === undefined ? null : (changes[a.priceId] ?? null),
     logoAddress: a.logoAddress,
   };
 }

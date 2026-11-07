@@ -35,15 +35,10 @@ function kindOf(sub: string | undefined): GithubKind {
 export function githubLinkOf(text?: string | null): GithubRef | null {
   if (!text) return null;
   const m = RE.exec(text);
-  if (!m) return null;
-  const owner = m[1];
-  const rawRepo = m[2];
-  if (owner === undefined || rawRepo === undefined) return null;
-  if (RESERVED.has(owner.toLowerCase())) return null;
-  const repo = rawRepo.replace(/\.git$/i, '');
-  if (!owner || !repo) return null;
-  const num = m[4] ? Number(m[4]) : undefined;
-  return { url: m[0], owner, repo, kind: kindOf(m[3]), number: num };
+  const owner = m?.[1];
+  const repo = m?.[2]?.replace(/\.git$/i, '');
+  if (!m || !owner || !repo || RESERVED.has(owner.toLowerCase())) return null;
+  return { url: m[0], owner, repo, kind: kindOf(m[3]), number: m[4] ? Number(m[4]) : undefined };
 }
 
 export interface GithubMeta {
@@ -67,10 +62,9 @@ function metaPath(ref: GithubRef): string {
 }
 
 function repoMeta(j: Record<string, unknown>, repo: string): GithubMeta {
-  const name = typeof j.full_name === 'string' ? j.full_name : repo;
   return {
     kind: 'repo',
-    title: name,
+    title: typeof j.full_name === 'string' ? j.full_name : repo,
     repo,
     state: '',
     description: typeof j.description === 'string' ? j.description : undefined,

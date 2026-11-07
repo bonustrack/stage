@@ -19,64 +19,28 @@ export interface Asset {
 export const ETH_PRICE_ID = 'ethereum:0x0000000000000000000000000000000000000000';
 const USDC_PRICE_ID = 'ethereum:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 
+const MAINNET_USDC = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+const ETH = { symbol: 'ETH', name: 'Ethereum', decimals: 18, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, priceId: ETH_PRICE_ID };
+const USDC = { symbol: 'USDC', name: 'USD Coin', decimals: 6, transferAuthorization: true } as const;
+
 export const ASSETS: Asset[] = [
-  { symbol: 'ETH', name: 'Ethereum', decimals: 18, chainId: 1, address: null, logoAddress: NATIVE_TOKEN_SENTINEL, priceId: ETH_PRICE_ID },
+  { ...ETH, chainId: 1 },
+  { ...USDC, chainId: 1, address: MAINNET_USDC, logoAddress: MAINNET_USDC, priceId: USDC_PRICE_ID },
+  { ...ETH, chainId: 11155111 },
+  { ...USDC, chainId: 11155111, address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', logoAddress: MAINNET_USDC, priceId: USDC_PRICE_ID },
+  { ...ETH, chainId: 8453 },
   {
-    symbol: 'USDC',
-    name: 'USD Coin',
-    decimals: 6,
-    chainId: 1,
-    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-    logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-    priceId: USDC_PRICE_ID,
-    transferAuthorization: true,
-  },
-  {
-    symbol: 'ETH',
-    name: 'Ethereum',
-    decimals: 18,
-    chainId: 11155111,
-    address: null,
-    logoAddress: NATIVE_TOKEN_SENTINEL,
-    priceId: ETH_PRICE_ID,
-  },
-  {
-    symbol: 'USDC',
-    name: 'USD Coin',
-    decimals: 6,
-    chainId: 11155111,
-    address: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
-    logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-    priceId: USDC_PRICE_ID,
-    transferAuthorization: true,
-  },
-  {
-    symbol: 'ETH',
-    name: 'Ethereum',
-    decimals: 18,
-    chainId: 8453,
-    address: null,
-    logoAddress: NATIVE_TOKEN_SENTINEL,
-    priceId: ETH_PRICE_ID,
-  },
-  {
-    symbol: 'USDC',
-    name: 'USD Coin',
-    decimals: 6,
+    ...USDC,
     chainId: 8453,
     address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-    logoAddress: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    logoAddress: MAINNET_USDC,
     priceId: 'base:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
-    transferAuthorization: true,
   },
   {
-    symbol: 'USDC',
-    name: 'USD Coin',
-    decimals: 6,
+    ...USDC,
     chainId: 84532,
     address: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
     logoAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-    transferAuthorization: true,
   },
   {
     symbol: 'STAGE',

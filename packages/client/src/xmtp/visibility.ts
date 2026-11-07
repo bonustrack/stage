@@ -6,7 +6,7 @@ import { onlyMembersLeft } from './humanize';
 
 const CONTROL_BODY_PREFIX = 'METRO_CTRL:';
 
-export function isControlBody(text: unknown): boolean {
+function isControlBody(text: unknown): boolean {
   return typeof text === 'string' && text.startsWith(CONTROL_BODY_PREFIX);
 }
 
@@ -44,7 +44,7 @@ export function arrivalEffect(m: ShownMessage): ArrivalEffect {
   return roleOfType(m.contentTypeId) === 'hidden' || isControlBody(m.content) ? 'drop' : 'row';
 }
 
-export function entryRoleOf(entry: HistoryEntry): RowRole {
+function entryRoleOf(entry: HistoryEntry): RowRole {
   if (reactionTargetOf(entry) !== undefined) return 'silent';
   return roleOfType(payloadTypeOf(entry));
 }

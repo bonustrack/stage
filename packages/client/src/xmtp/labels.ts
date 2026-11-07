@@ -1,3 +1,4 @@
+import { includesKey, uniqueKeys } from '../collections';
 import { validMemberAddresses } from './groups';
 
 export const MAX_LABELS = 16;
@@ -30,19 +31,7 @@ export function stringList(value: unknown): string[] {
 }
 
 export function labelsOf(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const item of raw) {
-    if (typeof item !== 'string') continue;
-    const label = cleanLabel(item);
-    const key = label.toLowerCase();
-    if (!label || seen.has(key)) continue;
-    seen.add(key);
-    out.push(label);
-    if (out.length >= MAX_LABELS) break;
-  }
-  return out;
+  return uniqueKeys(stringList(raw).map(cleanLabel).filter(Boolean)).slice(0, MAX_LABELS);
 }
 
 export function categoryOf(value: unknown): string | null {
@@ -59,8 +48,7 @@ export function priorityOf(value: unknown): ChannelPriority | null {
 export function addLabel(labels: string[], label: string): string[] {
   const clean = cleanLabel(label);
   if (!clean) return labels;
-  if (labels.some((l) => l.toLowerCase() === clean.toLowerCase())) return labels;
-  if (labels.length >= MAX_LABELS) return labels;
+  if (includesKey(labels, clean) || labels.length >= MAX_LABELS) return labels;
   return [...labels, clean];
 }
 

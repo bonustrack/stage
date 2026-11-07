@@ -128,12 +128,7 @@ const CONTENT_TYPES: Readonly<Record<string, ContentTypeSpec>> = {
   reaction: { role: 'silent', entry: reactionEntry, preview: previewReaction },
   readReceipt: { role: 'silent' },
   attachment: { role: 'bubble', deletable: true, entry: attachmentEntry, preview: previewSingleAttachment, files: inlineFiles },
-  remoteStaticAttachment: {
-    role: 'bubble',
-    deletable: true,
-    preview: previewSingleAttachment,
-    files: (content: Record<string, unknown>) => [remoteFile(content)],
-  },
+  remoteStaticAttachment: { role: 'bubble', deletable: true, preview: previewSingleAttachment, files: (content) => [remoteFile(content)] },
   multiRemoteStaticAttachment: { ...MULTI_REMOTE, deletable: true },
   multiRemoteAttachment: MULTI_REMOTE,
   group_updated: { role: 'system', entry: groupUpdateEntry, preview: previewGroupUpdate },
@@ -196,16 +191,11 @@ export function entryBuilderOf(typeId: string): { build: EntryBuilder; ignoresCo
   return spec.entry === undefined ? undefined : { build: spec.entry, ignoresContent: spec.entryIgnoresContent === true };
 }
 
-function previewOfXmtpContent(decoded: unknown, contentTypeId: string | undefined | null): string {
-  const typeId = contentTypeId ? shortTypeId(contentTypeId) : 'unknown';
-  if (typeof decoded === 'string') return humanizeMentions(decoded);
-  const preview = specOf(typeId).preview;
-  return preview ? preview(decoded) : `[${typeId}]`;
-}
-
 export function rowPreviewOf(m: { content: unknown; contentTypeId: string | undefined }): string {
   try {
-    return previewOfXmtpContent(m.content, m.contentTypeId);
+    if (typeof m.content === 'string') return humanizeMentions(m.content);
+    const preview = specOf(m.contentTypeId).preview;
+    return preview ? preview(m.content) : `[${m.contentTypeId ? shortTypeId(m.contentTypeId) : 'unknown'}]`;
   } catch {
     return `[${m.contentTypeId ?? 'unknown'}]`;
   }
@@ -217,10 +207,8 @@ export function attachedFilesOf(contentTypeId: string | undefined, content: unkn
   return record === undefined || files === undefined ? [] : files(record);
 }
 
-const ALL_CODECS: readonly { codec: StageCodec; onlyOn?: CodecPlatform }[] = Object.values(CONTENT_TYPES).flatMap((spec) =>
-  spec.codec === undefined ? [] : [{ codec: spec.codec, onlyOn: spec.codecOnlyOn }],
-);
-
 export function stageCodecsFor(platform: CodecPlatform): StageCodec[] {
-  return ALL_CODECS.filter((c) => c.onlyOn === undefined || c.onlyOn === platform).map((c) => c.codec);
+  return Object.values(CONTENT_TYPES).flatMap((spec) =>
+    spec.codec !== undefined && (spec.codecOnlyOn ?? platform) === platform ? [spec.codec] : [],
+  );
 }

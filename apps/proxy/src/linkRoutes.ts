@@ -19,8 +19,7 @@ function errorResponse(e: unknown, fallback: string): Response {
 
 function previewPayload(page: NonNullable<Awaited<ReturnType<typeof fetchPage>>>, request: Request): unknown {
   if ('kind' in page) return page;
-  const selfOrigin = new URL(request.url).origin;
-  return proxyPreviewImages(parseMeta(page.html, page.finalUrl), selfOrigin);
+  return proxyPreviewImages(parseMeta(page.html, page.finalUrl), new URL(request.url).origin);
 }
 
 async function cached(cacheUrl: string, ctx: ExecutionContext, fresh: () => Promise<Response>): Promise<Response> {

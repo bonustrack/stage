@@ -33,16 +33,6 @@ export type MailPart = 'index' | 'body';
 
 export type MailKeyPair = HpkeKeyPair;
 
-export interface MailIndex {
-  envelopeFrom: string;
-  from: string;
-  to: string;
-  subject: string;
-  date: string;
-  messageId: string;
-  size: number;
-}
-
 const MAIL_INDEX_SCHEMA = z.object({
   envelopeFrom: z.string(),
   from: z.string(),
@@ -52,6 +42,8 @@ const MAIL_INDEX_SCHEMA = z.object({
   messageId: z.string(),
   size: z.number().int().nonnegative(),
 });
+
+export type MailIndex = z.infer<typeof MAIL_INDEX_SCHEMA>;
 
 export function isMailboxLabel(label: string): boolean {
   return validateStageLabel(label) === null && !ROLE_LABELS.has(label);

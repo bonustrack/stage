@@ -53,8 +53,7 @@ export function bodyView(body: string, plain: boolean, findLinks?: LinkFinder): 
   const channels = segments.some((s) => s.type === 'channel');
   if (plain) return mentions || channels ? 'namedPlain' : 'plain';
   if (mentions) return 'mention';
-  const links = segments.some((s) => s.type === 'link');
-  return links || channels || MARKDOWN_SYNTAX.test(body) ? 'markdown' : 'plain';
+  return segments.some((s) => s.type === 'link') || channels || MARKDOWN_SYNTAX.test(body) ? 'markdown' : 'plain';
 }
 
 function splitSpans(text: string, spans: Span[], between: (text: string) => BodySegment[]): BodySegment[] {

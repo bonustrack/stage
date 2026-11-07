@@ -34,7 +34,5 @@ export function addLocalAccountToList(
 }
 
 export function resolveActiveAccount(list: AccountRecord[], activeId: string | null): AccountRecord | null {
-  const first = list[0];
-  if (first === undefined) return null;
-  return list.find((a) => a.id === activeId) ?? first;
+  return list.find((a) => a.id === activeId) ?? list[0] ?? null;
 }

@@ -28,9 +28,7 @@ function parseWei(value?: string): bigint | null {
 
 function deriveNativeSummary(to: string | undefined, value: string | undefined, nativeSymbol: string): ConfirmSummary {
   const wei = parseWei(value);
-  if (to && isAddress(to) && wei !== null) {
-    return { verified: true, recipient: to, amount: formatEther(wei), symbol: nativeSymbol };
-  }
+  if (to && isAddress(to) && wei !== null) return { verified: true, recipient: to, amount: formatEther(wei), symbol: nativeSymbol };
   return { verified: false, recipient: to ?? '(unknown)', target: to, selector: undefined };
 }
 
@@ -48,16 +46,9 @@ function deriveTransferSummary(to: string | undefined, data: string): ConfirmSum
 }
 
 export function deriveConfirmSummary(call: CallLike, nativeSymbol = 'ETH'): ConfirmSummary {
-  const to = call.to;
-  const data = call.data;
-  const hasData = !!data && data.length > 2;
-
-  if (!hasData) return deriveNativeSummary(to, call.value, nativeSymbol);
-
-  const transfer = deriveTransferSummary(to, data);
-  if (transfer) return transfer;
-
-  return { verified: false, recipient: to ?? '(unknown)', target: to, selector: selectorOf(call.data) };
+  const { to, data } = call;
+  if (!data || data.length <= 2) return deriveNativeSummary(to, call.value, nativeSymbol);
+  return deriveTransferSummary(to, data) ?? { verified: false, recipient: to ?? '(unknown)', target: to, selector: selectorOf(data) };
 }
 
 export function confirmMessage(s: ConfirmSummary, chainName: string): string {
@@ -107,10 +98,7 @@ function toScalarString(v: unknown): string | undefined {
       return undefined;
     }
   }
-  if (typeof v === 'string') return v;
-  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') {
-    return String(v);
-  }
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v);
   return undefined;
 }
 
@@ -132,23 +120,13 @@ function fieldOf(message: Record<string, unknown> | undefined, keys: string[]): 
 }
 
 function fmtFieldValue(v: unknown): string {
-  if (v == null) return '';
-  if (typeof v === 'object') {
-    try {
-      return JSON.stringify(v).slice(0, 80);
-    } catch {
-      return '[object Object]';
-    }
-  }
-  if (typeof v === 'string') return v.slice(0, 80);
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') return String(v).slice(0, 80);
   if (typeof v === 'symbol') return v.toString().slice(0, 80);
-  if (typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean') {
-    return String(v).slice(0, 80);
-  }
+  if (typeof v !== 'object' || v === null) return '';
   try {
     return JSON.stringify(v).slice(0, 80);
   } catch {
-    return '';
+    return '[object Object]';
   }
 }
 
@@ -178,9 +156,7 @@ function deriveTypedDataSummary(td: Eip712TypedData): SignConfirmSummary {
 }
 
 export function deriveSignSummary(req: SignatureRequestContent): SignConfirmSummary {
-  if (req.kind !== 'eip712' || !req.eip712) {
-    return { highRisk: false, kindLabel: 'message', message: req.message };
-  }
+  if (req.kind !== 'eip712' || !req.eip712) return { highRisk: false, kindLabel: 'message', message: req.message };
   return deriveTypedDataSummary(req.eip712);
 }
 

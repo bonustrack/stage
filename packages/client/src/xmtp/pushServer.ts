@@ -45,13 +45,11 @@ export interface HmacKeyData {
 
 export type HmacKeysByTopic = Record<string, readonly HmacKeyData[] | undefined>;
 
-export interface PushSubscriptionJson {
-  topic: string;
-  hmacKeys: { thirtyDayPeriodsSinceEpoch: number; key: string }[];
+export interface PushSubscriptionJson extends SenderFilterTopic {
   isSilent: boolean;
 }
 
-function hmacKeysJson(keys: readonly HmacKeyData[] | undefined): { thirtyDayPeriodsSinceEpoch: number; key: string }[] {
+function hmacKeysJson(keys: readonly HmacKeyData[] | undefined): SenderFilterTopic['hmacKeys'] {
   return (keys ?? []).map((k) => ({ thirtyDayPeriodsSinceEpoch: k.thirtyDayPeriodsSinceEpoch, key: bytesToBase64(k.hmacKey) }));
 }
 
@@ -88,8 +86,7 @@ export function deleteInstallationBody(installationId: string): { installationId
 const GROUP_TOPIC = /\/g-([0-9a-fA-F]+)\//;
 
 export function groupIdOfTopic(topic: string): string | null {
-  const match = GROUP_TOPIC.exec(topic);
-  return match?.[1]?.toLowerCase() ?? null;
+  return GROUP_TOPIC.exec(topic)?.[1]?.toLowerCase() ?? null;
 }
 
 export function withoutSyncGroups(topics: readonly string[], groups: readonly { id: string; name: string }[]): string[] {

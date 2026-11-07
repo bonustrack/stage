@@ -181,8 +181,7 @@ const readMail: Handler = async (request, deps) => {
 };
 
 const deleteMail = withAccess(async ({ stub, owner, id }) => {
-  const removed = await mailboxCall(stub, 'delete', { owner, id });
-  return removed.ok ? empty(null, 204) : fail(404, 'no such mail');
+  return (await mailboxCall(stub, 'delete', { owner, id })).ok ? empty(null, 204) : fail(404, 'no such mail');
 }, true);
 
 const closeBox = withAccess(async ({ stub, owner }) => {

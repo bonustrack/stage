@@ -55,8 +55,7 @@ export function isChatCleared(cleared: ClearedChats, peerAddress: string | null 
 export type ClearableRow = Pick<ChannelRow, 'peerAddress' | 'lastTs'> & Partial<Pick<ChannelRow, 'lastBubbleTs'>>;
 
 export function isRowCleared(cleared: ClearedChats, row: ClearableRow): boolean {
-  const revivalTs = row.lastBubbleTs === undefined ? row.lastTs : row.lastBubbleTs;
-  return isChatCleared(cleared, row.peerAddress, revivalTs);
+  return isChatCleared(cleared, row.peerAddress, row.lastBubbleTs === undefined ? row.lastTs : row.lastBubbleTs);
 }
 
 function clearedUpTo(cleared: ClearedChats, maxAt: number): ClearedChats {

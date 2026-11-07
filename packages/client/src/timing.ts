@@ -56,7 +56,7 @@ export interface Backoff {
   maxMs: number;
 }
 
-export const RETRY_BACKOFF: Backoff = { baseMs: 5_000, maxMs: 60_000 };
+const RETRY_BACKOFF: Backoff = { baseMs: 5_000, maxMs: 60_000 };
 
 export function backoffDelay(attempt: number, backoff: Backoff = RETRY_BACKOFF): number {
   return Math.min(backoff.baseMs * 2 ** Math.max(0, attempt - 1), backoff.maxMs);

@@ -31,13 +31,8 @@ export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   if (!text) return null;
   const launch = previewLaunchOf(text);
   if (launch === null) return null;
-  const { url } = launch;
-  const inner = decodedOrRaw(launch.inner);
-  const g = /u\.expo\.dev\/[^/\s]+\/group\/([A-Za-z0-9-]+)/i.exec(inner);
-  if (!g) return null;
-  const groupId = g[1];
-  if (groupId === undefined) return null;
-  return { url, groupId, shortGroup: groupId.slice(0, 8) };
+  const groupId = /u\.expo\.dev\/[^/\s]+\/group\/([A-Za-z0-9-]+)/i.exec(decodedOrRaw(launch.inner))?.[1];
+  return groupId === undefined ? null : { url: launch.url, groupId, shortGroup: groupId.slice(0, 8) };
 }
 
 type Detector = (token: string) => CardLink | null;
@@ -69,14 +64,6 @@ const DETECTORS: Detector[] = [
   },
 ];
 
-function specificCard(token: string): CardLink | null {
-  for (const detect of DETECTORS) {
-    const card = detect(token);
-    if (card) return card;
-  }
-  return null;
-}
-
 function isWebUrlWithHost(token: string): boolean {
   try {
     const u = new URL(token);
@@ -91,7 +78,9 @@ export function cardLinksOf(text: string | null | undefined, findLinks: LinkFind
   if (!isLinkSchemeUrl(body)) return [];
   const url = wholeLinkUrl(body, findLinks);
   if (!url) return [];
-  const card = specificCard(url);
-  if (card) return [card];
+  for (const detect of DETECTORS) {
+    const card = detect(url);
+    if (card) return [card];
+  }
   return isWebUrlWithHost(url) ? [{ kind: 'generic', url }] : [];
 }

@@ -45,36 +45,13 @@ function readJpegOrientation(payload: Uint8Array): number | undefined {
   return undefined;
 }
 
+const ORIENTATION_EXIF_HEAD = [
+  0x45, 0x78, 0x69, 0x66, 0x00, 0x00, 0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x12, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00,
+  0x00,
+];
+
 function buildOrientationApp1(orientation: number): number[] {
-  const tiff = [
-    0x49,
-    0x49,
-    0x2a,
-    0x00,
-    0x08,
-    0x00,
-    0x00,
-    0x00,
-    0x01,
-    0x00,
-    0x12,
-    0x01,
-    0x03,
-    0x00,
-    0x01,
-    0x00,
-    0x00,
-    0x00,
-    orientation & 0xff,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-    0x00,
-  ];
-  const payload = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00, ...tiff];
+  const payload = [...ORIENTATION_EXIF_HEAD, orientation & 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
   const len = payload.length + 2;
   return [0xff, 0xe1, (len >> 8) & 0xff, len & 0xff, ...payload];
 }
@@ -133,9 +110,7 @@ function stripJpeg(b: Uint8Array): Uint8Array {
     if (s.next < 0) break;
     i = s.next;
   }
-  if (s.orientation !== undefined && s.orientation !== 1) {
-    s.out.splice(2, 0, ...buildOrientationApp1(s.orientation));
-  }
+  if (s.orientation !== undefined && s.orientation !== 1) s.out.splice(2, 0, ...buildOrientationApp1(s.orientation));
   return Uint8Array.from(s.out);
 }
 
@@ -207,9 +182,7 @@ export function stripMetadataBytes(input: Uint8Array): StripResult {
   const strip = STRIPPERS[format];
   try {
     if (strip) return { bytes: strip(input), stripped: true, format };
-  } catch {
-    return { bytes: input, stripped: false, format };
-  }
+  } catch {}
   return { bytes: input, stripped: false, format };
 }
 

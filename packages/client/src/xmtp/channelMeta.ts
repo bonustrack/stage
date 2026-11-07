@@ -1,3 +1,4 @@
+import { includesKey } from '../collections';
 import { isPermissionError } from './groups';
 import { mentionToken } from './mentions';
 import { LabelPermissionError, assignedAddresses, categoryOf, labelsOf, parseObject, priorityOf, stringList } from './labels';
@@ -39,9 +40,8 @@ function quotedList(items: string[]): string {
 function labelClauses(blobBefore: Blob | null, blobAfter: Blob | null): string[] {
   const before = stringList(blobBefore?.labels);
   const after = stringList(blobAfter?.labels);
-  const has = (list: string[], label: string): boolean => list.some((l) => l.toLowerCase() === label.toLowerCase());
-  const added = after.filter((l) => !has(before, l));
-  const removed = before.filter((l) => !has(after, l));
+  const added = after.filter((l) => !includesKey(before, l));
+  const removed = before.filter((l) => !includesKey(after, l));
   return [
     added.length ? `added label${added.length === 1 ? '' : 's'} ${quotedList(added)}` : '',
     removed.length ? `removed label${removed.length === 1 ? '' : 's'} ${quotedList(removed)}` : '',
@@ -85,15 +85,10 @@ function listField<G extends string>(
   return { kind: 'list', read, empty: [], same: (cached, next) => sameList(sameEmpty ? (cached ?? []) : cached, next), describe, groupBy };
 }
 
-interface ValueFieldOptions<G extends string> {
-  groupBy?: G;
-  rejectsUnknown?: boolean;
-}
-
 function valueField<V extends string | null, G extends string = never>(
   noun: string,
   read: (raw: unknown) => V,
-  { groupBy, rejectsUnknown = false }: ValueFieldOptions<G> = {},
+  { groupBy, rejectsUnknown = false }: { groupBy?: G; rejectsUnknown?: boolean } = {},
 ): TagField<V, G> & { kind: 'value'; noun: string; rejectsUnknown: boolean } {
   const describe: Describe = (blobBefore, blobAfter, key) => {
     const before = read(blobBefore?.[key]);
@@ -145,12 +140,6 @@ function isTagKey(key: keyof Meta): key is TagKey {
 
 const TAG_KEYS = META_KEYS.filter(isTagKey);
 
-function isChannelField(key: TagKey): key is ChannelField {
-  return TAG_FIELDS[key].kind === 'value';
-}
-
-const CHANNEL_FIELDS = TAG_KEYS.filter(isChannelField);
-
 function tagsFrom(value: (key: TagKey) => unknown): GroupTags {
   return Object.fromEntries(TAG_KEYS.map((key) => [key, value(key)])) as GroupTags;
 }
@@ -161,15 +150,11 @@ export function groupTagsFrom(fields: Partial<Record<string, unknown>>): GroupTa
   return tagsFrom((key) => TAG_FIELDS[key].read(fields[key]));
 }
 
-export const CHANNEL_FIELD_NOUNS = Object.fromEntries(CHANNEL_FIELDS.map((field) => [field, TAG_FIELDS[field].noun])) as Record<
-  ChannelField,
-  string
->;
+export const CHANNEL_FIELD_NOUNS = Object.fromEntries(
+  TAG_KEYS.flatMap((key) => (TAG_FIELDS[key].kind === 'value' ? [[key, TAG_FIELDS[key].noun]] : [])),
+) as Record<ChannelField, string>;
 
-export const CHANNEL_GROUP_KEYS = TAG_KEYS.flatMap((key): ChannelGroupKey[] => {
-  const groupBy = TAG_FIELDS[key].groupBy;
-  return groupBy === undefined ? [] : [groupBy];
-}).sort();
+export const CHANNEL_GROUP_KEYS = TAG_KEYS.flatMap((key) => TAG_FIELDS[key].groupBy ?? []).sort();
 
 export function channelFieldOf(field: ChannelField, value: unknown): string | null {
   return TAG_FIELDS[field].read(value);
@@ -198,10 +183,6 @@ export async function groupTagsOf(group: AppDataGroup | null): Promise<GroupTags
 
 export async function groupAssignedOf(group: AppDataGroup | null): Promise<string[]> {
   return group ? TAG_FIELDS.assigned.read(parseBlob(await group.appData()).assigned) : [];
-}
-
-function isEditRefused(e: unknown): boolean {
-  return e instanceof Error && isPermissionError(e.message);
 }
 
 type Patch = (blob: Blob) => Promise<Blob>;
@@ -251,7 +232,7 @@ export function createAppDataWriter(): AppDataWriter {
     try {
       await queue.write(group, (existing) => Promise.resolve(patch(existing)));
     } catch (e) {
-      if (isEditRefused(e)) throw new LabelPermissionError(what);
+      if (e instanceof Error && isPermissionError(e.message)) throw new LabelPermissionError(what);
       throw e;
     }
   };

@@ -20,9 +20,7 @@ export function assertPublicUrl(raw: string): URL {
   } catch {
     throw new SsrfError('invalid url');
   }
-  if (u.protocol !== 'http:' && u.protocol !== 'https:') {
-    throw new SsrfError('only http(s) urls are allowed');
-  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new SsrfError('only http(s) urls are allowed');
   if (!u.hostname) throw new SsrfError('missing host');
   const problem = hostProblem(u.hostname, { blockedDomains: BLOCKED_DOMAINS });
   if (problem === 'private-ip') throw new SsrfError('private ip not allowed');

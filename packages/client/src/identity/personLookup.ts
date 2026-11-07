@@ -18,8 +18,7 @@ export function personQuery(input: string): PersonQuery | null {
   const parsed = parseHandle(typed);
   if (parsed.kind === 'address') return { kind: 'address', address: parsed.value };
   if (parsed.kind === 'stage') {
-    const bareLabel = !isStageName(typed);
-    if (bareLabel && validateStageLabel(stageLabelOf(parsed.value) ?? '') !== null) return null;
+    if (!isStageName(typed) && validateStageLabel(stageLabelOf(parsed.value) ?? '') !== null) return null;
     return { kind: 'name', name: parsed.value, onMainnet: false };
   }
   if (parsed.kind === 'basename' || parsed.kind === 'ens') return { kind: 'name', name: parsed.value, onMainnet: parsed.kind === 'ens' };

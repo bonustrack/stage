@@ -16,7 +16,5 @@ const deepLinkRule: LinkifyRule = {
 };
 
 export function registerDeepLinkSchemas(linkify: LinkifyLike): void {
-  for (const scheme of STAGE_SCHEMES) {
-    linkify.add(`${scheme}:`, deepLinkRule);
-  }
+  for (const scheme of STAGE_SCHEMES) linkify.add(`${scheme}:`, deepLinkRule);
 }

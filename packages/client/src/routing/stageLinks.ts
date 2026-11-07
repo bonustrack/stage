@@ -4,7 +4,7 @@ export const STAGE_SCHEMES = ['metro', APP_SCHEME] as const;
 
 const DEV_CLIENT_LAUNCH = 'expo-development-client';
 
-function escapeRegExp(text: string): string {
+export function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 }
 

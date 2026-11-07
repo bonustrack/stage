@@ -7,6 +7,7 @@ import {
   FRAME_MAX_MESSAGES,
   frameContentSchema,
   frameMessageSchema,
+  isRecord,
   messageComponentCount,
   nodeReplyMessageSchema,
   nodeReplyMessagesSchema,
@@ -103,10 +104,6 @@ function nodeRequestBody(request: NodeRequest, capabilities?: Record<string, unk
     ...(request.dataModel === undefined ? {} : { a2uiRendererDataModel: { version: A2UI_VERSION, surfaces: request.dataModel } }),
   };
   return JSON.stringify(Object.keys(metadata).length === 0 ? request.message : { ...request.message, metadata });
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function listOf(value: unknown): unknown[] | null {

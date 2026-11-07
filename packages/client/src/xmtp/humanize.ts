@@ -141,6 +141,5 @@ export function attachmentsPreview(items: readonly AttachmentMeta[]): string {
   const [first, ...rest] = items.map(attachmentKindOf);
   if (!first) return 'Sent an attachment';
   if (rest.length === 0) return `Sent ${KIND_NOUNS[first].one}`;
-  const noun = rest.every((k) => k === first) ? KIND_NOUNS[first].many : 'attachments';
-  return `Sent ${rest.length + 1} ${noun}`;
+  return `Sent ${rest.length + 1} ${rest.every((k) => k === first) ? KIND_NOUNS[first].many : 'attachments'}`;
 }

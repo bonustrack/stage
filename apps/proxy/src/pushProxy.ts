@@ -18,10 +18,9 @@ export function parsePushRoute(pathname: string, method: string): string | null 
 export async function handlePush(request: Request): Promise<Response> {
   const upstreamUrl = parsePushRoute(new URL(request.url).pathname, request.method);
   if (upstreamUrl === null) return text('not found', 404);
-  const body = await request.text();
   const upstream = await fetch(upstreamUrl, {
     method: 'POST',
-    body,
+    body: await request.text(),
     headers: { 'content-type': 'application/json' },
     signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
   });

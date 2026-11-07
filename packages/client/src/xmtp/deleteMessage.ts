@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
 import { shortTypeId } from './typeId';
 
-export const DELETE_MESSAGE_CONTENT_TYPE: XmtpContentTypeId = {
+const DELETE_MESSAGE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'xmtp.org',
   typeId: 'deleteMessage',
   versionMajor: 1,
@@ -18,7 +18,7 @@ export const STAGE_DELETE_CONTENT_TYPE: XmtpContentTypeId = {
   versionMinor: 0,
 };
 
-export const STAGE_DELETE_TYPE_ID = STAGE_DELETE_CONTENT_TYPE.typeId;
+const STAGE_DELETE_TYPE_ID = STAGE_DELETE_CONTENT_TYPE.typeId;
 
 export const DELETED_MESSAGE_TYPE_ID = 'deletedMessage';
 

@@ -1,6 +1,6 @@
 import { concatBytes } from 'viem';
 
-export const CHUNK_BYTES = 1_000_000;
+const CHUNK_BYTES = 1_000_000;
 export const CHUNK_COUNT_KEY = 'chunks';
 
 export interface ObjectStub {
@@ -21,7 +21,7 @@ export function objectNamed<Id>(ns: ObjectNamespace<Id>, name: string): ObjectSt
   return ns.get(ns.idFromName(name));
 }
 
-export function chunkKey(index: number, prefix = ''): string {
+function chunkKey(index: number, prefix = ''): string {
   return `${prefix}chunk:${index}`;
 }
 

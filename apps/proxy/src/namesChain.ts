@@ -1,12 +1,10 @@
-import { createPublicClient, createWalletClient, http, keccak256, namehash, stringToBytes, type Hex } from 'viem';
+import { createPublicClient, createWalletClient, http, keccak256, namehash, stringToBytes, zeroAddress, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
 import { BASENAME_REGISTRY, REGISTRY_ABI as BASENAME_REGISTRY_ABI } from '@stage-labs/client/identity/onchainProfile';
 import { STAGE_NAMES_PARENT, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import { NAME_TAKEN } from '@stage-labs/client/identity/namesApi';
 import type { NamesChain } from './namesTypes.ts';
-
-const ZERO = '0x0000000000000000000000000000000000000000';
 
 export class NameTransactionRevertedError extends Error {
   constructor(hash: Hex) {
@@ -39,26 +37,24 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
   const wallet = createWalletClient({ account, chain: base, transport });
   const parentNode = namehash(STAGE_NAMES_PARENT);
   const registry = { address: BASENAME_REGISTRY, abi: REGISTRY_ABI } as const;
-
   const mined = async (hash: Hex): Promise<Hex> => {
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     if (receipt.status !== 'success') throw new NameTransactionRevertedError(hash);
     return hash;
   };
-
   return {
     verifyClaim: (address, message, signature) => publicClient.verifyMessage({ address, message, signature }),
     subnameOwner: async (label) => {
       const owner = await publicClient.readContract({ ...registry, functionName: 'owner', args: [namehash(stageNameOf(label))] });
-      return owner === ZERO || owner.toLowerCase() === account.address.toLowerCase() ? null : owner;
+      return owner === zeroAddress || owner.toLowerCase() === account.address.toLowerCase() ? null : owner;
     },
     confirm: mined,
     issue: async (label, owner, onSubmitted) => {
       const node = namehash(stageNameOf(label));
       const resolver = await publicClient.readContract({ ...registry, functionName: 'resolver', args: [parentNode] });
-      if (resolver === ZERO) throw new Error('parent name has no resolver');
+      if (resolver === zeroAddress) throw new Error('parent name has no resolver');
       const current = await publicClient.readContract({ ...registry, functionName: 'owner', args: [node] });
-      if (current !== ZERO && current.toLowerCase() !== account.address.toLowerCase()) throw new Error(NAME_TAKEN);
+      if (current !== zeroAddress && current.toLowerCase() !== account.address.toLowerCase()) throw new Error(NAME_TAKEN);
       const hash = await wallet.writeContract({
         ...registry,
         functionName: 'setSubnodeRecord',

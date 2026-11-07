@@ -115,16 +115,13 @@ function stripAuthority(work: string): string {
 function extractRoute(url: string): { segments: string[]; query: URLSearchParams } {
   const trimmed = url.trim();
   const work = hashRoute(trimmed) ?? stripAuthority(trimmed);
-
   const qIdx = work.indexOf('?');
   const pathPart = qIdx === -1 ? work : work.slice(0, qIdx);
   const queryPart = qIdx === -1 ? '' : work.slice(qIdx + 1);
-
   const segments = pathPart
     .split('/')
     .map((s) => decodeURIComponent(s))
     .filter(Boolean);
-
   return { segments, query: new URLSearchParams(queryPart) };
 }
 

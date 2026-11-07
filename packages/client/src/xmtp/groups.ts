@@ -45,17 +45,6 @@ function createFailed(err: unknown): Error {
 
 const NOT_ON_XMTP = "One or more addresses aren't on XMTP yet, so they can't be added.";
 
-function mapCreateGroupError(err: unknown): Error {
-  return isNoInboxError(errorMessage(err)) ? new Error(NOT_ON_XMTP) : createFailed(err);
-}
-
-function mapAddMembersError(err: unknown): Error {
-  const msg = errorMessage(err);
-  if (isNoInboxError(msg)) return new Error(NOT_ON_XMTP);
-  if (isPermissionError(msg)) return new Error('Only a channel admin can add members.');
-  return new Error(`Couldn't add members: ${msg}`);
-}
-
 function notOnXmtpError(addresses: string[]): Error {
   const who = addresses.map(shortAddress).join(', ');
   return new Error(`${who} ${addresses.length === 1 ? "isn't" : "aren't"} on XMTP yet, so they can't be added.`);
@@ -86,7 +75,7 @@ export async function createGroupWith(
     const group = await create(members);
     return { line: lineOf(group.id), id: group.id };
   } catch (err) {
-    throw mapCreateGroupError(err);
+    throw isNoInboxError(errorMessage(err)) ? new Error(NOT_ON_XMTP) : createFailed(err);
   }
 }
 
@@ -95,7 +84,10 @@ export async function addGroupMembersWith(addresses: string[], add: (members: st
   try {
     await add(members);
   } catch (err) {
-    throw mapAddMembersError(err);
+    const msg = errorMessage(err);
+    if (isNoInboxError(msg)) throw new Error(NOT_ON_XMTP);
+    if (isPermissionError(msg)) throw new Error('Only a channel admin can add members.');
+    throw new Error(`Couldn't add members: ${msg}`);
   }
 }
 
@@ -172,11 +164,6 @@ export function canEditGroup(rights: GroupEditRights): boolean {
   return rights.name || rights.description || rights.image || rights.appData;
 }
 
-function mapUpdateGroupError(err: unknown): Error {
-  const msg = errorMessage(err);
-  return new Error(isPermissionError(msg) ? "You don't have permission to edit this channel." : msg);
-}
-
 export interface GroupMetaPatch {
   name?: string;
   imageUrl?: string;
@@ -195,6 +182,7 @@ export async function updateGroupMetaWith(patch: GroupMetaPatch, ops: GroupMetaW
     if (patch.imageUrl !== undefined) await ops.updateImageUrl(patch.imageUrl);
     if (patch.description !== undefined) await ops.updateDescription(patch.description);
   } catch (err) {
-    throw mapUpdateGroupError(err);
+    const msg = errorMessage(err);
+    throw new Error(isPermissionError(msg) ? "You don't have permission to edit this channel." : msg);
   }
 }
