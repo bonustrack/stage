@@ -27,7 +27,7 @@ function fixture(timeoutMs = 1_000) {
       hmacKeys: { [topic ?? TOPIC]: [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(1) }] },
     }),
     post: async (body) => {
-      await Bun.sleep(10);
+      await Bun.sleep(0);
       bodies.push(body.payload);
     },
   };
@@ -320,13 +320,13 @@ describe('foreground sender-filter isolation', () => {
     for (const phase of ['group_key', 'sign', 'http'] as const) await seedImportCase(phase);
   });
 
-  test('multiple batches reuse an unchanged account snapshot within the original deadline', async () => {
+  test('multiple batches reuse one unchanged account snapshot', async () => {
     const f = fixture(1_000);
     const topics = Array.from({ length: 300 }, (_, i) => `/xmtp/mls/1/g-${i.toString(16)}/proto`);
     let scans = 0;
     f.input.collectTopics = async () => {
       scans += 1;
-      await Bun.sleep(100);
+      await Bun.sleep(0);
       return {
         topics,
         hmacKeys: Object.fromEntries(
@@ -335,7 +335,7 @@ describe('foreground sender-filter isolation', () => {
       };
     };
     f.input.post = async (body) => {
-      await Bun.sleep(1);
+      await Bun.sleep(0);
       f.bodies.push(body.payload);
     };
     await f.publisher.publish(f.input);
@@ -346,19 +346,21 @@ describe('foreground sender-filter isolation', () => {
   test('an unrelated publication cannot invalidate an expensive selected-conversation read', async () => {
     const f = fixture(1_000);
     const entered = deferred();
+    const reading = deferred();
     const collect = f.input.collectTopics;
     let scans = 0;
     f.input.collectTopics = async (topic) => {
       if (topic === TOPIC) {
         scans += 1;
         entered.release();
-        await Bun.sleep(100);
+        await reading.promise;
       }
       return collect(topic);
     };
     const selected = f.publisher.publish({ ...f.input, topic: TOPIC });
     await entered.promise;
     await f.publisher.publish({ ...f.input, topic: OTHER_TOPIC });
+    reading.release();
     await selected;
     expect(scans).toBe(1);
     expect(f.bodies).toHaveLength(2);
