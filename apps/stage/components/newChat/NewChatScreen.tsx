@@ -28,7 +28,7 @@ import {
   NO_NEW_CHAT_METADATA,
   type NewChatMetadata as Metadata,
 } from './newChatMetadata.model';
-import { homeRows } from '../../lib/messaging/homeRows';
+import { useHomeRows } from '../../lib/messaging/homeRows';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
   NO_PICKS,
@@ -50,11 +50,9 @@ import { capabilities } from '../../lib/capabilities';
 import { setDraftValue } from '../../lib/drafts';
 import { useClearedChats } from '../../lib/sync/clearedChats';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
-import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { usePalette } from '../../lib/theme';
 import { useContentViewportHeight, useWebTabRail } from '../layout/webLayout';
-import { subscribeCachedRows } from '../../lib/channelsCache';
 import { warmSendPath } from '../../lib/pushRegister';
 import { useActiveAccountRecord, useSelfAddress } from '../../lib/messaging/account';
 import { mentionLabelOf } from '../../lib/convIdentity';
@@ -77,7 +75,7 @@ function clearNewChatDraft(draftKey: string | null): void {
 }
 
 function useCandidates(): { candidates: string[]; remembered: string[] } {
-  const rows = useStoreValue(subscribeCachedRows, homeRows);
+  const rows = useHomeRows();
   const cleared = useClearedChats();
   const self = useSelfAddress();
   const history = useMemberHistory();

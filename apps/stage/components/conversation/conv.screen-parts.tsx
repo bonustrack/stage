@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useRouter } from 'expo-router';
-import * as Clipboard from 'expo-clipboard';
 import { convTitle } from '../../lib/convIdentity';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -275,7 +274,7 @@ function ConversationMessageMenu({
         setMenuFor(null);
       }}
       onCopy={() => {
-        if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text).catch(reported('message.copy'));
+        if (menuFor?.text) void Promise.resolve(capabilities.copyToClipboard(menuFor.text)).catch(reported('message.copy'));
         setMenuFor(null);
       }}
       onSelect={() => {

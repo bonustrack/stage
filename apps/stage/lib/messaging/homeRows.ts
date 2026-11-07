@@ -3,23 +3,19 @@ import type { CachedRow } from '../cachedRows.model';
 import { isRowHidden } from '../sync/hiddenChannels';
 import { useStoreValue } from '../storeCore';
 
-export function homeRows(): CachedRow[] | null {
-  return getCachedRows();
-}
-
 export function useHomeRows(): CachedRow[] | null {
-  return useStoreValue(subscribeCachedRows, homeRows);
+  return useStoreValue(subscribeCachedRows, getCachedRows);
 }
 
 export function homeRowOf(convId: string): CachedRow | undefined {
-  return homeRows()?.find((row) => row.convId === convId);
+  return getCachedRows()?.find((row) => row.convId === convId);
 }
 
 export function hasHomeRows(): boolean {
-  return (homeRows()?.length ?? 0) > 0;
+  return (getCachedRows()?.length ?? 0) > 0;
 }
 
 export function updateHomeRows(fn: (prev: CachedRow[] | null) => CachedRow[] | null): void {
-  const next = fn(homeRows());
+  const next = fn(getCachedRows());
   setCachedRows(next?.filter((row) => !isRowHidden(row)) ?? null);
 }

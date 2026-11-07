@@ -16,6 +16,7 @@ import { channelFieldOf, type AppDataGroup, type ChannelField } from '@stage-lab
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { getCachedRows, setCachedRows } from './channelsCache';
+import { homeRowOf } from './messaging/homeRows';
 import type { CachedRow } from './cachedRows.model';
 import { sdk } from './xmtp.sdk';
 import { convOfLine } from './xmtp.find';
@@ -45,7 +46,8 @@ const latestRefresh = new Map<string, number>();
 let refreshSeq = 0;
 
 function hasGroupRow(convId: string): boolean {
-  return getCachedRows()?.some((r) => r.convId === convId && r.peerAddress == null) ?? false;
+  const row = homeRowOf(convId);
+  return row !== undefined && row.peerAddress == null;
 }
 
 async function loadGroupRow(convId: string, seq: number): Promise<void> {
@@ -173,7 +175,7 @@ function startLabelWrite(convId: string | null): LabelWrites | null {
   if (convId === null) return null;
   let writes = labelWrites.get(convId);
   if (!writes) {
-    const row = getCachedRows()?.find((r) => r.convId === convId);
+    const row = homeRowOf(convId);
     if (!row) return null;
     writes = { base: stringList(row.labels), pending: 0, failed: false };
     labelWrites.set(convId, writes);

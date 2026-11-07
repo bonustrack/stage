@@ -2,6 +2,7 @@ import { resolveInboxEthCached, primeInboxEthCache } from '@stage-labs/client/xm
 import { inboxEthCache } from './xmtp.state.core';
 import { sdk } from './xmtp.sdk';
 import { ignored, report, recover } from './errorPolicy';
+import { memoized } from './storeCore';
 
 type InboxEthMap = Record<string, string>;
 type IdentityClient = Awaited<ReturnType<typeof sdk.client>>;
@@ -26,14 +27,7 @@ function resolve(client: IdentityClient, ids: string[]): Promise<InboxEthMap> {
 const memberIdsByConv = new WeakMap<IdentityConv, Promise<string[]>>();
 
 function memberIdsOf(conv: IdentityConv): Promise<string[]> {
-  const known = memberIdsByConv.get(conv);
-  if (known) return known;
-  const ids = sdk.memberInboxIds(conv);
-  memberIdsByConv.set(conv, ids);
-  ids.catch(() => {
-    memberIdsByConv.delete(conv);
-  });
-  return ids;
+  return memoized(memberIdsByConv, conv, () => sdk.memberInboxIds(conv));
 }
 
 export async function primeConversationMembers(client: IdentityClient, convs: IdentityConv[]): Promise<void> {

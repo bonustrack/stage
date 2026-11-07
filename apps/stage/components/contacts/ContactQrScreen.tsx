@@ -13,6 +13,7 @@ import { QrScanner } from '../qr/QrScanner';
 import { getSelectedAccount } from '../../lib/accounts';
 import { getAccountSelection, useAccountSelection } from '../../lib/accountSelection';
 import { capabilities } from '../../lib/capabilities';
+import { accountQueryKeyAt } from '../../lib/queryClient';
 import { profileLinkOf } from '../../lib/links';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { contactQrValue, contactScanResult } from './ContactQr.model';
@@ -169,7 +170,10 @@ export function ContactQrScreen(): React.ReactElement {
     data: address,
     isPending,
     refetch,
-  } = useQuery({ queryKey: ['contactQr', selection], queryFn: async () => (await getSelectedAccount())?.address ?? null });
+  } = useQuery({
+    queryKey: accountQueryKeyAt('selection', selection, 'contactQr'),
+    queryFn: async () => (await getSelectedAccount())?.address ?? null,
+  });
   const valid = contactQrValue(address) !== null;
   return (
     <Column surface="surface" weight={1}>

@@ -1,6 +1,7 @@
 import type { Hex } from 'viem';
 import { getViemAccount } from './zerodev/keyring';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { memoized } from './storeCore';
 
 interface SigningKey {
   kind: 'EOA' | 'SCW';
@@ -35,13 +36,7 @@ async function signingIdentityForRecord(rec: AccountRecord): Promise<SigningIden
 
 export async function lazySigningKeyForRecord(rec: AccountRecord): Promise<SigningKey> {
   const identity = await signingIdentityForRecord(rec);
-  let pending: Promise<SigningKey> | null = null;
-  const resolveKey = (): Promise<SigningKey> => {
-    pending ??= signingKeyForRecord(rec);
-    pending.catch(() => {
-      pending = null;
-    });
-    return pending;
-  };
+  const keys = new Map<string, Promise<SigningKey>>();
+  const resolveKey = (): Promise<SigningKey> => memoized(keys, rec.id, () => signingKeyForRecord(rec));
   return { ...identity, signMessage: async (message) => (await resolveKey()).signMessage(message) };
 }

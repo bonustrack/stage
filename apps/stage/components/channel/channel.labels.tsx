@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { includesKey, isStringList, uniqueKeys } from '@stage-labs/client/collections';
+import { includesKey, uniqueKeys } from '@stage-labs/client/collections';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
@@ -15,7 +15,8 @@ import { usePalette } from '../../lib/theme';
 import { addGroupLabel, removeGroupLabel, suggestLabels } from '../../lib/xmtp.groups';
 import { CHANNEL_PRIORITIES, MAX_LABEL_LEN, MAX_LABELS } from '@stage-labs/client/xmtp/labels';
 import { CHANNEL_FIELD_NOUNS, channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
-import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { subscribeCachedRows } from '../../lib/channelsCache';
+import { homeRowOf } from '../../lib/messaging/homeRows';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useStoreValue } from '../../lib/storeCore';
 import { useChannelEditRights } from '../../lib/messaging/queries';
@@ -33,8 +34,7 @@ const NO_LABELS: string[] = [];
 
 export function useLiveChannelLabels(convId: string | undefined): string[] {
   const read = useCallback((): string => {
-    const labels = getCachedRows()?.find((row) => row.convId === convId)?.labels;
-    return isStringList(labels) ? labels.join('\n') : '';
+    return (convId === undefined ? undefined : homeRowOf(convId))?.labels.join('\n') ?? '';
   }, [convId]);
   const key = useStoreValue(subscribeCachedRows, read);
   return useMemo(() => (key === '' ? NO_LABELS : key.split('\n')), [key]);
@@ -42,7 +42,7 @@ export function useLiveChannelLabels(convId: string | undefined): string[] {
 
 function useLiveChannelField(convId: string | undefined, field: ChannelField): string | null {
   const read = useCallback(
-    (): string | null => channelFieldOf(field, getCachedRows()?.find((row) => row.convId === convId)?.[field]),
+    (): string | null => channelFieldOf(field, convId === undefined ? undefined : homeRowOf(convId)?.[field]),
     [convId, field],
   );
   return useStoreValue(subscribeCachedRows, read);

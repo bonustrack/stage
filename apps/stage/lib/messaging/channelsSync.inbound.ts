@@ -3,14 +3,13 @@ import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { arrivalEffect, countsAsUnread, isRowCandidate, revivesRow } from '@stage-labs/client/xmtp/visibility';
-import { setCachedRows } from '../channelsCache';
+import { getCachedRows, setCachedRows } from '../channelsCache';
 import { recover } from '../errorPolicy';
 import { getPeerName } from '../peerProfiles';
 import { presentInboundNotification } from '../pushNotify';
 import { isChannelHidden } from '../sync/hiddenChannels';
 import { getConvConsentState } from '../xmtp.conv';
 import { isActiveConv } from '../xmtp.state.core';
-import { homeRows } from './homeRows';
 
 function makeSeenOnce(limit: number): (id: string) => boolean {
   const seen = new Set<string>();
@@ -93,7 +92,7 @@ function applyToRows(
   lastPreview: string,
 ): { needsRefresh: boolean; notify: NotifyCtx | null } {
   const unchanged = { needsRefresh: false, notify: null };
-  const prev = homeRows();
+  const prev = getCachedRows();
   if (!prev) return unchanged;
   const target = prev.find((r) => r.convId === msgConvId);
   const dm = target?.peerAddress != null;

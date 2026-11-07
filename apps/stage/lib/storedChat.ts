@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { sdk } from './xmtp.sdk';
 import { getCachedRows } from './channelsCache';
 import { listedConvRow } from './messaging/convRow.model';
-import { useAccountEpoch } from './accountEpoch';
+import { accountQueryKeyAt, useAccountGeneration } from './queryClient';
 import { usePeerProfiles } from './peerProfiles';
 
 const CHAT_STALE_MS = 5 * 60_000;
@@ -25,9 +25,9 @@ async function storedChatOf(convId: string): Promise<StoredChat | null> {
 }
 
 export function useStoredChat(convId: string, recheckMs?: number): StoredChat | null {
-  const epoch = useAccountEpoch();
+  const epoch = useAccountGeneration('client');
   const { data } = useQuery({
-    queryKey: ['storageChat', epoch, convId],
+    queryKey: accountQueryKeyAt('client', epoch, 'storageChat', convId),
     queryFn: () => storedChatOf(convId),
     staleTime: CHAT_STALE_MS,
     retry: false,

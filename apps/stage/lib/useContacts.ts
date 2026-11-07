@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convMembers, primeConversationMembers } from './xmtp.identity';
 import { sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feed/firstPages';
-import { getCachedRows, subscribeCachedRows } from './channelsCache';
+import { getCachedRows } from './channelsCache';
+import { useHomeRows } from './messaging/homeRows';
 import type { CachedRow } from './cachedRows.model';
 import { knownSelfAddress, useKnownActiveAccountId } from './accountSelection';
 import { accountQueryKeyAt, useAccountGeneration } from './queryClient';
@@ -62,8 +63,7 @@ export function useContactList(enabled: boolean): Contact[] {
 }
 
 export function useContacts(exclude: string[], query: string): Contact[] {
-  const [rows, setRows] = useState<CachedRow[] | null>(() => getCachedRows());
-  useEffect(() => subscribeCachedRows(setRows), []);
+  const rows = useHomeRows();
 
   const peers = useMemo(() => peerAddressesOf(rows), [rows]);
   const version = usePeerProfiles(peers);

@@ -19,14 +19,14 @@ import {
   groupAccessOf,
   isFreshOwnGroup,
 } from '../xmtp.conv';
-import { hydrateCachedRows } from '../channelsCache';
+import { getCachedRows, hydrateCachedRows } from '../channelsCache';
 import { summarizeConversation } from './conversation';
 import { afterFirstPages } from '../feed/firstPages';
 import { hydratePeerProfiles } from '../peerProfileCache';
 import { perfLog, perfTime } from '../perf';
 import { dmIdsByPeer } from '@stage-labs/client/xmtp/dmRoutes';
 import { uniqueBy } from '@stage-labs/client/collections';
-import { hasHomeRows, homeRows, updateHomeRows } from './homeRows';
+import { hasHomeRows, updateHomeRows } from './homeRows';
 import type { CachedRow as Row } from '../cachedRows.model';
 import { mergePaintedRows, visibleRowsDiff } from './channelsSync.model';
 import { schedulePushTopicRefresh } from '../pushRegister';
@@ -41,7 +41,7 @@ const INIT_TIMEOUT_MS = 30_000;
 type Conv = Awaited<ReturnType<typeof listVisibleConversations>>[number];
 
 async function summarize(conv: Conv, selfInboxId: string, alreadySynced = false): Promise<Row> {
-  return { ...(await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(homeRows() ?? []))) };
+  return { ...(await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(getCachedRows() ?? []))) };
 }
 
 const INIT_TIMEOUT_MESSAGE = 'XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.';
@@ -81,9 +81,9 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
   let lastRefreshAt = 0;
   const THROTTLE_MS = 30_000;
   const paintFrom = async (convs: Conv[]): Promise<RepaintResult> => {
-    const beforeIds = (homeRows() ?? []).map((r) => r.convId);
+    const beforeIds = (getCachedRows() ?? []).map((r) => r.convId);
     await primeConversationMembers(client, convs);
-    const previous = new Map((homeRows() ?? []).map((r) => [r.convId, r]));
+    const previous = new Map((getCachedRows() ?? []).map((r) => [r.convId, r]));
     let failed = false;
     const summarized = (
       await Promise.all(
@@ -130,7 +130,7 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
   };
   const reconcile = async (): Promise<void> => {
     try {
-      const rows = homeRows();
+      const rows = getCachedRows();
       if (rows === null) return;
       const visible = await listVisibleConversations();
       const { added, gone } = visibleRowsDiff(
@@ -293,7 +293,7 @@ function startChannelsSync(): () => void {
   currentRun = run;
   armInitTimer(run);
   const removeHidden = (): void => {
-    if (homeRows() !== null) updateHomeRows((rows) => rows);
+    if (getCachedRows() !== null) updateHomeRows((rows) => rows);
   };
   const stopVisibility = subscribeHiddenChannelEdits(() => {
     removeHidden();

@@ -1,5 +1,6 @@
 import { convMembers, type ConvMembers } from '../xmtp.identity';
-import { getCachedRows, getLastReadNs, getMarkedUnread } from '../channelsCache';
+import { getLastReadNs, getMarkedUnread } from '../channelsCache';
+import { homeRowOf } from './homeRows';
 import { sdk } from '../xmtp.sdk';
 import { convOfLine } from '../xmtp.find';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -117,13 +118,7 @@ async function resolveMarkedUnread(convId: string, inputs: Parameters<typeof ini
 }
 
 function createdTsOf(conv: ConvHandle, convId: string): Promise<number | null> {
-  return rowCreatedTs(
-    conv,
-    convId,
-    getCachedRows()?.find((row) => row.convId === convId)?.createdTs,
-    (id) => convOfLine(lineOfConv(id)),
-    sdk.createdAtNs,
-  );
+  return rowCreatedTs(conv, convId, homeRowOf(convId)?.createdTs, (id) => convOfLine(lineOfConv(id)), sdk.createdAtNs);
 }
 
 const NO_KNOWN_DMS: ReadonlyMap<string, string> = new Map();

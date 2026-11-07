@@ -47,7 +47,13 @@ export function useStoreValue<T>(subscribe: (cb: () => void) => () => void, get:
   return useSyncExternalStore(subscribeAndPrime, get, get);
 }
 
-export function memoized<T>(cache: Map<string, Promise<T>>, key: string, make: () => Promise<T>): Promise<T> {
+interface PromiseCache<K, T> {
+  get(key: K): Promise<T> | undefined;
+  set(key: K, value: Promise<T>): unknown;
+  delete(key: K): boolean;
+}
+
+export function memoized<K, T>(cache: PromiseCache<K, T>, key: K, make: () => Promise<T>): Promise<T> {
   const known = cache.get(key);
   if (known !== undefined) return known;
   const pending = make();
