@@ -1,6 +1,7 @@
 import { getPeerHandle } from './peerProfiles';
 import { conversationPathFor, conversationSlugFor, profileSlugFor } from '@stage-labs/client/routing/handles';
 import { channelPath } from '@stage-labs/client/routing/routes';
+import { shareUrlFor } from '@stage-labs/client/routing/stageLinks';
 
 interface ChannelLink {
   pathname: '/channel/[convId]';
@@ -57,6 +58,10 @@ export function conversationSharePath(
   handle: string | null | undefined = getPeerHandle(peerAddress),
 ): string {
   return peerAddress ? conversationPathFor(peerAddress, handle) : channelPath(convId);
+}
+
+export function messageShareUrlOf(convId: string, peerAddress: string | null, messageId: string): string {
+  return `${shareUrlFor(conversationSharePath(convId, peerAddress))}?m=${messageId}`;
 }
 
 export function isActiveConversationPath(

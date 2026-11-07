@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -24,11 +23,10 @@ import { gatedAsChannel } from './convKind.model';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { ComposerDock } from './FooterDock';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { channelProfileLinkOf, conversationSharePath, profileLinkOf } from '../../lib/links';
+import { channelProfileLinkOf, messageShareUrlOf, profileLinkOf } from '../../lib/links';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
 import { EditChannelModal } from '../channel/EditChannelModal';
 import { useChannelEditRights } from '../../lib/messaging/queries';
-import { shareUrlFor } from '@stage-labs/client/routing/stageLinks';
 import { HoverIconButton } from '../hover';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
@@ -287,8 +285,7 @@ function ConversationMessageMenu({
         setMenuFor(null);
       })}
       onShareLink={() => {
-        const path = conversationSharePath(convId, !isGroup ? peerAddr : null);
-        if (menuFor) void Share.share({ message: `${shareUrlFor(path)}?m=${menuFor.id}` });
+        if (menuFor) capabilities.shareLink(messageShareUrlOf(convId, !isGroup ? peerAddr : null, menuFor.id));
         setMenuFor(null);
       }}
       onDelete={() => {
