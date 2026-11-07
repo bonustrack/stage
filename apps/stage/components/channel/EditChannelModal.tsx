@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { AvatarImage } from '../Avatar';
-import { channelAvatarUrl } from '../convIdentity';
+import { channelAvatarUrl } from '../../lib/convIdentity';
 import { errorLine } from '@stage-labs/client/errors';
 import type { GroupEditRights, GroupMetaPatch } from '@stage-labs/client/xmtp/groups';
 import { AppModal } from '../AppModal';

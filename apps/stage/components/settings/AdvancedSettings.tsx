@@ -4,7 +4,7 @@ import { removeAccountFromDevice, resetXmtpDatabase, useXmtpIdentity } from '../
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { capabilities } from '../../lib/capabilities';
-import { accountName } from '../convIdentity';
+import { accountName } from '../../lib/convIdentity';
 import { report, reported } from '../../lib/errorPolicy';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';

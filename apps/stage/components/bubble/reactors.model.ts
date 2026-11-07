@@ -7,11 +7,10 @@ export const SELF_NAME = 'You';
 
 export type ReactorNamer = (uri: string) => string;
 
-export function reactorNamer(addressOf: (uri: string) => string | null, peerName: (address: string) => string | undefined): ReactorNamer {
+export function reactorNamer(addressOf: (uri: string) => string | null, label: (address: string) => string): ReactorNamer {
   return (uri) => {
     const address = addressOf(uri);
-    if (!address) return shortAddress(inboxIdOfUri(uri) || uri);
-    return peerName(address) ?? shortAddress(address);
+    return address ? label(address) : shortAddress(inboxIdOfUri(uri) || uri);
   };
 }
 

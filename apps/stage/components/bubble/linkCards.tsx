@@ -9,7 +9,7 @@ import { usePalette, DANGER, SUCCESS } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT, schemePalette } from '@stage-labs/kit/tokens';
 import { bubbleLinkProps } from '../links/linkProps';
 import { openInBubbleLink } from '../../lib/capabilities';
-import { channelAvatar, channelTitle, peerTitle, resolvedPeerAddress, type ConvAvatar, type ConvTitle } from '../convIdentity';
+import { channelAvatar, channelTitle, peerTitle, resolvedPeerAddress, type ConvAvatar, type ConvTitle } from '../../lib/convIdentity';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';

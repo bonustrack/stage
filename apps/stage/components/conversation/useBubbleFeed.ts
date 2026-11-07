@@ -7,7 +7,7 @@ import type { SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 import type { FeedActions, MenuAnchor, VoteAction } from '../bubble/model';
 import { reactorNamer, reactorNamesByMessage } from '../bubble/reactors.model';
-import { getPeerName } from '../../lib/peerProfiles';
+import { peerLabel } from '../../lib/peerProfiles';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import { profileLinkOf } from '../../lib/links';
 import { previewOf } from './feed-helpers';
@@ -117,7 +117,7 @@ function useReactorNames(
   profilesVersion: number,
 ): Map<string, Map<string, string[]>> {
   const named = useMemo(
-    () => reactorNamesByMessage(reactions, myUri, reactorNamer(addressOf, getPeerName)),
+    () => reactorNamesByMessage(reactions, myUri, reactorNamer(addressOf, peerLabel)),
     [reactions, myUri, addressOf, profilesVersion],
   );
   return useReconciledMap(named);

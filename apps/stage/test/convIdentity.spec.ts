@@ -3,13 +3,14 @@ import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { seedPeerProfiles } from '../lib/peerProfiles';
 import {
   accountName,
+  chatLabelOf,
   channelAvatar,
   channelAvatarUrl,
   channelTitle,
   convTitle,
   rowAvatarAddress,
   rowTitle,
-} from '../components/convIdentity';
+} from '../lib/convIdentity';
 
 const NAMED = '0x1111111111111111111111111111111111111111';
 const UNKNOWN = '0x2222222222222222222222222222222222222222';
@@ -18,6 +19,15 @@ const CONV = 'a'.repeat(32);
 seedPeerProfiles({ [NAMED]: 'alice.base.eth' });
 
 describe('conversation titles', () => {
+  test('names the chat a file or a frame was sent in', () => {
+    const unnamed = 'Unnamed channel';
+    expect(chatLabelOf({ peerAddress: NAMED, groupName: '' }, unnamed)).toBe('alice.base.eth');
+    expect(chatLabelOf({ peerAddress: UNKNOWN, groupName: '' }, unnamed)).toBe('0x2222…2222');
+    expect(chatLabelOf({ peerAddress: null, groupName: ' Design ' }, unnamed)).toBe('Design');
+    expect(chatLabelOf({ peerAddress: null, groupName: '' }, unnamed)).toBe(unnamed);
+    expect(chatLabelOf(null, unnamed)).toBe('');
+  });
+
   test('a channel without a name shows the caller placeholder, dimmed', () => {
     expect(channelTitle('  Design  ', 'Untitled channel')).toEqual({ text: 'Design', placeholder: false });
     expect(channelTitle(' ', 'Untitled channel')).toEqual({ text: 'Untitled channel', placeholder: true });

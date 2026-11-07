@@ -3,7 +3,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { mentionLabel } from '@stage-labs/client/xmtp/messageBody';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
-import { isPeerResolved, peerLabel } from '../lib/peerProfiles';
+import { isPeerResolved, peerLabel } from './peerProfiles';
 
 export interface ConvTitle {
   text: string;
@@ -17,7 +17,7 @@ export interface ConvAvatar {
 
 const LOADING_TITLE: ConvTitle = { text: '', placeholder: false };
 
-export function displayNameOf(names: readonly (string | null | undefined)[], fallback: string): string {
+function displayNameOf(names: readonly (string | null | undefined)[], fallback: string): string {
   for (const name of names) {
     const shown = name?.trim();
     if (shown) return shown;
@@ -52,13 +52,9 @@ export function rowTitle(row: { peerAddress?: string | null; title: string; grou
   return { text: row.title, placeholder: isUnnamedChannelRow(row) };
 }
 
-export function chatLabelOf(
-  chat: { peerAddress: string | null; groupName: string } | null | undefined,
-  label: (address: string) => string,
-  placeholder: string,
-): string {
+export function chatLabelOf(chat: { peerAddress: string | null; groupName: string } | null | undefined, placeholder: string): string {
   if (chat === null || chat === undefined) return '';
-  if (chat.peerAddress !== null) return label(chat.peerAddress);
+  if (chat.peerAddress !== null) return peerLabel(chat.peerAddress);
   return channelTitle(chat.groupName, placeholder).text;
 }
 

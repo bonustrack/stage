@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
 import { reactorNamer, reactorNames, reactorNamesByMessage, reactorsLabel, type ReactorNamer } from '../components/bubble/reactors.model';
 import { ownsReaction, reactionPills } from '../components/bubble/reactions.model';
@@ -90,7 +91,7 @@ const addresses: Record<string, string> = {
 };
 const tooltipNameOf = reactorNamer(
   (uri) => addresses[uri] ?? null,
-  (address) => (address === addresses[ALICE] ? 'Alice' : undefined),
+  (address) => (address === addresses[ALICE] ? 'Alice' : shortAddress(address)),
 );
 
 describe('reaction tooltip', () => {

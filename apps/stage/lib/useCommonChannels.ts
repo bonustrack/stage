@@ -3,7 +3,7 @@ import { getCachedRows, hydrateCachedRows } from './channelsCache';
 import { convOfLine } from './xmtp.find';
 import { convMembers } from './xmtp.identity';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { channelStampSeed } from '@stage-labs/kit/avatar';
+import { channelAvatar } from './convIdentity';
 import { getAccountEpoch } from './accountEpoch';
 import {
   resolveCommonChannels,
@@ -27,7 +27,7 @@ async function resolveChannels(peerAddress: string): Promise<CommonChannel[]> {
   await hydrateCachedRows().catch(reported('commonChannels.hydrate'));
   const rows: CommonChannelRow[] = getCachedRows() ?? [];
   const memberSetOf = memberSetCache.resolver(getAccountEpoch(), fetchMembers);
-  return resolveCommonChannels(peerAddress, rows, memberSetOf, (row) => channelStampSeed(row.convId));
+  return resolveCommonChannels(peerAddress, rows, memberSetOf, (row) => channelAvatar(row.convId, row.avatarUri).avatarAddress);
 }
 
 export function useCommonChannels(peerAddress: string | null): { channels: CommonChannel[]; loading: boolean } {

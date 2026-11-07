@@ -2,7 +2,7 @@ import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { ConvAvatar } from '../ConvAvatar';
-import { convTitle } from '../convIdentity';
+import { convTitle } from '../../lib/convIdentity';
 import { TitleText } from '../TitleText';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useRouter } from 'expo-router';

@@ -1,5 +1,5 @@
 import { Text, type TextProps } from '@stage-labs/kit/react-native/text';
-import type { ConvTitle } from './convIdentity';
+import type { ConvTitle } from '../lib/convIdentity';
 
 export function titleTone(placeholder: boolean | undefined, color?: TextProps['color']): Pick<TextProps, 'color'> {
   return placeholder === true ? { color: 'secondary' } : { color };

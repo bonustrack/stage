@@ -1,6 +1,6 @@
 import type { AvatarSize } from '@stage-labs/kit/avatar';
 import { Avatar } from './Avatar';
-import { channelAvatar } from './convIdentity';
+import { channelAvatar } from '../lib/convIdentity';
 
 export interface ConvAvatarProps {
   peerAddr: string | null;

@@ -5,7 +5,7 @@ import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from '../Avatar';
-import { accountName } from '../convIdentity';
+import { accountName } from '../../lib/convIdentity';
 import { MenuSheet } from './MenuSheet';
 import type { SimultaneousRefs } from '../layout/simultaneousRefs';
 import { menuPointBelow } from '../AnchoredMenu';

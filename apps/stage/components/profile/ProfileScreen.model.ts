@@ -1,8 +1,6 @@
 import type { MenuItem } from '../appIcons';
-import { displayNameOf } from '../convIdentity';
-
-export function profileDisplayName(address: string, resolvedName: string | null | undefined, shortAddress: string): string {
-  return address ? displayNameOf([resolvedName], shortAddress) : 'Loading…';
+export function profileDisplayName(address: string, label: (address: string) => string): string {
+  return address ? label(address) : 'Loading…';
 }
 
 export const COPY_ADDRESS_ITEM: MenuItem<'copy-address'> = { id: 'copy-address', label: 'Copy address', icon: 'IconSquareBehindSquare1' };

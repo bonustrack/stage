@@ -7,7 +7,7 @@ import { rowMessagesOf, type ConvHandle } from '../xmtp.messages';
 import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/channelMeta';
 import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { isRowCandidate, isSystemMessage, onlyHiddenMessages, revivesRow } from '@stage-labs/client/xmtp/visibility';
-import { channelStampSeed } from '@stage-labs/kit/avatar';
+import { channelAvatar } from '../convIdentity';
 import {
   channelRowTitle,
   countUnreadEntries,
@@ -85,9 +85,7 @@ function rowAvatar(
   peerAddress: string | null,
   groupImageUrl: string,
 ): { avatarUri: string | null; avatarAddress: string | null } {
-  const avatarUri = peerAddress ? null : groupImageUrl.trim() || null;
-  const avatarAddress = peerAddress ?? (avatarUri ? null : channelStampSeed(conv.id));
-  return { avatarUri, avatarAddress };
+  return peerAddress ? { avatarUri: null, avatarAddress: peerAddress } : channelAvatar(conv.id, groupImageUrl);
 }
 
 function rowMetaOf(conv: ConvHandle, peerAddress: string | null, data: GroupRowData): GroupRowMeta {

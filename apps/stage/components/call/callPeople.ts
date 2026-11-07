@@ -1,6 +1,6 @@
 import { cachedSelfEthAddress } from '../../lib/xmtp.client';
 import { homeRowOf } from '../../lib/messaging/homeRows';
-import { rowTitle, type ConvTitle } from '../convIdentity';
+import { rowTitle, type ConvTitle } from '../../lib/convIdentity';
 import { peerLabel } from '../../lib/peerProfiles';
 
 interface CallPerson {

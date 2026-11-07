@@ -20,7 +20,7 @@ import type { MenuAnchor } from '../bubble/model';
 import { useHover } from '../hover';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { TitleText } from '../TitleText';
-import type { ConvTitle } from '../convIdentity';
+import type { ConvTitle } from '../../lib/convIdentity';
 import { MODAL, Overlay } from '@stage-labs/kit/react-native/modal';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 

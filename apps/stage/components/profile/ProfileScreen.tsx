@@ -5,7 +5,7 @@ import { dmLinkOf } from '../../lib/links';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../../lib/theme';
-import { usePeerProfiles, getPeerName, getPeerHandle, getPeerDescription } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerHandle, getPeerDescription, peerLabel } from '../../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from '../Avatar';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
@@ -139,7 +139,7 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
     },
   };
 
-  const displayName = profileDisplayName(addr, getPeerName(addr), shortAddress(addr));
+  const displayName = profileDisplayName(addr, peerLabel);
 
   return (
     <Column weight={1} surface="surface">

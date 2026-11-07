@@ -22,7 +22,7 @@ import { taskStateOf, unescapeBody, type TaskState } from './markdown.model';
 import { ResetBoundary } from '../chrome/ResetBoundary';
 import { useRouter } from 'expo-router';
 import { usePeerProfiles } from '../../lib/peerProfiles';
-import { mentionLabelOf } from '../convIdentity';
+import { mentionLabelOf } from '../../lib/convIdentity';
 import { profileLinkOf } from '../../lib/links';
 import { stageChannelIdOf } from '@stage-labs/client/xmtp/line';
 import { ChannelLink, useChannelLinkNames } from './ChannelLink';

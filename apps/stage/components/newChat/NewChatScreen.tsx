@@ -57,7 +57,7 @@ import { useContentViewportHeight, useWebTabRail } from '../layout/webLayout';
 import { subscribeCachedRows } from '../../lib/channelsCache';
 import { warmSendPath } from '../../lib/pushRegister';
 import { useActiveAccountRecord, useSelfAddress } from '../../lib/messaging/account';
-import { mentionLabelOf } from '../convIdentity';
+import { mentionLabelOf } from '../../lib/convIdentity';
 import { Column, PAGE_GUTTER, Row } from '../layout';
 
 interface Recipients {

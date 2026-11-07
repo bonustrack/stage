@@ -10,7 +10,7 @@ import { isPinned } from '../../lib/sync/pins';
 import type { Palette } from '../../lib/theme';
 import { channelTimestamp } from '../../lib/format';
 import { peerLabel } from '../../lib/peerProfiles';
-import { rowAvatarAddress } from '../convIdentity';
+import { rowAvatarAddress } from '../../lib/convIdentity';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 export function CommonChannels({ peerAddress, c }: { peerAddress: string; c: Palette }): React.ReactElement | null {

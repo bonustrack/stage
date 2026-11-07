@@ -5,7 +5,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU, DropdownMenuItem, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
-import { accountName } from '../convIdentity';
+import { accountName } from '../../lib/convIdentity';
 import { AnchoredMenu } from '../AnchoredMenu';
 import { MenuRow } from '../MenuRows';
 import type { MenuPoint } from '../AnchoredMenu.model';

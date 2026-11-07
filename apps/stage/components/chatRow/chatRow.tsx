@@ -6,7 +6,7 @@ import { peerLabel } from '../../lib/peerProfiles';
 import { prefetchFeed } from '../../lib/feed/load';
 import { channelTimestamp } from '../../lib/format';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { rowAvatarAddress, rowTitle } from '../convIdentity';
+import { rowAvatarAddress, rowTitle } from '../../lib/convIdentity';
 import { ChannelMenu } from './ChannelMenu';
 import { ChannelRowFields } from './ChannelRowFields';
 import type { ChannelRow } from './ChannelRow';
