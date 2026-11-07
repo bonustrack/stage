@@ -4,7 +4,7 @@ import { Row } from '../layout';
 import { unreadBadgeLabel } from '../../lib/format';
 import { usePalette } from '../../lib/theme';
 
-export const UNREAD_BADGE_SIZE = 18;
+const UNREAD_BADGE_SIZE = 18;
 
 export function UnreadBadgeLabel({ text, style }: { text: string; style?: ViewStyle }): React.ReactElement {
   const { link, bg } = usePalette();

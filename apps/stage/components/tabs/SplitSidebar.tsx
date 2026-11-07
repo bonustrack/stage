@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
 import { usePalette } from '../../lib/theme';
-import { useVisibleUnreadCount } from '../home/unreadCount';
-import { unreadBadgeLabel } from '../../lib/format';
 import { HomeScreen } from '../home/HomeScreen';
 import { WebTabRail } from './WebTabRail';
 import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../layout/webLayout';
@@ -56,11 +54,10 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
   const active = visible && rail && isSplitRoute(pathname);
   const railOnly = visible && rail && isRailOnlyRoute(pathname);
   usePaneScope(paneScopeOf(active, railOnly));
-  const unreadBadge = unreadBadgeLabel(useVisibleUnreadCount());
   if (!active && !railOnly) return null;
   return (
     <>
-      {isTabRoute(pathname) ? null : <WebTabRail pathname={pathname} unreadBadge={unreadBadge} />}
+      {isTabRoute(pathname) ? null : <WebTabRail pathname={pathname} />}
       <SidePane full={railOnly}>
         <HomeScreen pane board={boardHome} />
       </SidePane>

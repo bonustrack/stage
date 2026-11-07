@@ -215,6 +215,10 @@ export function isOnboardingRoute(pathname: string): boolean {
   return pathname === ROUTES.signup || pathname === ROUTES.import;
 }
 
+export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
+  return !wide && pathname === PAGES.chats.href;
+}
+
 export function newChatHref(wide: boolean, board: boolean): typeof PAGES.chats.href | typeof ROUTES.newChat {
   return wide && !board ? PAGES.chats.href : ROUTES.newChat;
 }
