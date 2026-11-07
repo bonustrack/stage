@@ -1,6 +1,6 @@
 import { base64ToBytes } from './text/base64';
 
-export type FileUse = 'send' | 'open' | 'kind' | 'record' | 'save';
+export type FileUse = 'send' | 'open' | 'kind' | 'record' | 'save' | 'mail' | 'strip';
 
 export type MediaKind = 'image' | 'audio' | 'video';
 
@@ -11,11 +11,12 @@ interface FileType {
 }
 
 const FILE_TYPES: readonly FileType[] = [
-  { ext: 'jpg', mime: 'image/jpeg', uses: ['send', 'open', 'kind', 'save'] },
-  { ext: 'jpeg', mime: 'image/jpeg', uses: ['send', 'kind'] },
-  { ext: 'png', mime: 'image/png', uses: ['send', 'open', 'kind', 'save'] },
-  { ext: 'gif', mime: 'image/gif', uses: ['send', 'open', 'kind', 'save'] },
-  { ext: 'webp', mime: 'image/webp', uses: ['send', 'open', 'kind', 'save'] },
+  { ext: 'jpg', mime: 'image/jpeg', uses: ['send', 'open', 'kind', 'save', 'mail', 'strip'] },
+  { ext: 'jpeg', mime: 'image/jpeg', uses: ['send', 'kind', 'strip'] },
+  { ext: 'jpg', mime: 'image/jpg', uses: ['strip'] },
+  { ext: 'png', mime: 'image/png', uses: ['send', 'open', 'kind', 'save', 'mail', 'strip'] },
+  { ext: 'gif', mime: 'image/gif', uses: ['send', 'open', 'kind', 'save', 'mail'] },
+  { ext: 'webp', mime: 'image/webp', uses: ['send', 'open', 'kind', 'save', 'mail', 'strip'] },
   { ext: 'heic', mime: 'image/heic', uses: ['send', 'open', 'kind', 'save'] },
   { ext: 'heif', mime: 'image/heif', uses: ['send', 'save'] },
   { ext: 'avif', mime: 'image/avif', uses: ['send', 'kind', 'save'] },
@@ -33,8 +34,11 @@ const FILE_TYPES: readonly FileType[] = [
   { ext: 'mp4', mime: 'video/mp4', uses: ['send', 'open', 'kind'] },
   { ext: 'mov', mime: 'video/quicktime', uses: ['send', 'open', 'kind'] },
   { ext: 'webm', mime: 'video/webm', uses: ['send', 'kind'] },
-  { ext: 'pdf', mime: 'application/pdf', uses: ['send', 'open'] },
-  { ext: 'txt', mime: 'text/plain', uses: ['open'] },
+  { ext: 'pdf', mime: 'application/pdf', uses: ['send', 'open', 'mail'] },
+  { ext: 'txt', mime: 'text/plain', uses: ['open', 'mail'] },
+  { ext: 'html', mime: 'text/html', uses: ['mail'] },
+  { ext: 'ics', mime: 'text/calendar', uses: ['mail'] },
+  { ext: 'eml', mime: 'message/rfc822', uses: ['mail'] },
   { ext: 'csv', mime: 'text/csv', uses: ['open'] },
   { ext: 'md', mime: 'text/markdown', uses: ['open'] },
   { ext: 'json', mime: 'application/json', uses: ['open'] },

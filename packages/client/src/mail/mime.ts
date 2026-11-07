@@ -1,3 +1,4 @@
+import { extensionForMime } from '../files';
 import { binaryString } from '../text/base64';
 import {
   binaryBytes,
@@ -46,17 +47,6 @@ interface Collected {
 const MAX_DEPTH = 10;
 const MAX_PARTS = 500;
 const BODY_TYPES: Readonly<Record<string, 'text' | 'html'>> = { 'text/plain': 'text', 'text/html': 'html' };
-const EXTENSIONS: Readonly<Record<string, string>> = {
-  'message/rfc822': 'eml',
-  'text/calendar': 'ics',
-  'text/plain': 'txt',
-  'text/html': 'html',
-  'application/pdf': 'pdf',
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/gif': 'gif',
-  'image/webp': 'webp',
-};
 
 function splitPart(source: string): Part {
   if (/^\r?\n/.test(source)) return { headers: new Map(), body: source.replace(/^\r?\n/, '') };
@@ -99,7 +89,7 @@ function contentIdOf(headers: MailHeaders): string | null {
 }
 
 function defaultName(mimeType: string, index: number): string {
-  return `attachment-${index + 1}.${EXTENSIONS[mimeType] ?? 'bin'}`;
+  return `attachment-${index + 1}.${extensionForMime(mimeType, 'mail') ?? 'bin'}`;
 }
 
 function bodyTypeOf(type: HeaderParams, disposition: HeaderParams, filename: string): 'text' | 'html' | null {

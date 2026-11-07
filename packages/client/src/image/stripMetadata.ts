@@ -1,3 +1,5 @@
+import { extensionForMime, fileExtension, mimeForExtension } from '../files';
+
 export interface StripResult {
   bytes: Uint8Array;
   stripped: boolean;
@@ -211,11 +213,7 @@ export function stripMetadataBytes(input: Uint8Array): StripResult {
   return { bytes: input, stripped: false, format };
 }
 
-const STRIPPABLE_MIMES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
-const STRIPPABLE_EXTS = new Set(['jpg', 'jpeg', 'png', 'webp']);
-
 export function isStrippableImage(mimeType: string | undefined, filename: string | undefined): boolean {
-  if (STRIPPABLE_MIMES.has((mimeType ?? '').toLowerCase())) return true;
-  const ext = (filename ?? '').split('.').pop()?.toLowerCase() ?? '';
-  return STRIPPABLE_EXTS.has(ext);
+  if (extensionForMime((mimeType ?? '').toLowerCase(), 'strip') !== undefined) return true;
+  return mimeForExtension(fileExtension(filename ?? ''), 'strip') !== undefined;
 }

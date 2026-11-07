@@ -268,6 +268,8 @@ describe('isStrippableImage', () => {
     expect(isStrippableImage('image/jpeg', undefined)).toBe(true);
     expect(isStrippableImage(undefined, 'photo.PNG')).toBe(true);
     expect(isStrippableImage('image/webp', 'x.webp')).toBe(true);
+    expect(isStrippableImage('IMAGE/JPG', undefined)).toBe(true);
+    expect(isStrippableImage(undefined, 'scan.jpeg')).toBe(true);
     expect(isStrippableImage('video/mp4', 'clip.mp4')).toBe(false);
     expect(isStrippableImage('application/pdf', 'doc.pdf')).toBe(false);
     expect(isStrippableImage('image/heic', 'IMG.heic')).toBe(false);
