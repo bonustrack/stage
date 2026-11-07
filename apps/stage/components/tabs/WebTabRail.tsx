@@ -3,7 +3,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { useRouter, type Href } from 'expo-router';
 import { usePalette } from '../../lib/theme';
-import { TAB_HREF, TAB_ORDER, homeTabIndex, type TabName } from '../SwipeTabs.config';
+import { TAB_HREF, TAB_ORDER, homeTabIndex, type TabName } from '../SwipeTabs.model';
 import { useTopChromeInset, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
 import { AccountAvatarButton } from '../AccountAvatarButton';
 import { RailTooltip } from './RailTooltip';
@@ -45,8 +45,8 @@ const TAB_LABELS: Record<TabName | 'contacts', string> = {
 
 const RAIL_BUTTON = { height: 48, alignItems: 'center', justifyContent: 'center' } as const;
 
-function activeTabIndex(pathname: string, boardHome: boolean): number {
-  return pathname.startsWith('/settings') ? -1 : homeTabIndex(pathname, boardHome);
+function activeTabIndex(pathname: string): number {
+  return pathname.startsWith('/settings') ? -1 : homeTabIndex(pathname);
 }
 
 function TabIcon({ icon, active, badge }: { icon: CentralIcon; active: boolean; badge?: string }): React.ReactElement {
@@ -100,14 +100,11 @@ function TabButtons({
   const openNewChat = useOpenNewChat();
   const boardHome = useBoardHome();
   const home = homeTabPresentation(vertical && boardHome);
-  const activeName = TAB_ORDER[activeTabIndex(pathname, boardHome)];
+  const activeName = TAB_ORDER[activeTabIndex(pathname)];
   return (
     <>
       {TAB_ICONS.map(([name, icon]) => {
-        const active =
-          name === 'contacts'
-            ? isMenuPageOpen(pathname, '/contacts')
-            : !isMenuPageRoute(pathname) && (name === activeName || (name === 'index' && activeName === 'board'));
+        const active = name === 'contacts' ? isMenuPageOpen(pathname, '/contacts') : !isMenuPageRoute(pathname) && name === activeName;
         const label = name === 'index' ? home.label : TAB_LABELS[name];
         const icn = (
           <TabIcon icon={name === 'index' ? appIcon(home.icon) : icon} active={active} badge={name === 'index' ? unreadBadge : undefined} />

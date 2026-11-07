@@ -34,7 +34,7 @@ export function useBoardQuery(): [string, (query: string) => void] {
   return [boardQuery.use(), boardQuery.set];
 }
 
-const homeViewLoaded = (): boolean => prefs.accountId() !== null;
+const homeViewLoaded = (): boolean => prefs.accountId() !== null && prefs.isCurrentAccount();
 
 export const useHomeViewLoaded = (): boolean => useStoreValue(prefs.subscribe, homeViewLoaded, prefs.loadAsync);
 

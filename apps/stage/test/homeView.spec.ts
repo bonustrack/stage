@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { collectSyncReplay, DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/readState';
+import { collectSyncReplay, DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent } from '@stage-labs/client/xmtp/readState';
 import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSettings.model';
 import { homeSortOf } from '../components/home/sort.model';
 
@@ -19,6 +19,8 @@ mock.module('../lib/accounts', () => ({
   getActiveAccountStrict: async () => ({ id: activeId }),
 }));
 const { applyRemoteHomeView, loadHomeView, onHomeViewChanged, setHomeView } = await import('../lib/homeView');
+const { createValueStore } = await import('../lib/persistedStore');
+const { jsonWith } = await import('../lib/storeCore');
 
 const view = (v: HomeViewContent['view'], groupBy: HomeViewContent['groupBy'], at: number): HomeViewContent => ({
   view: v,
@@ -143,6 +145,24 @@ describe('home view store', () => {
     expect(sent.at(-1)).toMatchObject({ view: 'chats', boardSort: { by: 'created', direction: 'asc' } });
     expect(stored('bob')).not.toHaveProperty('boardSort');
     stop();
+  });
+
+  test('a cold store restores both mode choices from durable account storage', async () => {
+    const coldStore = () =>
+      createValueStore({
+        key: 'home.view.',
+        default: DEFAULT_HOME_VIEW,
+        deserialize: jsonWith(homeViewSchema),
+        serialize: JSON.stringify,
+        perAccount: true,
+      });
+    for (const mode of ['board', 'chats'] as const) {
+      setHomeView({ view: mode });
+      await settle();
+      const reloaded = coldStore();
+      expect(reloaded.get().view).toBe('chats');
+      expect((await reloaded.load()).view).toBe(mode);
+    }
   });
 
   test('a remote payload keeps the local view type of each account', async () => {
