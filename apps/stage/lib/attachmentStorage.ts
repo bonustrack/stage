@@ -6,8 +6,7 @@ import { UPLOAD_MAX_BYTES, UPLOAD_REPLY } from '@stage-labs/client/uploads';
 
 const UPLOAD_URL = `${linkProxyBase()}${PROXY_ROUTES.attachments}`;
 const UPLOAD_TIMEOUT_MS = 60_000;
-export const MAX_UPLOAD_BYTES = UPLOAD_MAX_BYTES;
-const MAX_UPLOAD_MB = MAX_UPLOAD_BYTES / 1_000_000;
+const MAX_UPLOAD_MB = UPLOAD_MAX_BYTES / 1_000_000;
 
 const SWARM_GATEWAY = 'https://download.gateway.ethswarm.org/bzz/';
 const SWARM_LINK = /^https:\/\/[^/]+\/bzz\/([0-9a-f]{64}(?:[0-9a-f]{64})?)\/?$/i;
@@ -34,7 +33,7 @@ export function resolveUploadResponse(status: number, body: unknown, filename: s
 }
 
 export function assertUploadSize(bytes: number, filename: string): void {
-  if (bytes > MAX_UPLOAD_BYTES) {
+  if (bytes > UPLOAD_MAX_BYTES) {
     throw new Error(`Couldn't send "${filename}": the file is too large (over ${MAX_UPLOAD_MB} MB). Try a smaller file.`);
   }
 }
