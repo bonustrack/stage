@@ -1,7 +1,7 @@
 import { SUGGESTED_CONTACTS, suggestedContacts } from '../contacts/SuggestedContacts.model';
 import { isStringList } from '@stage-labs/client/collections';
 import { reactorsLabel } from '../bubble/reactors.model';
-import { PAGES, newChatHref, type ROUTES } from '../tabs/pages';
+import { PAGES, newChatHref } from '../tabs/pages';
 import { CHANNEL_NAME_MAX } from '../channel/EditChannelModal.model';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -41,12 +41,7 @@ export function newChatDraftKey(account: { id: string } | null): string | null {
   return account === null ? null : `new-chat:${account.id}`;
 }
 
-interface NewChatNav {
-  href: typeof PAGES.chats.href | typeof ROUTES.newChat;
-  push: boolean;
-}
-
-export function newChatNav(wide: boolean, board: boolean, pathname: string): NewChatNav {
+export function newChatNav(wide: boolean, board: boolean, pathname: string): { href: ReturnType<typeof newChatHref>; push: boolean } {
   return { href: newChatHref(wide, board), push: !wide || (board && pathname === PAGES.board.href) };
 }
 
@@ -101,13 +96,9 @@ export function recipientCandidates(
   requests: ReadonlySet<string> = new Set(),
   pool: readonly string[] = SUGGESTED_CONTACTS,
 ): string[] {
-  const accepted = peers.map((p) => p.peer).filter((peer) => !requests.has(peer));
-  const suggested = suggestedContacts(
-    peers.map((p) => p.peer),
-    self,
-    pool,
-  ).map((address) => address.toLowerCase());
-  return [...accepted, ...suggested];
+  const known = peers.map((p) => p.peer);
+  const suggested = suggestedContacts(known, self, pool).map((address) => address.toLowerCase());
+  return [...known.filter((peer) => !requests.has(peer)), ...suggested];
 }
 
 function lowerSet(list: readonly string[]): Set<string> {

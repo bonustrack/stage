@@ -32,10 +32,6 @@ interface Drag {
   width: number;
 }
 
-function setResizing(on: boolean): void {
-  setChromeClass('resizing', on);
-}
-
 function capturePointer(target: unknown, pointerId: number): void {
   (target as { setPointerCapture?: (id: number) => void } | null)?.setPointerCapture?.(pointerId);
 }
@@ -53,7 +49,7 @@ export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }
 
   useEffect(
     () => () => {
-      setResizing(false);
+      setChromeClass('resizing', false);
     },
     [],
   );
@@ -67,7 +63,7 @@ export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }
     const current = active(event);
     if (current === null) return null;
     drag.current = null;
-    setResizing(false);
+    setChromeClass('resizing', false);
     setDragging(false);
     return current;
   };
@@ -78,7 +74,7 @@ export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }
     event.preventDefault();
     capturePointer(event.currentTarget, pointerId);
     drag.current = { pointerId, x: clientX, y: clientY, width: pane.get() };
-    setResizing(true);
+    setChromeClass('resizing', true);
     setDragging(true);
   };
 

@@ -14,41 +14,23 @@ import {
   addedColumnOrder,
   cardColumnEdit,
   columnCarriers,
+  columnKeys,
   columnNoun,
   deleteColumnConfirm,
   deletedColumnOrder,
   keptColumnOrder,
   movedColumnOrder,
   renamedColumnOrder,
-  type BoardColumn,
+  type Columns,
   type EditableColumnBy,
 } from './BoardScreen.model';
 
-export function addBoardColumn(
-  columns: readonly BoardColumn<unknown>[],
-  saved: readonly string[],
-  name: string,
-  by: EditableColumnBy,
-): void {
-  saveGroupingOrder(
-    by,
-    addedColumnOrder(
-      columns.map((column) => column.key),
-      saved,
-      name,
-      by,
-    ),
-  );
+export function addBoardColumn(columns: Columns, saved: readonly string[], name: string, by: EditableColumnBy): void {
+  saveGroupingOrder(by, addedColumnOrder(columnKeys(columns), saved, name, by));
 }
 
-export function dropColumn(
-  columns: readonly BoardColumn<unknown>[],
-  saved: readonly string[],
-  from: string,
-  target: string,
-  by: GroupKey,
-): void {
-  const shown = columns.map((column) => column.key);
+export function dropColumn(columns: Columns, saved: readonly string[], from: string, target: string, by: GroupKey): void {
+  const shown = columnKeys(columns);
   if (groupingOrderStore(by) === 'categories') {
     moveCategory(from, target, shown);
     return;
@@ -57,14 +39,7 @@ export function dropColumn(
   if (next !== null) setBoardOrder(next);
 }
 
-export function dropCard(
-  columns: readonly BoardColumn<unknown>[],
-  saved: readonly string[],
-  convId: string,
-  from: string,
-  to: string,
-  by: GroupKey,
-): void {
+export function dropCard(columns: Columns, saved: readonly string[], convId: string, from: string, to: string, by: GroupKey): void {
   const edit = cardColumnEdit(columns, from, to, by);
   if (edit === null) return;
   const kept = keptColumnOrder(columns, saved, from);
@@ -94,22 +69,13 @@ function columnOutcome(
 
 export async function renameBoardColumn(
   rows: readonly ChannelListRow[],
-  columns: readonly BoardColumn<unknown>[],
+  columns: Columns,
   saved: readonly string[],
   from: string,
   to: string,
   by: EditableColumnBy,
 ): Promise<void> {
-  saveGroupingOrder(
-    by,
-    renamedColumnOrder(
-      columns.map((c) => c.key),
-      saved,
-      from,
-      to,
-      by,
-    ),
-  );
+  saveGroupingOrder(by, renamedColumnOrder(columnKeys(columns), saved, from, to, by));
   if (by === 'category') renameNewChatProject(from, to);
   const results = await Promise.allSettled(
     columnCarriers(rows, from, by).map((convId) =>
@@ -122,7 +88,7 @@ export async function renameBoardColumn(
 
 export async function deleteBoardColumn(
   rows: readonly ChannelListRow[],
-  columns: readonly BoardColumn<unknown>[],
+  columns: Columns,
   saved: readonly string[],
   label: string,
   by: EditableColumnBy,
@@ -130,15 +96,7 @@ export async function deleteBoardColumn(
   const carriers = columnCarriers(rows, label, by);
   const confirm = deleteColumnConfirm(label, carriers.length, by);
   if (!(await capabilities.confirm({ ...confirm, confirmLabel: 'Delete', destructive: true }))) return;
-  saveGroupingOrder(
-    by,
-    deletedColumnOrder(
-      columns.map((c) => c.key),
-      saved,
-      label,
-      by,
-    ),
-  );
+  saveGroupingOrder(by, deletedColumnOrder(columnKeys(columns), saved, label, by));
   if (by === 'category') renameNewChatProject(label, null);
   const results = await Promise.allSettled(
     carriers.map((convId) =>

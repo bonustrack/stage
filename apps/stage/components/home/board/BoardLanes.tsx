@@ -27,12 +27,11 @@ import {
 import { revealMarked, useArrowKeys } from '../../keys/keys';
 import { ALL_ARROWS } from '../../keys/keys.model';
 import { boardArrowMove } from './boardKeys.model';
-import { AddColumn, ColumnFrame, ColumnMenu, ColumnTitle, HEADER_PADDING, RenameHeading } from './BoardColumnEdit';
+import { AddColumn, ColumnFrame, ColumnMenu, ColumnTitle, HEADER_PADDING, RenameHeading, SHRINK } from './BoardColumnEdit';
 import { ColumnCards, cardDataSet, showInPanel } from './BoardCard';
 import { Column, Row, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR } from '../../layout';
 
 const GROW = { flexGrow: 1, flexShrink: 1 };
-const SHRINK = { flexShrink: 1, minHeight: 0 };
 const LANE = { alignSelf: 'stretch', alignItems: 'flex-start' } as const;
 const FILL = { flex: 1 };
 
@@ -248,7 +247,7 @@ export function BoardLanes({
         {...SELF_SCROLLBAR}
         gap={BOARD_GAP}
         keyboardShouldPersistTaps="handled"
-        style={{ flex: 1 }}
+        style={FILL}
         contentContainerStyle={{ ...padding, alignItems: 'flex-start' }}
         onLayout={(e) => {
           setFrame({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height });

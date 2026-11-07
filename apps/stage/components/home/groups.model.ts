@@ -54,27 +54,17 @@ export function groupKeysOf(items: readonly HomeListItem[]): ReadonlyMap<string,
 
 function orderedBuckets<R extends GroupRow>(rows: readonly R[], by: GroupKey, nameOf: NameOf, order: readonly string[]): Bucket<R>[] {
   const dm = rows.filter((row) => row.peerAddress !== null);
-  const { buckets, none } = bucketRows(
-    rows.filter((row) => row.peerAddress === null),
-    by,
-    nameOf,
-    (value) => sectionKeyOf(by, value),
-  );
+  const channels = rows.filter((row) => row.peerAddress === null);
+  const { buckets, none } = bucketRows(channels, by, nameOf, (value) => sectionKeyOf(by, value));
   const sections = [
     ...(dm.length === 0 ? [] : [{ ...DM_GROUP, rows: dm }]),
     ...buckets.sort((a, b) => compareNames(a.title, b.title)),
     ...(none.length === 0 ? [] : [{ key: NO_SECTION, title: noGroupTitle(by), rows: none }]),
   ];
-  return by === 'category'
-    ? savedFirst(
-        sections,
-        categorySectionOrderWith(
-          order,
-          buckets.map((b) => b.key),
-        ).map((key) => key.toLowerCase()),
-        (b) => b.key,
-      )
-    : sections;
+  if (by !== 'category') return sections;
+  const keys = buckets.map((b) => b.key);
+  const saved = categorySectionOrderWith(order, keys).map((key) => key.toLowerCase());
+  return savedFirst(sections, saved, (b) => b.key);
 }
 
 function uniqueListItems(bucket: Bucket<CachedRow>, seen: Set<string>): HomeListItem[] {

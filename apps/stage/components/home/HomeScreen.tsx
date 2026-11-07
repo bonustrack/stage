@@ -19,21 +19,20 @@ import { groupingOrderOf } from '../../lib/grouping.model';
 import { useGroupedRows, useHomeState } from './state';
 import { HomeDragLists, useHomeDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
-import { clearSearchFilters, toggleSearchLabel, toggleSearchUnread } from '../../lib/searchState';
 import { useTabFocused } from '../tabs/useTabFocused';
 import { PAGES } from '../tabs/pages';
 import { Column } from '../layout';
 
 export function HomeScreen({
   panRef,
-  pane,
+  pane = false,
   board = false,
 }: { panRef?: SimultaneousRefs; pane?: boolean; board?: boolean } = {}): React.ReactElement | null {
-  const splitHome = useWebTabRail() && pane !== true;
+  const splitHome = useWebTabRail() && !pane;
   const accountEpoch = useAccountEpoch();
   if (splitHome) return board ? null : <NewChatScreen key={accountEpoch} />;
-  if (board) return <BoardScreen pane={pane === true} />;
-  return <ChannelsHome panRef={panRef} pane={pane === true} />;
+  if (board) return <BoardScreen pane={pane} />;
+  return <ChannelsHome panRef={panRef} pane={pane} />;
 }
 
 export function BoardHome(): React.ReactElement | null {
@@ -102,10 +101,7 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
         barLabels={barLabels}
         placeholder={placeholder}
         enabledLabels={enabledLabels}
-        onToggleLabel={toggleSearchLabel}
         unreadOnly={unreadOnly}
-        onToggleUnread={toggleSearchUnread}
-        onClearAll={clearSearchFilters}
         query={query}
         listExtraData={listExtraData}
         scroll={st.scroll}

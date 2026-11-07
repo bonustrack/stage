@@ -7,6 +7,7 @@ import { HomeTopnav } from '../HomeTopnav';
 import { HomeError, HomeSpinner } from '../parts';
 import { useChannelsSyncError } from '../../../lib/messaging/channelsSync';
 import { peerLabel } from '../../../lib/peerProfiles';
+import type { CachedRow } from '../../../lib/cachedRows.model';
 import { useEffectiveColorScheme, usePalette } from '../../../lib/theme';
 import { reported } from '../../../lib/errorPolicy';
 import { groupingOrderOf } from '../../../lib/grouping.model';
@@ -26,14 +27,10 @@ function BoardBody(): React.ReactElement {
   const order = groupingOrderOf(columnBy, orders);
   const statusOrder = groupingOrderOf('status', orders);
   const error = useChannelsSyncError();
-  const columns = useMemo(
-    () =>
-      orderedColumns(
-        boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, (r) => isRowCleared(cleared, r), sort, statusOrder),
-        order,
-      ),
-    [rows, cleared, pinned, order, columnBy, profilesVersion, sort, statusOrder],
-  );
+  const columns = useMemo(() => {
+    const hidden = (row: CachedRow): boolean => isRowCleared(cleared, row);
+    return orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, hidden, sort, statusOrder), order);
+  }, [rows, cleared, pinned, order, columnBy, profilesVersion, sort, statusOrder]);
   const shown = useMemo(() => searchedColumns(columns, matches), [columns, matches]);
   if (error) return <HomeError error={error} dark={dark} fg={fg} />;
   if (!rows) return <HomeSpinner head={head} />;

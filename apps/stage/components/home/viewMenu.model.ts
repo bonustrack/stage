@@ -48,8 +48,6 @@ const SORT_ICONS: Record<HomeSort['by'], AppIconName> = {
 };
 const DIRECTION_ICONS: Record<HomeSort['direction'], AppIconName> = { asc: 'IconArrowUp', desc: 'IconArrowDown' };
 
-const page = (to: ViewMenuPage): ViewMenuAction => ({ kind: 'page', page: to });
-
 const edit = (change: HomeViewEdit): ViewMenuAction => ({ kind: 'edit', edit: change });
 
 function sortEdit(current: HomeViewContent, change: Partial<HomeSort>): ViewMenuAction {
@@ -96,37 +94,20 @@ export function homeActivityMenu(current: LastActivity): ViewMenuSection[] {
   ];
 }
 
+function pageRow(id: ViewMenuPage, label: string, icon: AppIconName, value?: string): ViewMenuRow {
+  return { id, label, value, icon, selected: false, action: { kind: 'page', page: id } };
+}
+
 function rootRows(current: HomeViewContent): ViewMenuRow[] {
   const board = current.view === 'board';
   const sort = homeSortOf(current);
   const picked = board ? current.columnBy : current.groupBy;
   return [
-    {
-      id: 'layout',
-      label: 'View',
-      value: board ? 'Board' : 'Chats',
-      icon: board ? 'IconColumns3Wide' : 'IconBubble3',
-      selected: false,
-      action: page('layout'),
-    },
-    {
-      id: 'grouping',
-      label: board ? 'Column by' : 'Group by',
-      value: picked === 'none' ? 'No grouping' : groupByLabel(picked),
-      icon: 'IconLayersThree',
-      selected: false,
-      action: page('grouping'),
-    },
-    {
-      id: 'sorting',
-      label: 'Sort by',
-      value: SORT_LABELS[sort.by],
-      icon: DIRECTION_ICONS[sort.direction],
-      selected: false,
-      action: page('sorting'),
-    },
-    { id: 'filter', label: 'Filter', icon: 'IconFilter1', selected: false, action: page('filter') },
-    { id: 'fields', label: 'Fields', icon: 'IconEyeOpen', selected: false, action: page('fields') },
+    pageRow('layout', 'View', board ? 'IconColumns3Wide' : 'IconBubble3', board ? 'Board' : 'Chats'),
+    pageRow('grouping', board ? 'Column by' : 'Group by', 'IconLayersThree', picked === 'none' ? 'No grouping' : groupByLabel(picked)),
+    pageRow('sorting', 'Sort by', DIRECTION_ICONS[sort.direction], SORT_LABELS[sort.by]),
+    pageRow('filter', 'Filter', 'IconFilter1'),
+    pageRow('fields', 'Fields', 'IconEyeOpen'),
   ];
 }
 

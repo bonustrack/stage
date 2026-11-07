@@ -18,6 +18,10 @@ export interface BoardColumn<T> {
   rows: T[];
 }
 
+export type Columns = readonly BoardColumn<unknown>[];
+
+export const columnKeys = (columns: readonly { key: string }[]): string[] => columns.map((column) => column.key);
+
 export type EditableColumnBy = Exclude<GroupKey, 'assignee'>;
 
 export const columnsEditable = (by: GroupKey): by is EditableColumnBy => by !== 'assignee';
@@ -61,17 +65,8 @@ export function boardColumns<T extends ChannelListRow & GroupableRow>(
   sort: HomeSort = homeSortOf({ ...DEFAULT_HOME_VIEW, view: 'board' }),
   statusOrder: readonly string[] = order,
 ): BoardColumn<T>[] {
-  const columns = valueColumns(
-    sortHomeRows(
-      rows.filter((row) => !row.peerAddress),
-      pinned,
-      sort,
-      statusOrder,
-    ),
-    by,
-    nameOf,
-    hidden,
-  );
+  const channels = rows.filter((row) => !row.peerAddress);
+  const columns = valueColumns(sortHomeRows(channels, pinned, sort, statusOrder), by, nameOf, hidden);
   return [...columns, ...rememberedColumns(order, new Set(columns.map((column) => column.key.toLowerCase())), by, nameOf)];
 }
 
@@ -104,11 +99,8 @@ export function cardLanding<T extends { convId: string }>(
 }
 
 export function orderedColumns<C extends { key: string }>(columns: readonly C[], order: readonly string[]): C[] {
-  return savedFirst(
-    columns,
-    order.map((key) => key.toLowerCase()),
-    (column) => column.key.toLowerCase(),
-  );
+  const saved = order.map((key) => key.toLowerCase());
+  return savedFirst(columns, saved, (column) => column.key.toLowerCase());
 }
 
 function withShown(saved: readonly string[], shown: readonly string[]): string[] {
@@ -127,19 +119,16 @@ export function movedColumnOrder(shown: readonly string[], saved: readonly strin
   return movedKey(withShown(saved, shown), from, to);
 }
 
-export function keptColumnOrder(columns: readonly BoardColumn<unknown>[], saved: readonly string[], from: string): string[] | null {
+export function keptColumnOrder(columns: Columns, saved: readonly string[], from: string): string[] | null {
   const column = columns.find((c) => c.key === from);
   if (column === undefined || column.rows.length > 1) return null;
-  const next = withShown(
-    saved,
-    columns.map((c) => c.key),
-  );
+  const next = withShown(saved, columnKeys(columns));
   return next.length === saved.length && next.every((key, index) => key === saved[index]) ? null : next;
 }
 
 type CardColumnEdit = { by: 'status' | 'category'; value: string | null } | { by: 'label'; from: string; to: string };
 
-export function cardColumnEdit(columns: readonly BoardColumn<unknown>[], from: string, to: string, by: GroupKey): CardColumnEdit | null {
+export function cardColumnEdit(columns: Columns, from: string, to: string, by: GroupKey): CardColumnEdit | null {
   if (!columnsEditable(by) || from === to) return null;
   if (!isGroupKeyOf(by, from) || !isGroupKeyOf(by, to)) return null;
   const source = columns.find((column) => column.key === from);
@@ -164,7 +153,7 @@ export function renameProblem(name: string): string | null {
   return typed.length > MAX_LABEL_LEN ? `Use at most ${MAX_LABEL_LEN} characters.` : null;
 }
 
-export function addColumnProblem(columns: readonly BoardColumn<unknown>[], name: string): string | null {
+export function addColumnProblem(columns: Columns, name: string): string | null {
   const problem = renameProblem(name);
   if (problem !== null) return problem;
   const key = typedName(name).toLowerCase();
@@ -181,7 +170,7 @@ export function addedColumnOrder(
   return [...withShown(saved, shown), groupKeyOf(by, typedName(name))];
 }
 
-export function renameTarget(columns: readonly BoardColumn<unknown>[], from: string, name: string): { name: string; merge: boolean } {
+export function renameTarget(columns: Columns, from: string, name: string): { name: string; merge: boolean } {
   const typed = typedName(name);
   const key = typed.toLowerCase();
   const existing = key === from.toLowerCase() ? null : columns.find((c) => columnEditable(c.key) && c.label.toLowerCase() === key)?.label;
@@ -193,22 +182,22 @@ export type TitleEdit = { kind: 'save'; name: string } | { kind: 'close' } | { k
 
 const unsaved = (via: TitleCommit): TitleEdit => (via === 'blur' ? { kind: 'close' } : { kind: 'stay' });
 
-export function draftEdit(columns: readonly BoardColumn<unknown>[], name: string, via: TitleCommit): TitleEdit {
+export function draftEdit(columns: Columns, name: string, via: TitleCommit): TitleEdit {
   if (typedName(name) === '') return unsaved(via);
   return addColumnProblem(columns, name) === null ? { kind: 'save', name: typedName(name) } : { kind: 'stay' };
 }
 
-export function draftNote(columns: readonly BoardColumn<unknown>[], name: string, tried: boolean): string | null {
+export function draftNote(columns: Columns, name: string, tried: boolean): string | null {
   return tried || typedName(name) !== '' ? addColumnProblem(columns, name) : null;
 }
 
-export function renameEdit(columns: readonly BoardColumn<unknown>[], from: string, name: string, via: TitleCommit): TitleEdit {
+export function renameEdit(columns: Columns, from: string, name: string, via: TitleCommit): TitleEdit {
   if (renameProblem(name) !== null) return unsaved(via);
   const target = renameTarget(columns, from, name);
   return target.name === from ? { kind: 'close' } : { kind: 'save', name: target.name };
 }
 
-export function renameNote(columns: readonly BoardColumn<unknown>[], from: string, name: string, tried: boolean): string | null {
+export function renameNote(columns: Columns, from: string, name: string, tried: boolean): string | null {
   const problem = renameProblem(name);
   if (problem !== null) return tried || typedName(name) !== '' ? problem : null;
   const target = renameTarget(columns, from, name);

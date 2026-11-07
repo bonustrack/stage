@@ -1,6 +1,6 @@
 import { channelPath } from '@stage-labs/client/routing/routes';
 import type { HomeView } from '../../lib/homeView';
-import { PAGES, pageList, splitAt, tabPageAt } from './pages';
+import { PAGES, PAGE_LIST, splitAt, tabPageAt } from './pages';
 
 const CHANNEL_PREFIX = channelPath('');
 
@@ -27,7 +27,7 @@ export function isRailRoute(pathname: string): boolean {
 }
 
 export function homeViewAt(pathname: string): HomeView | null {
-  return pageList().find((page) => page.home !== undefined && page.href === pathname)?.home ?? null;
+  return PAGE_LIST.find((page) => page.home !== undefined && page.href === pathname)?.home ?? null;
 }
 
 export function isBoardHome(pathname: string, lastView: HomeView): boolean {

@@ -17,7 +17,7 @@ import { routeRendersPage } from './pageRenderer';
 import { Column } from '../layout';
 
 function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }): React.ReactElement {
-  const home = rail ? null : homeViewAt(pathname);
+  const home = homeViewAt(pathname);
   if (home !== null) return <HomeTopnav view={home} pane={false} />;
   const title = rail ? tabPageAt(pathname)?.label : undefined;
   const left = title === undefined ? undefined : <Text text={title} size="xl" fontWeight="semibold" />;
@@ -36,10 +36,9 @@ function PagerOverlay({
   pathname: string;
 }): React.ReactElement | null {
   if (routeRendersPage(pathname)) return null;
-  const topnavHidden = rail && homeViewAt(pathname) !== null;
   return (
     <Column weight={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
-      {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname} />}
+      {rail && homeViewAt(pathname) !== null ? null : <HoistedTopnav rail={rail} pathname={pathname} />}
       <TabsPager />
     </Column>
   );

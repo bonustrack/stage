@@ -14,7 +14,12 @@ import type { CachedRow } from '../../lib/cachedRows.model';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
 
-function existingPeers(rows: readonly CachedRow[] | null): { address: string; convId: string }[] {
+interface Peer {
+  address: string;
+  convId: string;
+}
+
+function existingPeers(rows: readonly CachedRow[] | null): Peer[] {
   const peers = (rows ?? []).flatMap(({ peerAddress: address, convId }) => (address && convId ? [{ address, convId }] : []));
   return uniqueBy(peers, (p) => p.address.toLowerCase());
 }
@@ -24,16 +29,6 @@ const NO_MATCH_HINT = 'No matches. Try a username, a full address or a name.eth 
 interface ResolvedPeer {
   address: string;
   label: string | null;
-}
-
-function useResolvedPeer(q: string, enabled: boolean): ResolvedPeer | null {
-  const lookup = usePersonLookup(q, WITH_MAINNET_ENS, enabled);
-  return enabled && lookup.kind === 'resolved' ? { address: lookup.address, label: lookup.label } : null;
-}
-
-interface Peer {
-  address: string;
-  convId: string;
 }
 
 interface ResultRow {
@@ -63,10 +58,6 @@ function peerRow(p: Peer): ResultRow {
   return { address: p.address, convId: p.convId, title: peerLabel(p.address), subtitle: name ? shortAddress(p.address) : undefined };
 }
 
-function peerLink(address: string, convId?: string): ReturnType<typeof dmLinkOf> {
-  return isAddress(address) ? dmLinkOf(address) : conversationSlugLinkOf(convId ?? address);
-}
-
 function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): React.ReactElement {
   const router = useRouter();
   return (
@@ -82,7 +73,7 @@ function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): Rea
           square={false}
           subtitle={r.subtitle ?? null}
           onPress={() => {
-            router.push(peerLink(r.address, r.convId));
+            router.push(isAddress(r.address) ? dmLinkOf(r.address) : conversationSlugLinkOf(r.convId ?? r.address));
           }}
         />
       ))}
@@ -102,7 +93,9 @@ export function HomeContactResults({
   const q = query.trim();
   const existing = useMemo(() => existingPeers(chats), [chats]);
   const filtered = useMemo(() => filterPeers(existing, q), [existing, q]);
-  const resolved = useResolvedPeer(q, filtered.length === 0);
+  const lookup = usePersonLookup(q, WITH_MAINNET_ENS, filtered.length === 0);
+  const resolved: ResolvedPeer | null =
+    filtered.length === 0 && lookup.kind === 'resolved' ? { address: lookup.address, label: lookup.label } : null;
   usePeerProfiles([resolved?.address, ...existing.map((p) => p.address)]);
 
   const extra = resolved && !filtered.some((p) => p.address.toLowerCase() === resolved.address) ? [resolvedRow(resolved)] : [];

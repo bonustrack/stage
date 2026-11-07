@@ -55,9 +55,6 @@ export const CHANNELS_OVERFLOW_ITEMS: MenuItem<HomeOverflowId>[] = [
 export function searchBarLabels(matching: string[], enabled: ReadonlySet<string>, boardOrder: readonly string[]): string[] {
   const keys = new Set(matching.map((l) => l.toLowerCase()));
   const kept = [...enabled].filter((l) => !keys.has(l.toLowerCase()));
-  const labels = [...matching, ...kept].sort((a, b) => a.localeCompare(b));
-  return orderedColumns(
-    labels.map((label) => ({ key: groupKeyOf('label', label), label })),
-    boardOrder,
-  ).map((c) => c.label);
+  const labels = [...matching, ...kept].sort((a, b) => a.localeCompare(b)).map((label) => ({ key: groupKeyOf('label', label), label }));
+  return orderedColumns(labels, boardOrder).map((c) => c.label);
 }

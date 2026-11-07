@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from '../layout/safeArea';
 import { StackHeader } from './StackHeader';
 import { Column, Row, ScreenScroll } from '../layout';
 
-export interface StackPageProps {
+interface StackPageProps {
   title: string;
   header?: boolean;
   back?: boolean;
@@ -14,23 +14,6 @@ export interface StackPageProps {
   keyboardShouldPersistTaps?: 'handled';
   list?: boolean;
   children: ReactNode;
-}
-
-function PageScroll({
-  panRef,
-  keyboardShouldPersistTaps,
-  children,
-}: Pick<StackPageProps, 'panRef' | 'keyboardShouldPersistTaps' | 'children'>): React.ReactElement {
-  const insets = useSafeAreaInsets();
-  return (
-    <ScreenScroll
-      simultaneousHandlers={panRef}
-      keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-      contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
-    >
-      {children}
-    </ScreenScroll>
-  );
 }
 
 export function StackPage({
@@ -44,6 +27,7 @@ export function StackPage({
   list = false,
   children,
 }: StackPageProps): React.ReactElement {
+  const insets = useSafeAreaInsets();
   const actions =
     trailing === undefined ? undefined : (
       <Row weight={1} justify="end">
@@ -56,9 +40,13 @@ export function StackPage({
       {list ? (
         children
       ) : (
-        <PageScroll panRef={panRef} keyboardShouldPersistTaps={keyboardShouldPersistTaps}>
+        <ScreenScroll
+          simultaneousHandlers={panRef}
+          keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+          contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
+        >
           {children}
-        </PageScroll>
+        </ScreenScroll>
       )}
     </Column>
   );

@@ -16,6 +16,7 @@ import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-
 import { capabilities } from '../../lib/capabilities';
 import { ROUTES } from '../tabs/pages';
 import { useLastActivity } from '../../lib/lastActivity';
+import { clearSearchFilters, toggleSearchLabel, toggleSearchUnread } from '../../lib/searchState';
 import { Column, VirtualList, type PersistedScroll } from '../layout';
 
 const LIST_CONTENT = { paddingTop: TOPNAV_FADE, paddingBottom: 24 };
@@ -29,22 +30,13 @@ interface ChannelsListProps {
   barLabels: string[];
   placeholder?: React.ReactElement | null;
   enabledLabels: Set<string>;
-  onToggleLabel: (label: string) => void;
   unreadOnly: boolean;
-  onToggleUnread: () => void;
-  onClearAll: () => void;
   query: string;
   listExtraData: readonly unknown[];
   scroll: PersistedScroll;
   renderRow: ({ item }: { item: HomeListItem }) => React.ReactElement;
-  wrapList?: (list: React.ReactElement) => React.ReactElement;
+  wrapList: (list: React.ReactElement) => React.ReactElement;
   pane: boolean;
-}
-
-const same = (node: React.ReactElement): React.ReactElement => node;
-
-function knownPeerAddresses(rows: readonly CachedRow[] | null): string[] {
-  return (rows ?? []).flatMap((r) => (r.peerAddress === null ? [] : [r.peerAddress]));
 }
 
 function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement {
@@ -74,9 +66,9 @@ function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement
         labels={p.barLabels}
         enabled={p.enabledLabels}
         unreadOnly={p.unreadOnly}
-        onToggle={p.onToggleLabel}
-        onToggleUnread={p.onToggleUnread}
-        onClearAll={p.onClearAll}
+        onToggle={toggleSearchLabel}
+        onToggleUnread={toggleSearchUnread}
+        onClearAll={clearSearchFilters}
       />
     </>
   );
@@ -114,10 +106,9 @@ function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsLis
 }
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
-  const { panRef, items, query, pane, listExtraData, renderRow } = props;
-  const { scroll } = props;
+  const { panRef, items, query, pane, listExtraData, renderRow, scroll } = props;
   const wide = useWebTabRail();
-  const knownPeers = useMemo(() => knownPeerAddresses(props.rows), [props.rows]);
+  const knownPeers = useMemo(() => (props.rows ?? []).flatMap((r) => (r.peerAddress === null ? [] : [r.peerAddress])), [props.rows]);
   useScrollTopOnFilter(props);
 
   return (
@@ -131,7 +122,7 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
             {props.placeholder}
           </>
         ) : (
-          (props.wrapList ?? same)(
+          props.wrapList(
             <VirtualList
               ref={scroll.listRef}
               persist={scroll}

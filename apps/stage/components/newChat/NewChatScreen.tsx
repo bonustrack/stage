@@ -79,16 +79,10 @@ function useCandidates(): { candidates: string[]; remembered: string[] } {
   const cleared = useClearedChats();
   const self = useSelfAddress();
   const history = useMemberHistory();
-  const peers = useMemo(
-    () =>
-      rows === null
-        ? []
-        : recentDmPeers(
-            rows.filter((r) => !isRowCleared(cleared, r)),
-            self,
-          ),
-    [rows, cleared, self],
-  );
+  const peers = useMemo(() => {
+    const kept = (rows ?? []).filter((r) => !isRowCleared(cleared, r));
+    return recentDmPeers(kept, self);
+  }, [rows, cleared, self]);
   const requests = useRequestPeers(peers.slice(0, REQUEST_CHECK_LIMIT));
   return useMemo(
     () => ({

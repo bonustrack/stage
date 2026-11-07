@@ -60,8 +60,6 @@ function MetadataChip({
   );
 }
 
-const isEmpty = (value: Metadata): boolean => value.status === null && value.labels.length === 0 && value.assigned.length === 0;
-
 export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange: (next: Metadata) => void }): React.ReactElement | null {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const toggle = (key: string): void => {
@@ -69,7 +67,7 @@ export function NewChatMetadata({ value, onChange }: { value: Metadata; onChange
     onChange({ ...value, labels });
     if (labels.length === 0) setAnchor(null);
   };
-  if (isEmpty(value)) return null;
+  if (value.status === null && value.labels.length === 0 && value.assigned.length === 0) return null;
   return (
     <>
       <Row wrap gap={8} padding={{ x: PAGE_GUTTER, top: 12, bottom: 4 }}>

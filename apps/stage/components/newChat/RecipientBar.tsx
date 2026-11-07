@@ -96,7 +96,6 @@ export function RecipientBar({
   onAvatarPress?: () => void;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const [open, setOpen] = useState(false);
   return (
     <Column padding={{ bottom: 10 - PICKED_BORDER }}>
       <List direction="horizontal" showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -115,16 +114,15 @@ export function RecipientBar({
           <AddPeopleButton
             onPress={(event) => {
               setAnchor(menuPointAbove(event));
-              setOpen(true);
             }}
           />
         </Row>
       </List>
-      {open ? (
+      {anchor !== null ? (
         <AnchoredMenu
           visible
           onClose={() => {
-            setOpen(false);
+            setAnchor(null);
           }}
           anchor={anchor}
           width={PICKER_WIDTH}

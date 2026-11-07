@@ -1,3 +1,4 @@
+import { uniqueKeys } from '@stage-labs/client/collections';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { rowMatchesQuery, type ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { CHANNEL_PRIORITIES } from '@stage-labs/client/xmtp/labels';
@@ -292,26 +293,17 @@ export function searchRowMatcher(
 
 const IN_SCOPE: Record<HomeView, (row: FilterRow) => boolean> = { board: (row) => !row.peerAddress, chats: () => true };
 
-const sortedValues = (values: ReadonlyMap<string, string>): string[] => [...values.values()].sort((a, b) => a.localeCompare(b));
+const sortedValues = (values: readonly string[]): string[] => uniqueKeys(values).sort((a, b) => a.localeCompare(b));
 
 export function searchFilterSources(rows: readonly FilterRow[], scope: HomeView): Omit<FilterValues, 'has' | 'priorities'> {
-  const labels = new Map<string, string>();
-  const fields = { category: new Map<string, string>(), status: new Map<string, string>() };
-  const members = new Set<string>();
-  for (const row of rows) {
-    if (!IN_SCOPE[scope](row)) continue;
-    for (const label of row.labels ?? []) if (!labels.has(label.toLowerCase())) labels.set(label.toLowerCase(), label);
-    for (const field of ['category', 'status'] as const) {
-      const value = channelFieldOf(field, row[field]);
-      if (value !== null && !fields[field].has(value.toLowerCase())) fields[field].set(value.toLowerCase(), value);
-    }
-    for (const address of rowMembers(row)) members.add(address);
-  }
+  const scoped = rows.filter(IN_SCOPE[scope]);
+  const fieldValues = (field: 'category' | 'status'): string[] =>
+    sortedValues(scoped.flatMap((row) => channelFieldOf(field, row[field]) ?? []));
   return {
-    labels: sortedValues(labels),
-    members: [...members],
-    categories: sortedValues(fields.category),
-    statuses: sortedValues(fields.status),
+    labels: sortedValues(scoped.flatMap((row) => row.labels ?? [])),
+    members: [...new Set(scoped.flatMap(rowMembers))],
+    categories: fieldValues('category'),
+    statuses: fieldValues('status'),
   };
 }
 

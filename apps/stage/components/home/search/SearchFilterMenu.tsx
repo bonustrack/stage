@@ -31,21 +31,13 @@ import {
 } from './searchFilter.model';
 
 const { category, status, priority, label } = GROUPING_FIELDS;
-const FIELD_NAMES: Record<FilterField, string> = {
-  member: 'Member',
-  category: category.label,
-  status: status.label,
-  priority: priority.label,
-  label: label.label,
-  has: 'Has',
-};
-const FIELD_ICONS: Record<FilterField, AppIconName> = {
-  member: 'IconPeople',
-  category: category.icon,
-  status: status.icon,
-  priority: priority.icon,
-  label: label.icon,
-  has: 'IconFilter1',
+const FIELDS: Record<FilterField, { label: string; icon: AppIconName }> = {
+  member: { label: 'Member', icon: 'IconPeople' },
+  category,
+  status,
+  priority,
+  label,
+  has: { label: 'Has', icon: 'IconFilter1' },
 };
 const valueOption = (value: string): FilterOption => ({ key: value, label: value, value });
 
@@ -72,7 +64,7 @@ function OptionIcon({ field, option }: { field: FilterField; option: FilterOptio
   if (field === 'member' && option.key.startsWith('0x')) return <Avatar address={option.key} size={DROPDOWN_MENU.icon} />;
   return (
     <AppIcon
-      name={field === 'has' && option.value === 'draft' ? 'IconPencil' : FIELD_ICONS[field]}
+      name={field === 'has' && option.value === 'draft' ? 'IconPencil' : FIELDS[field].icon}
       size={DROPDOWN_MENU.icon}
       color="link"
     />
@@ -113,11 +105,11 @@ function FilterValues({
     <>
       <MenuRow icon="IconArrowLeft" label="Filter" onPress={onBack} />
       <DropdownMenuSeparator />
-      <MenuHeading text={FIELD_NAMES[field]} />
-      <PickerSearch value={needle} onChangeText={setNeedle} placeholder={`Search ${FIELD_NAMES[field].toLowerCase()}`} />
+      <MenuHeading text={FIELDS[field].label} />
+      <PickerSearch value={needle} onChangeText={setNeedle} placeholder={`Search ${FIELDS[field].label.toLowerCase()}`} />
       {field === 'has' ? null : (
         <PickerRow
-          label={`Exclude ${FIELD_NAMES[field].toLowerCase()}`}
+          label={`Exclude ${FIELDS[field].label.toLowerCase()}`}
           selected={excluded}
           count={excludedCount > 0 ? excludedCount : undefined}
           leading={<AppIcon name={IconCircleMinus} size={DROPDOWN_MENU.icon} color="link" />}
@@ -142,7 +134,7 @@ function FilterValues({
         <MenuRow
           divider
           icon={IconCrossMedium}
-          label={`Clear ${FIELD_NAMES[field].toLowerCase()}`}
+          label={`Clear ${FIELDS[field].label.toLowerCase()}`}
           onPress={() => {
             setQuery(clearQueryFilters(query, field));
           }}
@@ -191,8 +183,8 @@ export function SearchFilterMenu({
         return (
           <MenuRow
             key={key}
-            icon={FIELD_ICONS[key]}
-            label={FIELD_NAMES[key]}
+            icon={FIELDS[key].icon}
+            label={FIELDS[key].label}
             count={count > 0 ? count : undefined}
             onPress={() => {
               setField(key);

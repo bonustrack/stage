@@ -19,10 +19,9 @@ import type { MarkedNode } from '../../keys/keys.model';
 import { CARD_GAP, COLUMN_PADDING } from './BoardColumnEdit';
 import { Column, GUTTER_SCROLLBAR, gutterScrollbarWidth } from '../../layout';
 
-type BoardRouter = ReturnType<typeof useRouter>;
 export const cardDataSet = (columnKey: string, convId: string): MarkedNode => ({ dataSet: { boardcard: convId, boardcolumn: columnKey } });
 
-export function showInPanel(router: BoardRouter, convId: string, press: 'push' | 'replace'): void {
+export function showInPanel(router: ReturnType<typeof useRouter>, convId: string, press: 'push' | 'replace'): void {
   const link = conversationLinkOf(convId, null);
   if (press === 'push') router.push(link);
   else router.replace(link);

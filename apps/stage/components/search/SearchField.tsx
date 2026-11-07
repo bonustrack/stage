@@ -14,7 +14,7 @@ import { Column, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from '../layout';
 const FIELD_GAP = 4;
 const SEARCH_FIELD_HEIGHT = FORM_FIELD_HEIGHT + FIELD_GAP;
 
-function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
+export function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
   return <Column style={STICKY_UNDER_CHROME}>{children}</Column>;
 }
 
@@ -56,10 +56,7 @@ export interface SearchFieldProps {
 export const SearchField = forwardRef<React.ComponentRef<typeof TextField>, SearchFieldProps>(function SearchField(props, ref) {
   const palette = usePalette();
   const muted = palette[props.muted ?? 'text'];
-  const search = useSearchInput(
-    { ...props, blurOnEscape: true, focusColor: palette.link, restColor: muted, inputProps: props.inputProps },
-    ref,
-  );
+  const search = useSearchInput({ ...props, blurOnEscape: true, focusColor: palette.link, restColor: muted }, ref);
   const Frame = props.inline === true ? Fragment : StickyFrame;
   const shortcutNode = useShortcut('/', props.onOpen);
   return (

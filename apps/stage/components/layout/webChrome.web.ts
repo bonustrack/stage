@@ -99,19 +99,14 @@ export function setChromeClass(name: ChromeClass, on: boolean): void {
   root()?.classList.toggle(`stage-${name}`, on);
 }
 
-function applyDocumentTheme(theme: DocumentTheme): void {
-  const html = root();
-  if (html === null) return;
-  html.style.colorScheme = theme.dark ? 'dark' : 'light';
-  html.style.backgroundColor = theme.background;
-  html.style.setProperty('--stage-scrollbar-thumb', theme.scrollbarThumb);
-  document.getElementById('stage-boot')?.remove();
-}
-
-export function useDocumentTheme(ready: boolean, theme: DocumentTheme): void {
-  const { dark, background, scrollbarThumb } = theme;
+export function useDocumentTheme(ready: boolean, { dark, background, scrollbarThumb }: DocumentTheme): void {
   useEffect(() => {
-    if (ready) applyDocumentTheme({ dark, background, scrollbarThumb });
+    const html = root();
+    if (!ready || html === null) return;
+    html.style.colorScheme = dark ? 'dark' : 'light';
+    html.style.backgroundColor = background;
+    html.style.setProperty('--stage-scrollbar-thumb', scrollbarThumb);
+    document.getElementById('stage-boot')?.remove();
   }, [ready, dark, background, scrollbarThumb]);
 }
 

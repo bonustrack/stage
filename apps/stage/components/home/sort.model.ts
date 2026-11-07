@@ -36,18 +36,8 @@ export function updatedTimestamp(row: { lastTs?: number | null; createdTs?: numb
 }
 
 function statusRanks(rows: readonly SortableRow[], order: readonly string[]): Map<string, number> {
-  const statuses = [
-    ...new Set(
-      rows.flatMap((row) => {
-        const status = categoryOf(row.status);
-        return status === null ? [] : [status.toLowerCase()];
-      }),
-    ),
-  ];
-  const saved = order.flatMap((key) => {
-    const value = groupValueOf('status', key);
-    return value === null ? [] : [value.toLowerCase()];
-  });
+  const statuses = [...new Set(rows.flatMap((row) => categoryOf(row.status)?.toLowerCase() ?? []))];
+  const saved = order.flatMap((key) => groupValueOf('status', key)?.toLowerCase() ?? []);
   const compare = (a: string, b: string): number => compareNames(a, b) || (a < b ? -1 : a > b ? 1 : 0);
   return new Map(savedFirst(statuses, saved, (value) => value, compare).map((status, index) => [status, index]));
 }

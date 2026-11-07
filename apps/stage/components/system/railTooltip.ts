@@ -43,9 +43,8 @@ export function tooltipLabel(text: string): string {
 
 const tooltip = makeValue<RailTooltipState | null>(null);
 
-export function showRailTooltip(next: RailTooltipState): void {
-  tooltip.set(next);
-}
+export const showRailTooltip = tooltip.set;
+
 export function hideRailTooltip(): void {
   if (tooltip.get() !== null) tooltip.set(null);
 }

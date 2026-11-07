@@ -65,12 +65,6 @@ function tabBarStyle(pal: ReturnType<typeof usePalette>, bottomInset: number) {
   };
 }
 
-function useTabActive(pathname: string): (id: string, focused: boolean) => boolean {
-  const activeTab = activeTabOf(pathname, useBoardHome());
-  const onTab = isTabRoute(pathname);
-  return (id, focused) => (onTab ? activeTab === id : focused);
-}
-
 export function TabsShell(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
@@ -79,7 +73,8 @@ export function TabsShell(): React.ReactElement {
   const pal = usePalette();
   const gate = useAccountGate();
   const chatsTabListeners = useChatsTabListeners(pathname);
-  const tabActive = useTabActive(pathname);
+  const activeTab = activeTabOf(pathname, useBoardHome());
+  const onTab = isTabRoute(pathname);
   useRememberHomeView();
 
   if (gate.ready && !gate.hasAccount) return <Landing />;
@@ -113,7 +108,7 @@ export function TabsShell(): React.ReactElement {
               tabBarIcon: ({ focused }) => (
                 <TabIcon
                   icon={appIcon(page.icon)}
-                  active={tabActive(page.id, focused)}
+                  active={onTab ? activeTab === page.id : focused}
                   badge={page.id === 'chats' ? unreadBadge : undefined}
                 />
               ),

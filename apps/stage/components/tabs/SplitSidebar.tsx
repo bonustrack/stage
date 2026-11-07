@@ -22,11 +22,6 @@ function usePaneScope(scope: PaneScope | null): void {
   }, [scope]);
 }
 
-function paneScopeOf(active: boolean, railOnly: boolean): PaneScope | null {
-  if (active) return '1';
-  return railOnly ? 'rail' : null;
-}
-
 function SidePane({ full, children }: { full: boolean; children: React.ReactNode }): React.ReactElement {
   const paneWidth = channelsPaneWidth.use();
   const inset = useTopChromeInset();
@@ -53,7 +48,7 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
   const boardHome = useBoardHome();
   const active = visible && rail && isSplitRoute(pathname);
   const railOnly = visible && rail && isRailOnlyRoute(pathname);
-  usePaneScope(paneScopeOf(active, railOnly));
+  usePaneScope(active ? '1' : railOnly ? 'rail' : null);
   if (!active && !railOnly) return null;
   return (
     <>

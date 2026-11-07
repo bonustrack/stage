@@ -7,7 +7,7 @@ import type { VirtualListHandle } from '../layout';
 import type { HomeListItem } from './groups.model';
 import type { CachedRow } from '../../lib/cachedRows.model';
 
-interface RowRouter {
+export interface RowRouter {
   push: (to: { pathname: string; params: { convId: string } }) => void;
 }
 

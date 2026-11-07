@@ -21,7 +21,7 @@ import {
   draftNote,
   renameEdit,
   renameNote,
-  type BoardColumn,
+  type Columns,
   type TitleCommit,
   type TitleEdit,
 } from './BoardScreen.model';
@@ -32,8 +32,6 @@ export const COLUMN_PADDING = 10;
 export const CARD_GAP = 8;
 export const TITLE_SIZE = 'md';
 export const HEADER_PADDING = { left: 4, right: 4 + COLUMN_PADDING, y: 2 };
-
-type Columns = readonly BoardColumn<unknown>[];
 
 interface TitleEditState {
   name: string;
@@ -70,7 +68,7 @@ function useTitleEdit(
   return { name, tried, setName, finish, close };
 }
 
-const SHRINK = { flexShrink: 1, minHeight: 0 };
+export const SHRINK = { flexShrink: 1, minHeight: 0 };
 
 export function ColumnFrame({
   over = false,

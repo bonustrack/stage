@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { Topnav } from '../Topnav';
 import { useWebTabRail } from '../layout/webLayout';
@@ -15,7 +15,7 @@ function useHomeMenu(): HomeMenuState {
   useEffect(() => {
     setAnchor(null);
   }, [accountEpoch]);
-  return useMemo(() => ({ anchor, setAnchor }), [anchor]);
+  return { anchor, setAnchor };
 }
 
 export function HomeTopnav({ view, pane }: { view: HomeView; pane: boolean }): React.ReactElement {

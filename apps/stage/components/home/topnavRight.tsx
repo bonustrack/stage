@@ -27,18 +27,15 @@ const IconBubbleSparkle = memo((props: CentralIconBaseProps) => (
   </CentralIconBase>
 ));
 
-function copyActiveAddress(): void {
-  void getActiveAccount().then((acct) => {
-    if (!acct?.address) return;
-    capabilities.copy('Address', acct.address);
-  }, reported('home.copyAddress'));
-}
-
 export function HomeTopnavRight({ head, view, menu }: { head: string; view: HomeView; menu: HomeMenuState }): React.ReactElement {
   const router = useRouter();
   const openCompose = useOpenNewChat();
   const actions: MenuActions<HomeOverflowId> = {
-    'copy-address': copyActiveAddress,
+    'copy-address': () => {
+      void getActiveAccount().then((acct) => {
+        if (acct?.address) capabilities.copy('Address', acct.address);
+      }, reported('home.copyAddress'));
+    },
     profile: () => {
       void getActiveAccount().then((acct) => {
         if (acct?.address) router.push(profileLinkOf(acct.address));

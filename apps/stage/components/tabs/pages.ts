@@ -83,9 +83,7 @@ export type PageId = keyof typeof PAGES;
 
 type Page = PageEntry & { readonly id: PageId };
 
-type InPager<K extends PageId> = 'pager' extends (typeof PAGES)[K]['render']['native' | 'web'] ? K : never;
-
-export type PagerPageId = { [K in PageId]: InPager<K> }[PageId];
+export type PagerPageId = { [K in PageId]: 'pager' extends (typeof PAGES)[K]['render']['native' | 'web'] ? K : never }[PageId];
 
 function isPagerPage(page: Page): page is Page & { readonly id: PagerPageId } {
   return page.render.native === 'pager' || page.render.web === 'pager';
@@ -117,13 +115,9 @@ export const ROUTES = { newChat: '/new', scan: '/scan', signup: '/signup', impor
   AppRootHref
 >;
 
-const PAGE_LIST: readonly Page[] = (Object.keys(PAGES) as PageId[]).map((id) => ({ id, ...PAGES[id] }));
+export const PAGE_LIST: readonly Page[] = (Object.keys(PAGES) as PageId[]).map((id) => ({ id, ...PAGES[id] }));
 
 const OTHER_ROUTE_MAP: ReadonlyMap<string, RouteEntry> = new Map(Object.entries(OTHER_ROUTES));
-
-export function pageList(): readonly Page[] {
-  return PAGE_LIST;
-}
 
 export function pageAt(pathname: string): Page | undefined {
   return PAGE_LIST.find((page) => isPathUnder(pathname, page.href));
@@ -161,13 +155,9 @@ export const HIDDEN_TAB_ROUTES: readonly TabRoute[] = PAGE_LIST.flatMap((page) =
 
 export const PAGER_ORDER: readonly PagerPageId[] = PAGE_LIST.filter(isPagerPage).map((page) => page.id);
 
-const MENU_PAGES_PAGER_PAGE: PagerPageId = 'settings';
-
-const HOME_TAB: PageId = 'chats';
-
 function pagerPageAt(pathname: string, boardHome: boolean): PagerPageId {
   const page = pageAt(pathname);
-  const id = page !== undefined && isPagerPage(page) ? page.id : page?.menu !== undefined ? MENU_PAGES_PAGER_PAGE : 'chats';
+  const id = page !== undefined && isPagerPage(page) ? page.id : page?.menu !== undefined ? 'settings' : 'chats';
   return id === 'chats' && boardHome ? 'board' : id;
 }
 
@@ -179,9 +169,9 @@ export function activeTabOf(pathname: string, boardHome: boolean): PageId | null
   const page = pageAt(pathname);
   if (page?.menu !== undefined) return page.tabBar === true ? page.id : null;
   const id = pagerPageAt(pathname, boardHome);
-  const shown = PAGE_LIST.find((entry) => entry.id === id);
-  if (shown?.home !== undefined) return HOME_TAB;
-  return shown?.tabBar === true ? shown.id : null;
+  const shown: PageEntry = PAGES[id];
+  if (shown.home !== undefined) return 'chats';
+  return shown.tabBar === true ? id : null;
 }
 
 function otherRouteAt(pathname: string): RouteEntry | undefined {

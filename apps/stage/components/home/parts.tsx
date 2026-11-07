@@ -6,8 +6,8 @@ import { MessagingSetupBanner } from './MessagingSetupBanner';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { chatRowProps, rowMenuOpener, type RowMenu } from '../chatRow/chatRow';
 import type { ChannelFields } from '../../lib/channelFields.model';
-import { DragCell, PinnedRow, SectionHandle, type HomeDrag } from './listDrag';
-import { useSortableActive } from '@stage-labs/kit/react-native/sortable';
+import { DragCell, PinnedRow, type HomeDrag } from './listDrag';
+import { SortableHandle, useSortableActive } from '@stage-labs/kit/react-native/sortable';
 import { GroupHeader, useGroupHover } from './GroupHeader';
 import { isGroupHeader, type HomeListItem } from './groups.model';
 import { toggleGroupCollapsed } from '../../lib/channelGroups';
@@ -18,13 +18,13 @@ import type { CachedRow } from '../../lib/cachedRows.model';
 import { DANGER } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { rowDataSet } from './rowArrows';
+import { rowDataSet, type RowRouter } from './rowArrows';
 import { reported } from '../../lib/errorPolicy';
 import { Column } from '../layout';
 
 interface ChannelRowItemProps {
   item: CachedRow;
-  router: { push: (to: { pathname: string; params: { convId: string } }) => void };
+  router: RowRouter;
   setRowMenu: (m: RowMenu) => void;
   query?: string;
   profilesVersion: number;
@@ -76,7 +76,7 @@ function ChannelRowItemBase({
 const ChannelRowItem = memo(ChannelRowItemBase);
 
 export function useChannelRowRenderer(
-  router: { push: (to: { pathname: string; params: { convId: string } }) => void },
+  router: RowRouter,
   setRowMenu: (m: RowMenu) => void,
   deps: {
     channelProfilesVersion: number;
@@ -100,7 +100,7 @@ export function useChannelRowRenderer(
             header={item.header}
             onToggle={toggleGroupCollapsed}
             sectionHovered={hoveredGroup === item.header.key}
-            wrapToggle={(node) => (drag.model.sectionKeys.has(item.convId) ? <SectionHandle>{node}</SectionHandle> : node)}
+            wrapToggle={(node) => (drag.model.sectionKeys.has(item.convId) ? <SortableHandle>{node}</SortableHandle> : node)}
           />
         );
         return wrapItem(
@@ -154,10 +154,6 @@ const RESET_CONFIRM = {
     'but messages stored on this device are gone and a new device slot is used. An account supports ten.',
 };
 
-function confirmReset(): void {
-  void resetXmtpDatabase(RESET_CONFIRM).catch(reported('home.resetDatabase'));
-}
-
 export function HomeError({ error, dark, fg }: { error: string; dark: boolean; fg: string }): React.ReactElement {
   return (
     <Column padding={24} weight={1} align="center" justify="center" surface="surface">
@@ -177,7 +173,9 @@ export function HomeError({ error, dark, fg }: { error: string; dark: boolean; f
         }}
       />
       <Pressable
-        onPress={confirmReset}
+        onPress={() => {
+          void resetXmtpDatabase(RESET_CONFIRM).catch(reported('home.resetDatabase'));
+        }}
         style={({ pressed }) => ({
           paddingHorizontal: 20,
           paddingVertical: 12,

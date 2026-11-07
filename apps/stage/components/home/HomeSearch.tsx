@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { SearchField } from '../search/SearchField';
 import { TopnavSearch } from '../search/TopnavSearch';
 import { useWebTabRail } from '../layout/webLayout';
@@ -7,27 +7,6 @@ import { searchQueryText, setSearchQueryText } from './search/searchFilter.model
 import { useHomeQuery } from './listing';
 
 const SEARCH_INPUT = { accessibilityLabel: 'Search' };
-
-interface SearchOpen {
-  key: number;
-  open: () => void;
-  close: () => void;
-}
-
-function useSearchOpen(query: string, setQuery: (query: string) => void): SearchOpen {
-  const [key, setKey] = useState(0);
-  const open = useCallback(() => {
-    setKey((k) => k + 1);
-  }, []);
-  return {
-    key,
-    open,
-    close: () => {
-      setKey(0);
-      setQuery(setSearchQueryText(query, ''));
-    },
-  };
-}
 
 export function HomeSearch({
   view,
@@ -44,20 +23,23 @@ export function HomeSearch({
 }): React.ReactElement {
   const wide = useWebTabRail();
   const [query, setQuery] = useHomeQuery(view);
-  const search = useSearchOpen(query, setQuery);
+  const [key, setKey] = useState(0);
   const bar = {
-    autoFocus: search.key > 0,
+    autoFocus: key > 0,
     query: searchQueryText(query),
     setQuery: (text: string): void => {
       setQuery(setSearchQueryText(query, text));
     },
-    onClose: search.close,
+    onClose: (): void => {
+      setKey(0);
+      setQuery(setSearchQueryText(query, ''));
+    },
     onOpen: (): void => {
       onOpen?.();
-      search.open();
+      setKey((k) => k + 1);
     },
     inputProps: SEARCH_INPUT,
   };
-  if (wide) return <TopnavSearch key={search.key} {...bar} inline={inline} persistent trailing={trailing} />;
-  return <SearchField key={search.key} {...bar} inline fieldAction={fieldAction} />;
+  if (wide) return <TopnavSearch key={key} {...bar} inline={inline} persistent trailing={trailing} />;
+  return <SearchField key={key} {...bar} inline fieldAction={fieldAction} />;
 }

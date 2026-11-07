@@ -8,9 +8,7 @@ import { PAGES, type PageId } from './pages';
 
 type MenuPageId = { [K in PageId]: (typeof PAGES)[K] extends { readonly menu: object } ? K : never }[PageId];
 
-type DeveloperModeStatus = 'loading' | 'failed' | 'off' | 'on';
-
-export function useDeveloperModeStatus(): DeveloperModeStatus {
+export function useDeveloperModeStatus(): 'loading' | 'failed' | 'off' | 'on' {
   const enabled = useDeveloperMode();
   const loaded = useDeveloperModeLoaded();
   const failed = useDeveloperModeLoadFailed();

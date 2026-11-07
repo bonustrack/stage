@@ -36,15 +36,6 @@ export function newChatMetadata(params: Params): NewChatMetadata {
   };
 }
 
-function metadataFields(metadata: NewChatMetadata): Params {
-  return {
-    category: metadata.category ?? undefined,
-    status: metadata.status ?? undefined,
-    labels: metadata.labels.length > 0 ? metadata.labels : undefined,
-    assigned: metadata.assigned.length > 0 ? metadata.assigned : undefined,
-  };
-}
-
 export function newChatParams(metadata: NewChatMetadata): Record<string, string> {
   return { status: metadata.status ?? '', labels: metadata.labels.join('\n'), assigned: metadata.assigned.join('\n') };
 }
@@ -63,6 +54,12 @@ export function memberChatMetadata(metadata: NewChatMetadata, members: readonly 
 }
 
 export function newChatAppData(metadata: NewChatMetadata): string | undefined {
-  const fields = Object.fromEntries(Object.entries(metadataFields(metadata)).filter(([, value]) => value !== undefined));
+  const all: Params = {
+    category: metadata.category ?? undefined,
+    status: metadata.status ?? undefined,
+    labels: metadata.labels.length > 0 ? metadata.labels : undefined,
+    assigned: metadata.assigned.length > 0 ? metadata.assigned : undefined,
+  };
+  const fields = Object.fromEntries(Object.entries(all).filter(([, value]) => value !== undefined));
   return Object.keys(fields).length === 0 ? undefined : JSON.stringify({ v: 1, ...fields });
 }

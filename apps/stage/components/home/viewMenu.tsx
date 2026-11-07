@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 import { useRouter } from 'expo-router';
 import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
@@ -47,16 +47,6 @@ function FieldsPage({ view, fields }: { view: HomeView; fields: ChannelFields })
   );
 }
 
-function Section({ divider, heading, children }: { divider: boolean; heading?: string; children: React.ReactNode }): React.ReactElement {
-  return (
-    <>
-      {divider ? <DropdownMenuSeparator /> : null}
-      {heading === undefined ? null : <MenuHeading text={heading} />}
-      {children}
-    </>
-  );
-}
-
 function SectionsPage({
   content,
   counts,
@@ -70,7 +60,9 @@ function SectionsPage({
   return (
     <>
       {content.sections.map((section, index) => (
-        <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
+        <Fragment key={section.heading ?? index}>
+          {index > 0 ? <DropdownMenuSeparator /> : null}
+          {section.heading === undefined ? null : <MenuHeading text={section.heading} />}
           {section.rows.map((row) =>
             picker !== null ? (
               <PickerRow
@@ -98,7 +90,7 @@ function SectionsPage({
               />
             ),
           )}
-        </Section>
+        </Fragment>
       ))}
     </>
   );

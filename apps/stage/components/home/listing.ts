@@ -118,10 +118,8 @@ export function useKnownFieldValues(view: HomeView): ReturnType<typeof searchFil
   const orders = useGroupingOrders(prefs);
   const { cleared } = prefs;
   return useMemo(() => {
-    const sources = searchFilterSources(
-      (rows ?? []).filter((row) => !isRowCleared(cleared, row)),
-      view,
-    );
+    const kept = (rows ?? []).filter((row) => !isRowCleared(cleared, row));
+    const sources = searchFilterSources(kept, view);
     return {
       ...sources,
       categories: configuredFieldOptions('category', sources.categories, groupingOrderOf('category', orders)),

@@ -9,13 +9,10 @@ import { TOPNAV_HEIGHT } from '../Topnav';
 import { HoverIconButton } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { useSearchInput } from './searchInput';
-import { Column, Row, STICKY_UNDER_CHROME, PAGE_GUTTER } from '../layout';
+import { StickyFrame } from './SearchField';
+import { Row, PAGE_GUTTER } from '../layout';
 
 const BAR_GAP = 10;
-
-function StickyFrame({ children }: { children: React.ReactNode }): React.ReactElement {
-  return <Column style={STICKY_UNDER_CHROME}>{children}</Column>;
-}
 
 function SearchActions({
   persistent,
