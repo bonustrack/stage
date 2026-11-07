@@ -3,7 +3,15 @@ import { BUTTON_SIZES, SIZES } from '../src/button.styles';
 import { CONTROL_SIZES, controlColors, controlTextStyle, type ControlSize } from '../src/control.styles';
 import { markdownStyles } from '../src/markdown.styles';
 import { resolveTextSize } from '../src/text.styles';
-import { FONT_SIZE, fontName, fontSize, type FontSizeName } from '../src/tokens';
+import { FONT_SIZE, fontFamily, fontName, fontSize, kitTheme, type FontSizeName } from '../src/tokens';
+
+describe('font families', () => {
+  test('the theme reports the families the components draw with, the whole mono stack on web', () => {
+    expect(fontName.mono).toBe('Menlo, ui-monospace, monospace');
+    expect(fontName.mono).toBe(fontFamily.mono.join(', '));
+    expect(kitTheme('light').typography).toMatchObject({ fontFamily: fontName.sans, fontFamilyMono: fontName.mono });
+  });
+});
 
 describe('text size tokens', () => {
   test('every Text size resolves through fontSize and resolveTextSize alike, whatever the variant', () => {

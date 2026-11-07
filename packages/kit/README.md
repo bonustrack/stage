@@ -240,6 +240,8 @@ These exports stay for existing consumers but nothing in Kit uses them; they liv
 - `@stage-labs/kit/react-native/dom`: the browser helpers the kit's drag and drop uses, for hosts with their own gestures: `isCoarsePointer`, `setTouchScrollBlocked` (stops touch scrolling while on) and `swallowNextClick` (the click a drop or a long press leaves behind, within 300 ms by default). They do nothing natively, where `isCoarsePointer` is `true`.
 - Fix: the Kit catalog's `Icon` `name` lists exactly the names `Icon` renders. It gains `pin`, which rendered but failed validation, and `backward`, `bellOff`, `brokenHeart`, `mute`, `skip` and `starLines`, the Central icons behind the A2UI names `skipPrevious`, `notificationsOff`, `favoriteOff`, `volumeMute`, `skipNext` and `starHalf`, which now live in `central-icons.named.data.ts` with the other named icons (`volumeDown` was already listed). The catalog no longer imports the HeroIcon path data.
 - Fix: `fontName.mono` is the platform's monospace family (`Menlo` on iOS, `monospace` on Android, `Menlo, ui-monospace, monospace` on web, from `mono-font(.ios|.android).ts`), so `fontFamily="mono"` Text, A2UI mono Text and markdown code are monospace on Android and on browsers without Menlo. It was `Menlo` everywhere.
+- Fix: `kitTheme().typography.fontFamilyMono` is `fontName.mono`, the platform's monospace family, instead of `Menlo` everywhere.
+- The kit's drag tuning for hosts with their own gestures: `DRAG_HOLD_MS` and `DRAG_MOVE_SLOP` (`sortable`), and `activateDrag(pan, touch)` (`react-native/sortable`), which starts a pan after the hold on touch and after the slop with a mouse, as the kit lists do. `DragPlatform` gains `nativeDriver`.
 
 ### 0.1.0-beta.30
 

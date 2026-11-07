@@ -1,5 +1,8 @@
 import { luminance, parseHex } from './color-math';
+import { fontFamily } from './font-families';
 import { MONO_FONT } from './mono-font';
+
+export { fontFamily } from './font-families';
 
 export { BUTTON_RADIUS_DEFAULT, FONT_SIZE_SNAP, RADIUS_DEFAULT, RADIUS_MAX, RADIUS_MIN } from './legacy';
 
@@ -220,12 +223,6 @@ export function fontSize(name: FontSizeName): number {
   return FONT_SIZE[name];
 }
 
-export const fontFamily = {
-  sans: ['Calibre-Medium', 'system-ui', 'sans-serif'],
-  head: ['Calibre-Semibold', 'system-ui', 'sans-serif'],
-  mono: ['Menlo', 'ui-monospace', 'monospace'],
-} as const;
-
 export const fontName = { sans: fontFamily.sans[0], head: fontFamily.head[0], mono: MONO_FONT } as const;
 
 export const RADIUS_NAMES = ['pill', 'round', 'soft', 'sharp'] as const;
@@ -310,6 +307,6 @@ export function kitTheme(scheme: 'light' | 'dark', opts: KitThemeOptions = {}): 
     border: semanticColors.borderColor[scheme],
     radius: { name: radiusName, px: RADIUS_SCALE[radiusName] },
     density: { name: densityName, ...density },
-    typography: { baseSize: opts.baseSize ?? BASE_SIZE_DEFAULT, fontFamily: fontFamily.sans[0], fontFamilyMono: fontFamily.mono[0] },
+    typography: { baseSize: opts.baseSize ?? BASE_SIZE_DEFAULT, fontFamily: fontName.sans, fontFamilyMono: fontName.mono },
   };
 }
