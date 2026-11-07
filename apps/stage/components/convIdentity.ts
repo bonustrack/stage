@@ -1,4 +1,5 @@
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { mentionLabel } from '@stage-labs/client/xmtp/messageBody';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
@@ -15,6 +16,18 @@ export interface ConvAvatar {
 }
 
 const LOADING_TITLE: ConvTitle = { text: '', placeholder: false };
+
+export function displayNameOf(names: readonly (string | null | undefined)[], fallback: string): string {
+  for (const name of names) {
+    const shown = name?.trim();
+    if (shown) return shown;
+  }
+  return fallback;
+}
+
+export function accountName(account: { address: string; label?: string }, peerName?: string | null): string {
+  return displayNameOf([peerName, account.label], shortAddress(account.address));
+}
 
 export function mentionLabelOf(address: string): string {
   return mentionLabel(peerLabel(address));

@@ -5,6 +5,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU, DropdownMenuItem, useDropdownMenuText } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
+import { accountName } from '../convIdentity';
 import { AnchoredMenu } from '../AnchoredMenu';
 import { MenuRow } from '../MenuRows';
 import type { MenuPoint } from '../AnchoredMenu.model';
@@ -36,7 +37,7 @@ function AccountSwitchRow({
 }): React.ReactElement {
   const { link: head, text, border } = usePalette();
   const menuText = useDropdownMenuText();
-  const name = getPeerName(account.address) ?? account.label ?? shortAddress(account.address);
+  const name = accountName(account, getPeerName(account.address));
   const address = shortAddress(account.address);
   return (
     <DropdownMenuItem

@@ -5,6 +5,7 @@ import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from '../Avatar';
+import { accountName } from '../convIdentity';
 import { MenuSheet } from './MenuSheet';
 import type { SimultaneousRefs } from '../layout/simultaneousRefs';
 import { menuPointBelow } from '../AnchoredMenu';
@@ -31,11 +32,6 @@ import { PAGES } from '../tabs/pages';
 import { renderedByRoute } from '../tabs/pageRenderer';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
-function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
-  const candidate = peerName ?? label;
-  return candidate !== undefined && candidate !== null && candidate.trim() !== '' ? candidate : fallback;
-}
-
 function IdentityHero(): React.ReactElement | null {
   const dark = useEffectiveColorScheme() === 'dark';
   const rec = useActiveAccountRecord();
@@ -52,7 +48,7 @@ function IdentityHero(): React.ReactElement | null {
       <Row align="center" gap={16}>
         <Avatar address={address} size={72} />
         <Column weight={1} gap={2}>
-          <Text text={accountDisplayName(getPeerName(address), rec.label, short)} size="2xl" fontWeight="semibold" color="link" truncate />
+          <Text text={accountName(rec, getPeerName(address))} size="2xl" fontWeight="semibold" color="link" truncate />
           <Text text={sub} size="xs" color="secondary" />
         </Column>
       </Row>

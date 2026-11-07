@@ -1,7 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { seedPeerProfiles } from '../lib/peerProfiles';
-import { channelAvatar, channelAvatarUrl, channelTitle, convTitle, rowAvatarAddress, rowTitle } from '../components/convIdentity';
+import {
+  accountName,
+  channelAvatar,
+  channelAvatarUrl,
+  channelTitle,
+  convTitle,
+  rowAvatarAddress,
+  rowTitle,
+} from '../components/convIdentity';
 
 const NAMED = '0x1111111111111111111111111111111111111111';
 const UNKNOWN = '0x2222222222222222222222222222222222222222';
@@ -30,6 +38,15 @@ describe('conversation titles', () => {
     expect(rowTitle({ peerAddress: null, title: '3 members', groupName: '' })).toEqual({ text: '3 members', placeholder: true });
     expect(rowTitle({ peerAddress: null, title: 'Design', groupName: 'Design' })).toEqual({ text: 'Design', placeholder: false });
     expect(rowTitle({ peerAddress: NAMED, title: '0x1111…1111', groupName: '' })).toEqual({ text: 'alice.base.eth', placeholder: false });
+  });
+});
+
+describe('account names', () => {
+  test('an account shows its profile name, then its device label, then its short address', () => {
+    expect(accountName({ address: NAMED, label: 'Main' }, 'alice.base.eth')).toBe('alice.base.eth');
+    expect(accountName({ address: UNKNOWN, label: ' Main ' }, undefined)).toBe('Main');
+    expect(accountName({ address: UNKNOWN, label: '  ' }, null)).toBe('0x2222…2222');
+    expect(accountName({ address: UNKNOWN })).toBe('0x2222…2222');
   });
 });
 

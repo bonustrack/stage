@@ -4,6 +4,7 @@ import { removeAccountFromDevice, resetXmtpDatabase, useXmtpIdentity } from '../
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { capabilities } from '../../lib/capabilities';
+import { accountName } from '../convIdentity';
 import { report, reported } from '../../lib/errorPolicy';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
@@ -29,7 +30,7 @@ async function removeAndMoveOn(id: string): Promise<void> {
 }
 
 function confirmRemove(rec: AccountRecord): void {
-  const name = rec.label ?? shortAddress(rec.address);
+  const name = accountName(rec);
   void capabilities
     .confirm({
       title: 'Remove account',

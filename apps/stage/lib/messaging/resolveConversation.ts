@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { parseHandle } from '@stage-labs/client/routing/handles';
+import { isPeerHandleSegment, parseHandle } from '@stage-labs/client/routing/handles';
 import { resolveDmConvId, type DmResolveError } from '../dmResolve';
 import { getCachedRows } from '../channelsCache';
 import { resolveHandleToAddress } from '../resolveHandle';
@@ -35,11 +35,6 @@ function directState(param: string | undefined): ConvState {
   return { convId: param ?? null, resolving: false, error: false, pendingAddress: null };
 }
 
-function isPeerHandle(param: string | undefined): boolean {
-  const kind = parseHandle(param).kind;
-  return kind === 'address' || kind === 'stage' || kind === 'basename' || kind === 'ens';
-}
-
 async function resolvePeerConversation(param: string): Promise<ConvState> {
   const address = await resolveHandleToAddress(param);
   if (!address) return FAILED;
@@ -51,7 +46,7 @@ async function resolvePeerConversation(param: string): Promise<ConvState> {
 }
 
 function openingState(param: string | undefined, peerRoute: boolean): ConvState {
-  if (!param || !peerRoute || !isPeerHandle(param)) return directState(param);
+  if (!param || !peerRoute || !isPeerHandleSegment(param)) return directState(param);
   const cached = parseHandle(param).kind === 'address' ? cachedDmConvId(param) : null;
   return cached ? directState(cached) : RESOLVING;
 }
@@ -64,7 +59,7 @@ export function useResolvedConvId(param: string | undefined, peerRoute = true): 
   const [state, setState] = useState<ConvState>(() => openingState(param, peerRoute));
   useEffect(() => {
     setState(openingState(param, peerRoute));
-    if (!param || !peerRoute || !isPeerHandle(param)) return;
+    if (!param || !peerRoute || !isPeerHandleSegment(param)) return;
     let cancelled = false;
     resolvePeerConversation(param)
       .then((next) => {
