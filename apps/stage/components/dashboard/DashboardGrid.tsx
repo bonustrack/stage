@@ -13,7 +13,9 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import type { DashboardWidget } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { swallowNextClick } from '@stage-labs/kit/react-native/dom';
-import { HOLD_MS, MOVE_SLOP, lift, setDragging, settle } from './dragLift';
+import { activateDrag } from '@stage-labs/kit/react-native/sortable';
+import { DRAG_MOVE_SLOP } from '@stage-labs/kit/sortable';
+import { lift, setDragging, settle } from './dragLift';
 import { changeDashboard } from '../../lib/frames/dashboard';
 import { moveWidget } from '../../lib/frames/dashboard.model';
 import { usePalette } from '../../lib/theme';
@@ -110,7 +112,7 @@ function cellPan({ index, rect, rects, position, drag, onDrop, onHold }: CellGes
     })
     .onEnd((e, success) => {
       if (!success) return;
-      if (Math.hypot(e.translationX, e.translationY) >= MOVE_SLOP) {
+      if (Math.hypot(e.translationX, e.translationY) >= DRAG_MOVE_SLOP) {
         position.x.value += e.translationX;
         position.y.value += e.translationY;
         drag.dx.value = 0;
@@ -125,8 +127,7 @@ function cellPan({ index, rect, rects, position, drag, onDrop, onHold }: CellGes
       drag.dy.value = 0;
       runOnJS(settle)();
     });
-  if (touch) pan.activateAfterLongPress(HOLD_MS);
-  else pan.minDistance(MOVE_SLOP);
+  activateDrag(pan, touch);
   pan.config.touchAction = 'pan-y';
   return pan;
 }

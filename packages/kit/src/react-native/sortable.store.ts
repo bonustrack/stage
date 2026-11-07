@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Animated, Platform } from 'react-native';
+import { Animated } from 'react-native';
 import {
+  DRAG_MOVE_SLOP,
   insertionIndex,
   listAt,
   nearestList,
@@ -46,13 +47,11 @@ import {
 export type { SortDrag, SortHidden, SortIndicator, SortListEntry, SortSource, SortState } from './sortable.core';
 export type { SortItemEntry } from './sortable.measure';
 
-const MOVE_SLOP = 6;
 const SHIFT_MS = 120;
 const NEAR_LIST = 48;
-const NATIVE_DRIVER = Platform.OS !== 'web';
 const SCROLL_EDGE = 48;
 const MAX_SCROLL_STEP = 18;
-const { measuresSynchronously, ghostInViewport } = DRAG_PLATFORM;
+const { measuresSynchronously, ghostInViewport, nativeDriver } = DRAG_PLATFORM;
 
 function scrollStep(distance: number): number {
   return Math.ceil(((SCROLL_EDGE - distance) / SCROLL_EDGE) * MAX_SCROLL_STEP);
@@ -71,7 +70,7 @@ function axisOf(direction: SortDirection, point: Point): number {
 function animateTo(core: Core, offset: Animated.Value, value: number): void {
   if (core.shifts.get(offset) === value) return;
   core.shifts.set(offset, value);
-  Animated.timing(offset, { toValue: value, duration: SHIFT_MS, useNativeDriver: NATIVE_DRIVER }).start();
+  Animated.timing(offset, { toValue: value, duration: SHIFT_MS, useNativeDriver: nativeDriver }).start();
 }
 
 function slideOthers(core: Core, drag: SortDrag, toIndex: number): void {
@@ -202,7 +201,7 @@ function move(core: Core, at: Point): void {
   const drag = core.state.drag;
   if (drag === null || drag.keyboard) return;
   core.pointer = at;
-  core.moved = core.moved || Math.hypot(at.x - core.start.x, at.y - core.start.y) >= MOVE_SLOP;
+  core.moved = core.moved || Math.hypot(at.x - core.start.x, at.y - core.start.y) >= DRAG_MOVE_SLOP;
   refresh(core, drag);
   place(core, drag);
   retarget(core, drag);

@@ -2,13 +2,10 @@ import { useWindowDimensions } from 'react-native';
 import { useBottomChromeHeight } from './bottomChrome';
 
 export { WEB_TAB_RAIL_WIDTH } from './webChrome.core';
+export { isCoarsePointer } from '@stage-labs/kit/react-native/dom';
 
 export function desktopTitleBarInset(): number {
   return 0;
-}
-
-export function isCoarsePointer(): boolean {
-  return true;
 }
 
 export function documentScroll(): { x: number; y: number } {

@@ -25,9 +25,10 @@ export function measureElement(node: unknown): ScreenRect | null {
 export interface DragPlatform {
   measuresSynchronously: boolean;
   ghostInViewport: boolean;
+  nativeDriver: boolean;
 }
 
-export const DRAG_PLATFORM: DragPlatform = { measuresSynchronously: true, ghostInViewport: true };
+export const DRAG_PLATFORM: DragPlatform = { measuresSynchronously: true, ghostInViewport: true, nativeDriver: false };
 
 export function measureElementLater(node: unknown): Promise<ScreenRect | null> {
   return Promise.resolve(measureElement(node));

@@ -9,7 +9,7 @@ export const isCoarsePointer: typeof Web.isCoarsePointer = () => true;
 
 export const measureElement: typeof Web.measureElement = () => null;
 
-export const DRAG_PLATFORM: typeof Web.DRAG_PLATFORM = { measuresSynchronously: false, ghostInViewport: false };
+export const DRAG_PLATFORM: typeof Web.DRAG_PLATFORM = { measuresSynchronously: false, ghostInViewport: false, nativeDriver: true };
 
 interface Measurable {
   measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) => void;

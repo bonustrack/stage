@@ -1,5 +1,8 @@
 export type SortDirection = 'vertical' | 'horizontal';
 
+export const DRAG_HOLD_MS = 250;
+export const DRAG_MOVE_SLOP = 6;
+
 export interface SortRect {
   x: number;
   y: number;

@@ -2,9 +2,6 @@ import { Vibration } from 'react-native';
 import { setTouchScrollBlocked } from '@stage-labs/kit/react-native/dom';
 import { setChromeClass } from '../layout/webChrome';
 
-export const HOLD_MS = 250;
-export const MOVE_SLOP = 6;
-
 export function setDragging(on: boolean): void {
   setChromeClass('dragging', on);
 }

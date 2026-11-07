@@ -1,12 +1,14 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import type { AccessibilityActionEvent } from 'react-native';
 import { Gesture, type PanGesture } from 'react-native-gesture-handler';
-import type { SortDirection, SortStep } from '../sortable';
+import { DRAG_HOLD_MS, DRAG_MOVE_SLOP, type SortDirection, type SortStep } from '../sortable';
 import type { ListContextValue } from './sortable.context';
 import { isCoarsePointer, listenKeys, swallowNextClick } from './dom';
 
-const HOLD_MS = 250;
-const MOVE_SLOP = 6;
+export function activateDrag(pan: PanGesture, touch: boolean): PanGesture {
+  return touch ? pan.activateAfterLongPress(DRAG_HOLD_MS) : pan.minDistance(DRAG_MOVE_SLOP);
+}
+
 const SORT_STEPS: readonly SortStep[] = ['backward', 'forward', 'previousList', 'nextList'];
 
 const KEY_STEPS: Record<SortDirection, Record<string, SortStep>> = {
@@ -99,8 +101,7 @@ export function usePan(
         const drag = coordinator.state().drag;
         if (drag?.itemId === itemId && !drag.keyboard) coordinator.cancel();
       });
-    if (touch) pan.activateAfterLongPress(HOLD_MS);
-    else pan.minDistance(MOVE_SLOP);
+    activateDrag(pan, touch);
     pan.config.touchAction = list.touchAction;
     return pan;
   }, [list, itemId, preview, onHold, enabled, touch]);

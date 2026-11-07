@@ -27,6 +27,7 @@ import {
 import { useKitColors } from './theme-context';
 
 export type { SortDirection, SortMove } from '../sortable';
+export { activateDrag } from './sortable.gesture';
 export type { SortTouchAction } from './sortable.context';
 export type { SortableItemProps } from './sortable.item';
 export type { SortIndicator, SortSource } from './sortable.store';
