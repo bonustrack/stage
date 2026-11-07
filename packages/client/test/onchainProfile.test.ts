@@ -18,10 +18,15 @@ describe('basename reverse nodes', () => {
   });
 });
 
-function fakeClient(answers: { name: string; addr: string; text?: Record<string, string> }, fail = false): PublicClient {
+type FailingRead = (functionName: string, key: unknown) => boolean;
+
+function fakeClient(
+  answers: { name: string; addr: string; text?: Record<string, string> },
+  fails: FailingRead = () => false,
+): PublicClient {
   return {
     readContract: async ({ functionName, args }: { functionName: string; args?: unknown[] }) => {
-      if (fail) throw new Error('rpc down');
+      if (fails(functionName, args?.[1])) throw new Error('rpc down');
       if (functionName === 'resolver') return '0x00000000000000000000000000000000000000C0';
       if (functionName === 'name') return answers.name;
       if (functionName === 'addr') return answers.addr;
@@ -66,7 +71,7 @@ describe('resolveBasenameProfile', () => {
     expect(await resolveBasenameProfile(client, ALICE)).toBeNull();
   });
 
-  test('resolves through the Base client and swallows RPC failures', async () => {
+  test('resolves through the Base client', async () => {
     const clients = fakeClient({ name: 'tony.base.eth', addr: ALICE });
     expect(await resolveOnchainProfile(clients, ALICE)).toEqual({
       name: 'tony.base.eth',
@@ -75,7 +80,28 @@ describe('resolveBasenameProfile', () => {
       avatar: undefined,
       source: 'basename',
     });
-    expect(await resolveOnchainProfile(fakeClient({ name: '', addr: '' }, true), ALICE)).toBeNull();
+  });
+
+  test('a failed read fails the lookup instead of reading as an empty record', async () => {
+    const answers = { name: 'tony.base.eth', addr: ALICE, text: { avatar: 'ipfs://pic' } };
+    await expect(
+      resolveOnchainProfile(
+        fakeClient(answers, () => true),
+        ALICE,
+      ),
+    ).rejects.toThrow('rpc down');
+    await expect(
+      resolveOnchainProfile(
+        fakeClient(answers, (fn, key) => fn === 'text' && key === 'avatar'),
+        ALICE,
+      ),
+    ).rejects.toThrow('rpc down');
+    await expect(
+      resolveOnchainProfile(
+        fakeClient(answers, (fn) => fn === 'resolver'),
+        ALICE,
+      ),
+    ).rejects.toThrow('rpc down');
   });
 });
 
@@ -91,6 +117,11 @@ describe('resolveOnchainProfile issued-name fallback', () => {
   test('stays null without a lookup or when the issuer knows no name', async () => {
     expect(await resolveOnchainProfile(clients, ALICE)).toBeNull();
     expect(await resolveOnchainProfile(clients, ALICE, async () => null)).toBeNull();
+  });
+
+  test('a failed reverse lookup does not fall back to the issuer name', async () => {
+    const reverseDown = fakeClient({ name: '', addr: ALICE }, (fn) => fn === 'name');
+    await expect(resolveOnchainProfile(reverseDown, ALICE, async () => 'alice456.stage.base.eth')).rejects.toThrow('rpc down');
   });
 
   test('rejects an issuer name whose forward record points elsewhere', async () => {

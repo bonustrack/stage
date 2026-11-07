@@ -99,9 +99,7 @@ export function baseProfileClient(): PublicClient {
 }
 
 async function registryRecord(client: PublicClient, functionName: 'owner' | 'resolver', node: Hex): Promise<Hex | null> {
-  const value: Hex = await client
-    .readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName, args: [node] })
-    .catch(() => zeroAddress);
+  const value: Hex = await client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName, args: [node] });
   return value === zeroAddress ? null : value;
 }
 
@@ -132,8 +130,7 @@ async function profileForName(client: PublicClient, name: string, address: strin
   const node = namehash(normalize(name));
   const resolverAddress = (await registryRecord(client, 'resolver', node)) ?? BASENAME_L2_RESOLVER;
   const resolver = { address: resolverAddress, abi: L2_RESOLVER_ABI } as const;
-  const text = (key: string): Promise<string> =>
-    client.readContract({ ...resolver, functionName: 'text', args: [node, key] }).catch(() => '');
+  const text = (key: string): Promise<string> => client.readContract({ ...resolver, functionName: 'text', args: [node, key] });
   const [forward, avatar, displayName, description] = await Promise.all([
     client.readContract({ ...resolver, functionName: 'addr', args: [node] }),
     text(PROFILE_TEXT_KEYS.avatar),
@@ -214,9 +211,8 @@ export async function resolveOnchainProfile(
   address: string,
   issuedName?: IssuedNameLookup,
 ): Promise<OnchainProfile | null> {
-  const primary = await resolveBasenameProfile(client, address).catch(() => null);
+  const primary = await resolveBasenameProfile(client, address);
   if (primary !== null || issuedName === undefined) return primary;
-  const name = await issuedName(address).catch(() => null);
-  if (name === null) return null;
-  return profileForName(client, name, address).catch(() => null);
+  const name = await issuedName(address);
+  return name === null ? null : profileForName(client, name, address);
 }

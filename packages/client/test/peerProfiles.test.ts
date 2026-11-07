@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
+import type { PublicClient } from 'viem';
+import { resolveOnchainProfile } from '../src/identity/onchainProfile';
 import { createPeerProfiles } from '../src/identity/peerProfiles';
 import { fakeFetch } from './helpers';
 
@@ -105,5 +107,31 @@ describe('the store can be mirrored to disk', () => {
     expect(entries[TONY]).toBe('Tony');
     expect(entries[NAMELESS]).toBeNull();
     expect(entries[RENAMED]).toBe('After');
+  });
+});
+
+describe('a flaky RPC never wipes a cached profile', () => {
+  const avatarReadFails = {
+    readContract: async ({ functionName, args }: { functionName: string; args?: unknown[] }) => {
+      if (functionName === 'text' && args?.[1] === 'avatar') throw new Error('rpc down');
+      if (functionName === 'resolver') return '0x00000000000000000000000000000000000000C0';
+      if (functionName === 'name') return 'tony.base.eth';
+      return functionName === 'addr' ? TONY : '';
+    },
+  } as unknown as PublicClient;
+
+  test('a failed avatar read keeps the cached avatar and changes nothing', async () => {
+    const flaky = createPeerProfiles({ resolveOnchain: (address) => resolveOnchainProfile(avatarReadFails, address) });
+    flaky.seed({ [TONY]: { name: 'tony.base.eth', avatar: 'ipfs://cached', source: 'basename' } });
+    answer = { [TONY]: 'tony.base.eth' };
+    let notified = 0;
+    const unsubscribe = flaky.subscribe(() => {
+      notified += 1;
+    });
+    flaky.ensure([TONY]);
+    await settled();
+    unsubscribe();
+    expect(flaky.avatar(TONY)).toBe('ipfs://cached');
+    expect(notified).toBe(0);
   });
 });
