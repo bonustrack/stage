@@ -55,6 +55,7 @@ export function useBoardChannelCreation({ by, column, rowIds, onClose }: Creatio
     const pending = { ...draft, id: nextId.current, existingIds: rowIds, convId: null, error: null };
     changeName('');
     dispatch({ type: 'submit', pending });
+    onClose();
     void run(pending);
   };
   const retry = (pending: BoardPendingChannel): void => {
