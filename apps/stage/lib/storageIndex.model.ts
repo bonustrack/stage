@@ -2,6 +2,8 @@ import { deleteTargetOfContent, isDeleteRequestType, isDeletedPlaceholderType } 
 import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { attachedFilesOf } from '@stage-labs/client/xmtp/contentTypes';
+import { z } from 'zod';
+import { jsonWith, storedRecordOf, storedStrings } from './storeCore';
 
 export const FILE_PAGE_SIZE = 20;
 export const DELETED_LIMIT = 2_000;
@@ -53,10 +55,6 @@ function byteCount(value: unknown): number {
   if (typeof value === 'number' || typeof value === 'bigint') return Number(value);
   if (typeof value === 'string' && /^\d+$/.test(value)) return Number(value);
   return Number.NaN;
-}
-
-function objectOf(content: unknown): Record<string, unknown> | null {
-  return typeof content === 'object' && content !== null ? (content as Record<string, unknown>) : null;
 }
 
 function fileName(name: unknown, index: number, count: number): string {
@@ -174,44 +172,44 @@ export function nextPageBeforeNs(page: readonly { sentNs: number }[]): number | 
   return oldest === undefined ? undefined : oldest + PAGE_OVERLAP_NS;
 }
 
-function isStoredFile(value: unknown): value is StoredFile {
-  const f = objectOf(value);
-  return (
-    f !== null &&
-    typeof f.messageId === 'string' &&
-    typeof f.convId === 'string' &&
-    typeof f.name === 'string' &&
-    typeof f.index === 'number' &&
-    typeof f.size === 'number' &&
-    typeof f.sentMs === 'number'
-  );
-}
+const storedFileSchema = z.object({
+  messageId: z.string(),
+  convId: z.string(),
+  name: z.string(),
+  index: z.number(),
+  size: z.number(),
+  sentMs: z.number(),
+});
+
+const storedFilesSchema = z
+  .array(z.unknown())
+  .transform((items) => items.flatMap((item) => storedFileSchema.safeParse(item).data ?? []))
+  .catch([]);
+
+const isCount = (value: unknown): value is number => typeof value === 'number';
+
+const storedIndexSchema = z.object({
+  v: z.literal(1),
+  inboxId: z.string(),
+  cursorNs: z.number(),
+  files: storedFilesSchema,
+  deleted: storedStrings.catch([]),
+  retry: storedRecordOf(isCount).catch({}),
+});
 
 function indexRecord(index: StorageIndex): Record<string, unknown> {
   return { v: 1, ...index };
-}
-
-function retryOf(value: unknown): Record<string, number> {
-  const entries = Object.entries(objectOf(value) ?? {});
-  return Object.fromEntries(entries.filter((e): e is [string, number] => typeof e[1] === 'number'));
-}
-
-function indexOfRecord(raw: unknown): StorageIndex | null {
-  const o = objectOf(raw);
-  if (o === null || o.v !== 1 || typeof o.inboxId !== 'string' || typeof o.cursorNs !== 'number') return null;
-  const files = Array.isArray(o.files) ? o.files.filter(isStoredFile) : [];
-  const deleted = Array.isArray(o.deleted) ? o.deleted.filter((id): id is string => typeof id === 'string') : [];
-  return { inboxId: o.inboxId, cursorNs: o.cursorNs, files: files.sort(newestFirst), deleted, retry: retryOf(o.retry) };
 }
 
 export function encodeIndex(index: StorageIndex): string {
   return JSON.stringify(indexRecord(index));
 }
 
+const parseIndex = jsonWith(storedIndexSchema);
+
 export function decodeIndex(text: string): StorageIndex | null {
-  try {
-    return indexOfRecord(JSON.parse(text));
-  } catch {
-    return null;
-  }
+  const stored = parseIndex(text);
+  if (stored === undefined) return null;
+  const { inboxId, cursorNs, files, deleted, retry } = stored;
+  return { inboxId, cursorNs, files: files.sort(newestFirst), deleted, retry };
 }

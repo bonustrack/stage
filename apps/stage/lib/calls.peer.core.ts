@@ -1,6 +1,8 @@
 import { CALL_ICE_GATHER_MS, CALL_ICE_SERVERS } from '@stage-labs/client/xmtp/call';
 import { NO_MEDIA, type CallLinkStatus, type CallMedia } from './calls.store';
 import type { CallStream, CallTrack, Outgoing } from './calls.types';
+import { z } from 'zod';
+import { jsonWith } from './storeCore';
 
 interface TransportHooks {
   track: () => void;
@@ -33,15 +35,14 @@ export interface PeerHooks {
   onLost: () => void;
 }
 
+const callMediaSchema = z
+  .custom<{ audio?: unknown; video?: unknown; screen?: unknown }>((value) => value !== null && typeof value === 'object')
+  .transform((m): CallMedia => ({ audio: m.audio === true, video: m.video === true, screen: m.screen === true }));
+
+const parseMediaJson = jsonWith(callMediaSchema);
+
 export function parseMedia(data: unknown): CallMedia | null {
-  if (typeof data !== 'string') return null;
-  try {
-    const m: unknown = JSON.parse(data);
-    if (!m || typeof m !== 'object') return null;
-    return { audio: 'audio' in m && m.audio === true, video: 'video' in m && m.video === true, screen: 'screen' in m && m.screen === true };
-  } catch {
-    return null;
-  }
+  return typeof data === 'string' ? (parseMediaJson(data) ?? null) : null;
 }
 
 export function makePeer(transport: PeerTransport, { onChange, mine, onLost }: PeerHooks): Peer {

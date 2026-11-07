@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
+import { z } from 'zod';
 import { secureStorage } from '../platform/storage';
 import { THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference, type ThemePreference } from '@stage-labs/kit/theme';
 import {
@@ -13,7 +14,7 @@ import {
 } from '@stage-labs/kit/tokens';
 import { derivePalette, type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint } from '@stage-labs/kit/theme-derive';
 import type { KitThemeValue } from '@stage-labs/kit/react-native/theme-context';
-import { createValueStore } from './persistedStore';
+import { createValueStore, flagCodec } from './persistedStore';
 import { cloneSeed, defaultSeeds, migrateSeeds, withSeedColor, type SeedColorKey, type ThemeSeeds } from './colorOverrides.model';
 
 export type { ThemePreference, SeedColorKey };
@@ -53,28 +54,11 @@ export function useThemeFromSettings(): KitThemeValue {
 
 export { useKitPalette as usePalette, useKitScheme as useEffectiveColorScheme } from '@stage-labs/kit/react-native/theme-context';
 
-function parseSeeds(raw: string): ThemeSeeds | undefined {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? migrateSeeds(parsed) : undefined;
-  } catch {
-    return undefined;
-  }
-}
+const storedSeedsSchema = z.custom<object>((value) => value !== null && typeof value === 'object').transform(migrateSeeds);
 
-const seeds = createValueStore<ThemeSeeds>({
-  key: 'theme:seed',
-  default: defaultSeeds(),
-  serialize: (v) => JSON.stringify(v),
-  deserialize: parseSeeds,
-});
+const seeds = createValueStore<ThemeSeeds>({ key: 'theme:seed', default: defaultSeeds(), schema: storedSeedsSchema });
 
-const custom = createValueStore<boolean>({
-  key: 'theme:custom',
-  default: false,
-  serialize: (on) => (on ? '1' : '0'),
-  deserialize: (raw) => raw === '1',
-});
+const custom = createValueStore<boolean>({ key: 'theme:custom', default: false, ...flagCodec(false) });
 
 export const useThemeSeeds = (): ThemeSeeds => seeds.use();
 
