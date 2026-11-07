@@ -7,7 +7,7 @@ import { KERNEL_VERSION, ENTRY_POINT_VERSION } from '@stage-labs/client/zerodev/
 import { WALLET_CHAIN_ID } from '@stage-labs/client/wallet/chains';
 import { walletAccountRows, walletDeployLabel, type WalletDeployState } from './WalletSettings.model';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
-import { useActiveAccountRecord } from '../../lib/messaging/account';
+import { useActiveAccount } from '../../lib/messaging/account';
 import { makePublicClient } from '../../lib/zerodev/client';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
@@ -26,15 +26,15 @@ async function fetchDeployState(rec: AccountRecord): Promise<WalletDeployState> 
   }
 }
 
-function useWalletRecord(): { rec: AccountRecord | null; deploy: WalletDeployState } {
-  const rec = useActiveAccountRecord();
+function useWalletRecord(): { rec: AccountRecord | null; loaded: boolean; deploy: WalletDeployState } {
+  const { record: rec, loaded } = useActiveAccount();
   const { data: deploy } = useQuery({
     queryKey: ['walletDeployState', rec?.id ?? '', rec?.address ?? ''],
     queryFn: () => (rec ? fetchDeployState(rec) : Promise.resolve<WalletDeployState>('unknown')),
     enabled: !!rec,
     staleTime: 60_000,
   });
-  return { rec, deploy: deploy ?? 'loading' };
+  return { rec, loaded, deploy: deploy ?? 'loading' };
 }
 
 function WalletInfoRow({ label, value }: { label: string; value: string }): React.ReactElement {
@@ -115,15 +115,17 @@ function SmartAccountSections({ rec }: { rec: AccountRecord }): React.ReactEleme
 
 export function WalletSettings(): React.ReactElement {
   const { text: fg } = usePalette();
-  const { rec, deploy } = useWalletRecord();
+  const { rec, loaded, deploy } = useWalletRecord();
   const smart = rec?.type === 'smart';
 
   return (
     <SettingsPage section="wallet">
       {!rec ? (
-        <Text size="xs" color={fg} style={{ padding: 24 }}>
-          No active account.
-        </Text>
+        loaded ? (
+          <Text size="xs" color={fg} style={{ padding: 24 }}>
+            No active account.
+          </Text>
+        ) : null
       ) : (
         <>
           <SettingsGroup title="Address" footnote={smart ? 'Your smart account on Base. Tap to copy.' : 'Tap to copy.'}>

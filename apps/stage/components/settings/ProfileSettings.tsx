@@ -5,7 +5,7 @@ import { useCopiedFlag } from '../useCopiedFlag';
 import { getPeerHandle, getPeerName, getPeerProfileSource, invalidatePeerProfile, usePeerProfiles } from '../../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { useActiveAccountRecord } from '../../lib/messaging/account';
+import { useActiveAccount } from '../../lib/messaging/account';
 import { Avatar } from '../Avatar';
 import { SettingsPage } from './SettingsPage';
 import { profileView, type ProfileView } from './ProfileSettings.model';
@@ -84,7 +84,8 @@ function EditPane({
 }
 
 export function ProfileSettings(): React.ReactElement {
-  const address = useActiveAccountRecord()?.address ?? null;
+  const { record, loaded } = useActiveAccount();
+  const address = record?.address ?? null;
   usePeerProfiles([address]);
   const handle = getPeerHandle(address);
   const source = getPeerProfileSource(address);
@@ -92,7 +93,7 @@ export function ProfileSettings(): React.ReactElement {
 
   return (
     <SettingsPage section="profile">
-      {address && view.claimVisible ? (
+      {!loaded ? null : address && view.claimVisible ? (
         <Column align="center" padding={{ top: 24, bottom: 16 }}>
           <ClaimStageName
             address={address}
