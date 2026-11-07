@@ -4,7 +4,7 @@ import type { Hex } from 'viem';
 import { WALLET_ASSETS, type Asset, type AssetRow } from '@stage-labs/client/wallet/assets';
 import { BASE_NAMES_ONLY, lookupAddress, type PersonLookup } from '@stage-labs/client/identity/personLookup';
 import { buildPublicTransfer } from '@stage-labs/client/wallet/send';
-import { tokenAmountFromInput, type AmountUnit } from '@stage-labs/client/wallet/sendAmount';
+import { toggleAmountUnit, tokenAmountFromInput, type AmountUnit } from '@stage-labs/client/wallet/sendAmount';
 import { sendCallsFrom, waitForReceipt } from '../../../lib/tx';
 import { getActiveAccount } from '../../../lib/accounts';
 import { usePersonLookup } from '../../../lib/resolveHandle';
@@ -18,12 +18,11 @@ export interface SendState {
   amount: string;
   setAmount: (v: string) => void;
   unit: AmountUnit;
-  setUnit: (unit: AmountUnit) => void;
+  onToggleUnit: () => void;
   recipient: PersonLookup;
   resolved: string | null;
   tokenAmountText: string;
   balance: string | null;
-  priceUsd: number | null;
   secondaryLabel: string;
   canSubmit: boolean;
   busy: boolean;
@@ -87,6 +86,12 @@ export function useSend(initialTo: string, symbol: string, row: AssetRow | undef
   const busy = txState === 'submitting' || txState === 'pending';
   const canSubmit = !!resolved && tokenAmount > 0 && !!asset;
 
+  const onToggleUnit = (): void => {
+    const next = toggleAmountUnit(amount, unit, priceUsd);
+    setAmount(next.amount);
+    setUnit(next.unit);
+  };
+
   const onMax = (): void => {
     const max = maxAmountOf(balance, unit, priceUsd);
     if (max !== null) setAmount(max);
@@ -103,12 +108,11 @@ export function useSend(initialTo: string, symbol: string, row: AssetRow | undef
     amount,
     setAmount,
     unit,
-    setUnit,
+    onToggleUnit,
     recipient,
     resolved,
     tokenAmountText,
     balance,
-    priceUsd,
     secondaryLabel,
     canSubmit,
     busy,

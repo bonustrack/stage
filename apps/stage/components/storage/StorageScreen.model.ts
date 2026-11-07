@@ -15,37 +15,10 @@ export const STORAGE_FILTERS: readonly { value: StorageFilter; label: string }[]
 ];
 
 const KIND_EXTENSIONS: readonly (readonly [StorageKind, readonly string[]])[] = [
-  ['image', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'avif', 'bmp', 'tif', 'tiff', 'svg', 'ico']],
-  ['video', ['mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi', 'wmv', '3gp', 'mpg', 'mpeg']],
-  ['audio', ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'oga', 'opus', 'flac', 'weba', 'amr', 'caf', 'aif', 'aiff', 'mid', 'midi']],
-  [
-    'document',
-    [
-      'pdf',
-      'doc',
-      'docx',
-      'txt',
-      'md',
-      'rtf',
-      'odt',
-      'ods',
-      'odp',
-      'xls',
-      'xlsx',
-      'csv',
-      'tsv',
-      'ppt',
-      'pptx',
-      'key',
-      'pages',
-      'numbers',
-      'json',
-      'xml',
-      'html',
-      'htm',
-      'epub',
-    ],
-  ],
+  ['image', 'jpg jpeg png gif webp heic heif avif bmp tif tiff svg ico'.split(' ')],
+  ['video', 'mp4 mov m4v webm mkv avi wmv 3gp mpg mpeg'.split(' ')],
+  ['audio', 'm4a mp3 wav aac ogg oga opus flac weba amr caf aif aiff mid midi'.split(' ')],
+  ['document', 'pdf doc docx txt md rtf odt ods odp xls xlsx csv tsv ppt pptx key pages numbers json xml html htm epub'.split(' ')],
 ];
 
 export interface StorageRow {

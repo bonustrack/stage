@@ -31,13 +31,6 @@ export function ContactsScreen(): React.ReactElement | null {
   const { contacts, collected } = useContactList(true);
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
-  const open = useCallback(
-    (address: string): void => {
-      router.push(dmLinkOf(address));
-    },
-    [router],
-  );
-
   const renderItem = useCallback(
     ({ item }: { item: Contact }): React.ReactElement => {
       const model = contactNameModel({
@@ -55,12 +48,12 @@ export function ContactsScreen(): React.ReactElement | null {
           subtitle={model.subtitle}
           previewLines={1}
           onPress={() => {
-            open(item.address);
+            router.push(dmLinkOf(item.address));
           }}
         />
       );
     },
-    [open],
+    [router],
   );
 
   return (

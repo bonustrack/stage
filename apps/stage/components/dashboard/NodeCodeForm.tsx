@@ -10,7 +10,7 @@ import { capabilities } from '../../lib/capabilities';
 import { ignore } from '../../lib/errorPolicy';
 import { linkProxyBase } from '../../lib/linkProxy';
 import { addLivePreview } from '../../lib/frames/addToDashboard';
-import { frameKeysOf, type FrameKeys } from '../../lib/frames/frameKeys';
+import { frameKeysOf } from '../../lib/frames/frameKeys';
 import type { LivePreview } from '../../lib/frames/live.model';
 import { frameNodes } from '../../lib/frames/nodeTransport';
 import { useEffectiveColorScheme } from '../../lib/theme';
@@ -77,30 +77,6 @@ function useUnaddedNodeCleanup(key: string): { track: (work: Promise<unknown>) =
   };
 }
 
-function PublishedNode({ node, keys }: { node: Published; keys: FrameKeys }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  return (
-    <Column gap={6}>
-      <Row align="center" gap={8}>
-        <Column weight={1} minWidth={0}>
-          <Text text={node.url} size="xs" color="secondary" truncate />
-        </Column>
-        <Button
-          label="Copy link"
-          size="sm"
-          color="secondary"
-          variant="ghost"
-          dark={dark}
-          onPress={() => {
-            capabilities.copy('Link', node.url);
-          }}
-        />
-      </Row>
-      <FrameSurface frame={node.frame} keys={keys} />
-    </Column>
-  );
-}
-
 export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const [key] = useState(newNodeKey);
@@ -153,7 +129,26 @@ export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactEle
         hint={hint ?? undefined}
         hintTone="danger"
       />
-      {ready ? <PublishedNode node={published} keys={frameKeysOf({ kind: 'codePreview', nodeKey: key })} /> : null}
+      {ready ? (
+        <Column gap={6}>
+          <Row align="center" gap={8}>
+            <Column weight={1} minWidth={0}>
+              <Text text={published.url} size="xs" color="secondary" truncate />
+            </Column>
+            <Button
+              label="Copy link"
+              size="sm"
+              color="secondary"
+              variant="ghost"
+              dark={dark}
+              onPress={() => {
+                capabilities.copy('Link', published.url);
+              }}
+            />
+          </Row>
+          <FrameSurface frame={published.frame} keys={frameKeysOf({ kind: 'codePreview', nodeKey: key })} />
+        </Column>
+      ) : null}
       <Text text={NOTE} size="xs" color="secondary" />
       <Button
         label={buttonLabel(busy, ready)}

@@ -22,24 +22,15 @@ interface WidgetChrome {
   grip: WidgetGrip;
 }
 
-function useLiveActive(): boolean {
-  const focused = useIsFocused();
-  const inFront = useStoreValue(subscribeAppInFront, isAppInFront);
-  return focused && inFront;
-}
-
 function LiveBody({ live: { keys, state, act } }: { live: LiveWidgetHandle }): React.ReactElement {
-  if (state?.frame === null || state?.frame === undefined) {
-    const problem = state === undefined ? null : liveProblemText(state);
-    if (problem === null)
-      return (
-        <Column weight={1} align="center" justify="center">
-          <Spinner />
-        </Column>
-      );
-    return <Unavailable title={NOT_LOADED} detail={problem} />;
-  }
-  return <FrameSurface frame={state.frame} keys={keys} onMessage={act} fill />;
+  if (state?.frame) return <FrameSurface frame={state.frame} keys={keys} onMessage={act} fill />;
+  const problem = state === undefined ? null : liveProblemText(state);
+  if (problem !== null) return <Unavailable title={NOT_LOADED} detail={problem} />;
+  return (
+    <Column weight={1} align="center" justify="center">
+      <Spinner />
+    </Column>
+  );
 }
 
 function NodeWidget({
@@ -49,8 +40,9 @@ function NodeWidget({
   onMenu,
   grip,
 }: WidgetChrome & { widgetId: string; source: LiveSource; host: string }): React.ReactElement {
-  const active = useLiveActive();
-  const live = useLiveWidget(widgetId, source, active);
+  const focused = useIsFocused();
+  const inFront = useStoreValue(subscribeAppInFront, isAppInFront);
+  const live = useLiveWidget(widgetId, source, focused && inFront);
   return (
     <Column weight={1} gap={6}>
       {grip(<FrameHeader title={host} status={liveStatusText(live.state, channelTimestamp)} onMenu={onMenu} />)}

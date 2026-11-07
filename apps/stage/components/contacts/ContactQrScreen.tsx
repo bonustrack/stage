@@ -166,20 +166,17 @@ function ContactQr({ address, selection }: { address: string; selection: number 
 export function ContactQrScreen(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const selection = useAccountSelection();
-  const {
-    data: address,
-    isPending,
-    refetch,
-  } = useQuery({
+  const account = useQuery({
     queryKey: accountQueryKeyAt('selection', selection, 'contactQr'),
     queryFn: async () => (await getSelectedAccount())?.address ?? null,
   });
+  const address = account.data;
   const valid = contactQrValue(address) !== null;
   return (
     <Column surface="surface" weight={1}>
       <StackHeader title="Connect on Stage" backTo="/" />
       <ScreenScroll keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: PAGE_GUTTER }}>
-        {isPending ? (
+        {account.isPending ? (
           <Spinner />
         ) : valid && address ? (
           <ContactQr key={selection} address={address} selection={selection} />
@@ -192,7 +189,7 @@ export function ContactQrScreen(): React.ReactElement {
               variant="soft"
               color="secondary"
               onPress={() => {
-                void refetch();
+                void account.refetch();
               }}
             />
           </Column>

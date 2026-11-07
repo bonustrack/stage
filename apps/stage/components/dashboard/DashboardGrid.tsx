@@ -132,9 +132,8 @@ function cellPan({ index, rect, rects, position, drag, onDrop, onHold }: CellGes
   return pan;
 }
 
-function useCellGesture(args: CellGestureArgs): PanGesture {
+function useCellGesture({ index, rect, rects, position, drag, onDrop, onHold }: CellGestureArgs): PanGesture {
   const touch = isCoarsePointer();
-  const { index, rect, rects, position, drag, onDrop, onHold } = args;
   return useMemo(
     () => cellPan({ index, rect, rects, position, drag, onDrop, onHold }, touch),
     [index, rect, rects, position, drag, onDrop, onHold, touch],

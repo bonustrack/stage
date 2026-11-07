@@ -6,7 +6,7 @@ import { Title } from '@stage-labs/kit/react-native/title';
 import { explorerTxUrl } from '@stage-labs/client/xmtp/tx';
 import { viemChainName, WALLET_CHAIN_ID } from '@stage-labs/client/wallet/chains';
 import type { PersonLookup } from '@stage-labs/client/identity/personLookup';
-import { DANGER, usePalette } from '../../../lib/theme';
+import { DANGER, useEffectiveColorScheme, usePalette } from '../../../lib/theme';
 import { useSafeAreaInsets } from '../../layout/safeArea';
 import { openInBubbleLink } from '../../../lib/capabilities';
 import { bubbleLinkProps } from '../../links/linkProps';
@@ -15,24 +15,22 @@ import type { SendTxState } from './send.model';
 import { Column, Row, PAGE_GUTTER } from '../../layout';
 
 export function WalletFooter({
-  border,
-  dark,
   onCancel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   submitLabel,
   onSubmit,
   submitDisabled,
   submitLoading,
 }: {
-  border: string;
-  dark: boolean;
   onCancel: () => void;
-  cancelLabel?: string;
+  cancelLabel: string;
   submitLabel: string;
   onSubmit: () => void;
-  submitDisabled?: boolean;
-  submitLoading?: boolean;
+  submitDisabled: boolean;
+  submitLoading: boolean;
 }): React.ReactElement {
+  const { border } = usePalette();
+  const dark = useEffectiveColorScheme() === 'dark';
   const insets = useSafeAreaInsets();
   return (
     <Row
@@ -48,8 +46,8 @@ export function WalletFooter({
         pill
         dark={dark}
         style={{ flex: 1 }}
-        loading={!!submitLoading}
-        disabled={!!submitDisabled}
+        loading={submitLoading}
+        disabled={submitDisabled}
         onPress={onSubmit}
         label={submitLabel}
       />

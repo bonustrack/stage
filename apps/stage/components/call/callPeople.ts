@@ -8,15 +8,11 @@ interface CallPerson {
   name: string;
 }
 
-function nameOf(address: string | null): string {
-  return address ? peerLabel(address) : 'Someone';
-}
-
 export function callPerson(convId: string, inboxId: string, selfInboxId: string | null): CallPerson {
   if (inboxId === selfInboxId) return { address: cachedSelfEthAddress() ?? null, name: 'You' };
   const row = homeRowOf(convId);
   const address = row?.inboxToAddr[inboxId] ?? row?.peerAddress ?? null;
-  return { address, name: nameOf(address) };
+  return { address, name: address ? peerLabel(address) : 'Someone' };
 }
 
 export function callTitle(convId: string): ConvTitle {

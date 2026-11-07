@@ -19,54 +19,38 @@ const ADDRESS_HINT =
 const QR_SIZE = 240;
 const QR_PLACEHOLDER_BACKGROUND = '#f4f4f5';
 
-function AddressCard({ address, onCopy }: { address: string; onCopy: () => void }): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
-  return (
-    <Column gap={8}>
-      <Eyebrow text={ADDRESS_LABEL.toUpperCase()} size="3xs" color="secondary" />
-      <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
-        <Column weight={1}>
-          <Text text={address || '-'} size="xs" truncate />
-        </Column>
-        <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
-      </ListViewItem>
-      <Text size="md" variant="caption" text={ADDRESS_HINT} color="secondary" textAlign="center" />
-    </Column>
-  );
-}
-
-function AddressQr({ address, border }: { address: string; border: string }): React.ReactElement {
-  return (
-    <QrPanel
-      value={address || null}
-      size={QR_SIZE}
-      padding={16}
-      radius="xl"
-      border={border}
-      placeholder={<Column width={QR_SIZE} height={QR_SIZE} background={QR_PLACEHOLDER_BACKGROUND} />}
-    />
-  );
-}
-
 export function ReceiveScreen(): React.ReactElement {
   const { border } = usePalette();
-
+  const dark = useKitScheme() === 'dark';
   const { data: active } = useQuery({ queryKey: ['receiveActiveAccount'], queryFn: getActiveAccount });
   const address = active?.address ?? '';
-
   const onCopy = (): void => {
     if (!address) return;
     capabilities.copy('Address', address);
   };
-
   return (
     <Column surface="surface" weight={1}>
       <StackHeader title="Receive" wallet />
-
       <ScreenScroll contentContainerStyle={{ padding: 16, alignItems: 'center', gap: 16 }}>
         <Column width="100%" align="center" gap={16}>
-          <AddressQr address={address} border={border} />
-          <AddressCard address={address} onCopy={onCopy} />
+          <QrPanel
+            value={address || null}
+            size={QR_SIZE}
+            padding={16}
+            radius="xl"
+            border={border}
+            placeholder={<Column width={QR_SIZE} height={QR_SIZE} background={QR_PLACEHOLDER_BACKGROUND} />}
+          />
+          <Column gap={8}>
+            <Eyebrow text={ADDRESS_LABEL.toUpperCase()} size="3xs" color="secondary" />
+            <ListViewItem align="center" gap={12} dark={dark} onPress={onCopy}>
+              <Column weight={1}>
+                <Text text={address || '-'} size="xs" truncate />
+              </Column>
+              <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />
+            </ListViewItem>
+            <Text size="md" variant="caption" text={ADDRESS_HINT} color="secondary" textAlign="center" />
+          </Column>
         </Column>
       </ScreenScroll>
     </Column>

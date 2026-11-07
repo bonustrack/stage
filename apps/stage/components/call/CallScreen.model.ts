@@ -1,12 +1,7 @@
 import type { CallStream } from '../../lib/calls';
 import { clockLabel } from '../../lib/format';
 
-interface CallGrid {
-  cols: number;
-  rows: number;
-}
-
-export function callGrid(count: number, wide: boolean): CallGrid {
+export function callGrid(count: number, wide: boolean): { cols: number; rows: number } {
   const n = Math.max(1, count);
   const cols = wide ? Math.ceil(Math.sqrt(n)) : n <= 2 ? 1 : 2;
   return { cols, rows: Math.ceil(n / cols) };
@@ -14,8 +9,7 @@ export function callGrid(count: number, wide: boolean): CallGrid {
 
 export function callSubtitle(connected: number, elapsedMs: number): string {
   if (connected === 0) return 'Calling…';
-  const people = connected + 1;
-  return `${people} people · ${clockLabel(elapsedMs)}`;
+  return `${connected + 1} people · ${clockLabel(elapsedMs)}`;
 }
 
 export interface CallMediaViewProps {

@@ -22,7 +22,7 @@ import { Column, Row } from '../../layout';
 import { sendRowFor } from './send.model';
 
 const PICKER_AVATAR = { size: 40, badgeSize: 16 } as const;
-const SELECTED_AVATAR = { size: 28, badgeSize: 15, ring: 2 } as const;
+const SELECTED_AVATAR = { size: 28, badgeSize: 15 } as const;
 
 export interface SendRows {
   rows: AssetRow[];
@@ -41,30 +41,6 @@ export function useSendRows(): SendRows {
   return { rows: data ?? [], loading: record === null || data === undefined };
 }
 
-function TokenChoiceList({ rows, onPick }: { rows: AssetRow[]; onPick: (r: AssetRow) => void }): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
-  return (
-    <ListView dark={dark}>
-      {rows.map((r) => (
-        <ListViewItem
-          key={tokenRowId(r)}
-          align="center"
-          gap={12}
-          dark={dark}
-          onPress={() => {
-            onPick(r);
-          }}
-        >
-          <TokenRowBody
-            {...tokenRowModel(r, 'picker')}
-            avatar={<TokenAvatar logoUrl={tokenLogoOf(r)} chainId={r.chainId} badge="below" {...PICKER_AVATAR} />}
-          />
-        </ListViewItem>
-      ))}
-    </ListView>
-  );
-}
-
 export function TokenSelector({
   value,
   rows: { rows, loading },
@@ -75,14 +51,9 @@ export function TokenSelector({
   onChange: (symbol: string) => void;
 }): React.ReactElement {
   const { text: fg, link: head, border, bg } = usePalette();
+  const dark = useKitScheme() === 'dark';
   const [open, setOpen] = useState(false);
   const selected = sendRowFor(rows, value);
-
-  const onPick = (r: AssetRow): void => {
-    onChange(r.symbol);
-    setOpen(false);
-  };
-
   return (
     <Column gap={6}>
       <Eyebrow>TOKEN</Eyebrow>
@@ -104,11 +75,10 @@ export function TokenSelector({
         <TokenAvatar
           logoUrl={selected === undefined ? '' : tokenLogoOf(selected)}
           chainId={WALLET_CHAIN_ID}
-          size={SELECTED_AVATAR.size}
-          badgeSize={SELECTED_AVATAR.badgeSize}
           badge="corner"
           logoBackground={bg}
-          ring={{ color: border, width: SELECTED_AVATAR.ring }}
+          ring={{ color: border, width: 2 }}
+          {...SELECTED_AVATAR}
         />
         <Column minWidth={0} weight={1}>
           <Text fontWeight="semibold" size="xs" color={head} numberOfLines={1}>
@@ -120,7 +90,6 @@ export function TokenSelector({
         </Column>
         <Glyph icon={IconChevronBottom} size={18} color={fg} />
       </Pressable>
-
       <AppModal
         visible={open}
         onClose={() => {
@@ -133,7 +102,25 @@ export function TokenSelector({
             <Spinner size={28} color={fg} />
           </Row>
         ) : (
-          <TokenChoiceList rows={rows} onPick={onPick} />
+          <ListView dark={dark}>
+            {rows.map((r) => (
+              <ListViewItem
+                key={tokenRowId(r)}
+                align="center"
+                gap={12}
+                dark={dark}
+                onPress={() => {
+                  onChange(r.symbol);
+                  setOpen(false);
+                }}
+              >
+                <TokenRowBody
+                  {...tokenRowModel(r, 'picker')}
+                  avatar={<TokenAvatar logoUrl={tokenLogoOf(r)} chainId={r.chainId} badge="below" {...PICKER_AVATAR} />}
+                />
+              </ListViewItem>
+            ))}
+          </ListView>
         )}
       </AppModal>
     </Column>

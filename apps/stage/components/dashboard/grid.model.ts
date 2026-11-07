@@ -6,12 +6,8 @@ const WIDE_GRID_MIN = 560;
 const SPAN: Readonly<Record<DashboardWidth, number>> = { full: 4, half: 2, quarter: 1 };
 const WIDTH_LABEL: Readonly<Record<DashboardWidth, string>> = { full: 'Full', half: 'Half', quarter: 'Quarter' };
 
-function heightLabel(h: number): string {
-  return `${h * DASHBOARD_ROW}\u00a0px`;
-}
-
 export const WIDTH_OPTIONS = DASHBOARD_WIDTHS.map((value) => ({ value, label: WIDTH_LABEL[value] }));
-export const HEIGHT_OPTIONS = DASHBOARD_HEIGHTS.map((value) => ({ value, label: heightLabel(value) }));
+export const HEIGHT_OPTIONS = DASHBOARD_HEIGHTS.map((value) => ({ value, label: `${value * DASHBOARD_ROW}\u00a0px` }));
 
 export function gridColumns(width: number): number {
   return width >= WIDE_GRID_MIN ? 4 : 2;
@@ -88,16 +84,6 @@ export function cellRects(layout: GridLayout, width: number): WidgetRect[] {
   }));
 }
 
-function contains(rect: WidgetRect, x: number, y: number): boolean {
-  'worklet';
-  return x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height;
-}
-
-function distance(rect: WidgetRect, x: number, y: number): number {
-  'worklet';
-  return Math.hypot(rect.x + rect.width / 2 - x, rect.y + rect.height / 2 - y);
-}
-
 export function dropTarget(rects: readonly WidgetRect[], x: number, y: number, from: number): number {
   'worklet';
   let nearest = from;
@@ -105,8 +91,8 @@ export function dropTarget(rects: readonly WidgetRect[], x: number, y: number, f
   for (let i = 0; i < rects.length; i++) {
     const rect = rects[i];
     if (rect === undefined) continue;
-    if (contains(rect, x, y)) return i;
-    const d = distance(rect, x, y);
+    if (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height) return i;
+    const d = Math.hypot(rect.x + rect.width / 2 - x, rect.y + rect.height / 2 - y);
     if (d < best) {
       best = d;
       nearest = i;

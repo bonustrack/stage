@@ -3,8 +3,6 @@ import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { usePalette } from '../../lib/theme';
 import { Column } from '../layout';
 
-const OUTLINE_PADDING = 12;
-
 export type WidgetGrip = (handle: React.ReactElement) => React.ReactElement;
 
 export function Unavailable({ title, detail }: { title: string; detail?: string }): React.ReactElement {
@@ -14,7 +12,7 @@ export function Unavailable({ title, detail }: { title: string; detail?: string 
     <Column
       weight={1}
       gap={4}
-      padding={OUTLINE_PADDING}
+      padding={12}
       radius={BLOCK_RADIUS_DEFAULT}
       border={{ top: edge, right: edge, bottom: edge, left: edge }}
       align="center"

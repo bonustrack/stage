@@ -52,8 +52,6 @@ interface TileData {
   self: boolean;
 }
 
-const MINIMIZE = 'Minimize';
-
 const STATUS_TEXT: Record<CallLinkStatus, string | null> = { connecting: 'Connecting…', connected: null, failed: 'Could not connect' };
 
 function tilesOf(view: CallView, session: CallSession): TileData[] {
@@ -86,15 +84,15 @@ function Tile({
   tile: TileData;
   convId: string;
   selfInboxId: string | null;
-  width: string;
-  height: string;
+  width: `${number}%`;
+  height: `${number}%`;
 }): React.ReactElement {
   const { border } = usePalette();
   const person = callPerson(convId, tile.inboxId, selfInboxId);
   const status = STATUS_TEXT[tile.status];
   const showVideo = tile.media.video && tile.stream !== null;
   return (
-    <Column style={{ width: width as `${number}%`, height: height as `${number}%` }} padding={4}>
+    <Column style={{ width, height }} padding={4}>
       <Column weight={1} radius={12} background={border} align="center" justify="center" style={{ overflow: 'hidden' }}>
         {showVideo ? (
           <CallMediaView stream={tile.stream} kind="video" mirrored={tile.self && !tile.media.screen} contain={tile.media.screen} />
@@ -117,22 +115,6 @@ function Tile({
   );
 }
 
-function MinimizeButton(): React.ReactElement {
-  const { text } = usePalette();
-  return (
-    <HoverIconButton
-      icon={IconMinimize}
-      label={MINIMIZE}
-      color={text}
-      placement="below"
-      role="button"
-      onPress={() => {
-        setCallMinimized(true);
-      }}
-    />
-  );
-}
-
 function SpeakerControl(): React.ReactElement | null {
   const routes = useAudioRoutes();
   if (!canToggleSpeaker(routes)) return null;
@@ -152,6 +134,7 @@ function Controls({
   picker: { current: ScreenPicker | null };
 }): React.ReactElement {
   const bottom = useSafeAreaInsets().bottom;
+  const camera = media.video && !media.screen;
   return (
     <Row align="center" justify="center" gap={DENSITY_SCALE.normal.gap} padding={{ top: 12, bottom: 16 + bottom, x: PAGE_GUTTER }} wrap>
       <CallControl
@@ -162,9 +145,9 @@ function Controls({
       />
       <SpeakerControl />
       <CallControl
-        icon={media.video && !media.screen ? IconVideo : IconVideoOff}
-        label={media.video && !media.screen ? 'Turn camera off' : 'Turn camera on'}
-        active={media.video && !media.screen}
+        icon={camera ? IconVideo : IconVideoOff}
+        label={camera ? 'Turn camera off' : 'Turn camera on'}
+        active={camera}
         onPress={() => {
           void toggleCamera().catch(reported('call.camera'));
         }}
@@ -221,11 +204,21 @@ export function CallScreen({ view, session }: { view: CallView; session: CallSes
   const connected = view.peers.filter((p) => p.status === 'connected').length;
   const top = useSafeAreaInsets().top;
   const picker = useRef<ScreenPicker | null>(null);
+  const { text } = usePalette();
   return (
     <Column surface="surface" style={viewportFill(60)}>
       <CallScreenPicker host={picker} />
       <Row align="center" gap={14} padding={{ top: 14 + top, bottom: 10, x: PAGE_GUTTER }}>
-        <MinimizeButton />
+        <HoverIconButton
+          icon={IconMinimize}
+          label="Minimize"
+          color={text}
+          placement="below"
+          role="button"
+          onPress={() => {
+            setCallMinimized(true);
+          }}
+        />
         <Column weight={1}>
           <TitleText fontWeight="semibold" size="xs" title={callTitle(session.convId)} maxLines={1} />
           <Text size="2xs" color="secondary" text={callSubtitle(connected, Date.now() - session.startedMs)} />

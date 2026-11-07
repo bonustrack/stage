@@ -114,25 +114,15 @@ function MailBodyState({ label, id }: { label: string; id: string }): React.Reac
   useEffect(() => {
     if (opened) markMailRead(label, id);
   }, [opened, label, id]);
-  if (mailboxes.isError)
+  if (mailboxes.isError || (mailboxes.data !== undefined && box === undefined))
     return (
       <RetryNotice
-        message="Could not load your mailbox. Try again."
+        message={mailboxes.isError ? 'Could not load your mailbox. Try again.' : 'This mail is not in your mailboxes.'}
         onRetry={() => {
           void mailboxes.refetch();
         }}
       />
     );
-  if (mailboxes.data !== undefined && box === undefined) {
-    return (
-      <RetryNotice
-        message="This mail is not in your mailboxes."
-        onRetry={() => {
-          void mailboxes.refetch();
-        }}
-      />
-    );
-  }
   if (mail.isError)
     return (
       <RetryNotice

@@ -58,10 +58,6 @@ const ROW_PADDING = { paddingTop: 10, paddingBottom: 10, paddingLeft: PAGE_GUTTE
 const UNAVAILABLE = 'No longer available';
 const OPEN_FAILED = 'Could not open this file. It may no longer be available.';
 
-function useChatLabel(convId: string): string {
-  return chatLabelOf(useStoredChat(convId), 'Unnamed channel');
-}
-
 function useGoneCheck(messageId: string): void {
   const epoch = useAccountGeneration('client');
   const { data: gone } = useQuery({
@@ -88,7 +84,7 @@ function FileRow({
 }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   const { text: fg } = usePalette();
-  const chat = useChatLabel(row.file.convId);
+  const chat = chatLabelOf(useStoredChat(row.file.convId), 'Unnamed channel');
   useGoneCheck(row.file.messageId);
   const detail = unavailable ? UNAVAILABLE : [row.detail, chat].filter(Boolean).join(' · ');
   return (
@@ -144,39 +140,6 @@ function StatusLine({ storage, hidden }: { storage: StorageState; hidden: Readon
   );
 }
 
-function ListHeader({
-  query,
-  onQuery,
-  filter,
-  onFilter,
-  storage,
-  hidden,
-}: {
-  query: string;
-  onQuery: (query: string) => void;
-  filter: StorageFilter;
-  onFilter: (filter: StorageFilter) => void;
-  storage: StorageState;
-  hidden: ReadonlySet<string>;
-}): React.ReactElement {
-  return (
-    <Column gap={12} padding={{ top: LIST_TOP_GAP, bottom: 8 }}>
-      <SearchField
-        inline
-        muted="sub"
-        query={query}
-        setQuery={onQuery}
-        onClose={() => {
-          onQuery('');
-        }}
-        placeholder="Search files"
-      />
-      <TypeChips filter={filter} onFilter={onFilter} />
-      <StatusLine storage={storage} hidden={hidden} />
-    </Column>
-  );
-}
-
 function EmptyList({ storage, filtered }: { storage: StorageState; filtered: boolean }): React.ReactElement | null {
   const { sub } = usePalette();
   if (storage.failed && !storage.scanning && storage.files.length === 0) {
@@ -213,10 +176,6 @@ function Footnote({ show }: { show: boolean }): React.ReactElement | null {
   );
 }
 
-function withoutKey(keys: ReadonlySet<string>, key: string): ReadonlySet<string> {
-  return keys.has(key) ? new Set([...keys].filter((k) => k !== key)) : keys;
-}
-
 function useFileOpener(): { opening: string | null; unavailable: ReadonlySet<string>; open: (file: StoredFile) => void } {
   const busy = useRef(false);
   const [opening, setOpening] = useState<string | null>(null);
@@ -228,7 +187,7 @@ function useFileOpener(): { opening: string | null; unavailable: ReadonlySet<str
     setOpening(key);
     openStoredFile(file)
       .then(() => {
-        setUnavailable((prev) => withoutKey(prev, key));
+        setUnavailable((prev) => (prev.has(key) ? new Set([...prev].filter((k) => k !== key)) : prev));
       })
       .catch((err: unknown) => {
         if (!(err instanceof FileUnavailableError)) report('storage.openFile', err);
@@ -269,7 +228,20 @@ function StorageBody(): React.ReactElement {
       style={{ backgroundColor: bg }}
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
       ListHeaderComponent={
-        <ListHeader query={query} onQuery={setQuery} filter={filter} onFilter={setFilter} storage={storage} hidden={hidden} />
+        <Column gap={12} padding={{ top: LIST_TOP_GAP, bottom: 8 }}>
+          <SearchField
+            inline
+            muted="sub"
+            query={query}
+            setQuery={setQuery}
+            onClose={() => {
+              setQuery('');
+            }}
+            placeholder="Search files"
+          />
+          <TypeChips filter={filter} onFilter={setFilter} />
+          <StatusLine storage={storage} hidden={hidden} />
+        </Column>
       }
       ListEmptyComponent={<EmptyList storage={storage} filtered={query.trim() !== '' || filter !== 'all'} />}
       ListFooterComponent={<Footnote show={rows.length > 0} />}

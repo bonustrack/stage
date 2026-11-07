@@ -38,12 +38,9 @@ export function WidgetMenu({
   const live = widget.kind === DASHBOARD_LIVE_KIND ? liveSourceOf(widget) : null;
   const nodeKey = live !== null && ownsHostedNode(live) ? live.key : null;
   const remove = (): void => {
-    if (nodeKey === null) {
-      pick((widgets) => removeWidget(widgets, widget.id));
-      return;
-    }
     onClose();
-    void removeWithNode(widget.id, nodeKey);
+    if (nodeKey === null) changeDashboard((widgets) => removeWidget(widgets, widget.id));
+    else void removeWithNode(widget.id, nodeKey);
   };
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>
