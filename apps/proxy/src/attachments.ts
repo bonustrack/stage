@@ -1,4 +1,5 @@
-import { PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
+import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
+import { UPLOAD_MAX_BYTES, type UploadReply } from '@stage-labs/client/uploads';
 import { declaredLength } from '@stage-labs/client/net/cappedBody';
 import { corsHeaders, corsResponse, guarded, repliesWith, type HeaderMap } from './respond.ts';
 
@@ -67,7 +68,7 @@ async function upload(request: Request, store: AttachmentStore): Promise<Respons
   if (size < 1 || request.body === null) return text('empty attachment', 400);
   const id = newAttachmentId();
   await store.put(id, request.body);
-  return json({ id });
+  return json({ id } satisfies UploadReply);
 }
 
 function fileHeaders(meta: Pick<StoredAttachment, 'size' | 'etag'>): HeaderMap {

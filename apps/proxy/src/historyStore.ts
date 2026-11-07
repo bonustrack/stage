@@ -1,4 +1,5 @@
-import { HISTORY_ENVS, PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
+import { HISTORY_ENVS, PROXY_ROUTES } from '@stage-labs/client/endpoints';
+import { UPLOAD_MAX_BYTES } from '@stage-labs/client/uploads';
 import {
   CHUNK_COUNT_KEY,
   chunkStream,

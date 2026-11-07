@@ -23,8 +23,6 @@ export const PROXY_ROUTES = {
   mail: '/mail/',
 } as const;
 
-export const UPLOAD_MAX_BYTES = 100_000_000;
-
 export const STAGE_CLIENT_HEADER = 'x-stage-client';
 const STAGE_CLIENT_VALUE = '1';
 export const STAGE_CLIENT_HEADERS: Readonly<Record<string, string>> = { [STAGE_CLIENT_HEADER]: STAGE_CLIENT_VALUE };

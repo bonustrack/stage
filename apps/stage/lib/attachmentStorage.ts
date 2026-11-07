@@ -1,7 +1,8 @@
 import { ignored } from './errorPolicy';
 import { linkProxyBase } from './linkProxy';
 import { FetchTimeoutError, fetchWithin } from '@stage-labs/client/timing';
-import { PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
+import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
+import { UPLOAD_MAX_BYTES, UPLOAD_REPLY } from '@stage-labs/client/uploads';
 
 const UPLOAD_URL = `${linkProxyBase()}${PROXY_ROUTES.attachments}`;
 const UPLOAD_TIMEOUT_MS = 60_000;
@@ -17,7 +18,7 @@ export function attachmentDownloadUrl(url: string): string {
   return ref === undefined ? url : `${SWARM_GATEWAY}${ref.toLowerCase()}/`;
 }
 
-export function resolveUploadResponse(status: number, body: { id?: string } | null, filename: string): string {
+export function resolveUploadResponse(status: number, body: unknown, filename: string): string {
   if (status === 413) {
     throw new Error(`Couldn't send "${filename}": the file is too large (413). Try a smaller file.`);
   }
@@ -27,8 +28,8 @@ export function resolveUploadResponse(status: number, body: { id?: string } | nu
   if (status < 200 || status >= 300) {
     throw new Error(`Couldn't send "${filename}": upload failed (${status}).`);
   }
-  const id = body?.id;
-  if (!id) throw new Error(`Couldn't send "${filename}": the upload service returned no id.`);
+  const id = UPLOAD_REPLY.safeParse(body).data?.id;
+  if (id === undefined) throw new Error(`Couldn't send "${filename}": the upload service returned no id.`);
   return `${UPLOAD_URL}/${id}`;
 }
 
@@ -51,6 +52,6 @@ export async function uploadEncryptedAttachment(payload: Blob, filename: string)
     const reason = e instanceof FetchTimeoutError ? 'the upload timed out' : 'the upload service could not be reached';
     throw new Error(`Couldn't send "${filename}": ${reason}. Check your connection and try again.`);
   }
-  const body = (await res.json().catch(ignored(null, 'optional'))) as { id?: string } | null;
+  const body: unknown = await res.json().catch(ignored(null, 'optional'));
   return resolveUploadResponse(res.status, body, filename);
 }

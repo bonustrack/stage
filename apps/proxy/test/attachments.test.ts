@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
+import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
+import { UPLOAD_MAX_BYTES } from '@stage-labs/client/uploads';
 import { handleAttachments, newAttachmentId, parseAttachmentRoute, r2AttachmentStore, type AttachmentStore } from '../src/attachments.ts';
 
 const ORIGIN = 'https://proxy.stage.box';

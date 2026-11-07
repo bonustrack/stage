@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
+import { readSettleReply } from '@stage-labs/client/x402/settle';
 import { parseSettleBody, settleX402 } from '../src/settle.ts';
 import { restoreFetch, stubFetch } from './fakeFetch.ts';
 
@@ -60,4 +61,13 @@ test('same-origin redirect still carries the header (legit paid-content hop)', a
   const res = await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
   expect(res.status).toBe(200);
   expect(calls.map(({ payment }) => payment)).toEqual(['SIGNED-HEADER', 'SIGNED-HEADER']);
+});
+
+test('the client reads the settle reply as the proxy writes it', async () => {
+  withFakeFetch(() => ({ status: 200, body: 'paid content' }));
+  const res = await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
+  expect(readSettleReply(JSON.parse(JSON.stringify(res)))).toEqual({ status: 200, ok: true, body: 'paid content' });
+  withFakeFetch(() => ({ status: 402 }));
+  const unpaid = await settleX402({ url: 'https://api.example.com/paid', paymentHeader: 'SIGNED-HEADER' });
+  expect(readSettleReply(JSON.parse(JSON.stringify(unpaid)))).toEqual({ status: 402, ok: false });
 });
