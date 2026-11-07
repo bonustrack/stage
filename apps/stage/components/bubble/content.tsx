@@ -6,6 +6,7 @@ import { messageCardLinks } from './markdown.model';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf } from '@stage-labs/client/xmtp/deleteMessage';
 import {
+  attachmentsOf,
   deletedByOf,
   isAttachmentSummary,
   messageKindOf,
@@ -17,7 +18,6 @@ import {
 } from '@stage-labs/client/xmtp/entryPayload';
 import { mdParser, markdownStyles } from './markdown';
 import { pollOf } from './poll.model';
-import { attachmentsOf } from '@stage-labs/client/xmtp/entryPayload';
 import { PollView } from './poll';
 import { TxRequestCard, TxReceiptCard } from './cards';
 import { SigRequestCard, SigReferenceCard } from './cards.sig';
@@ -130,12 +130,7 @@ export function BubbleContent({ model, h, fg, sub }: BubbleContentProps): React.
   const textSize = d.poll ? 'md' : MESSAGE_BODY.size;
   const mdStyle = useMemo(() => markdownStyles(fg, dark, textSize), [fg, dark, textSize]);
   const markdownProps = useMemo(
-    (): MarkdownProps => ({
-      markdownit: mdParser,
-      onLinkPress: (url: string): boolean => openInBubbleLink(url),
-      rules: markdownRules,
-      style: mdStyle,
-    }),
+    (): MarkdownProps => ({ markdownit: mdParser, onLinkPress: openInBubbleLink, rules: markdownRules, style: mdStyle }),
     [mdStyle],
   );
   return (

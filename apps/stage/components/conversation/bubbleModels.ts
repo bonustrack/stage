@@ -30,7 +30,7 @@ export interface BubbleFeedState {
   payingIds: ReadonlySet<string>;
 }
 
-export interface BubbleView {
+interface BubbleView {
   dark: boolean;
   highlight?: string;
 }

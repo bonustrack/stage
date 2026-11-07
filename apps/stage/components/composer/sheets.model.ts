@@ -53,7 +53,7 @@ export function checkPollDraft(d: PollDraft): DraftCheck<Omit<PollContent, 'poll
   return { filled: true, ok: true, value };
 }
 
-export interface PaymentFields {
+interface PaymentFields {
   to: string;
   amount: string;
   units: number;

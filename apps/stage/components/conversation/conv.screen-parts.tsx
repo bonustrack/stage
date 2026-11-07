@@ -12,7 +12,6 @@ import { ConversationSidebarToggle } from './ConversationSidebarToggle';
 import { CallButtons } from '../call/CallButtons';
 import { capabilities } from '../../lib/capabilities';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
-import { previewOf } from './feed-helpers';
 import { canDeleteMessage, isAdminDelete, deleteConfirmOf } from './messageDeletion.model';
 import { TopnavSearch } from '../search/TopnavSearch';
 import { RequestActionBar } from './RequestActionBar';
@@ -141,31 +140,19 @@ export function ConversationFooter({
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { border: rowBg } = usePalette();
-  const { showJump, setShowJump, scrollToNewest, markAtBottom, jumpToMessage } = scroll;
-  const {
-    line,
-    mentionCandidates,
-    replyingTo,
-    setReplyingTo,
-    autoFocusNonce,
-    onOptimistic,
-    onSent,
-    consent,
-    consentKnown,
-    markConsentAllowed,
-  } = composer;
+  const { consent, replyingTo, setReplyingTo } = composer;
   const isGroup = gatedAsChannel(conv.kind);
   const access = useGroupAccess(convId, isGroup);
   const requestPending = canApproveConversation(consent, isGroup, access);
-  const composerShown = consentKnown && canComposeConversation(consent, isGroup, composerAccess(access, consent));
+  const composerShown = composer.consentKnown && canComposeConversation(consent, isGroup, composerAccess(access, consent));
   return (
     <ComposerDock>
-      {showJump ? (
+      {scroll.showJump ? (
         <Pressable
           onPress={() => {
-            markAtBottom();
-            scrollToNewest();
-            setShowJump(false);
+            scroll.markAtBottom();
+            scroll.scrollToNewest();
+            scroll.setShowJump(false);
           }}
           style={{
             position: 'absolute',
@@ -184,24 +171,24 @@ export function ConversationFooter({
           <Glyph icon={IconArrowDown} size={18} color="#ffffff" />
         </Pressable>
       ) : null}
-      {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed} /> : null}
+      {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={composer.markConsentAllowed} /> : null}
       {access === 'waiting' || access === 'outside' ? <ChannelAccessNotice outside={access === 'outside'} /> : null}
       {composerShown ? (
         <MessengerComposer
-          xmtpLine={line}
-          mentionCandidates={mentionCandidates}
+          xmtpLine={composer.line}
+          mentionCandidates={composer.mentionCandidates}
           suggestContacts={conv.kind === 'dm'}
           replyingTo={replyingTo ?? undefined}
-          autoFocusNonce={autoFocusNonce}
+          autoFocusNonce={composer.autoFocusNonce}
           onClearReply={() => {
             setReplyingTo(null);
           }}
           onRestoreReply={() => {
             setReplyingTo((current) => current ?? replyingTo);
           }}
-          onJumpToReply={jumpToMessage}
-          onOptimistic={onOptimistic}
-          onSent={onSent}
+          onJumpToReply={scroll.jumpToMessage}
+          onOptimistic={composer.onOptimistic}
+          onSent={composer.onSent}
         />
       ) : null}
     </ComposerDock>
@@ -244,33 +231,22 @@ function ConversationMessageMenu({
   convId: string;
 }): React.ReactElement {
   const { isGroup, peerAddr } = conv;
-  const {
-    target: menuFor,
-    setTarget: setMenuFor,
-    anchor: menuAnchor,
-    onReact,
-    setReplyTarget,
-    senderEthOf,
-    setSelectedForCopy,
-    myUri,
-    deletedIds,
-    isSuperAdmin,
-  } = menu;
+  const { target: menuFor, setTarget: setMenuFor, myUri } = menu;
   const addFrame = useAddChatFrameToDashboard();
   return (
     <BubbleActionMenu
       target={menuFor}
-      anchor={menuAnchor}
-      canDelete={canDeleteMessage(menuFor, { myUri, deleted: deletedIds, superAdmin: isSuperAdmin })}
+      anchor={menu.anchor}
+      canDelete={canDeleteMessage(menuFor, { myUri, deleted: menu.deletedIds, superAdmin: menu.isSuperAdmin })}
       onClose={() => {
         setMenuFor(null);
       }}
       onReact={(emoji) => {
-        if (menuFor) onReact(menuFor.id, emoji);
+        if (menuFor) menu.onReact(menuFor.id, emoji);
         setMenuFor(null);
       }}
       onReply={() => {
-        if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor), senderEthOf(menuFor.from));
+        if (menuFor) menu.setReplyTarget(menuFor.id, menu.senderEthOf(menuFor.from));
         setMenuFor(null);
       }}
       onCopy={() => {
@@ -278,7 +254,7 @@ function ConversationMessageMenu({
         setMenuFor(null);
       }}
       onSelect={() => {
-        if (menuFor) setSelectedForCopy(menuFor.id);
+        if (menuFor) menu.setSelectedForCopy(menuFor.id);
         setMenuFor(null);
       }}
       onAddToDashboard={frameAdder(addFrame, convId, menuFor, () => {

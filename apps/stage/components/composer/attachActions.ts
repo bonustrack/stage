@@ -28,7 +28,7 @@ export interface AttachAction {
   run: () => void | Promise<void>;
 }
 
-export type AttachRunners = Record<AttachmentId, () => void | Promise<void>>;
+type AttachRunners = Record<AttachmentId, () => void | Promise<void>>;
 
 export function attachActionsOf(run: AttachRunners, options: AttachOptions): AttachAction[] {
   return offeredAttachKinds(options).map(({ id, label }) => ({ id, icon: ATTACH_ICONS[id], label, run: run[id] }));

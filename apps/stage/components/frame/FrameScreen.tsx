@@ -56,17 +56,7 @@ function useFrameScreens(frame: FrameContent | null, stackKey: string, leave: ()
     scrollRef.current?.scrollToOffset({ offset: 0, animated: false });
   });
   const title = useMemo(() => (frame === null ? 'Frame' : frameScreenTitle(frame, screen)), [frame, screen]);
-  return {
-    title,
-    navigation: { screen, depth, navigate },
-    onBack:
-      depth > 0
-        ? () => {
-            back();
-          }
-        : undefined,
-    scrollRef,
-  };
+  return { title, navigation: { screen, depth, navigate }, onBack: depth > 0 ? back : undefined, scrollRef };
 }
 
 const FILL_STYLE = { flexGrow: 1 } as const;

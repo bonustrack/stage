@@ -1,13 +1,13 @@
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import {
   pollQuestionBlocks,
+  type Poll,
   type PollOpenAnswers,
   type PollOptionRow,
   type PollOwnVotes,
   type PollQuestionBlock,
   type PollVotes,
 } from './poll.model';
-import type { Poll } from './poll.model';
 import { usePalette } from '../../lib/theme';
 import { withAlpha } from '@stage-labs/kit/color-math';
 import { FEED_CONTENT_WIDTH } from '../layout/feedContent';

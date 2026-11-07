@@ -29,7 +29,7 @@ async function produceAndPostSignature(activeLine: string, requestId: string, re
   await xmtpSendSignatureReference(activeLine, buildSignatureReference(requestId, signature, address));
 }
 
-type RequestCall = NonNullable<WalletSendCallsContent['calls']>[number];
+type RequestCall = WalletSendCallsContent['calls'][number];
 
 function txCallOf(to: string, call: RequestCall): TxCall {
   if (!isAddress(to)) throw new Error('Invalid recipient address');
@@ -42,7 +42,7 @@ async function broadcastCall(to: string, call: RequestCall, chainId: number): Pr
 }
 
 function chainMeta(chainId: number): { chainName: string; nativeSymbol: string } {
-  return { chainName: viemChainName(chainId) ?? `chain ${chainId}`, nativeSymbol: VIEM_CHAINS[chainId]?.nativeCurrency?.symbol ?? 'ETH' };
+  return { chainName: viemChainName(chainId) ?? `chain ${chainId}`, nativeSymbol: VIEM_CHAINS[chainId]?.nativeCurrency.symbol ?? 'ETH' };
 }
 
 function paymentReceipt(
@@ -85,8 +85,6 @@ function useBusyIds(): { ids: Set<string>; run: (id: string, failMsg: string, ta
 export function useTxSignLayer(activeLine: string) {
   const signing = useBusyIds();
   const paying = useBusyIds();
-  const runSign = signing.run,
-    runPay = paying.run;
 
   const onSign = useCallback(
     (requestId: string, req: SignatureRequestContent) => {
@@ -99,15 +97,15 @@ export function useTxSignLayer(activeLine: string) {
           destructive: summary.highRisk,
         })
         .then((ok) => {
-          if (ok) runSign(requestId, 'Signing failed', () => produceAndPostSignature(activeLine, requestId, req));
+          if (ok) signing.run(requestId, 'Signing failed', () => produceAndPostSignature(activeLine, requestId, req));
         });
     },
-    [activeLine, runSign],
+    [activeLine, signing.run],
   );
 
   const onPay = useCallback(
     (requestId: string, wsc: WalletSendCallsContent) => {
-      const call = wsc.calls?.[0];
+      const call = wsc.calls[0];
       if (!call?.to) {
         capabilities.toast('Malformed payment request');
         return;
@@ -121,7 +119,7 @@ export function useTxSignLayer(activeLine: string) {
         await xmtpSendTxReference(activeLine, paymentReceipt(txHash, settledChainId, summary, nativeSymbol));
       };
       void getActiveAccount().then(async (active) => {
-        const blocker = paymentBlocker({ callCount: wsc.calls?.length ?? 0, chainId, chainName, smartAccount: active?.type === 'smart' });
+        const blocker = paymentBlocker({ callCount: wsc.calls.length, chainId, chainName, smartAccount: active?.type === 'smart' });
         if (blocker !== null) {
           capabilities.toast(blocker);
           return;
@@ -132,10 +130,10 @@ export function useTxSignLayer(activeLine: string) {
           confirmLabel: summary.verified ? 'Pay' : 'Continue anyway',
           destructive: !summary.verified,
         });
-        if (ok) runPay(requestId, 'Payment failed', broadcast);
+        if (ok) paying.run(requestId, 'Payment failed', broadcast);
       }, reported('chat.pay'));
     },
-    [activeLine, runPay],
+    [activeLine, paying.run],
   );
 
   return { signingIds: signing.ids, onSign, payingIds: paying.ids, onPay };

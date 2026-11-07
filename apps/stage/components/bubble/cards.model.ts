@@ -1,7 +1,7 @@
 import { formatEther } from 'viem';
 import { chainIdToNumber, requestAmountOf, type TxAmount, type WalletSendCallsContent } from '@stage-labs/client/xmtp/tx';
 
-export function ethFromWeiHex(valueHex?: string): string | undefined {
+function ethFromWeiHex(valueHex?: string): string | undefined {
   if (!valueHex) return undefined;
   try {
     const out = formatEther(BigInt(valueHex));
@@ -66,7 +66,7 @@ export function txCallFields(req: WalletSendCallsContent): TxCallFields {
   const tokenAddr = toAddress ? target : undefined;
   const desc = description ?? 'Payment request';
   const recipient = toAddress ?? target;
-  const chainNum = chainIdToNumber(req.chainId ?? '0x1');
+  const chainNum = chainIdToNumber(req.chainId);
   return {
     target,
     data,

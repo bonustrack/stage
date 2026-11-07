@@ -1,4 +1,4 @@
-export type ConvKind = 'dm' | 'group' | 'unknown';
+type ConvKind = 'dm' | 'group' | 'unknown';
 
 export function convKindOf(row: { peerAddress: string | null } | null): ConvKind {
   if (row === null) return 'unknown';

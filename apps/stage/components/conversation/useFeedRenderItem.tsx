@@ -16,9 +16,9 @@ type RenderItem = ({ item }: { item: HistoryEntry }) => React.ReactElement;
 function useBubbleModels(
   feed: BubbleFeed,
   entries: readonly HistoryEntry[],
+  dark: boolean,
   highlight: string | undefined,
 ): ReadonlyMap<string, BubbleModel> {
-  const dark = useEffectiveColorScheme() === 'dark';
   const previous = useRef<ReadonlyMap<string, BubbleModel>>(new Map());
   const models = useMemo(() => {
     const view = { dark, highlight };
@@ -34,9 +34,9 @@ export function useFeedRenderItem(
   highlight?: string,
 ): { renderItem: RenderItem; extraData: ReadonlyMap<string, BubbleModel> } {
   const sub = usePalette().text;
-  const models = useBubbleModels(feed, entries, highlight);
-  const { actions, state } = feed;
   const dark = useEffectiveColorScheme() === 'dark';
+  const models = useBubbleModels(feed, entries, dark, highlight);
+  const { actions, state } = feed;
   const renderItem = useCallback(
     ({ item }: { item: HistoryEntry }) => (
       <BubbleErrorBoundary sub={sub} entry={item}>

@@ -55,11 +55,8 @@ function useOptimisticVotes(activeLine: string, votes: Votes, ownVotes: Own, pol
         const { pollId, q } = unCk(key);
         const conf = confirmedOwn(pollId, q);
         const same = sel.size === conf.size && [...sel].every((i) => conf.has(i));
-        if (same) {
-          changed = true;
-          continue;
-        }
-        next.set(key, sel);
+        if (same) changed = true;
+        else next.set(key, sel);
       }
       return changed ? next : prev;
     });
@@ -105,19 +102,7 @@ function useOptimisticVotes(activeLine: string, votes: Votes, ownVotes: Own, pol
       next.clear();
       next.add(optionIndex);
     }
-    setOptimistic((prev) => {
-      const m = new Map(prev);
-      m.set(key, next);
-      return m;
-    });
-
-    const undo = (): void => {
-      setOptimistic((prev) => {
-        const m = new Map(prev);
-        m.delete(key);
-        return m;
-      });
-    };
+    setOptimistic((prev) => new Map(prev).set(key, next));
     if (!multi && action === 'added') {
       for (const prevIdx of current) {
         if (prevIdx !== optionIndex) {
@@ -129,7 +114,11 @@ function useOptimisticVotes(activeLine: string, votes: Votes, ownVotes: Own, pol
     }
     void xmtpVote(activeLine, pollId, optionIndex, action, q).catch((e: unknown) => {
       console.warn('xmtp vote failed', e);
-      undo();
+      setOptimistic((prev) => {
+        const m = new Map(prev);
+        m.delete(key);
+        return m;
+      });
     });
   });
 
@@ -178,21 +167,14 @@ function useOptimisticOpenAnswers(activeLine: string, openAnswers: OpenAnswers, 
     (pollId: string, q: number, text: string) => {
       const key = ck(pollId, q);
       const trimmed = text.trim();
-      setOptimisticOpen((prev) => {
-        const m = new Map(prev);
-        m.set(key, { text: trimmed, ts: new Date().toISOString() });
-        return m;
-      });
-      const undo = (): void => {
+      setOptimisticOpen((prev) => new Map(prev).set(key, { text: trimmed, ts: new Date().toISOString() }));
+      void xmtpOpenAnswer(activeLine, pollId, q, trimmed).catch((e: unknown) => {
+        console.warn('xmtp open-answer failed', e);
         setOptimisticOpen((prev) => {
           const m = new Map(prev);
           m.delete(key);
           return m;
         });
-      };
-      void xmtpOpenAnswer(activeLine, pollId, q, trimmed).catch((e: unknown) => {
-        console.warn('xmtp open-answer failed', e);
-        undo();
       });
     },
     [activeLine],

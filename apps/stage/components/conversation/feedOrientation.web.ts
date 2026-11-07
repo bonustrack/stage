@@ -1,5 +1,3 @@
-import type { RefObject } from 'react';
-import type { VirtualListHandle } from '../layout/VirtualList.types';
 import { FEED_MIN_BATCH, type FeedOrientation, type FeedScrollMetrics, type FeedScrollState } from './feedOrientation.core';
 
 const FEED_MAX_FIRST_PAINT = 60;
@@ -15,45 +13,24 @@ function shouldPageOlder(m: FeedScrollMetrics, positioned: boolean): boolean {
   return m.offset <= m.viewportHeight / 2;
 }
 
-function planRestore(args: {
-  loaded: boolean;
-  restoredSaved: boolean;
-  savedDistance: number | undefined;
-  userDragged: boolean;
-  atNewest: boolean;
-}): 'saved' | 'newest' | 'skip' {
-  const { loaded, restoredSaved, savedDistance, userDragged, atNewest } = args;
-  if (!loaded) return 'skip';
-  if (!restoredSaved && savedDistance != null && savedDistance > 0) return 'saved';
-  if (atNewest) return 'newest';
-  return userDragged || restoredSaved ? 'skip' : 'newest';
-}
-
-function scrollTo(list: RefObject<VirtualListHandle | null>, offset: number): void {
-  list.current?.scrollToOffset({ offset, animated: false });
+function planRestore(s: FeedScrollState): 'saved' | 'newest' | 'skip' {
+  if (!s.savedLoaded) return 'skip';
+  if (!s.restored && s.savedDistance != null && s.savedDistance > 0) return 'saved';
+  if (s.atNewest) return 'newest';
+  return s.userDragged || s.restored ? 'skip' : 'newest';
 }
 
 function restore(s: FeedScrollState, contentHeight: number): number | null {
-  const viewportHeight = s.viewportHeight;
-  const plan = planRestore({
-    loaded: s.savedLoaded,
-    restoredSaved: s.restored,
-    savedDistance: s.savedDistance,
-    userDragged: s.userDragged,
-    atNewest: s.atNewest,
-  });
+  const plan = planRestore(s);
   if (plan === 'skip') return null;
+  const offset = offsetForDistance(plan === 'saved' ? (s.savedDistance ?? 0) : 0, contentHeight, s.viewportHeight);
   if (plan === 'saved') {
     s.restored = true;
     s.atNewest = false;
     s.settleUntil = Date.now() + RESTORE_SETTLE_MS;
-    const anchor = s.savedAnchor;
-    if (anchor !== null && s.list.current?.scrollToAnchor(anchor) === true)
-      return offsetForDistance(s.savedDistance ?? 0, contentHeight, viewportHeight);
+    if (s.savedAnchor !== null && s.list.current?.scrollToAnchor(s.savedAnchor) === true) return offset;
   }
-  const distance = plan === 'saved' ? (s.savedDistance ?? 0) : 0;
-  const offset = offsetForDistance(distance, contentHeight, viewportHeight);
-  scrollTo(s.list, offset);
+  s.list.current?.scrollToOffset({ offset, animated: false });
   return offset;
 }
 

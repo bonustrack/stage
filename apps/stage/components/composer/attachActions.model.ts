@@ -1,6 +1,6 @@
 import type { AttachmentId } from '../../lib/drafts';
 
-export interface AttachKind {
+interface AttachKind {
   id: AttachmentId;
   label: string;
   draft: boolean;

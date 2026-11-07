@@ -34,11 +34,6 @@ function BubbleAvatar({
   );
 }
 
-function rowBackground(replyTarget: boolean | undefined, dark: boolean): string {
-  if (replyTarget) return dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)';
-  return 'transparent';
-}
-
 function BubbleColumn({
   model,
   h,
@@ -108,7 +103,7 @@ function MessengerBubbleBase({ model, actions }: MessengerBubbleProps): React.Re
           paddingHorizontal: PAGE_GUTTER,
           paddingVertical: 6,
           gap: 10,
-          backgroundColor: rowBackground(replyTarget, dark),
+          backgroundColor: replyTarget ? (dark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)') : 'transparent',
         },
       ]}
     >
@@ -125,8 +120,4 @@ function MessengerBubbleBase({ model, actions }: MessengerBubbleProps): React.Re
   return interaction === 'gestures' ? <GestureDetector gesture={g.tapGestures}>{row}</GestureDetector> : row;
 }
 
-function bubblePropsEqual(prev: MessengerBubbleProps, next: MessengerBubbleProps): boolean {
-  return prev.model === next.model && prev.actions === next.actions;
-}
-
-export const MessengerBubble = memo(MessengerBubbleBase, bubblePropsEqual);
+export const MessengerBubble = memo(MessengerBubbleBase);

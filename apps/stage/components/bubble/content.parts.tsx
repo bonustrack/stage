@@ -151,20 +151,6 @@ function MentionBody({ text, fg, onLinkPress }: { text: string; fg: string; onLi
   return <MessageText color={fg}>{bodySegments(text, findLinks).map((seg, i) => segmentNode(seg, i, link, onLinkPress))}</MessageText>;
 }
 
-function BubbleAttachment({
-  att,
-  index,
-  entryId,
-  fg,
-}: {
-  att: EntryAttachment;
-  index: number;
-  entryId: string;
-  fg: string;
-}): React.ReactElement {
-  return <ResolvedAttachment att={att} fg={fg} msgId={entryId} index={index} galleryKey={galleryKeyOf(entryId, index)} />;
-}
-
 export function BubbleAttachments({
   atts,
   entryId,
@@ -179,7 +165,7 @@ export function BubbleAttachments({
     <Column margin={{ top: 4, bottom: 6 }} gap={ATTACHMENT_GAP} maxWidth={FEED_CONTENT_WIDTH} style={{ alignSelf: 'stretch' }}>
       {atts.map((a, i) => (
         <Column key={a.id ?? `${entryId}-att-${i}`}>
-          <BubbleAttachment att={a} index={i} entryId={entryId} fg={fg} />
+          <ResolvedAttachment att={a} fg={fg} msgId={entryId} index={i} galleryKey={galleryKeyOf(entryId, i)} />
         </Column>
       ))}
     </Column>

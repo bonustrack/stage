@@ -10,9 +10,8 @@ export function handOverSend(convId: string, started: StartedSend): void {
   handedSends.set(convId.toLowerCase(), started);
 }
 
-export function useTakeHandedSend(convId: string | null, take: (started: StartedSend) => void): void {
+export function useTakeHandedSend(convId: string, take: (started: StartedSend) => void): void {
   useEffect(() => {
-    if (convId === null) return;
     const key = convId.toLowerCase();
     const started = handedSends.get(key);
     if (started === undefined) return;

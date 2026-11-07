@@ -6,8 +6,8 @@ import { subscribeAppInFront } from '../../lib/appInFront';
 import { warmSendPath } from '../../lib/pushRegister';
 import type { ComposerState } from './state';
 
-export function useWarmSendPath(line: string | undefined, draft: Pick<ComposerState, 'text' | 'pending'>): void {
-  const composing = useIsFocused() && line !== undefined;
+export function useWarmSendPath(line: string, draft: Pick<ComposerState, 'text' | 'pending'>): void {
+  const composing = useIsFocused();
   const epoch = useAccountEpoch();
   const selection = useAccountSelection();
   useEffect(() => (composing ? subscribeAppInFront(warmSendPath) : undefined), [composing]);

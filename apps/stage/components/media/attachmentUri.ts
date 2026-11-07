@@ -21,16 +21,12 @@ const REMOTE_RETRIES = 6;
 
 const REMOTE_BACKOFF = { baseMs: 2_000, maxMs: 30_000 };
 
-function remoteRetryDelay(failures: number): number {
-  return backoffDelay(failures + 1, REMOTE_BACKOFF);
-}
-
 function fetchRemote(remote: Attachment['remote']): Promise<{ fileUri: string; mimeType?: string }> {
   if (!remote) throw new Error('attachment has no remote');
   return resolveRemoteAttachment(remote);
 }
 
-export function useRemoteAttachment(remote: Attachment['remote']): {
+function useRemoteAttachment(remote: Attachment['remote']): {
   uri: string | null;
   mime: string | undefined;
   isError: boolean;
@@ -42,7 +38,7 @@ export function useRemoteAttachment(remote: Attachment['remote']): {
     enabled: !!remote,
     staleTime: Infinity,
     retry: REMOTE_RETRIES,
-    retryDelay: remoteRetryDelay,
+    retryDelay: (failures) => backoffDelay(failures + 1, REMOTE_BACKOFF),
   });
   return {
     uri: data?.fileUri ?? null,

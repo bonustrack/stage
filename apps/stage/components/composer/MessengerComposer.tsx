@@ -6,7 +6,7 @@ import { useWarmSendPath } from './useWarmSendPath';
 import { useComposerState } from './state';
 import { ComposerSheets } from './sheets';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { ComposerCore, useComposerCore, type ComposerCoreProps, type ReplyingTo } from './ComposerCore';
+import { ComposerCore, type ComposerCoreProps, type ReplyingTo } from './ComposerCore';
 
 interface Props {
   xmtpLine: string;
@@ -46,13 +46,12 @@ export function MessengerComposer(props: Props): React.ReactElement {
       void actions.send();
     },
   };
-  const core = useComposerCore(coreProps);
   useWarmSendPath(xmtpLine, s);
   useTakeHandedSend(convId, (started) => {
     void actions.adoptSend(started);
   });
   return (
-    <ComposerCore {...coreProps} core={core}>
+    <ComposerCore {...coreProps}>
       <ComposerSheets
         s={s}
         dark={dark}

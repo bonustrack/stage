@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleProp, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, ScrollView, ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
@@ -37,10 +37,6 @@ const BUTTON_INSET = 6;
 const FULL_SCREEN_SPOT: ViewStyle = { position: 'absolute', top: BUTTON_INSET, right: BUTTON_INSET, ...OVERLAY_SHADOW };
 const SCROLL_STYLE: ViewStyle = { flexGrow: 0, flexShrink: 1 };
 const FILL_STYLE: ViewStyle = { flex: 1 };
-
-function tileLayout(fill: boolean, depth: number): { tile: ViewStyle; scroll: StyleProp<ViewStyle> } {
-  return fill ? { tile: FILL_STYLE, scroll: FILL_STYLE } : { tile: {}, scroll: [SCROLL_STYLE, { maxHeight: framePreviewCap(depth) }] };
-}
 
 function useScrollFade(screen: string): {
   ref: React.RefObject<ScrollView | null>;
@@ -122,14 +118,13 @@ export function FrameSurface({
   const { screen, depth, navigate } = navigation;
   const fade = useScrollFade(screen);
   const [hovered, setHovered] = useState(false);
-  const layout = tileLayout(fill, depth);
   const tile: ViewStyle = {
     overflow: 'hidden',
     borderRadius: BLOCK_RADIUS_DEFAULT,
     borderWidth: FRAME_PREVIEW_BORDER,
     borderColor: pal.border,
     backgroundColor: pal.bg,
-    ...layout.tile,
+    ...(fill ? FILL_STYLE : {}),
   };
   return (
     <Column
@@ -152,7 +147,7 @@ export function FrameSurface({
       <List
         ref={fade.ref}
         showsVerticalScrollIndicator={false}
-        style={layout.scroll}
+        style={fill ? FILL_STYLE : [SCROLL_STYLE, { maxHeight: framePreviewCap(depth) }]}
         onLayout={fade.onLayout}
         onContentSizeChange={fade.onContentSizeChange}
         onScroll={fade.onScroll}

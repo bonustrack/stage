@@ -2,7 +2,7 @@ export const MENU_SCREEN_MARGIN = 40;
 export const MENU_STRIP_HEIGHT = 52;
 export const STRIP_GAP = 6;
 
-export interface MenuPlacement {
+interface MenuPlacement {
   stripTop: number;
   dropdownAbove: boolean;
 }

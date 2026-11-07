@@ -168,9 +168,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         dark={dark}
         disabled={p.busy}
         dataSet={SELF_SCROLLBAR.dataSet}
-        onChangeText={(text) => {
-          p.setText(text);
-        }}
+        onChangeText={p.setText}
         onSelectionChange={(range) => {
           p.setSelection({ start: range.start, end: range.end });
         }}
@@ -179,18 +177,9 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   );
 }
 
-function quickSlot(p: EditorProps): React.ReactElement | null {
-  const quick = p.quick;
-  if (!quick) return null;
-  return (
-    <ComposerBtn icon={quick.icon} label={quick.label} onPress={() => void quick.run()} fg={p.fg} hoverFg={p.head} chipBg={p.chipBg} />
-  );
-}
-
 function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
-  const { fg, chipBg } = p;
+  const { fg, chipBg, quick } = p;
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const quick = quickSlot(p);
   const close = (): void => {
     p.setAttachMenuOpen(() => false);
   };
@@ -206,9 +195,11 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
         fg={fg}
         hoverFg={p.head}
         chipBg={chipBg}
-        mr={quick === null ? undefined : -12}
+        mr={quick ? -12 : undefined}
       />
-      {quick}
+      {quick ? (
+        <ComposerBtn icon={quick.icon} label={quick.label} onPress={() => void quick.run()} fg={fg} hoverFg={p.head} chipBg={chipBg} />
+      ) : null}
       <AnchoredMenu visible={p.attachMenuOpen} onClose={close} anchor={anchor}>
         {(p.attachActions ?? []).map((action) => (
           <MenuRow

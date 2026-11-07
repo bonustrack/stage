@@ -97,18 +97,16 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
   }
 }
 
+function adoptSend(a: ComposerActionsArgs, started: StartedSend, current: () => ComposerActionsArgs): Promise<void> {
+  showSend(a, started);
+  return finishSend(a, started, current);
+}
+
 async function performSend(a: ComposerActionsArgs, current: () => ComposerActionsArgs): Promise<void> {
   if (!a.text.trim() && a.pending.length === 0) return;
   const line = await a.openLine();
   if (line === null) return;
-  const started = startSend(line, a.text, a.pending, a.replyingTo?.id);
-  showSend(a, started);
-  await finishSend(a, started, current);
-}
-
-function adoptSend(a: ComposerActionsArgs, started: StartedSend, current: () => ComposerActionsArgs): Promise<void> {
-  showSend(a, started);
-  return finishSend(a, started, current);
+  await adoptSend(a, startSend(line, a.text, a.pending, a.replyingTo?.id), current);
 }
 
 const KEYBOARD_HIDE_WAIT_MS = 500;

@@ -1,56 +1,30 @@
-import type { RefObject } from 'react';
-import type { VirtualListHandle } from '../layout/VirtualList.types';
 import { FEED_MIN_BATCH, FOLLOW_NEWEST_WITHIN_PX, type FeedOrientation, type FeedScrollState } from './feedOrientation.core';
 
 const PIN_NEWEST_MS = 1200;
 
-function planRestore(args: {
-  loaded: boolean;
-  contentHeight: number;
-  itemCount: number;
-  savedOffset: number | undefined;
-  now: number;
-  pinUntil: number;
-  setPinUntil: (t: number) => void;
-}): 'skip' | 'bottom' | { offset: number; done: true } {
-  const { loaded, contentHeight, itemCount, savedOffset, now, pinUntil, setPinUntil } = args;
-  if (!loaded || contentHeight <= 0 || itemCount === 0) return 'skip';
-  if (savedOffset == null || savedOffset <= 0) {
-    if (pinUntil === 0) {
-      setPinUntil(now + PIN_NEWEST_MS);
-      return 'bottom';
-    }
-    return now > pinUntil ? 'skip' : 'bottom';
+function restoreDistance(s: FeedScrollState, contentHeight: number, itemCount: number): number | null {
+  if (!s.savedLoaded || contentHeight <= 0 || itemCount === 0) return null;
+  const saved = s.savedDistance;
+  if (saved != null && saved > 0) {
+    s.restored = true;
+    return Math.min(saved, Math.max(0, contentHeight));
   }
-  return { offset: Math.min(savedOffset, Math.max(0, contentHeight)), done: true };
-}
-
-function scrollTo(list: RefObject<VirtualListHandle | null>, offset: number): void {
-  requestAnimationFrame(() => {
-    list.current?.scrollToOffset({ offset, animated: false });
-  });
+  const now = Date.now();
+  if (s.pinUntil === 0) s.pinUntil = now + PIN_NEWEST_MS;
+  else if (now > s.pinUntil) return null;
+  return 0;
 }
 
 function restore(s: FeedScrollState, contentHeight: number, itemCount: number): number | null {
   if (s.restored) return null;
-  const plan = planRestore({
-    loaded: s.savedLoaded,
-    contentHeight,
-    itemCount,
-    savedOffset: s.savedDistance,
-    now: Date.now(),
-    pinUntil: s.pinUntil,
-    setPinUntil: (t) => {
-      s.pinUntil = t;
-    },
-  });
-  if (plan === 'skip') {
+  const distance = restoreDistance(s, contentHeight, itemCount);
+  if (distance === null) {
     if (s.pinUntil !== 0) s.restored = true;
     return null;
   }
-  const distance = plan === 'bottom' ? 0 : plan.offset;
-  if (plan !== 'bottom') s.restored = true;
-  scrollTo(s.list, distance);
+  requestAnimationFrame(() => {
+    s.list.current?.scrollToOffset({ offset: distance, animated: false });
+  });
   return distance;
 }
 

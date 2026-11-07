@@ -23,7 +23,7 @@ import {
 import { channelCandidatesOf, channelQuery, matchChannels, type ChannelCandidate } from './channels.model';
 import type { ComposerState } from './state';
 
-export interface SuggestAvatar {
+interface SuggestAvatar {
   address: string | null;
   imageUri?: string | null;
   square?: boolean;
@@ -86,11 +86,7 @@ function useSuggest<T>(s: ComposerState, config: SuggestConfig<T>): Suggest<T> &
   };
 }
 
-export type MentionEditor = Suggest<MentionCandidate> & {
-  display: string;
-  setDisplay: (next: string) => void;
-  restore: (wire: string) => void;
-};
+type MentionEditor = Suggest<MentionCandidate> & { display: string; setDisplay: (next: string) => void; restore: (wire: string) => void };
 
 function useCandidatePool(
   pieces: Piece[],

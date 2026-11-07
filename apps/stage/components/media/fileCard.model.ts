@@ -19,7 +19,7 @@ function fileTypeLabel(name: string | undefined, mime: string | undefined): stri
   return sub ? sub.toUpperCase() : 'File';
 }
 
-export interface FileCardModel {
+interface FileCardModel {
   title: string;
   subtitle: string;
 }

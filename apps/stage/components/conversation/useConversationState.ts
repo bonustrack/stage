@@ -122,11 +122,11 @@ function useFeedDerivations(events: HistoryEntry[], myUri: string, dm: boolean) 
 }
 
 function useReplyTarget() {
-  const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; sender?: string | null; nonce: number } | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; sender?: string | null; nonce: number } | null>(null);
   const replyNonceRef = useRef(0);
-  const setReplyTarget = useCallback((id: string, preview: string, sender?: string | null) => {
+  const setReplyTarget = useCallback((id: string, sender?: string | null) => {
     replyNonceRef.current += 1;
-    setReplyingTo({ id, preview, sender, nonce: replyNonceRef.current });
+    setReplyingTo({ id, sender, nonce: replyNonceRef.current });
   }, []);
   return { replyingTo, setReplyingTo, setReplyTarget };
 }
@@ -185,7 +185,7 @@ function useConvFeed(convId: string | undefined, focus: string | undefined) {
   );
   const { loadOlder, loadingOlder, retry: retryFeed } = xmtpFeed;
   const hasMore = xmtpFeed.hasMore && !feedReachedClear(xmtpFeed.events, clearedAt);
-  const myUri = userUriOf(xmtpFeed.inboxId ?? '');
+  const myUri = userUriOf(xmtpFeed.inboxId);
   useMarkReadWhileSeen(convId, countFromOthers(events, myUri));
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);
@@ -194,7 +194,7 @@ function useConvFeed(convId: string | undefined, focus: string | undefined) {
 }
 
 function useConvMenus(convId: string | undefined) {
-  const { replyingTo, setReplyingTo, setReplyTarget } = useReplyTarget();
+  const reply = useReplyTarget();
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   const [selectedForCopy, setSelectedForCopy] = useState<string | null>(null);
   useFocusEffect(
@@ -209,9 +209,7 @@ function useConvMenus(convId: string | undefined) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
   return {
-    replyingTo,
-    setReplyingTo,
-    setReplyTarget,
+    ...reply,
     menuFor,
     setMenuFor,
     menuAnchor,
@@ -356,7 +354,7 @@ export function useConversationState(convId: string | undefined, focus: string |
   };
 }
 
-export type ConversationState = ReturnType<typeof useConversationState>;
+type ConversationState = ReturnType<typeof useConversationState>;
 export type FeedSlice = ConversationState['feed'];
 export type ComposerSlice = ConversationState['composer'];
 export type OverflowSlice = ConversationState['overflow'];

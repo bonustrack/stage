@@ -10,15 +10,14 @@ import { reactorNamer, reactorNamesByMessage } from '../bubble/reactors.model';
 import { peerLabel } from '../../lib/peerProfiles';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import { profileLinkOf } from '../../lib/links';
-import { previewOf } from './feed-helpers';
 import { replyQuoteOf } from './messageDeletion.model';
 import { memberNamer, withMemberNames } from './systemNames.model';
 import type { BubbleFeedState } from './bubbleModels';
 import type { BubbleFeed } from './useFeedRenderItem';
 
-export interface FeedActionTargets {
+interface FeedActionTargets {
   onReact: (messageId: string, emoji: string) => void;
-  setReplyTarget: (id: string, preview: string, sender?: string | null) => void;
+  setReplyTarget: (id: string, sender?: string | null) => void;
   setMenuAnchor: (anchor: MenuAnchor) => void;
   setMenuFor: (entry: HistoryEntry | null) => void;
   jumpToMessage: (messageId: string) => void;
@@ -39,18 +38,20 @@ function useStableRecord<T extends object>(value: T): T {
   return previous.current;
 }
 
-function makeFeedActions(
-  targets: { current: FeedActionTargets },
-  senderEthOf: { current: (from: string) => string | null },
-  openProfile: (address: string) => void,
-): FeedActions {
-  const t = (): FeedActionTargets => targets.current;
+interface FeedActionsLatest {
+  targets: FeedActionTargets;
+  senderEthOf: (from: string) => string | null;
+  router: ReturnType<typeof useRouter>;
+}
+
+function makeFeedActions(latest: { current: FeedActionsLatest }): FeedActions {
+  const t = (): FeedActionTargets => latest.current.targets;
   return {
     react: (entry, emoji) => {
       t().onReact(entry.id, emoji);
     },
     reply: (entry) => {
-      t().setReplyTarget(entry.id, previewOf(entry), senderEthOf.current(entry.from));
+      t().setReplyTarget(entry.id, latest.current.senderEthOf(entry.from));
     },
     openMenu: (entry, anchor) => {
       t().setMenuAnchor(anchor);
@@ -59,7 +60,9 @@ function makeFeedActions(
     jumpToReply: (entry) => {
       if (entry.replyTo) t().jumpToMessage(entry.replyTo);
     },
-    openProfile,
+    openProfile: (address) => {
+      latest.current.router.push(profileLinkOf(address));
+    },
     vote: (entry, questionIndex, optionIndex, action) => {
       t().onVote(entry.id, questionIndex, optionIndex, action);
     },
@@ -82,17 +85,9 @@ function makeFeedActions(
 
 function useFeedActions(targets: FeedActionTargets, senderEthOf: (from: string) => string | null): FeedActions {
   const router = useRouter();
-  const latest = useRef(targets);
-  latest.current = targets;
-  const sender = useRef(senderEthOf);
-  sender.current = senderEthOf;
-  const navigator = useRef(router);
-  navigator.current = router;
-  const [actions] = useState(() =>
-    makeFeedActions(latest, sender, (address) => {
-      navigator.current.push(profileLinkOf(address));
-    }),
-  );
+  const latest = useRef({ targets, senderEthOf, router });
+  latest.current = { targets, senderEthOf, router };
+  const [actions] = useState(() => makeFeedActions(latest));
   return actions;
 }
 
@@ -133,7 +128,7 @@ function useQuoteOf(
   }, [events, deletedIds]);
 }
 
-export interface BubbleFeedInputs extends Omit<BubbleFeedState, 'namedEntry' | 'quoteOf' | 'reactorNames' | 'replyingToId' | 'menuForId'> {
+interface BubbleFeedInputs extends Omit<BubbleFeedState, 'namedEntry' | 'quoteOf' | 'reactorNames' | 'replyingToId' | 'menuForId'> {
   events: readonly HistoryEntry[];
   reactions: Map<string, Map<string, string[]>>;
   profilesVersion: number;

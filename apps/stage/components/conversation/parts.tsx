@@ -118,30 +118,7 @@ function ReactionStrip({ stripBg, onReact }: { stripBg: string; onReact: (e: str
   );
 }
 
-interface BubbleActions {
-  reply: () => void;
-  copy: () => void;
-  select: () => void;
-  addToDashboard: () => void;
-  shareLink: () => void;
-  delete: () => void;
-}
-
 const ACTION_ROW_HEIGHT = 2 * DROPDOWN_MENU.itemPadY + DROPDOWN_MENU.lineHeight;
-
-function actionDropdownHeight(rows: number): number {
-  return rows * ACTION_ROW_HEIGHT + 2 * DROPDOWN_MENU.padY;
-}
-
-function ActionDropdown({ items, on }: { items: ReturnType<typeof bubbleMenuItems>; on: BubbleActions }): React.ReactElement {
-  return (
-    <DropdownMenu>
-      {items.map((item) => (
-        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={on[item.id]} />
-      ))}
-    </DropdownMenu>
-  );
-}
 
 function AnchoredBubbleMenu({
   open,
@@ -174,19 +151,7 @@ function AnchoredBubbleMenu({
   );
 }
 
-export function BubbleActionMenu({
-  target,
-  anchor,
-  canDelete,
-  onClose,
-  onReact,
-  onReply,
-  onCopy,
-  onSelect,
-  onAddToDashboard,
-  onShareLink,
-  onDelete,
-}: {
+export function BubbleActionMenu(p: {
   target: HistoryEntry | null;
   anchor: MenuAnchor;
   canDelete: boolean;
@@ -199,33 +164,37 @@ export function BubbleActionMenu({
   onShareLink: () => void;
   onDelete: () => void;
 }): React.ReactElement {
+  const { target, anchor, onClose } = p;
   const anchored = useAnchoredMenus();
 
   const pal = usePalette();
   const windowHeight = Dimensions.get('window').height;
   const items = bubbleMenuItems(!!target?.text, {
     selectText: offersSelectMode,
-    canDelete,
-    addToDashboard: onAddToDashboard !== undefined,
+    canDelete: p.canDelete,
+    addToDashboard: p.onAddToDashboard !== undefined,
   });
-  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, actionDropdownHeight(items.length), windowHeight);
+  const dropdownHeight = items.length * ACTION_ROW_HEIGHT + 2 * DROPDOWN_MENU.padY;
+  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, dropdownHeight, windowHeight);
   const reactAndClose = (e: string): void => {
-    onReact(e);
+    p.onReact(e);
     onClose();
+  };
+  const on = {
+    reply: p.onReply,
+    copy: p.onCopy,
+    select: p.onSelect,
+    addToDashboard: p.onAddToDashboard ?? onClose,
+    shareLink: p.onShareLink,
+    delete: p.onDelete,
   };
 
   const dropdown = (
-    <ActionDropdown
-      items={items}
-      on={{
-        reply: onReply,
-        copy: onCopy,
-        select: onSelect,
-        addToDashboard: onAddToDashboard ?? onClose,
-        shareLink: onShareLink,
-        delete: onDelete,
-      }}
-    />
+    <DropdownMenu>
+      {items.map((item) => (
+        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={on[item.id]} />
+      ))}
+    </DropdownMenu>
   );
   const strip = <ReactionStrip stripBg={pal.border} onReact={reactAndClose} />;
 

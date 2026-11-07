@@ -12,7 +12,7 @@ import { ChannelRowFields } from './ChannelRowFields';
 import type { ChannelRow } from './ChannelRow';
 import { rowPreviewText } from './chatRow.model';
 
-export function chatPreview(row: CachedRow): string {
+function chatPreview(row: CachedRow): string {
   const sender = row.lastSenderAddress;
   return rowPreviewText({
     preview: row.lastPreview,

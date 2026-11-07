@@ -8,7 +8,7 @@ export const FRAME_PREVIEW_FADE = 48;
 export const FRAME_PREVIEW_PADDING = 12;
 export const FRAME_PREVIEW_BAR = 40;
 
-export interface FrameCardModel {
+interface FrameCardModel {
   title: string;
   description?: string;
 }

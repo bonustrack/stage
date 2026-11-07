@@ -1,6 +1,6 @@
 import { isWalletChain, WALLET_CHAIN_ONLY } from '@stage-labs/client/wallet/chains';
 
-export interface PaymentCheck {
+interface PaymentCheck {
   callCount: number;
   chainId: number;
   chainName: string;

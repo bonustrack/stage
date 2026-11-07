@@ -9,15 +9,6 @@ import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const FILL = { flex: 1 } as const;
 
-interface RequestFailure {
-  scope: string;
-  toast: string;
-}
-
-const APPROVE_FAILURE: RequestFailure = { scope: 'request.approve', toast: 'Could not approve this chat. Try again.' };
-
-const REJECT_FAILURE: RequestFailure = { scope: 'request.reject', toast: 'Could not reject this chat. Try again.' };
-
 export function RequestActionBar({
   convId,
   dark,
@@ -31,14 +22,14 @@ export function RequestActionBar({
   const [busy, setBusy] = useState(false);
   const buttonStyle = useWebTabRail() ? undefined : FILL;
 
-  const act = (request: (id: string) => Promise<unknown>, failure: RequestFailure, done: () => void) => (): void => {
+  const act = (request: (id: string) => Promise<unknown>, scope: string, toast: string, done: () => void) => (): void => {
     if (busy) return;
     setBusy(true);
     void request(convId)
       .then(done)
       .catch((err: unknown) => {
-        report(failure.scope, err);
-        capabilities.toast(failure.toast);
+        report(scope, err);
+        capabilities.toast(toast);
         setBusy(false);
       });
   };
@@ -56,7 +47,7 @@ export function RequestActionBar({
           loading={busy}
           disabled={busy}
           label="Reject"
-          onPress={act(blockRequestConv, REJECT_FAILURE, () => {
+          onPress={act(blockRequestConv, 'request.reject', 'Could not reject this chat. Try again.', () => {
             capabilities.back();
           })}
         />
@@ -71,7 +62,7 @@ export function RequestActionBar({
           label="Approve"
           tintBg={link}
           tintFg={bg}
-          onPress={act(acceptRequestConv, APPROVE_FAILURE, () => {
+          onPress={act(acceptRequestConv, 'request.approve', 'Could not approve this chat. Try again.', () => {
             onAccepted();
           })}
         />

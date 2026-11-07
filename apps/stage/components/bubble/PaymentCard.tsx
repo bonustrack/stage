@@ -41,7 +41,7 @@ interface PaymentBalanceArgs {
   needed: number | undefined;
 }
 
-export interface PaymentBalance {
+interface PaymentBalance {
   show: boolean;
   value: PayerBalance | null;
 }
@@ -77,16 +77,9 @@ function PaymentBalanceLine({
   pal: ReturnType<typeof usePalette>;
 }): React.ReactElement | null {
   if (!show) return null;
-  if (bal) {
-    return (
-      <Text size="3xs" color={bal.insufficient ? pal.danger : pal.sub} numberOfLines={1}>
-        {bal.text}
-      </Text>
-    );
-  }
   return (
-    <Text size="3xs" color={pal.sub} numberOfLines={1} style={{ opacity: 0.5 }}>
-      Balance: …
+    <Text size="3xs" color={bal?.insufficient ? pal.danger : pal.sub} numberOfLines={1} style={bal ? undefined : { opacity: 0.5 }}>
+      {bal ? bal.text : 'Balance: …'}
     </Text>
   );
 }
@@ -118,18 +111,7 @@ function PaymentActionButton({
   );
 }
 
-export function PaymentCard({
-  dark,
-  logoUrl,
-  chainNum,
-  description,
-  badge,
-  amountLabel,
-  detail,
-  balance,
-  action,
-  footer,
-}: {
+export function PaymentCard(p: {
   dark?: boolean;
   logoUrl: string;
   chainNum: number;
@@ -157,8 +139,8 @@ export function PaymentCard({
       <Row align="center" justify="spaceBetween" gap={8}>
         <Row align="center" gap={10} style={{ flexShrink: 1 }}>
           <TokenAvatar
-            logoUrl={logoUrl}
-            chainId={chainNum}
+            logoUrl={p.logoUrl}
+            chainId={p.chainNum}
             size={CARD_AVATAR.size}
             badgeSize={CARD_AVATAR.badgeSize}
             badge="corner"
@@ -167,19 +149,19 @@ export function PaymentCard({
             ring={{ color: cardBackground, width: CARD_AVATAR.ring }}
           />
           <Text fontWeight="semibold" size="xs" color={pal.text} style={{ flexShrink: 1 }} numberOfLines={2}>
-            {description}
+            {p.description}
           </Text>
         </Row>
-        {badge}
+        {p.badge}
       </Row>
-      {amountLabel ? (
+      {p.amountLabel ? (
         <Text fontWeight="semibold" size="2xl" color={pal.link}>
-          {amountLabel}
+          {p.amountLabel}
         </Text>
       ) : null}
-      {detail}
-      <PaymentBalanceLine show={balance.show} bal={balance.value} pal={pal} />
-      {action ? <PaymentActionButton action={action} dark={dark} pal={pal} /> : footer}
+      {p.detail}
+      <PaymentBalanceLine show={p.balance.show} bal={p.balance.value} pal={pal} />
+      {p.action ? <PaymentActionButton action={p.action} dark={p.dark} pal={pal} /> : p.footer}
     </Column>
   );
 }
@@ -268,18 +250,16 @@ function X402PaymentCard({
   const canPay = x402CanPayInApp(accept);
   const asset = x402KnownAsset(accept);
 
-  const runPay = (): void => {
+  const runPay = async (): Promise<void> => {
     setPhase('paying');
-    void (async () => {
-      try {
-        const res = await payX402Exact({ resource: endpoint, accept, x402Version: challenge.x402Version });
-        setPhase(res.ok ? 'paid' : 'failed');
-        capabilities.toast(res.ok ? 'Payment sent' : `Payment failed (${res.status})`);
-      } catch (e) {
-        setPhase('failed');
-        capabilities.toast(errorMessage(e) || 'Payment failed');
-      }
-    })();
+    try {
+      const res = await payX402Exact({ resource: endpoint, accept, x402Version: challenge.x402Version });
+      setPhase(res.ok ? 'paid' : 'failed');
+      capabilities.toast(res.ok ? 'Payment sent' : `Payment failed (${res.status})`);
+    } catch (e) {
+      setPhase('failed');
+      capabilities.toast(errorMessage(e) || 'Payment failed');
+    }
   };
 
   const confirmPay = (): void => {
@@ -293,7 +273,7 @@ function X402PaymentCard({
         confirmLabel: 'Pay',
       })
       .then((ok) => {
-        if (ok) runPay();
+        if (ok) void runPay();
       });
   };
 

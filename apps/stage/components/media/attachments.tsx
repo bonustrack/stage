@@ -27,7 +27,7 @@ function MessengerVideoAttachment({ uri }: { uri: string }): React.ReactElement 
   );
 }
 
-export function AttachmentView({
+function AttachmentView({
   att,
   fullUrl,
   fg,

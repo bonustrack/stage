@@ -1,6 +1,6 @@
 import { entryAttachmentKind } from '@stage-labs/client/xmtp/humanize';
 
-export interface GalleryAttachment {
+interface GalleryAttachment {
   kind: string;
   mime?: string;
   name?: string;

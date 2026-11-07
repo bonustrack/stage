@@ -65,7 +65,7 @@ export function ReplyBanner({
   );
 }
 
-export const keepInputFocus =
+const keepInputFocus =
   Platform.OS === 'web'
     ? {
         onMouseDown: (event: { preventDefault: () => void }) => {
@@ -99,14 +99,6 @@ export function SuggestMenu<T extends { name: string }>({ suggest }: { suggest: 
 }
 
 const TRAY_TILE = 72;
-
-function TileName({ name, fg }: { name: string; fg: string }): React.ReactElement {
-  return (
-    <Text color={fg} size="3xs" style={{ width: TRAY_TILE, textAlign: 'center' }} numberOfLines={1}>
-      {name}
-    </Text>
-  );
-}
 
 function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void }): React.ReactElement {
   return (
@@ -149,7 +141,9 @@ function TrayTile({
         </Column>
         <RemoveBadge label={removeLabel} onRemove={onRemove} />
       </Column>
-      <TileName name={at.name ?? at.id} fg={fg} />
+      <Text color={fg} size="3xs" style={{ width: TRAY_TILE, textAlign: 'center' }} numberOfLines={1}>
+        {at.name ?? at.id}
+      </Text>
     </Column>
   );
 }

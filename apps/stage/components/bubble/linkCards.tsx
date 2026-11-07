@@ -233,8 +233,7 @@ export function ChannelCard({
   url: string;
 }): React.ReactElement | null {
   if (peerAddress) return <DmPeerCard address={peerAddress} url={url} />;
-  if (!convId) return null;
-  return <ConvIdCard convId={convId} url={url} />;
+  return convId ? <ConvIdCard convId={convId} url={url} /> : null;
 }
 
 function cardTitle(row: ConvRow | null, convId: string): ConvTitle {

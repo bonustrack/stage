@@ -29,12 +29,12 @@ export interface FeedScrollState {
   olderPending: boolean;
 }
 
-export interface FeedPositionHold {
+interface FeedPositionHold {
   minIndexForVisible: number;
   autoscrollToTopThreshold?: number;
 }
 
-export interface OrientedFeed {
+interface OrientedFeed {
   inverted: boolean;
   onStartReached?: () => void;
   onEndReached?: () => void;

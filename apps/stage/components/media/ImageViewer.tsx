@@ -34,10 +34,7 @@ export function ImageViewer({
   const [saving, setSaving] = useState(false);
   const insets = useSafeAreaInsets();
 
-  useEffect(() => {
-    if (!visible) return undefined;
-    return lockDocumentScroll();
-  }, [visible]);
+  useEffect(() => (visible ? lockDocumentScroll() : undefined), [visible]);
 
   const onDownload = async (): Promise<void> => {
     if (saving || !uri) return;

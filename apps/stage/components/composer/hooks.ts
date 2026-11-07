@@ -18,7 +18,6 @@ export function useCaretToEnd(text: string, setSelection: (range: { start: numbe
 
 export function useSavedDraft(key: string | null, value: unknown, restore: (saved: unknown) => void, delayMs = 0): void {
   const restored = useRef(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     restored.current = false;
     if (key === null) return;
@@ -29,12 +28,11 @@ export function useSavedDraft(key: string | null, value: unknown, restore: (save
   }, [key]);
   useEffect(() => {
     if (key === null || !restored.current) return;
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
+    const timer = setTimeout(() => {
       setDraftValue(key, value);
     }, delayMs);
     return () => {
-      if (timer.current) clearTimeout(timer.current);
+      clearTimeout(timer);
     };
   }, [value, key]);
 }

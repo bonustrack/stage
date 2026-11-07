@@ -15,7 +15,7 @@ import { ConversationSidebar } from './ConversationSidebar';
 import { PeerTopnav } from './PeerTopnav';
 import { Column, RIGHT_PANE_PAD } from '../layout';
 
-export type ConversationRoute = 'peer' | 'channel';
+type ConversationRoute = 'peer' | 'channel';
 
 function UnresolvedConversation({ resolved, peer }: { resolved: ReturnType<typeof useResolvedConvId>; peer?: string }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
@@ -54,19 +54,14 @@ function useConversationSearch() {
   return { open, query, setQuery, close, openSearch, inputRef };
 }
 
-function useConversationScreen(convId: string | undefined, focus: string | undefined) {
-  const c = useConversationState(convId, focus);
-  const memberList = useConversationSidebarShown();
-  const search = useConversationSearch();
-  const footer = useFooterHeight();
-  return { c, memberList, search, footer };
-}
-
 export function ConversationScreen({ route }: { route: ConversationRoute }): React.ReactElement {
   const { convId: routeParam, focus } = useLocalSearchParams<{ convId: string; focus?: string }>();
   const resolved = useResolvedConvId(routeParam, route === 'peer');
   const convId = resolved.convId ?? undefined;
-  const { c, memberList, search, footer } = useConversationScreen(convId, focus);
+  const c = useConversationState(convId, focus);
+  const memberList = useConversationSidebarShown();
+  const search = useConversationSearch();
+  const footer = useFooterHeight();
 
   if (resolved.resolving || !convId) {
     return (

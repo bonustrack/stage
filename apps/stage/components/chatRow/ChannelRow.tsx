@@ -49,7 +49,7 @@ interface ChannelRowProps {
   mark?: MarkedNode;
 }
 
-export const CHANNEL_ROW_HEIGHT = 67;
+const CHANNEL_ROW_HEIGHT = 67;
 const AVATAR_SIZE = 44;
 const ROW_PADDING_Y = 9;
 const TITLE_LINE_HEIGHT = 24;
@@ -189,51 +189,15 @@ function ChannelRowBody({
   );
 }
 
-function ChannelRowBase({
-  title,
-  placeholderTitle,
-  avatarAddress,
-  avatarUri,
-  square,
-  hideAvatar,
-  wrapTitle = false,
-  lastPreview,
-  timestamp,
-  subtitle,
-  previewLines,
-  showPreview,
-  unreadCount = 0,
-  markedUnread,
-  pinned,
-  draftText,
-  active,
-  onPress,
-  linkProps,
-  onPressIn,
-  onLongPress,
-  onContextMenu,
-  highlightQuery,
-  accessory,
-  fields,
-  mark,
-}: ChannelRowProps): React.ReactElement {
+function ChannelRowBase(p: ChannelRowProps): React.ReactElement {
+  const { onLongPress, avatarUri } = p;
   const { border } = usePalette();
-  const params = channelRowModel({
-    title,
-    placeholderTitle,
-    highlightQuery,
-    lastPreview,
-    subtitle,
-    draftText,
-    showPreview,
-    pinned,
-    timestampLabel: timestamp ?? '',
-  });
+  const params = channelRowModel({ ...p, timestampLabel: p.timestamp ?? '' });
 
   return (
     <Pressable
-      onPress={onPress}
-      onPressIn={onPressIn}
+      onPress={p.onPress}
+      onPressIn={p.onPressIn}
       onLongPress={
         onLongPress === undefined
           ? undefined
@@ -242,31 +206,31 @@ function ChannelRowBase({
             }
       }
       delayLongPress={onLongPress ? 300 : undefined}
-      style={({ pressed }) => ({ backgroundColor: pressed || active === true ? border : 'transparent', paddingHorizontal: PAGE_GUTTER })}
-      {...linkProps}
-      {...contextMenuProps(onContextMenu ?? onLongPress)}
-      {...mark}
+      style={({ pressed }) => ({ backgroundColor: pressed || p.active === true ? border : 'transparent', paddingHorizontal: PAGE_GUTTER })}
+      {...p.linkProps}
+      {...contextMenuProps(p.onContextMenu ?? onLongPress)}
+      {...p.mark}
     >
       <Row minHeight={rowMinHeight(params.showPreview)} padding={{ y: ROW_PADDING_Y }} align="center" gap={12}>
-        {hideAvatar === true ? null : (
+        {p.hideAvatar === true ? null : (
           <Avatar
             imageUri={avatarUri}
-            address={avatarUri ? null : (avatarAddress ?? null)}
+            address={avatarUri ? null : (p.avatarAddress ?? null)}
             size={AVATAR_SIZE}
-            square={square}
+            square={p.square}
             style={{ backgroundColor: border }}
           />
         )}
         <Column minWidth={0} weight={1}>
           <ChannelRowBody
             params={params}
-            wrapTitle={wrapTitle}
-            previewLines={previewLines}
-            trailing={<TrailingBadge unreadCount={unreadCount} markedUnread={markedUnread} />}
+            wrapTitle={p.wrapTitle ?? false}
+            previewLines={p.previewLines}
+            trailing={<TrailingBadge unreadCount={p.unreadCount ?? 0} markedUnread={p.markedUnread} />}
           />
-          {fields}
+          {p.fields}
         </Column>
-        {accessory}
+        {p.accessory}
       </Row>
     </Pressable>
   );

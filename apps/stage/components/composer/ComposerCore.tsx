@@ -3,7 +3,6 @@ import { FilePicker } from '@stage-labs/kit/react-native/file-picker';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
 import { useDictation } from './dictation';
-import type { Attachment } from './types';
 import { useComposerActions } from './actions';
 import { usePastedImages } from './pastedImages';
 import { useDroppedFiles } from './droppedFiles';
@@ -22,11 +21,10 @@ import { fileInputs } from './send.model';
 import type { ComposerState } from './state';
 import { Column, PAGE_GUTTER, Row } from '../layout';
 
-export type ComposerActions = ReturnType<typeof useComposerActions>;
+type ComposerActions = ReturnType<typeof useComposerActions>;
 
 export interface ReplyingTo {
   id: string;
-  preview: string;
   sender?: string | null;
   nonce?: number;
 }
@@ -87,15 +85,14 @@ function useDroppedAndPasted(actions: ComposerActions, focus: () => void): DropZ
 }
 
 function ComposerReply({ dark, sub, reply }: { dark: boolean; sub: string; reply: ComposerCoreProps['reply'] }): React.ReactElement | null {
-  const replyingTo = reply?.replyingTo;
-  if (!replyingTo) return null;
-  const onJumpToReply = reply?.onJumpToReply;
+  if (!reply?.replyingTo) return null;
+  const { replyingTo, onJumpToReply } = reply;
   return (
     <ReplyBanner
       dark={dark}
       sub={sub}
       sender={replyingTo.sender}
-      onClear={reply?.onClearReply}
+      onClear={reply.onClearReply}
       onPress={
         onJumpToReply
           ? () => {
@@ -107,23 +104,24 @@ function ComposerReply({ dark, sub, reply }: { dark: boolean; sub: string; reply
   );
 }
 
-function ComposerHeader(p: {
-  dark: boolean;
-  fg: string;
-  sub: string;
-  reply: ComposerCoreProps['reply'];
-  pending: Attachment[];
-  onRemovePending: (i: number) => void;
-  uploading: boolean;
-  err: string | null;
-}): React.ReactElement {
+function ComposerHeader(p: { dark: boolean; fg: string; reply: ComposerCoreProps['reply']; s: ComposerState }): React.ReactElement {
+  const { fg, s } = p;
   return (
     <>
-      <ComposerReply dark={p.dark} sub={p.sub} reply={p.reply} />
-      {p.pending.length > 0 ? <PendingRow fg={p.fg} pending={p.pending} onRemove={p.onRemovePending} /> : null}
-      {p.uploading || p.err ? (
-        <Text size="3xs" color={p.err ? DANGER : p.sub} style={{ paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }}>
-          {p.err ?? 'Uploading…'}
+      <ComposerReply dark={p.dark} sub={fg} reply={p.reply} />
+      {s.pending.length > 0 ? (
+        <PendingRow
+          fg={fg}
+          pending={s.pending}
+          onRemove={(i) => {
+            forgetAttachments(fileInputs(s.pending.filter((_, j) => j === i)));
+            s.setPending((prev) => prev.filter((_, j) => j !== i));
+          }}
+        />
+      ) : null}
+      {s.uploading || s.err ? (
+        <Text size="3xs" color={s.err ? DANGER : fg} style={{ paddingHorizontal: PAGE_GUTTER, paddingBottom: 4 }}>
+          {s.err ?? 'Uploading…'}
         </Text>
       ) : null}
     </>
@@ -209,7 +207,7 @@ function ComposerFilePickers({ actions }: { actions: ComposerActions }): React.R
   );
 }
 
-export function useComposerCore(p: ComposerCoreProps) {
+function useComposerCore(p: ComposerCoreProps) {
   const { s, actions } = p;
   const mention = useMentionEditor(s, p.mentionCandidates, p.suggestContacts === true);
   const caretToEnd = useCaretToEnd(mention.display, s.setSelection);
@@ -230,32 +228,18 @@ export function useComposerCore(p: ComposerCoreProps) {
   return { mention, drop, channels, voice };
 }
 
-export type ComposerCoreState = ReturnType<typeof useComposerCore>;
-
-export function ComposerCore({ core, ...p }: ComposerCoreProps & { core: ComposerCoreState }): React.ReactElement {
+export function ComposerCore(p: ComposerCoreProps): React.ReactElement {
   const { s, actions } = p;
+  const { mention, drop, channels, voice } = useComposerCore(p);
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
-  const { mention, drop, channels, voice } = core;
   const { dictation, startRecording, attachActions, quick } = voice;
   return (
     <Column nativeID={drop.zoneId} padding={{ x: 0, top: 0, bottom: 0 }} background={pal.border} radius={composerRadius(p.rounded)}>
       <SuggestMenu suggest={mention} />
       <SuggestMenu suggest={channels} />
       {p.header}
-      <ComposerHeader
-        dark={dark}
-        fg={pal.text}
-        sub={pal.text}
-        reply={p.reply}
-        pending={s.pending}
-        onRemovePending={(i) => {
-          forgetAttachments(fileInputs(s.pending.filter((_, j) => j === i)));
-          s.setPending((prev) => prev.filter((_, j) => j !== i));
-        }}
-        uploading={s.uploading}
-        err={s.err}
-      />
+      <ComposerHeader dark={dark} fg={pal.text} reply={p.reply} s={s} />
       <ComposerEditor
         dark={dark}
         fg={pal.text}

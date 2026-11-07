@@ -24,7 +24,7 @@ export function seekFraction(offset: number, width: number): number {
   return Math.max(0, Math.min(1, offset / width));
 }
 
-export interface AudioCardModel {
+interface AudioCardModel {
   voice: boolean;
   title: string;
   fileName: string;
