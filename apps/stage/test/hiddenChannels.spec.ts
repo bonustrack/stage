@@ -46,6 +46,7 @@ mock.module('../lib/xmtp.client', () => ({ cachedSelfEthAddress: () => activeId 
 mock.module('../lib/channelsCache', () => ({
   getCachedRows: () => null,
   setCachedRows: () => undefined,
+  subscribeCachedRows: () => () => undefined,
   patchRowConsent: () => undefined,
 }));
 mock.module('../lib/messaging/conversation', () => ({ groupRowMeta: async () => null }));
