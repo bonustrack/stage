@@ -56,10 +56,12 @@ export interface ValueStore<T> {
   loaded: () => boolean;
   loadFailed: () => boolean;
   retry: () => void;
+  settled: () => boolean;
   subscribe: (cb: () => void) => () => void;
   use: () => T;
-  useSettled: () => boolean;
 }
+
+export type StoreSource<T> = Pick<ValueStore<T>, 'get' | 'settled' | 'subscribe' | 'loadAsync'>;
 
 interface StoreCodec<T> {
   parse: (raw: string) => T | undefined;
@@ -298,8 +300,6 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     });
 
   const use = (): T => useStoreValue(subscribe, get, loadAsync);
-  const settled = (): boolean => loaded() || loadFailed();
-  const useSettled = (): boolean => useStoreValue(subscribe, settled, loadAsync);
 
   return {
     load,
@@ -315,8 +315,8 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     loaded,
     loadFailed,
     retry,
+    settled: () => loaded() || loadFailed(),
     subscribe,
     use,
-    useSettled,
   };
 }

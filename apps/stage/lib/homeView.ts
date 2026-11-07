@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
 import { reported } from './errorPolicy';
+import type { StoreSource } from './persistedStore';
 import { syncedSetting } from './sync/setting';
 import { editHomeView, receiveHomeView, syncedHomeView, syncsHomeView } from './syncedSettings.model';
 
@@ -18,14 +19,18 @@ export const useHomeView = prefs.use;
 
 export const getHomeView = prefs.get;
 
+export const homeViewSource: StoreSource<HomeViewContent> = prefs;
+
+export function homeViewOf(stored: HomeViewContent, view: HomeView): HomeViewContent {
+  return stored.view === view ? stored : { ...stored, view };
+}
+
 export function useHomeViewOf(view: HomeView): HomeViewContent {
   const stored = prefs.use();
-  return useMemo(() => (stored.view === view ? stored : { ...stored, view }), [stored, view]);
+  return useMemo(() => homeViewOf(stored, view), [stored, view]);
 }
 
 export const useHomeViewLoaded = homeView.useLoaded;
-
-export const useHomeViewSettled = prefs.useSettled;
 
 export function setHomeView(edit: HomeViewEdit): void {
   void homeView.editStored((current) => editHomeView(current, edit, Date.now()), syncsHomeView(edit)).catch(reported('homeView.save'));

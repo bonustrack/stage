@@ -1,6 +1,6 @@
 import { movedPinOrder, pinOrderAfterRemote, toggledPinOrder, type PinOrder } from '@stage-labs/client/xmtp/pinOrder';
 import type { PinStateContent } from '@stage-labs/client/xmtp/sync/pin';
-import { createValueStore } from '../persistedStore';
+import { createValueStore, type StoreSource } from '../persistedStore';
 import { makeListeners, storedStrings } from '../storeCore';
 import { rowIdOfConv } from '../xmtp.conv';
 import { stampLocal, takeIfNewer } from './clock';
@@ -45,7 +45,7 @@ async function applyRemotePinState(state: PinStateContent): Promise<void> {
 
 export const usePinnedOrder = (): PinOrder => store.use();
 
-export const usePinnedOrderSettled = store.useSettled;
+export const pinnedOrderSource: StoreSource<PinOrder> = store;
 
 async function pinStateForRows(state: PinStateContent): Promise<PinStateContent> {
   const convId = await rowIdOfConv(state.convId);

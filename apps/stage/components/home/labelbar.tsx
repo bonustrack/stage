@@ -5,31 +5,8 @@ import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { channelsLabelChips, selectChannelsFilter } from './model';
 import { LabelChip } from '../LabelChip';
-import { clearSearchFilters, setSearchQuery, toggleSearchLabel, toggleSearchUnread, useSearchState } from '../../lib/searchState';
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, Row, PAGE_GUTTER, LIST_TOP_GAP } from '../layout';
-
-export function useHomeFilters(): {
-  enabledLabels: Set<string>;
-  toggleLabel: (label: string) => void;
-  unreadOnly: boolean;
-  toggleUnread: () => void;
-  clearAllFilters: () => void;
-  query: string;
-  setQuery: (query: string) => void;
-} {
-  const search = useSearchState();
-  const enabledLabels = useMemo(() => new Set(search.labels), [search.labels]);
-  return {
-    enabledLabels,
-    toggleLabel: toggleSearchLabel,
-    unreadOnly: search.unreadOnly,
-    toggleUnread: toggleSearchUnread,
-    clearAllFilters: clearSearchFilters,
-    query: search.query,
-    setQuery: setSearchQuery,
-  };
-}
 
 const CHIPS_PADDING = { x: PAGE_GUTTER, y: LIST_TOP_GAP };
 const STRETCH = { alignSelf: 'stretch' } as const;

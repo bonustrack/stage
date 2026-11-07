@@ -1,4 +1,5 @@
 import { searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/sync/search';
+import type { StoreSource } from './persistedStore';
 import { syncedSetting } from './sync/setting';
 import {
   EMPTY_SEARCH,
@@ -20,13 +21,7 @@ export const searchStateSync = search.sync;
 
 export const useSearchState = prefs.use;
 
-export const useSearchStateSettled = prefs.useSettled;
-
-export const getSearchState = prefs.get;
-
-export const subscribeSearchState = prefs.subscribe;
-
-export const primeSearchState = prefs.loadAsync;
+export const searchStateSource: StoreSource<SearchStateContent> = prefs;
 
 function editSynced(change: FilterEdit): void {
   search.edit((current) => editFilters(current, change, Date.now()));

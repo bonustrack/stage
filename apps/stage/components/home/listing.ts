@@ -3,14 +3,13 @@ import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/cl
 import type { HomeSort, HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { useHomeRows } from '../../lib/messaging/homeRows';
 import type { CachedRow } from '../../lib/cachedRows.model';
-import { usePinnedOrder, usePinnedOrderSettled } from '../../lib/sync/pins';
-import { useClearedChats, useClearedChatsSettled } from '../../lib/sync/clearedChats';
 import { getPeerDisplayName, getPeerHandle, usePeerProfiles } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
-import { useHomeViewOf, useHomeViewSettled, type HomeView } from '../../lib/homeView';
-import { useLastActivityCutoff, useLastActivitySettled } from '../../lib/lastActivity';
-import { setSearchQuery, useSearchState, useSearchStateSettled } from '../../lib/searchState';
-import { useGroupingOrders } from '../../lib/groupingOrder';
+import { homeViewOf, type HomeView } from '../../lib/homeView';
+import { useActivityCutoff } from '../../lib/lastActivity';
+import { setSearchQuery, useSearchState } from '../../lib/searchState';
+import { useListingPrefs, type ListingPrefs } from '../../lib/listingPrefs';
+import type { ChannelFields } from '../../lib/channelFields.model';
 import { groupingOrderOf, type GroupingOrders } from '../../lib/grouping.model';
 import { makeValue } from '../../lib/storeCore';
 import { configuredFieldOptions } from '../channel/channelFieldOptions.model';
@@ -38,10 +37,20 @@ export const resetBoardQuery = (): void => {
   boardQuery.set('');
 };
 
-export function useHomeQuery(view: HomeView): [string, (query: string) => void] {
-  const chats = useSearchState().query;
-  const board = boardQuery.use();
+type HomeQuery = [string, (query: string) => void];
+
+function homeQuery(view: HomeView, chats: string, board: string): HomeQuery {
   return view === 'board' ? [board, boardQuery.set] : [chats, setSearchQuery];
+}
+
+export function useHomeQuery(view: HomeView): HomeQuery {
+  return homeQuery(view, useSearchState().query, boardQuery.use());
+}
+
+function useGroupingOrders(prefs: ListingPrefs): GroupingOrders {
+  const categories = prefs.groups.order;
+  const board = prefs.boardOrder;
+  return useMemo(() => ({ categories, board }), [categories, board]);
 }
 
 function profileAddresses(view: HomeView, rows: readonly CachedRow[], members: readonly string[], byAssignee: boolean): (string | null)[] {
@@ -57,6 +66,9 @@ export interface HomeListing {
   view: HomeViewContent;
   sort: HomeSort;
   orders: GroupingOrders;
+  enabledLabels: Set<string>;
+  unreadOnly: boolean;
+  fields: ChannelFields;
   query: string;
   setQuery: (query: string) => void;
   searchText: string;
@@ -65,39 +77,32 @@ export interface HomeListing {
   draftsVersion: number;
 }
 
-function useListingPrefsSettled(): boolean {
-  const settled = [
-    usePinnedOrderSettled(),
-    useClearedChatsSettled(),
-    useHomeViewSettled(),
-    useLastActivitySettled(),
-    useSearchStateSettled(),
-  ];
-  return settled.every(Boolean);
-}
-
 export function useHomeListing(view: HomeView): HomeListing {
+  const prefs = useListingPrefs();
   const storedRows = useHomeRows();
-  const rows = useListingPrefsSettled() ? storedRows : null;
-  const pinned = usePinnedOrder();
-  const cleared = useClearedChats();
-  const prefs = useHomeViewOf(view);
-  const orders = useGroupingOrders();
-  const [query, setQuery] = useHomeQuery(view);
-  const grouping = view === 'board' ? prefs.columnBy : prefs.groupBy;
+  const rows = prefs.settled ? storedRows : null;
+  const viewPrefs = useMemo(() => homeViewOf(prefs.homeView, view), [prefs.homeView, view]);
+  const orders = useGroupingOrders(prefs);
+  const { labels, unreadOnly } = prefs.search;
+  const enabledLabels = useMemo(() => new Set(labels), [labels]);
+  const [query, setQuery] = homeQuery(view, prefs.search.query, boardQuery.use());
+  const grouping = view === 'board' ? viewPrefs.columnBy : viewPrefs.groupBy;
   const members = searchFilterValues(query, 'member').length > 0 ? searchFilterSources(rows ?? [], view).members : [];
   const profilesVersion = usePeerProfiles(profileAddresses(view, rows ?? [], members, grouping === 'assignee'));
   const draftsVersion = useDraftsVersion();
-  const activityCutoff = useLastActivityCutoff(view);
+  const activityCutoff = useActivityCutoff(prefs.activity[view]);
   const searchText = useMemo(() => parseSearchFilter(query).text, [query]);
   const matches = useMemo(() => listingMatcher(query, activityCutoff), [query, profilesVersion, draftsVersion, activityCutoff]);
   return {
     rows,
-    pinned,
-    cleared,
-    view: prefs,
-    sort: homeSortOf(prefs),
+    pinned: prefs.pinned,
+    cleared: prefs.cleared,
+    view: viewPrefs,
+    sort: homeSortOf(viewPrefs),
     orders,
+    enabledLabels,
+    unreadOnly,
+    fields: prefs.fields[view],
     query,
     setQuery,
     searchText,
@@ -109,8 +114,9 @@ export function useHomeListing(view: HomeView): HomeListing {
 
 export function useKnownFieldValues(view: HomeView): ReturnType<typeof searchFilterSources> {
   const rows = useHomeRows();
-  const cleared = useClearedChats();
-  const orders = useGroupingOrders();
+  const prefs = useListingPrefs();
+  const orders = useGroupingOrders(prefs);
+  const { cleared } = prefs;
   return useMemo(() => {
     const sources = searchFilterSources(
       (rows ?? []).filter((row) => !isRowCleared(cleared, row)),

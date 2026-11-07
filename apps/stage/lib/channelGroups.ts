@@ -9,7 +9,7 @@ import {
 } from './channelGroups.model';
 import { reported } from './errorPolicy';
 import { loadBoardOrder } from './boardOrder';
-import { createValueStore } from './persistedStore';
+import { createValueStore, type StoreSource } from './persistedStore';
 import { settingChanges, type SyncedSetting } from './sync/setting';
 
 const prefs = createValueStore<ChannelGroupsPrefs>({
@@ -19,7 +19,7 @@ const prefs = createValueStore<ChannelGroupsPrefs>({
   perAccount: true,
 });
 
-export const useChannelGroups = prefs.use;
+export const channelGroupsSource: StoreSource<ChannelGroupsPrefs> = prefs;
 
 const categoryOrderChanges = settingChanges<readonly string[]>();
 

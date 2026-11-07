@@ -9,7 +9,7 @@ import type { HomeView } from './homeView';
 import { accountScope } from './accountSelection';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { reported } from './errorPolicy';
-import { createValueStore } from './persistedStore';
+import { createValueStore, type StoreSource } from './persistedStore';
 import { makeSharedSource, useStoreValue } from './storeCore';
 
 const prefs = createValueStore<ActivityPreferences>({
@@ -19,6 +19,8 @@ const prefs = createValueStore<ActivityPreferences>({
   perAccount: true,
 });
 
+export const lastActivitySource: StoreSource<ActivityPreferences> = prefs;
+
 export function getLastActivity(view: HomeView): LastActivity {
   return prefs.loaded() ? prefs.get()[view] : 'all';
 }
@@ -26,8 +28,6 @@ export function getLastActivity(view: HomeView): LastActivity {
 export function useLastActivity(view: HomeView): LastActivity {
   return useStoreValue(prefs.subscribe, () => getLastActivity(view), prefs.loadAsync);
 }
-
-export const useLastActivitySettled = prefs.useSettled;
 
 export function setLastActivity(view: HomeView, window: LastActivity): void {
   const scope = accountScope();
@@ -54,8 +54,7 @@ const subscribeClock = (onChange: () => void): (() => void) => clock(undefined, 
 const noClock = (): (() => void) => () => undefined;
 const clockNow = (): number => now;
 
-export function useLastActivityCutoff(view: HomeView): number | null {
-  const window = useLastActivity(view);
+export function useActivityCutoff(window: LastActivity): number | null {
   const current = useStoreValue(window === 'all' ? noClock : subscribeClock, clockNow);
   return lastActivityCutoff(window, current);
 }

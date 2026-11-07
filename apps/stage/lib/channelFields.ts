@@ -4,11 +4,12 @@ import {
   parseChannelFields,
   toggleChannelFieldIn,
   type ChannelField,
+  type ChannelFieldPreferences,
   type ChannelFields,
 } from './channelFields.model';
 import { appStorage } from '../platform/storage';
 import { reported } from './errorPolicy';
-import { createValueStore } from './persistedStore';
+import { createValueStore, type StoreSource } from './persistedStore';
 import type { HomeView } from './homeView';
 
 const prefs = createValueStore({
@@ -25,6 +26,8 @@ const prefs = createValueStore({
     set: appStorage.set,
   },
 });
+
+export const channelFieldsSource: StoreSource<ChannelFieldPreferences> = prefs;
 
 export function useChannelFields(view: HomeView): ChannelFields {
   return prefs.use()[view];

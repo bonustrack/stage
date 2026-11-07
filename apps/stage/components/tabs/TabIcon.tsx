@@ -10,7 +10,8 @@ export const TAB_ICON_FRAME = { width: 31, height: 28 } as const;
 const TAB_BADGE_POSITION = { position: 'absolute', top: -3, right: -3 } as const;
 
 export function useChatsTabBadge(): string | undefined {
-  return unreadBadgeLabel(useVisibleUnreadCount());
+  const count = useVisibleUnreadCount();
+  return count === null ? undefined : unreadBadgeLabel(count);
 }
 
 export function TabIcon({ icon, active, badge }: { icon: CentralIcon; active: boolean; badge?: string }): React.ReactElement {

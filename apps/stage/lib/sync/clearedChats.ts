@@ -1,5 +1,5 @@
 import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
-import { createValueStore } from '../persistedStore';
+import { createValueStore, type StoreSource } from '../persistedStore';
 import { keepUnlessChanged, makeListeners, storedRecordOf } from '../storeCore';
 
 const EMPTY: ClearedChats = {};
@@ -16,15 +16,11 @@ const prefs = createValueStore<ClearedChats>({
 const localChanges = makeListeners<string>();
 export const onClearedChatsChanged = localChanges.subscribe;
 
-export const getClearedChats = prefs.get;
+export const clearedChatsSource: StoreSource<ClearedChats> = prefs;
 
 export const useClearedChats = prefs.use;
 
-export const useClearedChatsSettled = prefs.useSettled;
-
 export const subscribeClearedChats = prefs.subscribe;
-
-export const primeClearedChats = prefs.loadAsync;
 
 export const loadClearedChats = prefs.loadFor;
 

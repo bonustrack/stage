@@ -11,7 +11,6 @@ import { RowChannelMenu } from '../chatRow/chatRow';
 import { ChannelsList } from './list';
 import { useChannelsSyncError } from '../../lib/messaging/channelsSync';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
-import { useHomeFilters } from './labelbar';
 import { searchBarLabels } from './model';
 import { BoardScreen } from './board/BoardScreen';
 import { useHomeListing } from './listing';
@@ -20,7 +19,7 @@ import { groupingOrderOf } from '../../lib/grouping.model';
 import { useGroupedRows, useHomeState } from './state';
 import { HomeDragLists, useHomeDrag } from './listDrag';
 import { useRowArrows } from './rowArrows';
-import { useChannelFields } from '../../lib/channelFields';
+import { clearSearchFilters, toggleSearchLabel, toggleSearchUnread } from '../../lib/searchState';
 import { useTabFocused } from '../tabs/useTabFocused';
 import { PAGES } from '../tabs/pages';
 import { Column } from '../layout';
@@ -49,10 +48,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const dark = useEffectiveColorScheme() === 'dark';
   const { text: fg, link: head } = usePalette();
   const st = useHomeState();
-  const { pinned, rowMenu } = st;
-  const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters } = useHomeFilters();
+  const { rowMenu } = st;
   const listing = useHomeListing('chats');
-  const { rows, query, searchText, matches, cleared, sort, orders, profilesVersion, draftsVersion } = listing;
+  const { rows, pinned, enabledLabels, unreadOnly, fields } = listing;
+  const { query, searchText, matches, cleared, sort, orders, profilesVersion, draftsVersion } = listing;
   const { groupBy } = listing.view;
   const statusOrder = groupingOrderOf('status', orders);
   const labelOrder = groupingOrderOf('label', orders);
@@ -66,7 +65,6 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
     [rows, pinned, enabledLabels, unreadOnly, sort, statusOrder, matches, cleared],
   );
   const list = useGroupedRows(visibleRows, searchText, groupBy, peerLabel, profilesVersion);
-  const fields = useChannelFields('chats');
   const error = useChannelsSyncError();
 
   const activePath = pane ? pathname : '';
@@ -104,10 +102,10 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
         barLabels={barLabels}
         placeholder={placeholder}
         enabledLabels={enabledLabels}
-        onToggleLabel={toggleLabel}
+        onToggleLabel={toggleSearchLabel}
         unreadOnly={unreadOnly}
-        onToggleUnread={toggleUnread}
-        onClearAll={clearAllFilters}
+        onToggleUnread={toggleSearchUnread}
+        onClearAll={clearSearchFilters}
         query={query}
         listExtraData={listExtraData}
         scroll={st.scroll}
