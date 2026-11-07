@@ -85,11 +85,16 @@ function listField<G extends string>(
   return { kind: 'list', read, empty: [], same: (cached, next) => sameList(sameEmpty ? (cached ?? []) : cached, next), describe, groupBy };
 }
 
+interface ValueFieldOptions<G extends string> {
+  groupBy?: G;
+  rejectsUnknown?: boolean;
+}
+
 function valueField<V extends string | null, G extends string = never>(
   noun: string,
   read: (raw: unknown) => V,
-  groupBy?: G,
-): TagField<V, G> & { kind: 'value'; noun: string } {
+  { groupBy, rejectsUnknown = false }: ValueFieldOptions<G> = {},
+): TagField<V, G> & { kind: 'value'; noun: string; rejectsUnknown: boolean } {
   const describe: Describe = (blobBefore, blobAfter, key) => {
     const before = read(blobBefore?.[key]);
     const after = read(blobAfter?.[key]);
@@ -97,13 +102,22 @@ function valueField<V extends string | null, G extends string = never>(
     if (before === after) return [];
     return [before === null ? `set ${noun} "${after}"` : `changed ${noun} to "${after}"`];
   };
-  return { kind: 'value', noun, read, empty: null as V, same: (cached, next) => (cached ?? null) === next, describe, groupBy };
+  return {
+    kind: 'value',
+    noun,
+    read,
+    empty: null as V,
+    same: (cached, next) => (cached ?? null) === next,
+    describe,
+    groupBy,
+    rejectsUnknown,
+  };
 }
 
 const LABELS = listField(labelsOf, labelClauses, 'label', false);
-const CATEGORY = valueField('project', categoryOf, 'category');
-const STATUS = valueField('status', categoryOf, 'status');
-const PRIORITY = valueField('priority', priorityOf);
+const CATEGORY = valueField('project', categoryOf, { groupBy: 'category' });
+const STATUS = valueField('status', categoryOf, { groupBy: 'status' });
+const PRIORITY = valueField('priority', priorityOf, { rejectsUnknown: true });
 const GITHUB: HistoryField = { kind: 'history', describe: githubClause };
 const ASSIGNED = listField(assignedAddresses, assigneeClauses, 'assignee', true);
 
@@ -249,8 +263,9 @@ export function createAppDataWriter(): AppDataWriter {
     },
     async writeChannelField(group, field, value, expected) {
       const next = channelFieldOf(field, value);
-      if (field === 'priority' && value !== null && value.trim() !== '' && next === null) throw new Error('Choose a valid priority.');
       const noun = CHANNEL_FIELD_NOUNS[field];
+      if (TAG_FIELDS[field].rejectsUnknown && value !== null && value.trim() !== '' && next === null)
+        throw new Error(`Choose a valid ${noun}.`);
       await writeTags(group, `the ${noun}`, (existing) => {
         if (
           expected !== undefined &&
