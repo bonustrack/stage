@@ -1,5 +1,14 @@
 import { describe, expect, test } from 'bun:test';
-import { AccountChangedError, accountScope, accountSelectionChanged, selectionScope, withAccountScope } from '../lib/accountSelection';
+import {
+  AccountChangedError,
+  accountScope,
+  accountSelectionChanged,
+  clientScope,
+  selectionScope,
+  subscribeAccountChange,
+  withAccountScope,
+  type AccountMoment,
+} from '../lib/accountSelection';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
 
 describe('account scopes', () => {
@@ -39,5 +48,32 @@ describe('account scopes', () => {
       expect(idle.aborted).toBe(false);
       expect(signals).toHaveLength(1);
     }
+  });
+
+  test('an account change names its moment and stops when unsubscribed', () => {
+    const moments: AccountMoment[] = [];
+    const stop = subscribeAccountChange((moment) => moments.push(moment));
+    accountSelectionChanged();
+    bumpAccountEpoch();
+    stop();
+    accountSelectionChanged();
+    expect(moments).toEqual(['selection', 'client']);
+  });
+
+  test('a client scope ends with the client generation or another cached client, not with the selection', () => {
+    let cached: string | null = 'client-a';
+    const scope = clientScope('client-a', () => cached);
+    accountSelectionChanged();
+    expect(scope.current()).toBe(true);
+    cached = 'client-b';
+    expect(scope.current()).toBe(false);
+    cached = 'client-a';
+    bumpAccountEpoch();
+    expect(scope.current()).toBe(false);
+    expect(() => {
+      scope.assertCurrent();
+    }).toThrow(AccountChangedError);
+    const started = clientScope('client-a', () => cached, scope.epoch);
+    expect(started.current()).toBe(false);
   });
 });

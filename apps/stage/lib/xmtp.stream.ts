@@ -12,8 +12,7 @@ import { report, reported } from './errorPolicy';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { isHiddenFromFeeds, reconcileHiddenConsent } from './channelVisibility';
 import { subscribeHiddenChannels } from './sync/hiddenChannels';
-import { subscribeAccountEpoch } from './accountEpoch';
-import { subscribeAccountSelection } from './accountSelection';
+import { subscribeAccountChange } from './accountSelection';
 import { makeGlobalStream, openAccountStreams } from './xmtp.stream.core';
 import { schedulePushTopicRefresh } from './pushRegister';
 
@@ -158,9 +157,7 @@ subscribeHiddenChannels(() => {
   globalStream.teardown();
   globalStream.rearm();
 });
-function restartForAccount(): void {
+subscribeAccountChange((moment) => {
   globalStream.teardown();
-  void globalStream.ensure();
-}
-subscribeAccountEpoch(restartForAccount);
-subscribeAccountSelection(globalStream.teardown);
+  if (moment === 'client') void globalStream.ensure();
+});

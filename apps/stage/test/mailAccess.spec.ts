@@ -3,6 +3,7 @@ import type { Hex } from 'viem';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import type { SignMessage } from '@stage-labs/client/mail/api';
 import { deriveMailKey, mailPublicKeyHex, sealMailIndex, sealMailPart } from '@stage-labs/client/mail/mailbox';
+import { AccountChangedError } from '../lib/accountSelection';
 import { makeMailAccess, type Mailbox } from '../lib/mail.core';
 import { fetchHandler } from './helpers';
 
@@ -180,7 +181,7 @@ describe('active account mail', () => {
     h.select(B);
     h.select(A);
     lookup.resolve('alice1');
-    expect(await rejected).toEqual(new Error('The active account changed.'));
+    expect(await rejected).toEqual(new AccountChangedError('The active account changed.'));
   });
 
   test('never reuses signers, keys or sessions after switch or logout and relogin', async () => {
@@ -211,7 +212,7 @@ describe('active account mail', () => {
     h.select(B);
     expect((await h.inbox(await h.boxes())).entries[0]?.index?.subject).toBe('Only b');
     pause.response.resolve(path === 'list' ? Response.json({ mails: [] }) : new Response('stale body'));
-    expect(await rejected).toEqual(new Error('The active account changed.'));
+    expect(await rejected).toEqual(new AccountChangedError('The active account changed.'));
     expect(h.requests.filter((request) => request === '/mail/session/alice1')).toHaveLength(1);
   });
 
@@ -223,7 +224,7 @@ describe('active account mail', () => {
     await pause.started;
     h.select(B);
     pause.response.resolve(new Response('expired', { status: 401 }));
-    expect(await rejected).toEqual(new Error('The active account changed.'));
+    expect(await rejected).toEqual(new AccountChangedError('The active account changed.'));
     expect(h.requests.filter((path) => path === '/mail/session/alice1')).toHaveLength(1);
   });
 
@@ -242,7 +243,7 @@ describe('active account mail', () => {
     const sign = SIGN.a;
     if (sign === undefined) throw new Error('missing signer');
     signer.resolve(sign);
-    expect(await rejected).toEqual(new Error('The active account changed.'));
+    expect(await rejected).toEqual(new AccountChangedError('The active account changed.'));
     expect(h.requests).toEqual([]);
   });
 });

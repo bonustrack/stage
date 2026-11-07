@@ -18,6 +18,7 @@ import {
   type MailKeyPair,
 } from '@stage-labs/client/mail/mailbox';
 import { parseMail, type ParsedMail } from '@stage-labs/client/mail/mime';
+import { AccountChangedError } from './accountSelection';
 import { report, reported } from './errorPolicy';
 import { memoized } from './storeCore';
 
@@ -81,7 +82,7 @@ function mailCredentials(deps: MailDeps) {
   const sessions = new Map<string, Promise<MailSession>>();
   const activated = new Set<string>();
   function check(selection: number): void {
-    if (selection !== deps.selection()) throw new Error('The active account changed.');
+    if (selection !== deps.selection()) throw new AccountChangedError('The active account changed.');
   }
   async function current<T>(selection: number, run: () => Promise<T>): Promise<T> {
     check(selection);

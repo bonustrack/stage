@@ -3,7 +3,7 @@ import { accountClient, type AccountClient } from './xmtp.account';
 import { getAccountEpoch } from './accountEpoch';
 import { channelAccess } from './channelAccess';
 import { loadHiddenChannels, subscribeHiddenChannels } from './sync/hiddenChannels';
-import { knownActiveAccountId } from './accountSelection';
+import { AccountChangedError, knownActiveAccountId } from './accountSelection';
 import { loadClearedChats, subscribeClearedChats } from './sync/clearedChats';
 import { acceptedShareConsent, type ShareDestination } from './shareDestination.model';
 import { sdk } from './xmtp.sdk';
@@ -14,7 +14,7 @@ export function isShareAccountCurrent(accountId: string, epoch: number): boolean
 }
 
 export function assertShareAccount(accountId: string, epoch: number): void {
-  if (!isShareAccountCurrent(accountId, epoch)) throw new Error('Choose a channel again for the active account.');
+  if (!isShareAccountCurrent(accountId, epoch)) throw new AccountChangedError('Choose a channel again for the active account.');
 }
 
 async function shareConsent(accountId: string, conv: NonNullable<Awaited<ReturnType<typeof sdk.findConv>>>) {

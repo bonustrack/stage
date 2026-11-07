@@ -8,7 +8,7 @@ import type { SendTarget } from './xmtp.messageSend.core';
 import { registerDmRoute } from './dmRoutes';
 import { recover } from './errorPolicy';
 import { getAccountEpoch } from './accountEpoch';
-import { AccountChangedError } from './accountSelection';
+import { clientScope } from './accountSelection';
 import { prepareSenderFilters } from './pushRegister';
 
 type Client = Awaited<ReturnType<typeof sdk.client>>;
@@ -32,9 +32,7 @@ async function activeForSend(client: Client, conv: Conv, line: string): Promise<
 export async function sendableConvOfLine(line: string, shouldPush = true, timing?: SendTiming): Promise<SendTarget<Conv>> {
   const epoch = getAccountEpoch();
   const client = await timeSendPhase(timing, 'client.ready', () => sdk.client());
-  const assertCurrent = (): void => {
-    if (getAccountEpoch() !== epoch || sdk.cachedClient() !== client) throw new AccountChangedError();
-  };
+  const { assertCurrent } = clientScope(client, sdk.cachedClient, epoch);
   const conv = await timeSendPhase(timing, 'conversation.find', () => convOfLine(line));
   assertCurrent();
   if (!conv) throw new Error(`XMTP conversation not found: ${line}`);

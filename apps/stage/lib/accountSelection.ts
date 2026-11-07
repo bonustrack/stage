@@ -27,6 +27,21 @@ export const subscribeAccountSelection = version.subscribe;
 
 export const useAccountSelection = version.use;
 
+export type AccountMoment = 'selection' | 'client';
+
+export function subscribeAccountChange(onChange: (moment: AccountMoment) => void): () => void {
+  const stopSelection = version.subscribe(() => {
+    onChange('selection');
+  });
+  const stopClient = subscribeAccountEpoch(() => {
+    onChange('client');
+  });
+  return () => {
+    stopSelection();
+    stopClient();
+  };
+}
+
 const activeId = makeValue<string | null>(null);
 
 export function rememberActiveAccountId(id: string | null): void {
@@ -81,21 +96,28 @@ export function accountScope(): AccountScope {
   return { accountId: activeId.get(), epoch, ...scopeOf(() => epoch === getAccountEpoch() && selection === getAccountSelection()) };
 }
 
+export interface ClientScope {
+  epoch: number;
+  current: () => boolean;
+  assertCurrent: (message?: string) => void;
+}
+
+export function clientScope<C>(client: C, cachedClient: () => C | null, epoch = getAccountEpoch()): ClientScope {
+  return { epoch, ...scopeOf(() => epoch === getAccountEpoch() && cachedClient() === client) };
+}
+
 export interface SignalledAccountScope extends AccountScope {
   signal: AbortSignal;
 }
 
 export async function withAccountScope<T>(run: (scope: SignalledAccountScope) => Promise<T>): Promise<T> {
   const controller = new AbortController();
-  const abort = (): void => {
+  const stop = subscribeAccountChange(() => {
     controller.abort();
-  };
-  const stopEpoch = subscribeAccountEpoch(abort);
-  const stopSelection = version.subscribe(abort);
+  });
   try {
     return await run({ ...accountScope(), signal: controller.signal });
   } finally {
-    stopEpoch();
-    stopSelection();
+    stop();
   }
 }

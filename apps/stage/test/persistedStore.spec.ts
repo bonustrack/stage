@@ -4,10 +4,14 @@ import { selectAccount } from './activeAccount';
 const values = new Map<string, string>();
 selectAccount('alice');
 let failRead = false;
+let readGate: Promise<unknown> = Promise.resolve();
 const writes: string[] = [];
+const reads: string[] = [];
 const storage = {
   get: async (key: string): Promise<string | null> => {
+    reads.push(key);
     if (failRead) throw new Error('storage unavailable');
+    await readGate;
     return values.get(key) ?? null;
   },
   set: async (key: string, value: string): Promise<void> => {
@@ -19,12 +23,14 @@ const storage = {
 mock.module('../platform/storage', () => ({ appStorage: storage, secureStorage: {} }));
 const { createValueStore } = await import('../lib/persistedStore');
 const { storedStrings } = await import('../lib/storeCore');
+const { accountSelectionChanged } = await import('../lib/accountSelection');
 
 beforeEach(() => {
   values.clear();
   writes.length = 0;
   selectAccount('alice');
   failRead = false;
+  readGate = Promise.resolve();
 });
 
 function accountStore(): ReturnType<typeof createValueStore<number>> {
@@ -170,5 +176,24 @@ describe('persisted value stores', () => {
     selectAccount('bob');
     await store.update((n) => n);
     expect(store.get()).toBe(8);
+  });
+
+  test('a read that the account selection outruns loads the newly selected account', async () => {
+    values.set('counter.alice', '4');
+    values.set('counter.bob', '8');
+    const gate = Promise.withResolvers<undefined>();
+    readGate = gate.promise;
+    const store = accountStore();
+    reads.length = 0;
+    const loading = store.load();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(reads).toEqual(['counter.alice']);
+    selectAccount('bob');
+    accountSelectionChanged();
+    gate.resolve(undefined);
+    expect(await loading).toBe(8);
+    expect(store.accountId()).toBe('bob');
+    expect(reads).toEqual(['counter.alice', 'counter.bob']);
   });
 });

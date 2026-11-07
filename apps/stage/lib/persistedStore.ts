@@ -1,7 +1,7 @@
 import { appStorage } from '../platform/storage';
 import type { AppStorage } from '../platform/types';
 import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
-import { readActiveAccountId } from './accountSelection';
+import { accountScope, readActiveAccountId } from './accountSelection';
 import { hydrateOnce, jsonWith, makeListeners, useStoreValue, type StoredSchema } from './storeCore';
 import { report, reported } from './errorPolicy';
 
@@ -117,7 +117,7 @@ interface StoreReader<T> {
 async function readStored<T>(reader: StoreReader<T>): Promise<boolean> {
   const { opts, codec, storage, state } = reader;
   if (!opts.perAccount) return applyRaw(opts, codec, state, await storage.get(opts.key));
-  const epoch = getAccountEpoch();
+  const { epoch, current } = accountScope();
   const id = await readActiveAccountId();
   if (id === state.accountId) {
     const changed = state.accountEpoch !== epoch;
@@ -126,7 +126,7 @@ async function readStored<T>(reader: StoreReader<T>): Promise<boolean> {
   }
   await reader.ready();
   const raw = id === null ? null : await storage.get(opts.key + id);
-  if (epoch !== getAccountEpoch()) return readStored(reader);
+  if (!current()) return readStored(reader);
   if (!opts.restore || state.accountId !== undefined) state.cache = opts.default;
   state.accountId = id;
   state.accountEpoch = epoch;

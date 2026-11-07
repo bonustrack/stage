@@ -14,8 +14,7 @@ import { timeSendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTimi
 import { fetchWithin } from '@stage-labs/client/timing';
 import { appStorage } from '../platform/storage';
 import { getActiveAccount } from './accounts';
-import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
-import { subscribeAccountSelection, withAccountScope } from './accountSelection';
+import { AccountChangedError, clientScope, subscribeAccountChange, withAccountScope } from './accountSelection';
 import { isAppInFront } from './appInFront';
 import { onReadStateChanged } from './channelsCache';
 import { report, reported, ignored } from './errorPolicy';
@@ -131,13 +130,12 @@ function pushInput(client: XmtpClient): PushRuntimeInput | null {
   const accountAddress = clientSdk.selfAddressOf(client);
   const inboxId = clientSdk.inboxIdOf(client);
   if (!installationId || !accountAddress || !inboxId) return null;
-  const epoch = getAccountEpoch();
   return {
     installationId,
     accountAddress,
     inboxId,
     signInstallation: (text) => clientSdk.push.signWithInstallationKey(client, text),
-    current: () => getCachedXmtpClient() === client && getAccountEpoch() === epoch,
+    current: clientScope(client, getCachedXmtpClient).current,
     syncPreferences: () => clientSdk.syncPreferences(client),
     platform: PUSH_PLATFORM,
     rpcUrl: pushRpcUrl,
@@ -151,7 +149,7 @@ function publishSenderFilters(input: PushRuntimeInput, topic?: string, timing?: 
   return withAccountScope(async (scope) => {
     const current = (): boolean => scope.current() && input.current();
     const account = await timeSendPhase(timing, 'filter.account', () => activeAccountFor(input));
-    if (!account || !current()) throw new Error('Sender filter account changed');
+    if (!account || !current()) throw new AccountChangedError('Sender filter account changed');
     await senderPublisher.publish({
       installationId: input.installationId,
       current,
@@ -286,8 +284,7 @@ let started = false;
 export function startPush(): void {
   if (started) return;
   started = true;
-  subscribeAccountEpoch(forgetAccountPushState);
-  subscribeAccountSelection(forgetAccountPushState);
+  subscribeAccountChange(forgetAccountPushState);
   onReadStateChanged(({ convId, markedUnread }) => {
     if (!markedUnread) clearOnRead(convId);
   });

@@ -5,8 +5,7 @@ import {
   type DeveloperModeContent,
 } from '@stage-labs/client/xmtp/sync/developerMode';
 import { getSelectedAccount } from './accounts';
-import { subscribeAccountEpoch } from './accountEpoch';
-import { accountScope, getAccountSelection, subscribeAccountSelection } from './accountSelection';
+import { AccountChangedError, accountScope, selectionScope, subscribeAccountChange, type SelectionScope } from './accountSelection';
 import { report } from './errorPolicy';
 import { makeListeners, useStoreValue } from './storeCore';
 import { editDeveloperMode } from './syncedSettings.model';
@@ -20,53 +19,53 @@ const { prefs } = developerMode;
 
 export const developerModeSync = developerMode.sync;
 
-let loadedSelection: number | undefined;
-let failedSelection: number | undefined;
+let loadedFor: SelectionScope | null = null;
+let failedFor: SelectionScope | null = null;
 let pending: Promise<void> | null = null;
 const changes = makeListeners();
-const loaded = (): boolean => loadedSelection === getAccountSelection() && prefs.isCurrentAccount();
-const failed = (): boolean => failedSelection === getAccountSelection();
+const loaded = (): boolean => loadedFor?.current() === true && prefs.isCurrentAccount();
+const failed = (): boolean => failedFor?.current() === true;
 const enabled = (): boolean => loaded() && prefs.get().enabled;
 
-async function refresh(): Promise<void> {
-  const selection = getAccountSelection();
+async function refresh(): Promise<SelectionScope> {
+  const scope = selectionScope();
   const account = await getSelectedAccount();
   await prefs.reload();
-  if (prefs.accountId() !== (account?.id ?? null)) await prefs.reload();
-  if (selection !== getAccountSelection() || !prefs.isCurrentAccount()) return refresh();
-  if (prefs.accountId() !== (account?.id ?? null)) throw new Error('The selected account changed while loading Developer mode.');
-  loadedSelection = selection;
+  if (!scope.current() || !prefs.isCurrentAccount()) return refresh();
+  if (prefs.accountId() !== (account?.id ?? null))
+    throw new AccountChangedError('The selected account changed while loading Developer mode.');
+  return scope;
 }
 
 function loadAsync(): void {
   if (loaded() || failed() || pending !== null) return;
-  const selection = getAccountSelection();
+  const scope = selectionScope();
   pending = refresh()
+    .then((done) => {
+      loadedFor = done;
+    })
     .catch((err: unknown) => {
-      if (selection === getAccountSelection()) failedSelection = selection;
+      if (scope.current()) failedFor = scope;
       report('developerMode.load', err);
     })
     .finally(() => {
       pending = null;
       changes.notify();
-      if (selection !== getAccountSelection()) loadAsync();
+      if (!scope.current()) loadAsync();
     });
 }
 
 export function retryDeveloperMode(): void {
-  failedSelection = undefined;
+  failedFor = null;
   loadAsync();
   changes.notify();
 }
 
-function accountChanged(): void {
-  loadedSelection = undefined;
-  retryDeveloperMode();
-}
-
 prefs.subscribe(changes.notify);
-subscribeAccountEpoch(accountChanged);
-subscribeAccountSelection(accountChanged);
+subscribeAccountChange(() => {
+  loadedFor = null;
+  retryDeveloperMode();
+});
 
 export const useDeveloperMode = (): boolean => useStoreValue(changes.subscribe, enabled, loadAsync);
 export const useDeveloperModeLoaded = (): boolean => useStoreValue(changes.subscribe, loaded, loadAsync);
