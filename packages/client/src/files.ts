@@ -78,16 +78,6 @@ export function dataUrlBytes(url: string): Uint8Array | null {
   return base64ToBytes(url.slice(comma + 1));
 }
 
-const UNSAFE_FILE_CHARS = /[\\/:*?"<>|]/g;
-
-export function safeFileName(name: string): string {
-  const clean = Array.from(name.replace(UNSAFE_FILE_CHARS, '_'))
-    .filter((ch) => ch.charCodeAt(0) >= 0x20)
-    .join('')
-    .trim();
-  return clean === '' || clean === '.' || clean === '..' ? 'attachment' : clean.slice(0, 200);
-}
-
 const RESERVED = '/\\:*?"<>|';
 const HIDDEN_RANGES: readonly (readonly [number, number])[] = [
   [0x0, 0x1f],

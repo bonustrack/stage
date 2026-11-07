@@ -4,7 +4,6 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { ParsedMail } from '@stage-labs/client/mail/mime';
-import { safeFileName } from '@stage-labs/client/files';
 import { capabilities } from '../../lib/capabilities';
 import { downloadFile } from '../../lib/fileDownload';
 import { reported } from '../../lib/errorPolicy';
@@ -51,7 +50,7 @@ function ImagesNotice({ shown, onToggle }: { shown: boolean; onToggle: () => voi
 
 function saveAttachment(row: MailAttachmentRow): void {
   const { attachment } = row;
-  void downloadFile(mailDataUri(attachment), safeFileName(attachment.filename), attachment.mimeType).catch((err: unknown) => {
+  void downloadFile(mailDataUri(attachment), attachment.filename, attachment.mimeType).catch((err: unknown) => {
     reported('mail.download')(err);
     capabilities.toast('Could not save this file.');
   });

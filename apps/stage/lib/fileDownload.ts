@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library/legacy';
 import { Directory, File, Paths } from 'expo-file-system';
-import { dataUrlBytes } from '@stage-labs/client/files';
+import { dataUrlBytes, nativeFileName } from '@stage-labs/client/files';
 import { capabilities } from './capabilities';
 import { ignored } from './errorPolicy';
 import { imageFileName } from './imageDownload.model';
@@ -31,8 +31,9 @@ export async function downloadFile(uri: string, name: string, mime?: string): Pr
   const target = await Directory.pickDirectoryAsync().catch(ignored(null, 'ui'));
   if (target === null) return;
   const bytes = await readBytes(uri);
-  target.createFile(name, mime ?? null).write(bytes);
-  capabilities.toast(`Saved ${name}`);
+  const fileName = nativeFileName(name, mime);
+  target.createFile(fileName, mime ?? null).write(bytes);
+  capabilities.toast(`Saved ${fileName}`);
 }
 
 async function toLocalUri(uri: string): Promise<string> {

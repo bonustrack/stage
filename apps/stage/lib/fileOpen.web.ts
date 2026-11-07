@@ -24,7 +24,7 @@ async function openOnDesktop(open: DesktopOpen, file: OpenableFile): Promise<voi
   const name = nativeFileName(file.name, file.mime);
   const res = await fetch(file.url);
   if (await open(name, new Uint8Array(await res.arrayBuffer()))) return;
-  await downloadFile(file.url, name);
+  await downloadFile(file.url, file.name, file.mime);
 }
 
 function blobUrlFor(dataUrl: string, bytes: Uint8Array, mime: string): string {
@@ -53,7 +53,7 @@ export function openFile(file: OpenableFile): void {
   }
   const action = fileOpenAction(file);
   if (action.kind === 'download') {
-    void downloadFile(file.url, file.name).catch(reported('file.download'));
+    void downloadFile(file.url, file.name, file.mime).catch(reported('file.download'));
     return;
   }
   if (action.kind === 'openBlob') {

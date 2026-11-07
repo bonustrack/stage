@@ -4,7 +4,7 @@ import { parseMail } from '@stage-labs/client/mail/mime';
 import { inboxRows, mailBody, mailReceivedAt, senderLabel, subjectLabel, visibleBlocks } from '../components/inbox/Inbox.model';
 import { mailReadKey, withReadKey, type InboxEntry } from '../lib/mail.core';
 import { jsonWith, storedStrings } from '../lib/storeCore';
-import { safeFileName } from '@stage-labs/client/files';
+import { nativeFileName } from '@stage-labs/client/files';
 import type { Hex } from 'viem';
 
 const index = (from: string, subject: string): MailIndex => ({
@@ -98,7 +98,8 @@ describe('mail view', () => {
     expect(visibleBlocks(body.blocks, false).map((block) => block.type)).toEqual(['text', 'image']);
     expect(visibleBlocks(body.blocks, true)).toHaveLength(3);
     expect(body.attachments.map((row) => [row.title, row.subtitle])).toEqual([['r/../report.pdf', 'PDF · 9 B']]);
-    expect(safeFileName(body.attachments[0]?.attachment.filename ?? '')).toBe('r_.._report.pdf');
+    const saved = body.attachments[0]?.attachment;
+    expect(nativeFileName(saved?.filename ?? '', saved?.mimeType)).toBe('r_.._report.pdf');
   });
 
   test('falls back to the text part and lists inline images when there is no html', () => {
@@ -128,7 +129,8 @@ describe('mail view', () => {
   });
 
   test('cleans file names for saving', () => {
-    expect(safeFileName('..')).toBe('attachment');
-    expect(safeFileName('a\u0007b:c.txt')).toBe('ab_c.txt');
+    expect(nativeFileName('..', undefined)).toBe('attachment');
+    expect(nativeFileName('a\u0007b:c.txt', 'text/plain')).toBe('a_b_c.txt');
+    expect(nativeFileName('invoice\u202efdp.exe', 'application/octet-stream')).toBe('invoice_fdp.exe');
   });
 });
