@@ -14,6 +14,16 @@ const localChanges = makeListeners<string>();
 
 export const onHiddenChannelsChanged = localChanges.subscribe;
 export const subscribeHiddenChannels = prefs.subscribe;
+
+export function subscribeHiddenChannelEdits(onEdit: () => void): () => void {
+  let seen = { accountId: prefs.accountId(), hidden: prefs.get() };
+  return prefs.subscribe(() => {
+    const next = { accountId: prefs.accountId(), hidden: prefs.get() };
+    const edited = next.accountId === seen.accountId && next.hidden !== seen.hidden;
+    seen = next;
+    if (edited) onEdit();
+  });
+}
 export const useHiddenChannels = prefs.use;
 export const loadHiddenChannels = prefs.loadFor;
 export const hiddenChannelsNow = prefs.get;

@@ -24,6 +24,13 @@ mock.module('../platform/storage', () => ({ appStorage: storage, secureStorage: 
 const { createValueStore } = await import('../lib/persistedStore');
 const { storedStrings } = await import('../lib/storeCore');
 const { accountSelectionChanged } = await import('../lib/accountSelection');
+const { bumpAccountEpoch } = await import('../lib/accountEpoch');
+
+function settled(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+}
 
 beforeEach(() => {
   values.clear();
@@ -179,21 +186,66 @@ describe('persisted value stores', () => {
   });
 
   test('a read that the account selection outruns loads the newly selected account', async () => {
-    values.set('counter.alice', '4');
-    values.set('counter.bob', '8');
+    values.set('outrun.alice', '4');
+    values.set('outrun.bob', '8');
     const gate = Promise.withResolvers<undefined>();
     readGate = gate.promise;
-    const store = accountStore();
+    const store = createValueStore({ key: 'outrun.', default: 0, deserialize: Number, perAccount: true });
     reads.length = 0;
+    const ownReads = (): string[] => reads.filter((key) => key.startsWith('outrun.'));
     const loading = store.load();
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(reads).toEqual(['counter.alice']);
+    for (let tick = 0; tick < 10 && ownReads().length === 0; tick++) await Promise.resolve();
+    expect(ownReads()).toEqual(['outrun.alice']);
     selectAccount('bob');
     accountSelectionChanged();
     gate.resolve(undefined);
     expect(await loading).toBe(8);
     expect(store.accountId()).toBe('bob');
-    expect(reads).toEqual(['counter.alice', 'counter.bob']);
+    expect(ownReads()).toEqual(['outrun.alice', 'outrun.bob']);
+  });
+
+  test('a per-account store follows a new selection by itself and is loaded only for the selected account', async () => {
+    values.set('follow.alice', '4');
+    values.set('follow.bob', '8');
+    const store = createValueStore({ key: 'follow.', default: 0, deserialize: Number, perAccount: true });
+    expect(store.loaded()).toBe(false);
+    await store.load();
+    expect(store.loaded()).toBe(true);
+    let notified = 0;
+    const stop = store.subscribe(() => {
+      notified += 1;
+    });
+    selectAccount('bob');
+    accountSelectionChanged();
+    expect(store.loaded()).toBe(false);
+    await settled();
+    expect(store.loaded()).toBe(true);
+    expect(store.get()).toBe(8);
+    expect(notified).toBeGreaterThan(0);
+    bumpAccountEpoch();
+    expect(store.loaded()).toBe(true);
+    stop();
+  });
+
+  test('a failed per-account read is a failure of that selection until a retry or another selection', async () => {
+    values.set('failing.alice', '4');
+    const store = createValueStore({ key: 'failing.', default: 0, deserialize: Number, perAccount: true });
+    failRead = true;
+    await expect(store.load()).rejects.toThrow('storage unavailable');
+    expect(store.loadFailed()).toBe(true);
+    expect(store.loaded()).toBe(false);
+    failRead = false;
+    store.retry();
+    expect(store.loadFailed()).toBe(false);
+    await settled();
+    expect(store.loaded()).toBe(true);
+    expect(store.get()).toBe(4);
+    failRead = true;
+    selectAccount('bob');
+    accountSelectionChanged();
+    await settled();
+    expect(store.loadFailed()).toBe(true);
+    accountSelectionChanged();
+    expect(store.loadFailed()).toBe(false);
   });
 });

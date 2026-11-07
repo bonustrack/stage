@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { makeValue } from './storeCore';
-import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
+import { getAccountEpoch, subscribeAccountEpoch, useAccountEpoch } from './accountEpoch';
 
 export class NoAccountError extends Error {
   constructor() {
@@ -96,6 +97,13 @@ export function accountScope(): AccountScope {
   const epoch = getAccountEpoch();
   const selection = getAccountSelection();
   return { accountId: activeId.get(), epoch, ...scopeOf(() => epoch === getAccountEpoch() && selection === getAccountSelection()) };
+}
+
+export function useAccountScope(): AccountScope {
+  const epoch = useAccountEpoch();
+  const selection = useAccountSelection();
+  const accountId = useKnownActiveAccountId();
+  return useMemo(() => accountScope(), [epoch, selection, accountId]);
 }
 
 export interface ClientScope {

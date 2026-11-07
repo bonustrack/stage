@@ -96,12 +96,6 @@ function destinationOf(row: CachedRow, cleared: ClearedChats): ShareDestination 
   };
 }
 
-export function mergeShareRows<T extends { convId: string }>(previous: readonly T[] | null, updates: readonly T[] | null): T[] {
-  const rows = new Map((previous ?? []).map((row) => [row.convId, row]));
-  for (const row of updates ?? []) rows.set(row.convId, row);
-  return [...rows.values()];
-}
-
 export function shareDestinations(rows: readonly CachedRow[] | null, cleared: ClearedChats): ShareDestination[] {
   return (rows ?? []).map((row) => destinationOf(row, cleared)).filter((row): row is ShareDestination => row !== null);
 }

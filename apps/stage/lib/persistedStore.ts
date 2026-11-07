@@ -1,7 +1,6 @@
 import { appStorage } from '../platform/storage';
 import type { AppStorage } from '../platform/types';
-import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
-import { accountScope, readActiveAccountId } from './accountSelection';
+import { accountScope, readActiveAccountId, selectionScope, subscribeAccountChange, type SelectionScope } from './accountSelection';
 import { hydrateOnce, jsonWith, makeListeners, useStoreValue, type StoredSchema } from './storeCore';
 import { report, reported } from './errorPolicy';
 
@@ -12,6 +11,7 @@ interface StoreOptions<T> {
   default: T;
   storage?: StoreStorage;
   perAccount?: boolean;
+  readAccount?: () => Promise<string | null>;
   durable?: boolean;
   restore?: (local: T, stored: T) => T;
   readNow?: boolean;
@@ -53,9 +53,12 @@ export interface ValueStore<T> {
   loadFor: (accountId: string) => Promise<T>;
   updateFor: (accountId: string, next: (current: T) => T) => Promise<void>;
   accountId: () => string | null;
-  isCurrentAccount: () => boolean;
+  loaded: () => boolean;
+  loadFailed: () => boolean;
+  retry: () => void;
   subscribe: (cb: () => void) => () => void;
   use: () => T;
+  useSettled: () => boolean;
 }
 
 interface StoreCodec<T> {
@@ -66,7 +69,8 @@ interface StoreCodec<T> {
 interface StoreState<T> {
   cache: T;
   accountId: string | null | undefined;
-  accountEpoch: number | undefined;
+  loadedFor: SelectionScope | null;
+  failedFor: SelectionScope | null;
 }
 
 function codecOf<T>(opts: ValueStoreOptions<T>): StoreCodec<T> {
@@ -114,22 +118,28 @@ interface StoreReader<T> {
   ready: () => Promise<void>;
 }
 
+function markLoaded<T>(state: StoreState<T>, selection: SelectionScope): void {
+  state.loadedFor = selection;
+  state.failedFor = null;
+}
+
 async function readStored<T>(reader: StoreReader<T>): Promise<boolean> {
   const { opts, codec, storage, state } = reader;
   if (!opts.perAccount) return applyRaw(opts, codec, state, await storage.get(opts.key));
-  const { epoch, current } = accountScope();
-  const id = await readActiveAccountId();
+  const { current } = accountScope();
+  const selection = selectionScope();
+  const id = await (opts.readAccount ?? readActiveAccountId)();
+  if (!current()) return readStored(reader);
   if (id === state.accountId) {
-    const changed = state.accountEpoch !== epoch;
-    state.accountEpoch = epoch;
-    return changed;
+    markLoaded(state, selection);
+    return false;
   }
   await reader.ready();
   const raw = id === null ? null : await storage.get(opts.key + id);
   if (!current()) return readStored(reader);
   if (!opts.restore || state.accountId !== undefined) state.cache = opts.default;
   state.accountId = id;
-  state.accountEpoch = epoch;
+  markLoaded(state, selection);
   applyRaw(opts, codec, state, raw);
   return true;
 }
@@ -154,10 +164,61 @@ function readNow<T>(reader: StoreReader<T>): boolean {
   return true;
 }
 
+interface StoreLoading<T> {
+  loaded: () => boolean;
+  loadFailed: () => boolean;
+  reload: () => Promise<T>;
+  load: () => Promise<T>;
+  loadAsync: () => void;
+  retry: () => void;
+}
+
+function storeLoading<T>(
+  opts: ValueStoreOptions<T>,
+  state: StoreState<T>,
+  hydration: ReturnType<typeof storeHydration<T>>,
+  notify: () => void,
+): StoreLoading<T> {
+  const loaded = (): boolean => (opts.perAccount ? state.loadedFor?.current() === true : hydration.done());
+  const loadFailed = (): boolean => !loaded() && state.failedFor?.current() === true;
+  async function reload(): Promise<T> {
+    const selection = selectionScope();
+    const was = loaded();
+    try {
+      if ((await hydration.run()) || loaded() !== was) notify();
+    } catch (err) {
+      if (opts.perAccount && selection.current() && !loaded()) {
+        state.failedFor = selection;
+        notify();
+      }
+      throw err;
+    }
+    return state.cache;
+  }
+  async function load(): Promise<T> {
+    if (loaded()) return state.cache;
+    if (opts.perAccount) return reload();
+    await hydration.run();
+    return state.cache;
+  }
+  function loadAsync(): void {
+    if (loaded()) return;
+    void reload().catch(reported(`store.${opts.key}`));
+  }
+  function retry(): void {
+    if (state.failedFor !== null) {
+      state.failedFor = null;
+      notify();
+    }
+    loadAsync();
+  }
+  return { loaded, loadFailed, reload, load, loadAsync, retry };
+}
+
 export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   const codec = codecOf(opts);
   const storage = opts.storage ?? appStorage;
-  const state: StoreState<T> = { cache: opts.default, accountId: undefined, accountEpoch: undefined };
+  const state: StoreState<T> = { cache: opts.default, accountId: undefined, loadedFor: null, failedFor: null };
   const { notify, subscribe } = makeListeners();
   const durable = durableWriter(
     storedFor,
@@ -169,26 +230,10 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   const reader: StoreReader<T> = { opts, codec, storage, state, ready: () => durable.ready() };
   const hydration = storeHydration(reader);
   if (readNow(reader)) hydration.markDone();
+  const { loaded, loadFailed, reload, load, loadAsync, retry } = storeLoading(opts, state, hydration, notify);
 
   function storageKey(): string | null {
     return opts.perAccount ? (typeof state.accountId === 'string' ? opts.key + state.accountId : null) : opts.key;
-  }
-
-  async function reload(): Promise<T> {
-    if (await hydration.run()) notify();
-    return state.cache;
-  }
-
-  async function load(): Promise<T> {
-    if (opts.perAccount ? state.accountId !== undefined : hydration.done()) return state.cache;
-    if (opts.perAccount) return reload();
-    await hydration.run();
-    return state.cache;
-  }
-
-  function loadAsync(): void {
-    if (opts.perAccount ? state.accountId !== undefined : hydration.done()) return;
-    void reload().catch(reported(`store.${opts.key}`));
   }
 
   function get(): T {
@@ -248,11 +293,13 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
   }
 
   if (opts.perAccount)
-    subscribeAccountEpoch(() => {
+    subscribeAccountChange(() => {
       void reload().catch(reported(`store.${opts.key}`));
     });
 
   const use = (): T => useStoreValue(subscribe, get, loadAsync);
+  const settled = (): boolean => loaded() || loadFailed();
+  const useSettled = (): boolean => useStoreValue(subscribe, settled, loadAsync);
 
   return {
     load,
@@ -265,8 +312,11 @@ export function createValueStore<T>(opts: ValueStoreOptions<T>): ValueStore<T> {
     loadFor,
     updateFor,
     accountId: () => state.accountId ?? null,
-    isCurrentAccount: () => !opts.perAccount || state.accountEpoch === getAccountEpoch(),
+    loaded,
+    loadFailed,
+    retry,
     subscribe,
     use,
+    useSettled,
   };
 }

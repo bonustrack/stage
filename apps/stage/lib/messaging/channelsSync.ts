@@ -4,8 +4,8 @@ import { makeValue } from '../storeCore';
 import { useAccountEpoch } from '../accountEpoch';
 import { syncPreferences, xmtpClient } from '../xmtp.client';
 import { sdk } from '../xmtp.sdk';
-import { NoAccountError } from '../accountSelection';
-import { getXmtpBootstrapPhase, isActiveConv } from '../xmtp.state.core';
+import { AccountChangedError, NoAccountError } from '../accountSelection';
+import { getXmtpBootstrapPhase, subscribeXmtpBootstrapPhase } from '../xmtp.state.core';
 import { isSyncConv } from '../sync/group';
 import { primeConversationMembers } from '../xmtp.identity';
 import { subscribeAllMessages } from '../xmtp.stream';
@@ -19,11 +19,9 @@ import {
   groupAccessOf,
   isFreshOwnGroup,
 } from '../xmtp.conv';
-import { hydrateCachedRows, setCachedRows } from '../channelsCache';
+import { hydrateCachedRows } from '../channelsCache';
 import { summarizeConversation } from './conversation';
-import { shortAddress } from '@stage-labs/client/identity/format';
 import { afterFirstPages } from '../feed/firstPages';
-import { getPeerName } from '../peerProfiles';
 import { hydratePeerProfiles } from '../peerProfileCache';
 import { perfLog, perfTime } from '../perf';
 import { dmIdsByPeer } from '@stage-labs/client/xmtp/dmRoutes';
@@ -32,144 +30,11 @@ import { hasHomeRows, homeRows, updateHomeRows } from './homeRows';
 import type { CachedRow as Row } from '../cachedRows.model';
 import { mergePaintedRows, visibleRowsDiff } from './channelsSync.model';
 import { schedulePushTopicRefresh } from '../pushRegister';
-import { report, recover, attempt } from '../errorPolicy';
-import { presentInboundNotification } from '../pushNotify';
-import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
-import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
-import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { arrivalEffect, countsAsUnread, isRowCandidate, revivesRow } from '@stage-labs/client/xmtp/visibility';
-import { isChannelHidden, loadHiddenChannels, subscribeHiddenChannels } from '../sync/hiddenChannels';
+import { report, reported, recover, attempt, ignored } from '../errorPolicy';
+import { errorMessage } from '@stage-labs/client/errors';
+import { loadHiddenChannels, subscribeHiddenChannelEdits } from '../sync/hiddenChannels';
+import { makeMsgStreamHandler } from './channelsSync.inbound';
 import { getActiveAccount } from '../accounts';
-
-function makeSeenOnce(limit: number): (id: string) => boolean {
-  const seen = new Set<string>();
-  return (id) => {
-    if (seen.has(id)) return true;
-    seen.add(id);
-    if (seen.size > limit) {
-      const oldest = seen.values().next().value;
-      if (oldest !== undefined) seen.delete(oldest);
-    }
-    return false;
-  };
-}
-
-const alreadyNotified = makeSeenOnce(200);
-const alreadyCounted = makeSeenOnce(2000);
-
-interface NotifyCtx {
-  title: string;
-  senderAddr: string | null;
-  isGroup: boolean;
-  fromSelf: boolean;
-}
-
-interface MsgHandlerDeps {
-  isCancelled: () => boolean;
-  refresh: () => Promise<void>;
-}
-
-function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<void>) {
-  let missTimer: ReturnType<typeof setTimeout> | null = null;
-  let refreshInFlight = false;
-
-  const runRefresh = (): void => {
-    if (refreshInFlight) {
-      armFullRefresh();
-      return;
-    }
-    refreshInFlight = true;
-    void refresh().finally(() => {
-      refreshInFlight = false;
-    });
-  };
-  function armFullRefresh(): void {
-    if (missTimer) clearTimeout(missTimer);
-    missTimer = setTimeout(() => {
-      missTimer = null;
-      if (!isCancelled()) runRefresh();
-    }, 1_000);
-  }
-
-  return (convId: string | null): void => {
-    void (async (): Promise<void> => {
-      if (convId && (await getConvConsentState(convId).catch(recover('home.streamConsent', null))) === 'denied') return;
-      if (!isCancelled()) armFullRefresh();
-    })();
-  };
-}
-
-function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
-  const onMiss = makeMissRefresher(isCancelled, refresh);
-  return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
-    if (isCancelled() || !msg || isChannelHidden(streamConvId)) return;
-    const effect = arrivalEffect(msg);
-    if (effect === 'refresh') onMiss(streamConvId);
-    if (effect !== 'row') return;
-    const lastTs = msg.sentNs ? Math.floor(msg.sentNs / 1_000_000) : Date.now();
-    const lastPreview = rowPreviewOf(msg).slice(0, ROW_PREVIEW_MAX_CHARS);
-
-    const result = applyToRows(streamConvId, msg, lastTs, lastPreview);
-    if (result.needsRefresh) onMiss(streamConvId);
-    maybeNotify(result.notify, streamConvId, msg.id, lastPreview);
-  };
-}
-
-function applyToRows(
-  msgConvId: string | null,
-  msg: StreamedMessage,
-  lastTs: number,
-  lastPreview: string,
-): { needsRefresh: boolean; notify: NotifyCtx | null } {
-  const unchanged = { needsRefresh: false, notify: null };
-  const prev = homeRows();
-  if (!prev) return unchanged;
-  const target = prev.find((r) => r.convId === msgConvId);
-  const dm = target?.peerAddress != null;
-  if (target !== undefined && !isRowCandidate(msg, dm)) return unchanged;
-  const result = applyInbound(
-    prev,
-    {
-      convId: msgConvId,
-      senderInboxId: msg.senderInboxId,
-      sentNs: msg.sentNs,
-      lastTs,
-      lastPreview,
-      countsAsUnread: countsAsUnread(msg) && !alreadyCounted(msg.id),
-    },
-    (cur) => ({
-      avatarAddress: cur.peerAddress ?? cur.avatarAddress,
-      lastSenderAddress: cur.inboxToAddr[msg.senderInboxId] ?? null,
-      lastFromSelf: msg.senderInboxId === cur.selfInboxId,
-      lastBubbleTs: revivesRow(msg, dm) ? lastTs : cur.lastBubbleTs,
-    }),
-  );
-  if (result === null) return { needsRefresh: true, notify: null };
-  setCachedRows(result.next);
-  const { current } = result;
-  return {
-    needsRefresh: false,
-    notify: {
-      title: current.title,
-      senderAddr: current.inboxToAddr[msg.senderInboxId] ?? null,
-      isGroup: current.peerAddress == null,
-      fromSelf: msg.senderInboxId === current.selfInboxId,
-    },
-  };
-}
-
-function notifyTitleBody(n: NotifyCtx, preview: string): { title: string; body: string } {
-  const senderName = getPeerName(n.senderAddr) ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');
-  if (n.isGroup) return { title: n.title, body: `${senderName}: ${preview}` };
-  return { title: getPeerName(n.senderAddr) ?? n.title, body: preview };
-}
-
-function maybeNotify(n: NotifyCtx | null, convId: string | null, msgId: string | undefined, preview: string): void {
-  if (!n || n.fromSelf || !convId || isActiveConv(convId)) return;
-  if (msgId && alreadyNotified(msgId)) return;
-  const { title, body } = notifyTitleBody(n, preview);
-  void presentInboundNotification({ title, body, convId, messageId: msgId });
-}
 
 const INIT_TIMEOUT_MS = 30_000;
 
@@ -193,25 +58,44 @@ interface SyncRun {
   cancelConsentStream: (() => void) | null;
   reconcileVisibility?: () => Promise<void>;
   appStateSub: { remove: () => void } | null;
+  stopPhaseWait?: () => void;
+  refreshers: Promise<Refreshers>;
+  ready: (refreshers: Refreshers) => void;
+  fail: (err: unknown) => void;
 }
 
 interface Refreshers {
   refresh: () => Promise<void>;
   refreshThrottled: () => Promise<void>;
   reconcile: () => Promise<void>;
+  repaint: (network: boolean) => Promise<RepaintResult>;
 }
+
+export interface RepaintResult {
+  failed: boolean;
+}
+
+const PAINTED: RepaintResult = { failed: false };
 
 function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInboxId: string, run: SyncRun): Refreshers {
   let lastRefreshAt = 0;
   const THROTTLE_MS = 30_000;
-  const paintFrom = async (convs: Conv[]): Promise<boolean> => {
+  const paintFrom = async (convs: Conv[]): Promise<RepaintResult> => {
     const beforeIds = (homeRows() ?? []).map((r) => r.convId);
     await primeConversationMembers(client, convs);
     const previous = new Map((homeRows() ?? []).map((r) => [r.convId, r]));
+    let failed = false;
     const summarized = (
-      await Promise.all(convs.map((c) => summarize(c, selfInboxId, true).catch(() => previous.get(c.id) ?? null)))
+      await Promise.all(
+        convs.map((c) =>
+          summarize(c, selfInboxId, true).catch((err: unknown) => {
+            failed = true;
+            return recover('home.summarize', previous.get(c.id) ?? null)(err);
+          }),
+        ),
+      )
     ).filter((r): r is Row => r !== null);
-    if (run.cancelled) return false;
+    if (run.cancelled) return { failed };
     updateHomeRows((prev) =>
       mergePaintedRows(
         beforeIds,
@@ -221,23 +105,24 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
     );
     lastRefreshAt = Date.now();
     clearTimeout(run.initTimer);
-    return true;
+    return { failed };
+  };
+  const paintLocal = async (): Promise<RepaintResult> => {
+    const local = await perfTime('channels.listLocal', listVisibleConversations);
+    perfLog('channels.localCount', { count: local.length });
+    return local.length > 0 ? perfTime('channels.paintLocal', () => paintFrom(local)) : PAINTED;
+  };
+  const sync = async (): Promise<RepaintResult> => {
+    if (run.cancelled) return PAINTED;
+    const local = sdk.storeChangesInBackground || !hasHomeRows() ? await paintLocal() : PAINTED;
+    await perfTime('channels.syncNetwork', syncConversationsFromNetwork);
+    if (run.cancelled) return local;
+    const fresh = await listVisibleConversations();
+    const painted = await perfTime('channels.paintFresh', () => paintFrom(fresh));
+    return { failed: local.failed || painted.failed };
   };
   const refresh = async (): Promise<void> => {
-    if (run.cancelled) return;
-    try {
-      if (sdk.storeChangesInBackground || !hasHomeRows()) {
-        const local = await perfTime('channels.listLocal', listVisibleConversations);
-        perfLog('channels.localCount', { count: local.length });
-        if (local.length > 0) await perfTime('channels.paintLocal', () => paintFrom(local));
-      }
-      await perfTime('channels.syncNetwork', syncConversationsFromNetwork);
-      if (run.cancelled) return;
-      const fresh = await listVisibleConversations();
-      await perfTime('channels.paintFresh', () => paintFrom(fresh));
-    } catch (err) {
-      report('home.refresh', err);
-    }
+    await sync().catch(reported('home.refresh'));
   };
   const refreshThrottled = async (): Promise<void> => {
     if (run.cancelled || Date.now() - lastRefreshAt < THROTTLE_MS) return;
@@ -266,7 +151,8 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
       report('home.reconcile', err);
     }
   };
-  return { refresh, refreshThrottled, reconcile };
+  const repaint = (network: boolean): Promise<RepaintResult> => (network ? sync() : paintLocal());
+  return { refresh, refreshThrottled, reconcile, repaint };
 }
 
 async function onNewConversation(conv: Conv, selfInboxId: string, run: SyncRun): Promise<void> {
@@ -322,6 +208,7 @@ async function initSync(run: SyncRun): Promise<void> {
     clearTimeout(run.initTimer);
     const selfInboxId = sdk.inboxIdOf(client);
     const r = makeRefreshers(client, selfInboxId, run);
+    run.ready(r);
     await hydratePeerProfiles();
     await afterFirstPages();
     await r.refresh();
@@ -330,28 +217,36 @@ async function initSync(run: SyncRun): Promise<void> {
     subscribeLiveStreams(run, r, selfInboxId);
     await syncPreferences();
   } catch (e) {
+    run.fail(e);
     if (run.cancelled || e instanceof NoAccountError) {
       clearTimeout(run.initTimer);
       return;
     }
-    if (!hasHomeRows()) syncError.set((e as Error).message);
+    if (!hasHomeRows()) syncError.set(errorMessage(e));
   }
 }
 
 function armInitTimer(run: SyncRun): void {
   run.initTimer = setTimeout(() => {
     if (run.cancelled || hasHomeRows()) return;
-    if (getXmtpBootstrapPhase() === 'registering') {
-      armInitTimer(run);
+    if (getXmtpBootstrapPhase() !== 'registering') {
+      syncError.set(INIT_TIMEOUT_MESSAGE);
       return;
     }
-    syncError.set(INIT_TIMEOUT_MESSAGE);
+    const stop = subscribeXmtpBootstrapPhase(() => {
+      if (getXmtpBootstrapPhase() === 'registering') return;
+      stop();
+      if (!run.cancelled) armInitTimer(run);
+    });
+    run.stopPhaseWait = stop;
   }, INIT_TIMEOUT_MS);
 }
 
 function stopRun(run: SyncRun): void {
   run.cancelled = true;
+  run.fail(new AccountChangedError());
   clearTimeout(run.initTimer);
+  run.stopPhaseWait?.();
   for (const stop of [run.cancelConvStream, run.cancelMsgStream, run.cancelConsentStream]) {
     if (stop) attempt(stop, 'cleanup');
   }
@@ -362,14 +257,45 @@ function stopRun(run: SyncRun): void {
     }, 'cleanup');
 }
 
+function newRun(): SyncRun {
+  let ready: SyncRun['ready'] = () => undefined;
+  let fail: SyncRun['fail'] = () => undefined;
+  const refreshers = new Promise<Refreshers>((resolve, reject) => {
+    ready = resolve;
+    fail = reject;
+  });
+  refreshers.catch(ignored(undefined, 'optional'));
+  return {
+    cancelled: false,
+    cancelConvStream: null,
+    cancelMsgStream: null,
+    cancelConsentStream: null,
+    appStateSub: null,
+    refreshers,
+    ready,
+    fail,
+  };
+}
+
+let currentRun: SyncRun | null = null;
+
+export async function refreshChannels(network: boolean): Promise<RepaintResult> {
+  const run = currentRun;
+  if (run === null) throw new Error('Messaging is not ready.');
+  const refreshers = await run.refreshers;
+  if (run.cancelled) throw new AccountChangedError();
+  return refreshers.repaint(network);
+}
+
 function startChannelsSync(): () => void {
   syncError.set('');
-  const run: SyncRun = { cancelled: false, cancelConvStream: null, cancelMsgStream: null, cancelConsentStream: null, appStateSub: null };
+  const run = newRun();
+  currentRun = run;
   armInitTimer(run);
   const removeHidden = (): void => {
     if (homeRows() !== null) updateHomeRows((rows) => rows);
   };
-  const stopVisibility = subscribeHiddenChannels(() => {
+  const stopVisibility = subscribeHiddenChannelEdits(() => {
     removeHidden();
     void run.reconcileVisibility?.();
   });
@@ -382,6 +308,7 @@ function startChannelsSync(): () => void {
   void hydratePeerProfiles();
   void initSync(run);
   return (): void => {
+    if (currentRun === run) currentRun = null;
     stopRun(run);
     stopVisibility();
   };

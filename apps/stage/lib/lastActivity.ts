@@ -5,7 +5,6 @@ import {
   type ActivityPreferences,
   type LastActivity,
 } from './lastActivity.model';
-import { subscribeAccountEpoch } from './accountEpoch';
 import type { HomeView } from './homeView';
 import { accountScope } from './accountSelection';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
@@ -20,22 +19,15 @@ const prefs = createValueStore<ActivityPreferences>({
   perAccount: true,
 });
 
-function subscribePreferences(onChange: () => void): () => void {
-  const offPrefs = prefs.subscribe(onChange);
-  const offAccount = subscribeAccountEpoch(onChange);
-  return () => {
-    offPrefs();
-    offAccount();
-  };
-}
-
 export function getLastActivity(view: HomeView): LastActivity {
-  return prefs.isCurrentAccount() ? prefs.get()[view] : 'all';
+  return prefs.loaded() ? prefs.get()[view] : 'all';
 }
 
 export function useLastActivity(view: HomeView): LastActivity {
-  return useStoreValue(subscribePreferences, () => getLastActivity(view), prefs.loadAsync);
+  return useStoreValue(prefs.subscribe, () => getLastActivity(view), prefs.loadAsync);
 }
+
+export const useLastActivitySettled = prefs.useSettled;
 
 export function setLastActivity(view: HomeView, window: LastActivity): void {
   const scope = accountScope();

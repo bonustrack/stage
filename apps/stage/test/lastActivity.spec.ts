@@ -8,6 +8,7 @@ import { parseSearchFilter, searchRowMatcher } from '../components/home/search/s
 import { searched } from './searchFixtures';
 import { row } from './rowFixture';
 import { bumpAccountEpoch } from '../lib/accountEpoch';
+import { accountSelectionChanged } from '../lib/accountSelection';
 import { selectAccount, selectedAccount } from './activeAccount';
 import { mockAppStorage } from './memoryStorage';
 
@@ -173,6 +174,7 @@ describe('Last activity local preferences', () => {
       selectAccount('activity-failure-bob');
       failedKey = `home.activity.${selectedAccount()}`;
       values.set(failedKey, '{"chats":"all","board":"7d"}');
+      accountSelectionChanged();
       bumpAccountEpoch();
       expect(getLastActivity('chats')).toBe('all');
       await settle();

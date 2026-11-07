@@ -1,7 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
 import {
   matchingDestinations,
-  mergeShareRows,
   parseIncomingShare,
   sharedAttachments,
   shareDestinations,
@@ -116,15 +115,6 @@ describe('incoming share boundary', () => {
     expect(acceptedShareConsent(true, undefined, 'unknown')).toBe(false);
     expect(acceptedShareConsent(true, undefined, 'allowed')).toBe(true);
     expect(acceptedShareConsent(true, false, 'denied')).toBe(true);
-  });
-
-  test('cache updates retain newly discovered destinations while applying changed rows', () => {
-    const discovered = { convId: 'new', title: 'New channel' };
-    const previous = { convId: 'old', title: 'Old title' };
-    const changed = { ...previous, title: 'Changed title' };
-    expect(mergeShareRows([discovered, previous], [changed])).toEqual([discovered, changed]);
-    expect(mergeShareRows(null, [changed])).toEqual([changed]);
-    expect(mergeShareRows([discovered], null)).toEqual([discovered]);
   });
 
   test('only offers accepted existing destinations, never sync groups or deleted chats', () => {

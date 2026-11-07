@@ -30,7 +30,6 @@ export interface Setting<T> {
   edit: (next: (current: T) => T, edited?: Edited<T>) => void;
   editStored: (next: (current: T) => T, announce?: boolean) => Promise<void>;
   changedLocally: (accountId: string, state: T) => void;
-  loaded: () => boolean;
   useLoaded: () => boolean;
 }
 
@@ -38,7 +37,6 @@ function makeSetting<T>(store: ValueStoreOptions<T>, policy: SettingPolicy<T>, i
   const prefs = createValueStore(store);
   const changes = settingChanges<T>();
   const synced = policy.synced ?? ((state: T): T => state);
-  const loaded = (): boolean => prefs.accountId() !== null;
   const changedLocally = (accountId: string, state: T): void => {
     changes.notify({ accountId, state: synced(state) });
   };
@@ -69,8 +67,7 @@ function makeSetting<T>(store: ValueStoreOptions<T>, policy: SettingPolicy<T>, i
       if (announce && accountId !== null) changedLocally(accountId, prefs.get());
     },
     changedLocally,
-    loaded,
-    useLoaded: () => useStoreValue(prefs.subscribe, loaded, prefs.loadAsync),
+    useLoaded: () => useStoreValue(prefs.subscribe, prefs.loaded, prefs.loadAsync),
   };
 }
 

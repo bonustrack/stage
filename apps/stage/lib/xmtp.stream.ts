@@ -11,7 +11,7 @@ import { onArrival, onDeletion, onStreamClosed, onUnknownArrival } from './feed/
 import { report, reported } from './errorPolicy';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { isHiddenFromFeeds, reconcileHiddenConsent } from './channelVisibility';
-import { subscribeHiddenChannels } from './sync/hiddenChannels';
+import { subscribeHiddenChannelEdits } from './sync/hiddenChannels';
 import { subscribeAccountChange } from './accountSelection';
 import { makeGlobalStream, openAccountStreams } from './xmtp.stream.core';
 import { schedulePushTopicRefresh } from './pushRegister';
@@ -153,7 +153,7 @@ const globalStream = makeGlobalStream({
 
 export const ensureGlobalStream = globalStream.ensure;
 registerGlobalStreamTeardown(globalStream.teardown);
-subscribeHiddenChannels(() => {
+subscribeHiddenChannelEdits(() => {
   globalStream.teardown();
   globalStream.rearm();
 });

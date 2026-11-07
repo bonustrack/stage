@@ -24,6 +24,8 @@ export const getXmtpBootstrapPhase = bootstrap.get;
 
 export const useXmtpBootstrapPhase = bootstrap.use;
 
+export const subscribeXmtpBootstrapPhase = bootstrap.subscribe;
+
 export async function whileRegistering<T>(work: () => Promise<T>): Promise<T> {
   bootstrap.set('registering');
   try {
