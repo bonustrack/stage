@@ -1,6 +1,7 @@
 import { isPeerHandleSegment } from './handles';
 import type { AppRouteSegment } from './routes';
-import { STAGE_HOST, hashPath, hashRoute, isLaunchPath, toStageWebUrl } from './stageLinks';
+import { STAGE_HOST } from '../endpoints';
+import { hashPath, hashRoute, isLaunchPath, toStageWebUrl } from './stageLinks';
 
 export type ParsedRoute =
   | { pathname: '/[convId]'; params: { convId: string; m?: string; focus?: string } }

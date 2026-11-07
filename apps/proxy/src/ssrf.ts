@@ -1,9 +1,10 @@
 import { hostProblem } from '@stage-labs/client/net/publicHost';
 import { readCappedBytes, type CapMode } from '@stage-labs/client/net/cappedBody';
+import { STAGE_HOST } from '@stage-labs/client/endpoints';
 
 export const UA = 'Mozilla/5.0 (compatible; StageLinkPreview/1.0; +https://stage.box)';
 
-const BLOCKED_DOMAINS = ['stage.box', 'metadata.google.internal'];
+const BLOCKED_DOMAINS = [STAGE_HOST, 'metadata.google.internal'];
 
 export class SsrfError extends Error {}
 

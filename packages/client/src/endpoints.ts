@@ -1,3 +1,5 @@
+export const STAGE_HOST = 'stage.box';
+export const STAGE_ORIGIN = `https://${STAGE_HOST}`;
 export const PROXY_ORIGIN = 'https://proxy.stage.box';
 export const PUSH_ORIGIN = 'https://push.stage.box';
 export const BUNDLER_HOST = 'bundler.stage.box';

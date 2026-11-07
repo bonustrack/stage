@@ -1,6 +1,7 @@
 import { isPublicHost, type HostPolicy } from '@stage-labs/client/net/publicHost';
+import { STAGE_HOST } from '@stage-labs/client/endpoints';
 
-const NODE_HOST_POLICY: HostPolicy = { ipLiterals: false, blockedDomains: ['stage.box'] };
+const NODE_HOST_POLICY: HostPolicy = { ipLiterals: false, blockedDomains: [STAGE_HOST] };
 
 function parsedUrl(raw: string): URL | null {
   try {

@@ -1,7 +1,6 @@
 import { APP_SCHEME } from '@stage-labs/client/endpoints';
 import { APP_HOME } from './assets';
 
-export const WEBSITE = 'https://stage.box';
 const DEEP_LINK = new RegExp(`^${APP_SCHEME}://(.*)$`, 'i');
 
 export function siteBaseFor(override: string | undefined): string {

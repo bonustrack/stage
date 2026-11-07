@@ -1,14 +1,8 @@
-export const STAGE_HOST = 'stage.box';
-
-export const STAGE_ORIGIN = `https://${STAGE_HOST}`;
-
-const APP_SCHEME = 'stage';
+import { APP_SCHEME, PREVIEW_LAUNCHER_PATH, STAGE_HOST, STAGE_ORIGIN } from '../endpoints';
 
 export const STAGE_SCHEMES = ['metro', APP_SCHEME] as const;
 
 const DEV_CLIENT_LAUNCH = 'expo-development-client';
-
-const PREVIEW_LAUNCHER = 'preview-launcher.html';
 
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
@@ -27,11 +21,11 @@ const LINK_SCHEME_RE = new RegExp(`^(?:https?|${SCHEMES}):\\/\\/`, 'i');
 const TRAILING_PUNCTUATION_RE = /[.,;:!?)\]}'"`>]+$/;
 
 const PREVIEW_LAUNCH_RE = new RegExp(
-  `(?:(?:${SCHEMES}):\\/\\/${escapeRegExp(DEV_CLIENT_LAUNCH)}\\/\\?url=|https?:\\/\\/${HOST}\\/${escapeRegExp(PREVIEW_LAUNCHER)}\\?u=)(\\S+)`,
+  `(?:(?:${SCHEMES}):\\/\\/${escapeRegExp(DEV_CLIENT_LAUNCH)}\\/\\?url=|https?:\\/\\/${HOST}${escapeRegExp(PREVIEW_LAUNCHER_PATH)}\\?u=)(\\S+)`,
   'i',
 );
 
-const LAUNCH_PATH_RE = new RegExp(`^(?:\\/\\/|\\/${escapeRegExp(DEV_CLIENT_LAUNCH)}\\/|\\/${escapeRegExp(PREVIEW_LAUNCHER)})`);
+const LAUNCH_PATH_RE = new RegExp(`^(?:\\/\\/|\\/${escapeRegExp(DEV_CLIENT_LAUNCH)}\\/|${escapeRegExp(PREVIEW_LAUNCHER_PATH)})`);
 
 const DEV_CLIENT_URL_RE = new RegExp(`^[a-z][a-z0-9+.-]*:\\/\\/${escapeRegExp(DEV_CLIENT_LAUNCH)}(\\/|\\?|$)`, 'i');
 
