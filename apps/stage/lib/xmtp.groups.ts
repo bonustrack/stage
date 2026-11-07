@@ -10,7 +10,7 @@ import {
   type GroupEditRights,
   type GroupMetaPatch,
 } from '@stage-labs/client/xmtp/groups';
-import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
+import { applyGroupMeta, patchRow } from '@stage-labs/client/xmtp/channelsCache';
 import { addLabel, assignedAddresses, moveLabel, removeLabel, renameLabels, stringList } from '@stage-labs/client/xmtp/labels';
 import { channelFieldOf, type AppDataGroup, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -151,15 +151,14 @@ export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   return result;
 }
 
-function patchRow(convId: string | null, patch: (row: CachedRow) => Partial<CachedRow>): void {
+function patchCachedRow(convId: string | null, patch: (row: CachedRow) => Partial<CachedRow>): void {
   const rows = getCachedRows();
-  const cur = rows?.find((r) => r.convId === convId);
-  if (!rows || !cur) return;
-  setCachedRows(rows.map((r) => (r === cur ? { ...r, ...patch(r) } : r)));
+  const next = rows && convId !== null ? patchRow(rows, convId, (row) => ({ ...row, ...patch(row) })) : null;
+  if (next) setCachedRows(next);
 }
 
 function patchRowLabels(convId: string | null, next: (labels: string[]) => string[]): void {
-  patchRow(convId, (r) => ({ labels: next(stringList(r.labels)) }));
+  patchCachedRow(convId, (r) => ({ labels: next(stringList(r.labels)) }));
 }
 
 interface LabelWrites {
@@ -237,7 +236,7 @@ export async function setGroupField(
   expected?: string | null,
 ): Promise<string | null> {
   const convId = convIdOfLine(line);
-  if (expected === undefined) patchRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
+  if (expected === undefined) patchCachedRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
   try {
     return await channelMetaWriter().writeChannelField(await groupOfLine(line), field, value, expected);
   } finally {

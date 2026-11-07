@@ -31,7 +31,7 @@ export function normalizeChannelRowTitle<R extends ChannelRow>(row: R): R {
   return title === row.title ? row : { ...row, title };
 }
 
-function patchRow<R extends ChannelRow>(rows: readonly R[], convId: string, patch: (cur: R) => R, moveToTop = false): R[] | null {
+export function patchRow<R extends ChannelRow>(rows: readonly R[], convId: string, patch: (cur: R) => R, moveToTop = false): R[] | null {
   const idx = rows.findIndex((r) => r.convId === convId);
   const cur = idx === -1 ? undefined : rows[idx];
   if (cur === undefined) return null;
