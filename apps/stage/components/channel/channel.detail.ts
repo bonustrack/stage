@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { refreshConv, useChannelEditRights, useChannelRoles, useConvDetails, useConvRow } from '../../lib/messaging/queries';
@@ -48,7 +49,7 @@ async function runTask(mark: (on: boolean) => void, failTitle: string, task: () 
   try {
     await task();
   } catch (e) {
-    capabilities.alert(failTitle, (e as Error).message ?? 'Unknown error');
+    capabilities.alert(failTitle, errorMessage(e));
   } finally {
     mark(false);
   }

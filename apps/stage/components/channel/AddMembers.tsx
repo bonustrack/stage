@@ -1,3 +1,4 @@
+import { errorLine } from '@stage-labs/client/errors';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -33,7 +34,7 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
       onDone();
       capabilities.toast(count === 1 ? 'Member added' : `${count} members added`);
     } catch (err) {
-      capabilities.toast((err as Error)?.message ?? "Couldn't add members");
+      capabilities.toast(errorLine(err, "Couldn't add members"));
       setSubmitting(false);
     }
   };

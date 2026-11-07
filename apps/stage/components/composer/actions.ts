@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { useRef, useState } from 'react';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import { useVoiceRecorder } from './voice';
@@ -34,7 +35,7 @@ async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: strin
     a.setPending((prev) => [...prev, attachment]);
     prepareAttachments(fileInputs([attachment]));
   } catch (e) {
-    a.setErr((e as Error).message);
+    a.setErr(errorMessage(e));
   } finally {
     a.setUploading(false);
   }
@@ -91,7 +92,7 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
     a.setPending((prev) => withLocation(prev, location));
     setLastAttachment('location');
   } catch (e) {
-    a.setErr((e as Error).message);
+    a.setErr(errorMessage(e));
   }
 }
 

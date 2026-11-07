@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
 import { CHANNEL_FIELD_NOUNS, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
@@ -14,8 +15,6 @@ export type ChannelActionFrom = 'list' | 'chat';
 interface ChannelRouter {
   replace: (href: string) => void;
 }
-
-const failure = (e: unknown): string => (e as Error).message ?? 'Unknown error';
 
 export function toastLabelError(e: unknown, what = 'labels'): void {
   if (e instanceof LabelPermissionError) capabilities.toast(e.message);
@@ -49,7 +48,7 @@ export async function leaveChannel(
       router.replace(homeRoute());
     }
   } catch (e) {
-    capabilities.alert('Couldn’t leave', failure(e));
+    capabilities.alert('Couldn’t leave', errorMessage(e));
   } finally {
     busy(false);
   }
@@ -67,7 +66,7 @@ export function deleteChat(convId: string, peerAddress: string, from: ChannelAct
         if (from === 'chat') router.replace(homeRoute());
         await (block ? blockRequestConv(convId) : unacceptConv(convId));
       } catch (e) {
-        capabilities.alert('Couldn’t delete', failure(e));
+        capabilities.alert('Couldn’t delete', errorMessage(e));
       }
     })();
   };
@@ -96,6 +95,6 @@ export async function checkChannelSync(convId: string): Promise<void> {
     const { title, message } = await checkConvSync(convId);
     capabilities.alert(title, message);
   } catch (e) {
-    capabilities.alert('Couldn’t check sync', failure(e));
+    capabilities.alert('Couldn’t check sync', errorMessage(e));
   }
 }

@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { useMemo, useState } from 'react';
 import type { Hex } from 'viem';
 import { WALLET_ASSETS, type Asset, type AssetRow } from '@stage-labs/client/wallet/assets';
@@ -63,7 +64,7 @@ function useSendTx(): SendTx {
       setTxState('confirmed');
     } catch (e) {
       setTxState('idle');
-      setTxErr((e as Error).message ?? 'Transaction failed');
+      setTxErr(errorMessage(e));
     }
   };
   return { txState, txHash, txErr, send };

@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { isAddress } from 'viem';
 import type { PollContent } from '@stage-labs/client/xmtp/poll';
 import { buildEip712SignatureRequest, buildPersonalSignatureRequest, type SignatureRequestContent } from '@stage-labs/client/xmtp/sign';
@@ -35,7 +36,7 @@ export function checkSignatureDraft(d: SignatureDraft): DraftCheck<SignatureRequ
     const value = d.kind === 'personal' ? buildPersonalSignatureRequest(d.message, d.desc) : buildEip712SignatureRequest(d.json, d.desc);
     return { filled: hasContent, ok: true, value };
   } catch (e) {
-    return { filled: hasContent, ok: false, message: (e as Error).message };
+    return { filled: hasContent, ok: false, message: errorMessage(e) };
   }
 }
 

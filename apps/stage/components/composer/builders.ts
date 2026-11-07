@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { parseUnits, toHex } from 'viem';
 import { base } from 'viem/chains';
 import { xmtpSendPoll, xmtpSendTxRequest, xmtpSendSignatureRequest } from '../../lib/xmtp.messages';
@@ -48,7 +49,7 @@ async function postStructured(
   try {
     sentId = await send(line);
   } catch (e) {
-    sendErr = (e as Error).message;
+    sendErr = errorMessage(e);
     post.setErr(sendErr);
   } finally {
     post.onSent?.(localId, sendErr, sentId);

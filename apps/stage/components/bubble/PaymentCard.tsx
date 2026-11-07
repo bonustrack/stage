@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -276,7 +277,7 @@ function X402PaymentCard({
         capabilities.toast(res.ok ? 'Payment sent' : `Payment failed (${res.status})`);
       } catch (e) {
         setPhase('failed');
-        capabilities.toast((e as Error).message || 'Payment failed');
+        capabilities.toast(errorMessage(e) || 'Payment failed');
       }
     })();
   };

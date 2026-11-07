@@ -1,3 +1,4 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { rememberLocalAttachments } from '../../lib/localAttachmentCache';
 import { uploadAttachments, xmtpSendMultiRemoteAttachment } from '../../lib/xmtp.attachments';
 import { xmtpReply, xmtpSendText } from '../../lib/xmtp.messages';
@@ -42,7 +43,7 @@ async function runStep(step: SendStep, previewUri?: (uri: string) => string): Pr
     if (previews.length > 0) rememberLocalAttachments(id, previews);
     return { id };
   } catch (e) {
-    return { error: (e as Error).message };
+    return { error: errorMessage(e) };
   }
 }
 

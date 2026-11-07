@@ -1,3 +1,4 @@
+import { errorLine } from '@stage-labs/client/errors';
 import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { shortAddress } from '@stage-labs/client/identity/format';
@@ -56,7 +57,7 @@ export function useMemberPicker(): MemberPickerState {
       setMembers((prev) => togglePick(prev, member));
       setEntry('');
     } catch (err) {
-      capabilities.toast((err as Error)?.message ?? 'Failed to add member');
+      capabilities.toast(errorLine(err, 'Failed to add member'));
     } finally {
       setAdding(false);
     }
