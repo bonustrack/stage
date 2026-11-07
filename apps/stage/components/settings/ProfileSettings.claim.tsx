@@ -1,6 +1,6 @@
 import { errorMessage } from '@stage-labs/client/errors';
 import { useEffect, useState } from 'react';
-import { Button } from '@stage-labs/kit/react-native/button';
+import { Button, buttonHeight } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { UsernameField, useUsernameInput } from '../profile/UsernameField';
 import { USERNAME_COPY, normalizeLabel, usernameReady } from '../profile/username.model';
@@ -38,7 +38,6 @@ function useOwnedLabel(address: string): string | null | undefined {
   return owned?.address === address ? owned.label : undefined;
 }
 
-const BUTTON_LG_HEIGHT = 48;
 const ABOUT_LINES = ['100%', '70%'] as const;
 
 function ClaimCardPlaceholder(): React.ReactElement {
@@ -50,7 +49,7 @@ function ClaimCardPlaceholder(): React.ReactElement {
     </Column>
   );
   return (
-    <IntroCard title={USERNAME_COPY.title} about={about} footer={<PlaceholderBlock width="100%" height={BUTTON_LG_HEIGHT} />}>
+    <IntroCard title={USERNAME_COPY.title} about={about} footer={<PlaceholderBlock width="100%" height={buttonHeight('lg')} />}>
       <FormFieldPlaceholder />
     </IntroCard>
   );

@@ -242,6 +242,7 @@ These exports stay for existing consumers but nothing in Kit uses them; they liv
 - Fix: `fontName.mono` is the platform's monospace family (`Menlo` on iOS, `monospace` on Android, `Menlo, ui-monospace, monospace` on web, from `mono-font(.ios|.android).ts`), so `fontFamily="mono"` Text, A2UI mono Text and markdown code are monospace on Android and on browsers without Menlo. It was `Menlo` everywhere.
 - Fix: `kitTheme().typography.fontFamilyMono` is `fontName.mono`, the platform's monospace family, instead of `Menlo` everywhere.
 - The kit's drag tuning for hosts with their own gestures: `DRAG_HOLD_MS` and `DRAG_MOVE_SLOP` (`sortable`), and `activateDrag(pan, touch)` (`react-native/sortable`), which starts a pan after the hold on touch and after the slop with a mouse, as the kit lists do. `DragPlatform` gains `nativeDriver`.
+- `FORM_FIELD_LABEL_GAP` (`react-native/text-field`, the gap between a labelled field's label and its value) and `buttonHeight(size)` (`react-native/button`), for hosts that draw loading placeholders shaped like a labelled field or a Button.
 
 ### 0.1.0-beta.30
 

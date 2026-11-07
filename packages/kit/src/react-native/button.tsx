@@ -155,6 +155,10 @@ function containerArgs(input: ContainerInput): ContainerStyleArgs {
   };
 }
 
+export function buttonHeight(size: ButtonSize): number {
+  return SIZES[size].height;
+}
+
 export function Button(props: ButtonProps): React.ReactElement {
   const {
     color,

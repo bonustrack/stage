@@ -1,13 +1,17 @@
 import { useEffect, useRef, type ComponentRef, type ReactNode, type Ref, type RefObject } from 'react';
 import type { TextInputProps } from 'react-native';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
-import { FORM_FIELD_HEIGHT, FORM_FIELD_RADIUS, TextField, type TextFieldProps } from '@stage-labs/kit/react-native/text-field';
+import {
+  FORM_FIELD_HEIGHT,
+  FORM_FIELD_LABEL_GAP,
+  FORM_FIELD_RADIUS,
+  TextField,
+  type TextFieldProps,
+} from '@stage-labs/kit/react-native/text-field';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column } from './layout';
 
 export { FORM_FIELD_HEIGHT, FORM_FIELD_RADIUS };
-
-const LABEL_GAP = 2;
 
 type NativeInputProps = Omit<
   TextInputProps,
@@ -103,7 +107,7 @@ export function FormField({
 export function FormFieldPlaceholder(): React.ReactElement {
   const { border } = usePalette();
   return (
-    <Column radius={FORM_FIELD_RADIUS} background={border} gap={LABEL_GAP}>
+    <Column radius={FORM_FIELD_RADIUS} background={border} gap={FORM_FIELD_LABEL_GAP}>
       <Text text=" " size="xs" />
       <Column height={FORM_FIELD_HEIGHT} />
     </Column>

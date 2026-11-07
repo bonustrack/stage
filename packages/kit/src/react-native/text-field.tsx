@@ -26,7 +26,7 @@ export const SEARCH_INPUT_PROPS =
       }
     : {};
 
-export { FORM_FIELD_HEIGHT, FORM_FIELD_RADIUS } from './text-field.filled';
+export { FORM_FIELD_HEIGHT, FORM_FIELD_LABEL_GAP, FORM_FIELD_RADIUS } from './text-field.filled';
 
 export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(props, ref) {
   if (props.label !== undefined || props.appearance === 'filled') return <FilledField {...props} ref={ref} />;

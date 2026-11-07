@@ -11,6 +11,8 @@ import { useKitColors } from './theme-context';
 
 export const FORM_FIELD_RADIUS = 4;
 
+export const FORM_FIELD_LABEL_GAP = 2;
+
 const FIELD_PADDING_X = 16;
 const FIELD_PADDING_TOP = 8;
 const FIELD_PADDING_BOTTOM = 12;
@@ -83,7 +85,7 @@ function StackedFrame({ field, props, background }: { field: ReactNode; props: T
       background={background}
       radius={FORM_FIELD_RADIUS}
       padding={{ x: FIELD_PADDING_X, top: FIELD_PADDING_TOP, bottom: FIELD_PADDING_BOTTOM }}
-      gap={2}
+      gap={FORM_FIELD_LABEL_GAP}
       style={props.disabled === true ? DISABLED : undefined}
     >
       {props.label === undefined ? null : (
