@@ -1,5 +1,6 @@
 import { asFileUri } from './localAttachmentCache';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
+import { randomHex } from '@stage-labs/client/ids';
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import {
@@ -38,7 +39,7 @@ async function materializeFileUri(src: string): Promise<string> {
 }
 
 function freshCacheFile(prefix: string, ext: string): File {
-  const tmpName = `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const tmpName = `${prefix}-${Date.now()}-${randomHex(3)}.${ext}`;
   const dest = new File(Paths.cache, tmpName);
   if (dest.exists)
     attempt(() => {
