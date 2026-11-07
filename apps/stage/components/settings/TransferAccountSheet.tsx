@@ -10,6 +10,7 @@ import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { transferKindFor, transferPayloadFor } from '../../lib/accountTransfer';
 import { TRANSFER_HOW_TO, transferWarning } from '../onboarding/importInput.model';
 import { Column } from '../layout';
+import { reported } from '../../lib/errorPolicy';
 
 const QR_SIZE = 240;
 const UNAVAILABLE_MESSAGE = 'This account cannot be linked: it has no exportable key on this device.';
@@ -30,7 +31,7 @@ function usePayload(rec: AccountRecord | null, onClose: () => void): string | nu
         return;
       }
       setPayload(next);
-    });
+    }, reported('settings.transferCode'));
     return () => {
       alive = false;
     };

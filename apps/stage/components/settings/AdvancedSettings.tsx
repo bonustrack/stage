@@ -4,17 +4,19 @@ import { removeAccountFromDevice, resetXmtpDatabase, useXmtpIdentity } from '../
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { capabilities } from '../../lib/capabilities';
-import { report } from '../../lib/errorPolicy';
+import { report, reported } from '../../lib/errorPolicy';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
+const RESET_CONFIRM = {
+  title: 'Reset XMTP database',
+  message:
+    'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone. A fresh installation is created on next launch.',
+};
+
 function confirmReset(): void {
-  void resetXmtpDatabase({
-    title: 'Reset XMTP database',
-    message:
-      'Wipes the local XMTP database of the current account only. The account and its keys stay. Messages stored on this device for this account are gone. A fresh installation is created on next launch.',
-  });
+  void resetXmtpDatabase(RESET_CONFIRM).catch(reported('settings.resetDatabase'));
 }
 
 async function removeAndMoveOn(id: string): Promise<void> {

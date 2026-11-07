@@ -71,7 +71,7 @@ function useMarkReadWhileSeen(convId: string | undefined, fromOthers: number): v
     useCallback(() => {
       if (!convId) return;
       const check = makeSeenCheck(isAppInFront, () => {
-        void markConvRead(convId);
+        void markConvRead(convId).catch(reported('chat.markRead'));
       });
       check();
       return subscribeAppInFront(check);

@@ -19,6 +19,7 @@ import { IconShieldCheck } from '@central-icons-react-native/round-outlined-radi
 import { SettingsButtonRow } from './SettingsPage';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, Row } from '../layout';
+import { reported } from '../../lib/errorPolicy';
 
 interface PanelProps {
   mode: PhraseRowMode;
@@ -102,7 +103,7 @@ export function RecoveryPhraseRow({ rec, mode }: { rec: AccountRecord; mode: Phr
       await markWalletBackedUp();
       setPhrase(null);
       capabilities.toast(BACKUP_PHRASE_COPY.saved);
-    })();
+    })().catch(reported('settings.backupSaved'));
   };
 
   const copy = phraseRowCopy(mode);

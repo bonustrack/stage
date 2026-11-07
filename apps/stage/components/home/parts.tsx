@@ -19,6 +19,7 @@ import { DANGER } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { rowDataSet } from './rowArrows';
+import { reported } from '../../lib/errorPolicy';
 import { Column } from '../layout';
 
 interface ChannelRowItemProps {
@@ -146,13 +147,15 @@ export function useChannelRowRenderer(
   );
 }
 
-const RESET_TITLE = 'Reset local database';
-const RESET_MESSAGE =
-  'Wipes the local XMTP database of this account only. The account and its keys stay, ' +
-  'but messages stored on this device are gone and a new device slot is used. An account supports ten.';
+const RESET_CONFIRM = {
+  title: 'Reset local database',
+  message:
+    'Wipes the local XMTP database of this account only. The account and its keys stay, ' +
+    'but messages stored on this device are gone and a new device slot is used. An account supports ten.',
+};
 
 function confirmReset(): void {
-  void resetXmtpDatabase({ title: RESET_TITLE, message: RESET_MESSAGE });
+  void resetXmtpDatabase(RESET_CONFIRM).catch(reported('home.resetDatabase'));
 }
 
 export function HomeError({ error, dark, fg }: { error: string; dark: boolean; fg: string }): React.ReactElement {
@@ -185,7 +188,7 @@ export function HomeError({ error, dark, fg }: { error: string; dark: boolean; f
         })}
       >
         <Text size="xs" color={DANGER}>
-          {RESET_TITLE}
+          {RESET_CONFIRM.title}
         </Text>
       </Pressable>
     </Column>

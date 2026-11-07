@@ -15,6 +15,7 @@ import { TOPNAV_HEIGHT } from '../Topnav';
 import { PeerTopnav } from './PeerTopnav';
 import { ChatColumn, ComposerDock } from './FooterDock';
 import { Column } from '../layout';
+import { reported } from '../../lib/errorPolicy';
 
 type PendingReason = 'unregistered' | 'stale-installations' | 'failed';
 
@@ -92,9 +93,11 @@ export function PendingConversation({
 
   useEffect(() => {
     let alive = true;
-    void flushDmOutboxFor(address).then((convId) => {
-      if (alive && convId) onDelivered();
-    });
+    void flushDmOutboxFor(address)
+      .then((convId) => {
+        if (alive && convId) onDelivered();
+      })
+      .catch(reported('dm.flush'));
     return () => {
       alive = false;
     };
@@ -102,11 +105,13 @@ export function PendingConversation({
 
   const onSubmit = useCallback(
     (text: string) => {
-      void enqueueDm(address, text).then(() =>
-        flushDmOutboxFor(address).then((convId) => {
-          if (convId) onDelivered();
-        }),
-      );
+      void enqueueDm(address, text)
+        .then(() =>
+          flushDmOutboxFor(address).then((convId) => {
+            if (convId) onDelivered();
+          }),
+        )
+        .catch(reported('dm.queue'));
     },
     [address, onDelivered],
   );

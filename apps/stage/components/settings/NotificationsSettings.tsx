@@ -4,6 +4,7 @@ import { getPushPermission, isPushSupported } from '../../lib/pushNotify';
 import { describePushStatus, usePushStatus } from '../../lib/pushStatus';
 import { SettingsButtonRow, SettingsGroup, SettingsPage } from './SettingsPage';
 import { PUSH_UNAVAILABLE, PushToggleRow } from './PushToggleRow';
+import { reported } from '../../lib/errorPolicy';
 
 function permissionLabel(perm: string): string {
   if (perm === 'granted') return 'System notifications are allowed.';
@@ -16,7 +17,7 @@ function permissionLabel(perm: string): string {
 function usePushPermission(): { perm: string; refresh: () => void } {
   const [perm, setPerm] = useState<string>('undetermined');
   const refresh = (): void => {
-    void getPushPermission().then(setPerm);
+    void getPushPermission().then(setPerm, reported('settings.pushPermission'));
   };
   useEffect(refresh, []);
   return { perm, refresh };
@@ -37,7 +38,7 @@ export function NotificationsSettings(): React.ReactElement {
             label="Open system settings"
             description="Allow notifications for Stage, then turn push off and on again."
             onPress={() => {
-              void Linking.openSettings();
+              void Linking.openSettings().catch(reported('settings.openSettings'));
             }}
           />
         </SettingsGroup>

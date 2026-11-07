@@ -15,7 +15,7 @@ import { usePalette } from '../../lib/theme';
 import { callsSupported, joinCall, loadCallHistory, startCall, useCallView } from '../../lib/calls';
 import { CALL_RING_TIMEOUT_MS, CALL_STALE_MS } from '@stage-labs/client/xmtp/call';
 import { joinableCall } from '@stage-labs/client/xmtp/callMachine';
-import { ignore } from '../../lib/errorPolicy';
+import { ignore, reported } from '../../lib/errorPolicy';
 
 function CallMenu({ convId, isGroup, disabled }: { convId: string; isGroup: boolean; disabled: boolean }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
@@ -41,7 +41,7 @@ function CallMenu({ convId, isGroup, disabled }: { convId: string; isGroup: bool
   };
   const start = (video: boolean): void => {
     close();
-    if (!disabled) ignore(startCall(convId, !isGroup, video), 'ui');
+    if (!disabled) void startCall(convId, !isGroup, video).catch(reported('call.start'));
   };
   return (
     <>
@@ -114,7 +114,7 @@ export function CallButtons({ convId, isGroup }: { convId: string; isGroup: bool
         iconStart={<Glyph icon={IconCall} size={16} color={bg} />}
         disabled={view.calls.session !== null}
         onPress={() => {
-          ignore(joinCall(convId, !isGroup), 'ui');
+          void joinCall(convId, !isGroup).catch(reported('call.join'));
         }}
       />
     );

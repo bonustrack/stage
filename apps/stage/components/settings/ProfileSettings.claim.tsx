@@ -7,6 +7,7 @@ import { USERNAME_COPY, normalizeLabel, usernameReady } from '../profile/usernam
 import { IntroCard } from '../chrome/IntroCard';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { claimAndSetUpStageName, ownedStageName, setUpStageName } from '../../lib/profile';
+import { reported } from '../../lib/errorPolicy';
 
 function useOwnedLabel(address: string): string | null {
   const [owned, setOwned] = useState<string | null>(null);
@@ -14,7 +15,7 @@ function useOwnedLabel(address: string): string | null {
     let cancelled = false;
     void ownedStageName(address).then((name) => {
       if (!cancelled) setOwned(name ? normalizeLabel(name) : null);
-    });
+    }, reported('settings.ownedName'));
     return () => {
       cancelled = true;
     };

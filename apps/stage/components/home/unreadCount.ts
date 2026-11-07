@@ -8,6 +8,7 @@ import { homeRows } from '../../lib/messaging/homeRows';
 import { useLastActivityCutoff } from '../../lib/lastActivity';
 import { listingMatcher } from './listing';
 import { listedUnreadCount } from './listing.model';
+import { reported } from '../../lib/errorPolicy';
 
 function subscribeSources(onChange: () => void): () => void {
   const offs = [
@@ -25,7 +26,7 @@ function subscribeSources(onChange: () => void): () => void {
 function primeSources(): void {
   primeSearchState();
   primeClearedChats();
-  void loadDrafts();
+  void loadDrafts().catch(reported('drafts.load'));
 }
 
 function chatsUnreadCount(activityCutoff: number | null): number {

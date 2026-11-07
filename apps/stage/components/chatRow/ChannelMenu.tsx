@@ -14,6 +14,7 @@ import { homeRowOf } from '../../lib/messaging/homeRows';
 import { useStoreValue } from '../../lib/storeCore';
 import { checkChannelSync, deleteChat, leaveChannel, type ChannelActionFrom } from '../channel/channelActions';
 import { isUnreadRow } from './chatRow.model';
+import { reported } from '../../lib/errorPolicy';
 
 interface ChannelMenuProps {
   convId: string;
@@ -53,10 +54,10 @@ export function ChannelMenu({ convId, visible, onClose, anchor, from = 'list', o
       },
     },
     'toggle-read': () => {
-      void (isUnread ? markConvRead(convId) : markConvUnread(convId));
+      void (isUnread ? markConvRead(convId) : markConvUnread(convId)).catch(reported('chatRow.read'));
     },
     'toggle-pin': () => {
-      void togglePin(convId);
+      void togglePin(convId).catch(reported('chatRow.pin'));
     },
     info: () => {
       if (isGroup) router.push(channelProfileLinkOf(convId));

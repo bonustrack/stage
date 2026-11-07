@@ -14,7 +14,7 @@ import { fileInputs } from './send.model';
 import { prepareAttachments } from '../../lib/xmtp.attachments';
 import { finishSend, showSend, startSend, type DraftArgs, type StartedSend } from './sendRun';
 import { locationAttachment, withLocation } from './location.model';
-import { ignored } from '../../lib/errorPolicy';
+import { ignored, reported } from '../../lib/errorPolicy';
 import { capabilities } from '../../lib/capabilities';
 
 type ComposerActionsArgs = DraftArgs & PostHooks & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
@@ -119,7 +119,7 @@ function afterKeyboardHides(open: () => void): void {
   const waited = new Promise<void>((done) => {
     setTimeout(done, KEYBOARD_HIDE_WAIT_MS);
   });
-  void Promise.race([KeyboardController.dismiss(), waited]).then(open);
+  void Promise.race([KeyboardController.dismiss(), waited]).then(open, reported('composer.keyboard'));
 }
 
 export function useComposerActions(a: ComposerActionsArgs) {

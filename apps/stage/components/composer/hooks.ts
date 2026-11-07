@@ -3,6 +3,7 @@ import { AppState, Keyboard } from 'react-native';
 import { loadDrafts, getDraftValue, setDraftValue } from '../../lib/drafts';
 import type { ComposerState } from './state';
 import { keepAttachmentsUntilSent, keptAttachmentsOf } from './handoff';
+import { reported } from '../../lib/errorPolicy';
 
 const TEXT_SAVE_DELAY_MS = 300;
 
@@ -24,7 +25,7 @@ export function useSavedDraft(key: string | null, value: unknown, restore: (save
     void loadDrafts().then(() => {
       restore(getDraftValue(key));
       restored.current = true;
-    });
+    }, reported('composer.drafts'));
   }, [key]);
   useEffect(() => {
     if (key === null || !restored.current) return;

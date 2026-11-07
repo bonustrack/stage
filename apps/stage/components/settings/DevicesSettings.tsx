@@ -20,6 +20,7 @@ import { IconDevices } from '@central-icons-react-native/round-outlined-radius-1
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column } from '../layout';
+import { report } from '../../lib/errorPolicy';
 
 function addedOn(ms: number | undefined): string {
   if (!ms) return 'Added on an unknown date';
@@ -74,7 +75,8 @@ function DeviceSessions(): React.ReactElement {
         .then(() => {
           capabilities.toast('Session revoked');
         })
-        .catch(() => {
+        .catch((err: unknown) => {
+          report('settings.revokeSession', err);
           capabilities.alert('Revoke failed', 'Could not revoke that session. Check your connection and try again.');
         })
         .finally(() => {

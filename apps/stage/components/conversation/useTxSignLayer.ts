@@ -15,6 +15,7 @@ import { capabilities } from '../../lib/capabilities';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { getActiveAccount } from '../../lib/accounts';
 import { paymentBlocker } from './pay.model';
+import { reported } from '../../lib/errorPolicy';
 
 const NO_SEND_KEY = 'No in-app wallet to send from';
 const NO_SIGN_KEY = 'No active wallet to sign with';
@@ -132,7 +133,7 @@ export function useTxSignLayer(activeLine: string) {
           destructive: !summary.verified,
         });
         if (ok) runPay(requestId, 'Payment failed', broadcast);
-      });
+      }, reported('chat.pay'));
     },
     [activeLine, runPay],
   );

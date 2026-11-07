@@ -2,6 +2,7 @@ import { usePushEnabled } from '../../lib/pushPref';
 import { isPushSupported } from '../../lib/pushNotify';
 import { applyPush } from '../../lib/pushToggle';
 import { SettingsToggleRow } from './SettingsPage';
+import { reported } from '../../lib/errorPolicy';
 
 export const PUSH_UNAVAILABLE = 'Push notifications are unavailable in this browser.';
 
@@ -24,7 +25,7 @@ export function PushToggleRow({
       disabled={!supported}
       description={supported ? about : unsupportedNote}
       onChange={(next) => {
-        void applyPush(next).then(onToggled);
+        void applyPush(next).then(onToggled).catch(reported('settings.push'));
       }}
     />
   );

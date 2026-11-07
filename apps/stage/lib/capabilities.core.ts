@@ -71,7 +71,7 @@ function isShareCancel(err: unknown): boolean {
 
 export function makeCapabilities(platform: PlatformEffects): Capabilities {
   const copy = (label: string, value: string): void => {
-    void Clipboard.setStringAsync(value);
+    void Clipboard.setStringAsync(value).catch(reported('clipboard.copy'));
     platform.toast(`${label} copied`);
   };
   const copyLink = (url: string): void => {

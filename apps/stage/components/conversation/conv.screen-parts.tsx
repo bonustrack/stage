@@ -31,7 +31,7 @@ import { HoverIconButton } from '../hover';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 import { deleteForEveryone } from '../../lib/ownDeletes';
-import { report } from '../../lib/errorPolicy';
+import { report, reported } from '../../lib/errorPolicy';
 import { useAddChatFrameToDashboard, type AddChatFrame } from '../../lib/frames/addToDashboard';
 import { frameOf } from '../../lib/frames/frame.model';
 import type { HistoryEntry } from '@stage-labs/client/types';
@@ -274,7 +274,7 @@ function ConversationMessageMenu({
         setMenuFor(null);
       }}
       onCopy={() => {
-        if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text);
+        if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text).catch(reported('message.copy'));
         setMenuFor(null);
       }}
       onSelect={() => {

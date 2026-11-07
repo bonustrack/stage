@@ -12,6 +12,7 @@ import { capabilities } from '../../lib/capabilities';
 import { profileLinkOf } from '../../lib/links';
 import { PAGES } from '../tabs/pages';
 import { HomeViewOptions, type HomeMenuState } from './viewMenu';
+import { reported } from '../../lib/errorPolicy';
 
 const BUBBLE =
   'M12.363 3.007A9 9 0 0 0 3 12C3 13.4247 3.33104 14.7721 3.9204 15.9694C3.9709 16.072 3.98746 16.1883 3.96447 16.3003L3.14957 20.2712C3.07816 20.6191 3.38218 20.9285 3.73132 20.8632L7.83545 20.0953C7.94223 20.0753 8.05242 20.091 8.15059 20.1376C9.31767 20.6906 10.6227 21 12 21A9 9 0 0 0 20.942 13.016';
@@ -30,7 +31,7 @@ function copyActiveAddress(): void {
   void getActiveAccount().then((acct) => {
     if (!acct?.address) return;
     capabilities.copy('Address', acct.address);
-  });
+  }, reported('home.copyAddress'));
 }
 
 export function HomeTopnavRight({ head, view, menu }: { head: string; view: HomeView; menu: HomeMenuState }): React.ReactElement {
@@ -41,7 +42,7 @@ export function HomeTopnavRight({ head, view, menu }: { head: string; view: Home
     profile: () => {
       void getActiveAccount().then((acct) => {
         if (acct?.address) router.push(profileLinkOf(acct.address));
-      });
+      }, reported('home.profile'));
     },
     settings: () => {
       router.push(PAGES.settings.href);

@@ -34,7 +34,7 @@ import {
   type CallView,
   type ScreenPicker,
 } from '../../lib/calls';
-import { ignore } from '../../lib/errorPolicy';
+import { reported } from '../../lib/errorPolicy';
 import { CallMediaView } from './CallMediaView';
 import { CallScreenPicker } from './CallScreenPicker';
 import { callPerson, callTitle } from './callPeople';
@@ -166,7 +166,7 @@ function Controls({
         label={media.video && !media.screen ? 'Turn camera off' : 'Turn camera on'}
         active={media.video && !media.screen}
         onPress={() => {
-          ignore(toggleCamera(), 'ui');
+          void toggleCamera().catch(reported('call.camera'));
         }}
       />
       {screenShareSupported ? (
@@ -175,7 +175,7 @@ function Controls({
           label={media.screen ? 'Stop sharing' : 'Share screen'}
           active={media.screen}
           onPress={() => {
-            ignore(toggleScreen(picker.current), 'ui');
+            void toggleScreen(picker.current).catch(reported('call.screen'));
           }}
         />
       ) : null}

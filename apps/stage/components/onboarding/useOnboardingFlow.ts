@@ -6,6 +6,7 @@ import type { Stage } from '../../lib/onboarding';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRunner';
 import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
+import { reported } from '../../lib/errorPolicy';
 
 export type Step = 'username' | 'profile' | 'import' | 'setup' | 'edit';
 
@@ -62,7 +63,7 @@ export function useOnboardingFlow(mode: OnboardingMode, onDone: () => void): Onb
       setPending(null);
       setLabel('');
       setStep('username');
-    });
+    }, reported('onboarding.startOver'));
   };
 
   const onSetupRetry = (): void => {
@@ -111,7 +112,7 @@ export function useOnboardingFlow(mode: OnboardingMode, onDone: () => void): Onb
           setProfileRecovery(value);
           setStep('edit');
         }
-      });
+      }, reported('onboarding.editProfile'));
     },
     profileRecovery,
     onRecoverySave: (profile) => {

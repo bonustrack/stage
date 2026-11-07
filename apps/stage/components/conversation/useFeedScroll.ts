@@ -12,7 +12,7 @@ import {
   saveFeedAnchor,
   saveScrollOffset,
 } from '../../lib/scrollPos';
-import { attempt } from '../../lib/errorPolicy';
+import { attempt, reported } from '../../lib/errorPolicy';
 import { useStableCallback } from '../useStableCallback';
 import { feedOrientation } from './feedOrientation';
 import { FOLLOW_NEWEST_WITHIN_PX, type FeedScrollState } from './feedOrientation.core';
@@ -64,11 +64,13 @@ function useScrollState(convId: string | undefined): FeedScrollState {
       s.savedAnchor = cachedAnchor;
       s.savedLoaded = true;
     } else {
-      void Promise.all([getScrollOffset(key), getFeedAnchor(convId)]).then(([o, anchor]) => {
-        s.savedDistance = o;
-        s.savedAnchor = anchor;
-        s.savedLoaded = true;
-      });
+      void Promise.all([getScrollOffset(key), getFeedAnchor(convId)])
+        .then(([o, anchor]) => {
+          s.savedDistance = o;
+          s.savedAnchor = anchor;
+          s.savedLoaded = true;
+        })
+        .catch(reported('feed.savedPosition'));
     }
     return () => {
       flushScrollOffset(key);

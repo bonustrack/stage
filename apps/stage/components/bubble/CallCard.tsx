@@ -9,7 +9,7 @@ import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-s
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { joinCall, setCallMinimized, useCallView } from '../../lib/calls';
-import { ignore } from '../../lib/errorPolicy';
+import { reported } from '../../lib/errorPolicy';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { callCardModel, callLiveOf, type CallCardModel, type CallRecord } from './callCard.model';
 import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
@@ -45,7 +45,7 @@ export function CallCard({ record, line }: { record: CallRecord; line: string })
   useTicking(model.tone === 'live');
   const pressable = convId !== null && model.action !== null;
   const onPress = (): void => {
-    if (convId !== null && model.action === 'join') ignore(joinCall(convId, record.dm), 'ui');
+    if (convId !== null && model.action === 'join') void joinCall(convId, record.dm).catch(reported('call.join'));
     if (model.action === 'open') setCallMinimized(false);
   };
   return (

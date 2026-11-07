@@ -16,6 +16,7 @@ import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outli
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 import { Column } from '../layout';
+import { reported } from '../../lib/errorPolicy';
 
 interface RevealedKey {
   id: string;
@@ -38,7 +39,8 @@ function confirmExport(rec: AccountRecord, setRevealed: (key: RevealedKey) => vo
         return;
       }
       setRevealed({ id: rec.id, pk });
-    });
+    })
+    .catch(reported('settings.exportKey'));
 }
 
 function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string }): React.ReactElement {

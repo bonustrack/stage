@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { flushScrollOffset, getScrollOffset, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
-import { attempt } from '../../lib/errorPolicy';
+import { attempt, reported } from '../../lib/errorPolicy';
 import type { PersistedScroll, VirtualListHandle, VirtualListProps } from './VirtualList.types';
 
 export function usePersistedScroll(key: string): PersistedScroll {
@@ -10,7 +10,7 @@ export function usePersistedScroll(key: string): PersistedScroll {
   useEffect(() => {
     void getScrollOffset(key).then((o) => {
       saved.current ??= o;
-    });
+    }, reported('list.savedScroll'));
     return () => {
       flushScrollOffset(key);
     };

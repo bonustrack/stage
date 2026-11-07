@@ -6,6 +6,7 @@ import { useFeedRenderItem, type BubbleFeed } from './useFeedRenderItem';
 import { searchLocalHistory, type SearchScanResult } from '../../lib/messaging/searchLocal';
 import { usePalette } from '../../lib/theme';
 import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';
+import { reported } from '../../lib/errorPolicy';
 
 const SEARCH_MIN_CHARS = 2;
 
@@ -39,9 +40,11 @@ export function ConversationSearch({ line, query, bubbles }: { line: string; que
           if (scanEpoch.current === epoch) setResult(partial);
         },
         () => scanEpoch.current !== epoch,
-      ).finally(() => {
-        if (scanEpoch.current === epoch) setScanning(false);
-      });
+      )
+        .finally(() => {
+          if (scanEpoch.current === epoch) setScanning(false);
+        })
+        .catch(reported('chat.search'));
     }, 220);
     return () => {
       clearTimeout(t);
