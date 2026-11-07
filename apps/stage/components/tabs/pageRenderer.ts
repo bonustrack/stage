@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import { PAGES, pageAt, rendererOf, type PageId } from './pages';
+import { PAGES, pagerShownAt, rendererOf, type PageId } from './pages';
 
 const WEB = Platform.OS === 'web';
 
@@ -8,6 +8,5 @@ export function renderedByRoute(id: PageId): boolean {
 }
 
 export function routeRendersPage(pathname: string): boolean {
-  const page = pageAt(pathname);
-  return page !== undefined && rendererOf(page, WEB) === 'route';
+  return !pagerShownAt(pathname, WEB);
 }

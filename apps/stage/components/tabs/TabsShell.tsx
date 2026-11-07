@@ -1,10 +1,12 @@
 import { usePathname, useRouter } from 'expo-router';
+import { Text } from '@stage-labs/kit/react-native/text';
 import { Tabs } from '../../lib/navigation';
 import { usePalette } from '../../lib/theme';
 import { useAccountGate } from '../../lib/accountGate';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { TAB_BAR_HEIGHT } from '../layout/webChrome.core';
 import { HomeTopnav } from '../home/HomeTopnav';
+import { Topnav } from '../Topnav';
 import { AccountAvatar } from '../AccountAvatarButton';
 import { Landing } from '../landing/Landing';
 import { useOpenNewChat } from '../newChat/newChatFocus';
@@ -13,12 +15,15 @@ import { TabsPager } from './TabsPager';
 import { TAB_ICON_FRAME, TabIcon, useChatsTabBadge } from './TabIcon';
 import { useBoardHome, useRememberHomeView } from './boardHome';
 import { isTabRoute } from './splitRoutes';
-import { HIDDEN_TAB_ROUTES, PAGES, TAB_BAR_PAGES, activeTabOf, chatsTabOpensNewChat } from './pages';
+import { HIDDEN_TAB_ROUTES, PAGES, TAB_BAR_PAGES, activeTabOf } from './pages';
+import { chatsTabOpensNewChat, homeTabPresentation } from './WebTabRail.model';
 import { routeRendersPage } from './pageRenderer';
 import { Column } from '../layout';
 
 function HoistedTopnav(): React.ReactElement {
-  return <HomeTopnav view={useBoardHome() ? 'board' : 'chats'} pane={false} />;
+  const board = useBoardHome();
+  if (usePathname() === PAGES.contacts.href) return <Topnav left={<Text text={PAGES.contacts.label} size="xl" fontWeight="semibold" />} />;
+  return <HomeTopnav view={board ? 'board' : 'chats'} pane={false} />;
 }
 
 function PagerOverlay({
@@ -41,13 +46,18 @@ function PagerOverlay({
   );
 }
 
-function useChatsTabListeners(pathname: string): { tabPress: (e: { preventDefault: () => void }) => void } {
+function useHomeTabListeners(pathname: string, board: boolean): { tabPress: (e: { preventDefault: () => void }) => void } {
+  const router = useRouter();
   const openNewChat = useOpenNewChat();
   return {
     tabPress: (e) => {
-      if (!chatsTabOpensNewChat(pathname, false)) return;
-      e.preventDefault();
-      openNewChat();
+      if (chatsTabOpensNewChat(pathname, false, board)) {
+        e.preventDefault();
+        openNewChat();
+      } else if (board) {
+        e.preventDefault();
+        router.navigate(PAGES.board.href);
+      }
     },
   };
 }
@@ -72,8 +82,10 @@ export function TabsShell(): React.ReactElement {
   const insets = useSafeAreaInsets();
   const pal = usePalette();
   const gate = useAccountGate();
-  const chatsTabListeners = useChatsTabListeners(pathname);
-  const activeTab = activeTabOf(pathname, useBoardHome());
+  const board = useBoardHome();
+  const home = homeTabPresentation(board);
+  const homeTabListeners = useHomeTabListeners(pathname, board);
+  const activeTab = activeTabOf(pathname);
   const onTab = isTabRoute(pathname);
   useRememberHomeView();
 
@@ -102,12 +114,12 @@ export function TabsShell(): React.ReactElement {
           <Tabs.Screen
             key={page.tabRoute}
             name={page.tabRoute}
-            listeners={page.id === 'chats' ? chatsTabListeners : undefined}
+            listeners={page.id === 'chats' ? homeTabListeners : undefined}
             options={{
-              tabBarAccessibilityLabel: page.label,
+              tabBarAccessibilityLabel: page.id === 'chats' ? home.label : page.label,
               tabBarIcon: ({ focused }) => (
                 <TabIcon
-                  icon={appIcon(page.icon)}
+                  icon={appIcon(page.id === 'chats' ? home.icon : page.icon)}
                   active={onTab ? activeTab === page.id : focused}
                   badge={page.id === 'chats' ? unreadBadge : undefined}
                 />

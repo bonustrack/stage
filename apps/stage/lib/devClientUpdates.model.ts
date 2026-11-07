@@ -72,13 +72,31 @@ export function previewFromStatus(value: unknown): { gitHash: string; url: strin
   const data = record(value);
   if (typeof data.sha !== 'string' || !SHA.test(data.sha) || !Array.isArray(data.statuses))
     throw new Error('Could not verify the main commit.');
-  const preview = data.statuses.map(record).find((entry) => entry.context === 'Preview');
+  const preview = preferredPreviewStatus(data.statuses);
   if (preview?.state !== 'success' || typeof preview.target_url !== 'string')
     throw new Error('The main update is not published yet. Try again after its Preview check finishes.');
   const launcher = new URL(preview.target_url);
   if (launcher.origin !== BUNDLER_ORIGIN || launcher.pathname !== PREVIEW_LAUNCHER_PATH)
     throw new Error('The main preview link is not a Stage launcher.');
   return { gitHash: data.sha, url: immutablePreviewUrl(launcher.searchParams.get('u') ?? '') };
+}
+
+function preferredPreviewStatus(statuses: unknown[]): Record<string, unknown> | undefined {
+  const entries = statuses.map(record);
+  return entries.find((entry) => entry.context === 'Main preview') ?? entries.find((entry) => entry.context === 'Preview');
+}
+
+export function previewHistoryUrl(gitHash: string, page: number): string {
+  if (!SHA.test(gitHash)) throw new Error('Invalid main update commit.');
+  return `${STATUS_URL}/${gitHash}/statuses?per_page=100&page=${page}`;
+}
+
+export function previewsFromHistory(value: unknown, gitHash: string): { gitHash: string; url: string }[] {
+  if (!Array.isArray(value)) throw new Error('Could not verify the main preview history. Nothing was loaded.');
+  return value
+    .map(record)
+    .filter((entry) => (entry.context === 'Main preview' || entry.context === 'Preview') && entry.state === 'success')
+    .map((entry) => previewFromStatus({ sha: gitHash, statuses: [entry] }));
 }
 
 function immutablePreviewUrl(url: string): string {

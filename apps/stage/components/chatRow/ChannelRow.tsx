@@ -6,7 +6,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Avatar } from '../Avatar';
-import { channelRowModel, type ChannelRowParams } from './ChannelRow.model';
+import { channelRowModel, WRAPPED_TITLE_LINE_HEIGHT, type ChannelRowParams } from './ChannelRow.model';
 import { menuPointOf } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { MarkedNode } from '../keys/keys.model';
@@ -22,6 +22,7 @@ import { Column, Row, PAGE_GUTTER } from '../layout';
 
 interface ChannelRowProps {
   title: string;
+  titleContent?: React.ReactNode;
   placeholderTitle?: boolean;
   avatarAddress?: string | null;
   avatarUri?: string | null;
@@ -53,7 +54,6 @@ const CHANNEL_ROW_HEIGHT = 67;
 const AVATAR_SIZE = 44;
 const ROW_PADDING_Y = 9;
 const TITLE_LINE_HEIGHT = 24;
-const WRAPPED_TITLE_LINE_HEIGHT = 22;
 const PREVIEW_LINE_HEIGHT = 18;
 const LINE_GAP = 2;
 const PIN_ICON_SIZE = 16;
@@ -125,15 +125,17 @@ function TitleRow({
   scheme,
   wrap,
   trailing,
+  titleContent,
 }: {
   params: ChannelRowParams;
   scheme: Scheme;
   wrap: boolean;
   trailing: React.ReactNode;
+  titleContent?: React.ReactNode;
 }): React.ReactElement {
   return (
     <Row align={wrap ? 'start' : 'center'} gap={12} height={wrap ? undefined : TITLE_LINE_HEIGHT}>
-      <TitleLine params={params} scheme={scheme} wrap={wrap} />
+      {titleContent ?? <TitleLine params={params} scheme={scheme} wrap={wrap} />}
       {params.timestamp === '' ? null : (
         <Row align="center" height={wrap ? WRAPPED_TITLE_LINE_HEIGHT : TITLE_LINE_HEIGHT}>
           <Text text={params.timestamp} size={params.timestampSize} color="secondary" />
@@ -168,17 +170,25 @@ function ChannelRowBody({
   trailing,
   wrapTitle,
   previewLines,
+  titleContent,
 }: {
   params: ChannelRowParams;
   trailing: React.ReactNode;
   wrapTitle: boolean;
   previewLines?: number;
+  titleContent?: React.ReactNode;
 }): React.ReactElement {
   const scheme = useKitScheme();
   const hasPrefix = params.previewPrefix !== undefined && params.previewPrefix !== '';
   return (
-    <Column gap={LINE_GAP} weight={1}>
-      <TitleRow params={params} scheme={scheme} wrap={wrapTitle} trailing={params.showPreview ? null : trailing} />
+    <Column gap={LINE_GAP} weight={params.showPreview ? 1 : undefined}>
+      <TitleRow
+        params={params}
+        scheme={scheme}
+        wrap={wrapTitle}
+        trailing={params.showPreview ? null : trailing}
+        titleContent={titleContent}
+      />
       {params.showPreview ? (
         <Row align="start" gap={12}>
           <PreviewParagraph params={params} hasPrefix={hasPrefix} lines={previewLines} />
@@ -225,6 +235,7 @@ function ChannelRowBase(p: ChannelRowProps): React.ReactElement {
           <ChannelRowBody
             params={params}
             wrapTitle={p.wrapTitle ?? false}
+            titleContent={p.titleContent}
             previewLines={p.previewLines}
             trailing={<TrailingBadge unreadCount={p.unreadCount ?? 0} markedUnread={p.markedUnread} />}
           />

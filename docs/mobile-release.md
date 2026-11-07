@@ -35,6 +35,8 @@ Both workflows check the downloaded APK with `bun scripts/verify-apk.mjs <file.a
 
 The dev client loads a branch preview from `https://bundler.stage.box/<branch>`, for example `/main` or `/feat/foo` (`/feat%2Ffoo` works too). Each branch publishes to its own EAS channel, named by `channelKey()` in `packages/client/src/endpoints.ts`. The preview workflow (`scripts/pr-preview/channel-key.mjs`) and the bundler Worker share that function.
 
+Settings, Load main update verifies the installed runtime and pins the compatible main manifest to an immutable update group. Main pushes also publish a `Main preview` commit status, which other branches cannot overwrite through their normal `Preview` status. For older publications sharing a commit with another branch, discovery checks up to three status-history pages and ten distinct immutable groups. It accepts only the exact compatible update ID, source commit and runtime, and otherwise loads nothing. When latest main needs a different runtime, install its matching development APK over the existing app without uninstalling or clearing data; an older compatible OTA cannot add the new native runtime.
+
 Version codes and build numbers are managed by EAS (`appVersionSource: remote`, `autoIncrement: true`), so nothing needs bumping besides `version`.
 
 The public client id the JavaScript bundle needs (`EXPO_PUBLIC_ZERODEV_PROJECT_ID`) lives in the `base` profile of `apps/stage/eas.json`, because EAS cloud builds bundle on Expo's servers where repo secrets and the gitignored `.env` do not exist. It is inlined into every shipped bundle anyway, so it is not secret. Without it a store build has no wallet configuration.

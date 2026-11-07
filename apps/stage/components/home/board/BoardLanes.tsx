@@ -7,7 +7,8 @@ import { List } from '@stage-labs/kit/react-native/list';
 import { SortableHandle, SortableItem, SortableList, SortableScope } from '@stage-labs/kit/react-native/sortable';
 import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { CountTag } from '../../CountTag';
-import { NewChatAction } from '../NewChatAction';
+import { useAccountEpoch } from '../../../lib/accountEpoch';
+import { BoardNewChannel, NewChannelButton } from './BoardNewChannel';
 import type { CachedRow } from '../../../lib/cachedRows.model';
 import { prefetchFeed } from '../../../lib/feed/load';
 import { useSafeAreaInsets } from '../../layout/safeArea';
@@ -28,7 +29,7 @@ import { revealMarked, useArrowKeys } from '../../keys/keys';
 import { ALL_ARROWS } from '../../keys/keys.model';
 import { boardArrowMove } from './boardKeys.model';
 import { AddColumn, ColumnFrame, ColumnMenu, ColumnTitle, HEADER_PADDING, RenameHeading, SHRINK } from './BoardColumnEdit';
-import { ColumnCards, cardDataSet, showInPanel } from './BoardCard';
+import { cardDataSet, showInPanel } from './BoardCard';
 import { Column, Row, LIST_TOP_GAP, PAGE_GUTTER, SELF_SCROLLBAR } from '../../layout';
 
 const GROW = { flexGrow: 1, flexShrink: 1 };
@@ -44,9 +45,40 @@ export interface ColumnActions {
   remove: (label: string) => void;
   create: (name: string) => void;
 }
+function ColumnHeader({
+  label,
+  count,
+  editable,
+  onRename,
+  onDelete,
+  onNewChannel,
+}: {
+  label: string;
+  count: number;
+  editable: boolean;
+  onRename: () => void;
+  onDelete: () => void;
+  onNewChannel: () => void;
+}): React.ReactElement {
+  return (
+    <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
+      <SortableHandle style={GROW}>
+        <Row align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
+          <ColumnTitle label={label} onPress={editable ? onRename : undefined} />
+          <CountTag count={count} />
+          <Column weight={1} />
+        </Row>
+      </SortableHandle>
+      {editable ? <ColumnMenu onDelete={onDelete} /> : null}
+      <NewChannelButton title={label} onPress={onNewChannel} />
+    </Row>
+  );
+}
+
 function BoardColumnView({
   column,
   columns,
+  rowIds,
   maxHeight,
   pinned,
   actions,
@@ -54,6 +86,7 @@ function BoardColumnView({
 }: {
   column: BoardColumn<CachedRow>;
   columns: readonly BoardColumn<CachedRow>[];
+  rowIds: ReadonlySet<string>;
   maxHeight?: DimensionValue;
   pinned: readonly string[];
   actions: ColumnActions;
@@ -63,6 +96,8 @@ function BoardColumnView({
   const { columnBy } = useHomeView();
   const editable = actions.editable && columnEditable(column.key);
   const [editing, setEditing] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const epoch = useAccountEpoch();
   const heading = editing ? (
     <RenameHeading
       label={label}
@@ -74,38 +109,26 @@ function BoardColumnView({
       }}
     />
   ) : (
-    <Row align="center" gap={8} padding={{ right: HEADER_PADDING.right }}>
-      <SortableHandle style={GROW}>
-        <Row align="center" gap={8} padding={{ left: HEADER_PADDING.left, y: HEADER_PADDING.y }}>
-          <ColumnTitle
-            label={label}
-            onPress={
-              editable
-                ? () => {
-                    setEditing(true);
-                  }
-                : undefined
-            }
-          />
-          <CountTag count={column.rows.length} />
-          <Column weight={1} />
-        </Row>
-      </SortableHandle>
-      {editable ? (
-        <ColumnMenu
-          onDelete={() => {
-            actions.remove(label);
-          }}
-        />
-      ) : null}
-      <NewChatAction by={columnBy} groupKey={column.key} title={label} />
-    </Row>
+    <ColumnHeader
+      label={label}
+      count={column.rows.length}
+      editable={editable}
+      onRename={() => {
+        setEditing(true);
+      }}
+      onDelete={() => {
+        actions.remove(label);
+      }}
+      onNewChannel={() => {
+        setDrafting(true);
+      }}
+    />
   );
   return (
     <SortableItem
       itemId={column.key}
       handle
-      disabled={editing || !columnMovable(column.key)}
+      disabled={editing || drafting || !columnMovable(column.key)}
       style={maxHeight === undefined ? undefined : { maxHeight }}
     >
       <SortableList
@@ -113,6 +136,7 @@ function BoardColumnView({
         group="cards"
         itemIds={column.rows.map((row) => row.convId)}
         keyboard={false}
+        disabled={drafting}
         style={SHRINK}
         accepts={acceptsCardMove}
         placeAt={actions.placeCard}
@@ -123,7 +147,20 @@ function BoardColumnView({
         {({ over, placeholder }) => (
           <ColumnFrame over={over} shrink>
             {heading}
-            <ColumnCards column={column} pinned={pinned} editable={actions.editable} placeholder={placeholder} onOpen={onOpen} />
+            <BoardNewChannel
+              key={epoch}
+              by={columnBy}
+              column={column}
+              rowIds={rowIds}
+              drafting={drafting}
+              pinned={pinned}
+              editable={actions.editable}
+              placeholder={placeholder}
+              onOpen={onOpen}
+              onClose={() => {
+                setDrafting(false);
+              }}
+            />
           </ColumnFrame>
         )}
       </SortableList>
@@ -157,12 +194,14 @@ function useCardArrows({
 
 function LaneColumns({
   columns,
+  rowIds,
   pinned,
   laneHeight,
   actions,
   onOpen,
 }: {
   columns: BoardColumn<CachedRow>[];
+  rowIds: ReadonlySet<string>;
   pinned: readonly string[];
   laneHeight: number;
   actions: ColumnActions;
@@ -188,6 +227,7 @@ function LaneColumns({
           key={column.key}
           column={column}
           columns={columns}
+          rowIds={rowIds}
           pinned={pinned}
           maxHeight={columnMaxHeight(laneHeight)}
           actions={actions}
@@ -200,10 +240,12 @@ function LaneColumns({
 
 export function BoardLanes({
   columns,
+  rowIds,
   pinned,
   actions,
 }: {
   columns: BoardColumn<CachedRow>[];
+  rowIds: ReadonlySet<string>;
   pinned: readonly string[];
   actions: ColumnActions;
 }): React.ReactElement {
@@ -258,7 +300,7 @@ export function BoardLanes({
         scrollEventThrottle={16}
         onContentSizeChange={revealEnd}
       >
-        <LaneColumns columns={columns} pinned={pinned} laneHeight={laneHeight} actions={actions} onOpen={setOpenedFrom} />
+        <LaneColumns columns={columns} rowIds={rowIds} pinned={pinned} laneHeight={laneHeight} actions={actions} onOpen={setOpenedFrom} />
         {actions.editable ? (
           <AddColumn
             columns={columns}

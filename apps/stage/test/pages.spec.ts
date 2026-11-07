@@ -8,50 +8,54 @@ import {
   isRestorableRoute,
   newChatHref,
   rendererOf,
+  shownPagerPage,
   PAGES,
 } from '../components/tabs/pages';
 
 describe('the tab bar and the pager', () => {
-  test('the tab bar shows Chats, Contacts and Wallet, the pager swipes Chats, Board, Wallet and Settings', () => {
+  test('the tab bar shows Chats, Contacts and Wallet, the pager swipes Chats, Contacts, Wallet and Settings', () => {
     expect(TAB_BAR_PAGES.map((page) => page.tabRoute)).toEqual(['index', 'contacts', 'wallet']);
     expect(TAB_BAR_PAGES.map((page) => page.label)).toEqual(['Chats', 'Contacts', 'Wallet']);
     expect(HIDDEN_TAB_ROUTES).toEqual(['board', 'settings']);
-    expect(PAGER_ORDER).toEqual(['chats', 'board', 'wallet', 'settings']);
+    expect(PAGER_ORDER).toEqual(['chats', 'contacts', 'wallet', 'settings']);
   });
 
-  test('the pager shows the page of the route, Settings under a menu page and Chats elsewhere', () => {
-    expect(homeTabIndex('/', false)).toBe(0);
-    expect(homeTabIndex('/', true)).toBe(1);
-    expect(homeTabIndex('/board', false)).toBe(1);
-    expect(homeTabIndex('/wallet/send', false)).toBe(2);
-    expect(homeTabIndex('/settings/display', false)).toBe(3);
-    expect(homeTabIndex('/dashboard', false)).toBe(3);
-    expect(homeTabIndex('/contacts', false)).toBe(3);
-    expect(homeTabIndex('/channel/abc', true)).toBe(1);
-    expect(homeTabIndex('/boorger', false)).toBe(0);
+  test('the pager shows the slot of the route: Board shares the home slot, Settings under a menu page, home elsewhere', () => {
+    expect(homeTabIndex('/')).toBe(0);
+    expect(homeTabIndex('/board')).toBe(0);
+    expect(homeTabIndex('/contacts')).toBe(1);
+    expect(homeTabIndex('/wallet/send')).toBe(2);
+    expect(homeTabIndex('/settings/display')).toBe(3);
+    expect(homeTabIndex('/dashboard')).toBe(3);
+    expect(homeTabIndex('/channel/abc')).toBe(0);
+    expect(homeTabIndex('/boorger')).toBe(0);
+    expect(shownPagerPage('/', true)).toBe('board');
+    expect(shownPagerPage('/channel/abc', true)).toBe('board');
+    expect(shownPagerPage('/', false)).toBe('chats');
   });
 
   test('a chat with a person whose name starts like a page stays on Chats', () => {
-    expect(homeTabIndex('/walletfan', false)).toBe(0);
-    expect(activeTabOf('/walletfan', false)).toBe('chats');
-    expect(activeTabOf('/settingsfan', false)).toBe('chats');
+    expect(homeTabIndex('/walletfan')).toBe(0);
+    expect(activeTabOf('/walletfan')).toBe('chats');
+    expect(activeTabOf('/settingsfan')).toBe('chats');
   });
 
   test('lights the tab of the page, Chats for the board, none for Settings and the developer pages', () => {
-    expect(activeTabOf('/', false)).toBe('chats');
-    expect(activeTabOf('/board', false)).toBe('chats');
-    expect(activeTabOf('/channel/abc', true)).toBe('chats');
-    expect(activeTabOf('/wallet', false)).toBe('wallet');
-    expect(activeTabOf('/contacts', false)).toBe('contacts');
-    expect(activeTabOf('/settings', false)).toBeNull();
-    expect(activeTabOf('/inbox/mail', false)).toBeNull();
+    expect(activeTabOf('/')).toBe('chats');
+    expect(activeTabOf('/board')).toBe('chats');
+    expect(activeTabOf('/channel/abc')).toBe('chats');
+    expect(activeTabOf('/wallet')).toBe('wallet');
+    expect(activeTabOf('/contacts')).toBe('contacts');
+    expect(activeTabOf('/settings')).toBeNull();
+    expect(activeTabOf('/inbox/mail')).toBeNull();
   });
 
-  test('Settings renders in the pager natively and by its route on the web', () => {
+  test('Settings and Contacts render in the pager natively and by their route on the web', () => {
     expect(rendererOf(PAGES.settings, false)).toBe('pager');
     expect(rendererOf(PAGES.settings, true)).toBe('route');
+    expect(rendererOf(PAGES.contacts, false)).toBe('pager');
+    expect(rendererOf(PAGES.contacts, true)).toBe('route');
     expect(rendererOf(PAGES.wallet, true)).toBe('pager');
-    expect(rendererOf(PAGES.contacts, false)).toBe('route');
   });
 });
 

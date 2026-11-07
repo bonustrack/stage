@@ -105,10 +105,12 @@ export function NewChatProject({
   value,
   onChange,
   flush,
+  children,
 }: {
   value: string | null;
   onChange: (next: string | null) => void;
   flush?: boolean;
+  children?: React.ReactNode;
 }): React.ReactElement {
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
   const pick = (next: string | null): void => {
@@ -117,8 +119,9 @@ export function NewChatProject({
   };
   return (
     <>
-      <Row padding={{ left: flush === true ? 0 : PAGE_GUTTER - TEXT_INSET }}>
+      <Row wrap align="center" gap={8} padding={{ left: flush === true ? 0 : PAGE_GUTTER - TEXT_INSET }}>
         <ProjectButton value={value} onPress={setAnchor} />
+        {children}
       </Row>
       {anchor === null ? null : (
         <AnchoredMenu

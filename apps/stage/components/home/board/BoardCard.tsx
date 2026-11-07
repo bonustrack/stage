@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'expo-router';
-import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
 import { List } from '@stage-labs/kit/react-native/list';
 import { SortableItem } from '@stage-labs/kit/react-native/sortable';
 import { ChannelRow } from '../../chatRow/ChannelRow';
@@ -9,7 +8,6 @@ import { useChannelFields } from '../../../lib/channelFields';
 import type { CachedRow } from '../../../lib/cachedRows.model';
 import { getDraft } from '../../../lib/drafts';
 import { conversationLinkOf } from '../../../lib/links';
-import { usePalette } from '../../../lib/theme';
 import { capabilities } from '../../../lib/capabilities';
 import { useWebTabRail } from '../../layout/webLayout';
 import { channelRouteConvId } from '../../tabs/splitRoutes';
@@ -17,7 +15,9 @@ import { PAGES } from '../../tabs/pages';
 import { boardCardPress, cardsRightPadding, type BoardColumn } from './BoardScreen.model';
 import type { MarkedNode } from '../../keys/keys.model';
 import { CARD_GAP, COLUMN_PADDING } from './BoardColumnEdit';
-import { Column, GUTTER_SCROLLBAR, gutterScrollbarWidth } from '../../layout';
+import { BoardCardFrame } from './BoardCardFrame';
+import { boardCardShowsPreview } from './BoardCard.model';
+import { GUTTER_SCROLLBAR, gutterScrollbarWidth } from '../../layout';
 
 export const cardDataSet = (columnKey: string, convId: string): MarkedNode => ({ dataSet: { boardcard: convId, boardcolumn: columnKey } });
 
@@ -43,7 +43,6 @@ function BoardCard({
   const router = useRouter();
   const pathname = usePathname();
   const panel = useWebTabRail();
-  const { bg, link } = usePalette();
   const openConvId = channelRouteConvId(pathname);
   const draftText = getDraft(item.convId);
   const fields = useChannelFields('board');
@@ -51,14 +50,10 @@ function BoardCard({
   const openMenu = rowMenuOpener(item.convId, setMenu);
   return (
     <SortableItem itemId={item.convId} disabled={!editable} onHold={openMenu}>
-      <Column
-        {...cardDataSet(columnKey, item.convId)}
-        surface="surface"
-        radius={BLOCK_RADIUS_DEFAULT}
-        style={{ overflow: 'hidden', borderWidth: 1, borderColor: (panel && openConvId === item.convId) || menu !== null ? link : bg }}
-      >
+      <BoardCardFrame mark={cardDataSet(columnKey, item.convId)} selected={(panel && openConvId === item.convId) || menu !== null}>
         <ChannelRow
           {...chatRowProps(item, { pinned, fields, draftText })}
+          showPreview={boardCardShowsPreview(fields.lastMessage, item.lastPreview, draftText)}
           wrapTitle
           onPress={() => {
             if (!panel) {
@@ -82,33 +77,32 @@ function BoardCard({
             setMenu(null);
           }}
         />
-      </Column>
+      </BoardCardFrame>
     </SortableItem>
   );
 }
 
-export function ColumnCards({
-  column,
-  pinned,
-  editable,
-  placeholder,
-  onOpen,
-}: {
+export interface ColumnCardsProps {
   column: BoardColumn<CachedRow>;
   pinned: readonly string[];
   editable: boolean;
   placeholder: React.ReactNode;
   onOpen: (key: string) => void;
-}): React.ReactElement | null {
-  if (column.rows.length === 0 && placeholder === null) return null;
+  leading?: React.ReactNode;
+}
+
+export function ColumnCards({ column, pinned, editable, placeholder, onOpen, leading }: ColumnCardsProps): React.ReactElement | null {
+  if (column.rows.length === 0 && placeholder === null && leading === undefined) return null;
   return (
     <List
       {...GUTTER_SCROLLBAR}
       gap={CARD_GAP}
+      keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
       style={{ flexGrow: 0, flexShrink: 1 }}
       contentContainerStyle={{ paddingRight: cardsRightPadding(COLUMN_PADDING, gutterScrollbarWidth()) }}
     >
+      {leading}
       {column.rows.map((item) => (
         <BoardCard
           key={item.convId}

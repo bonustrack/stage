@@ -14,7 +14,8 @@ import { requestNewChatFocus, useOpenNewChat } from '../newChat/newChatFocus';
 import { useBoardHome } from './boardHome';
 import { railMenuPages, isMenuPageOpen, isMenuPageRoute } from './menuPages';
 import { isTabRoute } from './splitRoutes';
-import { TAB_BAR_PAGES, activeTabOf, chatsTabOpensNewChat } from './pages';
+import { PAGES, TAB_BAR_PAGES, activeTabOf } from './pages';
+import { chatsTabOpensNewChat, homeTabPresentation } from './WebTabRail.model';
 import { useDeveloperMode } from '../../lib/developerMode';
 import { Column, Row, pinnedEdges } from '../layout';
 
@@ -37,30 +38,33 @@ function TabButtons({ pathname, vertical }: { pathname: string; vertical: boolea
   const navigate = useRailNavigate(pathname);
   const unreadBadge = useChatsTabBadge();
   const openNewChat = useOpenNewChat();
-  const activeTab = activeTabOf(pathname, useBoardHome());
+  const boardHome = useBoardHome();
+  const home = homeTabPresentation(boardHome);
+  const activeTab = activeTabOf(pathname);
   return (
     <>
       {TAB_BAR_PAGES.map((page) => {
         const chats = page.id === 'chats';
         const active = page.id === activeTab;
-        const icn = <HoverTabIcon icon={appIcon(page.icon)} active={active} badge={chats ? unreadBadge : undefined} />;
+        const label = chats ? home.label : page.label;
+        const icn = <HoverTabIcon icon={appIcon(chats ? home.icon : page.icon)} active={active} badge={chats ? unreadBadge : undefined} />;
         const go = (): void => {
-          if (chats && chatsTabOpensNewChat(pathname, vertical)) {
+          if (chats && chatsTabOpensNewChat(pathname, vertical, boardHome)) {
             openNewChat();
             return;
           }
-          if (chats) requestNewChatFocus();
-          navigate(page.href);
+          if (chats && home.href === PAGES.chats.href) requestNewChatFocus();
+          navigate(chats ? home.href : page.href);
         };
         return vertical ? (
-          <RailTooltip key={page.id} label={page.label} onPress={go} placement="beside" style={RAIL_BUTTON}>
+          <RailTooltip key={page.id} label={label} onPress={go} placement="beside" style={RAIL_BUTTON}>
             {icn}
           </RailTooltip>
         ) : (
           <Pressable
             key={page.id}
             accessibilityRole="button"
-            accessibilityLabel={page.label}
+            accessibilityLabel={label}
             accessibilityState={{ selected: active }}
             onPress={go}
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}

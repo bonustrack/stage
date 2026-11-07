@@ -4,20 +4,19 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import type { GestureType } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming, runOnJS } from 'react-native-reanimated';
 import { usePathname, useRouter } from 'expo-router';
-import { useBoardHome } from './boardHome';
+import { homeRoute, useBoardHome } from './boardHome';
 import { PAGER_SCREENS } from './pagerScreens';
-import { PAGER_ORDER, PAGES, homeTabIndex } from './pages';
+import { PAGER_ORDER, PAGES, homeTabIndex, isHomeSlot, slotPage } from './pages';
+import { swipedTabIndex } from './TabsPager.model';
 import { Column } from '../layout';
-
-const SWITCH_FRACTION = 0.2;
-const FLING_VELOCITY = 450;
 
 export function TabsPager(): React.ReactElement {
   const router = useRouter();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
 
-  const routeIndex = homeTabIndex(pathname, useBoardHome());
+  const boardHome = useBoardHome();
+  const routeIndex = homeTabIndex(pathname);
 
   const panRef = useRef<GestureType | undefined>(undefined);
 
@@ -28,7 +27,7 @@ export function TabsPager(): React.ReactElement {
 
   const navigate = (i: number): void => {
     const id = PAGER_ORDER[i];
-    if (id) router.navigate(PAGES[id].href);
+    if (id) router.navigate(isHomeSlot(id) ? homeRoute() : PAGES[id].href);
   };
 
   useEffect(() => {
@@ -52,7 +51,7 @@ export function TabsPager(): React.ReactElement {
 
   const pan = Gesture.Pan()
     .withRef(panRef)
-    .enabled(PAGER_ORDER[routeIndex] !== 'board')
+    .enabled(slotPage(PAGER_ORDER[routeIndex] ?? 'chats', boardHome) !== 'board')
     .activeOffsetX([-10, 10])
     .failOffsetY([-14, 14])
     .onUpdate((e) => {
@@ -65,13 +64,7 @@ export function TabsPager(): React.ReactElement {
     })
     .onEnd((e) => {
       'worklet';
-      const passed = Math.abs(e.translationX) > width * SWITCH_FRACTION;
-      const flung = Math.abs(e.velocityX) > FLING_VELOCITY;
-      let target = index.value;
-      if (passed || flung) {
-        if (e.translationX < 0 && index.value < PAGER_ORDER.length - 1) target = index.value + 1;
-        else if (e.translationX > 0 && index.value > 0) target = index.value - 1;
-      }
+      const target = swipedTabIndex(index.value, width, e.translationX, e.velocityX);
       index.value = target;
       tx.value = withSpring(-target * width, { damping: 22, stiffness: 240, velocity: e.velocityX });
       if (target !== routeIndex) {
@@ -92,7 +85,7 @@ export function TabsPager(): React.ReactElement {
       <GestureDetector gesture={pan}>
         <Animated.View style={stripStyle}>
           {PAGER_ORDER.map((id) => {
-            const Body = PAGER_SCREENS[id];
+            const Body = PAGER_SCREENS[slotPage(id, boardHome)];
             return (
               <Column width={width} key={id} style={{ height: '100%' }}>
                 <Body panRef={panRef} />

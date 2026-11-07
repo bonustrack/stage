@@ -32,6 +32,13 @@ export function useHomeViewOf(view: HomeView): HomeViewContent {
 
 export const useHomeViewLoaded = homeView.useLoaded;
 
+let viewRevision = 0;
+
 export function setHomeView(edit: HomeViewEdit): void {
-  void homeView.editStored((current) => editHomeView(current, edit, Date.now()), syncsHomeView(edit)).catch(reported('homeView.save'));
+  const revision = edit.view === undefined ? viewRevision : ++viewRevision;
+  const latest = (current: HomeViewContent): HomeViewEdit =>
+    edit.view === undefined || revision === viewRevision ? edit : { ...edit, view: current.view };
+  void homeView
+    .editStored((current) => editHomeView(current, latest(current), Date.now()), syncsHomeView(edit))
+    .catch(reported('homeView.save'));
 }

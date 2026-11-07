@@ -172,7 +172,7 @@ jobs:
               'https://bundler.stage.box/preview-launcher.html?u=' + encodeURIComponent(manifest);
             const shortSha = `${{ steps.update.outputs.short_sha }}`;
             const description = `Open dev-client preview ${shortSha} (matching runtime APK required)`;
-            await github.rest.repos.createCommitStatus({
+            const status = {
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha: context.sha,
@@ -180,7 +180,11 @@ jobs:
               context: 'Preview',
               target_url: target,
               description,
-            });
+            };
+            await github.rest.repos.createCommitStatus(status);
+            if (context.ref === 'refs/heads/main') {
+              await github.rest.repos.createCommitStatus({ ...status, context: 'Main preview' });
+            }
 
   cleanup:
     if: github.event_name == 'delete' && github.event.ref_type == 'branch'

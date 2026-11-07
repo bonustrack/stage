@@ -38,14 +38,14 @@ export const PAGES = {
     restore: false,
     home: 'chats',
   },
-  board: { href: '/board', label: 'Board', tabRoute: 'board', render: IN_PAGER, split: 'rail', home: 'board' },
+  board: { href: '/board', label: 'Board', icon: 'IconColumns3Wide', tabRoute: 'board', render: IN_PAGER, split: 'rail', home: 'board' },
   contacts: {
     href: '/contacts',
     label: 'Contacts',
     icon: 'IconGroup1',
     tabRoute: 'contacts',
     tabBar: true,
-    render: BY_ROUTE,
+    render: { native: 'pager', web: 'route' },
     split: 'pane',
     menu: { devOnly: false },
   },
@@ -153,25 +153,49 @@ export const HIDDEN_TAB_ROUTES: readonly TabRoute[] = PAGE_LIST.flatMap((page) =
   page.tabRoute === undefined || page.tabBar === true ? [] : [page.tabRoute],
 );
 
-export const PAGER_ORDER: readonly PagerPageId[] = PAGE_LIST.filter(isPagerPage).map((page) => page.id);
+const PAGER_PAGES = PAGE_LIST.filter(isPagerPage);
 
-function pagerPageAt(pathname: string, boardHome: boolean): PagerPageId {
+const HOME_SLOT = PAGER_PAGES.find((page) => page.home !== undefined)?.id ?? 'chats';
+
+export const PAGER_ORDER: readonly PagerPageId[] = PAGER_PAGES.filter((page) => page.home === undefined || page.id === HOME_SLOT).map(
+  (page) => page.id,
+);
+
+function pagerSlotAt(pathname: string): PagerPageId {
   const page = pageAt(pathname);
-  const id = page !== undefined && isPagerPage(page) ? page.id : page?.menu !== undefined ? 'settings' : 'chats';
-  return id === 'chats' && boardHome ? 'board' : id;
+  if (page === undefined || page.home !== undefined) return HOME_SLOT;
+  if (isPagerPage(page)) return page.id;
+  return page.menu !== undefined ? 'settings' : HOME_SLOT;
 }
 
-export function homeTabIndex(pathname: string, boardHome: boolean): number {
-  return PAGER_ORDER.indexOf(pagerPageAt(pathname, boardHome));
+export function homeTabIndex(pathname: string): number {
+  return PAGER_ORDER.indexOf(pagerSlotAt(pathname));
 }
 
-export function activeTabOf(pathname: string, boardHome: boolean): PageId | null {
+export function isHomeSlot(slot: PagerPageId): boolean {
+  return slot === HOME_SLOT;
+}
+
+export function slotPage(slot: PagerPageId, boardHome: boolean): PagerPageId {
+  return isHomeSlot(slot) && boardHome ? 'board' : slot;
+}
+
+export function shownPagerPage(pathname: string, boardHome: boolean): PagerPageId {
+  return slotPage(pagerSlotAt(pathname), boardHome);
+}
+
+export function pagerShownAt(pathname: string, web: boolean): boolean {
+  const page = pageAt(pathname);
+  return page === undefined || rendererOf(page, web) === 'pager';
+}
+
+export function activeTabOf(pathname: string): PageId | null {
   const page = pageAt(pathname);
   if (page?.menu !== undefined) return page.tabBar === true ? page.id : null;
-  const id = pagerPageAt(pathname, boardHome);
-  const shown: PageEntry = PAGES[id];
+  const slot = pagerSlotAt(pathname);
+  const shown: PageEntry = PAGES[slot];
   if (shown.home !== undefined) return 'chats';
-  return shown.tabBar === true ? id : null;
+  return shown.tabBar === true ? slot : null;
 }
 
 function otherRouteAt(pathname: string): RouteEntry | undefined {
@@ -203,10 +227,6 @@ export function isRestorableRoute(path: string): boolean {
 
 export function isOnboardingRoute(pathname: string): boolean {
   return pathname === ROUTES.signup || pathname === ROUTES.import;
-}
-
-export function chatsTabOpensNewChat(pathname: string, wide: boolean): boolean {
-  return !wide && pathname === PAGES.chats.href;
 }
 
 export function newChatHref(wide: boolean, board: boolean): typeof PAGES.chats.href | typeof ROUTES.newChat {

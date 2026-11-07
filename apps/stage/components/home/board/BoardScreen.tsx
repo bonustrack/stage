@@ -32,6 +32,7 @@ function BoardBody(): React.ReactElement {
     return orderedColumns(boardColumns(rows ?? [], pinned, order, columnBy, peerLabel, hidden, sort, statusOrder), order);
   }, [rows, cleared, pinned, order, columnBy, profilesVersion, sort, statusOrder]);
   const shown = useMemo(() => searchedColumns(columns, matches), [columns, matches]);
+  const rowIds = useMemo(() => new Set((rows ?? []).map((row) => row.convId)), [rows]);
   if (error) return <HomeError error={error} dark={dark} fg={fg} />;
   if (!rows) return <HomeSpinner head={head} />;
   const actions: ColumnActions = {
@@ -53,7 +54,7 @@ function BoardBody(): React.ReactElement {
       if (columnsEditable(columnBy)) addBoardColumn(columns, order, name, columnBy);
     },
   };
-  return <BoardLanes key={columnBy} columns={shown} pinned={pinned} actions={actions} />;
+  return <BoardLanes key={columnBy} columns={shown} rowIds={rowIds} pinned={pinned} actions={actions} />;
 }
 function BoardFrame({ pane, children }: { pane: boolean; children: React.ReactNode }): React.ReactElement {
   const wide = useWebTabRail();

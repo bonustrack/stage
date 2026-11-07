@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { DEFAULT_HOME_VIEW, type HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
+import { DEFAULT_HOME_VIEW, homeViewSchema, type HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { collectSyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSettings.model';
 import { homeSortOf } from '../components/home/sort.model';
@@ -10,6 +10,7 @@ import { settle } from './helpers';
 selectAccount('alice');
 const { values } = mockAppStorage();
 const { homeViewSync, setHomeView } = await import('../lib/homeView');
+const { createValueStore } = await import('../lib/persistedStore');
 
 const view = (v: HomeViewContent['view'], groupBy: HomeViewContent['groupBy'], at: number): HomeViewContent => ({
   view: v,
@@ -130,6 +131,24 @@ describe('home view store', () => {
     expect(sent.at(-1)).toMatchObject({ view: 'chats', boardSort: { by: 'created', direction: 'asc' } });
     expect(stored('bob')).not.toHaveProperty('boardSort');
     stop();
+  });
+
+  test('a cold store restores both mode choices from durable account storage', async () => {
+    const coldStore = () => createValueStore({ key: 'home.view.', default: DEFAULT_HOME_VIEW, schema: homeViewSchema, perAccount: true });
+    for (const mode of ['board', 'chats'] as const) {
+      setHomeView({ view: mode });
+      await settle();
+      const reloaded = coldStore();
+      expect(reloaded.get().view).toBe('chats');
+      expect((await reloaded.load()).view).toBe(mode);
+    }
+  });
+
+  test('the latest mode intent supersedes an earlier pick that has not been saved yet', async () => {
+    setHomeView({ view: 'chats' });
+    setHomeView({ view: 'board' });
+    await settle();
+    expect(stored('alice')).toMatchObject({ view: 'board' });
   });
 
   test('a remote payload keeps the local view type of each account', async () => {
