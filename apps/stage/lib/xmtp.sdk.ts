@@ -180,7 +180,7 @@ function streamConsent(client: NativeClient, onChange: (convIds: string[]) => vo
   let live = true;
   void client.preferences
     .streamConsent((consent) => {
-      if (live) onChange([consent.value]);
+      if (live && consent.entryType === 'conversation_id') onChange([consent.value]);
       return Promise.resolve();
     })
     .catch(reported('xmtp.consentStream'));
