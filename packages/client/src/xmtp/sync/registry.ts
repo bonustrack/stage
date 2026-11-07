@@ -37,11 +37,14 @@ export function isSyncType(contentTypeId: string | undefined, kind?: SyncKind): 
   return SYNC_KIND_NAMES.some((name) => SYNC_KINDS[name].matches(contentTypeId));
 }
 
-const SCHEMAS: { readonly [K in SyncKind]: { schema: OutputSchema<SyncContents[K]> } } = SYNC_KINDS;
+export interface SyncCodec<T> extends JsonCodec<T> {
+  schema: OutputSchema<T>;
+}
 
-export function parseSyncState<K extends SyncKind>(kind: K, content: unknown): SyncContents[K] | null {
-  const parsed = SCHEMAS[kind].schema.safeParse(content);
-  return parsed.success ? parsed.data : null;
+const CODECS: { readonly [K in SyncKind]: SyncCodec<SyncContents[K]> } = SYNC_KINDS;
+
+export function syncCodecOf<K extends SyncKind>(kind: K): SyncCodec<SyncContents[K]> {
+  return CODECS[kind];
 }
 
 export interface SyncTrust {

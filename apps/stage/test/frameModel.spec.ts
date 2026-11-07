@@ -9,15 +9,8 @@ import {
   framePreviewCap,
   frameScreenTitle,
 } from '../components/frame/frame.model';
-import {
-  frameActionContent,
-  frameLocked,
-  frameNodeOf,
-  frameOf,
-  frameRenders,
-  isFrameActionEntry,
-  nodeRequestOf,
-} from '../lib/frames/frame.model';
+import { frameActionContent, frameLocked, frameNodeOf, frameOf, frameRenders, nodeRequestOf } from '../lib/frames/frame.model';
+import { isFrameActionEntry } from '@stage-labs/client/xmtp/entryPayload';
 import { frameKeysOf } from '../lib/frames/frameKeys';
 import { frameStackOf, makeFrameStacks, navigateFrame, withFrameNav, type FrameStacks } from '../lib/frames/frameStacks';
 import { isSplitRoute } from '../components/tabs/splitRoutes';

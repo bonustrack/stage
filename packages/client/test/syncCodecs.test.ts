@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { SYNC_CODECS } from '../src/xmtp/jsonCodecs';
 import { STAGE_JSON_CODECS } from '../src/xmtp/contentTypes';
-import { isSyncType, type SyncKind } from '../src/xmtp/sync/registry';
+import { isSyncType, syncCodecOf, type SyncKind } from '../src/xmtp/sync/registry';
 
 const WIRE: Record<SyncKind, { typeId: string; fallback: string; json: string }> = {
   read: {
@@ -55,7 +54,7 @@ const REGISTRY = [
 describe('device sync wire format', () => {
   for (const [kind, wire] of Object.entries(WIRE)) {
     test(`${kind} encodes to the same bytes as before and decodes old payloads`, () => {
-      const codec = SYNC_CODECS[kind as SyncKind];
+      const codec = syncCodecOf(kind as SyncKind);
       const old = new TextEncoder().encode(wire.json);
       const decoded = codec.decode({ content: old });
       expect(decoded).toEqual(JSON.parse(wire.json));

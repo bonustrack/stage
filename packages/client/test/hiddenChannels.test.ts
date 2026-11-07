@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { hiddenConsent, isHiddenChannel, mergeHiddenChannels, type HiddenChannels } from '../src/xmtp/sync/clear';
 import type { SyncMessage } from '../src/xmtp/sync/kind';
-import { collectSyncReplay, parseSyncState } from '../src/xmtp/sync/registry';
-import { SYNC_CODECS } from '../src/xmtp/jsonCodecs';
+import { collectSyncReplay, syncCodecOf } from '../src/xmtp/sync/registry';
+import { syncState } from './helpers';
 
 function message(hidden: HiddenChannels, sentNs: number, senderInboxId = 'owner'): SyncMessage {
   return { contentTypeId: 'stage.box/clearState:1.0', content: { cleared: {}, hidden }, sentNs, senderInboxId };
@@ -13,9 +13,9 @@ const trust = { inboxId: 'owner', nowMs: 1000 };
 describe('hidden channel sync', () => {
   test('the existing clear codec carries channel state without changing deleted DMs', () => {
     const content = { cleared: { peer: 10 }, hidden: state(true, 20) };
-    expect(SYNC_CODECS.clear.decode(SYNC_CODECS.clear.encode(content))).toEqual(content);
-    expect(parseSyncState('clear', { cleared: { peer: 10 } })).toEqual({ cleared: { peer: 10 } });
-    expect(parseSyncState('clear', { cleared: { peer: 10 }, hidden: { group: 'bad' } })?.cleared).toEqual({ peer: 10 });
+    expect(syncCodecOf('clear').decode(syncCodecOf('clear').encode(content))).toEqual(content);
+    expect(syncState('clear', { cleared: { peer: 10 } })).toEqual({ cleared: { peer: 10 } });
+    expect(syncState('clear', { cleared: { peer: 10 }, hidden: { group: 'bad' } })?.cleared).toEqual({ peer: 10 });
   });
 
   test('offline devices replay leave and restore in timestamp order, not arrival order', () => {

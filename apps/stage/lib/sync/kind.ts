@@ -1,5 +1,4 @@
-import { SYNC_CODECS } from '@stage-labs/client/xmtp/jsonCodecs';
-import type { SyncContents, SyncKind, SyncReplay } from '@stage-labs/client/xmtp/sync/registry';
+import { syncCodecOf, type SyncContents, type SyncKind, type SyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { sendSyncState, type SyncTarget } from './group';
 import type { SyncJob } from './publisher';
 import { SHARED_CURSOR, type SyncCursor } from './replay';
@@ -38,7 +37,7 @@ export interface AppSyncKind {
 }
 
 export function defineAppSyncKind<K extends SyncKind>(spec: KindSpec<K>): AppSyncKind {
-  const codec = SYNC_CODECS[spec.kind];
+  const codec = syncCodecOf(spec.kind);
   const publisher =
     (sink: SyncSink): Publish<SyncContents[K]> =>
     (job) => {

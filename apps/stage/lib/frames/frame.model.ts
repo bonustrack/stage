@@ -4,7 +4,7 @@ import { frameActionSchema, frameContentSchema, type FrameActionContent, type Fr
 import type { TransportMetadata } from '@stage-labs/kit/a2ui/client';
 import type { RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 import { a2uiSnapshot } from '@stage-labs/kit/a2ui/snapshot';
-import { frameFieldOf, isFrameActionEntry as hasFrameAction } from '@stage-labs/client/xmtp/entryPayload';
+import { frameFieldOf } from '@stage-labs/client/xmtp/entryPayload';
 
 export interface FrameOut {
   message: RendererMessage;
@@ -25,10 +25,6 @@ export function frameOf(entry: HistoryEntry | undefined): FrameContent | null {
   const result = parsed.success ? parsed.data : null;
   parsedFrames.set(frame, result);
   return result;
-}
-
-export function isFrameActionEntry(entry: HistoryEntry): boolean {
-  return hasFrameAction(entry);
 }
 
 export function filledText(value: string | undefined): string | undefined {

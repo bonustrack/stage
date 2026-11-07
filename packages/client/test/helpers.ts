@@ -1,6 +1,7 @@
 import type { HistoryEntry } from '../src/types';
 import { NO_TAGS, type AppDataGroup } from '../src/xmtp/channelMeta';
 import type { ChannelRow } from '../src/xmtp/channelsCache';
+import { syncCodecOf, type SyncContents, type SyncKind } from '../src/xmtp/sync/registry';
 
 export function entry(id: string, fields: Partial<HistoryEntry> = {}): HistoryEntry {
   return { id, ts: '2026-09-30T00:00:00.000Z', station: 'xmtp', line: 'stage://xmtp/c', from: 'u', to: 'c', ...fields };
@@ -52,4 +53,9 @@ export function appDataGroup(initial = '{}'): { group: AppDataGroup; raw: () => 
     raw: () => raw,
     writes: () => writes,
   };
+}
+
+export function syncState<K extends SyncKind>(kind: K, content: unknown): SyncContents[K] | null {
+  const parsed = syncCodecOf(kind).schema.safeParse(content);
+  return parsed.success ? parsed.data : null;
 }

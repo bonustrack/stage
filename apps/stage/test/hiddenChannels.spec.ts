@@ -3,7 +3,7 @@ import { collectSyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { XmtpConsent } from '../lib/xmtp.types';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { SYNC_CODECS } from '@stage-labs/client/xmtp/jsonCodecs';
+import { syncCodecOf } from '@stage-labs/client/xmtp/sync/registry';
 import { mockAppStorage } from './memoryStorage';
 
 let activeId = 'web';
@@ -501,10 +501,10 @@ describe('departed channels across devices', () => {
   test('a captured sync target cannot publish through another account after an await', async () => {
     const context = await accountClient();
     const target = await syncTarget(context, 'replay-group');
-    await sendSyncState(target, SYNC_CODECS.clear, { cleared: {} });
+    await sendSyncState(target, syncCodecOf('clear'), { cleared: {} });
     expect(sentTo).toEqual(['replay-group']);
     await switchAccount('other-account');
-    expect(() => sendSyncState(target, SYNC_CODECS.clear, { cleared: {} })).toThrow('Messaging account changed');
+    expect(() => sendSyncState(target, syncCodecOf('clear'), { cleared: {} })).toThrow('Messaging account changed');
     expect(sentTo).toEqual(['replay-group']);
   });
 });

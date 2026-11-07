@@ -11,8 +11,7 @@ import {
 } from './codecs';
 import { signatureRequestSchema, signatureReferenceSchema } from './sign.schema';
 import { walletSendCallsSchema, transactionReferenceSchema } from './tx.schema';
-import { SYNC_KINDS, type SyncContents, type SyncKind } from './sync/registry';
-import { jsonCodec, type JsonCodec } from './jsonCodec';
+import { jsonCodec } from './jsonCodec';
 import { FRAME_CONTENT_TYPE, FRAME_ACTION_CONTENT_TYPE, frameFallbackText, frameActionFallbackText } from './frame';
 import { frameContentSchema, frameActionSchema } from './frame.schema';
 import { STAGE_DELETE_CONTENT_TYPE, deleteMessageSchema } from './deleteMessage';
@@ -47,8 +46,6 @@ export const TRANSACTION_REFERENCE_CODEC = jsonCodec(
   transactionReferenceSchema,
   'xmtp.transactionReference',
 );
-
-export const SYNC_CODECS: { readonly [K in SyncKind]: JsonCodec<SyncContents[K]> } = SYNC_KINDS;
 
 export const CALL_INVITE_CODEC = jsonCodec(CALL_INVITE_CONTENT_TYPE, callInviteText, callInviteSchema, 'xmtp.callInvite');
 

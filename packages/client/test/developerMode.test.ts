@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import { DEFAULT_DEVELOPER_MODE, mergeDeveloperMode, type DeveloperModeContent } from '../src/xmtp/sync/developerMode';
 import type { SyncMessage } from '../src/xmtp/sync/kind';
-import { collectSyncReplay, parseSyncState } from '../src/xmtp/sync/registry';
-import { SYNC_CODECS } from '../src/xmtp/jsonCodecs';
+import { collectSyncReplay, syncCodecOf } from '../src/xmtp/sync/registry';
+import { syncState } from './helpers';
 
 const state = (enabled: boolean, at: number): DeveloperModeContent => ({ enabled, at });
 const message = (content: unknown, sentNs: number, senderInboxId = 'self'): SyncMessage => ({
@@ -18,19 +18,19 @@ describe('developer mode sync', () => {
   test('defaults OFF and validates a complete, nonnegative clocked boolean', () => {
     expect(DEFAULT_DEVELOPER_MODE).toEqual(state(false, 0));
     for (const content of [state(false, 0), state(true, 12), state(false, 13)]) {
-      expect(parseSyncState('developerMode', content)).toEqual(content);
+      expect(syncState('developerMode', content)).toEqual(content);
     }
     for (const content of [true, {}, { enabled: 'true', at: 2 }, { at: 2 }, state(true, -1), state(true, NaN), state(true, Infinity)]) {
-      expect(parseSyncState('developerMode', content)).toBeNull();
+      expect(syncState('developerMode', content)).toBeNull();
     }
   });
 
   test('serializes both ON and explicit OFF without push notifications', () => {
     for (const enabled of [false, true]) {
       const original = state(enabled, 12);
-      expect(SYNC_CODECS.developerMode.decode(SYNC_CODECS.developerMode.encode(original))).toEqual(original);
+      expect(syncCodecOf('developerMode').decode(syncCodecOf('developerMode').encode(original))).toEqual(original);
     }
-    expect(SYNC_CODECS.developerMode.shouldPush()).toBe(false);
+    expect(syncCodecOf('developerMode').shouldPush()).toBe(false);
   });
 
   test('newer payload clocks win regardless of arrival order', () => {
@@ -62,7 +62,7 @@ describe('developer mode sync', () => {
     let phone = DEFAULT_DEVELOPER_MODE;
     let laptop = DEFAULT_DEVELOPER_MODE;
     const deliver = (current: DeveloperModeContent, sent: DeveloperModeContent): DeveloperModeContent => {
-      const decoded = SYNC_CODECS.developerMode.decode(SYNC_CODECS.developerMode.encode(sent));
+      const decoded = syncCodecOf('developerMode').decode(syncCodecOf('developerMode').encode(sent));
       const incoming = replay([message(decoded, 1)]);
       return incoming === null ? current : mergeDeveloperMode(current, incoming);
     };
