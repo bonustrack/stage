@@ -53,11 +53,14 @@ function convRowOptions(account: number, convId: string, listed: boolean) {
   };
 }
 
-export function useConvRow(convId?: string | null): ConvRow | null {
+export function useConvRow(convId?: string | null, recheckMs?: number): ConvRow | null {
   const id = convId ?? '';
   const account = useAccountGeneration('client');
   const listed = useListedRow(id);
-  const { data } = useQuery(convRowOptions(account, id, listed !== undefined));
+  const { data } = useQuery({
+    ...convRowOptions(account, id, listed !== undefined),
+    refetchInterval: recheckMs === undefined ? undefined : (query) => (query.state.data ? false : recheckMs),
+  });
   return listed ?? data ?? null;
 }
 
