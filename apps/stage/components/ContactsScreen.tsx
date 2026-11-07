@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { contactNameModel } from './ContactsScreen.model';
 import { ChannelRow } from './ChannelRow';
 import { StackHeader } from './chrome/StackHeader';
@@ -7,18 +7,34 @@ import { usePalette } from '../lib/theme';
 import { Platform } from 'react-native';
 import { useBottomChromeHeight } from '../lib/bottomChrome';
 import { useSafeAreaInsets } from '../lib/safeArea';
-import { useAllContacts, type Contact } from '../lib/useContacts';
+import { useContactList, type Contact } from '../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { SuggestedContacts } from './SuggestedContacts';
 import { Column, LIST_TOP_GAP, VirtualList } from './layout';
+import { useTabFocused } from './tabs/useWalletFocused';
 
 export function ContactsScreen(): React.ReactElement {
+  return (
+    <Column surface="surface" weight={1}>
+      <StackHeader title="Contacts" back={false} />
+      <ContactsBody active />
+    </Column>
+  );
+}
+
+export function ContactsTab(): React.ReactElement {
+  const pathname = usePathname();
+  const opened = useTabFocused('/contacts');
+  return <ContactsBody active={pathname === '/contacts' || opened} />;
+}
+
+function ContactsBody({ active }: { active: boolean }): React.ReactElement {
   const { bg } = usePalette();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const bottomChrome = useBottomChromeHeight();
-  const { contacts } = useAllContacts();
+  const contacts = useContactList(active);
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
   const open = useCallback(
@@ -54,21 +70,18 @@ export function ContactsScreen(): React.ReactElement {
   );
 
   return (
-    <Column surface="surface" weight={1}>
-      <StackHeader title="Contacts" back={false} />
-      <VirtualList
-        data={contacts}
-        keyExtractor={(c) => c.address}
-        renderItem={renderItem}
-        extraData={contacts.length}
-        style={{ backgroundColor: bg }}
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingTop: LIST_TOP_GAP,
-          paddingBottom: insets.bottom + (Platform.OS === 'web' ? bottomChrome : 0),
-        }}
-        ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
-      />
-    </Column>
+    <VirtualList
+      data={contacts}
+      keyExtractor={(c) => c.address}
+      renderItem={renderItem}
+      extraData={contacts.length}
+      style={{ backgroundColor: bg }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        paddingTop: LIST_TOP_GAP,
+        paddingBottom: insets.bottom + (Platform.OS === 'web' ? bottomChrome : 0),
+      }}
+      ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
+    />
   );
 }

@@ -49,7 +49,7 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
   const sort = homeSortOf(view);
   const order = columnBy === 'category' ? categoryOrder : boardOrder;
   const [error, setError] = useState<string>('');
-  useChannelsSync({ accountEpoch: useAccountEpoch(), setError, enabled: Platform.OS === 'web' });
+  useChannelsSync({ accountEpoch: useAccountEpoch(), setError });
   const profiles = useMemberProfiles(rows, query, columnBy === 'assignee');
   const draftsVersion = useDraftsVersion();
   const columns = useMemo(

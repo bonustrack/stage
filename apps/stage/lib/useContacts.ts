@@ -57,11 +57,6 @@ export function useContactList(enabled: boolean): Contact[] {
   return useMemo(() => toSortedContacts(addresses), [addresses, version]);
 }
 
-export function useAllContacts(): { contacts: Contact[] } {
-  const contacts = useContactList(true);
-  return { contacts };
-}
-
 export function useContacts(exclude: string[], query: string): Contact[] {
   const [rows, setRows] = useState<CachedRow[] | null>(() => getCachedRows());
   useEffect(() => subscribeCachedRows(setRows), []);

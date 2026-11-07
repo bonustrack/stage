@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { homePageName, homeTabIndex, swipedTabIndex, TAB_HREF, TAB_ORDER } from '../components/SwipeTabs.model';
+import { hasTabsPager, homePageName, homeTabIndex, swipedTabIndex, TAB_HREF, TAB_ORDER } from '../components/SwipeTabs.model';
 
 describe('mobile tab swipes', () => {
   const destination = (pathname: string, translation: number, velocity = 0): string => {
@@ -28,6 +28,15 @@ describe('mobile tab swipes', () => {
     expect(destination('/', 160)).toBe('/');
     expect(destination('/settings', -160)).toBe('/settings');
     expect(destination('/wallet', 0, 600)).toBe('/wallet');
+  });
+
+  test('Contacts keeps the native pager mounted while standalone web menu pages retain their own screens', () => {
+    for (const path of ['/', '/board', '/contacts', '/wallet', '/settings']) expect(hasTabsPager(path, false)).toBe(true);
+    expect(hasTabsPager('/contacts', true)).toBe(false);
+    expect(hasTabsPager('/settings', true)).toBe(false);
+    expect(hasTabsPager('/dashboard', false)).toBe(false);
+    expect(hasTabsPager('/dashboard', true)).toBe(false);
+    expect(hasTabsPager('/board', true)).toBe(true);
   });
 
   test('Board is the home view, not an additional swipe destination', () => {

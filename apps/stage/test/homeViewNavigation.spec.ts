@@ -1,113 +1,62 @@
-import { beforeEach, describe, expect, mock, test } from 'bun:test';
-import { homeViewNavigation } from '../components/tabs/homeViewNavigation.model';
+import { describe, expect, test } from 'bun:test';
+import { homeViewNavigation, type HomeViewNavigationState } from '../components/tabs/homeViewNavigation.model';
 
-let pathname = '/';
-let view: 'chats' | 'board' = 'chats';
-let loaded = false;
-let epoch = 0;
-const previous: { current: unknown } = { current: null };
-const effects: (() => void)[] = [];
-const replacements: string[] = [];
-const edits: string[] = [];
-const router = {
-  replace: (href: string): void => {
-    replacements.push(href);
-  },
-};
+const initial = (epoch = 0): HomeViewNavigationState => ({ epoch, pathname: null, restoringFrom: null });
 
-mock.module('react', () => ({
-  useRef: (initial: unknown) => {
-    previous.current ??= initial;
-    return previous;
-  },
-  useEffect: (effect: () => void): void => {
-    effects.push(effect);
-  },
-}));
-mock.module('expo-router', () => ({ usePathname: () => pathname, useRouter: () => router }));
-mock.module('../lib/accountEpoch', () => ({ useAccountEpoch: () => epoch }));
-mock.module('../lib/homeView', () => ({
-  useHomeView: () => ({ view }),
-  useHomeViewLoaded: () => loaded,
-  getHomeView: () => ({ view }),
-  setHomeView: (edit: { view: string }): void => {
-    edits.push(edit.view);
-  },
-}));
-const { useRememberHomeView } = await import('../components/tabs/boardHome');
-const render = (): void => {
-  useRememberHomeView();
-  for (const effect of effects.splice(0)) effect();
-};
-
-beforeEach(() => {
-  pathname = '/';
-  view = 'chats';
-  loaded = false;
-  epoch = 0;
-  previous.current = null;
-  edits.length = 0;
-  replacements.length = 0;
-});
-
-describe('home view reload restoration', () => {
-  test('waits for hydration before restoring the saved Board mode on the home page', () => {
-    render();
-    expect(edits).toEqual([]);
-    expect(replacements).toEqual([]);
-    view = 'board';
-    loaded = true;
-    render();
-    expect(replacements).toEqual(['/board']);
-    expect(edits).toEqual([]);
-    render();
-    expect(edits).toEqual([]);
-    expect(replacements).toEqual(['/board']);
-    pathname = '/board';
-    render();
-    expect(edits).toEqual([]);
+describe('hydrated home view navigation', () => {
+  test('a cold home visit restores saved Board without remembering Chats', () => {
+    const next = homeViewNavigation('/', 'board', initial(), 0);
+    expect(next.restore).toBe('/board');
+    expect(next.remember).toBeNull();
+    expect(homeViewNavigation('/', 'board', next.state, 0)).toEqual({ state: next.state, restore: null, remember: null });
+    const restored = homeViewNavigation('/board', 'board', next.state, 0);
+    expect(restored.restore).toBeNull();
+    expect(restored.remember).toBeNull();
   });
 
-  test('a Board URL cannot overwrite stored preferences before hydration', () => {
-    pathname = '/board';
-    render();
-    expect(edits).toEqual([]);
-    view = 'board';
-    loaded = true;
-    render();
-    expect(edits).toEqual([]);
+  test('Chats reload stays Chats and an explicit Board URL selects Board', () => {
+    expect(homeViewNavigation('/', 'chats', initial(), 0).restore).toBeNull();
+    expect(homeViewNavigation('/', 'chats', initial(), 0).remember).toBeNull();
+    expect(homeViewNavigation('/board', 'chats', initial(), 0).remember).toBe('board');
   });
 
-  test('Chats reloads stay Chats and an explicit later navigation can select Chats', () => {
-    loaded = true;
-    render();
-    expect(replacements).toEqual([]);
-    pathname = '/board';
-    view = 'board';
-    render();
-    pathname = '/';
-    render();
-    expect(edits).toEqual(['chats']);
+  test('local preference publication cannot overwrite an edit while the old route is mounted', () => {
+    const current = homeViewNavigation('/', 'chats', initial(), 0).state;
+    const next = homeViewNavigation('/', 'board', current, 0);
+    expect(next.remember).toBeNull();
+    expect(next.restore).toBeNull();
   });
 
-  test('a local mode edit is not overwritten while the old route is still mounted', () => {
-    loaded = true;
-    render();
-    view = 'board';
-    render();
-    expect(edits).toEqual([]);
-    expect(replacements).toEqual([]);
+  test('both directions remember route intent even when storage still contains the target mode', () => {
+    const board = homeViewNavigation('/board', 'board', initial(), 0).state;
+    const chats = homeViewNavigation('/', 'board', board, 0);
+    expect(chats.remember).toBe('chats');
+    expect(homeViewNavigation('/board', 'board', chats.state, 0).remember).toBe('board');
+    const saved = homeViewNavigation('/board', 'chats', chats.state, 0).state;
+    expect(homeViewNavigation('/board', 'chats', saved, 0).remember).toBeNull();
   });
 
-  test('account changes get a fresh restoration without touching non-home deep links', () => {
-    loaded = true;
-    render();
-    epoch = 1;
-    view = 'board';
-    render();
-    expect(replacements).toEqual(['/board']);
-    expect(homeViewNavigation('/channel/example', 'board', null).remember).toBeNull();
-    expect(homeViewNavigation('/contacts', 'board', null).restore).toBeNull();
-    expect(homeViewNavigation('/board', 'chats', null).remember).toBe('board');
+  test('switching from another account on Board restores the new account Chats choice', () => {
+    const previous = homeViewNavigation('/board', 'board', initial(), 0).state;
+    const next = homeViewNavigation('/board', 'chats', previous, 1);
+    expect(next.restore).toBe('/');
+    expect(next.remember).toBeNull();
+    expect(homeViewNavigation('/board', 'chats', next.state, 1).remember).toBeNull();
+    expect(homeViewNavigation('/', 'chats', next.state, 1).restore).toBeNull();
+  });
+
+  test('switching from Chats restores a new account Board choice', () => {
+    const previous = homeViewNavigation('/', 'chats', initial(), 0).state;
+    const next = homeViewNavigation('/', 'board', previous, 1);
+    expect(next.restore).toBe('/board');
+    expect(next.remember).toBeNull();
+  });
+
+  test('non-home deep links do not change mode, including after an account switch', () => {
+    for (const path of ['/channel/example', '/contacts', '/wallet', '/settings']) {
+      const next = homeViewNavigation(path, 'board', initial(), 1);
+      expect(next.restore).toBeNull();
+      expect(next.remember).toBeNull();
+    }
   });
 });

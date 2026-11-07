@@ -5,6 +5,7 @@ import { homeSortOf } from '../components/home/sort.model';
 
 const values = new Map<string, string>();
 let activeId = 'alice';
+let pauseAccount: Promise<void> | undefined;
 mock.module('../platform/storage', () => ({
   secureStorage: {},
   appStorage: {
@@ -15,7 +16,10 @@ mock.module('../platform/storage', () => ({
   },
 }));
 mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => ({ id: activeId }),
+  getActiveAccount: async () => {
+    await pauseAccount;
+    return { id: activeId };
+  },
   getActiveAccountStrict: async () => ({ id: activeId }),
 }));
 const { applyRemoteHomeView, loadHomeView, onHomeViewChanged, setHomeView } = await import('../lib/homeView');
@@ -163,6 +167,20 @@ describe('home view store', () => {
       expect(reloaded.get().view).toBe('chats');
       expect((await reloaded.load()).view).toBe(mode);
     }
+  });
+
+  test('the latest mode intent supersedes a save still waiting for account hydration', async () => {
+    let resume: (() => void) | undefined;
+    pauseAccount = new Promise<void>((resolve) => {
+      resume = resolve;
+    });
+    setHomeView({ view: 'chats' });
+    await settle();
+    setHomeView({ view: 'board' });
+    resume?.();
+    pauseAccount = undefined;
+    await settle();
+    expect(stored('alice')).toMatchObject({ view: 'board' });
   });
 
   test('a remote payload keeps the local view type of each account', async () => {

@@ -13,6 +13,11 @@ export function homeTabIndex(pathname: string): number {
   return 0;
 }
 
+export function hasTabsPager(pathname: string, web: boolean): boolean {
+  if (!web && pathname === '/contacts') return true;
+  return !isMenuPageRoute(pathname) && (!web || !pathname.startsWith('/settings'));
+}
+
 export function homePageName(pathname: string, boardHome: boolean): TabName {
   const name = TAB_ORDER[homeTabIndex(pathname)] ?? 'index';
   return name === 'index' && boardHome ? 'board' : name;

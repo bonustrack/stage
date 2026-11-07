@@ -45,10 +45,15 @@ export interface HomeViewChange {
 
 const localChanges = makeListeners<HomeViewChange>();
 export const onHomeViewChanged = localChanges.subscribe;
+let viewRevision = 0;
 
 export function setHomeView(edit: HomeViewEdit): void {
+  const revision = edit.view === undefined ? viewRevision : ++viewRevision;
   void prefs
-    .update((current) => editHomeView(current, edit, Date.now()))
+    .update((current) => {
+      const latest = edit.view === undefined || revision === viewRevision ? edit : { ...edit, view: current.view };
+      return editHomeView(current, latest, Date.now());
+    })
     .then(() => {
       const accountId = prefs.accountId();
       if (accountId !== null && syncsHomeView(edit)) localChanges.notify({ accountId, state: syncedHomeView(prefs.get()) });

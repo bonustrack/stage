@@ -13,7 +13,7 @@ import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBa
 import { chatsTabOpensNewChat } from '../../components/tabs/WebTabRail.model';
 import { useRememberHomeView } from '../../components/tabs/boardHome';
 import { BOARD_ROUTE } from '../../components/tabs/splitRoutes';
-import { isMenuPageRoute } from '../../components/tabs/menuPages';
+import { hasTabsPager } from '../../components/SwipeTabs.model';
 import { useWebTabRail } from '../../lib/webLayout';
 import { useVisibleUnreadCount } from '../../components/home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
@@ -28,6 +28,7 @@ const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet' };
 
 function HoistedTopnav({ rail, pathname }: { rail: boolean; pathname: string }): React.ReactElement {
   const slot = useTopnavSlot();
+  if (pathname === '/contacts') return <Topnav left={<Text text="Contacts" size="xl" fontWeight="semibold" />} />;
   if (slot?.override) return <>{slot.override}</>;
   const title = rail ? WIDE_TAB_TITLES[pathname] : undefined;
   const left = title === undefined ? undefined : <Text text={title} size="xl" fontWeight="semibold" />;
@@ -47,9 +48,8 @@ function PagerOverlay({
   rail: boolean;
   pathname: string;
 }): React.ReactElement | null {
-  if (isMenuPageRoute(pathname)) return null;
+  if (!hasTabsPager(pathname, Platform.OS === 'web')) return null;
   if (Platform.OS === 'web') {
-    if (pathname.startsWith('/settings')) return null;
     return (
       <Column weight={1} padding={{ top: insetTop, bottom: tabBarHeight }}>
         {topnavHidden ? null : <HoistedTopnav rail={rail} pathname={pathname} />}
