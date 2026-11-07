@@ -10,7 +10,8 @@ import { IconTileRow, MediaCard } from './MediaCard';
 import { useVideoAspectRatio } from './mediaAspect';
 import { usePalette } from '../../lib/theme';
 import { fileCardModel } from './fileCard.model';
-import { attachmentKind, type ChatAttachment as Attachment } from './attachment';
+import { entryAttachmentKind } from '@stage-labs/client/xmtp/humanize';
+import type { ChatAttachment as Attachment } from './attachment';
 import { useAttachmentUri } from './attachmentUri';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { openFile } from '../../lib/fileOpen';
@@ -37,7 +38,7 @@ export function AttachmentView({
   fg: string;
   galleryKey?: string;
 }): React.ReactElement {
-  const kind = attachmentKind(att);
+  const kind = entryAttachmentKind(att);
   if (kind === 'image') return <MessengerImageAttachment uri={fullUrl} galleryKey={galleryKey} />;
   if (kind === 'video') return <MessengerVideoAttachment uri={fullUrl} />;
   if (kind === 'audio') return <AudioCard att={att} uri={fullUrl} />;
@@ -133,7 +134,7 @@ export function ResolvedAttachment({
 }): React.ReactElement {
   const { uri, mime, failed, retry } = useAttachmentUri(att, msgId, index);
   const label = att.name ?? 'attachment';
-  const kind = attachmentKind(att);
+  const kind = entryAttachmentKind(att);
   const compact = kind === 'file';
 
   if (failed) return <AttachmentRetry label={label} fg={fg} onRetry={retry} compact={compact} />;

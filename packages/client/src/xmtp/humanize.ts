@@ -1,4 +1,4 @@
-import { fileExtension, kindExtensions } from '../files';
+import { fileExtension, kindExtensions, type MediaKind } from '../files';
 import { shortAddress } from '../identity/format';
 import { describeAppDataChange } from './appDataChange';
 import { withChannelLabels } from './channelRefs';
@@ -100,13 +100,28 @@ export interface AttachmentMeta {
   filename?: string | null;
 }
 
+const MEDIA_KINDS: readonly MediaKind[] = ['image', 'audio', 'video'];
+
+const KIND_EXTENSIONS: Record<MediaKind, string[]> = {
+  image: kindExtensions('image'),
+  audio: kindExtensions('audio'),
+  video: kindExtensions('video'),
+};
+
+export function isSvgAttachment(a: AttachmentMeta): boolean {
+  return /^image\/svg/i.test(a.mimeType?.trim() ?? '') || /\.svgz?$/i.test(a.filename?.trim() ?? '');
+}
+
 export function attachmentKindOf(a: AttachmentMeta): AttachmentKind {
+  if (isSvgAttachment(a)) return 'file';
   const ext = fileExtension(a.filename ?? '');
   const mime = a.mimeType ?? '';
-  if (matchesKind(mime, ext, 'image/', IMAGE_EXTS)) return 'image';
-  if (matchesKind(mime, ext, 'audio/', AUDIO_EXTS)) return 'audio';
-  if (matchesKind(mime, ext, 'video/', VIDEO_EXTS)) return 'video';
-  return 'file';
+  return MEDIA_KINDS.find((kind) => mime.startsWith(`${kind}/`) || KIND_EXTENSIONS[kind].includes(ext)) ?? 'file';
+}
+
+export function entryAttachmentKind(att: { kind: string; mime?: string; name?: string }): string {
+  if (isSvgAttachment({ mimeType: att.mime, filename: att.name })) return 'file';
+  return MEDIA_KINDS.find((kind) => att.mime?.startsWith(`${kind}/`) === true) ?? att.kind;
 }
 
 const KIND_EMOJI: Record<AttachmentKind, string> = { image: '📷', audio: '🎤', video: '🎥', file: '📎' };
@@ -129,11 +144,3 @@ export function attachmentsPreview(items: readonly AttachmentMeta[]): string {
   const noun = rest.every((k) => k === first) ? KIND_NOUNS[first].many : 'attachments';
   return `Sent ${rest.length + 1} ${noun}`;
 }
-
-function matchesKind(mime: string, ext: string, mimePrefix: string, exts: string[]): boolean {
-  return mime.startsWith(mimePrefix) || exts.includes(ext);
-}
-
-const IMAGE_EXTS = kindExtensions('image');
-const AUDIO_EXTS = kindExtensions('audio');
-const VIDEO_EXTS = kindExtensions('video');

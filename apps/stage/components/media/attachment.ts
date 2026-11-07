@@ -8,18 +8,6 @@ export function attachmentsOf(entry: HistoryEntry): ChatAttachment[] {
   return entryAttachmentsOf(entry) as ChatAttachment[];
 }
 
-export function isSvgAttachment(att: { mime?: string; name?: string }): boolean {
-  return /^image\/svg/i.test(att.mime?.trim() ?? '') || /\.svgz?$/i.test(att.name?.trim() ?? '');
-}
-
-export function attachmentKind(att: { kind: string; mime?: string; name?: string }): string {
-  if (isSvgAttachment(att)) return 'file';
-  if (att.mime?.startsWith('image/')) return 'image';
-  if (att.mime?.startsWith('audio/')) return 'audio';
-  if (att.mime?.startsWith('video/')) return 'video';
-  return att.kind;
-}
-
 export interface AttachmentSource {
   uri: string | null;
   mime: string | undefined;
