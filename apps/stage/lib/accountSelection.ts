@@ -51,8 +51,12 @@ export function rememberActiveAccountId(id: string | null): void {
 
 export const knownActiveAccountId = activeId.get;
 
+export function selfAddressOf(accountId: string | null | undefined): string | null {
+  return accountId?.toLowerCase() ?? null;
+}
+
 export function knownSelfAddress(): string | null {
-  return activeId.get()?.toLowerCase() ?? null;
+  return selfAddressOf(activeId.get());
 }
 
 export const subscribeActiveAccountId = activeId.subscribe;

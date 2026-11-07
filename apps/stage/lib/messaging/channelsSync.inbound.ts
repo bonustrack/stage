@@ -1,11 +1,10 @@
-import { shortAddress } from '@stage-labs/client/identity/format';
 import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { arrivalEffect, countsAsUnread, isRowCandidate, revivesRow } from '@stage-labs/client/xmtp/visibility';
 import { getCachedRows, setCachedRows } from '../channelsCache';
 import { recover } from '../errorPolicy';
-import { getPeerName } from '../peerProfiles';
+import { getPeerName, peerLabel } from '../peerProfiles';
 import { presentInboundNotification } from '../pushNotify';
 import { isChannelHidden } from '../sync/hiddenChannels';
 import { getConvConsentState } from '../xmtp.conv';
@@ -129,7 +128,7 @@ function applyToRows(
 }
 
 function notifyTitleBody(n: NotifyCtx, preview: string): { title: string; body: string } {
-  const senderName = getPeerName(n.senderAddr) ?? (n.senderAddr ? shortAddress(n.senderAddr) : 'New message');
+  const senderName = n.senderAddr ? peerLabel(n.senderAddr) : 'New message';
   if (n.isGroup) return { title: n.title, body: `${senderName}: ${preview}` };
   return { title: getPeerName(n.senderAddr) ?? n.title, body: preview };
 }

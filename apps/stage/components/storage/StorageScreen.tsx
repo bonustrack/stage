@@ -17,6 +17,7 @@ import { SearchField } from '../search/SearchField';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 import { useAccountEpoch } from '../../lib/accountEpoch';
+import { accountQueryKeyAt, useAccountGeneration } from '../../lib/queryClient';
 import { useOwnDeletes } from '../../lib/ownDeletes';
 import { useStoredChat } from '../../lib/storedChat';
 import { chatLabelOf } from '../../lib/convIdentity';
@@ -62,9 +63,9 @@ function useChatLabel(convId: string): string {
 }
 
 function useGoneCheck(messageId: string): void {
-  const epoch = useAccountEpoch();
+  const epoch = useAccountGeneration('client');
   const { data: gone } = useQuery({
-    queryKey: ['storageGone', epoch, messageId],
+    queryKey: accountQueryKeyAt('client', epoch, 'storageGone', messageId),
     queryFn: () => storageFileGone(messageId),
     staleTime: Infinity,
     retry: false,

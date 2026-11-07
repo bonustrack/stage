@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getActiveAccount } from '../accounts';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { accountQueryKeyAt, useAccountGeneration } from '../queryClient';
-import { useKnownActiveAccountId } from '../accountSelection';
+import { selfAddressOf, useKnownActiveAccountId } from '../accountSelection';
 
 interface ActiveAccount {
   record: AccountRecord | null;
@@ -26,5 +26,5 @@ export function useActiveAccountRecord(): AccountRecord | null {
 export function useSelfAddress(): string | null {
   const known = useKnownActiveAccountId();
   const record = useActiveAccountRecord();
-  return known ?? record?.address.toLowerCase() ?? null;
+  return selfAddressOf(known ?? record?.address);
 }

@@ -5,12 +5,13 @@ import { dmLinkOf } from '../../lib/links';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../../lib/theme';
-import { usePeerProfiles, getPeerHandle, getPeerDescription, peerLabel } from '../../lib/peerProfiles';
+import { usePeerProfiles, getPeerHandle, getPeerDescription } from '../../lib/peerProfiles';
+import { profileDisplayName } from '../../lib/convIdentity';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from '../Avatar';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { PEER_PROFILE_MENU, profileDisplayName, type PeerProfileId } from './ProfileScreen.model';
+import { PEER_PROFILE_MENU, type PeerProfileId } from './ProfileScreen.model';
 import type { MenuActions } from '../MenuRows';
 import { capabilities } from '../../lib/capabilities';
 import { ImageViewer } from '../media/ImageViewer';
@@ -139,7 +140,7 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
     },
   };
 
-  const displayName = profileDisplayName(addr, peerLabel);
+  const displayName = profileDisplayName(addr);
 
   return (
     <Column weight={1} surface="surface">

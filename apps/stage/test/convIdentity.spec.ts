@@ -8,6 +8,7 @@ import {
   channelAvatarUrl,
   channelTitle,
   convTitle,
+  profileDisplayName,
   rowAvatarAddress,
   rowTitle,
 } from '../lib/convIdentity';
@@ -48,6 +49,14 @@ describe('conversation titles', () => {
     expect(rowTitle({ peerAddress: null, title: '3 members', groupName: '' })).toEqual({ text: '3 members', placeholder: true });
     expect(rowTitle({ peerAddress: null, title: 'Design', groupName: 'Design' })).toEqual({ text: 'Design', placeholder: false });
     expect(rowTitle({ peerAddress: NAMED, title: '0x1111…1111', groupName: '' })).toEqual({ text: 'alice.base.eth', placeholder: false });
+  });
+});
+
+describe('profile names', () => {
+  test('a profile shows its peer label, or a loading placeholder before its address is known', () => {
+    expect(profileDisplayName(NAMED)).toBe('alice.base.eth');
+    expect(profileDisplayName(UNKNOWN)).toBe('0x2222…2222');
+    expect(profileDisplayName('')).toBe('Loading…');
   });
 });
 

@@ -1,7 +1,4 @@
 import type { MenuItem } from '../appIcons';
-export function profileDisplayName(address: string, label: (address: string) => string): string {
-  return address ? label(address) : 'Loading…';
-}
 
 export const COPY_ADDRESS_ITEM: MenuItem<'copy-address'> = { id: 'copy-address', label: 'Copy address', icon: 'IconSquareBehindSquare1' };
 

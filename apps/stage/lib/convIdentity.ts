@@ -29,6 +29,10 @@ export function accountName(account: { address: string; label?: string }, peerNa
   return displayNameOf([peerName, account.label], shortAddress(account.address));
 }
 
+export function profileDisplayName(address: string): string {
+  return address ? peerLabel(address) : 'Loading…';
+}
+
 export function mentionLabelOf(address: string): string {
   return mentionLabel(peerLabel(address));
 }

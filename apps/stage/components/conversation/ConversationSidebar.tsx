@@ -9,8 +9,8 @@ import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Avatar } from '../Avatar';
 import { PROFILE_AVATAR_SIZE, ProfileCover } from '../profile/ProfileCover';
-import { profileDisplayName } from '../profile/ProfileScreen.model';
-import { getPeerHandle, peerLabel, usePeerProfiles } from '../../lib/peerProfiles';
+import { profileDisplayName } from '../../lib/convIdentity';
+import { getPeerHandle, usePeerProfiles } from '../../lib/peerProfiles';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { Column, pinnedEdges, PAGE_GUTTER } from '../layout';
 
@@ -26,7 +26,7 @@ const sidebarWidth = createPaneWidth({
 function PeerProfileSidebar({ address }: { address: string }): React.ReactElement {
   const { bg, border, text } = usePalette();
   usePeerProfiles([address]);
-  const name = profileDisplayName(address, peerLabel);
+  const name = profileDisplayName(address);
   const handle = getPeerHandle(address);
   const identity = handle ? displayHandle(handle) : shortAddress(address);
   return (
