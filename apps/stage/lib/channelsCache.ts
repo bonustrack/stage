@@ -122,7 +122,7 @@ async function clearMarkedUnread(convId: string): Promise<void> {
 
 export async function markConvRead(convId: string): Promise<void> {
   const nowNs = Date.now() * 1_000_000;
-  await setLastReadNs(convId, Date.now() * 1_000_000);
+  await setLastReadNs(convId, nowNs);
   await clearMarkedUnread(convId);
   readChanges.notify({ convId, lastReadNs: nowNs, markedUnread: false });
   const rows = getCachedRows();

@@ -3,6 +3,9 @@ import { linkProxyBase } from './linkProxy';
 import type { X402Accept } from '@stage-labs/client/x402';
 import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from '@stage-labs/client/x402/payment';
 import { PROXY_ROUTES, STAGE_CLIENT_HEADERS } from '@stage-labs/client/endpoints';
+import { fetchWithin } from '@stage-labs/client/timing';
+
+const SETTLE_TIMEOUT_MS = 30_000;
 
 export interface X402PayResult {
   ok: boolean;
@@ -17,12 +20,7 @@ function assertExactChallenge(accept: X402Accept): void {
   if (!accept.asset) throw new Error('Challenge missing asset');
 }
 
-async function settlePayment(resource: string, paymentHeader: string): Promise<X402PayResult> {
-  const res = await fetch(`${linkProxyBase()}${PROXY_ROUTES.settle}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...STAGE_CLIENT_HEADERS },
-    body: JSON.stringify({ url: resource, paymentHeader }),
-  });
+async function settledResult(res: Response): Promise<X402PayResult> {
   if (!res.ok) return { ok: false, status: res.status };
   const j = (await res.json()) as { ok?: boolean; status?: number; body?: string };
   return {
@@ -30,6 +28,19 @@ async function settlePayment(resource: string, paymentHeader: string): Promise<X
     status: typeof j.status === 'number' ? j.status : res.status,
     body: typeof j.body === 'string' ? j.body : undefined,
   };
+}
+
+function settlePayment(resource: string, paymentHeader: string): Promise<X402PayResult> {
+  return fetchWithin(
+    `${linkProxyBase()}${PROXY_ROUTES.settle}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...STAGE_CLIENT_HEADERS },
+      body: JSON.stringify({ url: resource, paymentHeader }),
+    },
+    { timeoutMs: SETTLE_TIMEOUT_MS },
+    settledResult,
+  );
 }
 
 export async function payX402Exact({

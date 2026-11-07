@@ -20,11 +20,30 @@ mock.module('../platform/storage', () => ({
 mock.module('../lib/cache', () => ({
   persistenceBackend: { read: async () => null, write: () => undefined, onFlushSignal: () => undefined },
 }));
-const { getLastReadNs, raiseLastReadNs } = await import('../lib/channelsCache');
+const { getLastReadNs, markConvRead, onReadStateChanged, raiseLastReadNs } = await import('../lib/channelsCache');
 
 beforeEach(() => {
   secure.clear();
   readFails = false;
+});
+
+test('marking a chat read stores the position it announces', async () => {
+  const announced: number[] = [];
+  const stop = onReadStateChanged(({ lastReadNs }) => announced.push(lastReadNs));
+  const realNow = Date.now;
+  let now = 1_000;
+  Date.now = () => {
+    now += 1;
+    return now;
+  };
+  try {
+    await markConvRead('conv');
+  } finally {
+    Date.now = realNow;
+    stop();
+  }
+  expect(announced).toHaveLength(1);
+  expect(await getLastReadNs('conv')).toBe(announced[0] ?? -1);
 });
 
 test('a remote read position only ever raises the local one', async () => {

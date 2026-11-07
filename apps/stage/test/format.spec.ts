@@ -28,8 +28,9 @@ describe('channelTimestamp', () => {
 });
 
 describe('bubbleTimestamp', () => {
-  test('does not throw on a malformed string', () => {
-    expect(() => bubbleTimestamp('bad-timestamp')).not.toThrow();
+  test('shows no time for a malformed or empty timestamp', () => {
+    expect(bubbleTimestamp('bad-timestamp')).toBe('');
+    expect(bubbleTimestamp('')).toBe('');
   });
 
   test('formats a valid ISO string as a HH:mm clock time', () => {
