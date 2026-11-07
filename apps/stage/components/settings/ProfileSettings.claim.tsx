@@ -6,7 +6,7 @@ import { UsernameField, useUsernameInput } from '../profile/UsernameField';
 import { USERNAME_COPY, normalizeLabel, usernameReady } from '../profile/username.model';
 import { IntroCard } from '../chrome/IntroCard';
 import { PAGE_INTRO_TYPE } from '../chrome/PageIntro.model';
-import { FORM_FIELD_HEIGHT, FORM_FIELD_RADIUS } from '../FormField';
+import { FormFieldPlaceholder } from '../FormField';
 import { PlaceholderBar, PlaceholderBlock } from '../Placeholder';
 import { Column } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
@@ -51,7 +51,7 @@ function ClaimCardPlaceholder(): React.ReactElement {
   );
   return (
     <IntroCard title={USERNAME_COPY.title} about={about} footer={<PlaceholderBlock width="100%" height={BUTTON_LG_HEIGHT} />}>
-      <PlaceholderBlock width="100%" height={FORM_FIELD_HEIGHT} radius={FORM_FIELD_RADIUS} />
+      <FormFieldPlaceholder />
     </IntroCard>
   );
 }
