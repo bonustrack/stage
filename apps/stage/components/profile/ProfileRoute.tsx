@@ -5,7 +5,7 @@ import { ChannelProfile } from '../channel/ChannelProfile';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useResolvedHandle } from '../../lib/resolveHandle';
-import { profileKindOf } from '../../lib/links';
+import { profileKindOf } from '@stage-labs/client/routing/handles';
 import { Column } from '../layout';
 
 function UserProfile({ handle }: { handle: string }): React.ReactElement {
