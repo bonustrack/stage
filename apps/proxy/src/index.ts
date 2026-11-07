@@ -1,17 +1,17 @@
 import { BUNDLER_HOST, PROXY_ROUTES } from '@stage-labs/client/endpoints';
 import { clientRateKey } from '@stage-labs/client/net/clientIp';
 import { handleBundler } from './bundler.ts';
-import { RATE_LIMITED, handleImg, handlePreview, handleSettle } from './linkRoutes.ts';
-import { handleHistory } from './historyStore.ts';
-import { handleAttachments, r2AttachmentStore } from './attachments.ts';
-import { handlePush } from './pushProxy.ts';
+import { handleImg, handlePreview, handleSettle } from './linkRoutes.ts';
+import { HISTORY_CORS_HEADERS, handleHistory } from './historyStore.ts';
+import { ATTACHMENT_CORS, handleAttachments, r2AttachmentStore } from './attachments.ts';
+import { PUSH_CORS_HEADERS, handlePush } from './pushProxy.ts';
 import { configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
-import { handleMail, type MailChain } from './mailApi.ts';
+import { MAIL_CORS, handleMail, type MailChain } from './mailApi.ts';
 import { mailboxStub } from './mailBox.ts';
 import { receiveMail, type IncomingMail } from './mailReceive.ts';
-import { cloudflareApi, handleNodes } from './nodes.ts';
+import { NODES_CORS, cloudflareApi, handleNodes } from './nodes.ts';
 import { limitsAtRouter, overLimit, type RouteLimit } from './rateLimit.ts';
-import { CLIENT_CORS, OPEN_CORS, corsResponse, openJson, type HeaderMap } from './respond.ts';
+import { CLIENT_CORS, OPEN_CORS, RATE_LIMITED, corsResponse, openJson, type HeaderMap } from './respond.ts';
 
 export { NamesClaims } from './names.ts';
 export { HistoryArchives } from './historyStore.ts';
@@ -37,7 +37,7 @@ interface RouteScope {
 interface ProxyRoute {
   path: string;
   match: 'exact' | 'prefix' | 'tree';
-  preflight?: HeaderMap;
+  preflight: HeaderMap;
   limit?: RouteLimit<ProxyEnv>;
   handle: (request: Request, scope: RouteScope) => Promise<Response> | Response;
 }
@@ -67,7 +67,7 @@ function routeMail(request: Request, { env, limited }: RouteScope): Promise<Resp
 }
 
 const ROUTES: readonly ProxyRoute[] = [
-  { path: PROXY_ROUTES.health, match: 'exact', handle: () => corsResponse(OPEN_CORS, 'ok', 200, 'text/plain') },
+  { path: PROXY_ROUTES.health, match: 'exact', preflight: OPEN_CORS, handle: () => corsResponse(OPEN_CORS, 'ok', 200, 'text/plain') },
   {
     path: PROXY_ROUTES.preview,
     match: 'exact',
@@ -92,6 +92,7 @@ const ROUTES: readonly ProxyRoute[] = [
   {
     path: PROXY_ROUTES.attachments,
     match: 'tree',
+    preflight: ATTACHMENT_CORS,
     limit: { budget: 'attachments', methods: ['POST'], edge: (env, ip) => [{ binding: env.ATTACHMENT_UPLOADS, key: ip }] },
     handle: (request, { env }) =>
       handleAttachments(request, env.ATTACHMENTS === undefined ? undefined : r2AttachmentStore(env.ATTACHMENTS)),
@@ -99,6 +100,7 @@ const ROUTES: readonly ProxyRoute[] = [
   {
     path: PROXY_ROUTES.nodes,
     match: 'exact',
+    preflight: NODES_CORS,
     limit: {
       budget: 'nodes',
       inHandler: true,
@@ -113,17 +115,25 @@ const ROUTES: readonly ProxyRoute[] = [
   {
     path: PROXY_ROUTES.history,
     match: 'prefix',
+    preflight: HISTORY_CORS_HEADERS,
     limit: { budget: 'history', methods: ['POST'] },
     handle: (request, { env }) => handleHistory(request, env.HISTORY_ARCHIVES),
   },
-  { path: PROXY_ROUTES.push, match: 'prefix', handle: (request) => handlePush(request) },
+  { path: PROXY_ROUTES.push, match: 'prefix', preflight: PUSH_CORS_HEADERS, handle: (request) => handlePush(request) },
   {
     path: PROXY_ROUTES.mail,
     match: 'prefix',
+    preflight: MAIL_CORS,
     limit: { inHandler: true, edge: (env, ip) => [{ binding: env.MAIL_REQUESTS, key: ip }] },
     handle: routeMail,
   },
-  { path: PROXY_ROUTES.names, match: 'prefix', limit: { budget: 'names' }, handle: (request, { env }) => handleNamesRequest(request, env) },
+  {
+    path: PROXY_ROUTES.names,
+    match: 'prefix',
+    preflight: CLIENT_CORS,
+    limit: { budget: 'names' },
+    handle: (request, { env }) => handleNamesRequest(request, env),
+  },
 ];
 
 function matches({ path, match }: ProxyRoute, pathname: string): boolean {
@@ -132,7 +142,7 @@ function matches({ path, match }: ProxyRoute, pathname: string): boolean {
 }
 
 async function serve(route: ProxyRoute, request: Request, env: ProxyEnv, ctx: ExecutionContext): Promise<Response> {
-  if (route.preflight !== undefined && request.method === 'OPTIONS') return corsResponse(route.preflight, null, 204);
+  if (request.method === 'OPTIONS') return corsResponse(route.preflight, null, 204);
   const limited = (): Promise<boolean> => overLimit(route.limit, request, env);
   if (limitsAtRouter(route.limit, request.method) && (await limited())) return RATE_LIMITED();
   return route.handle(request, { env, ctx, limited });

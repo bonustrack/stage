@@ -19,7 +19,7 @@ const BYTES_KEY = 'bytes';
 const SIZE_KEY = 'size';
 const OBJECT_URL = 'https://history-archive/';
 
-const HISTORY_CORS_HEADERS = corsHeaders('GET, POST, OPTIONS');
+export const HISTORY_CORS_HEADERS = corsHeaders('GET, POST, OPTIONS');
 const { text } = repliesWith(HISTORY_CORS_HEADERS);
 
 type HistoryRoute = { kind: 'upload'; env: string } | { kind: 'part'; env: string; id: string } | { kind: 'file'; env: string; id: string };
@@ -66,7 +66,6 @@ async function download<Id>(ns: ObjectNamespace<Id>, env: string, id: string): P
 }
 
 export async function handleHistory<Id>(request: Request, ns: ObjectNamespace<Id> | undefined): Promise<Response> {
-  if (request.method === 'OPTIONS') return text(null, 204);
   const route = parseHistoryRoute(new URL(request.url).pathname, request.method);
   if (route === null) return text('not found', 404);
   if (ns === undefined) return text('history storage is not configured', 503);

@@ -6,7 +6,7 @@ const ID_BYTES = 24;
 const ATTACHMENT_ID = /^[A-Za-z0-9_-]{32}$/;
 const CONTENT_TYPE = 'application/octet-stream';
 const IMMUTABLE = 'public, max-age=31536000, immutable';
-const ATTACHMENT_CORS = corsHeaders('GET, HEAD, POST, OPTIONS');
+export const ATTACHMENT_CORS = corsHeaders('GET, HEAD, POST, OPTIONS');
 const { json, text } = repliesWith(ATTACHMENT_CORS);
 const KEY_PREFIX = 'attachments/';
 
@@ -90,7 +90,6 @@ async function download(store: AttachmentStore, id: string, method: string): Pro
 }
 
 export async function handleAttachments(request: Request, store: AttachmentStore | undefined): Promise<Response> {
-  if (request.method === 'OPTIONS') return text(null, 204);
   const route = parseAttachmentRoute(new URL(request.url).pathname, request.method);
   if (route === null) return text('not found', 404);
   if (store === undefined) return text('attachment storage is not configured', 503);

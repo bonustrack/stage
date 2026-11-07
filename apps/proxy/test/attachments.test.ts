@@ -104,13 +104,6 @@ describe('r2AttachmentStore', () => {
 });
 
 describe('handleAttachments', () => {
-  test('answers preflight with CORS headers for GET, HEAD and POST', async () => {
-    const res = await handleAttachments(new Request(`${ORIGIN}${ATTACHMENTS_PATH}`, { method: 'OPTIONS' }), memoryStore());
-    expect(res.status).toBe(204);
-    expect(res.headers.get('access-control-allow-origin')).toBe('*');
-    expect(res.headers.get('access-control-allow-methods')).toBe('GET, HEAD, POST, OPTIONS');
-  });
-
   test('stores an upload under a fresh id and serves the same bytes back', async () => {
     const store = memoryStore();
     const bytes = randomBytes(2_500_000);

@@ -39,16 +39,6 @@ describe('parseHistoryRoute', () => {
 });
 
 describe('handleHistory', () => {
-  test('answers preflight with permissive CORS headers', async () => {
-    const res = await handleHistory(
-      new Request('https://proxy.stage.box/xmtp-history/production/upload', { method: 'OPTIONS' }),
-      memoryNamespace(archiveObjectFetch, 1_000),
-    );
-    expect(res.status).toBe(204);
-    expect(res.headers.get('access-control-allow-origin')).toBe('*');
-    expect(res.headers.get('access-control-allow-methods')).toContain('POST');
-  });
-
   test('returns a CORS-tagged 404 for paths outside the route table', async () => {
     const res = await handleHistory(
       new Request('https://proxy.stage.box/xmtp-history/production/nope', { method: 'GET' }),

@@ -6,7 +6,7 @@ const PUSH_PREFIX = PROXY_ROUTES.push;
 const MAX_BODY_BYTES = 2_000_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 
-const PUSH_CORS_HEADERS = corsHeaders('POST, OPTIONS');
+export const PUSH_CORS_HEADERS = corsHeaders('POST, OPTIONS');
 const { text } = repliesWith(PUSH_CORS_HEADERS);
 
 export function parsePushRoute(pathname: string, method: string): string | null {
@@ -16,7 +16,6 @@ export function parsePushRoute(pathname: string, method: string): string | null 
 }
 
 export async function handlePush(request: Request): Promise<Response> {
-  if (request.method === 'OPTIONS') return text(null, 204);
   const upstreamUrl = parsePushRoute(new URL(request.url).pathname, request.method);
   if (upstreamUrl === null) return text('not found', 404);
   const body = await request.text();

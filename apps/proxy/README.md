@@ -90,7 +90,10 @@ runtime - no Express, no origin, no laptop dependency.
 
 Each route is one entry of the `ROUTES` table in `src/index.ts`: its path
 (from `@stage-labs/client/endpoints`, which the app and the client helpers
-use too), its preflight CORS, its rate limits and its handler. The handler
+use too), its preflight CORS, its rate limits and its handler. The router
+answers every `OPTIONS` with the route's preflight CORS itself, before any
+rate limit or configuration check, so a preflight never costs a request of
+the route's budget and is a 204 even where a binding is missing. The handler
 modules hold the request and reply shapes and their statuses; the node
 publish statuses are `NODE_PUBLISH_STATUS` in
 `@stage-labs/client/nodes/hosting`, documented for node authors in

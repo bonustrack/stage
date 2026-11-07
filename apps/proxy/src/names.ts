@@ -24,7 +24,7 @@ const addressKey = (address: string): string => `addr:${address.toLowerCase()}`;
 const labelKey = (label: string): string => `label:${label}`;
 const pendingKey = (label: string): string => `pending:${label}`;
 
-const { json: reply, text } = repliesWith(CLIENT_CORS);
+const { json: reply } = repliesWith(CLIENT_CORS);
 
 async function status(url: URL, deps: NamesDeps): Promise<Response> {
   const address = url.searchParams.get('address') ?? '';
@@ -187,7 +187,6 @@ async function route(request: Request, deps: NamesDeps): Promise<Response> {
 }
 
 export async function handleNames(request: Request, deps: NamesDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return text(null, 204);
   return await guarded(
     () => route(request, deps),
     (err) => {

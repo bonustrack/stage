@@ -23,7 +23,10 @@ const SIGNATURE_BYTES = 64;
 const ACCOUNT_ID = /^[0-9a-f]{32}$/;
 const TIMESTAMP = /^\d{1,12}$/;
 const LONG_HEX = /[0-9a-f]{32,}/gi;
-const CORS = corsHeaders('PUT, DELETE, OPTIONS', ['content-type', ...Object.values(NODE_SIGNATURE_HEADERS)].join(', ').toLowerCase());
+export const NODES_CORS = corsHeaders(
+  'PUT, DELETE, OPTIONS',
+  ['content-type', ...Object.values(NODE_SIGNATURE_HEADERS)].join(', ').toLowerCase(),
+);
 
 interface ApiReply {
   status: number;
@@ -39,7 +42,7 @@ interface NodesDeps {
   now?: () => number;
 }
 
-const { json: reply, fail, text } = repliesWith(CORS);
+const { json: reply, fail } = repliesWith(NODES_CORS);
 
 function firstError(json: unknown): string | null {
   const errors = (json as { errors?: unknown } | null)?.errors;
@@ -184,7 +187,6 @@ async function deleteNode(request: Request, api: NodesApi, nowMs: number): Promi
 }
 
 export async function handleNodes(request: Request, deps: NodesDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return text(null, 204);
   if (request.method !== 'PUT' && request.method !== 'DELETE') return fail(405, 'method not allowed');
   const { api } = deps;
   if (api === null) return fail(NODE_PUBLISH_STATUS['not-ready'], 'nodes are not set up');

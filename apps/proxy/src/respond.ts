@@ -28,6 +28,8 @@ export function openJson(body: unknown, status = 200, extra: HeaderMap = {}): Re
   return jsonResponse(body, status, { ...OPEN_CORS, ...extra });
 }
 
+export const RATE_LIMITED = (): Response => openJson({ error: 'rate limited' }, 429);
+
 export function corsResponse(
   cors: HeaderMap,
   body: string | ArrayBuffer | ReadableStream | null,

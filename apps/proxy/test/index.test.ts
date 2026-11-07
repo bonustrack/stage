@@ -43,18 +43,35 @@ describe('attachment routes', () => {
   });
 });
 
-describe('client route preflight', () => {
+const CLIENT_HEADERS = 'content-type, x-stage-client';
+
+describe('route preflight', () => {
   test.each([
-    ['/preview?url=https%3A%2F%2Fexample.com', 'GET'],
-    ['/img?url=https%3A%2F%2Fexample.com%2Fa.png', 'GET'],
-    ['/x402-settle', 'POST'],
-  ])('%s answers 204 with CORS headers', async (path, method) => {
+    ['/preview?url=https%3A%2F%2Fexample.com', 'GET', 'GET, POST, OPTIONS', CLIENT_HEADERS],
+    ['/img?url=https%3A%2F%2Fexample.com%2Fa.png', 'GET', 'GET, POST, OPTIONS', CLIENT_HEADERS],
+    ['/x402-settle', 'POST', 'GET, POST, OPTIONS', CLIENT_HEADERS],
+    ['/attachments', 'POST', 'GET, HEAD, POST, OPTIONS', 'content-type'],
+    [`/attachments/${'b'.repeat(32)}`, 'GET', 'GET, HEAD, POST, OPTIONS', 'content-type'],
+    ['/nodes', 'PUT', 'PUT, DELETE, OPTIONS', 'content-type, stage-key, stage-timestamp, stage-signature'],
+    ['/xmtp-history/production/upload', 'POST', 'GET, POST, OPTIONS', 'content-type'],
+    ['/xmtp-push/notifications.v1.Notifications/RegisterInstallation', 'POST', 'POST, OPTIONS', 'content-type'],
+    ['/mail/key', 'POST', 'GET, POST, DELETE, OPTIONS', 'content-type, authorization'],
+    ['/names/check?label=someone', 'GET', 'GET, POST, OPTIONS', CLIENT_HEADERS],
+  ])('%s answers 204 with its CORS headers, configured or not', async (path, method, methods, headers) => {
     const res = await preflight(path, method);
     expect(res.status).toBe(204);
+    expect(await res.text()).toBe('');
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
-    expect(res.headers.get('access-control-allow-methods')).toContain(method);
-    expect(res.headers.get('access-control-allow-headers')).toContain('x-stage-client');
+    expect(res.headers.get('access-control-allow-methods')).toBe(methods);
+    expect(res.headers.get('access-control-allow-headers')).toBe(headers);
     expect(res.headers.get('access-control-max-age')).toBe('86400');
+  });
+
+  test('health answers its preflight with the open origin only', async () => {
+    const res = await preflight('/health', 'GET');
+    expect(res.status).toBe(204);
+    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(res.headers.get('access-control-allow-methods')).toBeNull();
   });
 
   test('preview still needs the client header on GET', async () => {
@@ -79,6 +96,16 @@ const upload = (ip: string): Promise<Response> =>
   call('/xmtp-history/production/upload', { method: 'POST', headers: from(ip), body: 'archive' });
 
 describe('rate limits', () => {
+  test('name preflights do not use up the names budget', async () => {
+    const headers = from('203.0.113.30');
+    const budget = await callsUntilRefused(() => call('/names/status?address=0x0', { headers: from('203.0.113.31') }));
+    const preflights = await Promise.all(
+      Array.from({ length: budget + 1 }, () => call('/names/check?label=someone', { method: 'OPTIONS', headers })),
+    );
+    expect(preflights.every((res) => res.status === 204)).toBe(true);
+    expect((await call('/names/status?address=0x0', { headers })).status).toBe(503);
+  });
+
   test('name lookups do not use up the history upload budget', async () => {
     await callsUntilRefused(() => call('/names/status?address=0x0', { headers: from('203.0.113.7') }));
     expect((await upload('203.0.113.7')).status).toBe(503);
@@ -135,8 +162,8 @@ describe('route table', () => {
   });
 
   test('push and mail are wired to their handlers', async () => {
-    const push = await call('/xmtp-push/notifications.v1.Notifications/RegisterInstallation', { method: 'OPTIONS' });
-    expect(push.status).toBe(204);
+    const push = await call('/xmtp-push/Nope', { method: 'POST', body: '{}' });
+    expect(push.status).toBe(404);
     expect(push.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS');
     const mail = await call('/mail/key?label=alice1');
     expect(mail.status).toBe(503);

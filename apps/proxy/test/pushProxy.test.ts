@@ -35,13 +35,6 @@ describe('parsePushRoute', () => {
 });
 
 describe('handlePush', () => {
-  test('answers preflight with CORS headers', async () => {
-    const res = await handlePush(new Request('https://proxy.stage.box/xmtp-push/RegisterInstallation', { method: 'OPTIONS' }));
-    expect(res.status).toBe(204);
-    expect(res.headers.get('access-control-allow-origin')).toBe('*');
-    expect(res.headers.get('access-control-allow-methods')).toContain('POST');
-  });
-
   test('returns 404 with CORS headers for unknown routes', async () => {
     const res = await handlePush(new Request('https://proxy.stage.box/xmtp-push/Nope', { method: 'POST', body: '{}' }));
     expect(res.status).toBe(404);

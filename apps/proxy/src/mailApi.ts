@@ -15,7 +15,7 @@ import { corsHeaders, corsResponse, guarded, repliesWith } from './respond.ts';
 
 const MAIL_PREFIX = PROXY_ROUTES.mail;
 
-const CORS = corsHeaders('GET, POST, DELETE, OPTIONS', 'content-type, authorization');
+export const MAIL_CORS = corsHeaders('GET, POST, DELETE, OPTIONS', 'content-type, authorization');
 const SIGNATURE = /^0x[0-9a-fA-F]+$/;
 
 export interface MailChain {
@@ -38,7 +38,7 @@ interface Access {
   id: string;
 }
 
-const { json: reply, fail, text: empty } = repliesWith(CORS);
+const { json: reply, fail, text: empty } = repliesWith(MAIL_CORS);
 const isSignature = (value: string): value is Hex => SIGNATURE.test(value);
 
 async function readFields(request: Request): Promise<Fields> {
@@ -167,7 +167,7 @@ const listMail: Handler = async (request, deps) => {
 const readMail: Handler = async (request, deps) => {
   const found = await signedRead(request, deps, 'signedRead', true);
   if (!found.headers.has('x-mail-owner')) return found;
-  return found.ok ? corsResponse(CORS, found.body, 200, 'application/octet-stream') : fail(404, 'no such mail');
+  return found.ok ? corsResponse(MAIL_CORS, found.body, 200, 'application/octet-stream') : fail(404, 'no such mail');
 };
 
 const deleteMail = withAccess(async ({ stub, owner, id }) => {
@@ -192,7 +192,6 @@ const ROUTES: Readonly<Record<string, Handler | undefined>> = {
 } satisfies Partial<Record<`${'GET' | 'POST' | 'DELETE'} ${MailOp}`, Handler>>;
 
 export async function handleMail(request: Request, deps: MailDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return empty(null, 204);
   const handler = ROUTES[`${request.method} ${new URL(request.url).pathname.slice(MAIL_PREFIX.length)}`];
   if (handler === undefined) return fail(404, 'not found');
   if (deps.limited !== undefined && (await deps.limited())) return fail(429, 'too many requests');

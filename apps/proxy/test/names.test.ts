@@ -230,15 +230,6 @@ describe('check and status', () => {
     });
     expect((await handleNames(new Request('https://proxy.stage.box/names/resolve?label=ab'), d)).status).toBe(400);
   });
-
-  test('answers preflight', async () => {
-    const res = await handleNames(
-      new Request('https://proxy.stage.box/names/claim', { method: 'OPTIONS' }),
-      deps(fakeChain(), memoryStore()),
-    );
-    expect(res.status).toBe(204);
-    expect(res.headers.get('access-control-allow-methods')).toContain('POST');
-  });
 });
 
 describe('failures', () => {

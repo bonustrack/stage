@@ -164,12 +164,8 @@ describe('publishing a node', () => {
     expect(calls.filter((call) => call.method === 'PUT')).toHaveLength(1);
   });
 
-  test('answers CORS preflight, refuses other methods and rate limits before any work', async () => {
+  test('refuses other methods and rate limits before any work', async () => {
     const { api, calls } = cloudflare();
-    const pre = await run(new Request(URL_NODES, { method: 'OPTIONS' }), api);
-    expect(pre.status).toBe(204);
-    expect(pre.headers.get('access-control-allow-methods')).toBe('PUT, DELETE, OPTIONS');
-    expect(pre.headers.get('access-control-allow-headers')).toBe('content-type, stage-key, stage-timestamp, stage-signature');
     expect((await run(new Request(URL_NODES), api)).status).toBe(405);
     expect((await run(new Request(URL_NODES, { method: 'POST', body: CODE }), api)).status).toBe(405);
     expect((await run(signed('PUT', newNodeKey(), CODE), api, true)).status).toBe(429);

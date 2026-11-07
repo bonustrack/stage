@@ -1,10 +1,11 @@
+import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
 import type { PreviewMeta } from './parse.ts';
 
 const IMAGE_WIDTH = 600;
 const FAVICON_WIDTH = 64;
 
 function imgUrl(origin: string, target: string, width: number): string {
-  return `${origin}/img?url=${encodeURIComponent(target)}&w=${width}`;
+  return `${origin}${PROXY_ROUTES.img}?url=${encodeURIComponent(target)}&w=${width}`;
 }
 
 interface ProxiedPreview extends PreviewMeta {

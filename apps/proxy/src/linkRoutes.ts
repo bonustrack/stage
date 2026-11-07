@@ -5,14 +5,12 @@ import { parseMeta } from './parse.ts';
 import { proxyPreviewImages } from './imgProxy.ts';
 import { parseSettleBody, settleX402 } from './settle.ts';
 import { SsrfError } from './ssrf.ts';
-import { OPEN_CORS, corsResponse, guarded, openJson as json } from './respond.ts';
+import { OPEN_CORS, RATE_LIMITED, corsResponse, guarded, openJson as json } from './respond.ts';
 
 const CACHE_TTL = 24 * 60 * 60;
 const IMG_CACHE_TTL = 7 * 24 * 60 * 60;
 
 export type Limited = () => Promise<boolean>;
-
-export const RATE_LIMITED = (): Response => json({ error: 'rate limited' }, 429);
 
 function errorResponse(e: unknown, fallback: string): Response {
   if (e instanceof SsrfError) return json({ error: e.message }, 400);
