@@ -13,10 +13,7 @@ export interface Outgoing {
   video: CallTrack | null;
 }
 
-export interface CapturedMedia {
-  audio: CallTrack | null;
-  video: CallTrack | null;
-}
+export type CapturedMedia = Outgoing;
 
 export interface CallToken {
   live: () => boolean;

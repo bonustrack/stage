@@ -13,14 +13,7 @@ export function mimeOf(mime: string | undefined | null, nameOrUri: string): stri
   return mimeFromName(withoutQuery(nameOrUri));
 }
 
-interface OutgoingFile {
-  id: string;
-  url: string;
-  mime?: string;
-  name?: string;
-}
-
-export function outgoingFileMeta(at: OutgoingFile): { mimeType: string; filename: string } {
+export function outgoingFileMeta(at: { id: string; url: string; mime?: string; name?: string }): { mimeType: string; filename: string } {
   const mimeType = mimeOf(at.mime, at.name ?? at.url);
   return { mimeType, filename: withExtension(at.name ?? at.id, mimeType) };
 }

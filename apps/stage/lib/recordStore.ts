@@ -19,8 +19,7 @@ export function makeRecordStore(io: RecordIo, policy: WritePolicy, writeErrorTag
   const writing = new Map<string, RecordText>();
   let queue: Promise<void> = Promise.resolve();
   function queued(task: () => Promise<void>): Promise<void> {
-    const run = queue.then(task);
-    queue = run.catch(reported(writeErrorTag));
+    queue = queue.then(task).catch(reported(writeErrorTag));
     return queue;
   }
   const writes = writeBehind<RecordText>(policy, (name, text) => {

@@ -110,21 +110,11 @@ export function useAccountScope(): AccountScope {
   return useMemo(() => accountScope(), [epoch, selection, accountId]);
 }
 
-export interface ClientScope {
-  epoch: number;
-  current: () => boolean;
-  assertCurrent: (message?: string) => void;
-}
-
-export function clientScope<C>(client: C, cachedClient: () => C | null, epoch = getAccountEpoch()): ClientScope {
+export function clientScope<C>(client: C, cachedClient: () => C | null, epoch = getAccountEpoch()): Omit<AccountScope, 'accountId'> {
   return { epoch, ...scopeOf(() => epoch === getAccountEpoch() && cachedClient() === client) };
 }
 
-export interface SignalledAccountScope extends AccountScope {
-  signal: AbortSignal;
-}
-
-export async function withAccountScope<T>(run: (scope: SignalledAccountScope) => Promise<T>): Promise<T> {
+export async function withAccountScope<T>(run: (scope: AccountScope & { signal: AbortSignal }) => Promise<T>): Promise<T> {
   const controller = new AbortController();
   const stop = subscribeAccountChange(() => {
     controller.abort();

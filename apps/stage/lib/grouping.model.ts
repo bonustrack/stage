@@ -35,14 +35,12 @@ export function groupHeaderId(sectionKey: string): string {
   return `${HEADER_ID_PREFIX}${sectionKey}`;
 }
 
-export type GroupingOrderStore = 'categories' | 'board';
-
 export interface GroupingOrders {
   categories: readonly string[];
   board: readonly string[];
 }
 
-export function groupingOrderStore(by: GroupKey): GroupingOrderStore {
+export function groupingOrderStore(by: GroupKey): keyof GroupingOrders {
   return by === 'category' ? 'categories' : 'board';
 }
 

@@ -122,10 +122,7 @@ export function syncTimers(s: CallState): void {
     s.stopTicker();
     s.stopTicker = null;
   }
-  syncRingtone(s, session?.phase === 'ringing' && !s.busy);
-}
-
-function syncRingtone(s: CallState, ringing: boolean): void {
+  const ringing = session?.phase === 'ringing' && !s.busy;
   if (ringing && !s.stopRing) s.stopRing = s.deps.media.startRingtone();
   if (!ringing) stopRingtone(s);
 }

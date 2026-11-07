@@ -36,14 +36,12 @@ export function historyProblemMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
-const WAITING_LABEL = 'Waiting for your other device. Open Stage there on this account and keep it in the foreground.';
-
 export function historySyncPhaseLabel(phase: HistorySyncPhase, problem?: string | null): string | null {
   switch (phase) {
     case 'requesting':
       return 'Asking your other device for history…';
     case 'waiting':
-      return WAITING_LABEL;
+      return 'Waiting for your other device. Open Stage there on this account and keep it in the foreground.';
     case 'done':
       return 'History synced from your other device.';
     case 'timeout':
@@ -61,8 +59,7 @@ export function historySyncIsActive(phase: HistorySyncPhase): boolean {
 
 export function timeLeftLabel(msLeft: number): string {
   const seconds = Math.max(0, Math.ceil(msLeft / 1_000));
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, '0')} left`;
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} left`;
 }
 
 export function within<T>(work: Promise<T>, ms: number, message: string): Promise<T> {

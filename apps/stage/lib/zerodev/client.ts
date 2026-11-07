@@ -30,9 +30,8 @@ function configuredRpcUrl(): string {
 }
 
 export function makePublicClient(): PublicClient {
-  const rpc = configuredRpcUrl();
   const chain: Chain = base;
-  return createPublicClient({ chain, transport: http(rpc) });
+  return createPublicClient({ chain, transport: http(configuredRpcUrl()) });
 }
 
 function makeKernelClient(account: SmartAccount<KernelSmartAccountImplementation>, publicClient: PublicClient) {
@@ -48,9 +47,7 @@ function makeKernelClient(account: SmartAccount<KernelSmartAccountImplementation
   });
 }
 
-export type StageKernelClient = ReturnType<typeof makeKernelClient>;
-
-export async function kernelClientForRecord(rec: AccountRecord): Promise<StageKernelClient> {
+export async function kernelClientForRecord(rec: AccountRecord): Promise<ReturnType<typeof makeKernelClient>> {
   if (rec.type !== 'smart' || rec.hdIndex == null) throw new Error('Not a smart account.');
   const publicClient = makePublicClient();
   const owner = await smartOwnerSigner({ hdIndex: rec.hdIndex, phraseId: rec.phraseId });

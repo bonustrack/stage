@@ -63,9 +63,7 @@ function watchScreenEnd(video: CallTrack, ended: () => void): void {
 async function displayMedia(token: CallToken, picker: ScreenPicker | null): Promise<CallTrack | null> {
   const video = await captureScreen(token);
   if (!video) return null;
-  watchScreenEnd(video, () => {
-    video.ended = true;
-  });
+  watchScreenEnd(video, () => undefined);
   try {
     if (!(await pickScreen(picker))) {
       stopTrack(video);

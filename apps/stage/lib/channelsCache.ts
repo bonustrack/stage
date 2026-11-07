@@ -8,13 +8,7 @@ import { visibleCachedRows } from './sync/hiddenChannels';
 import { knownActiveAccountId, subscribeActiveAccountId } from './accountSelection';
 import { cachedRowsOf, type CachedRow } from './cachedRows.model';
 
-export interface ReadStateChange {
-  convId: string;
-  lastReadNs: number;
-  markedUnread: boolean;
-}
-
-const readChanges = makeListeners<ReadStateChange>();
+const readChanges = makeListeners<{ convId: string; lastReadNs: number; markedUnread: boolean }>();
 export const onReadStateChanged = readChanges.subscribe;
 
 const stores = new Map<string, PersistentStore<CachedRow[]>>();
@@ -36,8 +30,7 @@ function notifyActive(): void {
 }
 
 function fileNameFor(id: string): string {
-  const safe = id.replace(/[^A-Za-z0-9._-]/g, '_');
-  return `channels-cache.${safe}.json`;
+  return `channels-cache.${id.replace(/[^A-Za-z0-9._-]/g, '_')}.json`;
 }
 
 function storeFor(id: string): PersistentStore<CachedRow[]> {
@@ -57,13 +50,8 @@ function activeStore(): PersistentStore<CachedRow[]> {
 }
 
 function bindActiveStore(): void {
-  if (activeStoreUnsub) {
-    attempt(activeStoreUnsub, 'cleanup');
-    activeStoreUnsub = null;
-  }
-  activeStoreUnsub = activeStore().subscribe(() => {
-    notifyActive();
-  });
+  if (activeStoreUnsub) attempt(activeStoreUnsub, 'cleanup');
+  activeStoreUnsub = activeStore().subscribe(notifyActive);
 }
 bindActiveStore();
 
@@ -92,7 +80,6 @@ export const subscribeCachedRows = activeListeners.subscribe;
 
 const LAST_READ_PREFIX = 'unread.lastRead.';
 function lastReadOf(raw: string | null): number {
-  if (!raw) return 0;
   const n = Number(raw);
   return Number.isFinite(n) ? n : 0;
 }

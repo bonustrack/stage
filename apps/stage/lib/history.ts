@@ -39,13 +39,11 @@ export function historySyncProblem(): string | null {
 export const useHistorySyncPhase = phase.use;
 
 async function requestHistorySync(): Promise<void> {
-  const client = await sdk.client();
-  await sdk.history.sendSyncRequest(client, historyServerUrl());
+  await sdk.history.sendSyncRequest(await sdk.client(), historyServerUrl());
 }
 
 async function syncHistoryGroups(): Promise<void> {
-  const client = await sdk.client();
-  await sdk.history.syncDeviceGroups(client);
+  await sdk.history.syncDeviceGroups(await sdk.client());
 }
 
 async function processHistoryArchive(): Promise<void> {

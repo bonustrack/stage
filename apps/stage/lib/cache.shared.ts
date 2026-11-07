@@ -15,18 +15,13 @@ interface PersistenceBackend {
 const backend: PersistenceBackend = persistenceBackend;
 
 const stores = new Set<{ flushNow: () => void }>();
-let flushSignalWired = false;
 
-function wireFlushSignal(): void {
-  if (flushSignalWired) return;
-  flushSignalWired = true;
-  backend.onFlushSignal(() => {
-    for (const store of stores)
-      attempt(() => {
-        store.flushNow();
-      }, 'cache');
-  });
-}
+backend.onFlushSignal(() => {
+  for (const store of stores)
+    attempt(() => {
+      store.flushNow();
+    }, 'cache');
+});
 
 type Edit<T> = (current: T | null) => T | null;
 
@@ -52,7 +47,6 @@ export class PersistentStore<T> {
       backend.write(name, value);
     });
     stores.add(this);
-    wireFlushSignal();
   }
 
   flushNow(): void {

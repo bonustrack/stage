@@ -3,7 +3,7 @@ import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletio
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { attachedFilesOf } from '@stage-labs/client/xmtp/contentTypes';
 import { z } from 'zod';
-import { jsonWith, storedRecordOf, storedStrings } from './storeCore';
+import { jsonWith, sameList, storedRecordOf, storedStrings } from './storeCore';
 
 export const FILE_PAGE_SIZE = 20;
 export const DELETED_LIMIT = 2_000;
@@ -134,8 +134,7 @@ export function newestFirst(a: StoredFile, b: StoredFile): number {
 
 function withDeleted(deleted: readonly string[], ids: readonly string[]): string[] {
   if (ids.length === 0) return [...deleted];
-  const fresh = ids.filter((id) => !deleted.includes(id));
-  return [...deleted, ...new Set(fresh)].slice(-DELETED_LIMIT);
+  return [...deleted, ...new Set(ids.filter((id) => !deleted.includes(id)))].slice(-DELETED_LIMIT);
 }
 
 export function applyFindings(index: StorageIndex, findings: SettledFindings): StorageIndex {
@@ -148,10 +147,6 @@ export function applyFindings(index: StorageIndex, findings: SettledFindings): S
   }
   const files = [...byKey.values()].sort(newestFirst);
   return sameList(files, index.files) && sameList(deleted, index.deleted) ? index : { ...index, files, deleted };
-}
-
-function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
-  return a.length === b.length && a.every((item, i) => item === b[i]);
 }
 
 export function sinceFor(index: StorageIndex, convId: string): number {
@@ -197,12 +192,8 @@ const storedIndexSchema = z.object({
   retry: storedRecordOf(isCount).catch({}),
 });
 
-function indexRecord(index: StorageIndex): Record<string, unknown> {
-  return { v: 1, ...index };
-}
-
 export function encodeIndex(index: StorageIndex): string {
-  return JSON.stringify(indexRecord(index));
+  return JSON.stringify({ v: 1, ...index });
 }
 
 const parseIndex = jsonWith(storedIndexSchema);

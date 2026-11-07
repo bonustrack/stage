@@ -19,9 +19,7 @@ const NO_ADDRESSES: string[] = [];
 
 function peerAddressesOf(rows: readonly CachedRow[] | null): string[] {
   const out = new Set<string>();
-  for (const r of rows ?? []) {
-    if (r.peerAddress) out.add(r.peerAddress.toLowerCase());
-  }
+  for (const r of rows ?? []) if (r.peerAddress) out.add(r.peerAddress.toLowerCase());
   return [...out];
 }
 
@@ -49,12 +47,7 @@ async function collectAddresses(): Promise<string[]> {
   return [...set];
 }
 
-export interface ContactList {
-  contacts: Contact[];
-  collected: boolean;
-}
-
-export function useContactList(enabled: boolean): ContactList {
+export function useContactList(enabled: boolean): { contacts: Contact[]; collected: boolean } {
   const selection = useAccountGeneration('selection');
   const accountId = useKnownActiveAccountId();
   const { data: addresses = NO_ADDRESSES, isFetched } = useQuery({

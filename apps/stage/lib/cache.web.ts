@@ -8,8 +8,7 @@ const STORE = 'kv';
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 
 function openDb(): Promise<IDBDatabase | null> {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise<IDBDatabase | null>((resolve) => {
+  dbPromise ??= new Promise<IDBDatabase | null>((resolve) => {
     try {
       const scope = globalThis as { indexedDB?: IDBFactory };
       if (!scope.indexedDB) {

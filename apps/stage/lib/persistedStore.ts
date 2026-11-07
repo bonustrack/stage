@@ -166,21 +166,12 @@ function readNow<T>(reader: StoreReader<T>): boolean {
   return true;
 }
 
-interface StoreLoading<T> {
-  loaded: () => boolean;
-  loadFailed: () => boolean;
-  reload: () => Promise<T>;
-  load: () => Promise<T>;
-  loadAsync: () => void;
-  retry: () => void;
-}
-
 function storeLoading<T>(
   opts: ValueStoreOptions<T>,
   state: StoreState<T>,
   hydration: ReturnType<typeof storeHydration<T>>,
   notify: () => void,
-): StoreLoading<T> {
+): Pick<ValueStore<T>, 'loaded' | 'loadFailed' | 'reload' | 'load' | 'loadAsync' | 'retry'> {
   const loaded = (): boolean => (opts.perAccount ? state.loadedFor?.current() === true : hydration.done());
   const loadFailed = (): boolean => !loaded() && state.failedFor?.current() === true;
   async function reload(): Promise<T> {

@@ -32,6 +32,10 @@ export function jsonWith<T>(schema: StoredSchema<T>, reviver?: (key: string, val
   };
 }
 
+export function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
+  return a.length === b.length && a.every((item, i) => item === b[i]);
+}
+
 export function keepUnlessChanged<T>(current: T, next: T): T {
   return JSON.stringify(next) === JSON.stringify(current) ? current : next;
 }
@@ -132,12 +136,7 @@ export function makeSharedSource<S, T = void>(
   };
 }
 
-export function hydrateOnce<T>(reader: () => Promise<T>): {
-  run: () => Promise<T>;
-  done: () => boolean;
-  markDone: () => void;
-  reset: () => void;
-} {
+export function hydrateOnce<T>(reader: () => Promise<T>): { run: () => Promise<T>; done: () => boolean; markDone: () => void } {
   let loaded = false;
   let inFlight: Promise<T> | null = null;
   return {
@@ -156,10 +155,6 @@ export function hydrateOnce<T>(reader: () => Promise<T>): {
     done: (): boolean => loaded,
     markDone(): void {
       loaded = true;
-      inFlight = null;
-    },
-    reset(): void {
-      loaded = false;
       inFlight = null;
     },
   };

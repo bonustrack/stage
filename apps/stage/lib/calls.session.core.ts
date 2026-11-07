@@ -35,13 +35,11 @@ export interface CallSessionApi {
   toggleScreen: (picker: ScreenPicker | null) => Promise<void>;
 }
 
-const always = (): boolean => true;
-
 export async function acquire<T>(
   token: CallToken,
   getMedia: () => Promise<T | null>,
   dispose: (media: T) => void,
-  wanted: (media: T) => boolean = always,
+  wanted: (media: T) => boolean = () => true,
 ): Promise<T | null> {
   const media = await getMedia();
   if (media === null) return null;
@@ -50,25 +48,21 @@ export async function acquire<T>(
   return null;
 }
 
-function holding<T>(media: T, work: () => Promise<void>, dispose: (media: T) => void): () => Promise<T> {
-  return async () => {
-    try {
-      await work();
-    } catch (error) {
-      dispose(media);
-      throw error;
-    }
-    return media;
-  };
-}
-
 function startAudioWith(
   s: CallState,
   media: CapturedMedia,
   token: CallToken,
   dispose: (media: CapturedMedia) => void,
 ): () => Promise<CapturedMedia> {
-  return holding(media, () => s.deps.media.startAudio(media.video !== null, token), dispose);
+  return async () => {
+    try {
+      await s.deps.media.startAudio(media.video !== null, token);
+    } catch (error) {
+      dispose(media);
+      throw error;
+    }
+    return media;
+  };
 }
 
 async function exclusive(s: CallState, run: () => Promise<void>): Promise<void> {
@@ -188,17 +182,19 @@ function toggleCamera(s: CallState): Promise<void> {
   });
 }
 
+async function stopSharing(s: CallState, track: CallTrack): Promise<void> {
+  s.screen = null;
+  try {
+    await pushMedia(s);
+  } finally {
+    releaseVideo(s, track);
+  }
+}
+
 function shareScreen(s: CallState, track: CallTrack): Promise<void> {
   s.screen = track;
   s.deps.media.watchScreenEnd(track, () => {
-    if (s.screen !== track) return;
-    s.screen = null;
-    ignore(
-      pushMedia(s).finally(() => {
-        releaseVideo(s, track);
-      }),
-      'ui',
-    );
+    if (s.screen === track) ignore(stopSharing(s, track), 'ui');
   });
   return pushMedia(s);
 }
@@ -207,14 +203,8 @@ function toggleScreen(s: CallState, picker: ScreenPicker | null): Promise<void> 
   return exclusive(s, async () => {
     const callId = joinedCallId(s);
     if (callId === null) return;
-    const shared = s.screen;
-    if (shared) {
-      s.screen = null;
-      try {
-        await pushMedia(s);
-      } finally {
-        releaseVideo(s, shared);
-      }
+    if (s.screen) {
+      await stopSharing(s, s.screen);
       return;
     }
     const token = captureToken(s);

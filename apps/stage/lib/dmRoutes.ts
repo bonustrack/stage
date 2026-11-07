@@ -38,8 +38,7 @@ export function dmRowIdOf(convId: string, peerAddress: string | null, knownByPee
 }
 
 export function markHistoryImported(nowMs: number): Promise<void> {
-  const ns = nowMs * 1_000_000;
-  return importedUntil.update((current) => Math.max(current, ns));
+  return importedUntil.update((current) => Math.max(current, nowMs * 1_000_000));
 }
 
 export function isImportedReplay(sentNs: number): boolean {

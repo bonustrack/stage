@@ -41,9 +41,7 @@ async function shareConsent(accountId: string, conv: NonNullable<Awaited<ReturnT
     if (changed) throw new Error('Channel preferences changed. Choose the channel again.');
     return { cleared, hidden, consent };
   } finally {
-    stop.forEach((unsubscribe) => {
-      unsubscribe();
-    });
+    for (const unsubscribe of stop) unsubscribe();
   }
 }
 

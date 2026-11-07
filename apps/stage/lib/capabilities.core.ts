@@ -65,10 +65,6 @@ function confirmWith(alert: PlatformEffects['alert'], options: ConfirmOptions): 
   });
 }
 
-function isShareCancel(err: unknown): boolean {
-  return err instanceof Error && err.name === 'AbortError';
-}
-
 export function makeCapabilities(platform: PlatformEffects): Capabilities {
   const copy = (label: string, value: string): void => {
     void Clipboard.setStringAsync(value).catch(reported('clipboard.copy'));
@@ -98,7 +94,7 @@ export function makeCapabilities(platform: PlatformEffects): Capabilities {
           if (!shared) copyLink(url);
         },
         (err: unknown) => {
-          if (isShareCancel(err)) return;
+          if (err instanceof Error && err.name === 'AbortError') return;
           report('share.link', err);
           copyLink(url);
         },

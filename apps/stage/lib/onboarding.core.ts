@@ -135,11 +135,7 @@ async function continueSetup(deps: OnboardingDeps, attempt: Attempt, resuming: b
     await deps.messaging(record.id);
     await saveRequestedProfile(deps, attempt, state, record, onStage);
     await deps.clear();
-    attempt.started = false;
-    attempt.requested = undefined;
-    attempt.pending = null;
-    attempt.stored = null;
-    attempt.unconfirmed = false;
+    Object.assign(attempt, { started: false, requested: undefined, pending: null, stored: null, unconfirmed: false } satisfies Attempt);
   } catch (e) {
     throw setupFailure(attempt, e);
   }

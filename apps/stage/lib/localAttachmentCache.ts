@@ -9,14 +9,13 @@ import { fileExtension, withoutQuery } from '@stage-labs/client/files';
 const cache = makeLocalAttachmentCache();
 
 const listeners = makeListeners();
-const emit = listeners.notify;
 
 export function rememberLocalAttachments(
   messageId: string,
   previews: readonly LocalAttachmentPreview[],
   uploaded?: readonly UploadedAttachment[],
 ): void {
-  if (cache.remember(messageId, previews, uploaded)) emit();
+  if (cache.remember(messageId, previews, uploaded)) listeners.notify();
 }
 
 export function useUploadedAttachments(): ReadonlyMap<string, readonly string[]> {

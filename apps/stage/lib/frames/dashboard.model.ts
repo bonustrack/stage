@@ -10,11 +10,6 @@ import {
   type LiveSource,
 } from '@stage-labs/client/xmtp/sync/dashboard';
 
-interface WidgetSize {
-  w?: DashboardWidth;
-  h?: DashboardHeight;
-}
-
 export function canAddWidget(widgets: readonly DashboardWidget[]): boolean {
   return widgets.length < DASHBOARD_MAX_WIDGETS;
 }
@@ -82,7 +77,7 @@ export function removeWidget(widgets: DashboardWidget[], id: string): DashboardW
   return next.length === widgets.length ? widgets : next;
 }
 
-export function resizeWidget(widgets: DashboardWidget[], id: string, size: WidgetSize): DashboardWidget[] {
+export function resizeWidget(widgets: DashboardWidget[], id: string, size: { w?: DashboardWidth; h?: DashboardHeight }): DashboardWidget[] {
   const index = widgets.findIndex((widget) => widget.id === id);
   const current = widgets[index];
   if (current === undefined) return widgets;

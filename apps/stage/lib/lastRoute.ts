@@ -26,11 +26,7 @@ function hasColdStartDeepLink(url: string | null): boolean {
   return route !== null && route.pathname !== '/(tabs)';
 }
 
-interface RestoreGate {
-  ready: boolean;
-}
-
-export function useRestoreGate(isRestorable: (path: string) => boolean): RestoreGate {
+export function useRestoreGate(isRestorable: (path: string) => boolean): { ready: boolean } {
   const pathname = usePathname();
   const navState = useRootNavigationState();
   const [ready, setReady] = useState(false);

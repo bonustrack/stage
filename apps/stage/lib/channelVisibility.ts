@@ -91,9 +91,7 @@ export async function syncVisibleChannels(): Promise<void> {
 
 async function deniedGroups(context: AccountClient): Promise<Conv[]> {
   const denied: Conv[] = [];
-  for (const conv of await sdk.listConvs(context.client, ['denied'])) {
-    if (sdk.isGroup(conv) && !(await isSyncConv(conv))) denied.push(conv);
-  }
+  for (const conv of await sdk.listConvs(context.client, ['denied'])) if (sdk.isGroup(conv) && !(await isSyncConv(conv))) denied.push(conv);
   return denied;
 }
 

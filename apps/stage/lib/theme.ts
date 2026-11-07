@@ -30,11 +30,6 @@ const preference = createValueStore<ThemePreference>({
   deserialize: (raw) => (isThemePreference(raw) ? raw : undefined),
 });
 
-export async function setThemePreference(p: ThemePreference): Promise<void> {
-  if (!isThemePreference(p)) return;
-  await preference.setAsync(p);
-}
-
 export const useThemePreference = (): ThemePreference => preference.use();
 
 export type Palette = KitPalette;
@@ -73,7 +68,7 @@ export function useThemeChoice(): ThemeChoice {
 
 export function chooseTheme(choice: ThemeChoice): void {
   custom.set(choice === 'custom');
-  if (choice !== 'custom') void setThemePreference(choice);
+  if (choice !== 'custom') void preference.setAsync(choice);
 }
 
 function patchSeeds(patch: Partial<ThemeSeeds>): void {

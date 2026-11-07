@@ -25,8 +25,7 @@ export function isDevClientLauncher(debugMarker: unknown, launcher: unknown): bo
 }
 
 export function loadedCommit(manifest: unknown): string | null {
-  const extra = record(record(record(manifest).extra).expoClient).extra;
-  const gitHash = record(extra).gitHash;
+  const gitHash = record(record(record(record(manifest).extra).expoClient).extra).gitHash;
   return typeof gitHash === 'string' && SHA.test(gitHash) ? gitHash : null;
 }
 

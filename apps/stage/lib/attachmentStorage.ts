@@ -18,15 +18,9 @@ export function attachmentDownloadUrl(url: string): string {
 }
 
 export function resolveUploadResponse(status: number, body: unknown, filename: string): string {
-  if (status === 413) {
-    throw new Error(`Couldn't send "${filename}": the file is too large (413). Try a smaller file.`);
-  }
-  if (status === 429) {
-    throw new Error(`Couldn't send "${filename}": too many uploads right now. Try again in a minute.`);
-  }
-  if (status < 200 || status >= 300) {
-    throw new Error(`Couldn't send "${filename}": upload failed (${status}).`);
-  }
+  if (status === 413) throw new Error(`Couldn't send "${filename}": the file is too large (413). Try a smaller file.`);
+  if (status === 429) throw new Error(`Couldn't send "${filename}": too many uploads right now. Try again in a minute.`);
+  if (status < 200 || status >= 300) throw new Error(`Couldn't send "${filename}": upload failed (${status}).`);
   const id = UPLOAD_REPLY.safeParse(body).data?.id;
   if (id === undefined) throw new Error(`Couldn't send "${filename}": the upload service returned no id.`);
   return `${UPLOAD_URL}/${id}`;

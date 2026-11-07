@@ -68,17 +68,13 @@ async function conversationFindings<C>(conv: C, sinceNs: number, selfInboxId: st
   }
 }
 
-async function settledFindings<C>(conv: C, index: StorageIndex, findings: ScanFindings, source: ScanSource<C>): Promise<SettledFindings> {
-  const rights = needsDeleteRights(index, findings) ? await source.deleteRights(conv) : NO_DELETE_RIGHTS;
-  return settleFindings(index, findings, rights);
-}
-
 async function scanOne<C>(conv: C, sinceNs: number, source: ScanSource<C>, sink: ScanSink): Promise<boolean> {
   try {
     const findings = await conversationFindings(conv, sinceNs, sink.index().inboxId, source);
-    const settled = await settledFindings(conv, sink.index(), findings, source);
+    const index = sink.index();
+    const rights = needsDeleteRights(index, findings) ? await source.deleteRights(conv) : NO_DELETE_RIGHTS;
     assertCurrent(source);
-    sink.apply(settled);
+    sink.apply(settleFindings(index, findings, rights));
     return true;
   } catch (err) {
     if (err instanceof ScanStopped) throw err;

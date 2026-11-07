@@ -43,10 +43,8 @@ const storedListSchema = z
 
 const parseStoredList = jsonWith(storedListSchema);
 
-const UNREADABLE_LIST = 'The account list could not be read, so nothing was changed. Try again.';
-
 function unreadable(strict: boolean): AccountRecord[] {
-  if (strict) throw new Error(UNREADABLE_LIST);
+  if (strict) throw new Error('The account list could not be read, so nothing was changed. Try again.');
   return [];
 }
 
@@ -165,17 +163,14 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
   try {
     await deleteKey(id);
     await persist(next);
-    const active = await getActiveAccountId();
-    if (active === id) {
+    if ((await getActiveAccountId()) === id) {
       const first = next[0];
       if (first) await setActiveAccountId(first.id);
       else await secureStorage.delete(ACTIVE_KEY).catch(ignored(undefined, 'cleanup'));
     }
     const removedPhrase = rec?.type === 'smart' ? rec.phraseId : undefined;
     const stillUsed = new Set(next.flatMap((a) => (a.type === 'smart' && a.phraseId ? [a.phraseId] : [])));
-    if (removedPhrase && !stillUsed.has(removedPhrase)) {
-      await deletePhrase(removedPhrase, [...stillUsed][0] ?? null);
-    }
+    if (removedPhrase && !stillUsed.has(removedPhrase)) await deletePhrase(removedPhrase, [...stillUsed][0] ?? null);
     return next;
   } finally {
     accountSelectionChanged();

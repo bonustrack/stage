@@ -29,20 +29,12 @@ async function update(next: (ids: readonly string[]) => readonly string[]): Prom
   listeners.notify();
 }
 
-function markOwnDelete(messageId: string): Promise<void> {
-  return update((ids) => (ids.includes(messageId) ? ids : [...ids, messageId].slice(-MAX_IDS)));
-}
-
-function unmarkOwnDelete(messageId: string): Promise<void> {
-  return update((ids) => (ids.includes(messageId) ? ids.filter((id) => id !== messageId) : ids));
-}
-
 export async function deleteForEveryone(messageId: string, send: (messageId: string) => Promise<unknown>): Promise<void> {
-  await markOwnDelete(messageId);
+  await update((ids) => (ids.includes(messageId) ? ids : [...ids, messageId].slice(-MAX_IDS)));
   try {
     await send(messageId);
   } catch (err) {
-    await unmarkOwnDelete(messageId);
+    await update((ids) => (ids.includes(messageId) ? ids.filter((id) => id !== messageId) : ids));
     throw err;
   }
 }

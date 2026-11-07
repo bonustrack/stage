@@ -161,20 +161,9 @@ interface RtcConnection<Track> extends Connection<Track> {
   close(): void;
 }
 
-interface RtcConfig {
-  iceServers: { urls: string[] }[];
-  bundlePolicy: 'max-bundle';
-}
-
-interface RemoteStream<Track> {
-  stream: CallStream;
-  add: (track: Track) => void;
-  release: () => void;
-}
-
 export interface RtcPlatform<Track> {
-  connect: (config: RtcConfig) => RtcConnection<Track>;
-  remote: () => RemoteStream<Track>;
+  connect: (config: { iceServers: { urls: string[] }[]; bundlePolicy: 'max-bundle' }) => RtcConnection<Track>;
+  remote: () => { stream: CallStream; add: (track: Track) => void; release: () => void };
   track: (track: CallTrack | null) => Track | null;
 }
 

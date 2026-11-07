@@ -18,10 +18,7 @@ function belongsTo(item: OutboxItem, accountId: string | null): boolean {
 
 export function itemsForAddress(items: OutboxItem[], address: string, accountId: string | null): OutboxItem[] {
   const target = address.toLowerCase();
-  return items
-    .filter((i) => i.address === target && belongsTo(i, accountId))
-    .slice()
-    .sort((a, b) => a.createdAt - b.createdAt);
+  return items.filter((i) => i.address === target && belongsTo(i, accountId)).sort((a, b) => a.createdAt - b.createdAt);
 }
 
 export function addressesWithQueued(items: OutboxItem[], accountId: string | null): string[] {
@@ -33,9 +30,7 @@ export function withoutItem(items: OutboxItem[], id: string): OutboxItem[] {
 }
 
 export function pendingBanner(reason: 'unregistered' | 'stale-installations' | 'failed', shortAddress: string): string {
-  if (reason === 'unregistered') {
-    return `${shortAddress} isn't on XMTP yet. Messages you send now will be delivered when they join.`;
-  }
+  if (reason === 'unregistered') return `${shortAddress} isn't on XMTP yet. Messages you send now will be delivered when they join.`;
   if (reason === 'stale-installations') {
     return `${shortAddress}'s device keys have expired. Messages you send now will be delivered when they open an XMTP app.`;
   }

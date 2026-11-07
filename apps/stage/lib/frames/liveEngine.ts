@@ -1,5 +1,5 @@
 import type { NodeResult } from '@stage-labs/client/nodes/protocol';
-import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
+import type { FrameContent } from '@stage-labs/client/xmtp/frame';
 import { nodeRequestOf, type FrameOut } from './frame.model';
 import type { FrameSessions } from './frameSession';
 import { liveProblemText, liveStateAfter, type LiveState } from './live.model';
@@ -31,21 +31,13 @@ export interface LiveEngine {
   toastProblem: (next: LiveState, load: boolean) => boolean;
 }
 
-function requestOf(
-  transport: NodeTransport,
-  node: NodeSource,
-  call: LiveCall,
-  onMessage: (message: FrameMessage) => void,
-): Promise<NodeResult> {
-  if (call.load) return transport.load(node, { signal: call.signal, onMessage });
-  return transport.send(node, nodeRequestOf(call.out), onMessage);
-}
-
 export function makeLiveEngine(deps: LiveEngineDeps): LiveEngine {
   return {
     run: async (slot, call) => {
       const { result, applied } = await deps.sessions.streamInto(slot.sessionKey, call.load, slot.show, (onMessage) =>
-        requestOf(deps.transport, slot.node, call, onMessage),
+        call.load
+          ? deps.transport.load(slot.node, { signal: call.signal, onMessage })
+          : deps.transport.send(slot.node, nodeRequestOf(call.out), onMessage),
       );
       return { result, next: liveStateAfter(slot.read(), result, deps.now(), applied) };
     },

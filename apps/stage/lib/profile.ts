@@ -130,8 +130,6 @@ export async function saveBasenameProfile(address: string, name: string, changes
   return hash;
 }
 
-export type { NameCheck } from '@stage-labs/client/identity/namesApi';
-
 async function signForAccount(account: ProfileAccount, message: string): Promise<Hex> {
   const signed = await signFrom(
     account.record,
@@ -177,10 +175,6 @@ async function claimForAccount(account: ProfileAccount, label: string): Promise<
   return name;
 }
 
-export async function claimStageName(label: string): Promise<string> {
-  return claimForAccount(await profileAccount(), label);
-}
-
 async function nameSetupCalls(address: string, label: string, records: Record<string, string>): Promise<ContractCall[]> {
   const name = stageNameOf(label);
   return encodeNameSetup(name, address as Hex, records, await nameResolver(name));
@@ -194,7 +188,7 @@ export async function setUpStageName(address: string, label: string, records: Re
 }
 
 export async function claimAndSetUpStageName(address: string, label: string): Promise<Hex> {
-  await claimStageName(label);
+  await claimForAccount(await profileAccount(), label);
   return setUpStageName(address, label);
 }
 

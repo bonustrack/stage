@@ -164,16 +164,7 @@ async function runScan(live: () => boolean): Promise<void> {
   const accountId = context.account.id;
   const start = await startIndex(context);
   stopUnless(live);
-  setState({
-    accountId,
-    files: start.files,
-    loaded: true,
-    scanning: true,
-    firstScan: start.cursorNs === 0,
-    done: 0,
-    total: 0,
-    failed: false,
-  });
+  setState({ ...INITIAL, accountId, files: start.files, loaded: true, scanning: true, firstScan: start.cursorNs === 0 });
   const startedMs = Date.now();
   const convs = await sdk.listConvs(context.client, ALL_CONSENT);
   stopUnless(live);
@@ -186,12 +177,8 @@ async function runScan(live: () => boolean): Promise<void> {
   setState({ scanning: false, firstScan: false, done: convs.length, failed: failed.size > 0 });
 }
 
-function isStop(err: unknown): boolean {
-  return err instanceof ScanStopped || err instanceof AccountChangedError || err instanceof NoAccountError;
-}
-
 function scanEnded(err: unknown): void {
-  const stopped = isStop(err);
+  const stopped = err instanceof ScanStopped || err instanceof AccountChangedError || err instanceof NoAccountError;
   if (!stopped) report('storage.scan', err);
   setState({ scanning: false, firstScan: false, failed: !stopped, loaded: state.loaded || !stopped });
 }

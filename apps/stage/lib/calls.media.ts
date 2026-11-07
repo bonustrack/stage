@@ -56,9 +56,7 @@ function watchScreenEnd(video: CallTrack, ended: () => void): void {
 async function displayMedia(token: CallToken): Promise<CallTrack | null> {
   const video = await captureScreen(token);
   if (!video) return null;
-  watchScreenEnd(video, () => {
-    video.ended = true;
-  });
+  watchScreenEnd(video, () => undefined);
   return keptScreen(video, token);
 }
 

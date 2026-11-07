@@ -1,10 +1,7 @@
 export function channelTimestamp(ts: number | null): string {
   if (!ts) return '';
   const d = new Date(ts);
-  const today = new Date();
-  if (d.toDateString() === today.toDateString()) {
-    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  }
+  if (d.toDateString() === new Date().toDateString()) return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 

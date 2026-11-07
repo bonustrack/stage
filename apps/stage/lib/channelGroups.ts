@@ -10,6 +10,7 @@ import {
 import { reported } from './errorPolicy';
 import { loadBoardOrder } from './boardOrder';
 import { createValueStore, type StoreSource } from './persistedStore';
+import { sameList } from './storeCore';
 import { settingChanges, type SyncedSetting } from './sync/setting';
 
 const prefs = createValueStore<ChannelGroupsPrefs>({
@@ -31,12 +32,8 @@ export function toggleGroupCollapsed(key: string): void {
   void save((current) => ({ ...current, collapsed: toggleKey(current.collapsed, key) }));
 }
 
-function sameOrder(a: readonly string[], b: readonly string[]): boolean {
-  return a.length === b.length && a.every((key, i) => key === b[i]);
-}
-
 function withOrder(current: ChannelGroupsPrefs, order: string[]): ChannelGroupsPrefs {
-  return current.orderConfigured && sameOrder(current.order, order) ? current : { ...current, order, orderConfigured: true };
+  return current.orderConfigured && sameList(current.order, order) ? current : { ...current, order, orderConfigured: true };
 }
 
 function changeCategoryOrder(next: (order: string[]) => string[]): void {

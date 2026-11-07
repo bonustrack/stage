@@ -17,16 +17,12 @@ export interface ConvAvatar {
 
 const LOADING_TITLE: ConvTitle = { text: '', placeholder: false };
 
-function displayNameOf(names: readonly (string | null | undefined)[], fallback: string): string {
-  for (const name of names) {
+export function accountName(account: { address: string; label?: string }, peerName?: string | null): string {
+  for (const name of [peerName, account.label]) {
     const shown = name?.trim();
     if (shown) return shown;
   }
-  return fallback;
-}
-
-export function accountName(account: { address: string; label?: string }, peerName?: string | null): string {
-  return displayNameOf([peerName, account.label], shortAddress(account.address));
+  return shortAddress(account.address);
 }
 
 export function profileDisplayName(address: string): string {

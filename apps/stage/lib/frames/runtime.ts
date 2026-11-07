@@ -22,10 +22,8 @@ export const liveEngine = makeLiveEngine({
 
 export const chatFrames = makeLiveFrames(liveEngine, newNodeKey);
 
-function forgetFramesOfAccount(): void {
+subscribeAccountEpoch(() => {
   chatFrames.clear();
   frameSessions.clear();
   frameStacks.clear();
-}
-
-subscribeAccountEpoch(forgetFramesOfAccount);
+});

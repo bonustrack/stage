@@ -21,9 +21,7 @@ export function useTxSimulation(
     queryKey: accountQueryKeyAt('selection', selection, 'txSimulate', chainId, to ?? '', data ?? '', value ?? ''),
     queryFn: async (): Promise<SimulateResult> => {
       const from = (await getActiveAccount())?.address;
-      if (!from) {
-        return { success: 'unknown', assetChanges: { in: [], out: [] }, error: 'No active wallet' };
-      }
+      if (!from) return { success: 'unknown', assetChanges: { in: [], out: [] }, error: 'No active wallet' };
       return simulateTx({ from, to: to ?? '', data, value, chainId });
     },
     enabled: !!to,
@@ -78,8 +76,7 @@ function buildBalance(
   needed: number | undefined,
   known: { decimals: number; symbol: string } | undefined,
 ): PayerBalance {
-  const decimals = known?.decimals ?? onchain.decimals;
-  const human = formatUnits(onchain.raw, decimals);
+  const human = formatUnits(onchain.raw, known?.decimals ?? onchain.decimals);
   const sym = known?.symbol ?? symbol ?? onchain.symbol;
   return { text: `Balance: ${truncateDecimals(human, BALANCE_DIGITS)} ${sym}`, insufficient: needed != null && Number(human) < needed };
 }
@@ -91,8 +88,7 @@ async function resolveBalance(
   needed?: number,
 ): Promise<PayerBalance | null> {
   const cid = parseChainId(chainId);
-  const acct = await getActiveAccount();
-  const addr = acct?.address;
+  const addr = (await getActiveAccount())?.address;
   if (!addr || !isAddress(addr)) return null;
   const known = ASSETS.find((a) => a.chainId === cid && a.symbol.toLowerCase() === (symbol ?? '').toLowerCase());
   const onchain = await readOnchain(cid, token, addr).catch(recover('bubble.balance', null));

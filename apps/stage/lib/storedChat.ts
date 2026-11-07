@@ -2,12 +2,7 @@ import { useMemo } from 'react';
 import { useConvRow } from './messaging/queries';
 import { usePeerProfiles } from './peerProfiles';
 
-export interface StoredChat {
-  peerAddress: string | null;
-  groupName: string;
-}
-
-export function useStoredChat(convId: string, recheckMs?: number): StoredChat | null {
+export function useStoredChat(convId: string, recheckMs?: number): { peerAddress: string | null; groupName: string } | null {
   const row = useConvRow(convId, recheckMs);
   const known = row !== null;
   const peerAddress = row?.peerAddress ?? null;
