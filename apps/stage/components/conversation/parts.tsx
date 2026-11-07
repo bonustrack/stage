@@ -1,6 +1,6 @@
 import { Dimensions, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
+import { DROPDOWN_MENU, DropdownMenu } from '@stage-labs/kit/react-native/menu';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
@@ -127,6 +127,12 @@ interface BubbleActions {
   delete: () => void;
 }
 
+const ACTION_ROW_HEIGHT = 2 * DROPDOWN_MENU.itemPadY + DROPDOWN_MENU.lineHeight;
+
+function actionDropdownHeight(rows: number): number {
+  return rows * ACTION_ROW_HEIGHT + 2 * DROPDOWN_MENU.padY;
+}
+
 function ActionDropdown({ items, on }: { items: ReturnType<typeof bubbleMenuItems>; on: BubbleActions }): React.ReactElement {
   return (
     <DropdownMenu>
@@ -202,7 +208,7 @@ export function BubbleActionMenu({
     canDelete,
     addToDashboard: onAddToDashboard !== undefined,
   });
-  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, items.length, windowHeight);
+  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, actionDropdownHeight(items.length), windowHeight);
   const reactAndClose = (e: string): void => {
     onReact(e);
     onClose();

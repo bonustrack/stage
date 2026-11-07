@@ -7,12 +7,7 @@ export interface MenuPlacement {
   dropdownAbove: boolean;
 }
 
-function actionDropdownHeight(rows: number): number {
-  return rows * 48 + 16;
-}
-
-export function menuPlacement(anchorY: number, rows: number, windowHeight: number): MenuPlacement {
-  const dropdownH = actionDropdownHeight(rows);
+export function menuPlacement(anchorY: number, dropdownH: number, windowHeight: number): MenuPlacement {
   const maxStripTop = windowHeight - MENU_SCREEN_MARGIN - MENU_STRIP_HEIGHT;
   const stripTop = Math.max(MENU_SCREEN_MARGIN, Math.min(anchorY, maxStripTop));
   const roomBelow = windowHeight - MENU_SCREEN_MARGIN - (stripTop + MENU_STRIP_HEIGHT + STRIP_GAP);
