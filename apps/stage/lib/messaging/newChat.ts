@@ -16,7 +16,6 @@ const memberHistory = createValueStore<MemberHistory>({
   key: 'new-chat.members.',
   default: NO_MEMBER_HISTORY,
   schema: memberHistorySchema,
-  serialize: JSON.stringify,
   perAccount: true,
 });
 

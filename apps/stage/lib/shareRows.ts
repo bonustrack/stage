@@ -1,7 +1,7 @@
 import { accountClient } from './xmtp.account';
 import { sdk } from './xmtp.sdk';
 import { assertShareAccount } from './shareDestination';
-import type { CachedRow } from './channelsCache';
+import type { CachedRow } from './cachedRows.model';
 import { listVisibleConversations, syncConversationsFromNetwork } from './xmtp.conv';
 import { summarizeConversation } from './messaging/conversation';
 
