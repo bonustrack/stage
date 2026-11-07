@@ -2,13 +2,14 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import { attachmentsPayload } from '@stage-labs/client/xmtp/entryPayload';
 import { attachmentsPreview } from '@stage-labs/client/xmtp/humanize';
 import type { OptimisticEntry } from './types';
+import { randomHex } from '@stage-labs/client/ids';
 
 const LOCAL_ID_PREFIX = 'tmp_';
 
 let seq = 0;
 
 export function mintLocalId(): string {
-  return `${LOCAL_ID_PREFIX}${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+  return `${LOCAL_ID_PREFIX}${Date.now()}_${(seq++).toString(36)}_${randomHex(2)}`;
 }
 
 export function isLocalId(id: string): boolean {

@@ -16,11 +16,12 @@ import { prepareAttachments } from '../../lib/xmtp.attachments';
 import { finishSend, showSend, startSend, type DraftArgs, type StartedSend } from './sendRun';
 import { locationAttachment, withLocation } from './location.model';
 import { ignored, reported } from '../../lib/errorPolicy';
+import { randomHex } from '@stage-labs/client/ids';
 import { capabilities } from '../../lib/capabilities';
 
 type ComposerActionsArgs = DraftArgs & PostHooks & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
 
-const mintAttachmentId = (): string => `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const mintAttachmentId = (): string => `local_${Date.now()}_${randomHex(3)}`;
 
 async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: string, name?: string): Promise<void> {
   a.setUploading(true);

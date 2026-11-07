@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { backoffDelay } from '@stage-labs/client/timing';
 import { resolveRemoteAttachment } from '../../lib/xmtp.attachmentSdk';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
 import type { EntryAttachment as Attachment } from '@stage-labs/client/xmtp/entryPayload';
@@ -18,8 +19,10 @@ export function inlineAttachmentUrl(att: Attachment): string {
 
 const REMOTE_RETRIES = 6;
 
+const REMOTE_BACKOFF = { baseMs: 2_000, maxMs: 30_000 };
+
 function remoteRetryDelay(failures: number): number {
-  return Math.min(2_000 * 2 ** failures, 30_000);
+  return backoffDelay(failures + 1, REMOTE_BACKOFF);
 }
 
 function fetchRemote(remote: Attachment['remote']): Promise<{ fileUri: string; mimeType?: string }> {
