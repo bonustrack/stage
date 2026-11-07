@@ -6,7 +6,7 @@ import { SortableItem } from '@stage-labs/kit/react-native/sortable';
 import { ChannelRow } from '../../chatRow/ChannelRow';
 import { RowChannelMenu, chatRowProps, rowMenuOpener, type RowMenu } from '../../chatRow/chatRow';
 import { useChannelFields } from '../../../lib/channelFields';
-import type { Row as ChannelRowData } from '../model';
+import type { CachedRow as ChannelRowData } from '../../../lib/cachedRows.model';
 import { getDraft } from '../../../lib/drafts';
 import { conversationLinkOf } from '../../../lib/links';
 import { usePalette } from '../../../lib/theme';

@@ -8,7 +8,7 @@ import { usePersonLookup } from '../../lib/resolveHandle';
 import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
 import { usePeerProfiles, getPeerName, peerLabel } from '../../lib/peerProfiles';
 import { dmLinkOf } from '../../lib/links';
-import type { HomeRow } from '../../lib/messaging/homeRows';
+import type { CachedRow as HomeRow } from '../../lib/cachedRows.model';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
 

@@ -1,9 +1,13 @@
 import type { PeerProfileEntries } from '@stage-labs/client/identity/peerProfiles';
 import { PersistentStore } from './cache.shared';
+import { storedRecordOf, valueWith } from './storeCore';
 import { recover } from './errorPolicy';
 import { peerProfileEntries, seedPeerProfiles, subscribePeerProfiles } from './peerProfiles';
 
-const persisted = new PersistentStore<PeerProfileEntries>('peer-profiles.json');
+const isPeerProfileEntry = (value: unknown): value is PeerProfileEntries[string] =>
+  value === null || typeof value === 'string' || (typeof value === 'object' && !Array.isArray(value));
+
+const persisted = new PersistentStore<PeerProfileEntries>('peer-profiles.json', { parse: valueWith(storedRecordOf(isPeerProfileEntry)) });
 let hydration: Promise<void> | null = null;
 
 async function hydrateAndMirror(): Promise<void> {

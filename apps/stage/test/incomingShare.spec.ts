@@ -11,7 +11,7 @@ import { acceptedShareConsent } from '../lib/shareDestination.model';
 import { currentShareDraft, makeShareSender } from '../components/share/shareSend.model';
 import { planSendSteps } from '../components/composer/send.model';
 import { sendPreparedMessage, type SendTarget } from '../lib/xmtp.messageSend.core';
-import type { Row } from '../components/home/model';
+import type { CachedRow as Row } from '../lib/cachedRows.model';
 import { row } from './rowFixture';
 
 const targetOf = <C>(conv: C): SendTarget<C> => ({

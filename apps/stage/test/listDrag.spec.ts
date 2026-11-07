@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { groupRows } from '../components/home/groups.model';
 import { NO_HOME_DRAG, homeDragModel, pinMove, sectionMove, zoneAt, zoneMove } from '../components/home/listDrag.model';
-import type { Row } from '../components/home/model';
+import type { CachedRow as Row } from '../lib/cachedRows.model';
 import { groupHeaderId as header } from '../lib/grouping.model';
 import { row } from './rowFixture';
 

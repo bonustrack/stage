@@ -14,7 +14,7 @@ import { toggleGroupCollapsed } from '../../lib/channelGroups';
 import { resetXmtpDatabase } from '../../lib/deviceAccount';
 import { getDraft } from '../../lib/drafts';
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/links';
-import type { Row as RowT } from './model';
+import type { CachedRow as RowT } from '../../lib/cachedRows.model';
 import { DANGER } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { Button } from '@stage-labs/kit/react-native/button';

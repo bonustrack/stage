@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { isGroupRow, listedConvRow, memberAddressesOf, rowCreatedTs, sameConvRow } from '../lib/messaging/convRow.model';
+import { cachedRowsOf } from '../lib/cachedRows.model';
+import { isGroupRow, listedConvRow as listedOf, memberAddressesOf, rowCreatedTs, sameConvRow } from '../lib/messaging/convRow.model';
+
+const listedConvRow = (stored: unknown[] | null, convId: string) => listedOf(stored === null ? null : cachedRowsOf(stored), convId);
 
 describe('listedConvRow', () => {
   test('a listed direct chat gives the peer and its address map', () => {

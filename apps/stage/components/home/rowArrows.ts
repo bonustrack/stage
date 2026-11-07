@@ -5,7 +5,7 @@ import { revealMarked, useArrowKeys } from '../keys/keys';
 import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../keys/keys.model';
 import type { VirtualListHandle } from '../layout';
 import type { HomeListItem } from './groups.model';
-import type { Row } from './model';
+import type { CachedRow as Row } from '../../lib/cachedRows.model';
 
 interface RowRouter {
   push: (to: { pathname: string; params: { convId: string } }) => void;

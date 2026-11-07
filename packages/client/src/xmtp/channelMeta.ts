@@ -157,6 +157,10 @@ function tagsFrom(value: (key: TagKey) => unknown): GroupTags {
 
 export const NO_TAGS: GroupTags = tagsFrom((key) => TAG_FIELDS[key].empty);
 
+export function groupTagsFrom(fields: Partial<Record<string, unknown>>): GroupTags {
+  return tagsFrom((key) => TAG_FIELDS[key].read(fields[key]));
+}
+
 export const CHANNEL_FIELD_NOUNS = Object.fromEntries(CHANNEL_FIELDS.map((field) => [field, TAG_FIELDS[field].noun])) as Record<
   ChannelField,
   string
@@ -186,8 +190,7 @@ function parseBlob(appData: string): Blob {
 export async function groupTagsOf(group: AppDataGroup | null): Promise<GroupTags> {
   if (!group) return NO_TAGS;
   try {
-    const blob = parseBlob(await group.appData());
-    return tagsFrom((key) => TAG_FIELDS[key].read(blob[key]));
+    return groupTagsFrom(parseBlob(await group.appData()));
   } catch {
     return NO_TAGS;
   }

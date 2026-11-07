@@ -9,7 +9,7 @@ import { TOPNAV_FADE, TopnavFade, UNDER_TOPNAV } from '../Topnav';
 import { SuggestedContacts } from '../contacts/SuggestedContacts';
 import { usePalette } from '../../lib/theme';
 import { listKeyOf, type HomeListItem } from './groups.model';
-import type { Row } from './model';
+import type { CachedRow as Row } from '../../lib/cachedRows.model';
 import { useWebTabRail } from '../layout/webLayout';
 import { HoverIconButton } from '../hover';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';

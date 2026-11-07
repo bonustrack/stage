@@ -1,10 +1,17 @@
 import { useEffect, useReducer } from 'react';
+import { z } from 'zod';
 import { PersistentStore } from './cache.shared';
 import { createValueStore } from './persistedStore';
+import { valueWith } from './storeCore';
 
 const PERSIST_DEBOUNCE_MS = 800;
 
-const store = new PersistentStore<Record<string, unknown>>('composer-drafts.json', PERSIST_DEBOUNCE_MS);
+type Drafts = Record<string, unknown>;
+
+const store = new PersistentStore<Drafts>('composer-drafts.json', {
+  parse: valueWith(z.record(z.unknown())),
+  flushDelayMs: PERSIST_DEBOUNCE_MS,
+});
 
 export async function loadDrafts(): Promise<void> {
   await store.hydrate();
@@ -19,11 +26,15 @@ export function getDraft(convId: string): string {
   return typeof draft === 'string' ? draft : '';
 }
 
-export function setDraftValue(key: string, value: unknown): void {
-  const next = { ...store.get() };
+function withDraft(drafts: Drafts | null, key: string, value: unknown): Drafts | null {
+  const next = { ...drafts };
   if (value === undefined) Reflect.deleteProperty(next, key);
   else next[key] = value;
-  store.set(Object.keys(next).length ? next : null);
+  return Object.keys(next).length ? next : null;
+}
+
+export function setDraftValue(key: string, value: unknown): void {
+  store.update((drafts) => withDraft(drafts, key, value));
 }
 
 export function setDraft(convId: string, text: string): void {

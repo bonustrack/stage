@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import type { HomeSort, HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
-import { useHomeRows, type HomeRow } from '../../lib/messaging/homeRows';
+import { useHomeRows } from '../../lib/messaging/homeRows';
+import type { CachedRow as HomeRow } from '../../lib/cachedRows.model';
 import { usePinnedOrder } from '../../lib/sync/pins';
 import { useClearedChats } from '../../lib/sync/clearedChats';
 import { getPeerDisplayName, getPeerHandle, usePeerProfiles } from '../../lib/peerProfiles';

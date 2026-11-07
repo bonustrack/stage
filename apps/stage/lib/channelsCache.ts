@@ -1,16 +1,12 @@
 import { secureStorage } from '../platform/storage';
 import { PersistentStore, getSecure, setSecure } from './cache.shared';
 import { makeListeners } from './storeCore';
-import { applyRead, applyUnread, applySentPatch, normalizeChannelRowTitle, type ChannelRow } from '@stage-labs/client/xmtp/channelsCache';
+import { applyRead, applyUnread, applySentPatch, normalizeChannelRowTitle } from '@stage-labs/client/xmtp/channelsCache';
 import { attempt, ignored } from './errorPolicy';
 import type { XmtpConsent } from './xmtp.types';
 import { visibleCachedRows } from './sync/hiddenChannels';
 import { knownActiveAccountId, subscribeActiveAccountId } from './accountSelection';
-
-export interface CachedRow extends ChannelRow {
-  createdTs?: number | null;
-  consent: XmtpConsent | null;
-}
+import { cachedRowsOf, type CachedRow } from './cachedRows.model';
 
 export interface ReadStateChange {
   convId: string;
@@ -47,9 +43,10 @@ function fileNameFor(id: string): string {
 function storeFor(id: string): PersistentStore<CachedRow[]> {
   let s = stores.get(id);
   if (!s) {
-    s = new PersistentStore<CachedRow[]>(fileNameFor(id), undefined, async (rows) =>
-      (await visibleCachedRows(id, rows)).map(normalizeChannelRowTitle),
-    );
+    s = new PersistentStore<CachedRow[]>(fileNameFor(id), {
+      parse: cachedRowsOf,
+      restore: async (rows) => (await visibleCachedRows(id, rows)).map(normalizeChannelRowTitle),
+    });
     stores.set(id, s);
   }
   return s;
@@ -82,8 +79,7 @@ subscribeActiveAccountId(followActiveAccount);
 
 export async function hydrateCachedRows(): Promise<CachedRow[] | null> {
   if (activeId === DEFAULT_KEY) return null;
-  const v = await activeStore().hydrate();
-  return Array.isArray(v) ? v : null;
+  return activeStore().hydrate();
 }
 
 export function getCachedRows(): CachedRow[] | null {

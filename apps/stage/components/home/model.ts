@@ -1,10 +1,7 @@
-import type { ConversationView } from '../../lib/messaging/conversation';
 import type { MenuItem } from '../appIcons';
 import { COPY_ADDRESS_ITEM } from '../profile/ProfileScreen.model';
 import { orderedColumns } from './board/BoardScreen.model';
 import { groupKeyOf } from '../../lib/grouping.model';
-
-export type Row = ConversationView & Record<string, unknown>;
 
 interface LabelBarChip {
   value: string;

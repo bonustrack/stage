@@ -1,7 +1,7 @@
 import { Vibration } from 'react-native';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
-import type { HomeRow } from '../../lib/messaging/homeRows';
+import type { CachedRow as HomeRow } from '../../lib/cachedRows.model';
 import type { ChannelFields } from '../../lib/channelFields.model';
 import { getPeerName, isPeerResolved, peerLabel } from '../../lib/peerProfiles';
 import { prefetchFeed } from '../../lib/feed/load';

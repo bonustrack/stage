@@ -6,10 +6,14 @@ import { entry } from './helpers';
 
 const stored = new Map<string, string>();
 const pending = new Map<string, () => string | Promise<string>>();
+let unreadable = false;
 
 mock.module('../lib/cache', () => ({
   createRecordStore: () => ({
-    read: async (name: string) => stored.get(name) ?? null,
+    read: async (name: string) => {
+      if (unreadable) throw new Error('storage unavailable');
+      return stored.get(name) ?? null;
+    },
     write: (name: string, text: () => string | Promise<string>) => {
       pending.set(name, text);
     },
@@ -53,6 +57,17 @@ describe('the web feed snapshot', () => {
     await forgetFeeds('alice');
     expect(stored.has('feed-snapshot.alice')).toBe(false);
     expect(await cachedFeed('stage://xmtp/a')).toBeNull();
+  });
+
+  test('a feed remembered over an unreadable snapshot writes nothing and the next read retries', async () => {
+    selectAccount('carol');
+    stored.set('feed-snapshot.carol', JSON.stringify({ self: 'inbox-carol', lines: [] }));
+    unreadable = true;
+    rememberFeed('stage://xmtp/c', [entry('m1')]);
+    expect(await cachedFeed('stage://xmtp/c')).toBeNull();
+    expect(pending.has('feed-snapshot.carol')).toBe(false);
+    unreadable = false;
+    expect(await cachedSelfInboxId()).toBe('inbox-carol');
   });
 
   test('no account selected means nothing is kept', async () => {

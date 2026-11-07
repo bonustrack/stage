@@ -1,4 +1,6 @@
 import { expect, mock, test } from 'bun:test';
+import { z } from 'zod';
+import { valueWith } from '../lib/storeCore';
 import { row } from './rowFixture';
 
 const values = new Map<string, string>();
@@ -25,9 +27,10 @@ test('cache hydration never publishes a durable hidden channel, and a direct cha
   const rows = [{ convId: 'hidden', peerAddress: null }, shown, dm];
   cached.set('rows', rows);
   values.set('channels.hidden.a', JSON.stringify({ hidden: { hidden: true, at: 1 }, dm: { hidden: true, at: 1 } }));
-  const store = new PersistentStore<{ convId: string; peerAddress: string | null }[]>('rows', undefined, (stored) =>
-    visibleCachedRows('a', stored),
-  );
+  const store = new PersistentStore<{ convId: string; peerAddress: string | null }[]>('rows', {
+    parse: valueWith(z.array(z.object({ convId: z.string(), peerAddress: z.string().nullable() }))),
+    restore: (stored) => visibleCachedRows('a', stored),
+  });
   const published: unknown[] = [];
   store.subscribe((value) => {
     published.push(value);
@@ -59,7 +62,7 @@ test('actual channel-cache hydration and writes publish the same safe title used
 test('a slow hydration filter cannot replace newer live rows', async () => {
   const filter = Promise.withResolvers<string[]>();
   cached.set('slow', ['old']);
-  const store = new PersistentStore<string[]>('slow', undefined, () => filter.promise);
+  const store = new PersistentStore<string[]>('slow', { parse: valueWith(z.array(z.string())), restore: () => filter.promise });
   const hydration = store.hydrate();
   await Promise.resolve();
   store.set(['new']);

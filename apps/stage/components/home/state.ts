@@ -7,7 +7,7 @@ import { groupRows, rowsOf, type HomeListItem } from './groups.model';
 import type { NameOf } from './groupBy.model';
 import { CHANNELS_SCROLL_KEY } from '../../lib/scrollPos';
 import type { RowMenu } from '../chatRow/chatRow';
-import type { Row } from './model';
+import type { CachedRow as Row } from '../../lib/cachedRows.model';
 
 interface HomeState {
   rowMenu: RowMenu | null;

@@ -15,7 +15,8 @@ import { addLabel, assignedAddresses, moveLabel, removeLabel, renameLabels, stri
 import { channelFieldOf, type AppDataGroup, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { uniqueBy } from '@stage-labs/client/collections';
-import { getCachedRows, setCachedRows, type CachedRow } from './channelsCache';
+import { getCachedRows, setCachedRows } from './channelsCache';
+import type { CachedRow } from './cachedRows.model';
 import { sdk } from './xmtp.sdk';
 import { convOfLine } from './xmtp.find';
 import { notAGroup } from './xmtp.sdk.core';

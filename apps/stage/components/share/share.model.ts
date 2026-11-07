@@ -1,6 +1,6 @@
 import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
-import type { CachedRow } from '../../lib/channelsCache';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import type { IncomingShare, SharedFile } from '../../lib/incomingShare.types';
 import { attachmentMimeType } from '../../lib/attachmentFiles';

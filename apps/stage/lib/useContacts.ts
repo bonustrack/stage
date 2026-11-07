@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { convMembers, primeConversationMembers } from './xmtp.identity';
 import { sdk } from './xmtp.sdk';
 import { afterFirstPages } from './feed/firstPages';
-import { getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
+import { getCachedRows, subscribeCachedRows } from './channelsCache';
+import type { CachedRow } from './cachedRows.model';
 import { knownActiveAccountId } from './accountSelection';
 import { usePeerProfiles, peerLabel } from './peerProfiles';
 
@@ -14,11 +15,10 @@ export interface Contact {
 
 const NO_ADDRESSES: string[] = [];
 
-function peerAddressesOf(rows: ReturnType<typeof getCachedRows>): string[] {
+function peerAddressesOf(rows: readonly CachedRow[] | null): string[] {
   const out = new Set<string>();
   for (const r of rows ?? []) {
-    const peer = typeof r.peerAddress === 'string' ? r.peerAddress : null;
-    if (peer) out.add(peer.toLowerCase());
+    if (r.peerAddress) out.add(r.peerAddress.toLowerCase());
   }
   return [...out];
 }

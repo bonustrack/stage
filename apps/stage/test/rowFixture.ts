@@ -1,5 +1,5 @@
 import { NO_TAGS } from '@stage-labs/client/xmtp/channelMeta';
-import type { Row } from '../components/home/model';
+import type { CachedRow as Row } from '../lib/cachedRows.model';
 
 export function row(convId: string, fields: Partial<Row> = {}): Row {
   return {

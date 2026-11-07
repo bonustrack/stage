@@ -1,6 +1,7 @@
 import { backoffDelay } from '@stage-labs/client/timing';
 import { AccountChangedError, NoAccountError, readActiveAccountId } from '../accountSelection';
 import { report } from '../errorPolicy';
+import { keyedTimers } from '../writeBehind';
 
 export interface SyncJob {
   key: string;
@@ -24,20 +25,15 @@ async function isActiveAccount(accountId: string): Promise<boolean> {
 
 export function createSyncPublisher(isActive: (accountId: string) => Promise<boolean> = isActiveAccount): (job: SyncJob) => void {
   const pending = new Map<string, Pending>();
-  const timers = new Map<string, ReturnType<typeof setTimeout>>();
+  const timers = keyedTimers();
   const failures = new Map<string, number>();
   const running = new Set<string>();
   const paused = new Set<string>();
 
   function schedule(key: string, delay: number): void {
-    clearTimeout(timers.get(key));
-    timers.set(
-      key,
-      setTimeout(() => {
-        timers.delete(key);
-        void flush(key);
-      }, delay),
-    );
+    timers.schedule(key, delay, () => {
+      void flush(key);
+    });
   }
 
   function settle(key: string, revision: number): void {

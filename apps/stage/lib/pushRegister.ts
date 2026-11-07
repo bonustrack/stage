@@ -25,6 +25,7 @@ import { isPushEnabledSync, loadPushEnabled } from './pushPref';
 import { makePushRetry } from './pushRetry.core';
 import { setPushStatus } from './pushStatus';
 import { memoized } from './storeCore';
+import { keyedTimers } from './writeBehind';
 import { clientSdk, type XmtpClient } from './xmtp.clientSdk';
 import { signingKeyForRecord } from './accountSigning';
 import { getCachedXmtpClient } from './xmtp.state';
@@ -238,18 +239,17 @@ export async function unregisterPushFromServer(client: XmtpClient): Promise<void
   }
 }
 
-let topicRefresh: ReturnType<typeof setTimeout> | null = null;
+const pushTimers = keyedTimers();
+const TOPIC_REFRESH = 'topics';
 let topicRefreshDueAt = 0;
 
 export function schedulePushTopicRefresh(delayMs = TOPIC_REFRESH_DEBOUNCE_MS): void {
-  if (topicRefresh) clearTimeout(topicRefresh);
   topicRefreshDueAt = Math.max(topicRefreshDueAt, Date.now() + delayMs);
-  topicRefresh = setTimeout(() => {
-    topicRefresh = null;
+  pushTimers.schedule(TOPIC_REFRESH, topicRefreshDueAt - Date.now(), () => {
     topicRefreshDueAt = 0;
     const client = getCachedXmtpClient();
     if (client) void registerPushWithServer(client);
-  }, topicRefreshDueAt - Date.now());
+  });
 }
 
 function cachedInstallationId(): string | null {
@@ -268,18 +268,11 @@ async function requestPushClear(convId: string): Promise<void> {
   await postJson(pushRpcUrl(PUSH_RPC.clear), clearConversationBody(installationId, groupKey, convId));
 }
 
-const pendingClears = new Map<string, ReturnType<typeof setTimeout>>();
-
 function clearOnRead(convId: string): void {
   void dismissConvNotifications(convId).catch(ignored(undefined, 'ui'));
-  clearTimeout(pendingClears.get(convId));
-  pendingClears.set(
-    convId,
-    setTimeout(() => {
-      pendingClears.delete(convId);
-      void requestPushClear(convId).catch(reported('push.clear'));
-    }, CLEAR_DEBOUNCE_MS),
-  );
+  pushTimers.schedule(`clear:${convId}`, CLEAR_DEBOUNCE_MS, () => {
+    void requestPushClear(convId).catch(reported('push.clear'));
+  });
 }
 
 function forgetAccountPushState(): void {

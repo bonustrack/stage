@@ -1,4 +1,6 @@
-import { attempt, recover, reported } from './errorPolicy';
+import { attempt, recover } from './errorPolicy';
+import { makeRecordStore, type RecordStore } from './recordStore';
+
 const DB_NAME = 'stage-cache';
 const DB_VERSION = 1;
 const STORE = 'kv';
@@ -37,18 +39,14 @@ function openDb(): Promise<IDBDatabase | null> {
 async function idbRead<T>(key: string): Promise<T | null> {
   const db = await openDb();
   if (!db) return null;
-  return new Promise<T | null>((resolve) => {
-    try {
-      const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key);
-      req.onsuccess = () => {
-        resolve((req.result as T | undefined) ?? null);
-      };
-      req.onerror = () => {
-        resolve(null);
-      };
-    } catch {
-      resolve(null);
-    }
+  return new Promise<T | null>((resolve, reject) => {
+    const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key);
+    req.onsuccess = () => {
+      resolve((req.result as T | undefined) ?? null);
+    };
+    req.onerror = () => {
+      reject(req.error ?? new Error(`Could not read ${key}`));
+    };
   });
 }
 
@@ -62,14 +60,16 @@ async function idbWrite(key: string, value: unknown): Promise<void> {
   }, 'cache');
 }
 
+function onFlushSignal(flushAll: () => void): void {
+  if (typeof window !== 'undefined') window.addEventListener('pagehide', flushAll);
+}
+
 export const persistenceBackend = {
-  read: idbRead,
+  read: (name: string): Promise<unknown> => idbRead<unknown>(name),
   write(name: string, value: unknown): void {
     void idbWrite(name, value);
   },
-  onFlushSignal(flushAll: () => void): void {
-    if (typeof window !== 'undefined') window.addEventListener('pagehide', flushAll);
-  },
+  onFlushSignal,
 };
 
 const SEAL_KEY_NAME = 'sealed.key';
@@ -141,50 +141,6 @@ async function sealedWrite(name: string, text: string | null): Promise<void> {
   await idbWrite(name, { iv, data } satisfies Sealed);
 }
 
-export interface RecordStore {
-  read(name: string): Promise<string | null>;
-  write(name: string, text: () => string | Promise<string>): void;
-  remove(name: string): Promise<void>;
-}
-
-const RECORD_WRITE_DELAY_MS = 1_000;
-
 export function createRecordStore(writeErrorTag: string): RecordStore {
-  const texts = new Map<string, () => string | Promise<string>>();
-  const timers = new Map<string, ReturnType<typeof setTimeout>>();
-  let queue: Promise<void> = Promise.resolve();
-  function queued(task: () => Promise<void>): Promise<void> {
-    const run = queue.then(task);
-    queue = run.catch(reported(writeErrorTag));
-    return queue;
-  }
-  function writeNow(name: string): void {
-    clearTimeout(timers.get(name));
-    timers.delete(name);
-    const text = texts.get(name);
-    texts.delete(name);
-    if (text !== undefined) void queued(async () => sealedWrite(name, await text()));
-  }
-  persistenceBackend.onFlushSignal(() => {
-    for (const name of [...timers.keys()]) writeNow(name);
-  });
-  return {
-    read: sealedRead,
-    write(name, text) {
-      texts.set(name, text);
-      if (timers.has(name)) return;
-      timers.set(
-        name,
-        setTimeout(() => {
-          writeNow(name);
-        }, RECORD_WRITE_DELAY_MS),
-      );
-    },
-    remove(name) {
-      clearTimeout(timers.get(name));
-      timers.delete(name);
-      texts.delete(name);
-      return queued(() => sealedWrite(name, null));
-    },
-  };
+  return makeRecordStore({ read: sealedRead, write: sealedWrite, onFlushSignal }, { delayMs: 1_000, restart: false }, writeErrorTag);
 }

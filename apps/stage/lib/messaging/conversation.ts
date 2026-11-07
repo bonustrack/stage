@@ -5,7 +5,6 @@ import { convOfLine } from '../xmtp.find';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { rowMessagesOf, type ConvHandle } from '../xmtp.messages';
 import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/channelMeta';
-import type { XmtpConsent } from '../xmtp.types';
 import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { isRowCandidate, isSystemMessage, onlyHiddenMessages, revivesRow } from '@stage-labs/client/xmtp/visibility';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
@@ -21,14 +20,11 @@ import { deletedTextOf, isDeleteRequestType } from '@stage-labs/client/xmtp/dele
 import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import { deleteRightsOf } from './deleteRights';
 import { rowCreatedTs, type ConvRow } from './convRow.model';
-import type { ChannelRow, GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
+import type { GroupRowMeta } from '@stage-labs/client/xmtp/channelsCache';
+import type { CachedRow } from '../cachedRows.model';
 import { dmRoutesReady, dmRowIdOf } from '../dmRoutes';
 import { reported, recover } from '../errorPolicy';
 import { channelConsent } from '../channelVisibility';
-export interface ConversationView extends ChannelRow, ConvRow {
-  createdTs?: number | null;
-  consent: XmtpConsent | null;
-}
 
 function isMembershipNoise(m: RowMessage, dm: boolean): boolean {
   return dm && isSystemMessage(m);
@@ -139,7 +135,7 @@ export async function summarizeConversation(
   selfInboxId: string,
   alreadySynced: boolean,
   knownDmIds = NO_KNOWN_DMS,
-): Promise<ConversationView> {
+): Promise<CachedRow> {
   if (!alreadySynced) await sdk.syncConv(conv).catch(reported('conversation.sync'));
   const consent = sdk.consentOf(conv).catch(recover('conversation.consent', null));
   const members = await convMembers(conv);

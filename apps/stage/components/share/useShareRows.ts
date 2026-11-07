@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { getCachedRows, hydrateCachedRows, subscribeCachedRows, type CachedRow } from '../../lib/channelsCache';
+import { getCachedRows, hydrateCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import { fetchShareRows } from '../../lib/shareRows';
 import { mergeShareRows } from './share.model';
 

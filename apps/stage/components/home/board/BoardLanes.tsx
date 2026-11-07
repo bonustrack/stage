@@ -7,7 +7,7 @@ import { SortableHandle, SortableItem, SortableList, SortableScope } from '@stag
 import { moveAnchor, type SortMove } from '@stage-labs/kit/sortable';
 import { CountTag } from '../../CountTag';
 import { NewChatAction } from '../NewChatAction';
-import type { Row as ChannelRowData } from '../model';
+import type { CachedRow as ChannelRowData } from '../../../lib/cachedRows.model';
 import { prefetchFeed } from '../../../lib/feed/load';
 import { useSafeAreaInsets } from '../../layout/safeArea';
 import { useHomeView } from '../../../lib/homeView';

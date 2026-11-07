@@ -14,10 +14,17 @@ export function storedRecordOf<V>(isValue: (value: unknown) => value is V) {
     .transform((entries) => Object.fromEntries(Object.entries(entries).filter((entry): entry is [string, V] => isValue(entry[1]))));
 }
 
-export function jsonWith<T>(schema: StoredSchema<T>): (raw: string) => T | undefined {
+export function valueWith<T>(schema: StoredSchema<T>): (value: unknown) => T | null {
+  return (value) => {
+    const parsed = schema.safeParse(value);
+    return parsed.success ? parsed.data : null;
+  };
+}
+
+export function jsonWith<T>(schema: StoredSchema<T>, reviver?: (key: string, value: unknown) => unknown): (raw: string) => T | undefined {
   return (raw) => {
     try {
-      const parsed = schema.safeParse(JSON.parse(raw));
+      const parsed = schema.safeParse(JSON.parse(raw, reviver));
       return parsed.success ? parsed.data : undefined;
     } catch {
       return undefined;
