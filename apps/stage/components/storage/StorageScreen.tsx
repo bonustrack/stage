@@ -18,13 +18,20 @@ import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useOwnDeletes } from '../../lib/ownDeletes';
-import { useStoredChat } from '../chatRow/chatRow';
+import { useStoredChat } from '../../lib/storedChat';
 import { MenuPage } from '../tabs/MenuPage';
 import { useSafeAreaInsets } from '../layout/safeArea';
-import { forgetStorageFile, retryStorage, storageFileGone, useStorage, type StorageState } from '../../lib/storageIndex';
+import {
+  FileUnavailableError,
+  forgetStorageFile,
+  retryStorage,
+  storageFileGone,
+  useStorage,
+  type StorageState,
+} from '../../lib/storageIndex';
 import { fileKey, type StoredFile } from '../../lib/storageIndex.model';
 import { usePalette } from '../../lib/theme';
-import { FileUnavailableError, openStoredFile } from './storageOpen';
+import { openStoredFile } from './storageOpen';
 import {
   STORAGE_FILTERS,
   storageRows,

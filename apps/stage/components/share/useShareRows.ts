@@ -1,32 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { accountClient } from '../../lib/xmtp.account';
-import { assertShareAccount } from '../../lib/shareDestination';
 import { getCachedRows, hydrateCachedRows, subscribeCachedRows, type CachedRow } from '../../lib/channelsCache';
-import { listVisibleConversations, syncConversationsFromNetwork } from '../../lib/xmtp.conv';
-import { summarizeConversation } from '../../lib/messaging/conversation';
+import { fetchShareRows } from '../../lib/shareRows';
 import { mergeShareRows } from './share.model';
-
-async function fetchShareRows(accountId: string, epoch: number, network: boolean): Promise<{ rows: CachedRow[]; failed: boolean }> {
-  const context = await accountClient(accountId);
-  if (network) await syncConversationsFromNetwork();
-  const convs = await listVisibleConversations();
-  const rows: CachedRow[] = [];
-  let failed = false;
-  for (let index = 0; index < convs.length; index += 4) {
-    context.assertCurrent();
-    assertShareAccount(accountId, epoch);
-    const batch = await Promise.allSettled(
-      convs.slice(index, index + 4).map((conv) => summarizeConversation(conv, context.client.inboxId, true)),
-    );
-    for (const result of batch) {
-      if (result.status === 'fulfilled') rows.push({ ...result.value });
-      else failed = true;
-    }
-  }
-  context.assertCurrent();
-  assertShareAccount(accountId, epoch);
-  return { rows, failed };
-}
 
 export function useShareRows(
   accountId: string | null,

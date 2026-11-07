@@ -31,7 +31,6 @@ import {
 import { homeRows } from '../../lib/messaging/homeRows';
 import { useNewChatFocusNonce } from './newChatFocus';
 import {
-  NO_MEMBER_HISTORY,
   NO_PICKS,
   NO_RECIPIENT_NOTE,
   REQUEST_CHECK_LIMIT,
@@ -40,33 +39,23 @@ import {
   membersDraftKey,
   newChatDraftKey,
   pickedRecipients,
-  parseMemberHistory,
-  rankedCandidates,
   recentDmPeers,
   recipientCandidates,
-  rememberedMembers,
   savedPicks,
   shownRecipients,
-  startedChatWith,
-  type DmPeer,
-  type MemberHistory,
 } from './newChat.model';
+import { rankedCandidates, rememberedMembers } from '../../lib/messaging/newChatMembers.model';
+import { startNewChannel, useMemberHistory, useRequestPeers } from '../../lib/messaging/newChat';
 import { capabilities } from '../../lib/capabilities';
-import { reported } from '../../lib/errorPolicy';
 import { setDraftValue } from '../../lib/drafts';
 import { useClearedChats } from '../../lib/sync/clearedChats';
-import { createValueStore } from '../../lib/persistedStore';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { useStoreValue } from '../../lib/storeCore';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { usePalette } from '../../lib/theme';
 import { useContentViewportHeight, useWebTabRail } from '../layout/webLayout';
-import { convIdOfLine } from '@stage-labs/client/xmtp/line';
-import { createGroup } from '../../lib/xmtp.groups';
-import { getConvConsentState } from '../../lib/xmtp.conv';
 import { subscribeCachedRows } from '../../lib/channelsCache';
-import { uploadAttachments } from '../../lib/xmtp.attachments';
-import { schedulePushTopicRefresh, warmSendPath } from '../../lib/pushRegister';
+import { warmSendPath } from '../../lib/pushRegister';
 import { useActiveAccountRecord, useSelfAddress } from '../../lib/messaging/account';
 import { mentionLabelOf } from '../TitleText.model';
 import { Column, PAGE_GUTTER, Row } from '../layout';
@@ -78,18 +67,7 @@ interface Recipients {
   reset: () => void;
 }
 
-const NO_REQUESTS: ReadonlySet<string> = new Set();
-
-const memberHistory = createValueStore<MemberHistory>({
-  key: 'new-chat.members.',
-  default: NO_MEMBER_HISTORY,
-  deserialize: parseMemberHistory,
-  serialize: JSON.stringify,
-  perAccount: true,
-});
-
 const CENTERED_MAX_WIDTH = 640;
-const NEW_CHANNEL_PUSH_REFRESH_MS = 10_000;
 
 function clearNewChatDraft(draftKey: string | null): void {
   const membersKey = membersDraftKey(draftKey);
@@ -98,29 +76,11 @@ function clearNewChatDraft(draftKey: string | null): void {
   setDraftValue(membersKey, undefined);
 }
 
-function useRequestPeers(peers: readonly DmPeer[]): ReadonlySet<string> {
-  const [requests, setRequests] = useState(NO_REQUESTS);
-  const checked = peers.slice(0, REQUEST_CHECK_LIMIT);
-  const key = checked.map((p) => p.convId).join(',');
-  useEffect(() => {
-    let cancelled = false;
-    void Promise.all(checked.map(async (p) => ((await getConvConsentState(p.convId)) === 'unknown' ? [p.peer] : [])))
-      .then((found) => {
-        if (!cancelled) setRequests(new Set(found.flat()));
-      })
-      .catch(reported('newChat.requests'));
-    return () => {
-      cancelled = true;
-    };
-  }, [key]);
-  return requests;
-}
-
 function useCandidates(): { candidates: string[]; remembered: string[] } {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const cleared = useClearedChats();
   const self = useSelfAddress() || null;
-  const history = memberHistory.use();
+  const history = useMemberHistory();
   const peers = useMemo(
     () =>
       rows === null
@@ -131,7 +91,7 @@ function useCandidates(): { candidates: string[]; remembered: string[] } {
           ),
     [rows, cleared, self],
   );
-  const requests = useRequestPeers(peers);
+  const requests = useRequestPeers(peers.slice(0, REQUEST_CHECK_LIMIT));
   return useMemo(
     () => ({
       candidates: rankedCandidates(recipientCandidates(peers, self, requests), history, self),
@@ -189,14 +149,17 @@ function useStartChat(
     }
     busy.current = true;
     setCreating(true);
-    schedulePushTopicRefresh(NEW_CHANNEL_PUSH_REFRESH_MS);
     const { text } = latest.current;
-    uploadAttachments(fileInputs(latest.current.pending));
+    const files = fileInputs(latest.current.pending);
     try {
-      const { line } = await createGroup([...addresses], newChatAppData(metadata), firstMessageChannelName(text, mentionLabelOf));
-      const convId = convIdOfLine(line);
-      if (convId === null) return;
-      void memberHistory.update((current) => startedChatWith(current, addresses, Date.now())).catch(reported('newChatMembers.save'));
+      const started = await startNewChannel({
+        addresses,
+        files,
+        appData: newChatAppData(metadata),
+        name: firstMessageChannelName(text, mentionLabelOf),
+      });
+      if (started === null) return;
+      const { line, convId } = started;
       handOverSend(convId, startSend(line, text, latest.current.pending));
       clearNewChatDraft(draftKey);
       draft.setText('');

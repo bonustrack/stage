@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
+import { attachedFilesOf, type AttachedFile } from '@stage-labs/client/xmtp/contentTypes';
+import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { sdk } from './xmtp.sdk';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { AccountChangedError, NoAccountError } from './accountSelection';
@@ -8,8 +10,6 @@ import { subscribeAllMessages } from './xmtp.stream';
 import type { StreamMsg, XmtpConsent } from './xmtp.types';
 import { currentAccountId } from './accounts';
 import { getAccountEpoch, useAccountEpoch } from './accountEpoch';
-import { getCachedRows } from './channelsCache';
-import { listedConvRow } from './messaging/convRow.model';
 import { makeListeners, useStoreValue } from './storeCore';
 import { report, reported } from './errorPolicy';
 import { onStorageIndexForgotten, readStorageIndex, writeStorageIndex } from './storageIndexStore';
@@ -39,11 +39,6 @@ export interface StorageState {
   done: number;
   total: number;
   failed: boolean;
-}
-
-interface StorageChat {
-  peerAddress: string | null;
-  groupName: string;
 }
 
 const ALL_CONSENT: XmtpConsent[] = ['allowed', 'unknown', 'denied'];
@@ -251,24 +246,31 @@ export function useStorage(): StorageState {
   return useStoreValue(listeners.subscribe, getState);
 }
 
-export async function storageFileGone(messageId: string): Promise<boolean> {
+export class FileUnavailableError extends Error {
+  constructor() {
+    super('This file is no longer available.');
+  }
+}
+
+async function storedRow(messageId: string): Promise<StreamedMessage | null> {
   const message = await sdk.messageById(await sdk.client(), messageId);
-  return !message || isDeletedPlaceholderType(sdk.rowOf(message).contentTypeId);
+  return message ? sdk.rowOf(message) : null;
+}
+
+export async function storageFileGone(messageId: string): Promise<boolean> {
+  const row = await storedRow(messageId);
+  return row === null || isDeletedPlaceholderType(row.contentTypeId);
+}
+
+export async function storedFilePart(file: StoredFile): Promise<AttachedFile> {
+  const row = await storedRow(file.messageId);
+  if (row === null || isDeletedPlaceholderType(row.contentTypeId)) throw new FileUnavailableError();
+  const part = attachedFilesOf(row.contentTypeId, row.content)[file.index];
+  if (part === undefined || (part.remote === undefined && part.dataB64 === undefined)) throw new FileUnavailableError();
+  return part;
 }
 
 export function forgetStorageFile(messageId: string): void {
   if (held === null) return;
   commit(held.accountId, applyFindings(held.index, { files: [], deletedIds: [messageId] }));
-}
-
-export async function storageChatOf(convId: string): Promise<StorageChat | null> {
-  const listed = listedConvRow(getCachedRows(), convId);
-  if (listed !== undefined) return { peerAddress: listed.peerAddress, groupName: listed.groupName ?? '' };
-  const client = await sdk.client();
-  const conv = await sdk.findConv(client, convId);
-  if (!conv) return null;
-  const peer = sdk.dmPeerInboxId(conv);
-  if (peer === null) return { peerAddress: null, groupName: (await sdk.groupInfo(conv)).name };
-  const [address] = await sdk.ethAddressesOf(client, [await peer()]);
-  return { peerAddress: address ?? null, groupName: '' };
 }

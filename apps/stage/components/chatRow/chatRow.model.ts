@@ -23,13 +23,3 @@ export function rowPreviewText(m: RowPreviewModel): string {
   if (m.dm || m.senderLabel === null) return m.preview;
   return `${m.senderLabel}: ${m.preview}`;
 }
-
-export function chatLabelOf(
-  chat: { peerAddress: string | null; groupName: string } | null | undefined,
-  peerLabel: (address: string) => string,
-): string {
-  if (chat === null || chat === undefined) return '';
-  if (chat.peerAddress !== null) return peerLabel(chat.peerAddress);
-  const name = chat.groupName.trim();
-  return name === '' ? 'Unnamed channel' : name;
-}

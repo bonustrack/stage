@@ -1,12 +1,9 @@
 import { Vibration } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
 import type { HomeRow } from '../../lib/messaging/homeRows';
 import type { ChannelFields } from '../../lib/channelFields.model';
-import { getPeerName, isPeerResolved, peerLabel, usePeerProfiles } from '../../lib/peerProfiles';
-import { storageChatOf } from '../../lib/storageIndex';
-import { useAccountEpoch } from '../../lib/accountEpoch';
+import { getPeerName, isPeerResolved, peerLabel } from '../../lib/peerProfiles';
 import { prefetchFeed } from '../../lib/feed/load';
 import { channelTimestamp } from '../../lib/format';
 import type { MenuPoint } from '../AnchoredMenu.model';
@@ -14,7 +11,7 @@ import type { ConvTitle } from '../TitleText.model';
 import { ChannelMenu } from './ChannelMenu';
 import { ChannelRowFields } from './ChannelRowFields';
 import type { ChannelRow } from './ChannelRow';
-import { chatLabelOf, rowPreviewText } from './chatRow.model';
+import { rowPreviewText } from './chatRow.model';
 
 export function chatTitle(row: HomeRow): ConvTitle {
   if (row.peerAddress) return { text: getPeerName(row.peerAddress) ?? row.title, placeholder: false };
@@ -93,26 +90,4 @@ export function rowMenuOpener(convId: string, setRowMenu: (m: RowMenu) => void):
 export function RowChannelMenu({ menu, onClose }: { menu: RowMenu | null; onClose: () => void }): React.ReactElement | null {
   if (!menu) return null;
   return <ChannelMenu visible convId={menu.convId} anchor={menu.anchor ?? null} onClose={onClose} />;
-}
-
-const CHAT_STALE_MS = 5 * 60_000;
-
-interface StoredChat {
-  peerAddress: string | null;
-  label: string;
-}
-
-export function useStoredChat(convId: string, recheckMs?: number): StoredChat | null {
-  const epoch = useAccountEpoch();
-  const { data } = useQuery({
-    queryKey: ['storageChat', epoch, convId],
-    queryFn: () => storageChatOf(convId),
-    staleTime: CHAT_STALE_MS,
-    retry: false,
-    refetchInterval: recheckMs === undefined ? undefined : (query) => (query.state.data ? false : recheckMs),
-  });
-  const peer = data?.peerAddress ?? null;
-  usePeerProfiles([peer]);
-  if (data === null || data === undefined) return null;
-  return { peerAddress: peer, label: chatLabelOf(data, peerLabel) };
 }

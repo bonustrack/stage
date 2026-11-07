@@ -1,38 +1,19 @@
-import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
-import { attachedFilesOf } from '@stage-labs/client/xmtp/contentTypes';
-import type { RemoteAttachmentRef } from '@stage-labs/client/xmtp/entryPayload';
-import { sdk } from '../../lib/xmtp.sdk';
 import { resolveRemoteAttachment } from '../../lib/xmtp.attachmentSdk';
 import { openFile } from '../../lib/fileOpen';
+import { storedFilePart } from '../../lib/storageIndex';
 import type { StoredFile } from '../../lib/storageIndex.model';
 import { inlineAttachmentUrl } from '../media/attachmentUri';
 
-export class FileUnavailableError extends Error {
-  constructor() {
-    super('This file is no longer available.');
-  }
-}
-
-async function openRemote(remote: RemoteAttachmentRef, file: StoredFile): Promise<void> {
-  const resolved = await resolveRemoteAttachment(remote);
-  openFile({ url: resolved.fileUri, mime: resolved.mimeType, name: resolved.filename ?? file.name });
-}
-
 export async function openStoredFile(file: StoredFile): Promise<void> {
-  const client = await sdk.client();
-  const message = await sdk.messageById(client, file.messageId);
-  if (!message) throw new FileUnavailableError();
-  const row = sdk.rowOf(message);
-  if (isDeletedPlaceholderType(row.contentTypeId)) throw new FileUnavailableError();
-  const att = attachedFilesOf(row.contentTypeId, row.content)[file.index];
-  if (att?.remote) {
-    await openRemote(att.remote, file);
+  const part = await storedFilePart(file);
+  if (part.remote) {
+    const resolved = await resolveRemoteAttachment(part.remote);
+    openFile({ url: resolved.fileUri, mime: resolved.mimeType, name: resolved.filename ?? file.name });
     return;
   }
-  if (att?.dataB64 === undefined) throw new FileUnavailableError();
   openFile({
-    url: inlineAttachmentUrl({ kind: 'file', dataB64: att.dataB64, mime: att.mime }),
-    mime: att.mime,
-    name: att.name ?? file.name,
+    url: inlineAttachmentUrl({ kind: 'file', dataB64: part.dataB64, mime: part.mime }),
+    mime: part.mime,
+    name: part.name ?? file.name,
   });
 }

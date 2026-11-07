@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { StoredFile } from '../lib/storageIndex.model';
-import { chatLabelOf } from '../components/chatRow/chatRow.model';
+import { chatLabelOf } from '../lib/storedChat.model';
 import {
   extensionOf,
   scanProgressLabel,

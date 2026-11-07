@@ -3,22 +3,24 @@ import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import {
   MAX_SHOWN_RECIPIENTS,
-  NO_MEMBER_HISTORY,
   askPlaceholder,
   firstMessageChannelName,
   membersDraftKey,
   newChatDraftKey,
   newChatNav,
-  parseMemberHistory,
   pickedRecipients,
-  rankedCandidates,
   recentDmPeers,
   recipientCandidates,
-  rememberedMembers,
   savedPicks,
   shownRecipients,
-  startedChatWith,
 } from '../components/newChat/newChat.model';
+import {
+  NO_MEMBER_HISTORY,
+  parseMemberHistory,
+  rankedCandidates,
+  rememberedMembers,
+  startedChatWith,
+} from '../lib/messaging/newChatMembers.model';
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
 const SELF = '0x5e1f000000000000000000000000000000000002';

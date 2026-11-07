@@ -6,7 +6,7 @@ import type { DashboardSource } from '@stage-labs/client/xmtp/sync/dashboard';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { FrameHeader } from '../frame/FrameHeader';
 import { FrameTile } from '../frame/FramePreview';
-import { useStoredChat } from '../chatRow/chatRow';
+import { useStoredChat } from '../../lib/storedChat';
 import { capabilities } from '../../lib/capabilities';
 import { frameLocked } from '../../lib/frames/frame.model';
 import { useFrameMessage } from '../../lib/frames/frameMessage';
