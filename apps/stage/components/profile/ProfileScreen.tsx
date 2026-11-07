@@ -43,8 +43,9 @@ function EditProfileButton({ background }: { background: string }): React.ReactE
   );
 }
 
-function ProfileMenu({ isSelf, actions }: { isSelf: boolean; actions: MenuActions<PeerProfileId> }): React.ReactElement {
+function ProfileMenu({ isSelf, actions }: { isSelf: boolean | null; actions: MenuActions<PeerProfileId> }): React.ReactElement | null {
   const { bg } = usePalette();
+  if (isSelf === null) return null;
   if (isSelf) return <EditProfileButton background={bg} />;
   return <ProfileCoverMenu items={PEER_PROFILE_MENU} actions={actions} />;
 }
@@ -63,7 +64,7 @@ function ProfileIdentity({
   onSend,
 }: {
   addr: string;
-  isSelf: boolean;
+  isSelf: boolean | null;
   dark: boolean;
   c: Palette;
   insetTop: number;
@@ -104,7 +105,7 @@ function ProfileIdentity({
             <Text text={shortAddress(addr)} size="xs" color={c.text} />
           </GesturePressable>
         </Column>
-        {isSelf ? null : <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} />}
+        {isSelf === false ? <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} /> : null}
       </Column>
     </ProfileCover>
   );
@@ -116,7 +117,8 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
   const dark = useEffectiveColorScheme() === 'dark';
   const c = usePalette();
 
-  const isSelf = addr.toLowerCase() === useSelfAddress().toLowerCase();
+  const self = useSelfAddress();
+  const isSelf = self === null ? null : addr.toLowerCase() === self;
 
   usePeerProfiles([addr]);
 
@@ -160,7 +162,7 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
           onSend={onSend}
         />
 
-        {isSelf ? null : <CommonChannels peerAddress={addr} c={c} />}
+        {isSelf === false ? <CommonChannels peerAddress={addr} c={c} /> : null}
       </ScreenScroll>
 
       <ImageViewer

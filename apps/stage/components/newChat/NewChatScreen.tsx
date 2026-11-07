@@ -79,7 +79,7 @@ function clearNewChatDraft(draftKey: string | null): void {
 function useCandidates(): { candidates: string[]; remembered: string[] } {
   const rows = useStoreValue(subscribeCachedRows, homeRows);
   const cleared = useClearedChats();
-  const self = useSelfAddress() || null;
+  const self = useSelfAddress();
   const history = useMemberHistory();
   const peers = useMemo(
     () =>

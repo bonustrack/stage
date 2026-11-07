@@ -3,13 +3,13 @@ import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/cl
 import type { HomeSort, HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { useHomeRows } from '../../lib/messaging/homeRows';
 import type { CachedRow } from '../../lib/cachedRows.model';
-import { usePinnedOrder } from '../../lib/sync/pins';
-import { useClearedChats } from '../../lib/sync/clearedChats';
+import { usePinnedOrder, usePinnedOrderSettled } from '../../lib/sync/pins';
+import { useClearedChats, useClearedChatsSettled } from '../../lib/sync/clearedChats';
 import { getPeerDisplayName, getPeerHandle, usePeerProfiles } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
-import { useHomeViewOf, type HomeView } from '../../lib/homeView';
-import { useLastActivityCutoff } from '../../lib/lastActivity';
-import { setSearchQuery, useSearchState } from '../../lib/searchState';
+import { useHomeViewOf, useHomeViewSettled, type HomeView } from '../../lib/homeView';
+import { useLastActivityCutoff, useLastActivitySettled } from '../../lib/lastActivity';
+import { setSearchQuery, useSearchState, useSearchStateSettled } from '../../lib/searchState';
 import { useGroupingOrders } from '../../lib/groupingOrder';
 import { groupingOrderOf, type GroupingOrders } from '../../lib/grouping.model';
 import { makeValue } from '../../lib/storeCore';
@@ -65,8 +65,20 @@ export interface HomeListing {
   draftsVersion: number;
 }
 
+function useListingPrefsSettled(): boolean {
+  const settled = [
+    usePinnedOrderSettled(),
+    useClearedChatsSettled(),
+    useHomeViewSettled(),
+    useLastActivitySettled(),
+    useSearchStateSettled(),
+  ];
+  return settled.every(Boolean);
+}
+
 export function useHomeListing(view: HomeView): HomeListing {
-  const rows = useHomeRows();
+  const storedRows = useHomeRows();
+  const rows = useListingPrefsSettled() ? storedRows : null;
   const pinned = usePinnedOrder();
   const cleared = useClearedChats();
   const prefs = useHomeViewOf(view);

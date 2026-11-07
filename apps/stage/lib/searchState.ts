@@ -20,6 +20,8 @@ export const searchStateSync = search.sync;
 
 export const useSearchState = prefs.use;
 
+export const useSearchStateSettled = prefs.useSettled;
+
 export const getSearchState = prefs.get;
 
 export const subscribeSearchState = prefs.subscribe;

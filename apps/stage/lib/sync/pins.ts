@@ -45,6 +45,8 @@ async function applyRemotePinState(state: PinStateContent): Promise<void> {
 
 export const usePinnedOrder = (): PinOrder => store.use();
 
+export const usePinnedOrderSettled = store.useSettled;
+
 async function pinStateForRows(state: PinStateContent): Promise<PinStateContent> {
   const convId = await rowIdOfConv(state.convId);
   if (state.order === undefined) return { ...state, convId };

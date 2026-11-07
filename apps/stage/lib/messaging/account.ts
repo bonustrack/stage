@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getActiveAccount } from '../accounts';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { accountQueryKeyAt, useAccountGeneration } from '../queryClient';
+import { useKnownActiveAccountId } from '../accountSelection';
 
 export function useActiveAccountRecord(): AccountRecord | null {
   const epoch = useAccountGeneration('client');
@@ -13,6 +14,8 @@ export function useActiveAccountRecord(): AccountRecord | null {
   return data ?? null;
 }
 
-export function useSelfAddress(): string {
-  return (useActiveAccountRecord()?.address ?? '').toLowerCase();
+export function useSelfAddress(): string | null {
+  const known = useKnownActiveAccountId();
+  const record = useActiveAccountRecord();
+  return known ?? record?.address.toLowerCase() ?? null;
 }

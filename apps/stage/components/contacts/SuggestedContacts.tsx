@@ -16,7 +16,7 @@ export function SuggestedContacts({
   headingTop?: number;
 }): React.ReactElement | null {
   const router = useRouter();
-  const self = useSelfAddress() || null;
+  const self = useSelfAddress();
   const addresses = useMemo(() => suggestedContacts(known, self), [known, self]);
   usePeerProfiles(addresses);
   if (addresses.length === 0) return null;

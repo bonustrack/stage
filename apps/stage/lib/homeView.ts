@@ -25,6 +25,8 @@ export function useHomeViewOf(view: HomeView): HomeViewContent {
 
 export const useHomeViewLoaded = homeView.useLoaded;
 
+export const useHomeViewSettled = prefs.useSettled;
+
 export function setHomeView(edit: HomeViewEdit): void {
   void homeView.editStored((current) => editHomeView(current, edit, Date.now()), syncsHomeView(edit)).catch(reported('homeView.save'));
 }

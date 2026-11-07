@@ -20,6 +20,8 @@ export const getClearedChats = prefs.get;
 
 export const useClearedChats = prefs.use;
 
+export const useClearedChatsSettled = prefs.useSettled;
+
 export const subscribeClearedChats = prefs.subscribe;
 
 export const primeClearedChats = prefs.loadAsync;

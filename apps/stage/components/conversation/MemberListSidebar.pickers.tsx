@@ -121,18 +121,14 @@ export function MembersPicker({
   entries,
   self,
   rights,
-}: SectionDraft & { entries: MemberListEntry[]; self: string; rights: { add: boolean; remove: boolean } }): React.ReactElement {
+}: SectionDraft & { entries: MemberListEntry[]; self: string | null; rights: { add: boolean; remove: boolean } }): React.ReactElement {
   const [query, setQuery] = useState('');
   const memberAddresses = entries.map((entry) => entry.address);
   const contacts = useContacts(memberAddresses, query);
   const { found, looking, look } = useLookup(draft, toggle);
   const members: PersonOption[] = useOrderedEntries(entries, draft)
     .filter((entry) => matchesQuery(query, entry.name, entry.address))
-    .map((entry) => ({
-      address: entry.address,
-      name: entry.name,
-      disabled: !rights.remove || entry.address.toLowerCase() === self.toLowerCase(),
-    }));
+    .map((entry) => ({ address: entry.address, name: entry.name, disabled: !rights.remove || entry.address.toLowerCase() === self }));
   const contactOptions = contacts.map((contact) => ({ address: contact.address, name: contact.name, disabled: false }));
   const extra = uniqueBy(
     [...found, ...contactOptions],
