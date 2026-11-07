@@ -23,7 +23,7 @@ import { CARD_GAP, COLUMN_PADDING } from './BoardColumnEdit';
 import { BoardCardFrame } from './BoardCardFrame';
 import { ColumnCards, type ColumnCardsProps } from './BoardCard';
 import type { BoardColumn } from './BoardScreen.model';
-import { NO_MESSAGES_PREVIEW, type Row as ChannelRowData } from '../home/model';
+import type { Row as ChannelRowData } from '../home/model';
 
 const TITLE_INPUT_STYLE = {
   minHeight: WRAPPED_TITLE_LINE_HEIGHT,
@@ -131,6 +131,7 @@ function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; colu
         value={creation.name}
         onChangeText={creation.changeName}
         inputRef={input}
+        autoFocus
         onSubmit={() => {
           void creation.submit();
         }}
@@ -152,8 +153,7 @@ function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; colu
           titleContent={titleInput}
           hideAvatar={!fields.avatar}
           square
-          lastPreview={NO_MESSAGES_PREVIEW}
-          showPreview={fields.lastMessage}
+          showPreview={false}
           wrapTitle
         />
       </BoardCardFrame>
@@ -164,8 +164,8 @@ function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; colu
           )}
           <Row align="center" gap={8}>
             <Button
-              label="Add channel"
-              accessibilityLabel="Add channel"
+              label="Add"
+              accessibilityLabel="Add"
               size="sm"
               color="primary"
               variant="solid"
@@ -179,6 +179,7 @@ function NewChannelCard({ creation, columnKey }: { creation: BoardCreation; colu
               size="sm"
               variant="borderless"
               accessibilityLabel="Cancel"
+              style={{ alignSelf: 'center' }}
               iconStart={<Glyph icon={IconCrossMedium} size={20} color={text} />}
               onPress={creation.close}
             />
