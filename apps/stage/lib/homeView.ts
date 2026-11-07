@@ -26,11 +26,5 @@ export function useHomeViewOf(view: HomeView): HomeViewContent {
 export const useHomeViewLoaded = homeView.useLoaded;
 
 export function setHomeView(edit: HomeViewEdit): void {
-  void prefs
-    .update((current) => editHomeView(current, edit, Date.now()))
-    .then(() => {
-      const accountId = prefs.accountId();
-      if (accountId !== null && syncsHomeView(edit)) homeView.changedLocally(accountId, prefs.get());
-    })
-    .catch(reported('homeView.save'));
+  void homeView.editStored((current) => editHomeView(current, edit, Date.now()), syncsHomeView(edit)).catch(reported('homeView.save'));
 }

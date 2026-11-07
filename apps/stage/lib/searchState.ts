@@ -27,9 +27,7 @@ export const subscribeSearchState = prefs.subscribe;
 export const primeSearchState = prefs.loadAsync;
 
 function editSynced(change: FilterEdit): void {
-  prefs.set(editFilters(prefs.get(), change, Date.now()));
-  const accountId = prefs.accountId();
-  if (accountId !== null) search.changedLocally(accountId, prefs.get());
+  search.edit((current) => editFilters(current, change, Date.now()));
 }
 
 export function setSearchQuery(query: string): void {

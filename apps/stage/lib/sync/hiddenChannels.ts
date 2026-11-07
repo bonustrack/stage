@@ -1,6 +1,7 @@
 import { hiddenChannelsSchema, isHiddenChannel, mergeHiddenChannels, type HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
 import { createValueStore } from '../persistedStore';
 import { keepUnlessChanged, makeListeners } from '../storeCore';
+import { nextStamp } from '../syncedSettings.model';
 
 const prefs = createValueStore<HiddenChannels>({
   key: 'channels.hidden.',
@@ -23,7 +24,7 @@ export function isChannelHidden(convId: string | null | undefined): boolean {
 
 export async function setChannelHidden(accountId: string, convId: string, hidden: boolean): Promise<void> {
   await prefs.updateFor(accountId, (current) =>
-    mergeHiddenChannels(current, { [convId]: { hidden, at: Math.max(Date.now(), (current[convId]?.at ?? 0) + 1) } }),
+    mergeHiddenChannels(current, { [convId]: { hidden, at: nextStamp(current[convId]?.at, Date.now()) } }),
   );
   localChanges.notify(accountId);
 }

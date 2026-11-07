@@ -34,14 +34,12 @@ export const dashboardAccountId = (): string | null => prefs.accountId();
 export const useDashboardLoaded = dashboard.useLoaded;
 
 export function changeDashboard(change: (widgets: DashboardWidget[]) => DashboardWidget[]): void {
-  const accountId = prefs.accountId();
-  if (accountId === null) return;
-  const current = prefs.get();
-  const next = editDashboard(current, change(current.widgets), Date.now());
-  if (next === current) return;
-  prefs.set(next);
-  forgetLiveSnapshots(accountId, removedLiveIds(current.widgets, next.widgets));
-  dashboard.changedLocally(accountId, next);
+  dashboard.edit(
+    (current) => editDashboard(current, change(current.widgets), Date.now()),
+    (accountId, previous, next) => {
+      forgetLiveSnapshots(accountId, removedLiveIds(previous.widgets, next.widgets));
+    },
+  );
 }
 
 interface WidgetAdded {
