@@ -1,7 +1,7 @@
 import { ed25519 } from '@noble/curves/ed25519';
 import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
+import { A2UI_VERSION } from '@stage-labs/kit/a2ui/protocol';
 import {
-  A2UI_MESSAGE_VERSION,
   FRAME_ACTION_MAX_CHARS,
   FRAME_MAX_COMPONENTS,
   FRAME_MAX_MESSAGES,
@@ -100,7 +100,7 @@ export function nodeHeaders(method: string, url: string, body: string, key: stri
 function nodeRequestBody(request: NodeRequest, capabilities?: Record<string, unknown>): string {
   const metadata = {
     ...(capabilities === undefined ? {} : { a2uiRendererCapabilities: capabilities }),
-    ...(request.dataModel === undefined ? {} : { a2uiRendererDataModel: { version: A2UI_MESSAGE_VERSION, surfaces: request.dataModel } }),
+    ...(request.dataModel === undefined ? {} : { a2uiRendererDataModel: { version: A2UI_VERSION, surfaces: request.dataModel } }),
   };
   return JSON.stringify(Object.keys(metadata).length === 0 ? request.message : { ...request.message, metadata });
 }
