@@ -4,70 +4,77 @@ import { deletedEntryView, deletedMessages, deletedRowBy, isDeletableEntry } fro
 import { isDeleteRequest } from '../src/xmtp/entryPayload';
 import { XMTP_USER_PREFIX } from '../src/xmtp/line';
 import type { StreamedMessage } from '../src/xmtp/summarizeRow';
-import { entry } from './helpers';
+import { envelopeOf } from '../src/xmtp/envelope';
+import { xmtpMessage } from './fixtures/decoded-messages';
 
-const ALICE = `${XMTP_USER_PREFIX}alice`;
 const BOB = `${XMTP_USER_PREFIX}bob`;
-const OWNER = `${XMTP_USER_PREFIX}owner`;
-const MOD = `${XMTP_USER_PREFIX}mod`;
 const SUPER_ADMINS: ReadonlySet<string> = new Set(['owner']);
 
-const hello = entry('m1', { from: ALICE, payload: { contentType: 'text' }, text: 'hello' });
-const reply = entry('m2', { from: BOB, payload: { contentType: 'reply', replyTo: 'm1' }, text: 'hi back', replyTo: 'm1' });
-const request = (id: string, from: string, target: string): HistoryEntry =>
-  entry(id, { from, payload: { contentType: 'deleteMessage', deletes: target } });
+const LINE = 'stage://xmtp/c';
+const sent = (id: string, senderInboxId: string, contentTypeId: string, content: unknown): HistoryEntry =>
+  envelopeOf(xmtpMessage({ id, senderInboxId, contentTypeId, content }), LINE);
+const hello = sent('m1', 'alice', 'text', 'hello');
+const reply = sent('m2', 'bob', 'reply', { reference: 'm1', text: 'hi back' });
+const request = (id: string, senderInboxId: string, target: string): HistoryEntry =>
+  sent(id, senderInboxId, 'deleteMessage', { messageId: target });
 
 describe('deletedMessages', () => {
   test('a delete from the original sender deletes the message', () => {
-    expect([...deletedMessages([request('d1', ALICE, 'm1'), reply, hello])]).toEqual([['m1', 'sender']]);
+    expect([...deletedMessages([request('d1', 'alice', 'm1'), reply, hello])]).toEqual([['m1', 'sender']]);
   });
 
   test('a delete from anyone else is ignored', () => {
-    expect(deletedMessages([request('d1', BOB, 'm1'), hello]).size).toBe(0);
+    expect(deletedMessages([request('d1', 'bob', 'm1'), hello]).size).toBe(0);
   });
 
   test("a channel super admin may delete anyone's message", () => {
-    const deleted = deletedMessages([request('d1', OWNER, 'm1'), hello], { superAdmins: SUPER_ADMINS });
+    const deleted = deletedMessages([request('d1', 'owner', 'm1'), hello], { superAdmins: SUPER_ADMINS });
     expect([...deleted]).toEqual([['m1', 'admin']]);
   });
 
   test('a plain admin, a member or a stranger is refused', () => {
-    for (const from of [MOD, BOB, `${XMTP_USER_PREFIX}stranger`, 'owner']) {
-      expect(deletedMessages([request('d1', from, 'm1'), hello], { superAdmins: SUPER_ADMINS }).size).toBe(0);
+    const unprefixed = { ...request('d1', 'owner', 'm1'), from: 'owner' };
+    for (const del of [request('d1', 'mod', 'm1'), request('d1', 'bob', 'm1'), request('d1', 'stranger', 'm1'), unprefixed]) {
+      expect(deletedMessages([del, hello], { superAdmins: SUPER_ADMINS }).size).toBe(0);
     }
   });
 
   test('super admin rights come only from the list, never from a DM', () => {
-    expect(deletedMessages([request('d1', OWNER, 'm1'), hello]).size).toBe(0);
+    expect(deletedMessages([request('d1', 'owner', 'm1'), hello]).size).toBe(0);
   });
 
   test("the sender's own delete wins over an admin delete", () => {
-    const both = [request('d2', OWNER, 'm1'), request('d1', ALICE, 'm1'), hello];
+    const both = [request('d2', 'owner', 'm1'), request('d1', 'alice', 'm1'), hello];
     expect(deletedMessages(both, { superAdmins: SUPER_ADMINS }).get('m1')).toBe('sender');
   });
 
   test('group updates cannot be deleted, not even by a super admin', () => {
-    const update = entry('g1', { from: ALICE, payload: { contentType: 'group_updated', system: true }, text: 'renamed the channel' });
-    expect(deletedMessages([request('d1', ALICE, 'g1'), update]).size).toBe(0);
-    expect(deletedMessages([request('d1', OWNER, 'g1'), update], { superAdmins: SUPER_ADMINS }).size).toBe(0);
+    const update = sent('g1', 'alice', 'group_updated', {
+      initiatedByInboxId: 'alice',
+      addedInboxes: [],
+      removedInboxes: [],
+      metadataFieldChanges: [],
+    });
+    expect(deletedMessages([request('d1', 'alice', 'g1'), update]).size).toBe(0);
+    expect(deletedMessages([request('d1', 'owner', 'g1'), update], { superAdmins: SUPER_ADMINS }).size).toBe(0);
   });
 
   test('waits until the target is loaded, whatever the order', () => {
-    const del = request('d1', ALICE, 'm1');
+    const del = request('d1', 'alice', 'm1');
     expect(deletedMessages([del]).size).toBe(0);
     expect(deletedMessages([hello, del]).has('m1')).toBe(true);
   });
 
   test('an SDK placeholder and a local delete both count, with who deleted them', () => {
-    const placeholder = entry('m3', { from: BOB, payload: { contentType: 'deletedMessage', deletedBy: 'admin' } });
+    const placeholder = sent('m3', 'bob', 'deletedMessage', { deletedBy: 'admin' });
     const deleted = deletedMessages([placeholder, hello, reply], { ownDeletes: new Set(['m1', 'm2']), selfInboxId: 'alice' });
     expect(Object.fromEntries(deleted)).toEqual({ m1: 'sender', m2: 'admin', m3: 'admin' });
   });
 
   test('requests and placeholders are not deletable bubbles themselves', () => {
-    expect(isDeleteRequest(request('d1', ALICE, 'm1'))).toBe(true);
-    expect(isDeletableEntry(request('d1', ALICE, 'm1'))).toBe(false);
-    expect(isDeletableEntry(entry('m3', { from: BOB, payload: { contentType: 'deletedMessage' } }))).toBe(false);
+    expect(isDeleteRequest(request('d1', 'alice', 'm1'))).toBe(true);
+    expect(isDeletableEntry(request('d1', 'alice', 'm1'))).toBe(false);
+    expect(isDeletableEntry(sent('m3', 'bob', 'deletedMessage', {}))).toBe(false);
     expect(isDeletableEntry(hello)).toBe(true);
   });
 });
@@ -81,8 +88,8 @@ describe('deletedEntryView', () => {
       station: 'xmtp',
       line: reply.line,
       from: BOB,
-      to: 'c',
-      messageId: undefined,
+      to: LINE,
+      messageId: 'm2',
       payload: { contentType: 'deletedMessage', deletedBy: 'sender' },
     });
     expect(deletedEntryView(withMedia, 'admin').payload).toEqual({ contentType: 'deletedMessage', deletedBy: 'admin' });

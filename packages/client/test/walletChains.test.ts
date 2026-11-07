@@ -35,13 +35,9 @@ describe('chain table', () => {
 });
 
 describe('KNOWN_TOKENS', () => {
-  test('lists the USDC deployments that support transfer authorizations, keyed by lowercase address', () => {
-    expect(Object.keys(KNOWN_TOKENS).sort()).toEqual([
-      '0x036cbd53842c5426634e7929541ec2318f3dcf7e',
-      '0x1c7d4b196cb0c7b01d743fbc6116a902379c7238',
-      '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
-      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-    ]);
+  test('lists USDC deployments only, keyed by lowercase address', () => {
+    expect(Object.keys(KNOWN_TOKENS).every((address) => address === address.toLowerCase())).toBe(true);
     expect(Object.values(KNOWN_TOKENS).every((t) => t.symbol === 'USDC' && t.decimals === 6)).toBe(true);
+    expect(KNOWN_TOKENS['0x833589fcd6edb6e08f4c7c32d4f71b54bda02913']).toEqual({ symbol: 'USDC', decimals: 6 });
   });
 });

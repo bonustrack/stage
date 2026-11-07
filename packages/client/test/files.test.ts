@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { dataUrlBytes, extensionForMime, kindExtensions, mimeForExtension, normalizedMime, withoutQuery } from '../src/files';
+import { dataUrlBytes, extensionForMime, mimeForExtension, normalizedMime, withoutQuery } from '../src/files';
+import { attachmentKindOf } from '../src/xmtp/humanize';
 
 describe('file types per use', () => {
   test('a sent file gets its type from its name, including the formats only sending knows', () => {
@@ -21,10 +22,18 @@ describe('file types per use', () => {
     expect(normalizedMime(undefined, 'clip.M4A')).toBe('audio/mp4');
   });
 
-  test('the kind of a named attachment leaves out heif, bmp and caf', () => {
-    expect(kindExtensions('image')).toEqual(['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'avif']);
-    expect(kindExtensions('audio')).toEqual(['m4a', 'mp3', 'wav', 'aac', 'ogg']);
-    expect(kindExtensions('video')).toEqual(['mp4', 'mov', 'webm']);
+  test('the kind of a named attachment comes from its extension and leaves out heif, bmp and caf', () => {
+    const kindOf = (filename: string): string => attachmentKindOf({ filename });
+    expect(['a.JPG', 'a.heic', 'a.avif', 'a.m4a', 'a.ogg', 'a.mov', 'a.webm'].map(kindOf)).toEqual([
+      'image',
+      'image',
+      'image',
+      'audio',
+      'audio',
+      'video',
+      'video',
+    ]);
+    expect(['a.heif', 'a.bmp', 'a.caf', 'a.txt'].map(kindOf)).toEqual(['file', 'file', 'file', 'file']);
   });
 
   test('voice recordings and saved images have their own extensions', () => {

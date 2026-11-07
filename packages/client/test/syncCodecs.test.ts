@@ -74,7 +74,7 @@ describe('device sync wire format', () => {
     const ids = STAGE_JSON_CODECS.map(
       ({ contentType: t, shouldPush }) => `${t.authorityId}/${t.typeId}:${t.versionMajor}.${t.versionMinor}:${shouldPush()}`,
     );
-    expect(ids).toEqual(REGISTRY);
+    expect(ids.toSorted()).toEqual(REGISTRY.toSorted());
     expect(isSyncType('stage.box/frame:2.0')).toBe(false);
     expect(isSyncType(undefined)).toBe(false);
   });

@@ -11,7 +11,8 @@ import {
   type ShownMessage,
 } from '../src/xmtp/visibility';
 import { countUnreadEntries } from '../src/xmtp/summarizeRow';
-import { entry } from './helpers';
+import { envelopeOf } from '../src/xmtp/envelope';
+import { xmtpMessage } from './fixtures/decoded-messages';
 
 const CONTROL = 'METRO_CTRL:ping';
 
@@ -51,22 +52,23 @@ const MESSAGES: Record<string, RowMessage> = {
   unknown: { contentTypeId: 'somethingNew', content: { a: 1 }, senderInboxId: 'peer', sentNs: 1 },
 };
 
+const LINE = 'stage://xmtp/c';
+const enveloped = (id: string, contentTypeId: string, content: unknown): HistoryEntry =>
+  envelopeOf(xmtpMessage({ id, contentTypeId, content }), LINE);
+
 const ENTRIES: Record<string, HistoryEntry> = {
-  text: entry('t', { text: 'hi', payload: { contentType: 'text' } }),
-  control: entry('c', { text: CONTROL, payload: { contentType: 'text' } }),
-  reaction: entry('r', { text: '[react 👍]', payload: { contentType: 'reaction', reactTo: 't', emoji: '👍', removed: false } }),
-  readReceipt: entry('rr', { text: '[readReceipt payload]', payload: { contentType: 'readReceipt' } }),
-  groupUpdate: entry('g', { text: 'added 1 member', payload: { contentType: 'group_updated', system: true, groupUpdate: update } }),
-  leftOnly: entry('l', {
-    text: '1 member left the channel',
-    payload: { contentType: 'group_updated', system: true, groupUpdate: leftOnly },
-  }),
-  leave: entry('lr', { text: 'left the channel', payload: { contentType: 'leave_request', system: true } }),
-  deleteRequest: entry('d', { payload: { contentType: 'deleteMessage', deletes: 't' } }),
-  callSignal: entry('s', { text: '[callSignal payload]', payload: { contentType: 'callSignal' } }),
-  deleted: entry('x', { payload: { contentType: 'deletedMessage', deletedBy: 'sender' } }),
-  sync: entry('y', { text: 'Stage read state', payload: { contentType: 'readState' } }),
-  unknown: entry('u', { text: '[somethingNew payload]', payload: { contentType: 'somethingNew' } }),
+  text: enveloped('t', 'text', 'hi'),
+  control: enveloped('c', 'text', CONTROL),
+  reaction: enveloped('r', 'reaction', { reference: 't', content: '👍', removed: false, custom: false }),
+  readReceipt: enveloped('rr', 'readReceipt', {}),
+  groupUpdate: enveloped('g', 'group_updated', update),
+  leftOnly: enveloped('l', 'group_updated', leftOnly),
+  leave: enveloped('lr', 'leave_request', {}),
+  deleteRequest: enveloped('d', 'deleteMessage', { messageId: 't' }),
+  callSignal: enveloped('s', 'callSignal', {}),
+  deleted: enveloped('x', 'deletedMessage', { deletedBy: 'sender' }),
+  sync: enveloped('y', 'readState', {}),
+  unknown: enveloped('u', 'somethingNew', { a: 1 }),
 };
 
 function table<T>(rows: Record<string, unknown>, of: (key: string) => T): Record<string, T> {

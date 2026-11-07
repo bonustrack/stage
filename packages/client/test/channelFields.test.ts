@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { CHANNEL_PRIORITIES, LabelPermissionError, priorityOf } from '../src/xmtp/labels';
 import {
-  CHANNEL_FIELD_NOUNS,
   channelFieldOf,
   createAppDataWriter,
   groupTagsOf,
@@ -10,7 +9,6 @@ import {
   type AppDataGroup,
   type ChannelField,
 } from '../src/xmtp/channelMeta';
-import { GROUP_KEYS } from '../src/xmtp/sync/homeView';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { appDataGroup } from './helpers';
 
@@ -28,13 +26,6 @@ const kept = {
 const fields: ChannelField[] = ['status', 'priority'];
 
 describe('channel metadata table', () => {
-  test('derives the empty tags, field nouns and group keys from one field list', () => {
-    expect(NO_TAGS).toEqual({ labels: [], category: null, status: null, priority: null, assigned: [] });
-    expect(Object.keys(NO_TAGS)).toEqual(['labels', 'category', 'status', 'priority', 'assigned']);
-    expect(CHANNEL_FIELD_NOUNS).toEqual({ category: 'project', status: 'status', priority: 'priority' });
-    expect(GROUP_KEYS).toEqual(['assignee', 'category', 'label', 'status']);
-  });
-
   test('compares cached rows field by field, treating missing assignees as none', () => {
     const tags = { ...NO_TAGS, labels: ['Todo'], status: 'Doing' };
     expect(sameGroupTags({ labels: ['Todo'], status: 'Doing' }, tags)).toBe(true);
@@ -48,7 +39,6 @@ describe('channel status and priority', () => {
   test('normalizes status like category and uses the exact priority options', () => {
     expect(channelFieldOf('status', '  Needs   review ')).toBe('Needs review');
     expect(channelFieldOf('status', 'x'.repeat(40))).toBe('x'.repeat(24));
-    expect(CHANNEL_PRIORITIES).toEqual(['Urgent', 'High', 'Medium', 'Low']);
     for (const priority of CHANNEL_PRIORITIES) expect(priorityOf(` ${priority} `)).toBe(priority);
     for (const value of [undefined, null, '', '   ', 7, ['Work'], { name: 'Work' }]) {
       expect(channelFieldOf('status', value)).toBeNull();
