@@ -5,7 +5,7 @@ import {
   memberChanges,
   memberEditsText,
   memberListEntries,
-} from '../components/conversation/MemberListSidebar.model';
+} from '../components/channel/MemberListSidebar.model';
 
 const names: Record<string, string> = {
   '0xbbbb000000000000000000000000000000000002': 'zoe.base.eth',

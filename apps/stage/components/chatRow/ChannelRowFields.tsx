@@ -6,7 +6,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { Avatar } from '../Avatar';
 import { Row } from '../layout';
 import { AppIcon } from '../widgets';
-import { memberListEntries } from '../conversation/MemberListSidebar.model';
+import { memberListEntries } from '../channel/MemberListSidebar.model';
 import { visibleChannelFields, type ChannelRowFieldData } from './ChannelRowFields.model';
 import type { ChannelFields } from '../../lib/channelFields.model';
 import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';

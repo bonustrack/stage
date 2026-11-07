@@ -10,7 +10,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, DANGER, usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
 import { channelProfileMenuItems, memberRowModel, type ChannelMemberRole, type MemberRowBadge } from './channel.parts.model';
-import { ChannelAssignees, ChannelMembersSection } from '../conversation/MemberListSidebar';
+import { ChannelAssignees, ChannelMembersSection } from './MemberListSidebar';
 import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
 import { ChannelFields, ChannelLabels, useLiveChannelLabels } from './channel.labels';

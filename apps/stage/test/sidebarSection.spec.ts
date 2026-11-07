@@ -9,7 +9,7 @@ import {
   pickerWidth,
   selectedFirst,
   tagSearch,
-} from '../components/conversation/SidebarSection.model';
+} from '../components/channel/SidebarSection.model';
 import { includesKey, toggleKey, uniqueKeys } from '@stage-labs/client/collections';
 
 describe('sidebar section draft', () => {

@@ -14,8 +14,8 @@ import {
   type MemberAdminMark,
   type MemberListEntry,
 } from './MemberListSidebar.model';
-import { confirmMemberRemoval } from '../channel/channel.detail';
-import { ChannelFields, ChannelLabels, useLiveChannelLabels } from '../channel/channel.labels';
+import { confirmMemberRemoval } from './channel.detail';
+import { ChannelFields, ChannelLabels, useLiveChannelLabels } from './channel.labels';
 import { SectionNote, SidebarSection } from './SidebarSection';
 import { applyListEdits, hasListEdits, type ListEdits } from './SidebarSection.model';
 import { AssigneePicker, MembersPicker } from './MemberListSidebar.pickers';

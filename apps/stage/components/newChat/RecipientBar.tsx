@@ -7,7 +7,7 @@ import { HoverTooltip } from '../HoverTooltip';
 import { useHover } from '../hover';
 import { AnchoredMenu, PICKER_WIDTH, menuPointAbove } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { MembersPicker } from '../conversation/MemberListSidebar.pickers';
+import { MembersPicker } from '../channel/MemberListSidebar.pickers';
 import { includesKey } from '@stage-labs/client/collections';
 import { usePalette } from '../../lib/theme';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';

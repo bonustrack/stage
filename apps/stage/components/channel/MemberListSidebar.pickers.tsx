@@ -6,7 +6,7 @@ import { PickerList, PickerNote, PickerRow, PickerSearch } from '../PickerRows';
 import type { SectionDraft } from './SidebarSection';
 import { matchesQuery, selectedFirst } from './SidebarSection.model';
 import type { MemberListEntry } from './MemberListSidebar.model';
-import { lookupMember } from '../channel/MemberPicker';
+import { lookupMember } from './MemberPicker';
 import { capabilities } from '../../lib/capabilities';
 import { useContacts } from '../../lib/useContacts';
 import { usePalette } from '../../lib/theme';

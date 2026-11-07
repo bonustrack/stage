@@ -17,7 +17,7 @@ import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { updateGroupMeta } from '../../lib/xmtp.groups';
 import { ChannelLabelsEditor, writeLabels } from './channel.labels';
 import { channelChanges, channelDraftFrom, channelDraftProblem, type ChannelCurrent, type ChannelDraft } from './EditChannelModal.model';
-import { hasListEdits, listEdits, type ListEdits } from '../conversation/SidebarSection.model';
+import { hasListEdits, listEdits, type ListEdits } from './SidebarSection.model';
 import { Column } from '../layout';
 
 const AVATAR_PX = 96;

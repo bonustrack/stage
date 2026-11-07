@@ -12,7 +12,7 @@ import { MenuRow } from '../MenuRows';
 import { useKnownFieldValues } from '../home/listing';
 import { FIELD_SECTIONS } from '../channel/channel.labels';
 import { PickerList, PickerNote, PickerSearch } from '../PickerRows';
-import { tagSearch } from '../conversation/SidebarSection.model';
+import { tagSearch } from '../channel/SidebarSection.model';
 import { includesKey } from '@stage-labs/client/collections';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';

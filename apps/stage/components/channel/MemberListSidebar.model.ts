@@ -1,4 +1,4 @@
-import type { ChannelMemberRole } from '../channel/channel.parts.model';
+import type { ChannelMemberRole } from './channel.parts.model';
 import { type ListEdits } from './SidebarSection.model';
 import { includesKey } from '@stage-labs/client/collections';
 import { compareNames } from '../../lib/format';

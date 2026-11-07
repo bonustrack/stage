@@ -1,4 +1,4 @@
-import { MemberListSidebar } from './MemberListSidebar';
+import { MemberListSidebar } from '../channel/MemberListSidebar';
 import { TOPNAV_HEIGHT } from '../Topnav';
 import { createPaneWidth } from '../layout/paneWidth';
 import { rightPaneRule } from '../layout/webChrome';
