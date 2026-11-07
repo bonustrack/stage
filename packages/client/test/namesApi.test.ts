@@ -38,15 +38,21 @@ describe('issued names', () => {
     expect(sent.map((request) => request.url)).toEqual([`${BASE}/names/status?address=${ADDRESS}`, `${BASE}/names/resolve?label=fabien`]);
   });
 
-  test('a missing, empty or failed answer is no name', async () => {
-    for (const answer of [
-      () => Response.json({ name: null }),
-      () => Response.json({ name: '' }),
-      () => new Response('', { status: 503 }),
-    ]) {
-      reply = answer;
-      expect(await fetchIssuedName(BASE, ADDRESS)).toBeNull();
-    }
+  test('the service answering no name is no name', async () => {
+    reply = () => Response.json({ name: null });
+    expect(await fetchIssuedName(BASE, ADDRESS)).toBeNull();
+    reply = () => Response.json({ address: null });
+    expect(await fetchIssuedAddress(BASE, 'fabien')).toBeNull();
+  });
+
+  test('a failed or malformed answer is an error, not no name', async () => {
+    reply = () => new Response('', { status: 503 });
+    await expect(fetchIssuedName(BASE, ADDRESS)).rejects.toThrow('name service responded 503');
+    await expect(fetchIssuedAddress(BASE, 'fabien')).rejects.toThrow('name service responded 503');
+    reply = () => Response.json({ name: '' });
+    await expect(fetchIssuedName(BASE, ADDRESS)).rejects.toThrow('invalid payload');
+    reply = () => Response.json({});
+    await expect(fetchIssuedAddress(BASE, 'fabien')).rejects.toThrow('invalid payload');
   });
 });
 

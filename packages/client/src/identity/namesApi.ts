@@ -2,7 +2,7 @@ import { isAddress, type Hex } from 'viem';
 import { z } from 'zod';
 import { STAGE_CLIENT_HEADERS, namesPath, type NamesOp } from '../endpoints';
 import { isMailPublicKey } from '../mail/mailbox';
-import { parseOrThrow } from '../validate';
+import { parseOrThrow, type OutputSchema } from '../validate';
 import { stageNameOf, type ClaimRequest } from './stageNames';
 
 export const NAME_TAKEN = 'name already taken';
@@ -57,27 +57,24 @@ function namesUrl(proxyBase: string, op: NamesOp, query = ''): string {
   return `${proxyBase}${namesPath(op)}${query}`;
 }
 
-async function issuedField<T>(proxyBase: string, op: NamesOp, query: string, reply: z.ZodType<T>): Promise<T | null> {
-  return directRequest(namesUrl(proxyBase, op, `?${query}`), {}, async (res) => {
-    if (!res.ok) return null;
-    const parsed = reply.safeParse(await res.json());
-    return parsed.success ? parsed.data : null;
-  });
+async function namesReply<T>(res: Response, where: string, schema: OutputSchema<T>): Promise<T> {
+  if (!res.ok) throw new Error(`name service responded ${res.status}`);
+  return parseOrThrow(where, schema, await res.json());
 }
 
 export async function fetchIssuedName(proxyBase: string, address: string): Promise<string | null> {
-  return (await issuedField(proxyBase, 'status', `address=${encodeURIComponent(address)}`, STATUS_REPLY))?.name ?? null;
+  const url = namesUrl(proxyBase, 'status', `?address=${encodeURIComponent(address)}`);
+  return (await directRequest(url, {}, (res) => namesReply(res, 'issued name', STATUS_REPLY))).name;
 }
 
 export async function fetchIssuedAddress(proxyBase: string, label: string): Promise<string | null> {
-  return (await issuedField(proxyBase, 'resolve', `label=${encodeURIComponent(label)}`, RESOLVE_REPLY))?.address ?? null;
+  const url = namesUrl(proxyBase, 'resolve', `?label=${encodeURIComponent(label)}`);
+  return (await directRequest(url, {}, (res) => namesReply(res, 'issued address', RESOLVE_REPLY))).address;
 }
 
 export function fetchNameCheck(proxyBase: string, label: string, request: NamesRequest = directRequest): Promise<NameCheck> {
-  return request(namesUrl(proxyBase, 'check', `?label=${encodeURIComponent(label)}`), { headers: CLIENT_HEADERS }, async (res) => {
-    if (!res.ok) throw new Error(`name service responded ${res.status}`);
-    return parseOrThrow('username availability', CHECK_REPLY, await res.json());
-  });
+  const url = namesUrl(proxyBase, 'check', `?label=${encodeURIComponent(label)}`);
+  return request(url, { headers: CLIENT_HEADERS }, (res) => namesReply(res, 'username availability', CHECK_REPLY));
 }
 
 function claimOutcome(res: Response, body: z.infer<typeof CLAIM_REPLY>, label: string): NameClaimOutcome {
