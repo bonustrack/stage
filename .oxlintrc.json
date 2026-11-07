@@ -169,6 +169,32 @@
         "stage/native-only-in-seams": "error",
         "stage/no-silent-catch": "error",
         "stage/no-column-flex-style": ["error", { "nested": true }],
+        "stage/kit-layout-style": [
+          "error",
+          {
+            "nested": true,
+            "keys": [
+              "alignItems",
+              "justifyContent",
+              "gap",
+              "padding",
+              "paddingHorizontal",
+              "paddingVertical",
+              "paddingTop",
+              "paddingRight",
+              "paddingBottom",
+              "paddingLeft",
+              "margin",
+              "marginHorizontal",
+              "marginVertical",
+              "marginTop",
+              "marginRight",
+              "marginBottom",
+              "marginLeft",
+              "backgroundColor"
+            ]
+          }
+        ],
         "core/no-restricted-syntax": [
           "error",
           {
@@ -182,14 +208,6 @@
           {
             "selector": "JSXElement[openingElement.name.name=/^(Text|Title)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='color']",
             "message": "Kit Text/Title must take their colour via the `color` prop (color={pal.text}), not a color in style. Remove color from the style and pass color= instead."
-          },
-          {
-            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft)$/]",
-            "message": "Row/Column: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->padding (scalar or {x,y,top,right,bottom,left}), margin*->margin (same Spacing shape) (see kit/src/layout.ts)."
-          },
-          {
-            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name='backgroundColor']",
-            "message": "Row/Column: use the `surface` variant (surface/raised/sunken/toolbar) or the `background` override prop, not a backgroundColor in style."
           }
         ],
         "no-restricted-imports": [
@@ -259,8 +277,8 @@
       "rules": { "no-restricted-imports": "off" }
     },
     {
-      "files": ["apps/stage/components/landing/**", "apps/stage/components/smallText.ts"],
-      "rules": { "core/no-restricted-syntax": "off", "stage/no-column-flex-style": "off" }
+      "files": ["apps/stage/components/landing/**"],
+      "rules": { "core/no-restricted-syntax": "off", "stage/no-column-flex-style": "off", "stage/kit-layout-style": "off" }
     },
     {
       "files": ["apps/stage/components/layout/safeArea.ts"],

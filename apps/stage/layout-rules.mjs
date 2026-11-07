@@ -34,7 +34,7 @@ const HEX_COLOR = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const COLUMN_FLEX_MESSAGE =
   'Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex.';
 const KIT_LAYOUT_MESSAGE =
-  'Row/Column: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style.';
+  'Row/Column: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background or a surface variant, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see packages/kit/src/layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style.';
 const FONT_SIZE_MESSAGE = "Use a named Kit size token (FONT_SIZE.md / fontSize('md') from './tokens') instead of a raw fontSize number.";
 const HEX_MESSAGE = "Use a token from './tokens' (schemePalette()/colors/resolveColorToken) instead of a raw hex colour.";
 
@@ -54,11 +54,19 @@ function styleTagsAround(object, nested) {
   return tags;
 }
 
-function styleKeyRule(tagged, keys, message) {
+const STYLE_KEY_OPTIONS = {
+  type: 'object',
+  properties: { nested: { type: 'boolean' }, keys: { type: 'array', items: { type: 'string' } } },
+  additionalProperties: false,
+};
+
+function styleKeyRule(tagged, defaultKeys, message) {
   return {
-    meta: { type: 'suggestion', schema: [{ type: 'object', properties: { nested: { type: 'boolean' } }, additionalProperties: false }] },
+    meta: { type: 'suggestion', schema: [STYLE_KEY_OPTIONS] },
     create(context) {
       const nested = context.options[0]?.nested === true;
+      const listed = context.options[0]?.keys;
+      const keys = listed === undefined ? defaultKeys : new Set(listed);
       return {
         Property(node) {
           if (node.parent?.type !== 'ObjectExpression' || node.key?.type !== 'Identifier') return;
