@@ -33,7 +33,7 @@ For a dev-client APK built from a specific commit instead of an older compatible
 
 Both workflows check the downloaded APK with `bun scripts/verify-apk.mjs <file.apk>` before publishing it. It verifies the APK Signature Scheme v2 signature and prints the package, versionCode, versionName, signing certificate SHA-256, packaged runtime (`assets/fingerprint`) and commit (`extra.gitHash`). Flags such as `--package`, `--version-code`, `--runtime`, `--commit` and `--cert` make it fail on a mismatch. The signing certificate is pinned in each workflow, so an APK that could not install over the previous one is never published.
 
-The dev client loads a branch preview from `https://bundler.stage.box/<branch>`, for example `/main` or `/feat/foo` (`/feat%2Ffoo` works too). Each branch publishes to its own EAS channel, named by `channelKey()` in `apps/proxy/src/branchChannel.ts`. The preview workflow and the bundler Worker share that function.
+The dev client loads a branch preview from `https://bundler.stage.box/<branch>`, for example `/main` or `/feat/foo` (`/feat%2Ffoo` works too). Each branch publishes to its own EAS channel, named by `channelKey()` in `packages/client/src/endpoints.ts`. The preview workflow (`scripts/pr-preview/channel-key.mjs`) and the bundler Worker share that function.
 
 Version codes and build numbers are managed by EAS (`appVersionSource: remote`, `autoIncrement: true`), so nothing needs bumping besides `version`.
 

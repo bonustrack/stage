@@ -8,6 +8,7 @@ export const PREVIEW_LAUNCHER_PATH = '/preview-launcher.html';
 export const APP_SCHEME = 'stage';
 export const EAS_PROJECT_ID = '1707f2db-c2b8-4c91-9341-27b1d57d355f';
 export const EAS_UPDATES_URL = `https://u.expo.dev/${EAS_PROJECT_ID}`;
+export const MAIN_BRANCH = 'main';
 
 export const PROXY_ROUTES = {
   health: '/health',
@@ -48,6 +49,29 @@ export function namesPath(op: NamesOp): string {
 
 export function mailPath(op: MailOp): string {
   return `${PROXY_ROUTES.mail}${op}`;
+}
+
+const LITERAL_CHANNEL_CHARACTER = /^[A-Za-z0-9.-]$/;
+
+export function channelKey(branch: string): string {
+  return Array.from(new TextEncoder().encode(branch), (byte) => {
+    const character = String.fromCharCode(byte);
+    return LITERAL_CHANNEL_CHARACTER.test(character) ? character : `_${byte.toString(16).padStart(2, '0')}`;
+  }).join('');
+}
+
+export interface ManifestQuery {
+  branch: string;
+  runtime: string;
+  platform: string;
+}
+
+export function easManifestUrl({ branch, runtime, platform }: ManifestQuery): string {
+  const target = new URL(EAS_UPDATES_URL);
+  target.searchParams.set('channel-name', channelKey(branch));
+  target.searchParams.set('runtime-version', runtime);
+  target.searchParams.set('platform', platform);
+  return target.toString();
 }
 
 export function previewLauncherUrl(target: string): string {

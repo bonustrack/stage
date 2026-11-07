@@ -1,9 +1,9 @@
-import { BUNDLER_ORIGIN, EAS_UPDATES_URL, previewLauncherUrl } from '@stage-labs/client/endpoints';
-import { branchFromPath, branchPath, channelKey } from './branchChannel.ts';
+import { BUNDLER_ORIGIN, MAIN_BRANCH, easManifestUrl, previewLauncherUrl } from '@stage-labs/client/endpoints';
+import { branchFromPath, branchPath } from './branchChannel.ts';
 
 const DEFAULT_RUNTIME_VERSION = '1.0.0';
 const DEFAULT_PLATFORM = 'android';
-const DEFAULT_BRANCH = 'main';
+const DEFAULT_BRANCH = MAIN_BRANCH;
 const STATIC_FILES = new Set(['/index.html', '/preview-launcher.html', '/favicon.svg']);
 
 const NO_BRANCH_MESSAGE = `No branch in this URL. Load ${BUNDLER_ORIGIN}/<branch>, for example ${BUNDLER_ORIGIN}/${DEFAULT_BRANCH}`;
@@ -17,12 +17,12 @@ export function isBrowserRequest(request: Request): boolean {
   return (request.headers.get('accept') ?? '').includes('text/html');
 }
 
-export function manifestUrl(channel: string, request: Request): string {
-  const target = new URL(EAS_UPDATES_URL);
-  target.searchParams.set('channel-name', channel);
-  target.searchParams.set('runtime-version', request.headers.get('expo-runtime-version') ?? DEFAULT_RUNTIME_VERSION);
-  target.searchParams.set('platform', request.headers.get('expo-platform') ?? DEFAULT_PLATFORM);
-  return target.toString();
+export function manifestUrl(branch: string, request: Request): string {
+  return easManifestUrl({
+    branch,
+    runtime: request.headers.get('expo-runtime-version') ?? DEFAULT_RUNTIME_VERSION,
+    platform: request.headers.get('expo-platform') ?? DEFAULT_PLATFORM,
+  });
 }
 
 function branchFromRequest(pathname: string, expoClient: boolean): string | null {
@@ -40,5 +40,5 @@ export async function handleBundler(request: Request): Promise<Response> {
   }
   const headers = new Headers(request.headers);
   headers.delete('host');
-  return fetch(manifestUrl(channelKey(branch), request), { headers });
+  return fetch(manifestUrl(branch, request), { headers });
 }

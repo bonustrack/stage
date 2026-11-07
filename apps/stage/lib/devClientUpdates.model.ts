@@ -1,4 +1,4 @@
-import { BUNDLER_ORIGIN, EAS_UPDATES_URL, PREVIEW_LAUNCHER_PATH } from '@stage-labs/client/endpoints';
+import { BUNDLER_ORIGIN, EAS_UPDATES_URL, MAIN_BRANCH, PREVIEW_LAUNCHER_PATH, easManifestUrl } from '@stage-labs/client/endpoints';
 const PROJECT_URL = EAS_UPDATES_URL;
 const STATUS_URL = 'https://api.github.com/repos/bonustrack/stage/commits';
 const SHA = /^[0-9a-f]{40}$/;
@@ -105,9 +105,5 @@ export function freshUrl(url: string, stamp: number): string {
 }
 
 export function compatibleMainUrl(runtime: string, platform: string): string {
-  const target = new URL(PROJECT_URL);
-  target.searchParams.set('channel-name', 'main');
-  target.searchParams.set('runtime-version', runtime);
-  target.searchParams.set('platform', platform);
-  return target.toString();
+  return easManifestUrl({ branch: MAIN_BRANCH, runtime, platform });
 }
