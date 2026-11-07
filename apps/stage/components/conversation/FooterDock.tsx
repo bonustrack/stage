@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Platform, type StyleProp, type ViewStyle } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import Reanimated, { useAnimatedStyle } from 'react-native-reanimated';
 import { KeyboardStickyView, useReanimatedKeyboardAnimation } from 'react-native-keyboard-controller';
@@ -9,7 +9,8 @@ import { useMemberListOpen } from '../../lib/memberList';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { useWebTabRail } from '../layout/webLayout';
 import { TOPNAV_HEIGHT } from '../Topnav';
-import { Column, PANE_LEFT_PAD, RIGHT_PANE_INSET, RIGHT_PANE_PAD, pinnedBottom, viewportFill } from '../layout';
+import { Column, PANE_LEFT_PAD, RIGHT_PANE_PAD, viewportFill } from '../layout';
+import { FooterPin } from './FooterPin';
 
 export function useConversationSidebarShown(): boolean {
   const open = useMemberListOpen();
@@ -79,15 +80,9 @@ export function FooterDock({
   memberList: boolean;
 }): React.ReactElement {
   useReportBottomChrome(height);
-  if (Platform.OS !== 'web') return <>{children}</>;
   return (
-    <Column
-      style={[pinnedBottom(2), memberList ? RIGHT_PANE_INSET : null]}
-      onLayout={(e) => {
-        onHeight(e.nativeEvent.layout.height);
-      }}
-    >
+    <FooterPin onHeight={onHeight} memberList={memberList}>
       {children}
-    </Column>
+    </FooterPin>
   );
 }

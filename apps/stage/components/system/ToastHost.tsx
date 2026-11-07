@@ -2,7 +2,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { usePalette } from '../../lib/theme';
 import { useToastRequest } from '../../lib/toastHost';
-import { useFloatingBottom } from '../layout/floatingBottom';
+import { useFloatingBottom } from '../layout/insets';
 import { DROPDOWN_MENU } from '@stage-labs/kit/react-native/menu';
 import { Column, Row, pinnedBottom, PAGE_GUTTER } from '../layout';
 

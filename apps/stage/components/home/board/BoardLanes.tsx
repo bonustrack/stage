@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Platform, type DimensionValue } from 'react-native';
+import type { DimensionValue } from 'react-native';
+import { columnMaxHeight } from './boardHeight';
 import { usePathname, useRouter } from 'expo-router';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { List } from '@stage-labs/kit/react-native/list';
@@ -44,11 +45,6 @@ export interface ColumnActions {
   remove: (label: string) => void;
   create: (name: string) => void;
 }
-function columnMaxHeight(laneHeight: number): DimensionValue | undefined {
-  if (Platform.OS === 'web') return '100%';
-  return laneHeight > 0 ? laneHeight : undefined;
-}
-
 function BoardColumnView({
   column,
   columns,

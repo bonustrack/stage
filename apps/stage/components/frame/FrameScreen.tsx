@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
@@ -22,24 +22,11 @@ import { FrameView, type FrameNavigation } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';
 import { useFrameStack, useTopOnScreenChange } from './frameStack';
 import { useChatFrame, type ChatFrame } from './useFrameAction';
-import { Platform, useWindowDimensions, BackHandler, View } from 'react-native';
-import { documentScroll } from '../layout/webLayout';
+import { Platform, BackHandler, View } from 'react-native';
+import { useFillViewport } from './fillViewport';
 import type { ScreenScrollHandle } from '../layout/ScreenScroll.types';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
 import { Column, PAGE_GUTTER, ScreenScroll } from '../layout';
-
-function useFillViewport(): { ref: RefObject<View | null>; onLayout: () => void; minHeight?: number } {
-  const ref = useRef<View>(null);
-  const { height } = useWindowDimensions();
-  const [top, setTop] = useState<number | null>(null);
-  const onLayout = useCallback(() => {
-    if (Platform.OS !== 'web') return;
-    ref.current?.measureInWindow((_x, y) => {
-      setTop(y + documentScroll().y);
-    });
-  }, []);
-  return { ref, onLayout, minHeight: top === null ? undefined : Math.max(0, height - top) };
-}
 
 function useFrameScreens(frame: FrameContent | null, stackKey: string, leave: () => void) {
   const { screen, depth, navigate: step } = useFrameStack(stackKey, frame);
@@ -139,9 +126,10 @@ function FrameBody({
   navigation: FrameNavigation;
 }): React.ReactElement {
   const notice = consent === 'unknown' || consent === 'denied';
-  const viewport = useFillViewport();
+  const fill = useRef<View>(null);
+  const viewport = useFillViewport(fill);
   return (
-    <View ref={viewport.ref} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
+    <View ref={fill} onLayout={viewport.onLayout} style={{ flexGrow: 1, minHeight: viewport.minHeight }}>
       <FrameView
         frame={frame}
         sessionKey={chat.keys.session}

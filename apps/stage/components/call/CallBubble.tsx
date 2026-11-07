@@ -6,7 +6,7 @@ import { IconCallCancel } from '@central-icons-react-native/round-outlined-radiu
 import { IconMicrophone } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophone';
 import { IconMicrophoneOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMicrophoneOff';
 import type { CallSession } from '@stage-labs/client/xmtp/callMachine';
-import { useFloatingBottom } from '../layout/floatingBottom';
+import { useFloatingBottom } from '../layout/insets';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { usePalette } from '../../lib/theme';
 import { leaveCall, setCallMinimized, toggleMic, type CallView } from '../../lib/calls';

@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { Platform, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
-import { useSafeAreaInsets } from '../layout/safeArea';
-import { desktopTitleBarInset } from '../layout/webLayout';
+import { useWindowTopInset } from '../layout/insets';
 import { ROUTES } from '../tabs/pages';
 import { ScrollingBanner } from './ScrollingBanner';
 import {
@@ -149,8 +148,7 @@ function HeroAction(): React.ReactElement {
 
 export function Landing(): React.ReactElement {
   const { width, height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? desktopTitleBarInset() : insets.top;
+  const topInset = useWindowTopInset();
   const heroHeight = height - topInset - BANNER_HEIGHT;
   return (
     <ScreenScroll style={{ flex: 1, backgroundColor: HERO_WHITE }} contentContainerStyle={{ flexGrow: 1 }}>

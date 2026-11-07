@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import {
   type ProfileImage,
   type ProfileProgress,
@@ -33,7 +32,8 @@ import { invalidatePeerProfile } from './peerProfiles';
 import { sendCallsFrom, signFrom } from './tx';
 import { ignore, recover, reported } from './errorPolicy';
 import { claimMailKey, registerOwnMailKey } from './mailKey';
-import { profileRequest, readPicture } from './profileFetch';
+import { profileRequest } from './profileFetch';
+import { avatarFilePart } from './avatarFile';
 
 interface ProfileAccount {
   record: AccountRecord;
@@ -53,16 +53,9 @@ async function profileAccount(address?: string): Promise<ProfileAccount> {
   return { record, assertCurrent };
 }
 
-async function filePart(uri: string, mime: string, name: string): Promise<Blob | { uri: string; name: string; type: string }> {
-  if (Platform.OS !== 'web') return { uri, name, type: mime };
-  const blob = await readPicture(uri);
-  if (blob.size === 0 || !(mime || blob.type).startsWith('image/')) throw new Error('Choose a valid image for your profile picture.');
-  return new File([blob], name, { type: mime || blob.type });
-}
-
 export async function uploadAvatar(uri: string, mime: string, name = 'avatar'): Promise<string> {
   const form = new FormData();
-  form.append('file', (await filePart(uri, mime, name)) as Blob);
+  form.append('file', (await avatarFilePart(uri, mime, name)) as Blob);
   return profileRequest(PINEAPPLE_UPLOAD_URL, { method: 'POST', body: form }, async (res) => {
     if (!res.ok) throw new Error(`Image upload failed (${res.status})`);
     return parsePineappleResponse(await res.json());

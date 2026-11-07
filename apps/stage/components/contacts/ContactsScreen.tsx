@@ -4,9 +4,7 @@ import { contactNameModel } from './ContactsScreen.model';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { MenuPage } from '../tabs/MenuPage';
 import { usePalette } from '../../lib/theme';
-import { Platform } from 'react-native';
-import { useBottomChromeHeight } from '../layout/bottomChrome';
-import { useSafeAreaInsets } from '../layout/safeArea';
+import { useListBottomInset } from '../layout/insets';
 import { useContactList, type Contact } from '../../lib/useContacts';
 import { getPeerDescription, getPeerHandle, getPeerName } from '../../lib/peerProfiles';
 import { dmLinkOf } from '../../lib/links';
@@ -16,9 +14,8 @@ import { LIST_TOP_GAP, VirtualList } from '../layout';
 
 export function ContactsScreen(): React.ReactElement | null {
   const { bg } = usePalette();
-  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const bottomChrome = useBottomChromeHeight();
+  const bottomInset = useListBottomInset();
   const contacts = useContactList(true);
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
@@ -62,11 +59,7 @@ export function ContactsScreen(): React.ReactElement | null {
         renderItem={renderItem}
         extraData={contacts.length}
         style={{ backgroundColor: bg }}
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingTop: LIST_TOP_GAP,
-          paddingBottom: insets.bottom + (Platform.OS === 'web' ? bottomChrome : 0),
-        }}
+        contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP, paddingBottom: bottomInset }}
         ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
       />
     </MenuPage>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
-import { TOPNAV_FADE, TOPNAV_HEIGHT, TopnavFade, UNDER_TOPNAV } from '../../Topnav';
+import { TOPNAV_FADE, TopnavFade, UNDER_TOPNAV } from '../../Topnav';
 import { resetBoardQuery, useHomeListing } from '../listing';
 import { HomeSearch } from '../HomeSearch';
 import { HomeTopnav } from '../HomeTopnav';
@@ -12,7 +11,8 @@ import { useEffectiveColorScheme, usePalette } from '../../../lib/theme';
 import { reported } from '../../../lib/errorPolicy';
 import { groupingOrderOf } from '../../../lib/grouping.model';
 import { sortHomeRows } from '../sort.model';
-import { useContentViewportHeight, useWebTabRail } from '../../layout/webLayout';
+import { useWebTabRail } from '../../layout/webLayout';
+import { useBoardHeight } from './boardHeight';
 import { boardColumns, cardLanding, columnsEditable, orderedColumns, searchedColumns } from './BoardScreen.model';
 import { addBoardColumn, deleteBoardColumn, dropCard, dropColumn, renameBoardColumn } from './boardActions';
 import { BoardLanes, type ColumnActions } from './BoardLanes';
@@ -92,10 +92,6 @@ function BoardFrame({ pane, children }: { pane: boolean; children: React.ReactNo
       </Column>
     </>
   );
-}
-function useBoardHeight(): number | undefined {
-  const viewport = useContentViewportHeight();
-  return Platform.OS === 'web' ? viewport - TOPNAV_HEIGHT : undefined;
 }
 export function BoardScreen({ pane }: { pane: boolean }): React.ReactElement {
   useEffect(() => resetBoardQuery, []);
