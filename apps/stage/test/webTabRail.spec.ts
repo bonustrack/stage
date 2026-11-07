@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { chatsTabOpensNewChat, homeTabPresentation } from '../components/tabs/WebTabRail.model';
 import { newChatNav } from '../components/home/newChat.model';
 import { homeViewAt, isBoardHome, isRailOnlyRoute, isSplitRoute } from '../components/tabs/splitRoutes';
+import { homeViewNavigation, type HomeViewNavigationState } from '../components/tabs/homeViewNavigation.model';
 
 describe('home rail in Board mode', () => {
   test.each([
@@ -53,15 +54,53 @@ describe('unchanged Chats and phone navigation', () => {
     expect(newChatNav(true, false, pathname)).toEqual({ href: '/', push: false });
   });
 
-  test('the phone home tab opens the composer only when already on Chats', () => {
+  test('the phone home tab opens the composer only when already on Chats in Chats mode', () => {
+    expect(chatsTabOpensNewChat('/', false, false)).toBe(true);
+    expect(chatsTabOpensNewChat('/', false, true)).toBe(false);
     for (const board of [false, true]) {
-      expect(chatsTabOpensNewChat('/', false, board)).toBe(true);
-      for (const pathname of ['/board', '/channel/abc', '/new', '/wallet']) {
+      for (const pathname of ['/board', '/channel/abc', '/new', '/contacts', '/wallet', '/settings']) {
         expect(chatsTabOpensNewChat(pathname, false, board)).toBe(false);
       }
     }
     expect(chatsTabOpensNewChat('/', false)).toBe(true);
     expect(chatsTabOpensNewChat('/board', false)).toBe(false);
     expect(chatsTabOpensNewChat('/', true)).toBe(false);
+  });
+});
+
+describe('phone home footer follows the selected mode', () => {
+  test.each(['board', 'chats'] as const)('%s survives a cold restore and home reselect', (view) => {
+    const previous: HomeViewNavigationState = { epoch: 0, pathname: null, restoringFrom: null };
+    const initial = homeViewNavigation('/', view, previous, 0);
+    const pathname = initial.restore ?? '/';
+    const home = homeTabPresentation(isBoardHome(pathname, view));
+    expect(home.label).toBe(view === 'board' ? 'Board' : 'Chats');
+    expect(home.icon).toBe(view === 'board' ? 'IconColumns3Wide' : 'IconBubble3');
+    expect(home.href).toBe(pathname);
+    expect(homeViewNavigation(home.href, view, initial.state, 0).remember).toBeNull();
+    expect(chatsTabOpensNewChat(pathname, false, view === 'board')).toBe(view === 'chats');
+  });
+
+  test.each(['board', 'chats'] as const)('returning from another tab preserves %s', (view) => {
+    const home = homeTabPresentation(view === 'board');
+    for (const pathname of ['/contacts', '/wallet', '/settings']) {
+      const previous: HomeViewNavigationState = { epoch: 0, pathname: home.href, restoringFrom: null };
+      const away = homeViewNavigation(pathname, view, previous, 0);
+      expect(away.remember).toBeNull();
+      expect(homeTabPresentation(isBoardHome(pathname, view))).toEqual(home);
+      expect(chatsTabOpensNewChat(pathname, false, view === 'board')).toBe(false);
+      const returned = homeViewNavigation(home.href, view, away.state, 0);
+      expect(returned.restore).toBeNull();
+      expect(returned.remember).toBe(view);
+    }
+  });
+
+  test('switching either direction updates the footer presentation and destination together', () => {
+    for (const view of ['board', 'chats', 'board'] as const) {
+      const home = homeTabPresentation(view === 'board');
+      expect(homeViewAt(home.href)).toBe(view);
+      expect(home.label).toBe(view === 'board' ? 'Board' : 'Chats');
+      expect(home.icon).toBe(view === 'board' ? 'IconColumns3Wide' : 'IconBubble3');
+    }
   });
 });

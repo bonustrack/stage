@@ -10,8 +10,8 @@ import { TabsPager } from '../../components/SwipeTabs';
 import { Topnav } from '../../components/Topnav';
 import { useTopnavSlot } from '../../components/tabs/topnavSlots';
 import { TAB_BADGE_POSITION, TAB_BADGE_SIZE, TAB_ICON_FRAME, TAB_ICONS, WebTabBar, WebTabRail } from '../../components/tabs/WebTabRail';
-import { chatsTabOpensNewChat } from '../../components/tabs/WebTabRail.model';
-import { useRememberHomeView } from '../../components/tabs/boardHome';
+import { chatsTabOpensNewChat, homeTabPresentation } from '../../components/tabs/WebTabRail.model';
+import { useBoardHome, useRememberHomeView } from '../../components/tabs/boardHome';
 import { BOARD_ROUTE } from '../../components/tabs/splitRoutes';
 import { hasTabsPager } from '../../components/SwipeTabs.model';
 import { useWebTabRail } from '../../lib/webLayout';
@@ -23,6 +23,7 @@ import { Landing } from '../../components/landing/Landing';
 import { useAccountGate } from '../../lib/accountGate';
 import { useOpenNewChat } from '../../components/home/newChatFocus';
 import { Column } from '../../components/layout';
+import { appIcon } from '../../components/widgets';
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet' };
 
@@ -67,13 +68,18 @@ function PagerOverlay({
   );
 }
 
-function useChatsTabListeners(pathname: string, wide: boolean): { tabPress: (e: { preventDefault: () => void }) => void } {
+function useHomeTabListeners(pathname: string, wide: boolean, board: boolean): { tabPress: (e: { preventDefault: () => void }) => void } {
+  const router = useRouter();
   const openNewChat = useOpenNewChat();
   return {
     tabPress: (e) => {
-      if (!chatsTabOpensNewChat(pathname, wide)) return;
-      e.preventDefault();
-      openNewChat();
+      if (chatsTabOpensNewChat(pathname, wide, board)) {
+        e.preventDefault();
+        openNewChat();
+      } else if (board) {
+        e.preventDefault();
+        router.navigate(BOARD_ROUTE);
+      }
     },
   };
 }
@@ -118,7 +124,9 @@ export default function TabsLayout(): React.ReactElement {
   const web = Platform.OS === 'web';
   const rail = useWebTabRail();
   const gate = useAccountGate();
-  const chatsTabListeners = useChatsTabListeners(pathname, rail);
+  const board = useBoardHome();
+  const home = homeTabPresentation(board);
+  const homeTabListeners = useHomeTabListeners(pathname, rail, board);
   useRememberHomeView();
 
   const tabBarStyle = nativeTabBarStyle(pal, insets.bottom);
@@ -151,11 +159,15 @@ export default function TabsLayout(): React.ReactElement {
           <Tabs.Screen
             key={name}
             name={name}
-            listeners={name === 'index' ? chatsTabListeners : undefined}
+            listeners={name === 'index' ? homeTabListeners : undefined}
             options={{
-              tabBarAccessibilityLabel: name === 'index' ? 'Chats' : name === 'contacts' ? 'Contacts' : 'Wallet',
+              tabBarAccessibilityLabel: name === 'index' ? home.label : name === 'contacts' ? 'Contacts' : 'Wallet',
               tabBarIcon: ({ focused }) => (
-                <Glyph icon={icon} size={24} color={focused || (name === 'index' && pathname === BOARD_ROUTE) ? active : inactive} />
+                <Glyph
+                  icon={name === 'index' ? appIcon(home.icon) : icon}
+                  size={24}
+                  color={focused || (name === 'index' && pathname === BOARD_ROUTE) ? active : inactive}
+                />
               ),
               ...(name === 'index' ? chatsTabBadge(pal, unreadBadge) : {}),
             }}

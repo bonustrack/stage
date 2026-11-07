@@ -1,7 +1,7 @@
 import { BOARD_ROUTE, isRailOnlyRoute } from './splitRoutes';
 
 export function chatsTabOpensNewChat(pathname: string, wide: boolean, board = false): boolean {
-  return wide ? board && isRailOnlyRoute(pathname) : pathname === '/';
+  return wide ? board && isRailOnlyRoute(pathname) : !board && pathname === '/';
 }
 
 export function homeTabPresentation(board: boolean) {

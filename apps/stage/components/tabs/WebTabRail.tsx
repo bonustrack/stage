@@ -99,7 +99,7 @@ function TabButtons({
   const navigate = useRailNavigate(pathname);
   const openNewChat = useOpenNewChat();
   const boardHome = useBoardHome();
-  const home = homeTabPresentation(vertical && boardHome);
+  const home = homeTabPresentation(boardHome);
   const activeName = TAB_ORDER[activeTabIndex(pathname)];
   return (
     <>
