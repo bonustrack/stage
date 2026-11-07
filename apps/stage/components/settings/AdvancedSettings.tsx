@@ -1,12 +1,19 @@
 import { errorMessage } from '@stage-labs/client/errors';
-import { useActiveAccountRecord } from '../../lib/messaging/account';
+import { useActiveAccount } from '../../lib/messaging/account';
 import { removeAccountFromDevice, resetXmtpDatabase, useXmtpIdentity } from '../../lib/deviceAccount';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { capabilities } from '../../lib/capabilities';
 import { accountName } from '../../lib/convIdentity';
 import { report, reported } from '../../lib/errorPolicy';
-import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
+import {
+  SettingsButtonPlaceholderRow,
+  SettingsButtonRow,
+  SettingsGroup,
+  SettingsPage,
+  SettingsValuePlaceholderRow,
+  SettingsValueRow,
+} from './SettingsPage';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
@@ -43,21 +50,34 @@ function confirmRemove(rec: AccountRecord): void {
     });
 }
 
+const IDENTITY_ROWS = [
+  { label: 'XMTP address', key: 'addr' },
+  { label: 'Inbox id', key: 'inbox' },
+  { label: 'Installation id', key: 'install' },
+] as const;
+
+const IDENTITY_TITLE = 'XMTP identity';
+const IDENTITY_FOOTNOTE = 'Tap a value to copy it.';
+
 function IdentityGroup(): React.ReactElement | null {
   const id = useXmtpIdentity();
-  const rows = [
-    { label: 'XMTP address', value: id.addr, short: shortAddress(id.addr) },
-    { label: 'Inbox id', value: id.inbox, short: shortAddress(id.inbox) },
-    { label: 'Installation id', value: id.install, short: shortAddress(id.install) },
-  ].filter((r) => r.value !== '');
+  if (id === null)
+    return (
+      <SettingsGroup title={IDENTITY_TITLE} footnote={IDENTITY_FOOTNOTE}>
+        {IDENTITY_ROWS.map((r) => (
+          <SettingsValuePlaceholderRow key={r.label} label={r.label} />
+        ))}
+      </SettingsGroup>
+    );
+  const rows = IDENTITY_ROWS.map((r) => ({ label: r.label, value: id[r.key] })).filter((r) => r.value !== '');
   if (rows.length === 0) return null;
   return (
-    <SettingsGroup title="XMTP identity" footnote="Tap a value to copy it.">
+    <SettingsGroup title={IDENTITY_TITLE} footnote={IDENTITY_FOOTNOTE}>
       {rows.map((r) => (
         <SettingsValueRow
           key={r.label}
           label={r.label}
-          value={r.short}
+          value={shortAddress(r.value)}
           onPress={() => {
             capabilities.copy(r.label, r.value);
           }}
@@ -67,24 +87,30 @@ function IdentityGroup(): React.ReactElement | null {
   );
 }
 
+function RemoveAccountRow(): React.ReactElement | null {
+  const { record, loaded } = useActiveAccount();
+  if (!loaded) return <SettingsButtonPlaceholderRow />;
+  if (record === null) return null;
+  return (
+    <SettingsButtonRow
+      label="Remove account"
+      iconStart={IconTrashCan}
+      danger
+      onPress={() => {
+        confirmRemove(record);
+      }}
+    />
+  );
+}
+
 function DangerGroup(): React.ReactElement {
-  const rec = useActiveAccountRecord();
   return (
     <SettingsGroup
       title="Danger zone"
       footnote="Reset clears the messages stored on this device. Remove deletes this account from this device."
     >
       <SettingsButtonRow label="Reset XMTP database" iconStart={IconArrowRotateClockwise} danger onPress={confirmReset} />
-      {rec ? (
-        <SettingsButtonRow
-          label="Remove account"
-          iconStart={IconTrashCan}
-          danger
-          onPress={() => {
-            confirmRemove(rec);
-          }}
-        />
-      ) : null}
+      <RemoveAccountRow />
     </SettingsGroup>
   );
 }

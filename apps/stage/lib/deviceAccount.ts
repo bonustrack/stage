@@ -48,12 +48,14 @@ async function fetchXmtpIdentity(): Promise<XmtpIdentity> {
   return { addr: address ?? '', inbox: sdk.inboxIdOf(client), install: sdk.installationIdOf(client) ?? '' };
 }
 
-export function useXmtpIdentity(): XmtpIdentity {
+export function useXmtpIdentity(): XmtpIdentity | null {
   const epoch = useAccountGeneration('client');
-  return (
-    useQuery({ queryKey: accountQueryKeyAt('client', epoch, IDENTITY_KEY), queryFn: fetchXmtpIdentity, staleTime: Infinity }).data ??
-    NO_IDENTITY
-  );
+  const { data, isError } = useQuery({
+    queryKey: accountQueryKeyAt('client', epoch, IDENTITY_KEY),
+    queryFn: fetchXmtpIdentity,
+    staleTime: Infinity,
+  });
+  return data ?? (isError ? NO_IDENTITY : null);
 }
 
 export async function resetXmtpDatabase(copy: { title: string; message: string }): Promise<void> {

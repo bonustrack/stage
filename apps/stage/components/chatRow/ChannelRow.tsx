@@ -17,7 +17,7 @@ import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1
 import { titleTone } from '../TitleText';
 import { UnreadBadge } from './UnreadBadge';
 import type { BubbleLinkProps } from '../links/linkProps.types';
-import { PlaceholderBar } from '../Placeholder';
+import { PlaceholderBar, PlaceholderBlock } from '../Placeholder';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 interface ChannelRowProps {
@@ -275,10 +275,9 @@ function ChannelRowBase({
 export const ChannelRow = memo(ChannelRowBase);
 
 export function ChannelRowPlaceholder(): React.ReactElement {
-  const { border } = usePalette();
   return (
     <Row minHeight={CHANNEL_ROW_HEIGHT} padding={{ x: PAGE_GUTTER, y: ROW_PADDING_Y }} align="center" gap={12}>
-      <Column width={AVATAR_SIZE} height={AVATAR_SIZE} radius="full" background={border} />
+      <PlaceholderBlock width={AVATAR_SIZE} height={AVATAR_SIZE} />
       <Column minWidth={0} weight={1} gap={LINE_GAP}>
         <PlaceholderBar width="40%" height={12} line={TITLE_LINE_HEIGHT} />
         <PlaceholderBar width="60%" height={10} line={PREVIEW_LINE_HEIGHT} />

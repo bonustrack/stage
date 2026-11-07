@@ -16,6 +16,7 @@ import { IconChevronRight } from '@central-icons-react-native/round-outlined-rad
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CheckBox } from '@stage-labs/kit/react-native/check-box';
+import { PlaceholderBar, PlaceholderBlock } from '../Placeholder';
 import { Column, PAGE_GUTTER } from '../layout';
 
 const ROW_PADDING = { paddingTop: 14, paddingBottom: 14, paddingLeft: 16, paddingRight: 14 };
@@ -91,6 +92,28 @@ export function SettingsValueRow(props: { label: string; value: string; onPress?
       </Column>
       <Text text={props.value} size="xs" color="secondary" truncate style={{ flexShrink: 1 }} />
       {props.onPress === undefined ? null : <AppIcon name={IconSquareBehindSquare1} color="secondary" size={16} />}
+    </SettingsItem>
+  );
+}
+
+export function SettingsValuePlaceholderRow({ label }: { label: string }): React.ReactElement {
+  return (
+    <SettingsItem>
+      <Column weight={1}>
+        <Text text={label} size="xs" color="link" />
+      </Column>
+      <PlaceholderBar width={96} height={12} onCard />
+    </SettingsItem>
+  );
+}
+
+export function SettingsButtonPlaceholderRow(): React.ReactElement {
+  return (
+    <SettingsItem>
+      <PlaceholderBlock width={24} height={24} onCard />
+      <Column weight={1}>
+        <PlaceholderBar width="40%" height={12} onCard />
+      </Column>
     </SettingsItem>
   );
 }
