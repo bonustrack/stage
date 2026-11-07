@@ -4,33 +4,41 @@ export function sleep(ms: number): Promise<void> {
   });
 }
 
-export function settleBy<T>(work: Promise<T>, deadline: number, fallback: T, tickMs = 1_000): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
+type Timer = ReturnType<typeof setTimeout>;
+
+type ExpiryClock = (expire: () => void, wait: (ms: number, then: () => void) => void) => void;
+
+function settleOnClock<T>(work: Promise<T>, fallback: T, clock: ExpiryClock): Promise<T> {
+  let timer: Timer | undefined;
   const expired = new Promise<T>((resolve) => {
-    const check = (): void => {
-      const left = deadline - Date.now();
-      if (left <= 0) {
+    clock(
+      () => {
         resolve(fallback);
-        return;
-      }
-      timer = setTimeout(check, Math.min(tickMs, left));
-    };
-    check();
+      },
+      (ms, then) => {
+        timer = setTimeout(then, ms);
+      },
+    );
   });
   return Promise.race([work, expired]).finally(() => {
     if (timer !== undefined) clearTimeout(timer);
   });
 }
 
-export function settleWithin<T>(work: Promise<T>, ms: number, fallback: T): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const expired = new Promise<T>((resolve) => {
-    timer = setTimeout(() => {
-      resolve(fallback);
-    }, ms);
+export function settleBy<T>(work: Promise<T>, deadline: number, fallback: T, tickMs = 1_000): Promise<T> {
+  return settleOnClock(work, fallback, (expire, wait) => {
+    const check = (): void => {
+      const left = deadline - Date.now();
+      if (left <= 0) expire();
+      else wait(Math.min(tickMs, left), check);
+    };
+    check();
   });
-  return Promise.race([work, expired]).finally(() => {
-    if (timer !== undefined) clearTimeout(timer);
+}
+
+export function settleWithin<T>(work: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return settleOnClock(work, fallback, (expire, wait) => {
+    wait(ms, expire);
   });
 }
 
