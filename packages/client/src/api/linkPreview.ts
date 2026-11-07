@@ -1,16 +1,21 @@
+import { z } from 'zod';
 import { parseX402Challenge, type X402Challenge } from '../x402/challenge';
 import { PROXY_ROUTES, STAGE_CLIENT_HEADERS } from '../endpoints';
 
-interface LinkPreview {
-  url: string;
-  title?: string;
-  description?: string;
-  image?: string;
-  siteName?: string;
-  favicon?: string;
-  imageOrigin?: string;
-  faviconOrigin?: string;
-}
+const previewText = z.string().optional().catch(undefined);
+
+const linkPreviewSchema = z.object({
+  url: previewText,
+  title: previewText,
+  description: previewText,
+  image: previewText,
+  siteName: previewText,
+  favicon: previewText,
+  imageOrigin: previewText,
+  faviconOrigin: previewText,
+});
+
+export type LinkPreview = z.infer<typeof linkPreviewSchema> & { url: string };
 
 export type LinkPreviewResult = LinkPreview | X402Challenge;
 
@@ -18,23 +23,10 @@ export function isX402(r: LinkPreviewResult | null): r is X402Challenge {
   return !!r && 'kind' in r && r.kind === 'x402';
 }
 
-function str(j: Record<string, unknown>, key: string): string | undefined {
-  const v = j[key];
-  return typeof v === 'string' ? v : undefined;
-}
-
 function ogPreviewFrom(j: Record<string, unknown>, url: string): LinkPreview | null {
-  if (typeof j.title !== 'string' && typeof j.image !== 'string') return null;
-  return {
-    url: str(j, 'url') ?? url,
-    title: str(j, 'title'),
-    description: str(j, 'description'),
-    image: str(j, 'image'),
-    siteName: str(j, 'siteName'),
-    favicon: str(j, 'favicon'),
-    imageOrigin: str(j, 'imageOrigin'),
-    faviconOrigin: str(j, 'faviconOrigin'),
-  };
+  const parsed = linkPreviewSchema.safeParse(j);
+  if (!parsed.success || (parsed.data.title === undefined && parsed.data.image === undefined)) return null;
+  return { ...parsed.data, url: parsed.data.url ?? url };
 }
 
 function linkPreviewFrom(j: Record<string, unknown>, url: string): LinkPreviewResult | null {

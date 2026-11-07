@@ -1,11 +1,4 @@
-export interface PreviewMeta {
-  url: string;
-  title?: string;
-  description?: string;
-  image?: string;
-  siteName?: string;
-  favicon?: string;
-}
+import type { LinkPreview } from '@stage-labs/client/api/linkPreview';
 
 function decodeEntities(s: string): string {
   return s
@@ -90,7 +83,7 @@ function sameHostUrl(claimed: string | undefined, finalUrl: string): string {
   }
 }
 
-export function parseMeta(html: string, finalUrl: string): PreviewMeta {
+export function parseMeta(html: string, finalUrl: string): LinkPreview {
   const headEnd = html.search(/<\/head>/i);
   const head = headEnd > 0 ? html.slice(0, headEnd) : html.slice(0, 200_000);
 
