@@ -115,8 +115,10 @@ see `src/ssrf.ts`). On top of that:
 
 ## Caching
 
-Successful results are stored in `caches.default` (the Cloudflare edge cache),
-keyed by the normalised `/preview?url=...` request, TTL ~1 day. Cache hits add
+Successful `/preview` and `/img` results are stored in `caches.default` (the
+Cloudflare edge cache), keyed by the normalised `/preview?url=...` request
+(TTL about 1 day) or the `/img?url=...&w=...` request (TTL 7 days), always on
+`proxy.stage.box` so every entry host shares the cache. Cache hits add
 `x-cache: HIT`.
 
 ## Rate limit
@@ -138,10 +140,12 @@ bunx wrangler deploy
 ```
 
 `wrangler.toml` binds the Worker to the routes `proxy.stage.box/*` and
-`bundler.stage.box/*` on the `stage.box` zone, the `NAMES_KV` namespace and
-the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration)
-and the `ATTACHMENTS` R2 bucket (`stage`, created once in the
-dashboard; a deploy fails while it does not exist);
+`bundler.stage.box/*` on the `stage.box` zone, the `NAMES_KV` namespace, the
+SQLite-backed Durable Objects `NAMES_CLAIMS`, `HISTORY_ARCHIVES` and
+`MAIL_BOXES` (created by the `v1`, `v2` and `v4` migrations), the `ATTACHMENTS`
+R2 bucket (`stage`, created once in the dashboard; a deploy fails while it does
+not exist) and the RateLimit bindings `ATTACHMENT_UPLOADS`, `MAIL_REQUESTS`,
+`NODE_PUBLISHES` and `NODE_PUBLISHES_ALL`;
 `NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
 with `wrangler secret put`, never committed. So are `NODES_CF_API_TOKEN` (an
 account API token, owned by the account rather than a person so its API budget

@@ -14,10 +14,6 @@ command = 'bun install --frozen-lockfile && bash ../../scripts/check-source.sh &
 publish = "dist"
 ignore = '[ -n "$CACHED_COMMIT_REF" ] && [ "$CACHED_COMMIT_REF" != "$COMMIT_REF" ] && git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- . ../../packages ../../patches ../../scripts ../../.github/workflows/ci.yml ../../.oxlintrc.json ../../stage.config.js ../../package.json ../../bun.lock ../../bunfig.toml'
 
-# google-services*.json are Firebase ANDROID CLIENT configs: the AIza key in
-# them is a public client identifier that ships inside every APK (Google
-# documents committing it as safe). Netlify's secrets scanner flags it as a
-# likely secret and fails the build, so exempt exactly those files.
 [build.environment]
 BUN_VERSION = "1.4.4"
 NODE_VERSION = "22"
@@ -26,6 +22,10 @@ NODE_VERSION = "22"
 # desktop and extension builds.
 EXPO_UNSTABLE_METRO_OPTIMIZE_GRAPH = "1"
 EXPO_UNSTABLE_TREE_SHAKING = "1"
+# google-services*.json are Firebase ANDROID CLIENT configs: the AIza key in
+# them is a public client identifier that ships inside every APK (Google
+# documents committing it as safe). Netlify's secrets scanner flags it as a
+# likely secret and fails the build, so exempt exactly those files.
 SECRETS_SCAN_OMIT_PATHS = "google-services*.json,apps/stage/google-services*.json,lib/firebaseWeb.ts,apps/stage/lib/firebaseWeb.ts"
 
 [[headers]]

@@ -19,8 +19,8 @@ The keyring is the only module that:
 - imports the secret-bearing primitives:
   - `deriveOwner` / `generateWalletMnemonic` from
     `@stage-labs/client/zerodev/derive`,
-  - `privateKeyToAccount` / `generatePrivateKey` / `mnemonicToAccount` from
-    `viem/accounts`.
+  - `privateKeyToAccount` / `generatePrivateKey` / `mnemonicToAccount` /
+    `hdKeyToAccount` from `viem/accounts`.
 
 No other file in the app may touch any of the above.
 

@@ -15,8 +15,8 @@ apps/
   stage/      # stage — the universal Expo + React Native app (android · ios · web · desktop)
               #   app/         expo-router file routes (routes only — helpers live in components/)
               #   components/  kit-JSX screens + colocated *.model.ts pure models, one folder per family
-              #   lib/         state + SDK orchestration (incl. the xmtp.*.web adapters and *.core.ts)
-              #   modules/     messaging/ (rows, queries, feed, consent; no barrel) + the stage-pill native module
+              #   lib/         state + SDK orchestration (incl. messaging/, the xmtp.*.web adapters and *.core.ts)
+              #   modules/     Expo native modules: stage-pill, stage-calls, stage-share, stage-speech
               #   platform/    storage seams (.ts native / .web.ts overrides)
               #   test/        pure-model tests (bun test)
               #   desktop/     Electron shell that bundles the web export (nested workspace)
@@ -124,7 +124,8 @@ links (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
 
 CI runs on every push to any branch, on pull requests and on demand
 (`.github/workflows/ci.yml`). The gates, in order, are: **format → lint → check → knip → build → test**, all on Bun
-`1.4.4` with a frozen lockfile.
+`1.4.4` with a frozen lockfile. The order lives in `scripts/check-source.sh`, which CI runs and the Netlify build
+runs before the web export.
 
 ## License
 

@@ -23,42 +23,26 @@ bun install            # from the repo root
 "dependencies": { "@stage-labs/client": "workspace:*" }
 ```
 
-The exports point at `.ts` source, so consumers bundle the TypeScript directly (Metro/Expo for every platform). There is no build step.
+The exports point at `.ts` source, so consumers bundle the TypeScript directly (Metro for the app, wrangler for the Workers, esbuild for the desktop main process). There is no build step.
 
 ## Usage
 
 Import from the granular subpath exports so bundlers tree-shake what you do not use:
 
 ```ts
-import { previewOfXmtpContent } from '@stage-labs/client/xmtp/contentTypes';
+import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
-import { detectEmbed } from '@stage-labs/client/embed/detect';
+import { youtubeIdOf } from '@stage-labs/client/embed/detect';
 import type { HistoryEntry } from '@stage-labs/client/types';
 ```
 
 There is no root barrel: every module is imported through its own subpath export.
 
+`@stage-labs/client/xmtp/sendFetch` has one runtime importer that neither the TypeScript graph nor knip sees: the `@xmtp/browser-sdk` patch (`patches/@xmtp%2Fbrowser-sdk@7.0.0.patch`) imports it into the SDK bundle. Renaming or moving that subpath breaks web messaging, so change the patch with it.
+
 ## Project structure
 
-```
-src/
-  xmtp/        # contentTypes table, codecs, message + envelope, entryPayload, visibility, humanize, builders, line routing,
-               # channelsFilter/channelsCache, summarizeRow, groups, clientErrors, polls, signatures, tx requests, sync kinds, push server,
-               # message body segments (mentions, channels, links), channel link labels
-  identity/    # Basenames + stage names (read/write), onchain profiles, peer profile lookups, formatting
-  profile/     # avatar URL helper (stamp + IPFS gateway) and picture upload parsing
-  accounts/    # account records, key storage constants, HD index, device transfer
-  zerodev/     # Kernel smart accounts: configuration, ECDSA owner validator, HD derivation
-  wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error/confirm/wording
-  api/         # read-only clients: ens, defillama, github link detection
-  routing/     # stage link grammar, app route list, deep links and handle parsing
-  embed/       # link/embed detection, link cards
-  image/       # EXIF/metadata stripping before upload
-  text/        # markdown helpers, code blocks
-  x402/        # x402 payment challenge parsing, amounts and payment authorization
-  validate.ts  # parseOrThrow zod boundary helper
-  types.ts     # shared domain types
-```
+The public API is the `exports` map in [`package.json`](./package.json): one subpath per module, grouped under `src/` by domain (`xmtp/`, `identity/`, `wallet/`, `mail/`, `nodes/`, `net/`, ...).
 
 ## Kernel key model
 
@@ -79,5 +63,5 @@ Linting is centralised at the repo root (`bun run lint`).
 
 ## Links
 
-- Consumed by [`apps/stage`](../../apps/stage)
+- Consumed by [`apps/stage`](../../apps/stage), the desktop shell [`apps/stage/desktop`](../../apps/stage/desktop), the Workers [`apps/proxy`](../../apps/proxy) and [`apps/dispatch`](../../apps/dispatch), and the `@xmtp/browser-sdk` patch (see Usage)
 - Design system: [`@stage-labs/kit`](../kit)
