@@ -1,7 +1,6 @@
 import * as Linking from 'expo-linking';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
 import { appStorage } from '../platform/storage';
 import { loadAccounts } from './accounts';
 import { ignore, ignored } from './errorPolicy';
@@ -51,7 +50,7 @@ export function useRestoreGate(isRestorable: (path: string) => boolean): Restore
         ]);
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
-        const willRestore = Platform.OS !== 'web' && restorable && !deepLink && accounts.length > 0;
+        const willRestore = restorable && !deepLink && accounts.length > 0;
         if (willRestore) {
           processSavedRoute = saved;
           restoredTarget = saved;
