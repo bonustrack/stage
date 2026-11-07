@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { FormField } from '../FormField';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { RailTooltip } from '../tabs/RailTooltip';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { HoverTooltip } from '../HoverTooltip';
+import { Column } from '../layout';
 import { usePalette } from '../../lib/theme';
 import { randomUsername } from '@stage-labs/client/identity/stageNames';
 import {
@@ -78,17 +80,20 @@ export function useUsernameInput(initialLabel = ''): UsernameInput {
   return { raw, setRaw, label, state, setState };
 }
 
+const SHUFFLE_LABEL = 'Random username';
+
 function ShuffleButton({ pal, disabled, onPick }: { pal: Pal; disabled: boolean; onPick: (label: string) => void }): React.ReactElement {
   return (
-    <RailTooltip
-      label="Random username"
-      onPress={() => {
-        if (!disabled) onPick(randomUsername());
-      }}
-      style={undefined}
-    >
-      <Glyph icon={IconArrowLeftRight} size={SHUFFLE_ICON} color={pal.sub} />
-    </RailTooltip>
+    <HoverTooltip label={SHUFFLE_LABEL}>
+      <Pressable
+        accessibilityLabel={SHUFFLE_LABEL}
+        onPress={() => {
+          if (!disabled) onPick(randomUsername());
+        }}
+      >
+        <Glyph icon={IconArrowLeftRight} size={SHUFFLE_ICON} color={pal.sub} />
+      </Pressable>
+    </HoverTooltip>
   );
 }
 
@@ -98,9 +103,11 @@ function StatusMark({ state, label, pal }: { state: ClaimState; label: string; p
   if (status.kind === 'checking') return <Spinner size={STATUS_ICON} color={pal.sub} />;
   const ok = status.kind === 'ok';
   return (
-    <RailTooltip label={status.tip} onPress={NOOP} style={undefined}>
-      <Glyph icon={ok ? IconCircleCheck : IconCircleX} size={STATUS_ICON} color={ok ? pal.success : pal.danger} />
-    </RailTooltip>
+    <HoverTooltip label={status.tip}>
+      <Column accessible accessibilityLabel={status.tip}>
+        <Glyph icon={ok ? IconCircleCheck : IconCircleX} size={STATUS_ICON} color={ok ? pal.success : pal.danger} />
+      </Column>
+    </HoverTooltip>
   );
 }
 
