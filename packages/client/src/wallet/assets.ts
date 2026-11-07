@@ -123,5 +123,5 @@ export interface AssetRow {
   balance: string;
   priceUsd: number | null;
   change24h: number | null;
-  logoUrl: string;
+  logoAddress: string;
 }

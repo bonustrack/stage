@@ -1,9 +1,16 @@
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { fmtBalance, fmtUsd } from '@stage-labs/client/wallet/format';
+import { stampTokenUrl } from '@stage-labs/kit/avatar';
 
 export type TokenRowAsset = Pick<AssetRow, 'symbol' | 'name' | 'balance' | 'priceUsd' | 'change24h'>;
 
 export type TokenRowLayout = 'wallet' | 'picker';
+
+const TOKEN_LOGO_PX = 32;
+
+export function tokenLogoOf(r: Pick<AssetRow, 'chainId' | 'logoAddress'>): string {
+  return stampTokenUrl(r.chainId, r.logoAddress, TOKEN_LOGO_PX);
+}
 
 export interface TokenRowFields {
   title: string;

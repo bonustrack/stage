@@ -17,7 +17,7 @@ import { PAGES } from '../../tabs/pages';
 import { tokenRowId } from '@stage-labs/client/wallet/tokens';
 import { TokenAvatar } from '../../token/TokenAvatar';
 import { TokenRowBody } from '../../token/TokenRowBody';
-import { tokenRowModel } from '../../token/token.model';
+import { tokenLogoOf, tokenRowModel } from '../../token/token.model';
 import { Column, ScreenScroll, PAGE_GUTTER, Row } from '../../layout';
 
 const TOKEN_AVATAR_SIZE = 44;
@@ -28,7 +28,7 @@ const TokenRow = memo(function TokenRow({ r, border, bg }: { r: AssetRow; border
   return (
     <Row padding={{ y: 14 }} align="center" gap={12}>
       <TokenAvatar
-        logoUrl={r.logoUrl}
+        logoUrl={tokenLogoOf(r)}
         chainId={r.chainId}
         size={TOKEN_AVATAR_SIZE}
         badgeSize={TOKEN_BADGE_SIZE}

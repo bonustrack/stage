@@ -6,7 +6,6 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { stampTokenUrl } from '@stage-labs/kit/avatar';
 import { fetchAssetRows } from '@stage-labs/client/wallet/balances';
 import type { AssetRow } from '@stage-labs/client/wallet/assets';
 import { WALLET_CHAIN_ID } from '@stage-labs/client/wallet/chains';
@@ -18,7 +17,7 @@ import { usePalette } from '../../../lib/theme';
 import { useActiveAccountRecord } from '../../../lib/messaging/account';
 import { TokenAvatar } from '../../token/TokenAvatar';
 import { TokenRowBody } from '../../token/TokenRowBody';
-import { tokenRowModel } from '../../token/token.model';
+import { tokenLogoOf, tokenRowModel } from '../../token/token.model';
 import { Column, Row } from '../../layout';
 import { sendRowFor } from './send.model';
 
@@ -35,7 +34,7 @@ export function useSendRows(): SendRows {
   const address = record?.address ?? '';
   const { data } = useQuery({
     queryKey: ['assetRows', address.toLowerCase()],
-    queryFn: () => fetchAssetRows(address, { tokenLogo: stampTokenUrl }),
+    queryFn: () => fetchAssetRows(address),
     enabled: !!address,
     staleTime: 0,
   });
@@ -58,7 +57,7 @@ function TokenChoiceList({ rows, onPick }: { rows: AssetRow[]; onPick: (r: Asset
         >
           <TokenRowBody
             {...tokenRowModel(r, 'picker')}
-            avatar={<TokenAvatar logoUrl={r.logoUrl} chainId={r.chainId} badge="below" {...PICKER_AVATAR} />}
+            avatar={<TokenAvatar logoUrl={tokenLogoOf(r)} chainId={r.chainId} badge="below" {...PICKER_AVATAR} />}
           />
         </ListViewItem>
       ))}
@@ -103,7 +102,7 @@ export function TokenSelector({
         })}
       >
         <TokenAvatar
-          logoUrl={selected?.logoUrl ?? ''}
+          logoUrl={selected === undefined ? '' : tokenLogoOf(selected)}
           chainId={WALLET_CHAIN_ID}
           size={SELECTED_AVATAR.size}
           badgeSize={SELECTED_AVATAR.badgeSize}
