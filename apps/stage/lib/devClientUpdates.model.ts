@@ -1,5 +1,6 @@
 import { BUNDLER_ORIGIN, EAS_UPDATES_URL, MAIN_BRANCH, PREVIEW_LAUNCHER_PATH, easManifestUrl } from '@stage-labs/client/endpoints';
-const PROJECT_URL = EAS_UPDATES_URL;
+
+const EAS_UPDATES = new URL(EAS_UPDATES_URL);
 const STATUS_URL = 'https://api.github.com/repos/bonustrack/stage/commits';
 const SHA = /^[0-9a-f]{40}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -64,7 +65,7 @@ export function parsePreviewManifest(body: string, contentType: string): Preview
 }
 
 export function statusUrl(ref: string): string {
-  if (ref !== 'main' && !SHA.test(ref)) throw new Error('Invalid main update commit.');
+  if (ref !== MAIN_BRANCH && !SHA.test(ref)) throw new Error('Invalid main update commit.');
   return `${STATUS_URL}/${ref}/status`;
 }
 
@@ -83,9 +84,9 @@ export function previewFromStatus(value: unknown): { gitHash: string; url: strin
 
 function immutablePreviewUrl(url: string): string {
   const target = new URL(url);
-  const prefix = `${new URL(PROJECT_URL).pathname}/group/`;
+  const prefix = `${EAS_UPDATES.pathname}/group/`;
   if (
-    target.origin !== 'https://u.expo.dev' ||
+    target.origin !== EAS_UPDATES.origin ||
     !target.pathname.startsWith(prefix) ||
     !UUID.test(target.pathname.slice(prefix.length)) ||
     target.username ||
