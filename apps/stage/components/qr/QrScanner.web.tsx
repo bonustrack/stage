@@ -4,6 +4,7 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { View } from 'react-native';
 import { ignored, recover } from '../../lib/errorPolicy';
 import { Column } from '../layout';
+import { useDomHost } from '../layout/webChrome';
 import { SCANNER_HEIGHT, type QrScannerProps } from './QrScanner.types';
 
 const SCAN_INTERVAL_MS = 250;
@@ -158,7 +159,7 @@ function useCameraScan(host: HTMLElement | null, onScan: (text: string) => void)
 }
 
 export function QrScanner({ onScan, dark }: QrScannerProps): React.ReactElement {
-  const [host, setHost] = useState<HTMLElement | null>(null);
+  const { host, hostRef } = useDomHost();
   const { error, retry } = useCameraScan(host, onScan);
   if (error !== null) {
     return (
@@ -172,12 +173,5 @@ export function QrScanner({ onScan, dark }: QrScannerProps): React.ReactElement 
       </Column>
     );
   }
-  return (
-    <View
-      ref={(node) => {
-        setHost(node as unknown as HTMLElement | null);
-      }}
-      style={{ height: SCANNER_HEIGHT, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000000' }}
-    />
-  );
+  return <View ref={hostRef} style={{ height: SCANNER_HEIGHT, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000000' }} />;
 }

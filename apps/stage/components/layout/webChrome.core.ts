@@ -6,6 +6,11 @@ export type PaneScope = '1' | 'rail';
 
 export type ChromeClass = 'dragging' | 'resizing' | 'scroll-locked';
 
+export interface DomHost {
+  host: HTMLElement | null;
+  hostRef: (node: unknown) => void;
+}
+
 export interface DocumentTheme {
   dark: boolean;
   background: string;

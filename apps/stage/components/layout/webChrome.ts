@@ -1,5 +1,5 @@
 import type { View, ViewStyle } from 'react-native';
-import type { ChromeClass, DocumentTheme, PaneScope } from './webChrome.core';
+import type { ChromeClass, DocumentTheme, DomHost, PaneScope } from './webChrome.core';
 
 export { GUTTER_SCROLLBAR, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from './webChrome.core';
 
@@ -52,6 +52,12 @@ export function isRendered(node: unknown): boolean {
   return false;
 }
 
+const NO_DOM_HOST: DomHost = { host: null, hostRef: () => undefined };
+
+export function useDomHost(): DomHost {
+  return NO_DOM_HOST;
+}
+
 export function setTopInset(px: number): void {
   void px;
 }
@@ -65,7 +71,8 @@ export function setChromeClass(name: ChromeClass, on: boolean): void {
   void on;
 }
 
-export function applyDocumentTheme(theme: DocumentTheme): void {
+export function useDocumentTheme(ready: boolean, theme: DocumentTheme): void {
+  void ready;
   void theme;
 }
 

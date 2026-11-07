@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { ignore } from '../../lib/errorPolicy';
 import type { CallMediaViewProps } from './CallScreen.model';
+import { useDomHost } from '../layout/webChrome';
 
 function mediaElement(kind: CallMediaViewProps['kind'], mirrored: boolean, contain: boolean): HTMLMediaElement {
   const el = document.createElement(kind);
@@ -18,7 +19,7 @@ function mediaElement(kind: CallMediaViewProps['kind'], mirrored: boolean, conta
 }
 
 export function CallMediaView({ stream, kind, mirrored = false, contain = false }: CallMediaViewProps): React.ReactElement {
-  const [host, setHost] = useState<HTMLElement | null>(null);
+  const { host, hostRef } = useDomHost();
   useEffect(() => {
     if (host === null || stream?.platform !== 'web') return;
     const el = mediaElement(kind, mirrored, contain);
@@ -30,12 +31,5 @@ export function CallMediaView({ stream, kind, mirrored = false, contain = false 
       el.remove();
     };
   }, [host, stream, kind, mirrored, contain]);
-  return (
-    <View
-      ref={(node) => {
-        setHost(node as unknown as HTMLElement | null);
-      }}
-      style={kind === 'audio' ? { display: 'none' } : { width: '100%', height: '100%' }}
-    />
-  );
+  return <View ref={hostRef} style={kind === 'audio' ? { display: 'none' } : { width: '100%', height: '100%' }} />;
 }

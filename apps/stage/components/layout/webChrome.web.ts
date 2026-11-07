@@ -1,5 +1,6 @@
+import { useCallback, useEffect, useState } from 'react';
 import type { View, ViewStyle } from 'react-native';
-import { GUTTER_SCROLLBAR, type ChromeClass, type DocumentTheme, type PaneScope } from './webChrome.core';
+import { GUTTER_SCROLLBAR, type ChromeClass, type DocumentTheme, type DomHost, type PaneScope } from './webChrome.core';
 import { WEB_GLOBAL_CSS } from './webChrome.styles';
 
 export { GUTTER_SCROLLBAR, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from './webChrome.core';
@@ -71,6 +72,14 @@ export function isRendered(node: unknown): boolean {
   return node instanceof HTMLElement && node.getClientRects().length > 0;
 }
 
+export function useDomHost(): DomHost {
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  const hostRef = useCallback((node: unknown): void => {
+    setHost(node instanceof HTMLElement ? node : null);
+  }, []);
+  return { host, hostRef };
+}
+
 function root(): HTMLElement | null {
   return typeof document === 'undefined' ? null : document.documentElement;
 }
@@ -90,13 +99,20 @@ export function setChromeClass(name: ChromeClass, on: boolean): void {
   root()?.classList.toggle(`stage-${name}`, on);
 }
 
-export function applyDocumentTheme(theme: DocumentTheme): void {
+function applyDocumentTheme(theme: DocumentTheme): void {
   const html = root();
   if (html === null) return;
   html.style.colorScheme = theme.dark ? 'dark' : 'light';
   html.style.backgroundColor = theme.background;
   html.style.setProperty('--stage-scrollbar-thumb', theme.scrollbarThumb);
   document.getElementById('stage-boot')?.remove();
+}
+
+export function useDocumentTheme(ready: boolean, theme: DocumentTheme): void {
+  const { dark, background, scrollbarThumb } = theme;
+  useEffect(() => {
+    if (ready) applyDocumentTheme({ dark, background, scrollbarThumb });
+  }, [ready, dark, background, scrollbarThumb]);
 }
 
 export function applyWebGlobalStyles(): void {

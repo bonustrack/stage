@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { HERO_BLACK, asciiPath } from './Landing.model';
 import { useAsciiArt } from './useAsciiArt';
+import { useDomHost } from '../layout/webChrome';
 
 function sizeCanvas(canvas: HTMLCanvasElement, width: number, height: number): CanvasRenderingContext2D | null {
   const ratio = globalThis.devicePixelRatio || 1;
@@ -40,7 +41,7 @@ function useCanvas(host: HTMLElement | null): HTMLCanvasElement | null {
 
 export function AsciiField({ width, height }: { width: number; height: number }): React.ReactElement {
   const art = useAsciiArt(width, height);
-  const [host, setHost] = useState<HTMLElement | null>(null);
+  const { host, hostRef } = useDomHost();
   const canvas = useCanvas(host);
   const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null);
   useEffect(() => {
@@ -49,13 +50,5 @@ export function AsciiField({ width, height }: { width: number; height: number })
   useEffect(() => {
     if (ctx !== null) drawArt(ctx, art, width, height);
   }, [ctx, art, width, height]);
-  return (
-    <View
-      ref={(node) => {
-        setHost(node as unknown as HTMLElement | null);
-      }}
-      pointerEvents="none"
-      style={{ position: 'absolute', top: 0, left: 0, width, height, overflow: 'hidden' }}
-    />
-  );
+  return <View ref={hostRef} pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, width, height, overflow: 'hidden' }} />;
 }

@@ -7,9 +7,8 @@ import { TopChrome } from '../components/system/TopChrome';
 import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { Platform, Text, TextInput } from 'react-native';
-import { RootStack, currentRoute, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore } from '../lib/navigation';
-import { isBrowserExtension } from '../lib/extension';
+import { Text, TextInput } from 'react-native';
+import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore } from '../lib/navigation';
 import { usePathname } from 'expo-router';
 import { isOnboardingRoute, isRestorableRoute } from '../components/tabs/pages';
 import { useEffectiveColorScheme, usePalette, useThemeFromSettings } from '../lib/theme';
@@ -21,10 +20,11 @@ import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
 import { usePushDeepLinks } from '../lib/pushNotify';
 import { useOwnMailKey } from '../lib/mail';
-import { bootMessaging, useMessagingBoot } from '../lib/messaging/boot';
+import { useMessagingBoot } from '../lib/messaging/boot';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
-import { applyDocumentTheme, applyWebGlobalStyles } from '../components/layout/webChrome';
+import { applyWebGlobalStyles, useDocumentTheme } from '../components/layout/webChrome';
+import { bootWebMessaging } from '../components/system/webBoot';
 import { ContentFrame } from '../components/layout/ContentFrame';
 import { installPlainTextCopy } from '../lib/plainCopy';
 import { AlertHost } from '../components/system/AlertHost';
@@ -36,7 +36,6 @@ import { KeyboardResync } from '../components/system/KeyboardResync';
 import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
-import { ignored } from '../lib/errorPolicy';
 import { useTabRole } from '../lib/tabLock';
 import { TabStandby } from '../components/system/TabStandby';
 import { Column, viewportFill } from '../components/layout';
@@ -46,9 +45,7 @@ const queryClient = getQueryClient();
 applyWebGlobalStyles();
 installPlainTextCopy();
 bootKitFonts();
-if (Platform.OS === 'web' && !isBrowserExtension() && !isOnboardingRoute(currentRoute('').replace(/\?.*$/, ''))) {
-  void bootMessaging(true).catch(ignored(undefined, 'optional'));
-}
+bootWebMessaging();
 
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
@@ -65,16 +62,10 @@ function isDarkBg(hex: string): boolean {
   return rgb === null || luminance(rgb, LUMA_REC709) < 0.5;
 }
 
-function useDocumentTheme(ready: boolean, dark: boolean, background: string, scrollbarThumb: string): void {
-  useEffect(() => {
-    if (ready) applyDocumentTheme({ dark, background, scrollbarThumb });
-  }, [ready, dark, background, scrollbarThumb]);
-}
-
 export default function RootLayout(): React.ReactElement {
   const { scheme, palette } = useThemeFromSettings();
   const tab = useTabRole();
-  useDocumentTheme(tab !== 'pending', scheme === 'dark', palette.bg, palette.sub);
+  useDocumentTheme(tab !== 'pending', { dark: scheme === 'dark', background: palette.bg, scrollbarThumb: palette.sub });
   return (
     <KitThemeProvider value={palette} scheme={scheme}>
       {tab === 'active' ? <RootLayoutInner /> : null}
