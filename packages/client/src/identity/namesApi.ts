@@ -1,6 +1,7 @@
-import type { Hex } from 'viem';
+import { isAddress, type Hex } from 'viem';
 import { z } from 'zod';
 import { STAGE_CLIENT_HEADERS, namesPath, type NamesOp } from '../endpoints';
+import { isMailPublicKey } from '../mail/mailbox';
 import { parseOrThrow } from '../validate';
 import { stageNameOf, type ClaimRequest } from './stageNames';
 
@@ -12,12 +13,35 @@ const directRequest: NamesRequest = async (url, init, read) => read(await fetch(
 
 const CLIENT_HEADERS = { 'content-type': 'application/json', ...STAGE_CLIENT_HEADERS };
 
-const STATUS_REPLY = z.object({ name: z.string().min(1) });
-const RESOLVE_REPLY = z.object({ address: z.string().min(1) });
+const STATUS_REPLY = z.object({ name: z.string().min(1).nullable() });
+const RESOLVE_REPLY = z.object({ address: z.string().min(1).nullable() });
 const CHECK_REPLY = z.object({ valid: z.boolean(), available: z.boolean(), reason: z.string().optional() });
-const CLAIM_REPLY = z.object({ name: z.string().optional(), error: z.string().optional(), mailKey: z.string().optional() });
+const CLAIM_REPLY = z.object({
+  name: z.string().optional(),
+  error: z.string().optional(),
+  mailKey: z.string().optional(),
+  txHash: z.string().optional(),
+  alreadyOwned: z.boolean().optional(),
+});
+
+export const NAME_CLAIM_REQUEST = z.object({
+  label: z.string().transform((label) => label.toLowerCase()),
+  address: z.string().refine((address): address is Hex => isAddress(address, { strict: false })),
+  issuedAt: z.number(),
+  signature: z.string().refine((signature): signature is Hex => /^0x[0-9a-fA-F]+$/.test(signature)),
+  mailKey: z
+    .string()
+    .transform((key) => key.toLowerCase())
+    .refine(isMailPublicKey)
+    .optional(),
+});
 
 export type NameCheck = z.infer<typeof CHECK_REPLY>;
+export type NameClaimBody = z.output<typeof NAME_CLAIM_REQUEST>;
+export type NameStatusReply = z.input<typeof STATUS_REPLY>;
+export type NameResolveReply = z.input<typeof RESOLVE_REPLY>;
+export type NameCheckReply = z.input<typeof CHECK_REPLY>;
+export type NameClaimReply = z.input<typeof CLAIM_REPLY>;
 
 export interface NameClaim extends ClaimRequest {
   signature: Hex;
@@ -66,7 +90,8 @@ function claimOutcome(res: Response, body: z.infer<typeof CLAIM_REPLY>, label: s
 
 export function postNameClaim(proxyBase: string, claim: NameClaim, request: NamesRequest = directRequest): Promise<NameClaimOutcome> {
   const { label, address, issuedAt, signature, mailKey } = claim;
-  const init = { method: 'POST', headers: CLIENT_HEADERS, body: JSON.stringify({ label, address, issuedAt, signature, mailKey }) };
+  const body: z.input<typeof NAME_CLAIM_REQUEST> = { label, address, issuedAt, signature, mailKey };
+  const init = { method: 'POST', headers: CLIENT_HEADERS, body: JSON.stringify(body) };
   return request(namesUrl(proxyBase, 'claim'), init, async (res) =>
     claimOutcome(res, parseOrThrow('username registration', CLAIM_REPLY, await res.json()), label),
   );

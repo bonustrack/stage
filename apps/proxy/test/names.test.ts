@@ -1,8 +1,10 @@
-import { describe, expect, test } from 'bun:test';
+import { afterEach, describe, expect, test } from 'bun:test';
 import { claimMessage } from '@stage-labs/client/identity/stageNames';
+import { fetchIssuedAddress, fetchIssuedName, fetchNameCheck, postNameClaim } from '@stage-labs/client/identity/namesApi';
 import { handleNames } from '../src/names.ts';
 import { claimsStore, serialized } from '../src/namesClaims.ts';
 import type { NamesChain, NamesDeps, NamesStore } from '../src/namesTypes.ts';
+import { restoreFetch, stubFetch } from './fakeFetch.ts';
 
 const ALICE = '0x00000000000000000000000000000000000000A1';
 const NOW = 1_800_000_000_000;
@@ -275,5 +277,50 @@ describe('claims durable object', () => {
     expect(kv.data.get('label:fabien')).toBe(BOB.toLowerCase());
     await store.put('label:legacy', '');
     expect(await store.get('label:legacy')).toBeNull();
+  });
+});
+
+describe('the client names api against the handler', () => {
+  afterEach(restoreFetch);
+
+  test('reads every answer the handler writes', async () => {
+    const d = deps(fakeChain({ taken: ['ownedname'] }), memoryStore());
+    stubFetch((request) => handleNames(request, d));
+    const base = 'https://proxy.stage.box';
+    const signature = '0x5169' as const;
+    expect(await fetchIssuedName(base, ALICE)).toBeNull();
+    expect(await fetchIssuedAddress(base, 'fabien')).toBeNull();
+    expect(await fetchNameCheck(base, 'fabien')).toEqual({ valid: true, available: true });
+    expect(await fetchNameCheck(base, 'ab')).toMatchObject({ valid: false, available: false });
+    expect(await postNameClaim(base, { ...goodClaim, signature })).toEqual({
+      kind: 'claimed',
+      name: 'fabien.stage.base.eth',
+      mailKeyFailed: false,
+    });
+    expect(await fetchIssuedName(base, ALICE)).toBe('fabien.stage.base.eth');
+    expect(await fetchIssuedAddress(base, 'fabien')).toBe(ALICE.toLowerCase());
+    expect(await fetchIssuedAddress(base, 'ownedname')).toBe('0x00000000000000000000000000000000000000b2');
+    expect(await fetchNameCheck(base, 'fabien')).toEqual({ valid: true, available: false });
+  });
+
+  test('sends claims the handler accepts or refuses in the shape the client reads', async () => {
+    const d = deps(fakeChain(), memoryStore());
+    stubFetch((request) => handleNames(request, d));
+    const base = 'https://proxy.stage.box';
+    const signature = '0x5169' as const;
+    const bob = '0x00000000000000000000000000000000000000B0';
+    const mailKey = `0x${'ab'.repeat(32)}`;
+    expect((await postNameClaim(base, { ...goodClaim, signature })).kind).toBe('claimed');
+    expect(await postNameClaim(base, { ...goodClaim, address: bob, signature })).toEqual({ kind: 'taken' });
+    expect(await postNameClaim(base, { ...goodClaim, label: 'second', address: bob, signature, mailKey })).toEqual({
+      kind: 'claimed',
+      name: 'second.stage.base.eth',
+      mailKeyFailed: true,
+    });
+    expect(await postNameClaim(base, { ...goodClaim, label: 'third', signature, mailKey: '0x12' })).toEqual({
+      kind: 'refused',
+      status: 400,
+      error: 'label, address, issuedAt and signature required',
+    });
   });
 });
