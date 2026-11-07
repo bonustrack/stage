@@ -33,7 +33,7 @@ export function sortedListing<R extends ListingRow>(o: ListingOrder<R>): R[] {
   return sortHomeRows(chipped(o), o.pinned, o.sort, o.statusOrder);
 }
 
-export function listedRows<R extends ListingRow>(rows: readonly R[], v: ListingVisibility<R>): R[] {
+function listedRows<R extends ListingRow>(rows: readonly R[], v: ListingVisibility<R>): R[] {
   return rows.filter((row) => v.matches(row) && !isRowCleared(v.cleared, row));
 }
 

@@ -4,14 +4,12 @@ import { useRouter } from 'expo-router';
 import { refreshConv, useChannelEditRights, useChannelRoles, useConvDetails, useConvRow } from '../../lib/messaging/queries';
 import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { removeGroupMembers } from '../../lib/xmtp.groups';
-import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '../../lib/peerProfiles';
 import { capabilities } from '../../lib/capabilities';
 import { leaveChannel as leaveChannelFlow } from './channelActions';
 
-function convIdOf(line: string): string {
-  const convId = convIdOfLine(line);
+function requireConvId(convId: string | undefined): string {
   if (!convId) throw new Error('Conversation not found');
   return convId;
 }
@@ -67,7 +65,6 @@ export function confirmMemberRemoval(names: string[]): Promise<boolean> {
 
 export function useChannelDetail(convId: string | undefined) {
   const router = useRouter();
-  const line = lineOfConv(convId ?? '');
   const row = useConvRow(convId);
   const { description } = useConvDetails(convId, row);
   const directory = useMemberDirectory(convId, row);
@@ -83,8 +80,9 @@ export function useChannelDetail(convId: string | undefined) {
       },
       'Remove member failed',
       async () => {
-        await removeGroupMembers(convIdOf(line), [addr]);
-        refreshConv(convIdOf(line));
+        const id = requireConvId(convId);
+        await removeGroupMembers(id, [addr]);
+        refreshConv(id);
       },
     );
   };

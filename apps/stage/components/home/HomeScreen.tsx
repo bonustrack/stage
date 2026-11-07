@@ -15,7 +15,7 @@ import { useHomeFilters } from './labelbar';
 import { searchBarLabels } from './model';
 import { BoardScreen } from './board/BoardScreen';
 import { useHomeListing } from './listing';
-import { listedRows, sortedListing } from './listing.model';
+import { homeListing } from './listing.model';
 import { groupingOrderOf } from '../../lib/grouping.model';
 import { useGroupedRows, useHomeState } from './state';
 import { HomeDragLists, useHomeDrag } from './listDrag';
@@ -57,15 +57,14 @@ function ChannelsHome({ panRef, pane }: { panRef?: SimultaneousRefs; pane: boole
   const statusOrder = groupingOrderOf('status', orders);
   const labelOrder = groupingOrderOf('label', orders);
 
-  const sortedRows = useMemo(
-    () => sortedListing({ rows, enabledLabels, unreadOnly, pinned, sort, statusOrder }),
-    [rows, pinned, enabledLabels, unreadOnly, sort, statusOrder],
-  );
   const barLabels = useMemo(
     () => searchBarLabels(deriveBarLabels((rows ?? []).filter(matches)), enabledLabels, labelOrder),
     [rows, matches, enabledLabels, labelOrder],
   );
-  const visibleRows = useMemo(() => listedRows(sortedRows, { matches, cleared }), [sortedRows, matches, cleared]);
+  const visibleRows = useMemo(
+    () => homeListing({ rows, enabledLabels, unreadOnly, pinned, sort, statusOrder, matches, cleared }),
+    [rows, pinned, enabledLabels, unreadOnly, sort, statusOrder, matches, cleared],
+  );
   const list = useGroupedRows(visibleRows, searchText, groupBy, peerLabel, profilesVersion);
   const fields = useChannelFields('chats');
   const error = useChannelsSyncError();
