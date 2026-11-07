@@ -53,11 +53,6 @@ describe('pendingBanner: truthful copy per reason', () => {
       { id: 'legacy', address: '0xabc', text: 'old', createdAt: 3 },
     ];
     expect(itemsForAddress(mixed, '0xabc', 'acct-a').map((i) => i.id)).toEqual(['mine', 'legacy']);
-    expect(
-      addressesWithQueued(
-        mixed.filter((i) => i.id === 'theirs'),
-        'acct-a',
-      ),
-    ).toEqual([]);
+    expect(addressesWithQueued(mixed.slice(1, 2), 'acct-a')).toEqual([]);
   });
 });

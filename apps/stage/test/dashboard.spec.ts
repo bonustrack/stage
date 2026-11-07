@@ -30,6 +30,7 @@ import {
 } from '../lib/frames/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
 import { selectAccount } from './activeAccount';
+import { settle } from './helpers';
 import { mockAppStorage } from './memoryStorage';
 
 selectAccount('alice');
@@ -44,12 +45,9 @@ const widget = (id: string, w: DashboardWidth = 'half', h: DashboardHeight = 1):
   kind: 'frame',
   source: { conversationId: 'conv0', messageId: id },
 });
+const FULL = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
 const ids = (widgets: readonly DashboardWidget[]): string[] => widgets.map((item) => item.id);
 const stored = (account: string): unknown => JSON.parse(values.get(`dashboard.v1.${account}`) ?? 'null');
-const settle = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
 const synced = (raw: unknown): DashboardContent => dashboardSchema.parse(JSON.parse(JSON.stringify(raw)));
 const signInAs = async (account: string): Promise<string> => {
   selectAccount(account);
@@ -62,9 +60,8 @@ const frameWidget = (id: string, from = source): DashboardWidget => ({ id, w: 'h
 
 describe('dashboard widgets', () => {
   test('a dashboard takes at most 48 widgets', () => {
-    const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
-    expect(canAddWidget(full)).toBe(false);
-    expect(canAddWidget(full.slice(1))).toBe(true);
+    expect(canAddWidget(FULL)).toBe(false);
+    expect(canAddWidget(FULL.slice(1))).toBe(true);
   });
 
   test('removing drops only that widget and an unknown id changes nothing', () => {
@@ -111,9 +108,8 @@ describe('frame widgets', () => {
     expect(addFrameWidget(list, 'f', { ...source, messageId: 'msg2' }, 'half')).toBe(list);
     expect(frameWidgetAdd(list, { ...source, messageId: 'msg2' })).toBe('added');
     expect(frameWidgetAdd(list, { ...source, conversationId: 'conv2' })).toBe('added');
-    const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
-    expect(frameWidgetAdd(full, source)).toBe('full');
-    expect(addFrameWidget(full, 'f', source, 'half')).toBe(full);
+    expect(frameWidgetAdd(FULL, source)).toBe('full');
+    expect(addFrameWidget(FULL, 'f', source, 'half')).toBe(FULL);
   });
 
   test('only frame and live widgets are kept: no kind, another kind or a broken reference drops the widget', () => {
@@ -170,9 +166,8 @@ describe('live widgets', () => {
     expect(liveWidgetAdd(list, live.url)).toBe('exists');
     expect(addLiveWidget(list, 'm', { ...live, key: 'cd'.repeat(32) }, 'half')).toBe(list);
     expect(liveWidgetAdd(list, 'https://eth.example.com/')).toBe('added');
-    const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
-    expect(liveWidgetAdd(full, live.url)).toBe('full');
-    expect(addLiveWidget(full, 'l', live, 'half')).toBe(full);
+    expect(liveWidgetAdd(FULL, live.url)).toBe('full');
+    expect(addLiveWidget(FULL, 'l', live, 'half')).toBe(FULL);
   });
 
   test('a live widget without a valid url, key or origin is dropped', () => {

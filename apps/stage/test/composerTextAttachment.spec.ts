@@ -4,7 +4,6 @@ import { planSendSteps, unsentDraft } from '../components/composer/send.model';
 import { textAttachment } from '../components/composer/textAttachment.model';
 import { locationAttachment } from '../components/composer/location.model';
 import type { Attachment } from '../components/composer/types';
-import type { LocalAttachmentInput, OnAttachmentsUploaded } from '../lib/xmtp.types';
 
 const longText = `  Café, ไทย, 👨‍👩‍👧‍👦, é\r\n${'Full original text\n\n'.repeat(300)}\t \n`;
 const photo = {
@@ -16,19 +15,13 @@ const photo = {
   size: 10,
 } satisfies Attachment;
 
+type Ports = Parameters<typeof planSendSteps>[4];
+
 function senders() {
   return {
-    text: mock<(line: string, text: string, beforeSend?: () => Promise<void>) => Promise<string>>(async () => 'text-id'),
-    reply: mock<(line: string, replyTo: string, text: string, beforeSend?: () => Promise<void>) => Promise<string>>(async () => 'reply-id'),
-    attachments: mock<
-      (
-        line: string,
-        files: LocalAttachmentInput[],
-        onUploaded?: OnAttachmentsUploaded,
-        beforeSend?: () => Promise<void>,
-        replyTo?: string,
-      ) => Promise<string>
-    >(async () => 'file-id'),
+    text: mock<Ports['text']>(async () => 'text-id'),
+    reply: mock<Ports['reply']>(async () => 'reply-id'),
+    attachments: mock<Ports['attachments']>(async () => 'file-id'),
   };
 }
 
@@ -123,7 +116,7 @@ describe('large composer text becomes a UTF-8 attachment', () => {
     const beforeSend = mock(async () => undefined);
     const steps = planSendSteps('line', longText, [], 'reference', ports, () => 'id', assertCurrent, beforeSend);
     await steps[0]?.run();
-    const validate = ports.attachments.mock.calls[0]?.[3] as (() => Promise<void>) | undefined;
+    const validate = ports.attachments.mock.calls[0]?.[3];
     expect(assertCurrent).toHaveBeenCalledTimes(1);
     await validate?.();
     expect(beforeSend).toHaveBeenCalledTimes(1);

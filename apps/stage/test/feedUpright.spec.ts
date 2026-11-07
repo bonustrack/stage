@@ -91,20 +91,14 @@ describe('a saved distance restores to the same place in an upright list', () =>
 });
 
 describe('an upright feed lands on the newest message and stays put once the reader takes over', () => {
-  test('opening a conversation pins to the newest message as content renders in', () => {
-    expect(upright.restore(state(), CONTENT, 0)).toBe(maxOffset);
-  });
-
-  test('it keeps pinning even when growth has pushed the measured position off the end', () => {
-    expect(upright.restore(state({ atNewest: false }), CONTENT, 0)).toBe(maxOffset);
-  });
-
-  test('a dragged-away reader is left alone', () => {
-    expect(upright.restore(state({ atNewest: false, userDragged: true }), CONTENT, 0)).toBeNull();
-  });
-
-  test('scrolling back to the newest message makes it sticky again', () => {
-    expect(upright.restore(state({ userDragged: true, atNewest: true }), CONTENT, 0)).toBe(maxOffset);
+  test.each([
+    ['opening a conversation pins to the newest message as content renders in', {}, maxOffset],
+    ['it keeps pinning even when growth has pushed the measured position off the end', { atNewest: false }, maxOffset],
+    ['a dragged-away reader is left alone', { atNewest: false, userDragged: true }, null],
+    ['scrolling back to the newest message makes it sticky again', { userDragged: true, atNewest: true }, maxOffset],
+    ['nothing moves until the saved position has been read back', { savedLoaded: false }, null],
+  ])('%s', (_name, over, offset) => {
+    expect(upright.restore(state(over), CONTENT, 0)).toBe(offset);
   });
 
   test('a saved position wins once, then stops fighting the reader', () => {
@@ -113,10 +107,6 @@ describe('an upright feed lands on the newest message and stays put once the rea
     expect(s.restored).toBe(true);
     expect(s.settleUntil).toBeGreaterThan(0);
     expect(upright.restore(s, CONTENT, 0)).toBeNull();
-  });
-
-  test('nothing moves until the saved position has been read back', () => {
-    expect(upright.restore(state({ savedLoaded: false }), CONTENT, 0)).toBeNull();
   });
 
   test('scroll events are ignored until the feed is positioned and the restore has settled', () => {

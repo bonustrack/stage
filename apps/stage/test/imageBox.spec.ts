@@ -9,9 +9,7 @@ describe('attachment layout', () => {
   });
 
   test('images use a square placeholder until their size is known', () => {
-    expect(mediaAspectRatio(undefined)).toBe(1);
-    expect(mediaAspectRatio({ width: 640 })).toBe(1);
-    expect(mediaAspectRatio({ width: 0, height: 480 })).toBe(1);
+    for (const size of [undefined, { width: 640 }, { width: 0, height: 480 }]) expect(mediaAspectRatio(size)).toBe(1);
   });
 
   test('videos use a 16:9 placeholder until their size is known', () => {
@@ -26,9 +24,7 @@ describe('attachment layout', () => {
 
   test('accepts only a positive measured size', () => {
     expect(validSize({ width: 640, height: 480 })).toEqual({ width: 640, height: 480 });
-    expect(validSize({ width: 0, height: 480 })).toBeUndefined();
-    expect(validSize({ width: 640, height: 0 })).toBeUndefined();
-    expect(validSize({ width: 640 })).toBeUndefined();
-    expect(validSize(undefined)).toBeUndefined();
+    for (const size of [{ width: 0, height: 480 }, { width: 640, height: 0 }, { width: 640 }, undefined])
+      expect(validSize(size)).toBeUndefined();
   });
 });

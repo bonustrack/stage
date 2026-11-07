@@ -4,16 +4,13 @@ import { isAllowedLinkScheme } from '@stage-labs/client/routing/stageLinks';
 
 describe('isAllowedLinkScheme', () => {
   test('allows web + mailto + our app schemes', () => {
-    expect(isAllowedLinkScheme('https://stage.box/xmtp/abc')).toBe(true);
-    expect(isAllowedLinkScheme('http://example.com')).toBe(true);
-    expect(isAllowedLinkScheme('mailto:hi@stage.box')).toBe(true);
-    expect(isAllowedLinkScheme('metro://xmtp/abc')).toBe(true);
-    expect(isAllowedLinkScheme('stage://room/123')).toBe(true);
+    for (const url of ['https://stage.box/xmtp/abc', 'http://example.com', 'mailto:hi@stage.box', 'metro://xmtp/abc', 'stage://room/123']) {
+      expect(isAllowedLinkScheme(url)).toBe(true);
+    }
   });
 
   test('is case-insensitive on the scheme', () => {
-    expect(isAllowedLinkScheme('HTTPS://example.com')).toBe(true);
-    expect(isAllowedLinkScheme('Metro://xmtp/abc')).toBe(true);
+    for (const url of ['HTTPS://example.com', 'Metro://xmtp/abc']) expect(isAllowedLinkScheme(url)).toBe(true);
   });
 
   test('tolerates leading/trailing whitespace', () => {
@@ -21,19 +18,16 @@ describe('isAllowedLinkScheme', () => {
   });
 
   test('rejects dangerous / arbitrary schemes', () => {
-    expect(isAllowedLinkScheme('file:///etc/passwd')).toBe(false);
-    expect(isAllowedLinkScheme('tel:+15551234567')).toBe(false);
-    expect(isAllowedLinkScheme('sms:+15551234567')).toBe(false);
-    expect(isAllowedLinkScheme('content://media/external/file/1')).toBe(false);
-    expect(isAllowedLinkScheme('intent://scan/#Intent;scheme=zxing;end')).toBe(false);
-    expect(isAllowedLinkScheme('javascript:alert(1)')).toBe(false);
-    expect(isAllowedLinkScheme('otherapp://do-something')).toBe(false);
+    for (const url of ['file:///etc/passwd', 'tel:+15551234567', 'sms:+15551234567', 'content://media/external/file/1']) {
+      expect(isAllowedLinkScheme(url)).toBe(false);
+    }
+    for (const url of ['intent://scan/#Intent;scheme=zxing;end', 'javascript:alert(1)', 'otherapp://do-something']) {
+      expect(isAllowedLinkScheme(url)).toBe(false);
+    }
   });
 
   test('rejects scheme-less strings', () => {
-    expect(isAllowedLinkScheme('example.com/path')).toBe(false);
-    expect(isAllowedLinkScheme('/relative/path')).toBe(false);
-    expect(isAllowedLinkScheme('')).toBe(false);
+    for (const url of ['example.com/path', '/relative/path', '']) expect(isAllowedLinkScheme(url)).toBe(false);
   });
 });
 

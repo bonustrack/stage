@@ -4,13 +4,9 @@ import { clockLabel } from '../lib/format';
 
 describe('audio card', () => {
   test('recognises recorded voice notes by their file name', () => {
-    expect(isVoiceNote({ name: 'voice-1727450000000.m4a' })).toBe(true);
-    expect(isVoiceNote({ name: 'voice.m4a' })).toBe(true);
-    expect(isVoiceNote({ name: 'Voice_memo.m4a' })).toBe(true);
+    for (const name of ['voice-1727450000000.m4a', 'voice.m4a', 'Voice_memo.m4a', '  ']) expect(isVoiceNote({ name })).toBe(true);
     expect(isVoiceNote({})).toBe(true);
-    expect(isVoiceNote({ name: '  ' })).toBe(true);
-    expect(isVoiceNote({ name: 'voiceover-take2.mp3' })).toBe(false);
-    expect(isVoiceNote({ name: 'designing-grok-bot.mp3' })).toBe(false);
+    for (const name of ['voiceover-take2.mp3', 'designing-grok-bot.mp3']) expect(isVoiceNote({ name })).toBe(false);
   });
 
   test('formats a playback clock', () => {

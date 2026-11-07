@@ -9,7 +9,7 @@ import {
   searchRowMatcher,
   type FilterRow,
 } from '../components/home/search/searchFilter.model';
-import { ALICE, BOB, NAMES, group, searched } from './searchFixtures';
+import { ALICE, BOB, group, namesOf, searched } from './searchFixtures';
 
 const rows: FilterRow[] = [
   { ...group('build', ['Bug'], [ALICE]), category: 'Stage', status: 'Backlog', priority: 'High' },
@@ -19,7 +19,6 @@ const rows: FilterRow[] = [
   group('missing', ['Todo']),
   { ...group('empty', []), category: '  ', status: '', priority: null },
 ];
-const namesOf = (address: string): string[] => NAMES[address] ?? [];
 const draftOf = (convId: string): string => (convId === 'ship' ? 'release' : '');
 const matching = (query: string): string[] =>
   rows.filter(searchRowMatcher(parseSearchFilter(query), namesOf, draftOf)).map((row) => row.convId);
@@ -115,12 +114,7 @@ describe('metadata filter suggestions', () => {
     const board = searchFilterSources([...rows, duplicate, dm], 'board');
     expect(board.categories).toEqual(['Client work', 'Snapshot', 'Stage']);
     expect(board.statuses).toEqual(['🚧 In progress', 'Backlog', 'Ready, next', 'Todo']);
-    expect(
-      searchFilterSources(
-        rows.filter((row) => row.convId === 'missing' || row.convId === 'empty'),
-        'board',
-      ),
-    ).toMatchObject({ categories: [], statuses: [] });
+    expect(searchFilterSources(rows.slice(4), 'board')).toMatchObject({ categories: [], statuses: [] });
     expect(searchFilterSources([dm], 'chats')).toMatchObject({ categories: ['Private'], statuses: ['DM only'] });
   });
 

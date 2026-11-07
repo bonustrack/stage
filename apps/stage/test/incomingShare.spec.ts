@@ -13,12 +13,7 @@ import { sendPreparedMessage, type SendTarget } from '../lib/xmtp.messageSend.co
 import type { CachedRow as Row } from '../lib/cachedRows.model';
 import { row } from './rowFixture';
 
-const targetOf = <C>(conv: C): SendTarget<C> => ({
-  conv,
-  assertCurrent: () => {
-    return;
-  },
-});
+const targetOf = <C>(conv: C): SendTarget<C> => ({ conv, assertCurrent: () => undefined });
 
 const id = 'f1363f20-9a10-4e7c-9adc-5da913462fc4';
 const file = (index = 0, size = 1_024) => ({
@@ -31,18 +26,12 @@ const ready = (files: unknown[] = [file()]) => ({ id, status: 'ready', files });
 
 function sendEffects() {
   return {
-    validate: mock(async () => () => {
-      return;
-    }),
+    validate: mock(async () => (): void => undefined),
     start: mock(() => 'started'),
     finish: mock(async () => true),
-    success: mock(async () => {
-      return;
-    }),
+    success: mock(async () => undefined),
     busy: mock((value: boolean) => value),
-    error: mock(() => {
-      return;
-    }),
+    error: mock(() => undefined),
   };
 }
 
@@ -177,9 +166,7 @@ describe('explicit share send gate', () => {
     await sender.send();
     expect(effects.validate).toHaveBeenCalledTimes(1);
     expect(effects.start).not.toHaveBeenCalled();
-    checked.resolve(() => {
-      return;
-    });
+    checked.resolve(() => undefined);
     await first;
     expect(effects.start).toHaveBeenCalledTimes(1);
     expect(effects.success).toHaveBeenCalledTimes(1);
@@ -236,9 +223,7 @@ describe('explicit share send gate', () => {
         attachments: mock(async () => 'files'),
       },
       () => 'local',
-      () => {
-        return;
-      },
+      () => undefined,
       validate,
     );
     const result = steps[0]?.run();

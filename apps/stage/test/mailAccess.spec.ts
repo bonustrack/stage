@@ -15,11 +15,6 @@ const SIGN: Record<string, SignMessage> = {
   b: () => Promise.resolve<Hex>(`0x${'cd'.repeat(65)}`),
 };
 
-function deferred<T>() {
-  const { promise, resolve, reject } = Promise.withResolvers<T>();
-  return { promise, resolve, reject };
-}
-
 async function harness() {
   let active: AccountRecord | null = A;
   let selection = 0;
@@ -55,8 +50,8 @@ async function harness() {
       body: sealMailPart(keys.publicKey, label, ID, 'body', new TextEncoder().encode(raw)),
     });
   }
-  const pauses = new Map<string, ReturnType<typeof deferred<Response>>>();
-  const started = new Map<string, ReturnType<typeof deferred<undefined>>>();
+  const pauses = new Map<string, PromiseWithResolvers<Response>>();
+  const started = new Map<string, PromiseWithResolvers<undefined>>();
   const lookup = { run: (address: string): Promise<string | null> => Promise.resolve(names.get(address) ?? null) };
   const signing = {
     run: (rec: AccountRecord): Promise<SignMessage> => {
@@ -116,8 +111,8 @@ async function harness() {
     boxes: () => access.mailboxes(selection),
     inbox: (boxes: Mailbox[]) => access.inbox(boxes, selection),
     pause(path: string) {
-      const response = deferred<Response>();
-      const start = deferred<undefined>();
+      const response = Promise.withResolvers<Response>();
+      const start = Promise.withResolvers<undefined>();
       pauses.set(path, response);
       started.set(path, start);
       return { response, started: start.promise };
@@ -173,7 +168,7 @@ describe('active account mail', () => {
 
   test('drops a delayed name lookup even when the user switches back to the same account', async () => {
     const h = await harness();
-    const lookup = deferred<string | null>();
+    const lookup = Promise.withResolvers<string | null>();
     h.lookup.run = () => lookup.promise;
     const pending = h.boxes();
     const rejected = pending.catch((err: unknown) => err);
@@ -230,8 +225,8 @@ describe('active account mail', () => {
 
   test('does not start mail requests with a signer that arrives after switching', async () => {
     const h = await harness();
-    const signer = deferred<SignMessage>();
-    const started = deferred<undefined>();
+    const signer = Promise.withResolvers<SignMessage>();
+    const started = Promise.withResolvers<undefined>();
     h.signing.run = () => {
       started.resolve(undefined);
       return signer.promise;

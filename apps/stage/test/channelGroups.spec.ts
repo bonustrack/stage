@@ -8,6 +8,7 @@ import { selectAccount } from './activeAccount';
 import { groupHeaderId } from '../lib/grouping.model';
 import { row } from './rowFixture';
 import { mockAppStorage } from './memoryStorage';
+import { settle } from './helpers';
 
 const parseChannelGroupsPrefs = (raw: string): unknown => jsonWith(channelGroupsSchema)(raw) ?? NO_GROUPS_PREFS;
 
@@ -177,10 +178,6 @@ describe('one category order for the chat list and the board', () => {
       .map((item) => item.header.title);
   const columns = (order: readonly string[]): string[] =>
     orderedColumns(boardColumns(rows, [], [], 'category', nameOf), order).map((column) => column.label);
-  const settle = (): Promise<void> =>
-    new Promise((resolve) => {
-      setTimeout(resolve, 0);
-    });
   const sent: string[][] = [];
   categoryOrderSync.onLocalChange((change) => {
     sent.push([...change.state]);

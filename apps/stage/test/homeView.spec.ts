@@ -5,6 +5,7 @@ import { editHomeView, receiveHomeView, syncedHomeView } from '../lib/syncedSett
 import { homeSortOf } from '../components/home/sort.model';
 import { selectAccount } from './activeAccount';
 import { mockAppStorage } from './memoryStorage';
+import { settle } from './helpers';
 
 selectAccount('alice');
 const { values } = mockAppStorage();
@@ -16,10 +17,6 @@ const view = (v: HomeViewContent['view'], groupBy: HomeViewContent['groupBy'], a
   columnBy: 'label',
   at,
 });
-const settle = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
 const stored = (account: string): unknown => JSON.parse(values.get(`home.view.${account}`) ?? 'null');
 
 describe('home view model', () => {

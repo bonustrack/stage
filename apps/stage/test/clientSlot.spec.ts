@@ -71,9 +71,7 @@ describe('createClientSlot', () => {
     const discarded: string[] = [];
     const slot = createClientSlot<string>(
       () => undefined,
-      (client) => {
-        discarded.push(client);
-      },
+      (client) => discarded.push(client),
     );
     const work = Promise.withResolvers<string>();
     const first = slot.getOrCreate(() => work.promise).catch((e: unknown) => e);
@@ -88,12 +86,8 @@ describe('createClientSlot', () => {
   test('reset closes the cached client before the shared state resets', async () => {
     const log: string[] = [];
     const slot = createClientSlot<string>(
-      () => {
-        log.push('reset');
-      },
-      (client) => {
-        log.push(`close:${client}`);
-      },
+      () => log.push('reset'),
+      (client) => log.push(`close:${client}`),
     );
     slot.reset();
     expect(log).toEqual(['reset']);

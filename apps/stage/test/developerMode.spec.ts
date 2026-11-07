@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { DEFAULT_DEVELOPER_MODE, type DeveloperModeContent } from '@stage-labs/client/xmtp/sync/developerMode';
 import { editDeveloperMode } from '../lib/syncedSettings.model';
+import { settle } from './helpers';
 import { mockAppStorage } from './memoryStorage';
 
 let activeId: string | null = null;
@@ -38,19 +39,6 @@ const { developerModeSync, setDeveloperMode } = await import('../lib/developerMo
 let sequence = 0;
 const key = (id: string): string => `developer.mode.${id}`;
 const stored = (id: string): unknown => JSON.parse(values.get(key(id)) ?? 'null');
-const settle = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
-function barrier(): { wait: () => Promise<void>; release: () => void } {
-  let release = (): void => {
-    throw new Error('Barrier not initialized');
-  };
-  const promise = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  return { wait: () => promise, release };
-}
 
 beforeEach(async () => {
   failRead = false;
@@ -83,9 +71,7 @@ describe('developer mode account preference', () => {
   test('persists ON and OFF for the account and emits only local edits', async () => {
     const id = activeId ?? '';
     const sent: { accountId: string; state: DeveloperModeContent }[] = [];
-    const stop = developerModeSync.onLocalChange((change) => {
-      sent.push(change);
-    });
+    const stop = developerModeSync.onLocalChange((change) => sent.push(change));
     try {
       await setDeveloperMode(true);
       const on = await developerModeSync.load(id);
@@ -153,13 +139,13 @@ describe('developer mode account preference', () => {
 
   test('does not write or emit when account selection changes during a local edit', async () => {
     const oldId = activeId ?? '';
-    const gate = barrier();
-    accountDelay = gate.wait;
+    const gate = Promise.withResolvers<undefined>();
+    accountDelay = () => gate.promise;
     const pending = setDeveloperMode(true);
     activeId = 'switched-during-edit';
     accountSelectionChanged();
     accountDelay = null;
-    gate.release();
+    gate.resolve(undefined);
     await pending;
     await settle();
     expect(stored(oldId)).toBeNull();
@@ -169,9 +155,7 @@ describe('developer mode account preference', () => {
 
   test('does not write stale data after a failed read or announce a failed durable write', async () => {
     const sent: DeveloperModeContent[] = [];
-    const stop = developerModeSync.onLocalChange((change) => {
-      sent.push(change.state);
-    });
+    const stop = developerModeSync.onLocalChange((change) => sent.push(change.state));
     try {
       failRead = true;
       await expect(setDeveloperMode(true)).rejects.toThrow('read unavailable');
@@ -189,14 +173,14 @@ describe('developer mode account preference', () => {
 
   test('switching during a queued durable read cancels the old local edit', async () => {
     const oldId = activeId ?? '';
-    const gate = barrier();
-    readDelay = gate.wait;
+    const gate = Promise.withResolvers<undefined>();
+    readDelay = () => gate.promise;
     const pending = setDeveloperMode(true);
     await settle();
     activeId = 'switched-during-storage';
     accountSelectionChanged();
     readDelay = null;
-    gate.release();
+    gate.resolve(undefined);
     await pending;
     await settle();
     expect(stored(oldId)).toBeNull();
@@ -207,15 +191,15 @@ describe('developer mode account preference', () => {
   test('account hydration cannot restore the previous account over the selected account', async () => {
     values.set(key('hydrating-old'), JSON.stringify({ enabled: true, at: 10 }));
     values.set(key('hydrating-new'), JSON.stringify({ enabled: false, at: 20 }));
-    const gate = barrier();
-    readDelay = gate.wait;
+    const gate = Promise.withResolvers<undefined>();
+    readDelay = () => gate.promise;
     activeId = 'hydrating-old';
     bumpAccountEpoch();
     await settle();
     activeId = 'hydrating-new';
     bumpAccountEpoch();
     readDelay = null;
-    gate.release();
+    gate.resolve(undefined);
     await settle();
     expect(await developerModeSync.load('hydrating-new')).toEqual({ enabled: false, at: 20 });
     expect(await developerModeSync.load('hydrating-old')).toEqual({ enabled: true, at: 10 });
@@ -224,9 +208,7 @@ describe('developer mode account preference', () => {
 
   test('unreadable selection rejects rather than writing the fallback account', async () => {
     const sent: DeveloperModeContent[] = [];
-    const stop = developerModeSync.onLocalChange((change) => {
-      sent.push(change.state);
-    });
+    const stop = developerModeSync.onLocalChange((change) => sent.push(change.state));
     try {
       failSelection = true;
       await expect(setDeveloperMode(true)).rejects.toThrow('selection unavailable');

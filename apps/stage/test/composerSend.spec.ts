@@ -2,24 +2,14 @@ import { describe, expect, mock, test } from 'bun:test';
 import { planSendSteps, unsentDraft } from '../components/composer/send.model';
 import { locationAttachment } from '../components/composer/location.model';
 import type { Attachment } from '../components/composer/types';
-import type { LocalAttachmentInput, OnAttachmentsUploaded } from '../lib/xmtp.types';
 
-type Gate = () => Promise<void>;
-type TextSender = (line: string, text: string, gate?: Gate) => Promise<string>;
-type ReplySender = (line: string, replyTo: string, text: string, gate?: Gate) => Promise<string>;
-type FileSender = (
-  line: string,
-  files: LocalAttachmentInput[],
-  onUploaded?: OnAttachmentsUploaded,
-  gate?: Gate,
-  replyTo?: string,
-) => Promise<string>;
+type Ports = Parameters<typeof planSendSteps>[4];
 
 function makeSenders() {
   return {
-    text: mock<TextSender>(async () => 'text-id'),
-    reply: mock<ReplySender>(async () => 'reply-id'),
-    attachments: mock<FileSender>(async () => 'attachment-id'),
+    text: mock<Ports['text']>(async () => 'text-id'),
+    reply: mock<Ports['reply']>(async () => 'reply-id'),
+    attachments: mock<Ports['attachments']>(async () => 'attachment-id'),
   };
 }
 
@@ -136,7 +126,7 @@ describe('composer sends encrypted remote attachments', () => {
       undefined,
       {
         ...makeSenders(),
-        attachments: async (_line: string, _files: LocalAttachmentInput[], notify?: OnAttachmentsUploaded) => {
+        attachments: async (_line, _files, notify) => {
           notify?.(await upload.promise);
           return sent.promise;
         },

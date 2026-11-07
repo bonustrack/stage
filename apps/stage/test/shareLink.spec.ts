@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
+import { settle } from './helpers';
 
 const copied: string[] = [];
 mock.module('expo-clipboard', () => ({
@@ -26,12 +27,6 @@ function capabilitiesSharing(share: (text: string) => Promise<boolean>): { toast
   return { toasts, shareLink: caps.shareLink };
 }
 
-function settled(): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
-}
-
 function failing(name: string): () => Promise<boolean> {
   return () => {
     const err = new Error('share failed');
@@ -52,28 +47,18 @@ describe('sharing a link', () => {
       return Promise.resolve(true);
     });
     shareLink(URL);
-    await settled();
+    await settle();
     expect([shared, copied, toasts]).toEqual([[URL], [], []]);
   });
 
-  test('without a share sheet the link is copied, with the copy toast', async () => {
-    const { toasts, shareLink } = capabilitiesSharing(() => Promise.resolve(false));
+  test.each<[string, () => Promise<boolean>, string[][]]>([
+    ['without a share sheet the link is copied, with the copy toast', () => Promise.resolve(false), [[URL], ['Link copied']]],
+    ['closing the share sheet copies nothing', failing('AbortError'), [[], []]],
+    ['a share sheet that fails falls back to copying the link', failing('NotAllowedError'), [[URL], ['Link copied']]],
+  ])('%s', async (_name, share, expected) => {
+    const { toasts, shareLink } = capabilitiesSharing(share);
     shareLink(URL);
-    await settled();
-    expect([copied, toasts]).toEqual([[URL], ['Link copied']]);
-  });
-
-  test('closing the share sheet copies nothing', async () => {
-    const { toasts, shareLink } = capabilitiesSharing(failing('AbortError'));
-    shareLink(URL);
-    await settled();
-    expect([copied, toasts]).toEqual([[], []]);
-  });
-
-  test('a share sheet that fails falls back to copying the link', async () => {
-    const { toasts, shareLink } = capabilitiesSharing(failing('NotAllowedError'));
-    shareLink(URL);
-    await settled();
-    expect([copied, toasts]).toEqual([[URL], ['Link copied']]);
+    await settle();
+    expect([copied, toasts]).toEqual(expected);
   });
 });

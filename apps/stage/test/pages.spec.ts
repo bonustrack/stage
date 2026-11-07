@@ -62,18 +62,8 @@ describe('restoring the last route', () => {
   });
 
   test('restores pages, chats and their sub pages', () => {
-    for (const path of [
-      '/wallet/send',
-      '/settings/display',
-      '/board',
-      '/dashboard',
-      '/inbox/mail',
-      '/channel/abc',
-      '/boorger',
-      '/signup',
-    ]) {
-      expect(isRestorableRoute(path)).toBe(true);
-    }
+    for (const path of ['/wallet/send', '/settings/display', '/board', '/dashboard']) expect(isRestorableRoute(path)).toBe(true);
+    for (const path of ['/inbox/mail', '/channel/abc', '/boorger', '/signup']) expect(isRestorableRoute(path)).toBe(true);
   });
 });
 

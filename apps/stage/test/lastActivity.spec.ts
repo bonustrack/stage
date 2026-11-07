@@ -11,6 +11,7 @@ import { bumpAccountEpoch } from '../lib/accountEpoch';
 import { accountSelectionChanged } from '../lib/accountSelection';
 import { selectAccount, selectedAccount } from './activeAccount';
 import { mockAppStorage } from './memoryStorage';
+import { settle } from './helpers';
 
 const parseLastActivity = (raw: string): unknown => jsonWith(lastActivitySchema)(raw) ?? DEFAULT_LAST_ACTIVITY;
 const DAY = 86_400_000;
@@ -27,10 +28,6 @@ const { values, writes } = mockAppStorage({
 });
 mock.module('../lib/appInFront', () => ({ isAppInFront: () => true, subscribeAppInFront: () => () => undefined }));
 const { getLastActivity, setLastActivity } = await import('../lib/lastActivity');
-const settle = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
 const stored = (id: string): unknown => JSON.parse(values.get(`home.activity.${id}`) ?? 'null');
 
 beforeEach(() => {
@@ -88,35 +85,16 @@ describe('Last activity windows', () => {
       row('other', { labels: ['Feature'], lastTs: now, category: 'Snapshot', status: 'Todo' }),
     ];
     const cutoff = lastActivityCutoff('3d', now);
-    const matches = searchRowMatcher(
-      parseSearchFilter('category:Stage -status:Done rec'),
-      () => [],
-      () => '',
-      cutoff,
-    );
+    const matches = searchRowMatcher(parseSearchFilter('category:Stage -status:Done rec'), () => [], undefined, cutoff);
     const listed = homeListing({ rows, enabledLabels: new Set(['bug']), unreadOnly: false, pinned: ['old'], matches, cleared: {} });
     expect(listed.map((r) => r.convId)).toEqual(['recent']);
     const columns = boardColumns(rows, ['old'], ['status:Todo', 'status:Done', 'status:Blocked'], 'status');
-    const shown = searched(
-      columns,
-      'category:Stage',
-      () => [],
-      () => '',
-      cutoff,
-    );
+    const shown = searched(columns, 'category:Stage', undefined, undefined, cutoff);
     expect(shown.map((column) => column.key)).toEqual(columns.map((column) => column.key));
     expect(shown.find((column) => column.key === 'status:Done')?.rows).toEqual([]);
     expect(shown.find((column) => column.key === 'status:Blocked')?.rows).toEqual([]);
     expect(shown.flatMap((column) => column.rows).map((r) => r.convId)).toEqual(['recent']);
-    expect(
-      searched(
-        columns,
-        '',
-        () => [],
-        () => '',
-        null,
-      ).flatMap((column) => column.rows),
-    ).toHaveLength(3);
+    expect(searched(columns, '').flatMap((column) => column.rows)).toHaveLength(3);
   });
 });
 
@@ -144,19 +122,14 @@ describe('Last activity local preferences', () => {
     selectAccount('activity-race-alice');
     const aliceKey = `home.activity.${selectedAccount()}`;
     values.set(aliceKey, '{"chats":"3d","board":"7d"}');
-    let release = (): void => undefined;
-    blockedRead = {
-      key: aliceKey,
-      pending: new Promise<void>((resolve) => {
-        release = resolve;
-      }),
-    };
+    const read = Promise.withResolvers<undefined>();
+    blockedRead = { key: aliceKey, pending: read.promise };
     setLastActivity('chats', '1d');
     await settle();
     selectAccount('activity-race-bob');
     values.set(`home.activity.${selectedAccount()}`, '{"chats":"30d","board":"all"}');
     bumpAccountEpoch();
-    release();
+    read.resolve(undefined);
     await settle();
     expect(writes).toEqual([]);
     expect(stored('activity-race-alice')).toEqual({ chats: '3d', board: '7d' });

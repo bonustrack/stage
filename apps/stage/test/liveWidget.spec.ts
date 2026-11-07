@@ -26,13 +26,7 @@ describe('live widget state', () => {
   test('a node frame replaces the shown frame and clears any problem', () => {
     expect(liveStateAfter(EMPTY_LIVE, frameReply(CARD), 1_000)).toEqual(shown);
     const failing = { ...shown, problem: 'timeout' as const, failures: 3 };
-    expect(liveStateAfter(failing, frameReply(NEXT), 2_000)).toEqual({
-      frame: { messages: NEXT },
-      at: 2_000,
-      problem: null,
-      status: null,
-      failures: 0,
-    });
+    expect(liveStateAfter(failing, frameReply(NEXT), 2_000)).toEqual({ ...shown, frame: { messages: NEXT }, at: 2_000 });
   });
 
   test('a failure keeps the last good frame and its time, and counts the failures', () => {

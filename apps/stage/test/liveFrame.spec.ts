@@ -28,11 +28,6 @@ const streamed =
     return Promise.resolve({ ok: true, reply: { kind: 'streamed', load } });
   };
 
-const failing =
-  (result: NodeResult): Answer =>
-  () =>
-    Promise.resolve(result);
-
 function harness() {
   const calls: NodeCall[] = [];
   const toasts: string[] = [];
@@ -182,9 +177,9 @@ describe('live frames in chats', () => {
   test('a failure keeps the shown frame and says why', async () => {
     const h = harness();
     await h.frames.refresh('m1', SENT, NODE);
-    h.reply(failing({ ok: false, problem: 'status', status: 503 }));
+    h.reply(async () => ({ ok: false, problem: 'status', status: 503 }));
     await h.frames.refresh('m1', SENT, NODE);
-    h.reply(failing({ ok: false, problem: 'timeout' }));
+    h.reply(async () => ({ ok: false, problem: 'timeout' }));
     await h.frames.send('m1', SENT, NODE, tapOf('buy'));
     expect(h.frames.frameOf('m1')).toEqual({ messages: NEXT });
     expect(h.toasts).toEqual(['Could not refresh: node error 503', 'Could not send: timed out']);

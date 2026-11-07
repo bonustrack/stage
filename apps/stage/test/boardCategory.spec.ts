@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { searched } from './searchFixtures';
+import { group, searched } from './searchFixtures';
 import {
   addedColumnOrder,
   boardColumns,
@@ -16,16 +16,7 @@ import {
 import { configuredFieldOptions } from '../components/channel/channelFieldOptions.model';
 import { searchFilterSources } from '../components/home/search/searchFilter.model';
 
-const row = (convId: string, category?: string) => ({
-  convId,
-  category,
-  title: convId,
-  lastTs: 1,
-  lastPreview: '',
-  unreadCount: 0,
-  labels: ['Legacy'],
-  status: 'Todo',
-});
+const row = (convId: string, category?: string) => ({ ...group(convId, ['Legacy']), category, status: 'Todo' });
 const rows = [row('a', 'Stage'), row('b', 'stage'), row('c', 'Metro')];
 const order = ['category:metro', 'category:fde', 'category:stage', 'category:FDE', 'category:', 'status:Done'];
 const columns = orderedColumns(boardColumns(rows, [], order, 'category'), order);

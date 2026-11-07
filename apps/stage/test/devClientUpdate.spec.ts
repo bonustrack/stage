@@ -33,10 +33,7 @@ function status(gitHash: string, url: string): string {
   });
 }
 
-function fixture(
-  newRuntime = 'new-runtime',
-  compatible = manifest(),
-): { request: UpdateRequest; calls: { url: string; headers: Record<string, string> }[] } {
+function fixture(newRuntime = 'new-runtime', compatible = manifest()) {
   const calls: { url: string; headers: Record<string, string> }[] = [];
   const request: UpdateRequest = (url, headers) => {
     calls.push({ url, headers });

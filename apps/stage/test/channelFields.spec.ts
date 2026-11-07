@@ -3,6 +3,7 @@ import { CHANNEL_FIELDS, visibleChannelFieldCount } from '../components/home/fie
 import { DEFAULT_CHANNEL_FIELDS, parseChannelFields, toggleChannelFieldIn } from '../lib/channelFields.model';
 import { selectAccount, selectedAccount } from './activeAccount';
 import { mockAppStorage } from './memoryStorage';
+import { settle } from './helpers';
 
 selectAccount('alice');
 let failedKey: string | null = null;
@@ -13,10 +14,6 @@ const { values, writes } = mockAppStorage({
   },
 });
 const { toggleChannelField } = await import('../lib/channelFields');
-const settle = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
 const stored = (id: string): unknown => JSON.parse(values.get(`home.fields.${id}`) ?? 'null');
 
 const hidden = {

@@ -87,36 +87,22 @@ export class FakeStream extends EventTarget implements MediaStream {
   }
 }
 
-export interface Gate {
-  reached: Promise<void>;
-  open: () => void;
-  pass: () => Promise<void>;
-}
-
-export function gate(): Gate {
-  let arrive: () => void = () => undefined;
-  let release: () => void = () => undefined;
-  const reached = new Promise<void>((resolve) => {
-    arrive = resolve;
-  });
-  const opened = new Promise<void>((resolve) => {
-    release = resolve;
-  });
+function gate() {
+  const reached = Promise.withResolvers<undefined>();
+  const opened = Promise.withResolvers<undefined>();
   return {
-    reached,
-    open: release,
+    reached: reached.promise,
+    open: () => opened.resolve(undefined),
     pass: () => {
-      arrive();
-      return opened;
+      reached.resolve(undefined);
+      return opened.promise;
     },
   };
 }
 
-type Step = 'prepare' | 'user' | 'start' | 'display' | 'self';
+type Gate = ReturnType<typeof gate>;
 
-export function fakeTrackOf(track: CallTrack | null): FakeTrack | null {
-  return track?.platform === 'web' && track.value instanceof FakeTrack ? track.value : null;
-}
+type Step = 'prepare' | 'user' | 'start' | 'display' | 'self';
 
 export function fakeMedia() {
   const log: string[] = [];
@@ -198,9 +184,7 @@ export function fakeMedia() {
   };
 }
 
-export type FakeMedia = ReturnType<typeof fakeMedia>;
-
-export interface FakePeer {
+interface FakePeer {
   peer: Peer;
   hooks: PeerHooks;
   sent: string[];
@@ -261,7 +245,6 @@ export function fakeTimers() {
   return {
     running,
     every(ms: number, run: () => void): () => void {
-      void ms;
       next += 1;
       const id = next;
       running.set(id, run);

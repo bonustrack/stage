@@ -94,64 +94,42 @@ describe('a message arriving from the stream', () => {
 });
 
 describe('a deletion from the stream', () => {
+  const placeholder = entry('m1', { line: OPEN, ts: at(1), payload: { contentType: 'deletedMessage', deletedBy: 'sender' } });
+  const readPlaceholder = async (): Promise<HistoryEntry> => placeholder;
+  const current = (): boolean => true;
+
   test('replaces a message the feed shows with its placeholder', async () => {
     onArrival(OPEN, entry('m1', { line: OPEN, ts: at(1) }), ns(1));
-    const placeholder = entry('m1', { line: OPEN, ts: at(1), payload: { contentType: 'deletedMessage', deletedBy: 'sender' } });
-    await onDeletion(
-      OPEN,
-      'm1',
-      async () => placeholder,
-      () => true,
-    );
+    await onDeletion(OPEN, 'm1', readPlaceholder, current);
     expect(feedCache.get(OPEN)?.[0]).toBe(placeholder);
   });
 
   test('of a message the feed does not show does nothing', async () => {
     let asked = false;
-    await onDeletion(
-      OPEN,
-      'unknown',
-      async () => {
-        asked = true;
-        return null;
-      },
-      () => true,
-    );
+    const read = async (): Promise<null> => {
+      asked = true;
+      return null;
+    };
+    await onDeletion(OPEN, 'unknown', read, current);
     expect(asked).toBe(false);
   });
 
   test('resyncs an open feed when the placeholder cannot be read', async () => {
     holdFeedLine(OPEN);
     onArrival(OPEN, entry('m1', { line: OPEN, ts: at(1) }), ns(1));
-    await onDeletion(
-      OPEN,
-      'm1',
-      async () => null,
-      () => true,
-    );
+    await onDeletion(OPEN, 'm1', async () => null, current);
     expect(resyncs.length).toBe(1);
   });
 
   test('is dropped when the account or the feed changed while the placeholder loaded', async () => {
     onArrival(OPEN, entry('m1', { line: OPEN, ts: at(1) }), ns(1));
-    const placeholder = entry('m1', { line: OPEN, ts: at(1), payload: { contentType: 'deletedMessage', deletedBy: 'sender' } });
-    await onDeletion(
-      OPEN,
-      'm1',
-      async () => placeholder,
-      () => false,
-    );
+    await onDeletion(OPEN, 'm1', readPlaceholder, () => false);
     expect(feedCache.get(OPEN)?.[0]?.payload).toBeUndefined();
-    const resetting = onDeletion(
-      OPEN,
-      'm1',
-      async () => {
-        resetFeed();
-        return placeholder;
-      },
-      () => true,
-    );
-    await resetting;
+    const resetting = async (): Promise<HistoryEntry> => {
+      resetFeed();
+      return placeholder;
+    };
+    await onDeletion(OPEN, 'm1', resetting, current);
     expect(feedCache.get(OPEN)).toBeUndefined();
   });
 });

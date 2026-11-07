@@ -36,6 +36,7 @@ describe('filter chips follow the search', () => {
 describe('the View menu', () => {
   const chats = { view: 'chats', groupBy: 'none', columnBy: 'label', at: 0 } as const;
   const board = { ...chats, view: 'board', groupBy: 'category' } as const;
+  const sorts = { chatsSort: { by: 'created', direction: 'asc' }, boardSort: { by: 'priority', direction: 'desc' } } as const;
   const labels = (sections: ViewMenuSection[]): string[][] =>
     sections.map((s) => s.rows.map((r) => `${r.label}${r.value === undefined ? '' : `: ${r.value}`}${r.selected ? '*' : ''}`));
 
@@ -48,24 +49,14 @@ describe('the View menu', () => {
   test('the view picker selects the current layout and edits only the mode', () => {
     expect(labels(homeLayoutMenu(chats))).toEqual([['Chats*', 'Board']]);
     expect(labels(homeLayoutMenu(board))).toEqual([['Chats', 'Board*']]);
-    const configured = {
-      ...chats,
-      chatsSort: { by: 'created', direction: 'asc' },
-      boardSort: { by: 'priority', direction: 'desc' },
-    } as const;
+    const configured = { ...chats, ...sorts };
     const switched = { ...configured, ...pick(configured, 'view:board') };
     expect(switched).toEqual({ ...configured, view: 'board' });
     expect({ ...switched, ...pick(switched, 'view:chats') }).toEqual(configured);
   });
 
   test('selected values are separate from labels and follow the active mode', () => {
-    const current = {
-      ...chats,
-      groupBy: 'assignee',
-      columnBy: 'status',
-      chatsSort: { by: 'created', direction: 'asc' },
-      boardSort: { by: 'priority', direction: 'desc' },
-    } as const;
+    const current = { ...chats, groupBy: 'assignee', columnBy: 'status', ...sorts } as const;
     for (const view of ['chats', 'board', 'chats'] as const) {
       const rows = homeViewMenu({ ...current, view }).flatMap((section) => section.rows);
       expect(rows.find((row) => row.id === 'grouping')).toMatchObject({

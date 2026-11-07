@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { searched } from './searchFixtures';
+import { NONE, group, searched } from './searchFixtures';
 import { boardColumns } from '../components/home/board/BoardScreen.model';
 import {
   HAS_OPTIONS,
@@ -9,16 +9,7 @@ import {
   type FilterRow,
 } from '../components/home/search/searchFilter.model';
 
-const row = (convId: string, labels?: string[]): FilterRow => ({
-  convId,
-  title: convId,
-  lastPreview: '',
-  lastTs: 1,
-  unreadCount: 0,
-  labels,
-  inboxToAddr: { self: '0xself' },
-  selfInboxId: 'self',
-});
+const row = (convId: string, labels?: string[]): FilterRow => ({ ...group(convId, []), labels });
 
 const rows = [row('labelled', ['Todo']), row('both', ['Todo', 'Bug']), row('draft'), row('empty', []), row('spaces'), row('attachment')];
 const drafts: Record<string, string> = { both: ' hello ', draft: '\ntext\n', spaces: ' \n\t ', attachment: '' };
@@ -26,7 +17,6 @@ const draftOf = (id: string): string => drafts[id] ?? '';
 const namesOf = (): string[] => [];
 const matching = (query: string): string[] =>
   rows.filter(searchRowMatcher(parseSearchFilter(query), namesOf, draftOf)).map((item) => item.convId);
-const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
 
 describe('has channel filters', () => {
   test('parses has alongside the existing fields and free text', () => {

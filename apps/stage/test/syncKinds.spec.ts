@@ -1,10 +1,8 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { SYNC_KIND_NAMES } from '@stage-labs/client/xmtp/sync/registry';
+import { mockAppStorage } from './memoryStorage';
 
-mock.module('../platform/storage', () => ({
-  secureStorage: { get: async () => null, set: async () => undefined, delete: async () => undefined },
-  appStorage: { get: async () => null, set: async () => undefined, delete: async () => undefined },
-}));
+mockAppStorage();
 mock.module('../lib/cache', () => ({
   persistenceBackend: { read: async () => null, write: () => undefined, onFlushSignal: () => undefined },
 }));

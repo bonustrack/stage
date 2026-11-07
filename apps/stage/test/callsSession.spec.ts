@@ -6,6 +6,7 @@ import { NO_MEDIA, type CallView } from '../lib/calls.store';
 import type { CallInboundHooks } from '../lib/calls.machine.core';
 import { acquire, makeCallSession } from '../lib/calls.session.core';
 import { fakeMedia, fakePeers, fakeTimers, FakeTrack } from './callsFakes';
+import { settle } from './helpers';
 
 const SELF = 'self-inbox';
 const PEER = 'peer-inbox';
@@ -59,17 +60,10 @@ function harness() {
     every: timers.every,
   });
   return {
-    start: session.startCall,
-    join: session.joinCall,
-    decline: session.declineCall,
-    leave: session.leaveCall,
-    toggleMic: session.toggleMic,
-    toggleCamera: session.toggleCamera,
-    toggleScreen: session.toggleScreen,
+    ...session,
     view: () => view,
     dispatch: (event: CallEvent) => hooks?.dispatch(event),
     generation: () => hooks?.generation() ?? -1,
-    reset: session.reset,
   };
 }
 
@@ -92,28 +86,14 @@ afterEach(() => {
   setSystemTime();
 });
 
+const FROM_PEER = { senderInboxId: PEER, selfInboxId: SELF, sentMs: NOW, nowMs: NOW };
+
 function invite(convId: string, callId: string, from: string): CallEvent {
-  return {
-    type: 'invite',
-    convId,
-    senderInboxId: PEER,
-    selfInboxId: SELF,
-    sentMs: NOW,
-    nowMs: NOW,
-    dm: true,
-    allowed: true,
-    invite: { callId, from, video: false },
-  };
+  return { type: 'invite', convId, ...FROM_PEER, dm: true, allowed: true, invite: { callId, from, video: false } };
 }
 
 function signal(convId: string, s: CallSignal): CallEvent {
-  return { type: 'signal', convId, senderInboxId: PEER, selfInboxId: SELF, sentMs: NOW, nowMs: NOW, signal: s };
-}
-
-function flush(): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
+  return { type: 'signal', convId, ...FROM_PEER, signal: s };
 }
 
 function stopCounts(): number[] {
@@ -127,7 +107,7 @@ function previewTrack(): MediaStreamTrack | undefined {
 
 describe('starting and answering', () => {
   test('starting a call opens the microphone, then invites the chat', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     expect(media.log).toEqual(['prepare', 'mic', 'start audio']);
     expect(sent).toEqual([{ kind: 'invite', content: { callId: 'call-id-1', from: 'call-id-2', video: false } }]);
     expect(h.view().calls.session).toMatchObject({ convId: 'c1', phase: 'joined', selfPeerId: 'call-id-2' });
@@ -138,7 +118,7 @@ describe('starting and answering', () => {
 
   test('a video call falls back to the microphone when the camera is refused', async () => {
     media.settings.cameraRefused = true;
-    await h.start('c1', true, true);
+    await h.startCall('c1', true, true);
     expect(media.log).toEqual(['prepare', 'camera+mic', 'mic', 'start audio']);
     expect(sent).toEqual([{ kind: 'invite', content: { callId: 'call-id-1', from: 'call-id-2', video: true } }]);
     expect(h.view().media.video).toBe(false);
@@ -146,7 +126,7 @@ describe('starting and answering', () => {
 
   test('without the microphone nothing is sent and the audio session is let go', async () => {
     media.settings.micRefused = true;
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     expect(media.log).toEqual(['prepare', 'mic', 'stop audio']);
     expect(toasts).toEqual(['Allow microphone access to join the call']);
     expect(sent).toEqual([]);
@@ -156,7 +136,7 @@ describe('starting and answering', () => {
   test('an invite rings until it is accepted, then the join is signalled', async () => {
     h.dispatch(invite('c1', 'remote-call-1', 'remote-peer-1'));
     expect(h.view().calls.session?.phase).toBe('ringing');
-    await h.join('c1', true);
+    await h.joinCall('c1', true);
     expect(media.log).toEqual(['ring', 'ring stop', 'prepare', 'mic', 'start audio']);
     expect(sent).toEqual([{ kind: 'signal', content: { kind: 'join', callId: 'remote-call-1', from: 'call-id-1' } }]);
     expect(h.view().calls.session).toMatchObject({ callId: 'remote-call-1', phase: 'joined' });
@@ -164,7 +144,7 @@ describe('starting and answering', () => {
 
   test('declining stops the ring and tells the caller', () => {
     h.dispatch(invite('c1', 'remote-call-1', 'remote-peer-1'));
-    h.decline();
+    h.declineCall();
     expect(media.log).toEqual(['ring', 'stop audio', 'ring stop']);
     expect(sent).toEqual([{ kind: 'signal', content: { kind: 'decline', callId: 'remote-call-1' } }]);
     expect(h.view().calls.session).toBeNull();
@@ -172,7 +152,7 @@ describe('starting and answering', () => {
   });
 
   test('an unanswered call hangs up once the ring times out', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     setSystemTime(NOW + CALL_RING_TIMEOUT_MS);
     timers.fire();
     expect(toasts).toEqual(['No answer']);
@@ -186,7 +166,7 @@ describe('media that arrives too late', () => {
   test('a microphone that opens after the caller hung up is stopped', async () => {
     h.dispatch(invite('c1', 'remote-call-1', 'remote-peer-1'));
     const mic = media.hold('user');
-    const joining = h.join('c1', true);
+    const joining = h.joinCall('c1', true);
     await mic.reached;
     h.dispatch(signal('c1', { kind: 'leave', callId: 'remote-call-1', from: 'remote-peer-1' }));
     expect(toasts).toEqual(['Missed call']);
@@ -200,7 +180,7 @@ describe('media that arrives too late', () => {
 
   test('an account switch while audio starts drops the call before it is announced', async () => {
     const starting = media.hold('start');
-    const call = h.start('c1', true, false);
+    const call = h.startCall('c1', true, false);
     await starting.reached;
     h.reset();
     starting.open();
@@ -213,7 +193,7 @@ describe('media that arrives too late', () => {
 
   test('a call that starts ringing while the microphone opens wins', async () => {
     const mic = media.hold('user');
-    const call = h.start('c1', true, false);
+    const call = h.startCall('c1', true, false);
     await mic.reached;
     h.dispatch(invite('c2', 'remote-call-2', 'remote-peer-2'));
     mic.open();
@@ -226,7 +206,7 @@ describe('media that arrives too late', () => {
 
   test('a ring that arrives while audio starts lets the start finish, then releases it', async () => {
     const starting = media.hold('start');
-    const call = h.start('c1', true, false);
+    const call = h.startCall('c1', true, false);
     await starting.reached;
     h.dispatch(invite('c2', 'remote-call-2', 'remote-peer-2'));
     starting.open();
@@ -239,7 +219,7 @@ describe('media that arrives too late', () => {
 
   test('the inbox id that resolves after an account switch is not shown', async () => {
     const self = media.hold('self');
-    const call = h.start('c1', true, false);
+    const call = h.startCall('c1', true, false);
     await self.reached;
     h.reset();
     self.open();
@@ -250,11 +230,11 @@ describe('media that arrives too late', () => {
   });
 
   test('a camera that opens after the call ended is stopped', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     const camera = media.hold('user');
     const toggling = h.toggleCamera();
     await camera.reached;
-    h.leave();
+    h.leaveCall();
     camera.open();
     await toggling;
     expect(media.log).toEqual(['prepare', 'mic', 'start audio', 'camera', 'stop audio']);
@@ -263,9 +243,9 @@ describe('media that arrives too late', () => {
 
   test('one capture at a time: other actions are ignored while it runs', async () => {
     const mic = media.hold('user');
-    const first = h.start('c1', true, false);
+    const first = h.startCall('c1', true, false);
     await mic.reached;
-    await h.start('c2', true, false);
+    await h.startCall('c2', true, false);
     await h.toggleCamera();
     mic.open();
     await first;
@@ -276,16 +256,16 @@ describe('media that arrives too late', () => {
 
 describe('in a call', () => {
   test('a joining peer gets an offer, and hanging up closes it and tells the others', async () => {
-    await h.start('c1', false, false);
+    await h.startCall('c1', false, false);
     h.dispatch(signal('c1', { kind: 'join', callId: 'call-id-1', from: 'remote-peer-1' }));
-    await flush();
+    await settle();
     expect(peers.opened).toHaveLength(1);
     expect(h.view().peers.map((p) => p.inboxId)).toEqual([PEER]);
     expect(sent.at(-1)).toEqual({
       kind: 'signal',
       content: { kind: 'offer', callId: 'call-id-1', from: 'call-id-2', to: 'remote-peer-1', sdp: 'offer sdp' },
     });
-    h.leave();
+    h.leaveCall();
     expect(sent.at(-1)).toEqual({ kind: 'signal', content: { kind: 'leave', callId: 'call-id-1', from: 'call-id-2' } });
     expect(peers.opened[0]?.closed).toBe(1);
     expect(stopCounts()).toEqual([1]);
@@ -296,9 +276,9 @@ describe('in a call', () => {
   });
 
   test('the other side hanging up a DM ends the call with a notice', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     h.dispatch(signal('c1', { kind: 'join', callId: 'call-id-1', from: 'remote-peer-1' }));
-    await flush();
+    await settle();
     h.dispatch(signal('c1', { kind: 'leave', callId: 'call-id-1', from: 'remote-peer-1' }));
     expect(toasts).toEqual(['Call ended']);
     expect(peers.opened[0]?.closed).toBe(1);
@@ -306,12 +286,12 @@ describe('in a call', () => {
   });
 
   test('muting tells every peer', async () => {
-    await h.start('c1', false, false);
+    await h.startCall('c1', false, false);
     h.dispatch(signal('c1', { kind: 'join', callId: 'call-id-1', from: 'remote-peer-1' }));
-    await flush();
+    await settle();
     peers.opened[0]?.open();
     h.toggleMic();
-    await flush();
+    await settle();
     expect(peers.opened[0]?.sent).toEqual([
       JSON.stringify({ audio: true, video: false, screen: false }),
       JSON.stringify({ audio: false, video: false, screen: false }),
@@ -321,7 +301,7 @@ describe('in a call', () => {
   });
 
   test('the camera swaps the preview and the audio route on and off', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     await h.toggleCamera();
     const camera = media.tracks[1];
     expect(media.log.slice(3)).toEqual(['camera', 'start video']);
@@ -335,7 +315,7 @@ describe('in a call', () => {
   });
 
   test('a refused camera says so', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     media.settings.cameraRefused = true;
     await h.toggleCamera();
     expect(toasts).toEqual(['Allow camera access to turn on video']);
@@ -343,21 +323,21 @@ describe('in a call', () => {
   });
 
   test('a shared screen shows until the system ends the share', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     await h.toggleScreen(null);
     const screen = media.tracks[1];
     expect(media.log.slice(3)).toEqual(['display', `watch ${screen?.id ?? ''}`]);
     expect(h.view().media).toEqual({ audio: true, video: true, screen: true });
     expect(previewTrack()).toBe(screen);
     media.screenEnds[0]?.();
-    await flush();
+    await settle();
     expect(h.view().media.screen).toBe(false);
     expect(h.view().preview).toBeNull();
     expect(screen?.stops).toBe(1);
   });
 
   test('a screen share that ended before it started is dropped', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     media.settings.screenEnded = true;
     await h.toggleScreen(null);
     expect(media.log.slice(3)).toEqual(['display']);
@@ -367,7 +347,7 @@ describe('in a call', () => {
   });
 
   test('an account switch ends the call without a word and resets the view', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     const generation = h.generation();
     h.reset();
     expect(h.view()).toMatchObject({ calls: EMPTY_CALLS, selfInboxId: null, preview: null, peers: [] });
@@ -382,18 +362,18 @@ describe('in a call', () => {
 
 describe('the capture token', () => {
   test('the platform holds a token that goes stale when the call ends, and the next call gets a new one', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     const [preparing, starting] = media.tokens;
     expect([preparing?.live(), starting?.live()]).toEqual([true, true]);
-    h.leave();
+    h.leaveCall();
     expect([preparing?.live(), starting?.live()]).toEqual([false, false]);
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     expect(media.tokens.slice(2).map((t) => t.live())).toEqual([true, true]);
   });
 
   test('an account switch cancels the token of a capture in progress', async () => {
     const preparing = media.hold('prepare');
-    const call = h.start('c1', true, false);
+    const call = h.startCall('c1', true, false);
     await preparing.reached;
     h.reset();
     expect(media.tokens[0]?.live()).toBe(false);
@@ -404,7 +384,7 @@ describe('the capture token', () => {
   });
 
   test('sharing the screen hands the screen picker to the platform', async () => {
-    await h.start('c1', true, false);
+    await h.startCall('c1', true, false);
     const picker = { show: () => undefined };
     await h.toggleScreen(picker);
     expect(media.pickers).toEqual([picker]);

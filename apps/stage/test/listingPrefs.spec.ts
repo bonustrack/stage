@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { selectAccount } from './activeAccount';
 import { mockAppStorage } from './memoryStorage';
+import { settle } from './helpers';
 
 let account = 0;
 const held = new Map<string, Promise<void>>();
@@ -19,19 +20,11 @@ const { listingPrefsNow, primeListingPrefs, subscribeListingPrefs } = await impo
 const { accountSelectionChanged } = await import('../lib/accountSelection');
 const { bumpAccountEpoch } = await import('../lib/accountEpoch');
 
-const settle = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
-
 function hold(prefix: string): () => Promise<void> {
-  let release = (): void => undefined;
-  const pending = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  held.set(prefix, pending);
+  const { promise, resolve } = Promise.withResolvers<undefined>();
+  held.set(prefix, promise);
   return async () => {
-    release();
+    resolve(undefined);
     held.delete(prefix);
     await settle();
   };

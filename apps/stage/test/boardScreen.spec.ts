@@ -26,27 +26,15 @@ import {
   renamedColumnOrder,
 } from '../components/home/board/BoardScreen.model';
 
-interface TestRow {
-  convId: string;
-  title: string;
-  lastPreview: string;
-  lastTs: number | null;
-  unreadCount: number;
-  labels?: string[];
-  category?: string | null;
-  assigned?: string[];
-  peerAddress?: string | null;
-}
-
-function row(convId: string, lastTs: number, labels?: string[]): TestRow {
+function row(convId: string, lastTs: number, labels?: string[]) {
   return { convId, title: convId, lastPreview: '', lastTs, unreadCount: 0, labels };
 }
 
-function dm(convId: string, lastTs: number, labels?: string[]): TestRow {
+function dm(convId: string, lastTs: number, labels?: string[]) {
   return { ...row(convId, lastTs, labels), peerAddress: '0xpeer' };
 }
 
-function shape(rows: TestRow[], pinned: string[] = [], order: string[] = []): [string, string[]][] {
+function shape(rows: ReturnType<typeof row>[], pinned: string[] = [], order: string[] = []): [string, string[]][] {
   return boardColumns(rows, pinned, order, 'label').map((c) => [c.label, c.rows.map((r) => r.convId)]);
 }
 

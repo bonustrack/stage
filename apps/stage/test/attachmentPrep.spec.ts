@@ -2,12 +2,7 @@ import { describe, expect, mock, test } from 'bun:test';
 import { makeAttachmentPrep } from '../lib/xmtp.attachmentPrep.core';
 import { sendPreparedAttachment, sendPreparedMessage, type SendTarget } from '../lib/xmtp.messageSend.core';
 
-const targetOf = <C>(conv: C): SendTarget<C> => ({
-  conv,
-  assertCurrent: () => {
-    return;
-  },
-});
+const targetOf = <C>(conv: C): SendTarget<C> => ({ conv, assertCurrent: () => undefined });
 
 const photo = { fileUri: 'blob:photo', mimeType: 'image/png', filename: 'photo.png' };
 const clip = { fileUri: 'blob:clip', mimeType: 'video/mp4', filename: 'clip.mp4' };
@@ -60,9 +55,7 @@ describe('attachment send account capture', () => {
       const send = mock(async () => 'id');
       await expect(
         sendPreparedAttachment({
-          assertCurrent: () => {
-            return;
-          },
+          assertCurrent: () => undefined,
           uploaded: async () => {
             if (phase === 'upload') accepted = false;
             return ['encrypted'];

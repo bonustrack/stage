@@ -107,9 +107,8 @@ describe('frames with a node source', () => {
       host: 'nodes.stage.box',
     });
     expect(frameNodeOf(report)).toBeNull();
-    expect(frameNodeOf({ ...report, source: { url: 'http://btc.example.com/' } })).toBeNull();
-    expect(frameNodeOf({ ...report, source: { url: 'https://localhost/' } })).toBeNull();
-    expect(frameNodeOf({ ...report, source: { url: 'https://user:pw@btc.example.com/' } })).toBeNull();
+    for (const url of ['http://btc.example.com/', 'https://localhost/', 'https://user:pw@btc.example.com/'])
+      expect(frameNodeOf({ ...report, source: { url } })).toBeNull();
   });
 
   test('a frame with a node stays read only until the chat is known to be accepted', () => {

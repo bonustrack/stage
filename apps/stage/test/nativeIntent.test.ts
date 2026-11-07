@@ -27,9 +27,7 @@ describe('redirectSystemPath', () => {
   });
 
   test('non-conversation custom-scheme deep links pass through unchanged', () => {
-    expect(r('stage://group/g1')).toBe('stage://group/g1');
-    expect(r('stage://user/0xabc')).toBe('stage://user/0xabc');
-    expect(r('stage://settings')).toBe('stage://settings');
+    for (const link of ['stage://group/g1', 'stage://user/0xabc', 'stage://settings']) expect(r(link)).toBe(link);
   });
 
   test('channel + address deep links pass through unchanged', () => {

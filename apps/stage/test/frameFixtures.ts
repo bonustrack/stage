@@ -1,6 +1,5 @@
 import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
 import type { FrameOut } from '../lib/frames/frame.model';
-
 import { KIT_CATALOG_ID as KIT_CATALOG } from '@stage-labs/kit/a2ui/kit-catalog';
 
 export { KIT_CATALOG };

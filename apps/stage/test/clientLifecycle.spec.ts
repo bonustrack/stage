@@ -18,38 +18,28 @@ function harness(initial: AccountRecord[], activeId: string | null, ready = fals
   let active = activeId;
   let cached: FakeClient | null = null;
   let failBuild = false;
+  const logged = (event: string): Promise<void> => {
+    log.push(event);
+    return Promise.resolve();
+  };
   const lifecycle = makeClientLifecycle<FakeClient>({
     accounts: {
       active: () => Promise.resolve(records.find((r) => r.id === active) ?? null),
       list: () => Promise.resolve(records),
       setActive: (id) => {
-        log.push(`setActive:${id}`);
         active = id;
-        return Promise.resolve();
+        return logged(`setActive:${id}`);
       },
       remove: (id) => {
-        log.push(`remove:${id}`);
         records = records.filter((r) => r.id !== id);
-        return Promise.resolve();
+        return logged(`remove:${id}`);
       },
     },
     store: {
-      deleteFiles: (dir) => {
-        log.push(`deleteFiles:${dir}`);
-        return Promise.resolve();
-      },
-      deleteKey: (id) => {
-        log.push(`deleteKey:${id}`);
-        return Promise.resolve();
-      },
-      wipe: (id, dir) => {
-        log.push(`wipe:${id}:${dir}`);
-        return Promise.resolve();
-      },
-      forgetSaved: (id) => {
-        log.push(`forget:${id}`);
-        return Promise.resolve();
-      },
+      deleteFiles: (dir) => logged(`deleteFiles:${dir}`),
+      deleteKey: (id) => logged(`deleteKey:${id}`),
+      wipe: (id, dir) => logged(`wipe:${id}:${dir}`),
+      forgetSaved: (id) => logged(`forget:${id}`),
     },
     client: {
       get: () => cached,
@@ -78,14 +68,9 @@ function harness(initial: AccountRecord[], activeId: string | null, ready = fals
       syncPreferences: () => Promise.resolve(),
       installations: () => Promise.resolve([]),
       installationIdOf: (c) => c.id,
-      revoke: (_c, acct, installationId) => {
-        log.push(`revoke:${acct.id}:${installationId}`);
-        return Promise.resolve();
-      },
+      revoke: (_c, acct, installationId) => logged(`revoke:${acct.id}:${installationId}`),
     },
-    bumpEpoch: () => {
-      log.push('epoch');
-    },
+    bumpEpoch: () => log.push('epoch'),
   });
   return {
     log,

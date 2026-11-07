@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import type { ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
 import { homeListing, listedUnreadCount, unreadRowCount } from '../components/home/listing.model';
 import { parseSearchFilter, searchRowMatcher } from '../components/home/search/searchFilter.model';
-import { ALICE, NAMES, SELF } from './searchFixtures';
+import { ALICE, SELF, namesOf } from './searchFixtures';
 import { row } from './rowFixture';
 
 const rows = [
@@ -13,7 +13,6 @@ const rows = [
   row('e', { unreadCount: 1, inboxToAddr: { self: SELF, alice: ALICE } }),
   row('dm', { unreadCount: 1, peerAddress: '0xpeer', lastBubbleTs: 10 }),
 ];
-const namesOf = (address: string): string[] => NAMES[address] ?? [];
 
 interface View {
   query?: string;

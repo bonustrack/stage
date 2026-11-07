@@ -102,9 +102,7 @@ describe('gallery arrow keys', () => {
   });
 
   test('treats inputs, text areas, selects and contenteditable as text fields', () => {
-    expect(isEditableTarget('INPUT', false)).toBe(true);
-    expect(isEditableTarget('TEXTAREA', false)).toBe(true);
-    expect(isEditableTarget('SELECT', false)).toBe(true);
+    for (const tag of ['INPUT', 'TEXTAREA', 'SELECT']) expect(isEditableTarget(tag, false)).toBe(true);
     expect(isEditableTarget('DIV', true)).toBe(true);
     expect(isEditableTarget('DIV', false)).toBe(false);
     expect(isEditableTarget(null, false)).toBe(false);

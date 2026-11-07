@@ -14,17 +14,9 @@ import {
   renamedColumnOrder,
   renameTarget,
 } from '../components/home/board/BoardScreen.model';
+import { group } from './searchFixtures';
 
-const row = (convId: string, status?: string | null) => ({
-  convId,
-  status,
-  title: convId,
-  lastTs: 1,
-  lastPreview: '',
-  unreadCount: 0,
-  labels: ['Legacy', 'Done'],
-  category: 'Stage',
-});
+const row = (convId: string, status?: string | null) => ({ ...group(convId, ['Legacy', 'Done']), status, category: 'Stage' });
 const rows = [row('a', 'Todo'), row('b', 'todo'), row('c', 'Done'), row('d'), row('e', '  ')];
 const columns = boardColumns(rows, [], []);
 const keys = columns.map((c) => c.key);
@@ -86,25 +78,9 @@ describe('status board', () => {
       ['status:', 0],
     ]);
     expect(cardColumnEdit(assigned, 'status:Todo', 'status:', 'status')).toEqual({ by: 'status', value: null });
-    const hidden = boardColumns(
-      [row('a', 'Todo')],
-      [],
-      [],
-      'status',
-      (value) => value,
-      () => true,
-    );
+    const hidden = boardColumns([row('a', 'Todo')], [], [], 'status', undefined, () => true);
     expect(hidden.map((column) => [column.key, column.rows.length])).toEqual([['status:Todo', 0]]);
-    expect(
-      boardColumns(
-        [row('a')],
-        [],
-        [],
-        'status',
-        (value) => value,
-        () => true,
-      ),
-    ).toEqual([]);
+    expect(boardColumns([row('a')], [], [], 'status', undefined, () => true)).toEqual([]);
   });
 
   test('remembers a literal No status column after its final card is cleared', () => {

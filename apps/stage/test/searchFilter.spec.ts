@@ -8,11 +8,7 @@ import {
   type FilterRow,
 } from '../components/home/search/searchFilter.model';
 import { boardColumns } from '../components/home/board/BoardScreen.model';
-import { ALICE, BOB, NAMES, SELF, group, searched } from './searchFixtures';
-
-const namesOf = (address: string): string[] => NAMES[address] ?? [];
-
-const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
+import { ALICE, BOB, NONE, SELF, group, namesOf, searched } from './searchFixtures';
 
 const rows = [
   group('build', ['🚧 In progress'], [ALICE]),
@@ -20,10 +16,8 @@ const rows = [
   group('plan', ['Todo'], [ALICE, BOB]),
 ];
 
-const matching = (query: string): string[] => {
-  const matches = searchRowMatcher(parseSearchFilter(query), namesOf);
-  return rows.filter(matches).map((row) => row.convId);
-};
+const matching = (query: string, list: FilterRow[] = rows): string[] =>
+  list.filter(searchRowMatcher(parseSearchFilter(query), namesOf)).map((row) => row.convId);
 
 describe('parsing the search filter', () => {
   test('splits label and member tokens from the free text', () => {
@@ -91,7 +85,7 @@ describe('member:@me', () => {
   const left: FilterRow = { ...group('left', ['Todo'], [ALICE]), inboxToAddr: { 'inbox-0': ALICE } };
   const unknown: FilterRow = { ...group('unknown', ['Todo'], [BOB]), selfInboxId: undefined };
   const all = [...rows, left, unknown];
-  const found = (query: string): string[] => all.filter(searchRowMatcher(parseSearchFilter(query), namesOf)).map((row) => row.convId);
+  const found = (query: string): string[] => matching(query, all);
 
   test('matches the channels you are a member of, whatever the case', () => {
     expect(found('member:@me')).toEqual(['build', 'ship', 'plan']);
@@ -129,7 +123,7 @@ describe('filter values on the board', () => {
 describe('the search filter on the chats page', () => {
   const dm: FilterRow = { ...group('bob dm', [], [BOB]), peerAddress: BOB, lastPreview: 'see you at lunch' };
   const chats = [...rows, dm];
-  const found = (query: string): string[] => chats.filter(searchRowMatcher(parseSearchFilter(query), namesOf)).map((row) => row.convId);
+  const found = (query: string): string[] => matching(query, chats);
 
   test('every chat gives values, direct chats and unlabelled groups included, without you', () => {
     const loose = group('loose', [], ['0xc0ffee']);

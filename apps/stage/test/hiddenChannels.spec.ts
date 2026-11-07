@@ -1,10 +1,10 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { collectSyncReplay } from '@stage-labs/client/xmtp/sync/registry';
+import { collectSyncReplay, syncCodecOf } from '@stage-labs/client/xmtp/sync/registry';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { XmtpConsent } from '../lib/xmtp.types';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { syncCodecOf } from '@stage-labs/client/xmtp/sync/registry';
 import { mockAppStorage } from './memoryStorage';
+import { settle } from './helpers';
 
 let activeId = 'web';
 interface FakeConv {
@@ -114,14 +114,13 @@ mock.module('../lib/xmtp.sdk', () => ({
 const { bumpAccountEpoch } = await import('../lib/accountEpoch');
 const { rememberActiveAccountId } = await import('../lib/accountSelection');
 rememberActiveAccountId(activeId);
-const { isChannelHidden, loadHiddenChannels, applyRemoteHiddenChannels, onHiddenChannelsChanged } =
+const { isChannelHidden, loadHiddenChannels, applyRemoteHiddenChannels, onHiddenChannelsChanged, visibleCachedRows } =
   await import('../lib/sync/hiddenChannels');
 const { applyChatVisibility, loadChatVisibility } = await import('../lib/sync/chatVisibility');
 const { leaveGroupConv } = await import('../lib/xmtp.groups');
 const { listVisibleConversations, acceptRequestConv, getConvConsentState, groupAccessOf } = await import('../lib/xmtp.conv');
 const { syncVisibleChannels, reconcileHiddenConsent, backfillHiddenChannels } = await import('../lib/channelVisibility');
 const { cachedChannelAccess, subscribeChannelAccess } = await import('../lib/channelAccess');
-const { visibleCachedRows } = await import('../lib/sync/hiddenChannels');
 const { accountClient } = await import('../lib/xmtp.account');
 const { replaySyncHistory, SHARED_CURSOR } = await import('../lib/sync/replay');
 const { syncTarget, sendSyncState } = await import('../lib/sync/group');
@@ -131,9 +130,7 @@ async function switchAccount(id: string): Promise<void> {
   activeId = id;
   rememberActiveAccountId(id);
   bumpAccountEpoch();
-  await new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
+  await settle();
 }
 const visible = async (): Promise<string[]> => (await listVisibleConversations()).map((c) => c.id);
 

@@ -21,6 +21,7 @@ function fixture(timeoutMs = 1_000) {
   let current = true;
   let fail = false;
   let sync: () => Promise<unknown> = async () => undefined;
+  let syncs = 0;
   const bodies: string[] = [];
   const collect = async (): Promise<PushTopics> => ({
     topics: [TOPIC, '/xmtp/mls/1/w-installation/proto'],
@@ -32,7 +33,10 @@ function fixture(timeoutMs = 1_000) {
     signal: controller.signal,
     groupKey: async () => 'b'.repeat(64),
     sign: async () => new Uint8Array(64),
-    syncPreferences: () => sync(),
+    syncPreferences: () => {
+      syncs += 1;
+      return sync();
+    },
     collectTopics: collect,
     post: async (body) => {
       if (fail) throw new Error('offline');
@@ -44,6 +48,7 @@ function fixture(timeoutMs = 1_000) {
     input,
     bodies,
     controller,
+    syncs: () => syncs,
     setCurrent: (value: boolean) => {
       current = value;
     },
@@ -62,17 +67,9 @@ function fixture(timeoutMs = 1_000) {
   };
 }
 
-function deferred() {
-  let release = (): void => undefined;
-  const promise = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  return { promise, release };
-}
-
 describe('account-wide sender publication without a push token', () => {
   test('receiving registration starts independently and remains maintained when publication fails', async () => {
-    const gate = deferred();
+    const gate = Promise.withResolvers<undefined>();
     let received = false;
     const work = maintainPushPaths(
       async () => {
@@ -84,7 +81,7 @@ describe('account-wide sender publication without a push token', () => {
       },
     );
     expect(received).toBe(true);
-    gate.release();
+    gate.resolve(undefined);
     await expect(work).rejects.toThrow('filter offline');
   });
 
@@ -161,73 +158,53 @@ describe('account-wide sender publication without a push token', () => {
 
   test('a preference sync from the last thirty seconds is reused by the next notifying send', async () => {
     const f = fixture();
-    let syncs = 0;
-    f.setSync(async () => {
-      syncs += 1;
-    });
     await f.publisher.publish({ ...f.input, topic: TOPIC });
     await f.publisher.publish({ ...f.input, topic: TOPIC });
-    expect(syncs).toBe(1);
+    expect(f.syncs()).toBe(1);
     f.advance(30_000);
     await f.publisher.publish({ ...f.input, topic: TOPIC });
-    expect(syncs).toBe(2);
+    expect(f.syncs()).toBe(2);
     f.publisher.clear();
     await f.publisher.publish({ ...f.input, topic: TOPIC });
-    expect(syncs).toBe(3);
+    expect(f.syncs()).toBe(3);
     expect(f.bodies).toHaveLength(2);
   });
 
   test('a warm-up sync while the user types lets the next notifying send skip its own sync', async () => {
     const f = fixture();
-    let syncs = 0;
-    f.setSync(async () => {
-      syncs += 1;
-    });
     await f.publisher.warm(f.input);
     await f.publisher.publish({ ...f.input, topic: TOPIC });
-    expect(syncs).toBe(1);
+    expect(f.syncs()).toBe(1);
     expect(f.bodies).toHaveLength(1);
     f.setCurrent(false);
     await f.publisher.warm(f.input);
-    expect(syncs).toBe(1);
+    expect(f.syncs()).toBe(1);
   });
 
   test('a send joins a preference sync that is already running instead of starting another', async () => {
     const f = fixture();
-    const gate = deferred();
-    let syncs = 0;
-    f.setSync(async () => {
-      syncs += 1;
-      await gate.promise;
-    });
+    const gate = Promise.withResolvers<undefined>();
+    f.setSync(() => gate.promise);
     const warming = f.publisher.warm(f.input);
     const sending = f.publisher.publish({ ...f.input, topic: TOPIC });
-    gate.release();
+    gate.resolve(undefined);
     await Promise.all([warming, sending]);
-    expect(syncs).toBe(1);
+    expect(f.syncs()).toBe(1);
     expect(f.bodies).toHaveLength(1);
   });
 
   test('expired warming is refreshed before a notifying send publishes', async () => {
     const f = fixture();
-    let syncs = 0;
-    f.setSync(async () => {
-      syncs += 1;
-    });
     await f.publisher.warm(f.input);
     f.advance(30_000);
     await f.publisher.publish({ ...f.input, topic: TOPIC });
-    expect(syncs).toBe(2);
+    expect(f.syncs()).toBe(2);
     expect(f.bodies).toHaveLength(1);
   });
 
   test('failed warming is not cached and cannot let a notifying send bypass preparation', async () => {
     const f = fixture();
-    let syncs = 0;
-    f.setSync(async () => {
-      syncs += 1;
-      throw new Error('offline');
-    });
+    f.setSync(() => Promise.reject(new Error('offline')));
     await expect(f.publisher.warm(f.input)).rejects.toThrow('offline');
     let sent = false;
     const prepare = (): Promise<void> => f.publisher.publish({ ...f.input, topic: TOPIC });
@@ -237,13 +214,11 @@ describe('account-wide sender publication without a push token', () => {
       }),
     ).rejects.toThrow('offline');
     expect(sent).toBe(false);
-    expect(syncs).toBe(2);
+    expect(f.syncs()).toBe(2);
     expect(f.bodies).toHaveLength(0);
-    f.setSync(async () => {
-      syncs += 1;
-    });
+    f.setSync(async () => undefined);
     await prepareNotifyingSend(true, prepare, () => undefined);
-    expect(syncs).toBe(3);
+    expect(f.syncs()).toBe(3);
     expect(f.bodies).toHaveLength(1);
   });
 
@@ -300,17 +275,17 @@ describe('account-wide sender publication without a push token', () => {
 
   test('rotation refreshes serialize and use the keys read after the preceding request', async () => {
     const f = fixture();
-    const gate = deferred();
-    const entered = deferred();
+    const gate = Promise.withResolvers<undefined>();
+    const entered = Promise.withResolvers<undefined>();
     f.setSync(async () => {
-      entered.release();
+      entered.resolve(undefined);
       await gate.promise;
     });
     const first = f.publisher.publish(f.input);
     await entered.promise;
     f.setKey(2);
     const second = f.publisher.publish(f.input);
-    gate.release();
+    gate.resolve(undefined);
     await Promise.all([first, second]);
     expect(f.bodies).toHaveLength(1);
     expect(f.bodies[0]).toContain(Buffer.from(new Uint8Array(42).fill(2)).toString('base64'));
@@ -319,9 +294,9 @@ describe('account-wide sender publication without a push token', () => {
   test('closed-worker cancellation and timeout free the queue for the replacement session', async () => {
     for (const abort of [false, true]) {
       const f = fixture(10);
-      const entered = deferred();
+      const entered = Promise.withResolvers<undefined>();
       f.setSync(() => {
-        entered.release();
+        entered.resolve(undefined);
         return new Promise(() => undefined);
       });
       const old = f.publisher.publish(f.input);
@@ -391,10 +366,10 @@ describe('account-wide sender publication without a push token', () => {
     const f = fixture();
     await f.publisher.publish(f.input);
     f.setKey(2);
-    const entered = deferred();
-    const gate = deferred();
+    const entered = Promise.withResolvers<undefined>();
+    const gate = Promise.withResolvers<undefined>();
     f.input.post = async () => {
-      entered.release();
+      entered.resolve(undefined);
       await gate.promise;
     };
     const background = f.publisher.publish(f.input);
@@ -407,7 +382,7 @@ describe('account-wide sender publication without a push token', () => {
     await Bun.sleep(0);
     expect(diagnostic.read()).toEqual([]);
     now = 77;
-    gate.release();
+    gate.resolve(undefined);
     await Promise.all([background, send]);
     timing?.finish();
     expect(diagnostic.read()).toEqual([
@@ -427,10 +402,10 @@ describe('account-wide sender publication without a push token', () => {
 
   test('a cancelled queued preparation records only its elapsed queue wait and still fails closed', async () => {
     const f = fixture();
-    const entered = deferred();
-    const gate = deferred();
+    const entered = Promise.withResolvers<undefined>();
+    const gate = Promise.withResolvers<undefined>();
     f.input.post = async () => {
-      entered.release();
+      entered.resolve(undefined);
       await gate.promise;
     };
     const background = f.publisher.publish(f.input);
@@ -456,7 +431,7 @@ describe('account-wide sender publication without a push token', () => {
       ],
     ];
     expect(diagnostic.read()).toEqual(expected);
-    gate.release();
+    gate.resolve(undefined);
     await background;
     await Promise.resolve();
     expect(diagnostic.read()).toEqual(expected);
@@ -465,10 +440,10 @@ describe('account-wide sender publication without a push token', () => {
   test('timed-out key, group-key and signing waits remain visible without pretending they completed', async () => {
     for (const phase of ['keys', 'group_key', 'sign'] as const) {
       const f = fixture(10);
-      const gate = deferred();
-      const entered = deferred();
+      const gate = Promise.withResolvers<undefined>();
+      const entered = Promise.withResolvers<undefined>();
       const hold = async (): Promise<void> => {
-        entered.release();
+        entered.resolve(undefined);
         await gate.promise;
       };
       if (phase === 'keys')
@@ -499,7 +474,7 @@ describe('account-wide sender publication without a push token', () => {
       expect(snapshot[0]).toContainEqual({ phase: `filter.${phase}`, durationMs: 30 });
       expect(f.bodies).toHaveLength(0);
       now = 200;
-      gate.release();
+      gate.resolve(undefined);
       await Promise.resolve();
       await Promise.resolve();
       expect(diagnostic.read()).toEqual(snapshot);

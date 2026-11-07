@@ -4,6 +4,7 @@ import { envelopeOf } from '@stage-labs/client/xmtp/envelope';
 import { rowPreviewOf } from '@stage-labs/client/xmtp/contentTypes';
 import { nativeGroupMetaPolicy, nativeInstallationCreatedAtMs, nativeMessageOf } from '../lib/xmtp.sdk.native.shapes';
 import { webMessageOf } from '../lib/xmtp.sdk.web.message';
+import { REMOTE_TEXT_FILE as remote } from './helpers';
 
 const MS = 1_717_000_000_123;
 const NS = MS * 1_000_000;
@@ -31,16 +32,6 @@ function web(typeId: string, content: unknown, fallback?: string) {
     ...(fallback === undefined ? {} : { fallback }),
   });
 }
-
-const remote = {
-  url: 'https://store.example/encrypted',
-  filename: 'message.txt',
-  contentDigest: 'digest',
-  secret: 'secret',
-  salt: 'salt',
-  nonce: 'nonce',
-  contentLength: '4097',
-};
 
 describe('one message shape from both SDKs', () => {
   test('both carry the short type id, the time and the fallback', () => {
@@ -156,11 +147,6 @@ describe('nativeInstallationCreatedAtMs', () => {
     }
   });
   test('missing or nonsense values are unknown', () => {
-    expect(nativeInstallationCreatedAtMs(undefined)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(null)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(0)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(-5)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(Number.NaN)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs('1700000000')).toBeUndefined();
+    for (const value of [undefined, null, 0, -5, Number.NaN, '1700000000']) expect(nativeInstallationCreatedAtMs(value)).toBeUndefined();
   });
 });

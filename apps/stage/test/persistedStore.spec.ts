@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
 import { selectAccount } from './activeAccount';
+import { settle } from './helpers';
 
 const values = new Map<string, string>();
 selectAccount('alice');
@@ -25,12 +26,6 @@ const { createValueStore } = await import('../lib/persistedStore');
 const { storedStrings } = await import('../lib/storeCore');
 const { accountSelectionChanged } = await import('../lib/accountSelection');
 const { bumpAccountEpoch } = await import('../lib/accountEpoch');
-
-function settled(): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
-}
 
 beforeEach(() => {
   values.clear();
@@ -218,7 +213,7 @@ describe('persisted value stores', () => {
     selectAccount('bob');
     accountSelectionChanged();
     expect(store.loaded()).toBe(false);
-    await settled();
+    await settle();
     expect(store.loaded()).toBe(true);
     expect(store.get()).toBe(8);
     expect(notified).toBeGreaterThan(0);
@@ -237,13 +232,13 @@ describe('persisted value stores', () => {
     failRead = false;
     store.retry();
     expect(store.loadFailed()).toBe(false);
-    await settled();
+    await settle();
     expect(store.loaded()).toBe(true);
     expect(store.get()).toBe(4);
     failRead = true;
     selectAccount('bob');
     accountSelectionChanged();
-    await settled();
+    await settle();
     expect(store.loadFailed()).toBe(true);
     accountSelectionChanged();
     expect(store.loadFailed()).toBe(false);

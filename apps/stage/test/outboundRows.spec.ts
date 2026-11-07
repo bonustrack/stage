@@ -11,20 +11,13 @@ import {
   type OutboundView,
 } from '../components/conversation/outboundRows.model';
 import { isLocalId, mintLocalId, optimisticEntryOf, optimisticRowPreview } from '../components/composer/outbound';
+import { entry as historyEntry } from './helpers';
 
 const ME = 'metro://xmtp/me';
 const T0 = Date.parse('2026-09-25T10:00:00.000Z');
 
-const entry = (id: string, ms: number, text: string, extra: Partial<HistoryEntry> = {}): HistoryEntry => ({
-  id,
-  ts: new Date(T0 + ms).toISOString(),
-  station: 'xmtp',
-  line: 'l',
-  from: ME,
-  to: 'l',
-  text,
-  ...extra,
-});
+const entry = (id: string, ms: number, text: string, extra: Partial<HistoryEntry> = {}): HistoryEntry =>
+  historyEntry(id, { ts: new Date(T0 + ms).toISOString(), from: ME, text, ...extra });
 
 const pendingState = (...optimistic: HistoryEntry[]): OutboundState => ({ optimistic, confirmedIds: new Map() });
 const keyOf = (view: OutboundView, id: string) => view.localIdOf.get(id) ?? id;

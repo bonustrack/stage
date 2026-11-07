@@ -14,9 +14,7 @@ function harness(overrides: Partial<FinalizeDeps<string>> = {}) {
       log.push(`registered:${id}`);
       return Promise.resolve(undefined);
     },
-    discard: (client) => {
-      log.push(`discard:${client}`);
-    },
+    discard: (client) => log.push(`discard:${client}`),
     ...overrides,
   };
   return {
@@ -30,15 +28,12 @@ function harness(overrides: Partial<FinalizeDeps<string>> = {}) {
 }
 
 describe('client finalization', () => {
-  for (const boundary of ['markRegistered'] as const) {
-    test(`a failed ${boundary} does not publish readiness and discards only its own client`, async () => {
-      const failure = new Error(boundary);
-      const { finalize, log } = harness({ [boundary]: () => Promise.reject(failure) });
-      await expect(finalize('client-a', account('a'), { markRegistered: true })).rejects.toBe(failure);
-      expect(log.filter((e) => e.startsWith('cache:') || e.startsWith('push:'))).toEqual([]);
-      expect(log.filter((e) => e.startsWith('discard:'))).toEqual(['discard:client-a']);
-    });
-  }
+  test('a failed markRegistered does not publish readiness and discards only its own client', async () => {
+    const failure = new Error('markRegistered');
+    const { finalize, log } = harness({ markRegistered: () => Promise.reject(failure) });
+    await expect(finalize('client-a', account('a'), { markRegistered: true })).rejects.toBe(failure);
+    expect(log).toEqual(['discard:client-a']);
+  });
 
   test('a selection change during registration cannot restore the old account or publish its client', async () => {
     const entered = Promise.withResolvers<undefined>();

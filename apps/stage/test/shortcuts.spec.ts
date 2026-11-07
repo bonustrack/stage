@@ -25,19 +25,14 @@ describe('shortcutOf', () => {
   });
 
   test('ignores other keys', () => {
-    expect(shortcutOf(press('x'), null, false)).toBeNull();
-    expect(shortcutOf(press('?'), null, false)).toBeNull();
-    expect(shortcutOf(press('Enter'), null, false)).toBeNull();
-    expect(shortcutOf(press('constructor'), null, false)).toBeNull();
+    for (const key of ['x', '?', 'Enter', 'constructor']) expect(shortcutOf(press(key), null, false)).toBeNull();
   });
 
   test('ignores ctrl, alt and meta but keeps shift for layouts that need it', () => {
-    expect(shortcutOf(press('c', { ctrlKey: true }), null, false)).toBeNull();
-    expect(shortcutOf(press('c', { metaKey: true }), null, false)).toBeNull();
-    expect(shortcutOf(press('c', { altKey: true }), null, false)).toBeNull();
-    expect(shortcutOf(press('/', { ctrlKey: true }), null, false)).toBeNull();
-    expect(shortcutOf(press('/', { metaKey: true }), null, false)).toBeNull();
-    expect(shortcutOf(press('/', { altKey: true }), null, false)).toBeNull();
+    for (const key of ['c', '/']) {
+      for (const extra of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }])
+        expect(shortcutOf(press(key, extra), null, false)).toBeNull();
+    }
   });
 
   test('leaves the key to inputs, text areas and editable content', () => {

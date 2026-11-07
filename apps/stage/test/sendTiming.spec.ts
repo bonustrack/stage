@@ -1,10 +1,5 @@
 import { expect, test } from 'bun:test';
 import { timeSendPhase, type SendPhase } from '@stage-labs/client/xmtp/sendTiming';
-
-interface PhaseSample {
-  phase: SendPhase;
-  durationMs: number;
-}
 import { makeSendTimingDiagnostic } from '../lib/sendTiming.core';
 
 function fixture() {
@@ -51,7 +46,7 @@ test('snapshots contain only fixed phases and durations, not results, errors or 
     }),
   ).rejects.toBe(error);
   timing?.finish();
-  const expected: PhaseSample[][] = [
+  const expected: { phase: SendPhase; durationMs: number }[][] = [
     [
       { phase: 'conversation.find', durationMs: 7 },
       { phase: 'sdk.send', durationMs: 23 },
@@ -169,14 +164,11 @@ test('settlement closes unfinished phases at the observed wait and ignores their
   const f = fixture();
   f.diagnostic.start();
   const timing = f.diagnostic.begin();
-  let release = (): void => undefined;
-  const pending = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  const work = timeSendPhase(timing, 'filter.keys', () => pending);
+  const pending = Promise.withResolvers<undefined>();
+  const work = timeSendPhase(timing, 'filter.keys', () => pending.promise);
   f.advance(30);
   timing?.finish();
-  const expected: PhaseSample[][] = [
+  const expected: { phase: SendPhase; durationMs: number }[][] = [
     [
       { phase: 'filter.keys', durationMs: 30 },
       { phase: 'xmtp.total', durationMs: 30 },
@@ -184,7 +176,7 @@ test('settlement closes unfinished phases at the observed wait and ignores their
   ];
   expect(f.diagnostic.read()).toEqual(expected);
   f.advance(200);
-  release();
+  pending.resolve(undefined);
   await work;
   expect(f.diagnostic.read()).toEqual(expected);
 });

@@ -30,10 +30,7 @@ describe('configured channel field options', () => {
   });
 
   test('keeps all configured values when channels are absent or filtered out', () => {
-    const filtered = searchFilterSources(
-      rows.filter((row) => row.convId === 'active'),
-      'board',
-    );
+    const filtered = searchFilterSources(rows.slice(0, 1), 'board');
     expect(configuredFieldOptions('status', filtered.statuses, statusOrder)).toEqual([
       '🗒️ Backlog',
       '🚧 In progress',

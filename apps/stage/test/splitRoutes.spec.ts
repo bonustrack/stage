@@ -13,12 +13,8 @@ import {
 
 describe('isSplitRoute', () => {
   test('home, conversations, and direct messages split', () => {
-    expect(isSplitRoute('/')).toBe(true);
-    expect(isSplitRoute('/channel/abc')).toBe(true);
+    for (const path of ['/', '/channel/abc', '/boorger', '/fabien.eth', '/profile/boorger']) expect(isSplitRoute(path)).toBe(true);
     expect(isSplitRoute('/0x1234567890abcdef1234567890abcdef12345678')).toBe(true);
-    expect(isSplitRoute('/boorger')).toBe(true);
-    expect(isSplitRoute('/fabien.eth')).toBe(true);
-    expect(isSplitRoute('/profile/boorger')).toBe(true);
   });
 
   test('the onboarding pages never split, even though they look like handles', () => {
@@ -27,16 +23,9 @@ describe('isSplitRoute', () => {
   });
 
   test('profiles, settings, wallet and the menu pages split', () => {
-    expect(isSplitRoute('/profile/0xabc')).toBe(true);
-    expect(isSplitRoute('/settings')).toBe(true);
-    expect(isSplitRoute('/settings/security')).toBe(true);
-    expect(isSplitRoute('/wallet')).toBe(true);
-    expect(isSplitRoute('/wallet/send')).toBe(true);
-    expect(isSplitRoute('/contacts')).toBe(true);
-    expect(isSplitRoute('/dashboard')).toBe(true);
-    expect(isSplitRoute('/storage')).toBe(true);
-    expect(isSplitRoute('/inbox')).toBe(true);
-    expect(isSplitRoute('/inbox/mail')).toBe(true);
+    for (const path of ['/profile/0xabc', '/settings', '/settings/security', '/wallet', '/wallet/send'])
+      expect(isSplitRoute(path)).toBe(true);
+    for (const path of ['/contacts', '/dashboard', '/storage', '/inbox', '/inbox/mail']) expect(isSplitRoute(path)).toBe(true);
   });
 
   test('add members and the contact scanner keep the sidebar', () => {
@@ -62,21 +51,14 @@ describe('channelRouteConvId', () => {
   });
 
   test('is null on every other route', () => {
-    expect(channelRouteConvId('/channel/')).toBeNull();
-    expect(channelRouteConvId('/channel/abc/more')).toBeNull();
-    expect(channelRouteConvId('/channels/abc')).toBeNull();
-    expect(channelRouteConvId('/')).toBeNull();
+    for (const path of ['/channel/', '/channel/abc/more', '/channels/abc', '/']) expect(channelRouteConvId(path)).toBeNull();
   });
 });
 
 describe('isTabRoute', () => {
   test('Contacts is a tab page and Board keeps its existing route', () => {
-    expect(isTabRoute('/')).toBe(true);
-    expect(isTabRoute('/board')).toBe(true);
-    expect(isTabRoute('/wallet')).toBe(true);
-    expect(isTabRoute('/contacts')).toBe(true);
-    expect(isTabRoute('/wallet/send')).toBe(false);
-    expect(isTabRoute('/settings/security')).toBe(false);
+    for (const path of ['/', '/board', '/wallet', '/contacts']) expect(isTabRoute(path)).toBe(true);
+    for (const path of ['/wallet/send', '/settings/security']) expect(isTabRoute(path)).toBe(false);
   });
 });
 
@@ -88,11 +70,8 @@ describe('isRailOnlyRoute', () => {
   });
 
   test('the rail shows on split pages and on the board page only', () => {
-    expect(isRailRoute('/board')).toBe(true);
-    expect(isRailRoute('/')).toBe(true);
-    expect(isRailRoute('/channel/abc')).toBe(true);
-    expect(isRailRoute('/signup')).toBe(false);
-    expect(isRailRoute('/user/abc')).toBe(false);
+    for (const path of ['/board', '/', '/channel/abc']) expect(isRailRoute(path)).toBe(true);
+    for (const path of ['/signup', '/user/abc']) expect(isRailRoute(path)).toBe(false);
   });
 });
 

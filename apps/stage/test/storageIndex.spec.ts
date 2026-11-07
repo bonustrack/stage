@@ -23,6 +23,7 @@ import type { MessageQuery } from '../lib/xmtp.sdk.core';
 import { nativeMessageOf } from '../lib/xmtp.sdk.native.shapes';
 import { webMessageOf } from '../lib/xmtp.sdk.web.message';
 import type { XmtpMessage } from '@stage-labs/client/xmtp/message';
+import { REMOTE_TEXT_FILE as remote } from './helpers';
 
 const ME = 'inbox-me';
 const PEER = 'inbox-peer';
@@ -77,15 +78,6 @@ describe('storage index model', () => {
   });
 
   test('indexes single-remote text-file replies from both SDK shapes, not ordinary replies', () => {
-    const remote = {
-      url: 'https://store.example/encrypted',
-      filename: 'message.txt',
-      contentDigest: 'digest',
-      secret: 'secret',
-      salt: 'salt',
-      nonce: 'nonce',
-      contentLength: '4097',
-    };
     const native = scanned(
       nativeMessageOf({
         id: 'native',
@@ -210,9 +202,7 @@ function memorySink(start: StorageIndex): ScanSink & { progressed: number[] } {
     apply: (findings) => {
       index = applyFindings(index, findings);
     },
-    progress: (done) => {
-      progressed.push(done);
-    },
+    progress: (done) => progressed.push(done),
   };
 }
 
@@ -293,16 +283,7 @@ describe('storage scan', () => {
     const errors: unknown[] = [];
     const start = indexWith({ cursorNs: 0 });
     const sink = memorySink(start);
-    const failed = await scanConversations(
-      ['c1', 'c2'],
-      start,
-      source(chats.page, {
-        failed: (err) => {
-          errors.push(err);
-        },
-      }),
-      sink,
-    );
+    const failed = await scanConversations(['c1', 'c2'], start, source(chats.page, { failed: (err) => errors.push(err) }), sink);
     expect(errors).toHaveLength(1);
     expect([...failed]).toEqual([['c1', 0]]);
     expect(ids(sink.index())).toEqual(['b']);

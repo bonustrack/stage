@@ -33,6 +33,7 @@ const CAROL = '0xCA10000000000000000000000000000000000004';
 const bob = BOB.toLowerCase();
 const carol = CAROL.toLowerCase();
 const alice = ALICE.toLowerCase();
+const GRAPHEMES = ['é', '👍🏿', '🇨🇭', '👩‍💻', '👨‍👩‍👧‍👦', '✈️', 'क्ष', '한'];
 
 function dm(peer: string, lastTs: number): { convId: string; peerAddress: string; lastTs: number } {
   return { convId: `c-${peer}-${lastTs}`, peerAddress: peer, lastTs };
@@ -53,17 +54,17 @@ describe('new chat recipients', () => {
 
   test('a new account gets Alice, and she is the one picked by default', () => {
     const list = candidates([]);
-    expect(list).toEqual([ALICE.toLowerCase()]);
-    expect(pickedRecipients(null, list)).toEqual([ALICE.toLowerCase()]);
+    expect(list).toEqual([alice]);
+    expect(pickedRecipients(null, list)).toEqual([alice]);
   });
 
   test('Alice follows the recent people and is not repeated when already a contact', () => {
-    expect(candidates([dm('0xb0b', 1)])).toEqual(['0xb0b', ALICE.toLowerCase()]);
-    expect(candidates([dm('0xb0b', 1), dm(ALICE, 2)])).toEqual([ALICE.toLowerCase(), '0xb0b']);
+    expect(candidates([dm('0xb0b', 1)])).toEqual(['0xb0b', alice]);
+    expect(candidates([dm('0xb0b', 1), dm(ALICE, 2)])).toEqual([alice, '0xb0b']);
   });
 
   test('people who only sent a request are never offered', () => {
-    expect(candidates([dm('0xb0b', 2), dm('0xc4e', 1)], new Set(['0xb0b']))).toEqual(['0xc4e', ALICE.toLowerCase()]);
+    expect(candidates([dm('0xb0b', 2), dm('0xc4e', 1)], new Set(['0xb0b']))).toEqual(['0xc4e', alice]);
   });
 
   test('at most five people show, most recent first, and picked people always show', () => {
@@ -190,18 +191,16 @@ describe('firstMessageChannelName', () => {
   });
 
   test('does not split graphemes when reserving space for the truncation marker', () => {
-    const encoder = new TextEncoder();
-    for (const grapheme of ['é', '👍🏿', '🇨🇭', '👩‍💻', '👨‍👩‍👧‍👦', '✈️', 'क्ष', '한']) {
-      const prefix = 'a'.repeat(99 - encoder.encode(grapheme).length);
+    for (const grapheme of GRAPHEMES) {
+      const prefix = 'a'.repeat(99 - new TextEncoder().encode(grapheme).length);
       expect(firstMessageChannelName(prefix + grapheme + 'xx')).toBe(prefix + '…');
       expect(firstMessageChannelName(prefix + grapheme + 'x')).toBe(prefix + grapheme + 'x');
     }
   });
 
   test('keeps complete graphemes that fit beside the truncation marker', () => {
-    const encoder = new TextEncoder();
-    for (const grapheme of ['é', '👍🏿', '🇨🇭', '👩‍💻', '👨‍👩‍👧‍👦', '✈️', 'क्ष', '한']) {
-      const prefix = 'a'.repeat(97 - encoder.encode(grapheme).length);
+    for (const grapheme of GRAPHEMES) {
+      const prefix = 'a'.repeat(97 - new TextEncoder().encode(grapheme).length);
       expect(firstMessageChannelName(prefix + grapheme + 'abcd')).toBe(prefix + grapheme + '…');
     }
     expect(firstMessageChannelName('e' + '́'.repeat(100))).toBe('…');
