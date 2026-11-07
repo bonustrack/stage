@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { parsePendingSetup, samePreparedAccount } from '../src/profile/setup';
+import { parsePendingSetup, samePreparedAccount, type PendingSetup } from '../src/profile/setup';
 
-const account = {
+const account: NonNullable<PendingSetup['account']> = {
   id: '0x00000000000000000000000000000000000000a1',
   address: '0x00000000000000000000000000000000000000a1',
   type: 'smart',
@@ -12,7 +12,7 @@ const account = {
   ownerAddress: '0x00000000000000000000000000000000000000a2',
 };
 const profile = { label: 'synthetic123', image: { uri: 'data:image/png;base64,c3ludGhldGlj', mime: 'image/png' } };
-const checkpoint = { version: 1, stage: 'profile', account, profile };
+const checkpoint: PendingSetup = { version: 1, stage: 'profile', account, profile };
 const parse = (value: unknown) => parsePendingSetup(JSON.stringify(value));
 
 describe('public setup checkpoint boundary', () => {

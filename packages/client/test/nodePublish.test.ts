@@ -4,7 +4,7 @@ import { utf8ToBytes } from '@noble/hashes/utils';
 import { hostedNodeUrl, isNodeId, nodeIdOf, nodeScriptName } from '../src/nodes/hosting';
 import { clientRateKey } from '../src/net/clientIp';
 import { nodeKeyId } from '../src/nodes/protocol';
-import { deleteNode, nodeCodeTooLarge, ownNodeUrl, publishNode } from '../src/nodes/publish';
+import { deleteNode, nodeCodeTooLarge, ownNodeUrl, publishNode, type PublishResult } from '../src/nodes/publish';
 import { base64url, base64urlBytes, isStrongNodeKey, nodeSigningText } from '../src/nodes/signing';
 
 const RFC8032_KEY = '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60';
@@ -124,7 +124,7 @@ describe('publishing', () => {
   });
 
   test('maps proxy answers to problems', async () => {
-    const cases: [Response, unknown][] = [
+    const cases: [Response, PublishResult][] = [
       [
         Response.json({ error: 'Uncaught SyntaxError: Unexpected token' }, { status: 400 }),
         { ok: false, problem: 'refused', detail: 'Uncaught SyntaxError: Unexpected token' },

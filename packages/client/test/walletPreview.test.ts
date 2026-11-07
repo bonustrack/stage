@@ -14,7 +14,7 @@ function request(call: WalletSendCallsContent['calls'][number]): WalletSendCalls
   return { version: '1.0', chainId: '0x2105', from: PAYER, calls: [call] };
 }
 
-function transfer(token: string, raw: bigint): string {
+function transfer(raw: bigint): string {
   return encodeFunctionData({ abi: erc20Abi, functionName: 'transfer', args: [PAYEE, raw] });
 }
 
@@ -27,7 +27,7 @@ describe('previewOfXmtpContent for payment requests', () => {
   test('known token: the amount comes from the transfer calldata with the token decimals', () => {
     const req = request({
       to: USDC_BASE,
-      data: transfer(USDC_BASE, 10000n),
+      data: transfer(10000n),
       metadata: { currency: 'USDC', amount: 10000, decimals: 6, toAddress: PAYEE },
     });
     expect(previewOfXmtpContent(req, REQUEST)).toBe('Payment request: 0.01 USDC');
@@ -36,7 +36,7 @@ describe('previewOfXmtpContent for payment requests', () => {
   test('unknown token: metadata amount scaled by its decimals', () => {
     const req = request({
       to: UNKNOWN_TOKEN,
-      data: transfer(UNKNOWN_TOKEN, 10000n),
+      data: transfer(10000n),
       metadata: { currency: 'FOO', amount: 10000, decimals: 6, toAddress: PAYEE },
     });
     expect(previewOfXmtpContent(req, REQUEST)).toBe('Payment request: 0.01 FOO');

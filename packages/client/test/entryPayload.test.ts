@@ -12,7 +12,8 @@ import {
 } from '../src/xmtp/entryPayload';
 import { envelopeOf } from '../src/xmtp/envelope';
 import { xmtpMessage } from './fixtures/decoded-messages';
-import { entry } from './helpers';
+import type { PollContent } from '../src/xmtp/poll';
+import { entry, storedEntry } from './helpers';
 
 const LINE = 'stage://xmtp/c';
 const at = (contentTypeId: string, content: unknown) => envelopeOf(xmtpMessage({ contentTypeId, content }), LINE);
@@ -31,29 +32,29 @@ describe('entry payload', () => {
     expect(messageKindOf(at('deleteRequest', { messageId: 'm1' }))).toBe('hidden');
     expect(messageKindOf(at('deletedMessage', { deletedBy: 'admin' }))).toBe('deleted');
     expect(messageKindOf(at('frameAction', { frameId: 'f1', action: { name: 'go' } }))).toBe('frameAction');
-    expect(messageKindOf(entry('legacy', { payload: { reactTo: 'm1', emoji: '+1' } }))).toBe('reaction');
+    expect(messageKindOf(storedEntry('legacy', { payload: { reactTo: 'm1', emoji: '+1' } }))).toBe('reaction');
     expect(messageKindOf(entry('bare'))).toBe('text');
   });
 
   test('the composer builds the same structured payload as an arriving message', () => {
-    const poll = { question: 'Lunch?', options: [{ label: 'Yes' }, { label: 'No' }] };
-    expect(structuredPayload('poll', poll)).toEqual(at('poll', poll).payload);
+    const poll: PollContent = { pollId: 'p1', question: 'Lunch?', options: [{ label: 'Yes' }, { label: 'No' }] };
+    expect(at('poll', poll).payload).toEqual(structuredPayload('poll', poll));
     const receipt = { networkId: 8453, reference: '0xabc' };
     expect(structuredPayload('transactionReference', receipt)).toEqual({ contentType: 'transactionReference', txReference: receipt });
     expect(attachmentsPayload([{ kind: 'image', mime: 'image/png' }])).toEqual({ attachments: [{ kind: 'image', mime: 'image/png' }] });
   });
 
   test('accessors validate what they read, so an old snapshot cannot break a reader', () => {
-    expect(pollContentOf(entry('p', { payload: { contentType: 'poll', poll: 'nope' } as never }))).toBeUndefined();
+    expect(pollContentOf(storedEntry('p', { payload: { contentType: 'poll', poll: 'nope' } }))).toBeUndefined();
     expect(
-      signatureRequestOf(entry('s', { payload: { contentType: 'signatureRequest', signatureRequest: { message: 'x' } } as never })),
+      signatureRequestOf(storedEntry('s', { payload: { contentType: 'signatureRequest', signatureRequest: { message: 'x' } } })),
     ).toBeUndefined();
     expect(
-      walletSendCallsOf(entry('w', { payload: { contentType: 'walletSendCalls', walletSendCalls: { calls: 'x' } } as never })),
+      walletSendCallsOf(storedEntry('w', { payload: { contentType: 'walletSendCalls', walletSendCalls: { calls: 'x' } } })),
     ).toBeUndefined();
-    expect(attachmentsOf(entry('a', { payload: { contentType: 'reply', attachments: 'x' } as never }))).toEqual([]);
-    expect(reactionOf(entry('r', { payload: { reactTo: 'm1', emoji: 7 } as never }))).toBeNull();
-    expect(reactionOf(entry('r', { payload: { reactTo: 'm1', emoji: '1', schema: 'custom', removed: 1 } as never }))).toEqual({
+    expect(attachmentsOf(storedEntry('a', { payload: { contentType: 'reply', attachments: 'x' } }))).toEqual([]);
+    expect(reactionOf(storedEntry('r', { payload: { reactTo: 'm1', emoji: 7 } }))).toBeNull();
+    expect(reactionOf(storedEntry('r', { payload: { reactTo: 'm1', emoji: '1', schema: 'custom', removed: 1 } }))).toEqual({
       reactTo: 'm1',
       emoji: '1',
       removed: true,

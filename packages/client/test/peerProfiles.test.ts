@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { createPeerProfiles } from '../src/identity/peerProfiles';
+import { fakeFetch } from './helpers';
 
 const profiles = createPeerProfiles();
 
@@ -16,11 +17,11 @@ const realFetch = globalThis.fetch;
 
 beforeEach(() => {
   lookups = [];
-  globalThis.fetch = (async (_url: unknown, init?: { body?: string }) => {
-    const parsed = JSON.parse(init?.body ?? '{}') as { params?: string[] };
+  globalThis.fetch = fakeFetch(async (_url, init) => {
+    const parsed = JSON.parse(String(init?.body ?? '{}')) as { params?: string[] };
     lookups.push(parsed.params ?? []);
     return new Response(JSON.stringify({ result: answer }));
-  }) as unknown as typeof fetch;
+  });
 });
 
 afterEach(() => {

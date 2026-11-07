@@ -22,7 +22,7 @@ function harness(
 ) {
   const blocks: (bigint | undefined)[] = [];
   const answers: Record<string, string> = { owner: patch.owner ?? ADDRESS, addr: patch.forward ?? ADDRESS, name: patch.primary ?? NAME };
-  const texts = patch.records ?? RECORDS;
+  const texts: Record<string, string> = patch.records ?? RECORDS;
   const resolver = patch.resolver ?? RESOLVER;
   const reverseResolver = patch.reverseResolver ?? RESOLVER;
   const client = {

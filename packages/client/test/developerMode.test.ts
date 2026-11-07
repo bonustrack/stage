@@ -53,7 +53,7 @@ describe('developer mode sync', () => {
   test('rejects foreign, malformed, too-future and already-consumed messages', () => {
     const good = message(state(false, 12), 3);
     const log = [good, message(state(true, 20), 4, 'stranger'), message({ enabled: true }, 5), message(state(true, 86_400_101), 6)];
-    expect(replay(log)).toEqual(good.content);
+    expect(replay(log)).toEqual(state(false, 12));
     expect(replay(log, 3)).toBeNull();
     expect(collectSyncReplay(log, 0, { inboxId: '', nowMs: 100 }).developerMode).toBeNull();
   });

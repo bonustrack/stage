@@ -4,6 +4,8 @@ import { revivesRow } from '../src/xmtp/visibility';
 import { isSyncGroupName, syncGroupName, pickPublishGroup, isOwnSyncGroup, type SyncGroupFacts } from '../src/xmtp/sync/group';
 import { isNewerSyncState, type SyncMessage } from '../src/xmtp/sync/kind';
 import { isSyncType, parseSyncState, collectSyncReplay, type SyncReplay } from '../src/xmtp/sync/registry';
+import type { GroupKey, HomeSort, HomeViewContent } from '../src/xmtp/sync/homeView';
+import type { DashboardContent } from '../src/xmtp/sync/dashboard';
 
 const ME = 'inbox-me';
 const STRANGER = 'inbox-stranger';
@@ -98,15 +100,16 @@ describe('category order payload', () => {
 
 describe('home view payload', () => {
   test('accepts status grouping and only defaults an unset column choice', () => {
-    const state = { view: 'board', groupBy: 'status', at: 4 };
+    const state = { view: 'board', groupBy: 'status', at: 4 } satisfies Partial<HomeViewContent>;
     expect(parseSyncState('homeView', state)).toEqual({ ...state, columnBy: 'status' });
-    for (const columnBy of ['label', 'category', 'assignee', 'status']) {
+    const columns: GroupKey[] = ['label', 'category', 'assignee', 'status'];
+    for (const columnBy of columns) {
       expect(parseSyncState('homeView', { ...state, columnBy })).toEqual({ ...state, columnBy });
     }
   });
 
   test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
-    const ok = { view: 'board', groupBy: 'none', columnBy: 'category', at: 3 };
+    const ok: HomeViewContent = { view: 'board', groupBy: 'none', columnBy: 'category', at: 3 };
     expect(parseSyncState('homeView', ok)).toEqual(ok);
     expect(parseSyncState('homeView', { ...ok, view: 'table' })).toBeNull();
     expect(parseSyncState('homeView', { ...ok, columnBy: 'none' })).toBeNull();
@@ -282,7 +285,8 @@ describe('restored sync groups', () => {
       { contentTypeId: VIEW, content: view('category', 7), sentNs: 3 },
       { contentTypeId: VIEW, content: view('owner', 12), sentNs: 4 },
     ]);
-    expect(replay.homeView).toEqual(view('assignee', 9));
+    const newest: HomeViewContent = { view: 'chats', groupBy: 'assignee', columnBy: 'label', at: 9 };
+    expect(replay.homeView).toEqual(newest);
     expect(replayOf([]).homeView).toBeNull();
   });
 
@@ -302,7 +306,11 @@ describe('restored sync groups', () => {
       { contentTypeId: DASHBOARD, content: { widgets: [], at: NOW + DAY_MS + 1 }, sentNs: 4 },
       { contentTypeId: DASHBOARD, content: { widgets: [frame('d')] }, sentNs: 5 },
     ]);
-    expect(replay.dashboard).toEqual({ widgets: [frame('b', 'full', 2)], at: 9 });
+    const newest: DashboardContent = {
+      widgets: [{ id: 'b', w: 'full', h: 2, kind: 'frame', source: { conversationId: 'conv', messageId: 'b' } }],
+      at: 9,
+    };
+    expect(replay.dashboard).toEqual(newest);
     expect(replay.board).toBeNull();
     expect(isSyncType(DASHBOARD, 'board')).toBe(false);
     expect(isSyncType(DASHBOARD, 'dashboard')).toBe(true);
@@ -311,9 +319,9 @@ describe('restored sync groups', () => {
 
   test('replays the latest supplied sort choices across newer legacy snapshots', () => {
     const VIEW = 'stage.box/homeView:1.0';
-    const base = { view: 'chats', groupBy: 'none', columnBy: 'status', at: 10 };
-    const chatsSort = { by: 'created', direction: 'asc' };
-    const boardSort = { by: 'updated', direction: 'desc' };
+    const base: HomeViewContent = { view: 'chats', groupBy: 'none', columnBy: 'status', at: 10 };
+    const chatsSort: HomeSort = { by: 'created', direction: 'asc' };
+    const boardSort: HomeSort = { by: 'updated', direction: 'desc' };
     const messages = [
       { contentTypeId: VIEW, content: { ...base, chatsSort, boardSort }, sentNs: 1 },
       { contentTypeId: VIEW, content: { ...base, chatsSort: { by: 'priority', direction: 'asc' }, at: 11 }, sentNs: 2 },
@@ -321,7 +329,7 @@ describe('restored sync groups', () => {
       { contentTypeId: VIEW, content: { ...base, chatsSort, at: NOW + DAY_MS + 1 }, sentNs: 4 },
       { contentTypeId: VIEW, content: { ...base, chatsSort: { by: 'unknown' }, at: 13 }, sentNs: 5 },
     ];
-    const expected = { ...base, groupBy: 'category', at: 12, chatsSort: { by: 'priority', direction: 'asc' }, boardSort };
+    const expected: HomeViewContent = { ...base, groupBy: 'category', at: 12, chatsSort: { by: 'priority', direction: 'asc' }, boardSort };
     expect(replayOf(messages).homeView).toEqual(expected);
     expect(replayOf([...messages].reverse()).homeView).toEqual(expected);
     expect(replayOf(messages, 2).homeView).toEqual({ ...base, groupBy: 'category', at: 12 });

@@ -76,6 +76,8 @@ function makeJpegWithExif(): Uint8Array {
   ]);
 }
 
+const view = (b: Uint8Array): DataView => new DataView(b.buffer, b.byteOffset, b.byteLength);
+
 function readOrientation(b: Uint8Array): number | undefined {
   let i = 2;
   while (i + 4 < b.length) {
@@ -85,14 +87,14 @@ function readOrientation(b: Uint8Array): number | undefined {
     }
     const m = b[i + 1];
     if (m === 0xda || m === 0xd9) break;
-    const len = (b[i + 2] << 8) | b[i + 3];
+    const len = view(b).getUint16(i + 2);
     if (m === 0xe1) {
       const p = b.subarray(i + 4, i + 2 + len);
       const ifd0 = 6 + 8;
-      const count = p[ifd0] | (p[ifd0 + 1] << 8);
+      const count = view(p).getUint16(ifd0, true);
       for (let k = 0; k < count; k += 1) {
         const e = ifd0 + 2 + k * 12;
-        if ((p[e] | (p[e + 1] << 8)) === 0x0112) return p[e + 8] | (p[e + 9] << 8);
+        if (view(p).getUint16(e, true) === 0x0112) return view(p).getUint16(e + 8, true);
       }
     }
     i += 2 + len;
@@ -235,7 +237,7 @@ describe('stripMetadataBytes - WebP', () => {
     expect(contains(bytes, 'GPSLatitude secret')).toBe(false);
     expect(contains(bytes, 'EXIF')).toBe(false);
     expect(contains(bytes, 'VP8 ')).toBe(true);
-    const newSize = bytes[4] | (bytes[5] << 8) | (bytes[6] << 16) | (bytes[7] << 24);
+    const newSize = view(bytes).getUint32(4, true);
     expect(newSize).toBe(bytes.length - 8);
   });
 

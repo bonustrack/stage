@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { encodeFunctionData, parseAbi } from 'viem';
 import { decodeCall, spoofWarning, type DecodedCall } from '../src/wallet/txDecode';
+import { fakeFetch } from './helpers';
 
 const verified = (functionName: string): DecodedCall => ({
   decoded: true,
@@ -61,11 +62,11 @@ const postStringData = encodeFunctionData({ abi: parseAbi(['function post(string
 
 type FetchMock = (url: string) => { ok: boolean; json: () => Promise<unknown> };
 function mockFetch(impl: FetchMock): void {
-  const mocked: typeof globalThis.fetch = (input) => {
+  globalThis.fetch = fakeFetch(async (input) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    return Promise.resolve(impl(url) as unknown as Response);
-  };
-  globalThis.fetch = mocked;
+    const answer = impl(url);
+    return Response.json(await answer.json(), { status: answer.ok ? 200 : 404 });
+  });
 }
 const realFetch = globalThis.fetch;
 

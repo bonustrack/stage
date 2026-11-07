@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'bun:test';
+import type { CallSignal } from '../src/xmtp/call';
 import { envelopeOf } from '../src/xmtp/envelope';
+import { attachmentsOf } from '../src/xmtp/entryPayload';
 import { textMessage, reactionMessage, voteReaction, undecodableMessage, xmtpMessage } from './fixtures/decoded-messages';
 
 const LINE = 'stage://xmtp/tony/conv1';
@@ -95,7 +97,7 @@ describe('envelopeOf per content type', () => {
     });
   });
 
-  test.each([
+  test.each<Record<string, unknown>>([
     { ...remote, secret: undefined },
     { ...remote, nonce: 42 },
     { ...remote, filename: 42 },
@@ -105,7 +107,7 @@ describe('envelopeOf per content type', () => {
     const e = at('reply', { reference: 'original', remote: content }, 'fallback');
     expect(e.replyTo).toBe('original');
     expect(e.text).toBe('fallback');
-    expect(e.payload?.attachments).toBeUndefined();
+    expect(attachmentsOf(e)).toEqual([]);
   });
 
   test('a reply with no text and no file reads as its fallback, then as a reply', () => {
@@ -125,7 +127,7 @@ describe('envelopeOf per content type', () => {
   test('multi remote attachments name unnamed files by position', () => {
     const e = at('multiRemoteStaticAttachment', { attachments: [{ url: 'a' }, { url: 'b', filename: 'b.mp4' }] });
     expect(e.text).toBe('[2 attachments]');
-    expect(e.payload?.attachments).toEqual([
+    expect(attachmentsOf(e)).toEqual([
       { kind: 'file', name: 'attachment-1', remote: { url: 'a' } },
       { kind: 'video', name: 'b.mp4', remote: { url: 'b', filename: 'b.mp4' } },
     ]);
@@ -158,13 +160,12 @@ describe('envelopeOf per content type', () => {
         text: 'updated the channel description',
         payload: { contentType: 'group_updated', system: true, groupUpdate },
       });
-      expect(e.payload?.groupUpdate).toBe(groupUpdate);
     }
   });
 
   test('call invites and signals keep their parsed content for the call card', () => {
     const invite = { callId: 'call-0001', from: 'peer-aaaa', video: false };
-    const signal = { kind: 'join', callId: 'call-0001', from: 'peer-bbbb' };
+    const signal: CallSignal = { kind: 'join', callId: 'call-0001', from: 'peer-bbbb' };
     expect(at('callInvite', invite, 'fb')).toMatchObject({ text: 'fb', payload: { contentType: 'callInvite', callInvite: invite } });
     expect(at('callSignal', signal, 'fb').payload).toEqual({ contentType: 'callSignal', callSignal: signal });
     expect(at('callInvite', { callId: 'x' }, 'fb').payload).toEqual({ contentType: 'callInvite' });

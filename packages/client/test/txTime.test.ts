@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { fetchTxTime } from '../src/wallet/txTime';
+import { fakeFetch } from './helpers';
 
 const realFetch = globalThis.fetch;
 const HASH = '0xd11ae537c41c5d81911fab079308ca9a3d780a6e736d383477a8a14e023fc84a';
@@ -15,7 +16,7 @@ function txResult(state: TxState): object | null {
 }
 
 function mockRpc(state: TxState): void {
-  globalThis.fetch = async (input, init) => {
+  globalThis.fetch = fakeFetch(async (input, init) => {
     const request = new Request(input, init);
     const body = (await request.json()) as { id: number; method: string };
     requests.push(`${new URL(request.url).pathname} ${body.method}`);
@@ -24,7 +25,7 @@ function mockRpc(state: TxState): void {
         ? txResult(state)
         : { number: BLOCK, timestamp: `0x${(Date.parse(MINED_AT) / 1000).toString(16)}`, transactions: [] };
     return Response.json({ id: body.id, jsonrpc: '2.0', result });
-  };
+  });
 }
 
 afterEach(() => {

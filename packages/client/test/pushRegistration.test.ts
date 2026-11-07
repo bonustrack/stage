@@ -19,7 +19,7 @@ function fixture(timeoutMs?: number) {
   const subscriptions = new Map<string, PushSubscriptionJson[]>();
   const calls: string[] = [];
   const statuses: string[] = [];
-  let key = OLD_KEY;
+  let key: Uint8Array = OLD_KEY;
   let period = PERIOD;
   let token = 'synthetic-token';
   let now = 1_000;

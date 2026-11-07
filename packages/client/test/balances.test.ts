@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { decodeFunctionData, encodeAbiParameters, encodeFunctionResult, multicall3Abi, type Hex } from 'viem';
 import { fetchAssetRows, fetchWalletPortfolio } from '../src/wallet/balances';
+import { fakeFetch } from './helpers';
 
 const realFetch = globalThis.fetch;
 const ethId = 'ethereum:0x0000000000000000000000000000000000000000';
@@ -27,7 +28,7 @@ function priceResponse(url: URL, pricing: PriceFixture): Response {
 }
 
 function mockBalances(mode: BalanceFixture, pricing: PriceFixture = 'missing'): void {
-  globalThis.fetch = async (input, init) => {
+  globalThis.fetch = fakeFetch(async (input, init) => {
     const request = new Request(input, init);
     const url = new URL(request.url);
     if (url.hostname === 'coins.llama.fi') return priceResponse(url, pricing);
@@ -47,7 +48,7 @@ function mockBalances(mode: BalanceFixture, pricing: PriceFixture = 'missing'): 
       jsonrpc: '2.0',
       result: encodeFunctionResult({ abi: multicall3Abi, functionName: 'aggregate3', result: results }),
     });
-  };
+  });
 }
 
 afterEach(() => {
