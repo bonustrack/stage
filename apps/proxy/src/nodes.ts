@@ -1,5 +1,4 @@
 import {
-  NODE_CODE_MAX_BYTES,
   NODE_PUBLISH_STATUS,
   NODE_SIGNATURE_HEADERS,
   NODE_SIGNATURE_MAX_SKEW_SECONDS,
@@ -80,10 +79,8 @@ export function cloudflareApi(token: string | undefined, accountId: string | und
 async function readCode(request: Request): Promise<Uint8Array | Response> {
   const length = declaredLength(request.headers);
   if (length === null) return fail(411, 'content length required');
-  if (length > NODE_CODE_MAX_BYTES) return fail(NODE_PUBLISH_STATUS['too-large'], 'code too large');
   if (length === 0) return fail(NODE_PUBLISH_STATUS.refused, 'code required');
-  const code = new Uint8Array(await request.arrayBuffer());
-  return code.byteLength > NODE_CODE_MAX_BYTES ? fail(NODE_PUBLISH_STATUS['too-large'], 'code too large') : code;
+  return new Uint8Array(await request.arrayBuffer());
 }
 
 async function verified(publicKey: Uint8Array, signature: Uint8Array, text: string): Promise<boolean> {

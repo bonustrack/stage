@@ -148,7 +148,10 @@ describe('publishing a node', () => {
     const key = newNodeKey();
     const { api, calls } = cloudflare();
     const big = 'x'.repeat(64 * 1024 + 1);
-    expect((await run(signed('PUT', key, big), api)).status).toBe(413);
+    const env = {} as Parameters<typeof worker.fetch>[1];
+    const tooLarge = await worker.fetch(signed('PUT', key, big), env, {} as ExecutionContext);
+    expect(tooLarge.status).toBe(413);
+    expect(tooLarge.headers.get('access-control-allow-methods')).toBe('PUT, DELETE, OPTIONS');
     const chunked = new Request(URL_NODES, {
       method: 'PUT',
       body: new Blob([CODE]).stream(),

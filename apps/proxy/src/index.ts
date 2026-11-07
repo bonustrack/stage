@@ -1,17 +1,19 @@
 import { BUNDLER_HOST, PROXY_ROUTES } from '@stage-labs/client/endpoints';
+import { declaredLength, readCappedBytes } from '@stage-labs/client/net/cappedBody';
 import { clientRateKey } from '@stage-labs/client/net/clientIp';
+import { NODE_CODE_MAX_BYTES } from '@stage-labs/client/nodes/hosting';
 import { handleBundler } from './bundler.ts';
 import { handleImg, handlePreview, handleSettle } from './linkRoutes.ts';
 import { HISTORY_CORS_HEADERS, handleHistory } from './historyStore.ts';
 import { ATTACHMENT_CORS, handleAttachments, r2AttachmentStore } from './attachments.ts';
-import { PUSH_CORS_HEADERS, handlePush } from './pushProxy.ts';
+import { PUSH_BODY_MAX_BYTES, PUSH_CORS_HEADERS, handlePush } from './pushProxy.ts';
 import { configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
 import { MAIL_CORS, handleMail, type MailChain } from './mailApi.ts';
 import { mailboxStub } from './mailBox.ts';
 import { receiveMail, type IncomingMail } from './mailReceive.ts';
 import { NODES_CORS, cloudflareApi, handleNodes } from './nodes.ts';
 import { limitsAtRouter, overLimit, type RouteLimit } from './rateLimit.ts';
-import { CLIENT_CORS, OPEN_CORS, RATE_LIMITED, corsResponse, openJson, type HeaderMap } from './respond.ts';
+import { CLIENT_CORS, OPEN_CORS, RATE_LIMITED, corsResponse, jsonResponse, openJson, type HeaderMap } from './respond.ts';
 
 export { NamesClaims } from './names.ts';
 export { HistoryArchives } from './historyStore.ts';
@@ -34,11 +36,14 @@ interface RouteScope {
   limited: () => Promise<boolean>;
 }
 
+const JSON_BODY_MAX_BYTES = 64 * 1024;
+
 interface ProxyRoute {
   path: string;
   match: 'exact' | 'prefix' | 'tree';
   preflight: HeaderMap;
   limit?: RouteLimit<ProxyEnv>;
+  maxBody?: number;
   handle: (request: Request, scope: RouteScope) => Promise<Response> | Response;
 }
 
@@ -87,6 +92,7 @@ const ROUTES: readonly ProxyRoute[] = [
     match: 'exact',
     preflight: CLIENT_CORS,
     limit: { budget: 'settle', inHandler: true },
+    maxBody: JSON_BODY_MAX_BYTES,
     handle: (request, { limited }) => handleSettle(request, limited),
   },
   {
@@ -101,6 +107,7 @@ const ROUTES: readonly ProxyRoute[] = [
     path: PROXY_ROUTES.nodes,
     match: 'exact',
     preflight: NODES_CORS,
+    maxBody: NODE_CODE_MAX_BYTES,
     limit: {
       budget: 'nodes',
       inHandler: true,
@@ -119,12 +126,19 @@ const ROUTES: readonly ProxyRoute[] = [
     limit: { budget: 'history', methods: ['POST'] },
     handle: (request, { env }) => handleHistory(request, env.HISTORY_ARCHIVES),
   },
-  { path: PROXY_ROUTES.push, match: 'prefix', preflight: PUSH_CORS_HEADERS, handle: (request) => handlePush(request) },
+  {
+    path: PROXY_ROUTES.push,
+    match: 'prefix',
+    preflight: PUSH_CORS_HEADERS,
+    maxBody: PUSH_BODY_MAX_BYTES,
+    handle: (request) => handlePush(request),
+  },
   {
     path: PROXY_ROUTES.mail,
     match: 'prefix',
     preflight: MAIL_CORS,
     limit: { inHandler: true, edge: (env, ip) => [{ binding: env.MAIL_REQUESTS, key: ip }] },
+    maxBody: JSON_BODY_MAX_BYTES,
     handle: routeMail,
   },
   {
@@ -132,6 +146,7 @@ const ROUTES: readonly ProxyRoute[] = [
     match: 'prefix',
     preflight: CLIENT_CORS,
     limit: { budget: 'names' },
+    maxBody: JSON_BODY_MAX_BYTES,
     handle: (request, { env }) => handleNamesRequest(request, env),
   },
 ];
@@ -141,11 +156,20 @@ function matches({ path, match }: ProxyRoute, pathname: string): boolean {
   return pathname === path || (match === 'tree' && pathname.startsWith(`${path}/`));
 }
 
+async function cappedRequest(request: Request, maxBody: number | undefined): Promise<Request | null> {
+  if (maxBody === undefined || request.body === null || request.method === 'GET' || request.method === 'HEAD') return request;
+  if ((declaredLength(request.headers) ?? 0) > maxBody) return null;
+  const bytes = await readCappedBytes(request.body, maxBody, 'reject');
+  return bytes === null ? null : new Request(request, { body: bytes });
+}
+
 async function serve(route: ProxyRoute, request: Request, env: ProxyEnv, ctx: ExecutionContext): Promise<Response> {
   if (request.method === 'OPTIONS') return corsResponse(route.preflight, null, 204);
   const limited = (): Promise<boolean> => overLimit(route.limit, request, env);
   if (limitsAtRouter(route.limit, request.method) && (await limited())) return RATE_LIMITED();
-  return route.handle(request, { env, ctx, limited });
+  const capped = await cappedRequest(request, route.maxBody);
+  if (capped === null) return jsonResponse({ error: 'request too large' }, 413, route.preflight);
+  return route.handle(capped, { env, ctx, limited });
 }
 
 export default {

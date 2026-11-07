@@ -3,7 +3,7 @@ import { isPushRpc, pushRpcPath } from '@stage-labs/client/xmtp/pushServer';
 import { corsHeaders, corsResponse, repliesWith } from './respond.ts';
 
 const PUSH_PREFIX = PROXY_ROUTES.push;
-const MAX_BODY_BYTES = 2_000_000;
+export const PUSH_BODY_MAX_BYTES = 2_000_000;
 const UPSTREAM_TIMEOUT_MS = 20_000;
 
 export const PUSH_CORS_HEADERS = corsHeaders('POST, OPTIONS');
@@ -19,7 +19,6 @@ export async function handlePush(request: Request): Promise<Response> {
   const upstreamUrl = parsePushRoute(new URL(request.url).pathname, request.method);
   if (upstreamUrl === null) return text('not found', 404);
   const body = await request.text();
-  if (body.length > MAX_BODY_BYTES) return text('body too large', 413);
   const upstream = await fetch(upstreamUrl, {
     method: 'POST',
     body,

@@ -170,3 +170,30 @@ describe('route table', () => {
     expect(await mail.json()).toEqual({ error: 'mail is not configured' });
   });
 });
+
+describe('request body caps', () => {
+  const kb = (n: number): string => 'x'.repeat(n * 1024);
+  const chunked = (text: string): ReadableStream<Uint8Array> => new Blob([text]).stream();
+
+  test.each([
+    ['/names/claim', 'GET, POST, OPTIONS'],
+    ['/mail/key', 'GET, POST, DELETE, OPTIONS'],
+    ['/x402-settle', 'GET, POST, OPTIONS'],
+  ])('%s refuses a JSON body over 64 KB with its CORS headers, declared or streamed', async (path, methods) => {
+    const headers = from('203.0.113.40');
+    for (const body of [kb(65), chunked(kb(65))]) {
+      const res = await call(path, { method: 'POST', headers, body });
+      expect(res.status).toBe(413);
+      expect(await res.json()).toEqual({ error: 'request too large' });
+      expect(res.headers.get('access-control-allow-methods')).toBe(methods);
+    }
+    expect((await call(path, { method: 'POST', headers, body: kb(63) })).status).not.toBe(413);
+  });
+
+  test('push bodies are capped at 2 MB in bytes', async () => {
+    const big = await call('/xmtp-push/RegisterInstallation', { method: 'POST', body: 'é'.repeat(1_000_001) });
+    expect(big.status).toBe(413);
+    expect(big.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS');
+    expect((await call('/xmtp-push/Nope', { method: 'POST', body: chunked('{}') })).status).toBe(404);
+  });
+});
