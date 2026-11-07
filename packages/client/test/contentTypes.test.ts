@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { attachedFilesOf, roleOfType, rowPreviewOf, stageCodecsFor } from '../src/xmtp/contentTypes';
+import { attachedFilesOf, roleOfType, stageCodecsFor } from '../src/xmtp/contentTypes';
 import { previewOf, sharedStageCodecs } from './helpers';
 
 const idOf = (codec: { contentType: { authorityId: string; typeId: string } }): string =>
@@ -24,7 +24,7 @@ describe('content type table', () => {
   test('an unknown type previews as its id, and a preview that throws as the message type', () => {
     expect(previewOf({ a: 1 }, 'somethingNew')).toBe('[somethingNew]');
     expect(previewOf({ a: 1 }, undefined)).toBe('[unknown]');
-    expect(rowPreviewOf({ contentTypeId: 'poll', content: null })).toBe('[poll]');
+    expect(previewOf(null, 'poll')).toBe('[poll]');
   });
 
   test('attached files come from inline, remote, multi remote and file replies', () => {

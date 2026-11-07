@@ -33,12 +33,10 @@ describe('regex checks', () => {
       '(a)\\1',
       '(?<n>a)\\k<n>',
       'a'.repeat(1001),
-    ]) {
+    ])
       expect([p.slice(0, 20), isSafeRegex(p)]).toEqual([p.slice(0, 20), false]);
-    }
-    for (const p of ['^[a-z]+$', '^\\d{3}-\\d{4}$', '^[^@]+@[^@]+\\.[a-z]{2,}$', '^(foo|bar)$', '^(abc)+$', '[(+*]+', '^\\(\\d+\\)$']) {
+    for (const p of ['^[a-z]+$', '^\\d{3}-\\d{4}$', '^[^@]+@[^@]+\\.[a-z]{2,}$', '^(foo|bar)$', '^(abc)+$', '[(+*]+', '^\\(\\d+\\)$'])
       expect([p, isSafeRegex(p)]).toEqual([p, true]);
-    }
   });
 });
 
@@ -122,13 +120,7 @@ describe('bound style values', () => {
   test('colours from data are Kit tokens or 3, 6 or 8 digit hex, deliberately wider than the #rrggbb a literal may be', () => {
     expect(['danger', '#ff0000', '#f00', '#ff000080'].map(colorValueOf)).toEqual(['danger', '#ff0000', '#f00', '#ff000080']);
     expect(['#ff0000', '#f00', '#ff000080'].map((hex) => new RegExp(LITERAL_HEX_COLOR_PATTERN).test(hex))).toEqual([true, false, false]);
-    expect(['red; background: url(x)', 'url(x)', 'constructor', 'rgb(0,0,0)', 7].map(colorValueOf)).toEqual([
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-    ]);
+    expect(['red; background: url(x)', 'url(x)', 'constructor', 'rgb(0,0,0)', 7].map(colorValueOf)).toEqual(Array(5).fill(undefined));
   });
 
   test('lengths are pixels or a percentage, padding keeps only known sides', () => {

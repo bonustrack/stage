@@ -11,6 +11,8 @@ const TOKEN = 'test-token';
 const NOW = 1_760_000_000_000;
 const CODE = 'export default { fetch: () => Response.json({ type: "Card", children: [] }) };';
 const API_BASE = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/workers/dispatch/namespaces/${NODES_NAMESPACE}`;
+const NO_ENV = {} as Parameters<typeof worker.fetch>[1];
+const CTX = {} as ExecutionContext;
 
 interface ApiCall {
   url: string;
@@ -55,12 +57,10 @@ describe('cloudflareApi', () => {
   });
 
   test('the proxy answers 503 on /nodes until the secrets are set', async () => {
-    const env = {} as Parameters<typeof worker.fetch>[1];
-    const key = newNodeKey();
-    const res = await worker.fetch(signed('PUT', key, CODE, Date.now()), env, {} as ExecutionContext);
+    const res = await worker.fetch(signed('PUT', newNodeKey(), CODE, Date.now()), NO_ENV, CTX);
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual({ error: 'nodes are not set up' });
-    expect((await worker.fetch(new Request(`${URL_NODES}/x`), env, {} as ExecutionContext)).status).toBe(404);
+    expect((await worker.fetch(new Request(`${URL_NODES}/x`), NO_ENV, CTX)).status).toBe(404);
   });
 });
 
@@ -148,8 +148,7 @@ describe('publishing a node', () => {
     const key = newNodeKey();
     const { api, calls } = cloudflare();
     const big = 'x'.repeat(64 * 1024 + 1);
-    const env = {} as Parameters<typeof worker.fetch>[1];
-    const tooLarge = await worker.fetch(signed('PUT', key, big), env, {} as ExecutionContext);
+    const tooLarge = await worker.fetch(signed('PUT', key, big), NO_ENV, CTX);
     expect(tooLarge.status).toBe(413);
     expect(tooLarge.headers.get('access-control-allow-methods')).toBe('PUT, DELETE, OPTIONS');
     const chunked = new Request(URL_NODES, {
@@ -262,29 +261,23 @@ describe('signature edge cases', () => {
 
   test('the proxy limits publishes per IPv6 /64 and in all', async () => {
     const keys: string[] = [];
-    const allow = {
-      limit: ({ key }: { key: string }) => {
+    const limiter = (success: boolean): RateLimit => ({
+      limit: ({ key }) => {
         keys.push(key);
-        return Promise.resolve({ success: true });
+        return Promise.resolve({ success });
       },
-    };
-    const deny = {
-      limit: ({ key }: { key: string }) => {
-        keys.push(key);
-        return Promise.resolve({ success: false });
-      },
-    };
+    });
     const env = {
       NODES_CF_API_TOKEN: TOKEN,
       NODES_CF_ACCOUNT_ID: ACCOUNT,
-      NODE_PUBLISHES: allow,
-      NODE_PUBLISHES_ALL: deny,
+      NODE_PUBLISHES: limiter(true),
+      NODE_PUBLISHES_ALL: limiter(false),
     } as unknown as Parameters<typeof worker.fetch>[1];
     const request = signed('PUT', newNodeKey(), CODE, Date.now());
     const withIp = new Request(request, {
       headers: { ...Object.fromEntries(request.headers), 'cf-connecting-ip': '2001:db8:1:2:aaaa::1' },
     });
-    const res = await worker.fetch(withIp, env, {} as ExecutionContext);
+    const res = await worker.fetch(withIp, env, CTX);
     expect(res.status).toBe(429);
     expect(keys).toEqual(['2001:db8:1:2::/64', 'all']);
   });

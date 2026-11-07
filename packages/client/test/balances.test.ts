@@ -122,13 +122,11 @@ describe('fetchAssetRows balance failures', () => {
     expect(rows[0]?.change24h).toBeNull();
   });
 
-  test('a reverted balance call rejects rather than substituting zero', async () => {
-    mockBalances('reverted');
-    await expect(fetchAssetRows(address)).rejects.toThrow();
-  });
-
-  test('an RPC failure rejects rather than emptying one chain', async () => {
-    mockBalances('rpc-error');
+  test.each<[string, BalanceFixture]>([
+    ['a reverted balance call rejects rather than substituting zero', 'reverted'],
+    ['an RPC failure rejects rather than emptying one chain', 'rpc-error'],
+  ])('%s', async (_name, mode) => {
+    mockBalances(mode);
     await expect(fetchAssetRows(address)).rejects.toThrow();
   });
 });

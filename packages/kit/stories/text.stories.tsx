@@ -1,15 +1,10 @@
 import type { Story } from '../gallery/story';
 import { Text, type TextProps } from '../src/react-native/text';
 import { Column } from '../src/react-native/column';
-import { ALIGNS, bool, COLOR_TOKENS, FONT_SIZES, number, select, text } from './_controls';
-import { TEXT_FONT_FAMILIES, TEXT_TRANSFORMS, TEXT_VARIANTS, TEXT_WEIGHTS } from '../src/kit-vocabulary';
+import { bool, COLOR_TOKENS, FONT_SIZES, number, select, text } from './_controls';
+import { TEXT_ALIGNS, TEXT_FONT_FAMILIES, TEXT_TRANSFORMS, TEXT_VARIANTS, TEXT_WEIGHTS } from '../src/kit-vocabulary';
 
 export default { title: 'Text' };
-
-const VARIANTS = TEXT_VARIANTS;
-const WEIGHTS = TEXT_WEIGHTS;
-const FAMILIES = TEXT_FONT_FAMILIES;
-const TRANSFORMS = TEXT_TRANSFORMS;
 
 export const Controls: Story<TextProps> = (args) => <Text {...args} />;
 Controls.args = {
@@ -28,14 +23,14 @@ Controls.args = {
 };
 Controls.argTypes = {
   text,
-  variant: select(VARIANTS),
+  variant: select(TEXT_VARIANTS),
   size: select(FONT_SIZES),
-  fontWeight: select(WEIGHTS),
-  fontFamily: select(FAMILIES),
+  fontWeight: select(TEXT_WEIGHTS),
+  fontFamily: select(TEXT_FONT_FAMILIES),
   letterSpacing: number,
-  textTransform: select(TRANSFORMS),
+  textTransform: select(TEXT_TRANSFORMS),
   color: select(COLOR_TOKENS),
-  textAlign: select(ALIGNS),
+  textAlign: select(TEXT_ALIGNS),
   italic: bool,
   lineThrough: bool,
   truncate: bool,
@@ -51,12 +46,12 @@ export const Matrix: Story = () => (
         {s} · Calibre {s}
       </Text>
     ))}
-    {WEIGHTS.map((w) => (
+    {TEXT_WEIGHTS.map((w) => (
       <Text key={w} fontWeight={w}>
         fontWeight {w}
       </Text>
     ))}
-    {VARIANTS.map((v) => (
+    {TEXT_VARIANTS.map((v) => (
       <Text key={v} variant={v}>
         variant {v}
       </Text>

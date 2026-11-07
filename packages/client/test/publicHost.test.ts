@@ -1,9 +1,13 @@
 import { describe, expect, test } from 'bun:test';
 import { hostProblem, isPublicHost } from '../src/net/publicHost';
-
-const isPrivateIp = (host: string): boolean => hostProblem(host) === 'private-ip';
 import { declaredLength, readCappedBytes, readCappedResponse } from '../src/net/cappedBody';
 import { clientIp } from '../src/net/clientIp';
+
+const isPrivateIp = (host: string): boolean => hostProblem(host) === 'private-ip';
+
+function expectEach<T>(hosts: string[], of: (host: string) => T, expected: T): void {
+  for (const host of hosts) expect([host, of(host)]).toEqual([host, expected]);
+}
 
 describe('private addresses', () => {
   test('private, loopback, link-local, carrier, benchmark and multicast IPv4', () => {
@@ -22,10 +26,8 @@ describe('private addresses', () => {
       '224.0.0.1',
       '255.255.255.255',
     ];
-    for (const ip of blocked) expect([ip, isPrivateIp(ip)]).toEqual([ip, true]);
-    for (const ip of ['8.8.8.8', '1.1.1.1', '172.32.0.1', '100.128.0.1', '198.20.0.1', '169.253.0.1']) {
-      expect([ip, isPrivateIp(ip)]).toEqual([ip, false]);
-    }
+    expectEach(blocked, isPrivateIp, true);
+    expectEach(['8.8.8.8', '1.1.1.1', '172.32.0.1', '100.128.0.1', '198.20.0.1', '169.253.0.1'], isPrivateIp, false);
   });
 
   test('loopback, unique local, link-local, multicast, NAT64, 6to4 and translated IPv6', () => {
@@ -44,11 +46,11 @@ describe('private addresses', () => {
       '2002:7f00:1::1',
       '::ffff:0:a00:1',
     ];
-    for (const ip of blocked) expect([ip, isPrivateIp(ip)]).toEqual([ip, true]);
+    expectEach(blocked, isPrivateIp, true);
   });
 
   test('IPv4 inside IPv6 counts by its IPv4 address', () => {
-    for (const ip of [
+    const mapped = [
       '::ffff:127.0.0.1',
       '::ffff:7f00:1',
       '::ffff:a00:1',
@@ -56,18 +58,15 @@ describe('private addresses', () => {
       '::7f00:1',
       '::127.0.0.1',
       '2001:db8::ffff:7f00:1',
-    ]) {
-      expect([ip, isPrivateIp(ip)]).toEqual([ip, true]);
-    }
-    for (const ip of ['::ffff:808:808', '::ffff:0808:0808', '::ffff:8.8.8.8', '2606:4700:4700::1111']) {
-      expect([ip, isPrivateIp(ip)]).toEqual([ip, false]);
-    }
+    ];
+    expectEach(mapped, isPrivateIp, true);
+    expectEach(['::ffff:808:808', '::ffff:0808:0808', '::ffff:8.8.8.8', '2606:4700:4700::1111'], isPrivateIp, false);
   });
 });
 
 describe('public host names', () => {
   test('local names, single labels and numeric last labels are not public', () => {
-    for (const host of [
+    const local = [
       'localhost',
       'api.localhost',
       'printer.local',
@@ -81,31 +80,26 @@ describe('public host names', () => {
       'example.0x1f',
       'localhost..',
       'printer.local...',
-    ]) {
-      expect([host, hostProblem(host)]).toEqual([host, 'local']);
-    }
+    ];
+    expectEach(local, hostProblem, 'local');
   });
 
   test('public names and addresses pass, private addresses are named as such', () => {
-    for (const host of ['example.com', 'a.b.example.org', 'xn--bcher-kva.example', 'EXAMPLE.COM.', '1.1.1.1', '[2606:4700::1111]']) {
-      expect([host, isPublicHost(host)]).toEqual([host, true]);
-    }
+    const publicHosts = ['example.com', 'a.b.example.org', 'xn--bcher-kva.example', 'EXAMPLE.COM.', '1.1.1.1', '[2606:4700::1111]'];
+    expectEach(publicHosts, isPublicHost, true);
     expect(hostProblem('10.0.0.1')).toBe('private-ip');
     expect(hostProblem('[fd00::1]')).toBe('private-ip');
   });
 
   test('a caller can refuse every IP literal', () => {
-    for (const host of ['1.1.1.1', '8.8.8.8', '[2606:4700::1111]', '2606:4700::1111']) {
-      expect([host, hostProblem(host, { ipLiterals: false })]).toEqual([host, 'ip-literal']);
-    }
+    const literals = ['1.1.1.1', '8.8.8.8', '[2606:4700::1111]', '2606:4700::1111'];
+    expectEach(literals, (host) => hostProblem(host, { ipLiterals: false }), 'ip-literal');
     expect(isPublicHost('example.com', { ipLiterals: false })).toBe(true);
   });
 
   test('a caller can block a domain with its subdomains', () => {
     const policy = { blockedDomains: ['stage.box'] };
-    for (const host of ['stage.box', 'proxy.stage.box', 'STAGE.BOX.', 'a.b.stage.box..']) {
-      expect([host, hostProblem(host, policy)]).toEqual([host, 'local']);
-    }
+    expectEach(['stage.box', 'proxy.stage.box', 'STAGE.BOX.', 'a.b.stage.box..'], (host) => hostProblem(host, policy), 'local');
     expect(isPublicHost('notstage.box', policy)).toBe(true);
     expect(isPublicHost('stage.box.example.com', policy)).toBe(true);
     expect(isPublicHost('stage.box')).toBe(true);

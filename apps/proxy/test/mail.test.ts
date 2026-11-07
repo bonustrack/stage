@@ -18,15 +18,6 @@ import { restoreFetch, stubFetch } from './fakeFetch.ts';
 import { memoryStorage, type MemoryStorage } from './memoryArchive.ts';
 
 const BASE = 'https://proxy.stage.box';
-
-async function closeMailbox(session: MailSession): Promise<void> {
-  const query = `?label=${encodeURIComponent(session.label)}`;
-  const res = await fetch(`${session.proxyBase}${mailPath('box')}${query}`, {
-    method: 'DELETE',
-    headers: { authorization: `Bearer ${session.token}` },
-  });
-  expect(res.ok).toBe(true);
-}
 const ALICE = privateKeyToAccount('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d');
 const BOB = privateKeyToAccount('0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a');
 const MALLORY = privateKeyToAccount('0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6');
@@ -89,6 +80,20 @@ async function deliver(to: string): Promise<string[]> {
 
 function post(path: string, body: unknown): Promise<Response> {
   return handleMail(new Request(`${BASE}/mail/${path}`, { method: 'POST', body: JSON.stringify(body) }), deps);
+}
+
+interface Challenge {
+  nonce: string;
+  expiresAt: number;
+}
+
+async function challenge(): Promise<Challenge> {
+  return (await (await post('challenge', { label: 'alice1' })).json()) as Challenge;
+}
+
+async function signIn(issued: Challenge): Promise<number> {
+  const signature = await ALICE.signMessage({ message: mailSessionMessage({ label: 'alice1', ...issued }) });
+  return (await post('session', { label: 'alice1', nonce: issued.nonce, signature })).status;
 }
 
 function storedText(label: string): string {
@@ -166,31 +171,25 @@ describe('st.box mail access', () => {
 
   test('refuses expired sessions, expired challenges and replayed sign-ins', async () => {
     await activate('alice1', ALICE);
-    const issued = (await (await post('challenge', { label: 'alice1' })).json()) as { nonce: string; expiresAt: number };
-    const signature = await ALICE.signMessage({ message: mailSessionMessage({ label: 'alice1', ...issued }) });
-    expect((await post('session', { label: 'alice1', nonce: issued.nonce, signature })).status).toBe(200);
-    expect((await post('session', { label: 'alice1', nonce: issued.nonce, signature })).status).toBe(401);
+    const issued = await challenge();
+    expect(await signIn(issued)).toBe(200);
+    expect(await signIn(issued)).toBe(401);
     const session = await openMailSession(BASE, 'alice1', signer(ALICE));
     clock.now += SESSION_TTL_MS + 1;
     await expect(listMail(session)).rejects.toThrow('(401)');
-    const late = (await (await post('challenge', { label: 'alice1' })).json()) as { nonce: string; expiresAt: number };
-    const lateSignature = await ALICE.signMessage({ message: mailSessionMessage({ label: 'alice1', ...late }) });
+    const late = await challenge();
     clock.now += NONCE_TTL_MS + 1;
-    expect((await post('session', { label: 'alice1', nonce: late.nonce, signature: lateSignature })).status).toBe(401);
+    expect(await signIn(late)).toBe(401);
   });
 
   test('keeps at most 20 open sign-ins per mailbox, dropping the oldest first', async () => {
     await activate('alice1', ALICE);
-    const issued: { nonce: string; expiresAt: number }[] = [];
+    const issued: Challenge[] = [];
     for (let i = 0; i < 25; i += 1) {
       clock.now += 1;
-      issued.push((await (await post('challenge', { label: 'alice1' })).json()) as { nonce: string; expiresAt: number });
+      issued.push(await challenge());
     }
     expect([...(boxes.get('alice1')?.data.keys() ?? [])].filter((key) => key.startsWith('nonce:')).length).toBe(20);
-    const signIn = async (challenge: { nonce: string; expiresAt: number }): Promise<number> => {
-      const signature = await ALICE.signMessage({ message: mailSessionMessage({ label: 'alice1', ...challenge }) });
-      return (await post('session', { label: 'alice1', nonce: challenge.nonce, signature })).status;
-    };
     expect(await signIn(issued[0] ?? { nonce: '', expiresAt: 0 })).toBe(401);
     expect(await signIn(issued[24] ?? { nonce: '', expiresAt: 0 })).toBe(200);
   });
@@ -207,7 +206,12 @@ describe('st.box mail access', () => {
     expect(await listMail(carol)).toEqual([]);
     await activate('alice1', CAROL);
     expect([...(boxes.get('alice1')?.data.keys() ?? [])].filter((key) => key.startsWith('body:'))).toEqual([]);
-    await closeMailbox(await openMailSession(BASE, 'alice1', signer(CAROL)));
+    const closing = await openMailSession(BASE, 'alice1', signer(CAROL));
+    const closed = await fetch(`${BASE}${mailPath('box')}?label=alice1`, {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${closing.token}` },
+    });
+    expect(closed.ok).toBe(true);
     expect(boxes.get('alice1')?.data.size).toBe(0);
   });
 

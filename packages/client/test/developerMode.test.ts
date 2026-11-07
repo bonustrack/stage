@@ -13,6 +13,7 @@ const message = (content: unknown, sentNs: number, senderInboxId = 'self'): Sync
 });
 const replay = (messages: SyncMessage[], afterNs = 0): DeveloperModeContent | null =>
   collectSyncReplay(messages, afterNs, { inboxId: 'self', nowMs: 100 }).developerMode;
+const codec = syncCodecOf('developerMode');
 
 describe('developer mode sync', () => {
   test('defaults OFF and validates a complete, nonnegative clocked boolean', () => {
@@ -28,9 +29,9 @@ describe('developer mode sync', () => {
   test('serializes both ON and explicit OFF without push notifications', () => {
     for (const enabled of [false, true]) {
       const original = state(enabled, 12);
-      expect(syncCodecOf('developerMode').decode(syncCodecOf('developerMode').encode(original))).toEqual(original);
+      expect(codec.decode(codec.encode(original))).toEqual(original);
     }
-    expect(syncCodecOf('developerMode').shouldPush()).toBe(false);
+    expect(codec.shouldPush()).toBe(false);
   });
 
   test('newer payload clocks win regardless of arrival order', () => {
@@ -59,15 +60,12 @@ describe('developer mode sync', () => {
   });
 
   test('two synthetic devices converge through the real codec and replay in both directions', () => {
-    let phone = DEFAULT_DEVELOPER_MODE;
-    let laptop = DEFAULT_DEVELOPER_MODE;
     const deliver = (current: DeveloperModeContent, sent: DeveloperModeContent): DeveloperModeContent => {
-      const decoded = syncCodecOf('developerMode').decode(syncCodecOf('developerMode').encode(sent));
-      const incoming = replay([message(decoded, 1)]);
+      const incoming = replay([message(codec.decode(codec.encode(sent)), 1)]);
       return incoming === null ? current : mergeDeveloperMode(current, incoming);
     };
-    phone = state(true, 10);
-    laptop = deliver(laptop, phone);
+    let phone = state(true, 10);
+    let laptop = deliver(DEFAULT_DEVELOPER_MODE, phone);
     expect(laptop).toEqual(phone);
     laptop = state(false, 11);
     phone = deliver(phone, laptop);

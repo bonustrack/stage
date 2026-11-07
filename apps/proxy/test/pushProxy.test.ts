@@ -3,15 +3,9 @@ import { handlePush, parsePushRoute } from '../src/pushProxy.ts';
 
 describe('parsePushRoute', () => {
   test('maps the three XMTP notification RPCs to the push server', () => {
-    expect(parsePushRoute('/xmtp-push/RegisterInstallation', 'POST')).toBe(
-      'https://push.stage.box/notifications.v1.Notifications/RegisterInstallation',
-    );
-    expect(parsePushRoute('/xmtp-push/SubscribeWithMetadata', 'POST')).toBe(
-      'https://push.stage.box/notifications.v1.Notifications/SubscribeWithMetadata',
-    );
-    expect(parsePushRoute('/xmtp-push/DeleteInstallation', 'POST')).toBe(
-      'https://push.stage.box/notifications.v1.Notifications/DeleteInstallation',
-    );
+    for (const rpc of ['RegisterInstallation', 'SubscribeWithMetadata', 'DeleteInstallation']) {
+      expect(parsePushRoute(`/xmtp-push/${rpc}`, 'POST')).toBe(`https://push.stage.box/notifications.v1.Notifications/${rpc}`);
+    }
   });
 
   test('maps the two Stage device group RPCs to their own service', () => {

@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'bun:test';
 import worker from '../src/index.ts';
 
-const env = {} as Parameters<typeof worker.fetch>[1];
+type Env = Parameters<typeof worker.fetch>[1];
+const env = {} as Env;
 const ctx = {} as ExecutionContext;
 
 function call(path: string, init: RequestInit = {}): Promise<Response> {
@@ -31,15 +32,9 @@ describe('attachment routes', () => {
   });
 
   test('an upload refused by the edge rate limit is 429 before touching storage', async () => {
-    const limited = { ATTACHMENT_UPLOADS: { limit: () => Promise.resolve({ success: false }) } } as unknown as Parameters<
-      typeof worker.fetch
-    >[1];
-    const res = await worker.fetch(
-      new Request('https://proxy.stage.box/attachments', { method: 'POST', body: 'x', headers: { 'content-length': '1' } }),
-      limited,
-      ctx,
-    );
-    expect(res.status).toBe(429);
+    const limited = { ATTACHMENT_UPLOADS: { limit: () => Promise.resolve({ success: false }) } } as unknown as Env;
+    const request = new Request('https://proxy.stage.box/attachments', { method: 'POST', body: 'x', headers: { 'content-length': '1' } });
+    expect((await worker.fetch(request, limited, ctx)).status).toBe(429);
   });
 });
 

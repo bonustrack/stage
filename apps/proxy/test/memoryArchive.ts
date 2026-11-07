@@ -6,6 +6,14 @@ export type MemoryStorage = ArchiveStorage & MailStorage & { alarm: number | nul
 
 type ObjectFetch = (request: Request, storage: ArchiveStorage, now: number) => Promise<Response>;
 
+export function randomBytes(length: number): Uint8Array<ArrayBuffer> {
+  const bytes = new Uint8Array(length);
+  for (let offset = 0; offset < length; offset += 65_536) {
+    crypto.getRandomValues(bytes.subarray(offset, Math.min(length, offset + 65_536)));
+  }
+  return bytes;
+}
+
 export function memoryStorage(): MemoryStorage {
   const data = new Map<string, unknown>();
   return {

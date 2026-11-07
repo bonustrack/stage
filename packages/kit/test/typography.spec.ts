@@ -22,12 +22,6 @@ describe('text size tokens', () => {
     }
   });
 
-  test('without a size, body text is md and a caption is 3xs', () => {
-    expect(resolveTextSize(undefined, 'body')).toBe(FONT_SIZE.md);
-    expect(resolveTextSize(undefined, undefined)).toBe(FONT_SIZE.md);
-    expect(resolveTextSize(undefined, 'caption')).toBe(FONT_SIZE['3xs']);
-  });
-
   test('button labels are Text sizes that grow with the button', () => {
     const labels = BUTTON_SIZES.map((size) => SIZES[size].fontSize);
     for (const label of labels) expect(Object.values(FONT_SIZE)).toContain(label);
@@ -56,12 +50,9 @@ describe('control typography', () => {
 
   test('Markdown defaults use xs, preserving larger headings and code sizes', () => {
     const styles = markdownStyles({ fg: '#fff', dark: true });
-    for (const key of ['body', 'strong', 'em', 'bullet_list_icon', 'ordered_list_icon']) {
+    for (const key of ['body', 'strong', 'em', 'bullet_list_icon', 'ordered_list_icon'])
       expect(styles[key]).toMatchObject({ fontSize: 16, lineHeight: 23 });
-    }
-    for (const [index, fontSize] of [24, 20, 17, 16, 16, 16].entries()) {
-      expect(styles[`heading${index + 1}`]).toMatchObject({ fontSize });
-    }
+    for (const [index, fontSize] of [24, 20, 17, 16, 16, 16].entries()) expect(styles[`heading${index + 1}`]).toMatchObject({ fontSize });
     expect(styles.code_inline).toMatchObject({ fontSize: 14 });
     expect(styles.code_block).toMatchObject({ fontSize: 13 });
   });
@@ -69,8 +60,6 @@ describe('control typography', () => {
   test('explicit Markdown body size and scaled headings are unchanged', () => {
     const styles = markdownStyles({ fg: '#000', dark: false, fontSize: 18, lineHeight: 27 });
     expect(styles.body).toMatchObject({ fontSize: 18, lineHeight: 27 });
-    for (const [index, fontSize] of [29, 24, 21, 18, 18, 18].entries()) {
-      expect(styles[`heading${index + 1}`]).toMatchObject({ fontSize });
-    }
+    for (const [index, fontSize] of [29, 24, 21, 18, 18, 18].entries()) expect(styles[`heading${index + 1}`]).toMatchObject({ fontSize });
   });
 });

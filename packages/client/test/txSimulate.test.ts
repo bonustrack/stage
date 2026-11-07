@@ -33,7 +33,7 @@ afterEach(() => {
 
 function answerRpc(answers: RpcAnswers): string[] {
   const methods: string[] = [];
-  const respond = async (_input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  globalThis.fetch = fakeFetch(async (_input, init) => {
     const { method } = JSON.parse(String(init?.body)) as { method: string };
     methods.push(method);
     const sim = answers.simulate;
@@ -43,8 +43,7 @@ function answerRpc(answers: RpcAnswers): string[] {
     }
     if (method === 'eth_call') return Response.json(answers.call ?? { result: '0x' });
     return Response.json({ error: { message: `unexpected ${method}` } });
-  };
-  globalThis.fetch = fakeFetch(respond);
+  });
   return methods;
 }
 

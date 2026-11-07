@@ -15,17 +15,13 @@ describe('webXmtpDbPath', () => {
 });
 
 describe('canReuseSavedClient', () => {
-  test('true when address case-insensitively equal and env equal', () => {
-    expect(canReuseSavedClient('0xABC', 'production', '0xabc', 'production')).toBe(true);
-  });
-  test('false on env mismatch', () => {
-    expect(canReuseSavedClient('0xabc', 'dev', '0xabc', 'production')).toBe(false);
-  });
-  test('false on address mismatch', () => {
-    expect(canReuseSavedClient('0xdef', 'production', '0xabc', 'production')).toBe(false);
-  });
-  test('false when nothing saved', () => {
-    expect(canReuseSavedClient(null, null, '0xabc', 'production')).toBe(false);
+  test.each<[string, string | null, string | null, boolean]>([
+    ['true when address case-insensitively equal and env equal', '0xABC', 'production', true],
+    ['false on env mismatch', '0xabc', 'dev', false],
+    ['false on address mismatch', '0xdef', 'production', false],
+    ['false when nothing saved', null, null, false],
+  ])('%s', (_name, savedAddress, savedEnv, reusable) => {
+    expect(canReuseSavedClient(savedAddress, savedEnv, '0xabc', 'production')).toBe(reusable);
   });
 });
 

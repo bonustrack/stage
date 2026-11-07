@@ -84,24 +84,8 @@ describe('resolveBasenameProfile', () => {
 
   test('a failed read fails the lookup instead of reading as an empty record', async () => {
     const answers = { name: 'tony.base.eth', addr: ALICE, text: { avatar: 'ipfs://pic' } };
-    await expect(
-      resolveOnchainProfile(
-        fakeClient(answers, () => true),
-        ALICE,
-      ),
-    ).rejects.toThrow('rpc down');
-    await expect(
-      resolveOnchainProfile(
-        fakeClient(answers, (fn, key) => fn === 'text' && key === 'avatar'),
-        ALICE,
-      ),
-    ).rejects.toThrow('rpc down');
-    await expect(
-      resolveOnchainProfile(
-        fakeClient(answers, (fn) => fn === 'resolver'),
-        ALICE,
-      ),
-    ).rejects.toThrow('rpc down');
+    const failures: FailingRead[] = [() => true, (fn, key) => fn === 'text' && key === 'avatar', (fn) => fn === 'resolver'];
+    for (const fails of failures) await expect(resolveOnchainProfile(fakeClient(answers, fails), ALICE)).rejects.toThrow('rpc down');
   });
 });
 

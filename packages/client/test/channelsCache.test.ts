@@ -81,10 +81,8 @@ describe('applySentPatch', () => {
   test('moves row to front, truncates preview, marks self', () => {
     const longPreview = 'x'.repeat(300);
     const out = applySentPatch(base, 'b', longPreview, 555);
-    expect(out?.[0]?.convId).toBe('b');
+    expect(out?.[0]).toMatchObject({ convId: 'b', lastFromSelf: true, lastTs: 555 });
     expect(out?.[0]?.lastPreview.length).toBe(ROW_PREVIEW_MAX_CHARS);
-    expect(out?.[0]?.lastFromSelf).toBe(true);
-    expect(out?.[0]?.lastTs).toBe(555);
     expect(out?.[1]?.convId).toBe('a');
   });
   test('missing returns null', () => {
@@ -102,8 +100,7 @@ describe('applyInbound', () => {
 
   test('moves the row without counting a message that does not count as unread', () => {
     const out = applyInbound(rows, { ...update, lastPreview: 'added label "Blocked"', countsAsUnread: false });
-    expect(out?.next[0]?.unreadCount).toBe(0);
-    expect(out?.next[0]?.lastPreview).toBe('added label "Blocked"');
+    expect(out?.next[0]).toMatchObject({ unreadCount: 0, lastPreview: 'added label "Blocked"' });
     expect(out?.wasUnread).toBe(false);
   });
 });

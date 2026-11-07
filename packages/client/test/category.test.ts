@@ -22,13 +22,12 @@ describe('channel category', () => {
         appDataGroup(blob({ labels: ['Todo'], category: 'Work', assigned: [bob.toUpperCase().replace('0X', '0x')] })).group,
       ),
     ).toEqual({ labels: ['Todo'], category: 'Work', status: null, priority: null, assigned: [bob] });
-    expect(
-      await groupTagsOf({ appData: () => Promise.resolve(blob({ category: 'Ops' })), updateAppData: () => Promise.resolve() }),
-    ).toEqual({ labels: [], category: 'Ops', status: null, priority: null, assigned: [] });
+    const none = { labels: [], category: null, status: null, priority: null, assigned: [] };
+    expect(await groupTagsOf(appDataGroup(blob({ category: 'Ops' })).group)).toEqual({ ...none, category: 'Ops' });
     for (const raw of ['', '{', '[]', blob({ labels: ['Todo'] }), blob({ category: ['Work'] })]) {
       expect((await groupTagsOf(appDataGroup(raw).group)).category).toBeNull();
     }
-    expect(await groupTagsOf(null)).toEqual({ labels: [], category: null, status: null, priority: null, assigned: [] });
+    expect(await groupTagsOf(null)).toEqual(none);
   });
 
   test('sets, changes and clears one category while keeping the other fields', async () => {

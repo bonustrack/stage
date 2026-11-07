@@ -144,21 +144,16 @@ describe('mention labels', () => {
   });
 
   test('plain views retain ordinary Markdown URLs and resolve mentions within their labels', () => {
-    const source = `read [ping @${A}](https://example.com) today stage://channel/c0ffee02`;
-    const result = namedPlainText(
-      bodySegments(source, findLinks, true),
-      () => '@Chen',
-      () => '#Ops',
-    );
-    expect(result).toBe('read [ping @Chen](https://example.com) today #Ops');
-    expect(bodyView(`[ping @${A}](https://example.com)`, true, findLinks)).toBe('namedPlain');
-    expect(
+    const plain = (body: string): string =>
       namedPlainText(
-        bodySegments(`code \`@${A}\` and @${B}`, findLinks, true),
+        bodySegments(body, findLinks, true),
         () => '@Chen',
         () => '#Ops',
-      ),
-    ).toBe(`code \`@${A}\` and @Chen`);
+      );
+    const source = `read [ping @${A}](https://example.com) today stage://channel/c0ffee02`;
+    expect(plain(source)).toBe('read [ping @Chen](https://example.com) today #Ops');
+    expect(bodyView(`[ping @${A}](https://example.com)`, true, findLinks)).toBe('namedPlain');
+    expect(plain(`code \`@${A}\` and @${B}`)).toBe(`code \`@${A}\` and @Chen`);
   });
 
   test('channel fallbacks work in formatted Markdown links with titles', () => {

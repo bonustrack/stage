@@ -9,6 +9,7 @@ import {
   chartTooltipRows,
   chartXLabel,
   type ChartDatum,
+  type ChartGeometryInput,
   type ChartSeries,
 } from '../src/chart';
 import { chartAreaPath, chartCurvePath, type ChartPoint } from '../src/chart.curves';
@@ -110,17 +111,14 @@ const TWO_ROWS: ChartDatum[] = [
 ];
 
 describe('chartGeometry', () => {
+  const geometry = (data: ChartDatum[], series: ChartSeries[], extra: Partial<ChartGeometryInput> = {}) =>
+    chartGeometry({ data, series, xAxis: 'd', width: 320, height: 240, ...extra });
+
   test('places bars like Recharts: 10% category gap, bar gap, 4px value end and 1px base corners', () => {
-    const g = chartGeometry({
-      data: TWO_ROWS,
-      xAxis: 'd',
-      width: 320,
-      height: 240,
-      series: [
-        { type: 'bar', dataKey: 'v' },
-        { type: 'bar', dataKey: 'w' },
-      ],
-    });
+    const g = geometry(TWO_ROWS, [
+      { type: 'bar', dataKey: 'v' },
+      { type: 'bar', dataKey: 'w' },
+    ]);
     expect(g.plot).toEqual({ left: 5, top: 5, right: 315, bottom: 205 });
     expect(g.bars.map((b) => [b.series, b.index])).toEqual([
       [0, 0],
@@ -136,16 +134,13 @@ describe('chartGeometry', () => {
   });
 
   test('stacks bars in one slot with the end corners on the last series only', () => {
-    const g = chartGeometry({
-      data: [{ d: 'a', v: 1, w: 2 }],
-      xAxis: 'd',
-      width: 320,
-      height: 240,
-      series: [
+    const g = geometry(
+      [{ d: 'a', v: 1, w: 2 }],
+      [
         { type: 'bar', dataKey: 'v', stack: 's' },
         { type: 'bar', dataKey: 'w', stack: 's' },
       ],
-    });
+    );
     expect(g.bars.map((b) => b.path)).toEqual([
       'M36,138.33L284,138.33L284,204A1,1,0,0,1,283,205L37,205A1,1,0,0,1,36,204Z',
       'M36,9A4,4,0,0,1,40,5L280,5A4,4,0,0,1,284,9L284,138.33L36,138.33Z',
@@ -153,16 +148,11 @@ describe('chartGeometry', () => {
   });
 
   test('rounds a negative bar at its value end, below the zero line', () => {
-    const g = chartGeometry({
-      data: [
-        { q: 'Q1', p: 42 },
-        { q: 'Q2', p: -18 },
-      ],
-      xAxis: 'q',
-      width: 320,
-      height: 240,
-      series: [{ type: 'bar', dataKey: 'p' }],
-    });
+    const data: ChartDatum[] = [
+      { q: 'Q1', p: 42 },
+      { q: 'Q2', p: -18 },
+    ];
+    const g = geometry(data, [{ type: 'bar', dataKey: 'p' }], { xAxis: 'q' });
     expect(g.ticks.map((t) => t.label)).toEqual(['-20', '0', '20', '40', '60']);
     expect(g.ticks[1]?.y).toBe(155);
     expect(g.bars[1]?.path).toBe(
@@ -178,16 +168,10 @@ describe('chartGeometry', () => {
       { d: 'd', v: 4 },
       { d: 'e', v: 5 },
     ];
-    const g = chartGeometry({
-      data,
-      xAxis: 'd',
-      width: 320,
-      height: 240,
-      series: [
-        { type: 'line', dataKey: 'v' },
-        { type: 'area', dataKey: 'v' },
-      ],
-    });
+    const g = geometry(data, [
+      { type: 'line', dataKey: 'v' },
+      { type: 'area', dataKey: 'v' },
+    ]);
     expect(g.categories[0]?.x).toBe(g.plot.left);
     expect(g.categories[4]?.x).toBe(g.plot.right);
     expect(g.shapes[0]?.line.match(/M/g)?.length).toBe(2);
@@ -197,7 +181,7 @@ describe('chartGeometry', () => {
 
   test('thins x labels from the end, keeps the first and last inside, and hides them with the axis', () => {
     const data: ChartDatum[] = Array.from({ length: 30 }, (_, i) => ({ d: `Day ${i + 1}`, v: i }));
-    const g = chartGeometry({ data, xAxis: 'd', width: 320, height: 240, series: [{ type: 'line', dataKey: 'v' }] });
+    const g = geometry(data, [{ type: 'line', dataKey: 'v' }]);
     expect(g.labels.length).toBeGreaterThan(2);
     expect(g.labels.length).toBeLessThan(30);
     expect(g.labels[g.labels.length - 1]?.index).toBe(29);
@@ -205,13 +189,7 @@ describe('chartGeometry', () => {
       const next = g.labels[i + 1];
       if (next !== undefined) expect(next.x - label.x).toBeGreaterThan(10);
     }
-    const hidden = chartGeometry({
-      data,
-      xAxis: { dataKey: 'd', hide: true },
-      width: 320,
-      height: 240,
-      series: [{ type: 'line', dataKey: 'v' }],
-    });
+    const hidden = geometry(data, [{ type: 'line', dataKey: 'v' }], { xAxis: { dataKey: 'd', hide: true } });
     expect(hidden.labels).toEqual([]);
     expect(hidden.plot.bottom).toBe(240 - 7 - 5);
   });
@@ -266,15 +244,14 @@ describe('chartGeometry', () => {
       { d: 'e', v: '' },
       { d: 'f', v: 6 },
     ];
-    const g = chartGeometry({ data, xAxis: 'd', width: 320, height: 240, series: [{ type: 'line', dataKey: 'v' }] });
+    const g = geometry(data, [{ type: 'line', dataKey: 'v' }]);
     const lonely = g.categories.filter((_, index) => index === 0 || index === 5).map((category) => category.x);
     expect(g.shapes[0]?.dots.map((p) => p[0])).toEqual(lonely);
   });
 
   test('makes room for the y axis and the legend', () => {
-    const base = { data: TWO_ROWS, xAxis: 'd', width: 320, height: 240, series: [{ type: 'bar', dataKey: 'v' }] } as const;
-    expect(chartGeometry({ ...base, showYAxis: true }).plot.left).toBeGreaterThan(5);
-    expect(chartGeometry({ ...base, legend: true }).plot.bottom).toBe(240 - 30);
+    expect(geometry(TWO_ROWS, [{ type: 'bar', dataKey: 'v' }], { showYAxis: true }).plot.left).toBeGreaterThan(5);
+    expect(geometry(TWO_ROWS, [{ type: 'bar', dataKey: 'v' }], { legend: true }).plot.bottom).toBe(240 - 30);
   });
 });
 

@@ -1,6 +1,6 @@
 const realFetch = globalThis.fetch;
 
-export function requestOf(input: RequestInfo | URL, init?: RequestInit): Request {
+function requestOf(input: RequestInfo | URL, init?: RequestInit): Request {
   return input instanceof Request ? new Request(input, init) : new Request(String(input), init);
 }
 

@@ -14,7 +14,7 @@ describe('surfaceColor', () => {
 
   for (const [surface, expected] of cases) {
     test(`${surface} -> ${String(expected)}`, () => {
-      expect(surfaceColor(surface, PALETTE)).toBe(expected as string);
+      expect(surfaceColor(surface, PALETTE)).toBe(expected);
     });
   }
 });

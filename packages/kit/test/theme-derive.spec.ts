@@ -39,8 +39,7 @@ describe('derivePalette', () => {
   });
 
   test('the default seed short-circuits to the legacy palette', () => {
-    expect(derivePalette(DEFAULT_SEED.dark, 'dark')).toEqual(kitPalette('dark'));
-    expect(derivePalette(DEFAULT_SEED.light, 'light')).toEqual(kitPalette('light'));
+    for (const scheme of ['dark', 'light'] as const) expect(derivePalette(DEFAULT_SEED[scheme], scheme)).toEqual(kitPalette(scheme));
   });
 
   test('the formula alone is not lossless at the default seed: sub and inputBg drift', () => {

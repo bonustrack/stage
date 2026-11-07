@@ -15,19 +15,17 @@ import { color, range, select, useDark } from './_controls';
 
 export default { title: 'Icon' };
 
-type CentralName = CentralIconName;
-
-const ICONS: Record<CentralName, { line: CentralIcon; solid?: CentralIcon }> = CENTRAL_ICONS;
+const ICONS: Record<CentralIconName, { line: CentralIcon; solid?: CentralIcon }> = CENTRAL_ICONS;
 const STYLES = ['line', 'solid'] as const;
-const NAMES = Object.keys(ICONS) as CentralName[];
+const NAMES = Object.keys(ICONS) as CentralIconName[];
 const ALIAS_NAMES = Object.keys(KIT_ICON_ALIASES) as KitIconAliasName[];
 
-function targetName(target: KitIconAliasTarget): CentralName {
+function targetName(target: KitIconAliasTarget): CentralIconName {
   return typeof target === 'string' ? target : target.name;
 }
 
-function aliasesByName(): Map<CentralName, string[]> {
-  const out = new Map<CentralName, string[]>();
+function aliasesByName(): Map<CentralIconName, string[]> {
+  const out = new Map<CentralIconName, string[]>();
   for (const alias of ALIAS_NAMES) {
     const name = targetName(KIT_ICON_ALIASES[alias]);
     out.set(name, [...(out.get(name) ?? []), alias]);
@@ -37,15 +35,15 @@ function aliasesByName(): Map<CentralName, string[]> {
 
 const ALIASES_OF = aliasesByName();
 
-function namesIn(style: IconStyle): CentralName[] {
+function namesIn(style: IconStyle): CentralIconName[] {
   return style === 'solid' ? NAMES.filter((name) => ICONS[name].solid !== undefined) : NAMES;
 }
 
-function glyph(name: CentralName, style: IconStyle): CentralIcon {
+function glyph(name: CentralIconName, style: IconStyle): CentralIcon {
   return style === 'solid' ? (ICONS[name].solid ?? ICONS[name].line) : ICONS[name].line;
 }
 
-function matches(name: CentralName, query: string): boolean {
+function matches(name: CentralIconName, query: string): boolean {
   if (query === '') return true;
   if (name.toLowerCase().includes(query)) return true;
   return (ALIASES_OF.get(name) ?? []).some((alias) => alias.toLowerCase().includes(query));
@@ -89,7 +87,7 @@ function Catalogue({ style }: { style: IconStyle }): React.ReactElement {
 }
 
 interface GlyphArgs {
-  name: CentralName;
+  name: CentralIconName;
   style: IconStyle;
   size: number;
   color?: string;

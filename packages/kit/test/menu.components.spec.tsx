@@ -14,10 +14,7 @@ const noop = (): void => undefined;
 describe('DropdownMenuItem', () => {
   test('a plain row is a menu item named by its label', () => {
     const html = renderToStaticMarkup(<DropdownMenuItem label="Reply" onPress={noop} />);
-    expect(html).toContain('role="menuitem"');
-    expect(html).toContain('aria-label="Reply"');
-    expect(html).toContain('padding-top:6px');
-    expect(html).toContain('gap:8px');
+    for (const part of ['role="menuitem"', 'aria-label="Reply"', 'padding-top:6px', 'gap:8px']) expect(html).toContain(part);
   });
 
   test('a host row keeps its own role, state, gap, height and slots', () => {

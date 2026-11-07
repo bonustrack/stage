@@ -27,9 +27,8 @@ describe('transfer amounts', () => {
   });
 
   it('rejects scientific notation, non-positive amounts and junk', () => {
-    for (const amount of ['1e3', '1E-3', '0', '0.0', '-1', '', 'abc', '1.2.3', '0x1']) {
+    for (const amount of ['1e3', '1E-3', '0', '0.0', '-1', '', 'abc', '1.2.3', '0x1'])
       expect(() => ethValue(amount)).toThrow('Invalid amount');
-    }
   });
 
   it('rounds fraction digits past the token decimals, as the smart account send always did', () => {

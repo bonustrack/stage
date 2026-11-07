@@ -31,12 +31,22 @@ afterEach(() => {
 });
 
 async function settled(): Promise<void> {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 0);
+  for (let tick = 0; tick < 2; tick += 1) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  }
+}
+
+async function ensureCountingNotices(store: ReturnType<typeof createPeerProfiles>, address: string): Promise<number> {
+  let notified = 0;
+  const unsubscribe = store.subscribe(() => {
+    notified += 1;
   });
-  await new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
+  store.ensure([address]);
+  await settled();
+  unsubscribe();
+  return notified;
 }
 
 describe('seeded profiles are usable before the network answers', () => {
@@ -68,13 +78,7 @@ describe('a seeded profile is still refreshed from the network', () => {
   test('ensure looks a seeded address up again, and stays quiet when nothing changed', async () => {
     profiles.seed({ [TONY]: 'Tony' });
     answer = { [TONY]: 'Tony' };
-    let notified = 0;
-    const unsubscribe = profiles.subscribe(() => {
-      notified += 1;
-    });
-    profiles.ensure([TONY]);
-    await settled();
-    unsubscribe();
+    const notified = await ensureCountingNotices(profiles, TONY);
     expect(lookups.flat()).toContain(TONY);
     expect(notified).toBe(0);
     expect(profiles.name(TONY)).toBe('Tony');
@@ -89,14 +93,7 @@ describe('a seeded profile is still refreshed from the network', () => {
   test('a changed name notifies subscribers', async () => {
     profiles.seed({ [RENAMED]: 'Before' });
     answer = { [RENAMED]: 'After' };
-    let notified = 0;
-    const unsubscribe = profiles.subscribe(() => {
-      notified += 1;
-    });
-    profiles.ensure([RENAMED]);
-    await settled();
-    unsubscribe();
-    expect(notified).toBe(1);
+    expect(await ensureCountingNotices(profiles, RENAMED)).toBe(1);
     expect(profiles.name(RENAMED)).toBe('After');
   });
 });
@@ -124,13 +121,7 @@ describe('a flaky RPC never wipes a cached profile', () => {
     const flaky = createPeerProfiles({ resolveOnchain: (address) => resolveOnchainProfile(avatarReadFails, address) });
     flaky.seed({ [TONY]: { name: 'tony.base.eth', avatar: 'ipfs://cached', source: 'basename' } });
     answer = { [TONY]: 'tony.base.eth' };
-    let notified = 0;
-    const unsubscribe = flaky.subscribe(() => {
-      notified += 1;
-    });
-    flaky.ensure([TONY]);
-    await settled();
-    unsubscribe();
+    const notified = await ensureCountingNotices(flaky, TONY);
     expect(flaky.avatar(TONY)).toBe('ipfs://cached');
     expect(notified).toBe(0);
   });

@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { attachmentEmojiPreview, attachmentKindOf, attachmentsPreview, entryAttachmentKind, isSvgAttachment } from '../src/xmtp/humanize';
-import { rowPreviewOf } from '../src/xmtp/contentTypes';
+import { previewOf } from './helpers';
 
 describe('SVG attachments', () => {
   test('are recognised by type or by name', () => {
@@ -22,8 +22,7 @@ describe('SVG attachments', () => {
     expect(attachmentKindOf({ mimeType: 'image/svg+xml' })).toBe('file');
     expect(attachmentsPreview([{ mimeType: 'image/svg+xml', filename: 'logo.svg' }])).toBe('Sent a file');
     expect(attachmentEmojiPreview('image/svg+xml', 'logo.svg')).toBe('📎');
-    const content = { filename: 'logo.svg', mimeType: 'image/svg+xml', data: '' };
-    expect(rowPreviewOf({ content, contentTypeId: 'xmtp.org/attachment:1.0' })).toBe('Sent a file');
+    expect(previewOf({ filename: 'logo.svg', mimeType: 'image/svg+xml', data: '' }, 'xmtp.org/attachment:1.0')).toBe('Sent a file');
   });
 });
 

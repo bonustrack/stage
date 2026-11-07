@@ -198,16 +198,7 @@ describe('replies', () => {
     const declared = namespace(() => new Response('{}', { headers: { 'content-length': String(limit + 1) } }));
     expect((await call(NODE_URL, { nodes: declared.nodes })).status).toBe(502);
     const chunk = new Uint8Array(64 * 1024);
-    const streamed = namespace(
-      () =>
-        new Response(
-          new ReadableStream({
-            pull: (controller) => {
-              controller.enqueue(chunk);
-            },
-          }),
-        ),
-    );
+    const streamed = namespace(() => new Response(new ReadableStream({ pull: (controller) => controller.enqueue(chunk) })));
     expect((await call(NODE_URL, { nodes: streamed.nodes })).status).toBe(502);
   });
 

@@ -43,7 +43,6 @@ describe('link preview replies', () => {
 
   test('carry an x402 challenge as a challenge', async () => {
     respond({ kind: 'x402', endpoint: PAGE, accepts: [{ scheme: 'exact', network: 'base', amount: '1000' }] });
-    const result = await fetchLinkPreview('https://proxy.stage.box', PAGE);
-    expect(isX402(result)).toBe(true);
+    expect(isX402(await fetchLinkPreview('https://proxy.stage.box', PAGE))).toBe(true);
   });
 });

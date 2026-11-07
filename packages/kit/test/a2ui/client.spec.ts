@@ -178,6 +178,8 @@ describe('Kit catalog', () => {
   const registry = createCatalogRegistry([BASIC_CATALOG, KIT_CATALOG]);
   const valid = (component: JsonObject) => registry.validateComponent(KIT_CATALOG_ID, component, []);
   const basic = (component: JsonObject) => registry.validateComponent(BASIC_CATALOG_ID, component, []);
+  const accepts = (component: JsonObject): void => expect(valid(component)).toEqual([]);
+  const rejects = (component: JsonObject): void => expect(valid(component).length).toBeGreaterThan(0);
   const action = { event: { name: 'x' } };
 
   test('is a valid A2UI v1.0 catalog definition', () => {
@@ -188,7 +190,7 @@ describe('Kit catalog', () => {
 
   test('extends the basic catalog components and still rejects unknown props', () => {
     const text = { id: 't', component: 'Text', text: 'Hi', size: 'lg', fontWeight: 'semibold', color: 'secondary' };
-    expect(valid(text)).toEqual([]);
+    accepts(text);
     expect(basic(text).length).toBeGreaterThan(0);
     expect(valid({ ...text, bogus: 1 })).toEqual([{ path: '/bogus', message: "Unexpected property 'bogus'." }]);
     expect(Object.keys(registry.component(KIT_CATALOG_ID, 'Text')?.properties ?? {})).toContain('fontWeight');
@@ -218,41 +220,34 @@ describe('Kit catalog', () => {
       expect(client.checks('editor', rules, ROOT_SCOPE)[0]?.valid).toBe(false);
       client.write('editor', '/name', 'Grace');
       expect(client.checks('editor', rules, ROOT_SCOPE)[0]?.valid).toBe(true);
-      expect(valid({ id: 'save', component: 'Button', child: 'l', action: { event: { name: 'save' } }, checks: rules })).toEqual([]);
+      accepts({ id: 'save', component: 'Button', child: 'l', action: { event: { name: 'save' } }, checks: rules });
     });
   });
 
   describe('Text', () => {
     test('takes bound colours and weights, the surface colour, letter spacing and case, opacity and selection', () => {
-      expect(valid({ id: 't', component: 'Text', text: 'Late', color: { '@path': 'tone' }, fontWeight: { '@path': '/weight' } })).toEqual(
-        [],
-      );
-      expect(valid({ id: 't', component: 'Text', text: '3', color: 'surface' })).toEqual([]);
-      expect(valid({ id: 't', component: 'Text', text: 'Panel', letterSpacing: 1, textTransform: 'uppercase' })).toEqual([]);
-      expect(valid({ id: 't', component: 'Text', text: 'Panel', textTransform: 'shout' }).length).toBeGreaterThan(0);
-      expect(valid({ id: 't', component: 'Text', text: 'x', opacity: 0.5, selectable: true })).toEqual([]);
+      accepts({ id: 't', component: 'Text', text: 'Late', color: { '@path': 'tone' }, fontWeight: { '@path': '/weight' } });
+      accepts({ id: 't', component: 'Text', text: '3', color: 'surface' });
+      accepts({ id: 't', component: 'Text', text: 'Panel', letterSpacing: 1, textTransform: 'uppercase' });
+      rejects({ id: 't', component: 'Text', text: 'Panel', textTransform: 'shout' });
+      accepts({ id: 't', component: 'Text', text: 'x', opacity: 0.5, selectable: true });
     });
   });
 
   describe('Icon', () => {
     test('takes Central icon names only', () => {
-      expect(valid({ id: 'i', component: 'Icon', name: 'wallet' })).toEqual([]);
+      for (const name of ['wallet', 'settingsGear1', 'chevronRightSmall', 'pin', 'brokenHeart'])
+        accepts({ id: 'i', component: 'Icon', name });
       expect(basic({ id: 'i', component: 'Icon', name: 'wallet' }).length).toBeGreaterThan(0);
-      expect(valid({ id: 'i', component: 'Icon', name: 'settingsGear1' })).toEqual([]);
-      expect(valid({ id: 'i', component: 'Icon', name: 'chevronRightSmall' })).toEqual([]);
-      expect(valid({ id: 'i', component: 'Icon', name: 'pin' })).toEqual([]);
-      expect(valid({ id: 'i', component: 'Icon', name: 'brokenHeart' })).toEqual([]);
-      expect(valid({ id: 'i', component: 'Icon', name: 'noSuchIcon' }).length).toBeGreaterThan(0);
+      rejects({ id: 'i', component: 'Icon', name: 'noSuchIcon' });
     });
   });
 
   describe('Button', () => {
     test('takes a Kit fill and colour, a bound colour and a bound loading state', () => {
-      expect(valid({ id: 'b', component: 'Button', child: 't', variant: 'soft', color: 'danger', action })).toEqual([]);
-      expect(valid({ id: 'b', component: 'Button', child: 't', color: { '@path': 'tone' }, action })).toEqual([]);
-      expect(
-        valid({ id: 'b', component: 'Button', child: 'l', loading: { '@path': '/saving' }, action: { event: { name: 'save' } } }),
-      ).toEqual([]);
+      accepts({ id: 'b', component: 'Button', child: 't', variant: 'soft', color: 'danger', action });
+      accepts({ id: 'b', component: 'Button', child: 't', color: { '@path': 'tone' }, action });
+      accepts({ id: 'b', component: 'Button', child: 'l', loading: { '@path': '/saving' }, action: { event: { name: 'save' } } });
     });
   });
 
@@ -268,36 +263,36 @@ describe('Kit catalog', () => {
     };
 
     test('take bound or percentage sizes and per-side padding', () => {
-      expect(valid(bar)).toEqual([]);
-      expect(valid({ ...bar, width: '40%', height: 8 })).toEqual([]);
-      expect(valid({ ...bar, width: '40px' }).length).toBeGreaterThan(0);
-      expect(valid({ ...bar, padding: { inside: 4 } }).length).toBeGreaterThan(0);
+      accepts(bar);
+      accepts({ ...bar, width: '40%', height: 8 });
+      rejects({ ...bar, width: '40px' });
+      rejects({ ...bar, padding: { inside: 4 } });
     });
 
     test('take per-side borders, pixel radii and opacity', () => {
-      expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { bottom: { size: 1, color: 'border' } } })).toEqual([]);
-      expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { left: 2 } })).toEqual([]);
-      expect(valid({ id: 'r', component: 'Row', children: ['a'], border: { middle: 1 } }).length).toBeGreaterThan(0);
-      expect(valid({ id: 'c', component: 'Column', children: ['a'], radius: 14 })).toEqual([]);
-      expect(valid({ id: 'c', component: 'Column', children: ['a'], radius: -1 }).length).toBeGreaterThan(0);
-      expect(valid({ id: 'r', component: 'Column', children: ['a'], opacity: 0.6 })).toEqual([]);
-      expect(valid({ id: 'r', component: 'Column', children: ['a'], opacity: 2 }).length).toBeGreaterThan(0);
+      accepts({ id: 'r', component: 'Row', children: ['a'], border: { bottom: { size: 1, color: 'border' } } });
+      accepts({ id: 'r', component: 'Row', children: ['a'], border: { left: 2 } });
+      rejects({ id: 'r', component: 'Row', children: ['a'], border: { middle: 1 } });
+      accepts({ id: 'c', component: 'Column', children: ['a'], radius: 14 });
+      rejects({ id: 'c', component: 'Column', children: ['a'], radius: -1 });
+      accepts({ id: 'r', component: 'Column', children: ['a'], opacity: 0.6 });
+      rejects({ id: 'r', component: 'Column', children: ['a'], opacity: 2 });
     });
 
     test('take a standard action with press feedback, which the basic catalog does not', () => {
       const pick = { event: { name: 'pickTheme', context: { id: { '@path': 'id' } } } };
-      expect(valid({ id: 'c', component: 'Column', children: ['a'], action: pick })).toEqual([]);
-      expect(valid({ id: 'r', component: 'Row', children: ['a'], action: pick })).toEqual([]);
+      accepts({ id: 'c', component: 'Column', children: ['a'], action: pick });
+      accepts({ id: 'r', component: 'Row', children: ['a'], action: pick });
       expect(basic({ id: 'c', component: 'Column', children: ['a'], action: pick }).length).toBeGreaterThan(0);
-      expect(valid({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'highlight' })).toEqual([]);
-      expect(valid({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'shake' }).length).toBeGreaterThan(0);
+      accepts({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'highlight' });
+      rejects({ id: 'r', component: 'Row', children: ['a'], action, feedback: 'shake' });
     });
   });
 
   describe('Card', () => {
     test('takes a background colour or a surface', () => {
-      expect(valid({ id: 'k', component: 'Card', child: 'r', background: '#f7f7f8' })).toEqual([]);
-      expect(valid({ id: 'k', component: 'Card', child: 'r', surface: 'surface' })).toEqual([]);
+      accepts({ id: 'k', component: 'Card', child: 'r', background: '#f7f7f8' });
+      accepts({ id: 'k', component: 'Card', child: 'r', surface: 'surface' });
     });
   });
 
@@ -314,40 +309,34 @@ describe('Kit catalog', () => {
         move: { '@path': '/lastMove' },
         action: { event: { name: 'moveCard', context: { move: { '@path': '/lastMove' } } } },
       };
-      expect(valid(list)).toEqual([]);
-      expect(valid({ ...list, move: '/lastMove' }).length).toBeGreaterThan(0);
-      expect(
-        valid({ id: 'l', component: 'List', children: { componentId: 'row', path: '/pages' }, sortable: true, handle: 'grip' }),
-      ).toEqual([]);
+      accepts(list);
+      rejects({ ...list, move: '/lastMove' });
+      accepts({ id: 'l', component: 'List', children: { componentId: 'row', path: '/pages' }, sortable: true, handle: 'grip' });
     });
 
     test('takes a preview or line indicator and padding', () => {
-      expect(valid({ id: 'l', component: 'List', children: ['a'], indicator: 'line', padding: { x: 8 } })).toEqual([]);
-      expect(valid({ id: 'l', component: 'List', children: ['a'], indicator: 'shift' }).length).toBeGreaterThan(0);
+      accepts({ id: 'l', component: 'List', children: ['a'], indicator: 'line', padding: { x: 8 } });
+      rejects({ id: 'l', component: 'List', children: ['a'], indicator: 'shift' });
     });
   });
 
   describe('TextField and CheckBox', () => {
     test('a TextField takes a submit action, which the basic catalog does not, a hidden label and a pill shape', () => {
       const field = { id: 'f', component: 'TextField', label: 'Name', value: { '@path': '/name' } };
-      expect(valid({ ...field, action: { event: { name: 'rename', context: { name: { '@path': '/name' } } } } })).toEqual([]);
+      accepts({ ...field, action: { event: { name: 'rename', context: { name: { '@path': '/name' } } } } });
       expect(basic({ ...field, action: { event: { name: 'rename' } } }).length).toBeGreaterThan(0);
-      expect(valid({ id: 'f', component: 'TextField', label: 'Search', hideLabel: true, pill: true, value: { '@path': '/q' } })).toEqual(
-        [],
-      );
+      accepts({ id: 'f', component: 'TextField', label: 'Search', hideLabel: true, pill: true, value: { '@path': '/q' } });
     });
 
     test('a CheckBox takes an action and the switch style', () => {
-      expect(
-        valid({
-          id: 'c',
-          component: 'CheckBox',
-          label: 'In sidebar',
-          value: { '@path': 'shown' },
-          displayStyle: 'switch',
-          action: { event: { name: 'toggle', context: { shown: { '@path': 'shown' } } } },
-        }),
-      ).toEqual([]);
+      accepts({
+        id: 'c',
+        component: 'CheckBox',
+        label: 'In sidebar',
+        value: { '@path': 'shown' },
+        displayStyle: 'switch',
+        action: { event: { name: 'toggle', context: { shown: { '@path': 'shown' } } } },
+      });
     });
   });
 
@@ -360,31 +349,29 @@ describe('Kit catalog', () => {
         action: { event: { name: 'deleteColumn', context: { id: { '@path': 'id' } } } },
       };
       const menu = { id: 'm', component: 'DropdownMenu', trigger: 'more', align: 'end', items: [row] };
-      expect(valid(menu)).toEqual([]);
-      expect(valid({ ...menu, items: [{ label: 'Delete' }] }).length).toBeGreaterThan(0);
-      expect(valid({ ...menu, items: [{ ...row, bogus: 1 }] }).length).toBeGreaterThan(0);
+      accepts(menu);
+      rejects({ ...menu, items: [{ label: 'Delete' }] });
+      rejects({ ...menu, items: [{ ...row, bogus: 1 }] });
       const setColor = { event: { name: 'setColor' } };
-      expect(
-        valid({
-          id: 'm',
-          component: 'DropdownMenu',
-          trigger: 'b',
-          items: [{ label: 'Red', swatch: '#e25507', selected: true, action: setColor }],
-        }),
-      ).toEqual([]);
+      accepts({
+        id: 'm',
+        component: 'DropdownMenu',
+        trigger: 'b',
+        items: [{ label: 'Red', swatch: '#e25507', selected: true, action: setColor }],
+      });
       const rename = { label: 'Rename', action: { event: { name: 'rename' } } };
-      expect(valid({ id: 'm', component: 'DropdownMenu', trigger: 'row', openOn: 'contextMenu', items: [rename] })).toEqual([]);
+      accepts({ id: 'm', component: 'DropdownMenu', trigger: 'row', openOn: 'contextMenu', items: [rename] });
     });
 
     test('a Modal opens as a side sheet or from a bound value', () => {
-      expect(valid({ id: 'd', component: 'Modal', trigger: 'b', content: 'c', side: 'end' })).toEqual([]);
-      expect(valid({ id: 'd', component: 'Modal', trigger: 'open', content: 'body', open: { '@path': '/confirm/open' } })).toEqual([]);
+      accepts({ id: 'd', component: 'Modal', trigger: 'b', content: 'c', side: 'end' });
+      accepts({ id: 'd', component: 'Modal', trigger: 'open', content: 'body', open: { '@path': '/confirm/open' } });
     });
   });
 
   describe('Title and Chart', () => {
     test('a Title takes a line clamp', () => {
-      expect(valid({ id: 'h', component: 'Title', text: 'Project', maxLines: 3 })).toEqual([]);
+      accepts({ id: 'h', component: 'Title', text: 'Project', maxLines: 3 });
     });
 
     test('a Chart takes bound or inline data and bound series, and only its chart types', () => {
@@ -396,14 +383,12 @@ describe('Kit catalog', () => {
         xAxis: 'week',
         height: 160,
       };
-      expect(valid(chart)).toEqual([]);
-      expect(valid({ ...chart, data: [{ week: 'W1', sales: 3 }] })).toEqual([]);
-      expect(valid({ ...chart, series: [{ type: 'pie', dataKey: 'sales' }] }).length).toBeGreaterThan(0);
+      accepts(chart);
+      accepts({ ...chart, data: [{ week: 'W1', sales: 3 }] });
+      rejects({ ...chart, series: [{ type: 'pie', dataKey: 'sales' }] });
       const bare = { id: 'c', component: 'Chart', data: { '@path': '/trend' }, xAxis: 'week' };
-      expect(valid({ ...bare, series: { '@path': '/series' } })).toEqual([]);
-      expect(
-        valid({ ...bare, series: [{ type: 'line', dataKey: { '@path': '/metric/key' }, label: { '@path': '/metric/label' } }] }),
-      ).toEqual([]);
+      accepts({ ...bare, series: { '@path': '/series' } });
+      accepts({ ...bare, series: [{ type: 'line', dataKey: { '@path': '/metric/key' }, label: { '@path': '/metric/label' } }] });
     });
   });
 });

@@ -23,9 +23,7 @@ describe('personQuery', () => {
   });
 
   test('a label that cannot be a stage username is not looked up', () => {
-    for (const input of ['tony', '', 'tony-', 'x'.repeat(33), 'bob', '0x12', 'not a name']) {
-      expect(personQuery(input)).toBeNull();
-    }
+    for (const input of ['tony', '', 'tony-', 'x'.repeat(33), 'bob', '0x12', 'not a name']) expect(personQuery(input)).toBeNull();
   });
 
   test('full names keep their own resolution, mainnet ENS is marked', () => {

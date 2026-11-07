@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { createHmac } from 'node:crypto';
 import { makePushRegistrar, type PushRegistrationInput } from '../src/xmtp/pushRegistration';
 import type { PushSubscriptionJson } from '../src/xmtp/pushServer';
+import { deferred } from './helpers';
 
 const GROUP = '/xmtp/mls/1/g-abcdef/proto';
 const DM = '/xmtp/mls/1/g-012345/proto';
@@ -19,18 +20,20 @@ function fixture(timeoutMs?: number) {
   const subscriptions = new Map<string, PushSubscriptionJson[]>();
   const calls: string[] = [];
   const statuses: string[] = [];
-  let key: Uint8Array = OLD_KEY;
-  let period = PERIOD;
-  let token = 'synthetic-token';
-  let now = 1_000;
-  let current = true;
-  let failPost = false;
-  let failRead = false;
-  let failSync = false;
-  let failWrite = false;
-  let sync: () => Promise<void> = () => Promise.resolve();
-  let beforePost: () => Promise<void> = () => Promise.resolve();
-  let beforeRead: () => void = () => undefined;
+  const state = {
+    key: OLD_KEY,
+    period: PERIOD,
+    token: 'synthetic-token',
+    now: 1_000,
+    current: true,
+    failPost: false,
+    failRead: false,
+    failSync: false,
+    failWrite: false,
+    sync: (): Promise<void> => Promise.resolve(),
+    beforePost: (): Promise<void> => Promise.resolve(),
+    beforeRead: (): void => undefined,
+  };
   const { register, unregister } = makePushRegistrar({
     timeoutMs,
     cacheError: (error) => {
@@ -40,17 +43,17 @@ function fixture(timeoutMs?: number) {
       stored.delete(id);
     },
     read: async (id) => {
-      beforeRead();
-      if (failRead) throw new Error('disk unavailable');
+      state.beforeRead();
+      if (state.failRead) throw new Error('disk unavailable');
       return stored.get(id) ?? null;
     },
     write: async (id, value) => {
-      if (failWrite) throw new Error('quota exceeded');
+      if (state.failWrite) throw new Error('quota exceeded');
       stored.set(id, value);
     },
     post: async (url, body) => {
-      await beforePost();
-      if (failPost) throw new Error('offline');
+      await state.beforePost();
+      if (state.failPost) throw new Error('offline');
       calls.push(url);
       if (url === 'SubscribeWithMetadata') {
         const request = body as { installationId: string; subscriptions: PushSubscriptionJson[] };
@@ -58,7 +61,7 @@ function fixture(timeoutMs?: number) {
       }
       if (url === 'DeleteInstallation') subscriptions.delete((body as { installationId: string }).installationId);
     },
-    now: () => now,
+    now: () => state.now,
     status: (status) => {
       statuses.push(status);
     },
@@ -66,22 +69,22 @@ function fixture(timeoutMs?: number) {
   const input: PushRegistrationInput = {
     installationId: 'mobile',
     platform: 'android',
-    current: () => current,
+    current: () => state.current,
     signal: controller.signal,
     rpcUrl: (method) => method,
-    getToken: async () => token,
+    getToken: async () => state.token,
     syncPreferences: async () => {
-      if (failSync) throw new Error('sync failed');
-      await sync();
+      if (state.failSync) throw new Error('sync failed');
+      await state.sync();
     },
     collectTopics: async () => ({
       topics: [GROUP, DM, WELCOME],
-      hmacKeys: Object.fromEntries([GROUP, DM].map((topic) => [topic, [{ thirtyDayPeriodsSinceEpoch: period, hmacKey: key }]])),
+      hmacKeys: Object.fromEntries([GROUP, DM].map((topic) => [topic, [{ thirtyDayPeriodsSinceEpoch: state.period, hmacKey: state.key }]])),
     }),
   };
   const delivers = (installationId: string, topic: string, senderKey: Uint8Array): boolean => {
     const sub = subscriptions.get(installationId)?.find((item) => item.topic === topic);
-    const own = sub?.hmacKeys.find((item) => item.thirtyDayPeriodsSinceEpoch === period);
+    const own = sub?.hmacKeys.find((item) => item.thirtyDayPeriodsSinceEpoch === state.period);
     if (!own) return true;
     const expected = createHmac('sha256', Buffer.from(own.key, 'base64')).update(ENVELOPE).digest();
     return !expected.equals(createHmac('sha256', senderKey).update(ENVELOPE).digest());
@@ -99,51 +102,8 @@ function fixture(timeoutMs?: number) {
     abort: () => {
       controller.abort();
     },
-    setWriteFailure: (value: boolean) => {
-      failWrite = value;
-    },
-    setKey: (value: Uint8Array) => {
-      key = value;
-    },
-    setPeriod: (value: number) => {
-      period = value;
-    },
-    setToken: (value: string) => {
-      token = value;
-    },
-    setNow: (value: number) => {
-      now = value;
-    },
-    setCurrent: (value: boolean) => {
-      current = value;
-    },
-    setPostFailure: (value: boolean) => {
-      failPost = value;
-    },
-    setReadFailure: (value: boolean) => {
-      failRead = value;
-    },
-    setSyncFailure: (value: boolean) => {
-      failSync = value;
-    },
-    onSync: (value: () => Promise<void>) => {
-      sync = value;
-    },
-    onPost: (value: () => Promise<void>) => {
-      beforePost = value;
-    },
-    onRead: (value: () => void) => {
-      beforeRead = value;
-    },
+    state,
   };
-}
-
-function deferred() {
-  let release = (): void => undefined;
-  const promise = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  return { promise, release };
 }
 
 describe('inbox sender-filter registration', () => {
@@ -151,7 +111,7 @@ describe('inbox sender-filter registration', () => {
     const f = fixture();
     await f.register(f.input);
     expect(f.delivers('mobile', GROUP, OWNER_KEY)).toBe(true);
-    f.setKey(OWNER_KEY);
+    f.state.key = OWNER_KEY;
     await f.register(f.input);
     expect(f.calls).toEqual(['RegisterInstallation', 'SubscribeWithMetadata', 'SubscribeWithMetadata']);
     for (const topic of [GROUP, DM]) {
@@ -164,9 +124,9 @@ describe('inbox sender-filter registration', () => {
 
   test('syncs the inbox preferences before reading keys on cold registration', async () => {
     const f = fixture();
-    f.onSync(async () => {
-      f.setKey(OWNER_KEY);
-    });
+    f.state.sync = async () => {
+      f.state.key = OWNER_KEY;
+    };
     await f.register(f.input);
     expect(f.delivers('mobile', GROUP, OWNER_KEY)).toBe(false);
   });
@@ -183,13 +143,13 @@ describe('inbox sender-filter registration', () => {
     await f.register(f.input);
     await f.register(f.input);
     expect(f.calls).toHaveLength(2);
-    f.setPeriod(PERIOD + 1);
+    f.state.period = PERIOD + 1;
     await f.register(f.input);
     expect(f.calls).toHaveLength(3);
-    f.setToken('renewed-token');
+    f.state.token = 'renewed-token';
     await f.register(f.input);
     expect(f.calls.slice(-2)).toEqual(['RegisterInstallation', 'SubscribeWithMetadata']);
-    f.setNow(24 * 60 * 60 * 1_000);
+    f.state.now = 24 * 60 * 60 * 1_000;
     await f.register(f.input);
     expect(f.calls).toHaveLength(7);
   });
@@ -220,7 +180,7 @@ describe('inbox sender-filter registration', () => {
     const restarted = fixture();
     for (const [id, state] of before.stored) restarted.stored.set(id, state);
     for (const [id, subscriptions] of before.subscriptions) restarted.subscriptions.set(id, subscriptions);
-    restarted.setKey(OWNER_KEY);
+    restarted.state.key = OWNER_KEY;
     await restarted.register(restarted.input);
     expect(restarted.calls).toEqual(['SubscribeWithMetadata']);
     expect(restarted.delivers('mobile', GROUP, OWNER_KEY)).toBe(false);
@@ -228,9 +188,9 @@ describe('inbox sender-filter registration', () => {
 
   test('keeps each account installation separate and never suppresses another account', async () => {
     const f = fixture();
-    f.setKey(OWNER_KEY);
+    f.state.key = OWNER_KEY;
     await f.register(f.input);
-    f.setKey(OTHER_KEY);
+    f.state.key = OTHER_KEY;
     await f.register({ ...f.input, installationId: 'other-account' });
     expect(f.delivers('mobile', GROUP, OWNER_KEY)).toBe(false);
     expect(f.delivers('other-account', GROUP, OWNER_KEY)).toBe(true);
@@ -240,11 +200,11 @@ describe('inbox sender-filter registration', () => {
 
   test('does not register without a token or while the captured session is stale', async () => {
     const f = fixture();
-    f.setToken('');
+    f.state.token = '';
     expect(await f.register(f.input)).toBe(false);
     expect(f.statuses).toEqual(['no-token']);
-    f.setToken('synthetic-token');
-    f.setCurrent(false);
+    f.state.token = 'synthetic-token';
+    f.state.current = false;
     expect(await f.register(f.input)).toBe(false);
     expect(f.calls).toEqual([]);
   });
@@ -255,22 +215,22 @@ describe('inbox sender-filter registration', () => {
       const input = { ...f.input };
       if (phase === 'token')
         input.getToken = async () => {
-          f.setCurrent(false);
+          f.state.current = false;
           return 'token';
         };
       if (phase === 'sync')
-        f.onSync(async () => {
-          f.setCurrent(false);
-        });
+        f.state.sync = async () => {
+          f.state.current = false;
+        };
       if (phase === 'topics')
         input.collectTopics = async () => {
-          f.setCurrent(false);
+          f.state.current = false;
           return { topics: [], hmacKeys: {} };
         };
       if (phase === 'storage')
-        f.onRead(() => {
-          f.setCurrent(false);
-        });
+        f.state.beforeRead = () => {
+          f.state.current = false;
+        };
       expect(await f.register(input)).toBe(false);
       expect(f.calls).toEqual([]);
       expect(f.stored.size).toBe(0);
@@ -279,9 +239,9 @@ describe('inbox sender-filter registration', () => {
 
   test('a switch during HTTP never saves an outdated registration or reports it as ready', async () => {
     const f = fixture();
-    f.onPost(async () => {
-      f.setCurrent(false);
-    });
+    f.state.beforePost = async () => {
+      f.state.current = false;
+    };
     expect(await f.register(f.input)).toBe(false);
     expect(f.calls).toEqual(['RegisterInstallation']);
     expect(f.stored.size).toBe(0);
@@ -290,16 +250,16 @@ describe('inbox sender-filter registration', () => {
 
   test('failed sync, storage and subscription requests remain retryable', async () => {
     const f = fixture();
-    f.setSyncFailure(true);
+    f.state.failSync = true;
     await expect(f.register(f.input)).rejects.toThrow('sync failed');
-    f.setSyncFailure(false);
-    f.setReadFailure(true);
+    f.state.failSync = false;
+    f.state.failRead = true;
     await expect(f.register(f.input)).rejects.toThrow('disk unavailable');
-    f.setReadFailure(false);
-    f.setPostFailure(true);
+    f.state.failRead = false;
+    f.state.failPost = true;
     await expect(f.register(f.input)).rejects.toThrow('offline');
     expect(f.stored.size).toBe(0);
-    f.setPostFailure(false);
+    f.state.failPost = false;
     expect(await f.register(f.input)).toBe(true);
   });
 
@@ -307,13 +267,13 @@ describe('inbox sender-filter registration', () => {
     const f = fixture();
     const gate = deferred();
     const entered = deferred();
-    f.onPost(async () => {
+    f.state.beforePost = async () => {
       entered.release();
       await gate.promise;
-    });
+    };
     const first = f.register(f.input);
     await entered.promise;
-    f.setKey(OWNER_KEY);
+    f.state.key = OWNER_KEY;
     const second = f.register(f.input);
     gate.release();
     await Promise.all([first, second]);
@@ -325,14 +285,14 @@ describe('inbox sender-filter registration', () => {
     const f = fixture();
     const gate = deferred();
     const entered = deferred();
-    f.onSync(async () => {
+    f.state.sync = async () => {
       entered.release();
       await gate.promise;
-    });
+    };
     const first = f.register(f.input);
     await entered.promise;
     const second = f.register(f.input);
-    f.setCurrent(false);
+    f.state.current = false;
     gate.release();
     expect(await Promise.all([first, second])).toEqual([false, false]);
     expect(f.calls).toEqual([]);
@@ -341,23 +301,23 @@ describe('inbox sender-filter registration', () => {
   test('a closed worker cannot block the same installation on the replacement session', async () => {
     const f = fixture();
     const entered = deferred();
-    f.onSync(() => {
+    f.state.sync = () => {
       entered.release();
       return new Promise(() => undefined);
-    });
+    };
     const abandoned = f.register(f.input);
     await entered.promise;
     f.abort();
     await expect(abandoned).rejects.toThrow('cancelled');
-    f.onSync(async () => undefined);
+    f.state.sync = async () => undefined;
     expect(await f.register({ ...f.input, signal: new AbortController().signal })).toBe(true);
   });
 
   test('a hung SDK call times out without poisoning future refreshes', async () => {
     const f = fixture(10);
-    f.onSync(() => new Promise(() => undefined));
+    f.state.sync = () => new Promise(() => undefined);
     await expect(f.register(f.input)).rejects.toThrow('timed out');
-    f.onSync(async () => undefined);
+    f.state.sync = async () => undefined;
     expect(await f.register(f.input)).toBe(true);
   });
 
@@ -365,16 +325,16 @@ describe('inbox sender-filter registration', () => {
     const f = fixture();
     const entered = deferred();
     const gate = deferred();
-    f.onPost(async () => {
+    f.state.beforePost = async () => {
       if (f.calls.length === 1) {
         entered.release();
         await gate.promise;
       }
-    });
+    };
     const registering = f.register(f.input);
     await entered.promise;
     expect(f.stored.size).toBe(0);
-    f.setCurrent(false);
+    f.state.current = false;
     const removing = f.unregister('mobile', (method) => method);
     gate.release();
     expect(await registering).toBe(false);
@@ -386,7 +346,7 @@ describe('inbox sender-filter registration', () => {
 
   test('successful remote registration remains successful when optional cache persistence fails', async () => {
     const f = fixture();
-    f.setWriteFailure(true);
+    f.state.failWrite = true;
     expect(await f.register(f.input)).toBe(true);
     expect(f.cacheErrors).toHaveLength(1);
     expect(f.subscriptions.has('mobile')).toBe(true);

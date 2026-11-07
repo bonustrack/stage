@@ -1,19 +1,29 @@
 import { describe, expect, test } from 'bun:test';
 import { makeSenderFilterPublisher, type SenderFilterInput } from '../src/xmtp/pushSenderFilter';
+import { deferred } from './helpers';
 
 const TOPIC = '/xmtp/mls/1/g-abcdef/proto';
 const OTHER_TOPIC = '/xmtp/mls/1/g-123456/proto';
+const MANY_TOPICS = Array.from({ length: 300 }, (_, i) => `/xmtp/mls/1/g-${i.toString(16)}/proto`);
+const ROTATED_KEY = Buffer.from(new Uint8Array(42).fill(2)).toString('base64');
 
-function deferred() {
-  let release = (): void => undefined;
-  const promise = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  return { promise, release };
+const keysOf = (fill: number) => [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(fill) }];
+const manyTopicsSnapshot = () => ({ topics: MANY_TOPICS, hmacKeys: Object.fromEntries(MANY_TOPICS.map((topic) => [topic, keysOf(1)])) });
+const batchSizes = (bodies: string[]): number[] => bodies.map((body) => (JSON.parse(body) as { topics: unknown[] }).topics.length);
+
+function stall<A extends unknown[], R>(run: (...args: A) => Promise<R>) {
+  const entered = deferred();
+  const gate = deferred();
+  const stalled = async (...args: A): Promise<R> => {
+    entered.release();
+    await gate.promise;
+    return run(...args);
+  };
+  return { entered, gate, stalled };
 }
 
-function fixture(timeoutMs = 1_000) {
-  const publisher = makeSenderFilterPublisher(Date.now, timeoutMs);
+function fixture() {
+  const publisher = makeSenderFilterPublisher(Date.now, 1_000);
   const bodies: string[] = [];
   const input: SenderFilterInput = {
     installationId: 'a'.repeat(64),
@@ -22,10 +32,7 @@ function fixture(timeoutMs = 1_000) {
     groupKey: async () => 'b'.repeat(64),
     sign: async () => new Uint8Array(64),
     syncPreferences: async () => undefined,
-    collectTopics: async (topic) => ({
-      topics: [topic ?? TOPIC],
-      hmacKeys: { [topic ?? TOPIC]: [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(1) }] },
-    }),
+    collectTopics: async (topic) => ({ topics: [topic ?? TOPIC], hmacKeys: { [topic ?? TOPIC]: keysOf(1) } }),
     post: async (body) => {
       await Bun.sleep(0);
       bodies.push(body.payload);
@@ -34,8 +41,45 @@ function fixture(timeoutMs = 1_000) {
   return { publisher, input, bodies };
 }
 
+type Fixture = ReturnType<typeof fixture>;
+
+function holdFirstPost(f: Fixture) {
+  const posting = deferred();
+  const gate = deferred();
+  const post = f.input.post;
+  f.input.post = async (body, signal) => {
+    if (f.bodies.length === 0) {
+      posting.release();
+      await gate.promise;
+    }
+    await post(body, signal);
+  };
+  return { posting, gate };
+}
+
+function delayedFirstCollection(f: Fixture) {
+  const entered = deferred();
+  const gate = deferred();
+  const collect = f.input.collectTopics;
+  const state = { key: 1, collections: 0 };
+  const input = {
+    ...f.input,
+    collectTopics: async (topic?: string) => {
+      state.collections += 1;
+      const snapshot = await collect(topic);
+      snapshot.hmacKeys[TOPIC] = keysOf(state.key);
+      if (state.collections === 1) {
+        entered.release();
+        await gate.promise;
+      }
+      return snapshot;
+    },
+  };
+  return { input, entered, gate, state };
+}
+
 async function seedImportCase(phase: 'group_key' | 'sign' | 'http') {
-  const f = fixture(1_000);
+  const f = fixture();
   let now = 0;
   let key = 1;
   let held = false;
@@ -64,7 +108,7 @@ async function seedImportCase(phase: 'group_key' | 'sign' | 'http') {
         await backgroundGate.promise;
       }
       const snapshot = await collect(topic);
-      snapshot.hmacKeys[TOPIC] = [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(key) }];
+      snapshot.hmacKeys[TOPIC] = keysOf(key);
       return snapshot;
     },
     groupKey: async () => {
@@ -91,7 +135,7 @@ async function seedImportCase(phase: 'group_key' | 'sign' | 'http') {
   try {
     await selected;
     expect(key).toBe(2);
-    expect(f.bodies.at(-1)).toContain(Buffer.from(new Uint8Array(42).fill(2)).toString('base64'));
+    expect(f.bodies.at(-1)).toContain(ROTATED_KEY);
   } finally {
     controller.abort();
     backgroundGate.release();
@@ -104,7 +148,7 @@ function rotatedCollection(input: SenderFilterInput) {
   let key = 1;
   input.collectTopics = async (topic) => {
     const snapshot = await collect(topic);
-    if (snapshot.hmacKeys[TOPIC]) snapshot.hmacKeys[TOPIC] = [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(key) }];
+    if (snapshot.hmacKeys[TOPIC]) snapshot.hmacKeys[TOPIC] = keysOf(key);
     return snapshot;
   };
   return () => {
@@ -115,19 +159,8 @@ function rotatedCollection(input: SenderFilterInput) {
 describe('foreground sender-filter isolation', () => {
   test('a stalled account-wide scan cannot consume the selected conversation send deadline', async () => {
     const f = fixture();
-    const entered = deferred();
-    const gate = deferred();
-    const collect = f.input.collectTopics;
-    const background = f.publisher
-      .publish({
-        ...f.input,
-        collectTopics: async (topic) => {
-          entered.release();
-          await gate.promise;
-          return collect(topic);
-        },
-      })
-      .catch((error: unknown) => error);
+    const { entered, gate, stalled } = stall(f.input.collectTopics);
+    const background = f.publisher.publish({ ...f.input, collectTopics: stalled }).catch((error: unknown) => error);
     await entered.promise;
     try {
       await f.publisher.publish({ ...f.input, topic: OTHER_TOPIC });
@@ -141,87 +174,41 @@ describe('foreground sender-filter isolation', () => {
 
   test('a stalled key read for one conversation does not block another conversation', async () => {
     const f = fixture();
-    const entered = deferred();
-    const gate = deferred();
-    const collect = f.input.collectTopics;
-    const stalled = f.publisher
-      .publish({
-        ...f.input,
-        topic: TOPIC,
-        collectTopics: async (topic) => {
-          entered.release();
-          await gate.promise;
-          return collect(topic);
-        },
-      })
-      .catch((error: unknown) => error);
+    const { entered, gate, stalled } = stall(f.input.collectTopics);
+    const stalledPublish = f.publisher.publish({ ...f.input, topic: TOPIC, collectTopics: stalled }).catch((error: unknown) => error);
     await entered.promise;
     try {
       await f.publisher.publish({ ...f.input, topic: OTHER_TOPIC });
       expect(f.bodies).toHaveLength(1);
     } finally {
       gate.release();
-      await stalled;
+      await stalledPublish;
     }
   });
 
   test.each([undefined, TOPIC])('a delayed %s snapshot is re-read rather than overwriting newer published keys', async (topic) => {
-    const f = fixture(1_000);
-    const entered = deferred();
-    const gate = deferred();
-    const collect = f.input.collectTopics;
-    let key = 1;
-    let collections = 0;
-    const input = {
-      ...f.input,
-      collectTopics: async (selected?: string) => {
-        collections += 1;
-        const snapshot = await collect(selected);
-        snapshot.hmacKeys[TOPIC] = [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(key) }];
-        if (collections === 1) {
-          entered.release();
-          await gate.promise;
-        }
-        return snapshot;
-      },
-    };
+    const f = fixture();
+    const { input, entered, gate, state } = delayedFirstCollection(f);
     const background = f.publisher.publish({ ...input, topic });
     await entered.promise;
-    key = 2;
+    state.key = 2;
     await f.publisher.publish({ ...input, topic: TOPIC });
     gate.release();
     await background;
-    expect(collections).toBe(3);
+    expect(state.collections).toBe(3);
     expect(f.bodies).toHaveLength(1);
-    expect(f.bodies[0]).toContain(Buffer.from(new Uint8Array(42).fill(2)).toString('base64'));
+    expect(f.bodies[0]).toContain(ROTATED_KEY);
   });
 
   test('a snapshot predating a failed or cancelled publication is re-read before a later attempt', async () => {
     for (const cancel of [false, true]) {
-      const f = fixture(1_000);
-      const entered = deferred();
-      const gate = deferred();
+      const f = fixture();
+      const { input, entered, gate, state } = delayedFirstCollection(f);
       const posting = deferred();
       const controller = new AbortController();
-      const collect = f.input.collectTopics;
-      let key = 1;
-      let collections = 0;
-      const input = {
-        ...f.input,
-        collectTopics: async (topic?: string) => {
-          collections += 1;
-          const snapshot = await collect(topic);
-          snapshot.hmacKeys[TOPIC] = [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(key) }];
-          if (collections === 1) {
-            entered.release();
-            await gate.promise;
-          }
-          return snapshot;
-        },
-      };
       const background = f.publisher.publish(input);
       await entered.promise;
-      key = 2;
+      state.key = 2;
       const failed = f.publisher.publish({
         ...input,
         topic: TOPIC,
@@ -239,14 +226,14 @@ describe('foreground sender-filter isolation', () => {
       await expect(failed).rejects.toThrow(cancel ? 'cancelled' : 'offline');
       gate.release();
       await background;
-      expect(collections).toBe(3);
+      expect(state.collections).toBe(3);
       expect(f.bodies).toHaveLength(1);
-      expect(f.bodies[0]).toContain(Buffer.from(new Uint8Array(42).fill(2)).toString('base64'));
+      expect(f.bodies[0]).toContain(ROTATED_KEY);
     }
   });
 
   test('ready publications still serialize HTTP and re-read changed snapshots', async () => {
-    const f = fixture(1_000);
+    const f = fixture();
     const entered = deferred();
     const gate = deferred();
     const post = f.input.post;
@@ -276,35 +263,20 @@ describe('foreground sender-filter isolation', () => {
   });
 
   test('large account publication yields between acknowledged batches to a selected conversation', async () => {
-    const f = fixture(1_000);
-    const topics = Array.from({ length: 300 }, (_, i) => `/xmtp/mls/1/g-${i.toString(16)}/proto`);
-    const entered = deferred();
-    const firstPost = deferred();
+    const f = fixture();
     const collect = f.input.collectTopics;
-    const post = f.input.post;
     let scans = 0;
     f.input.collectTopics = async (topic) => {
       if (topic) return collect(topic);
       scans += 1;
-      return {
-        topics,
-        hmacKeys: Object.fromEntries(
-          topics.map((value) => [value, [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(1) }]]),
-        ),
-      };
+      return manyTopicsSnapshot();
     };
-    f.input.post = async (body, signal) => {
-      if (f.bodies.length === 0) {
-        entered.release();
-        await firstPost.promise;
-      }
-      await post(body, signal);
-    };
+    const { posting, gate } = holdFirstPost(f);
     const background = f.publisher.publish(f.input).catch((error: unknown) => error);
-    await entered.promise;
+    await posting.promise;
     const selected = f.publisher.publish({ ...f.input, topic: OTHER_TOPIC });
     await Bun.sleep(0);
-    firstPost.release();
+    gate.release();
     try {
       await selected;
       expect(f.bodies).toHaveLength(2);
@@ -313,7 +285,7 @@ describe('foreground sender-filter isolation', () => {
       await background;
     }
     expect(scans).toBe(1);
-    expect(f.bodies.map((body) => (JSON.parse(body) as { topics: unknown[] }).topics.length)).toEqual([256, 1, 44]);
+    expect(batchSizes(f.bodies)).toEqual([256, 1, 44]);
   });
 
   test('preference imports during group-key, signing or HTTP waits require current keys before acknowledgment', async () => {
@@ -321,30 +293,20 @@ describe('foreground sender-filter isolation', () => {
   });
 
   test('multiple batches reuse one unchanged account snapshot', async () => {
-    const f = fixture(1_000);
-    const topics = Array.from({ length: 300 }, (_, i) => `/xmtp/mls/1/g-${i.toString(16)}/proto`);
+    const f = fixture();
     let scans = 0;
     f.input.collectTopics = async () => {
       scans += 1;
       await Bun.sleep(0);
-      return {
-        topics,
-        hmacKeys: Object.fromEntries(
-          topics.map((topic) => [topic, [{ thirtyDayPeriodsSinceEpoch: 700, hmacKey: new Uint8Array(42).fill(1) }]]),
-        ),
-      };
-    };
-    f.input.post = async (body) => {
-      await Bun.sleep(0);
-      f.bodies.push(body.payload);
+      return manyTopicsSnapshot();
     };
     await f.publisher.publish(f.input);
     expect(scans).toBe(1);
-    expect(f.bodies.map((body) => (JSON.parse(body) as { topics: unknown[] }).topics.length)).toEqual([256, 44]);
+    expect(batchSizes(f.bodies)).toEqual([256, 44]);
   });
 
   test('an unrelated publication cannot invalidate an expensive selected-conversation read', async () => {
-    const f = fixture(1_000);
+    const f = fixture();
     const entered = deferred();
     const reading = deferred();
     const collect = f.input.collectTopics;
@@ -368,28 +330,17 @@ describe('foreground sender-filter isolation', () => {
 
   test('clearing a session fences delayed collection and warming from the replacement session', async () => {
     for (const phase of ['collection', 'warming']) {
-      const f = fixture(1_000);
-      const entered = deferred();
-      const gate = deferred();
-      const collect = f.input.collectTopics;
-      const sync = f.input.syncPreferences;
-      if (phase === 'collection')
-        f.input.collectTopics = async (topic) => {
-          entered.release();
-          await gate.promise;
-          return collect(topic);
-        };
-      else
-        f.input.syncPreferences = async () => {
-          entered.release();
-          await gate.promise;
-          await sync();
-        };
+      const f = fixture();
+      const { collectTopics, syncPreferences } = f.input;
+      const collection = stall(collectTopics);
+      const warming = stall(syncPreferences);
+      const { entered, gate } = phase === 'collection' ? collection : warming;
+      if (phase === 'collection') f.input.collectTopics = collection.stalled;
+      else f.input.syncPreferences = warming.stalled;
       const obsolete = (phase === 'collection' ? f.publisher.publish(f.input) : f.publisher.warm(f.input)).catch((error: unknown) => error);
       await entered.promise;
       f.publisher.clear();
-      f.input.collectTopics = collect;
-      f.input.syncPreferences = sync;
+      Object.assign(f.input, { collectTopics, syncPreferences });
       await f.publisher.publish({ ...f.input, topic: TOPIC });
       gate.release();
       expect(await obsolete).toBeInstanceOf(Error);
@@ -398,27 +349,18 @@ describe('foreground sender-filter isolation', () => {
   });
 
   test('a selected snapshot queued behind an unrelated request is read again before publication', async () => {
-    const f = fixture(1_000);
+    const f = fixture();
     const rotate = rotatedCollection(f.input);
-    const entered = deferred();
     const queued = deferred();
-    const gate = deferred();
     const collect = f.input.collectTopics;
-    const post = f.input.post;
     f.input.collectTopics = async (topic) => {
       const snapshot = await collect(topic);
       if (topic === TOPIC) queued.release();
       return snapshot;
     };
-    f.input.post = async (body, signal) => {
-      if (f.bodies.length === 0) {
-        entered.release();
-        await gate.promise;
-      }
-      await post(body, signal);
-    };
+    const { posting, gate } = holdFirstPost(f);
     const unrelated = f.publisher.publish({ ...f.input, topic: OTHER_TOPIC });
-    await entered.promise;
+    await posting.promise;
     const selected = f.publisher.publish({ ...f.input, topic: TOPIC });
     await queued.promise;
     await Bun.sleep(0);
@@ -426,11 +368,11 @@ describe('foreground sender-filter isolation', () => {
     gate.release();
     await Promise.all([unrelated, selected]);
     expect(f.bodies).toHaveLength(2);
-    expect(f.bodies[1]).toContain(Buffer.from(new Uint8Array(42).fill(2)).toString('base64'));
+    expect(f.bodies[1]).toContain(ROTATED_KEY);
   });
 
   test('a background collection reading newer keys after a selected acknowledgment does not drop them', async () => {
-    const f = fixture(1_000);
+    const f = fixture();
     const rotate = rotatedCollection(f.input);
     const entered = deferred();
     const gate = deferred();
@@ -449,19 +391,16 @@ describe('foreground sender-filter isolation', () => {
     gate.release();
     await background;
     expect(f.bodies).toHaveLength(2);
-    expect(f.bodies[1]).toContain(Buffer.from(new Uint8Array(42).fill(2)).toString('base64'));
+    expect(f.bodies[1]).toContain(ROTATED_KEY);
   });
 
   test.each([false, true])(
     'a stalled post-wait recollection frees the lane and resumes background work on cancellation=%s',
     async (cancel) => {
-      const f = fixture(1_000);
-      const posting = deferred();
-      const firstPost = deferred();
+      const f = fixture();
       const recollecting = deferred();
       const recollection = deferred();
       const collect = f.input.collectTopics;
-      const post = f.input.post;
       let reads = 0;
       f.input.collectTopics = async (topic) => {
         if (topic === TOPIC && ++reads === 2) {
@@ -470,19 +409,13 @@ describe('foreground sender-filter isolation', () => {
         }
         return collect(topic);
       };
-      f.input.post = async (body, signal) => {
-        if (f.bodies.length === 0) {
-          posting.release();
-          await firstPost.promise;
-        }
-        await post(body, signal);
-      };
+      const { posting, gate } = holdFirstPost(f);
       const first = f.publisher.publish({ ...f.input, topic: OTHER_TOPIC });
       await posting.promise;
       const controller = new AbortController();
       const stalled = f.publisher.publish({ ...f.input, topic: TOPIC, signal: controller.signal }).catch((error: unknown) => error);
       await Bun.sleep(0);
-      firstPost.release();
+      gate.release();
       await recollecting.promise;
       let finished = false;
       let backgroundFinished = false;

@@ -17,6 +17,7 @@ import { entry, storedEntry } from './helpers';
 
 const LINE = 'stage://xmtp/c';
 const at = (contentTypeId: string, content: unknown) => envelopeOf(xmtpMessage({ contentTypeId, content }), LINE);
+const stored = (payload: object) => storedEntry('stored', { payload });
 
 describe('entry payload', () => {
   test('one kind per entry, in the order the bubble decides', () => {
@@ -32,7 +33,7 @@ describe('entry payload', () => {
     expect(messageKindOf(at('deleteRequest', { messageId: 'm1' }))).toBe('hidden');
     expect(messageKindOf(at('deletedMessage', { deletedBy: 'admin' }))).toBe('deleted');
     expect(messageKindOf(at('frameAction', { frameId: 'f1', action: { name: 'go' } }))).toBe('frameAction');
-    expect(messageKindOf(storedEntry('legacy', { payload: { reactTo: 'm1', emoji: '+1' } }))).toBe('reaction');
+    expect(messageKindOf(stored({ reactTo: 'm1', emoji: '+1' }))).toBe('reaction');
     expect(messageKindOf(entry('bare'))).toBe('text');
   });
 
@@ -45,21 +46,13 @@ describe('entry payload', () => {
   });
 
   test('accessors validate what they read, so an old snapshot cannot break a reader', () => {
-    expect(pollContentOf(storedEntry('p', { payload: { contentType: 'poll', poll: 'nope' } }))).toBeUndefined();
-    expect(
-      signatureRequestOf(storedEntry('s', { payload: { contentType: 'signatureRequest', signatureRequest: { message: 'x' } } })),
-    ).toBeUndefined();
-    expect(
-      walletSendCallsOf(storedEntry('w', { payload: { contentType: 'walletSendCalls', walletSendCalls: { calls: 'x' } } })),
-    ).toBeUndefined();
-    expect(attachmentsOf(storedEntry('a', { payload: { contentType: 'reply', attachments: 'x' } }))).toEqual([]);
-    expect(reactionOf(storedEntry('r', { payload: { reactTo: 'm1', emoji: 7 } }))).toBeNull();
-    expect(reactionOf(storedEntry('r', { payload: { reactTo: 'm1', emoji: '1', schema: 'custom', removed: 1 } }))).toEqual({
-      reactTo: 'm1',
-      emoji: '1',
-      removed: true,
-      custom: true,
-    });
+    expect(pollContentOf(stored({ contentType: 'poll', poll: 'nope' }))).toBeUndefined();
+    expect(signatureRequestOf(stored({ contentType: 'signatureRequest', signatureRequest: { message: 'x' } }))).toBeUndefined();
+    expect(walletSendCallsOf(stored({ contentType: 'walletSendCalls', walletSendCalls: { calls: 'x' } }))).toBeUndefined();
+    expect(attachmentsOf(stored({ contentType: 'reply', attachments: 'x' }))).toEqual([]);
+    expect(reactionOf(stored({ reactTo: 'm1', emoji: 7 }))).toBeNull();
+    const reaction = reactionOf(stored({ reactTo: 'm1', emoji: '1', schema: 'custom', removed: 1 }));
+    expect(reaction).toEqual({ reactTo: 'm1', emoji: '1', removed: true, custom: true });
   });
 
   test('the attachment summary text is recognised from the attachments it names', () => {

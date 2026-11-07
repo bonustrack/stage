@@ -70,6 +70,10 @@ beforeEach(() => {
 
 afterEach(restoreFetch);
 
+function issueFabien(): Promise<Hex> {
+  return makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base').issue('fabien', USER);
+}
+
 function sentCalls(): { to: Hex | null | undefined; functionName: string; args: readonly unknown[] }[] {
   return sent.map((raw) => {
     const tx = parseTransaction(raw as `0x02${string}`);
@@ -80,9 +84,7 @@ function sentCalls(): { to: Hex | null | undefined; functionName: string; args: 
 
 describe('issuing a stage name on Base', () => {
   test('one transaction creates the name already owned by the claimer, on the parent resolver', async () => {
-    const chain = makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base');
-    const hash = await chain.issue('fabien', USER);
-    expect(hash).toBe(keccak256(sent[0] ?? '0x'));
+    expect(await issueFabien()).toBe(keccak256(sent[0] ?? '0x'));
     expect(sentCalls()).toEqual([
       {
         to: REGISTRY.toLowerCase() as Hex,
@@ -94,19 +96,19 @@ describe('issuing a stage name on Base', () => {
 
   test('a name the operator still holds from an older claim goes to the claimer the same way', async () => {
     owners.set(namehash('fabien.stage.base.eth'), OPERATOR);
-    await makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base').issue('fabien', USER);
+    await issueFabien();
     expect(sentCalls().map((call) => [call.functionName, call.args[2]])).toEqual([['setSubnodeRecord', USER]]);
   });
 
   test('a reverted receipt never causes the transaction to be sent again', async () => {
     receiptStatus = '0x0';
-    await expect(makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base').issue('fabien', USER)).rejects.toThrow('reverted');
+    await expect(issueFabien()).rejects.toThrow('reverted');
     expect(sent).toHaveLength(1);
   }, 15_000);
 
   test('a name someone else owns is refused before any transaction', async () => {
     owners.set(namehash('fabien.stage.base.eth'), '0x00000000000000000000000000000000000000b2');
-    await expect(makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base').issue('fabien', USER)).rejects.toThrow('name already taken');
+    await expect(issueFabien()).rejects.toThrow('name already taken');
     expect(sent).toEqual([]);
   });
 });

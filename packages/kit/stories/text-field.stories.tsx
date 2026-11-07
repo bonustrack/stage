@@ -7,9 +7,6 @@ import { TEXT_FIELD_APPEARANCES, TEXT_FIELD_VARIANTS } from '../src/kit-vocabula
 
 export default { title: 'Text Field' };
 
-const VARIANTS = TEXT_FIELD_VARIANTS;
-const APPEARANCES = TEXT_FIELD_APPEARANCES;
-
 export const Controls: Story<TextFieldProps> = (args) => {
   const [value, setValue] = useState(args.value ?? '');
   return <TextField {...args} dark={useDark()} value={value} onChangeText={setValue} />;
@@ -27,8 +24,8 @@ Controls.args = {
 Controls.argTypes = {
   label: text,
   placeholder: text,
-  variant: select(VARIANTS),
-  appearance: select(APPEARANCES),
+  variant: select(TEXT_FIELD_VARIANTS),
+  appearance: select(TEXT_FIELD_APPEARANCES),
   size: select(CONTROL_SIZES),
   inputType: select(['text', 'email', 'tel', 'url']),
   pill: bool,
@@ -64,8 +61,8 @@ export const Matrix: Story = () => {
   const dark = useDark();
   return (
     <Column gap={12}>
-      {APPEARANCES.flatMap((appearance) =>
-        VARIANTS.map((variant) => (
+      {TEXT_FIELD_APPEARANCES.flatMap((appearance) =>
+        TEXT_FIELD_VARIANTS.map((variant) => (
           <TextField
             key={`${appearance}-${variant}`}
             dark={dark}

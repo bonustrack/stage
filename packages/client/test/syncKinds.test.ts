@@ -17,6 +17,7 @@ const READ = 'stage.box/readState:1.0';
 const PIN = 'stage.box/pinState:1.0';
 const CLEAR = 'stage.box/clearState:1.0';
 const BOARD = 'stage.box/boardState:1.0';
+const VIEW = 'stage.box/homeView:1.0';
 
 function replayOf(messages: Omit<SyncMessage, 'senderInboxId'>[], afterNs = 0): SyncReplay {
   return collectSyncReplay(
@@ -104,9 +105,7 @@ describe('home view payload', () => {
     const state = { view: 'board', groupBy: 'status', at: 4 } satisfies Partial<HomeViewContent>;
     expect(syncState('homeView', state)).toEqual({ ...state, columnBy: 'status' });
     const columns: GroupKey[] = ['label', 'category', 'assignee', 'status'];
-    for (const columnBy of columns) {
-      expect(syncState('homeView', { ...state, columnBy })).toEqual({ ...state, columnBy });
-    }
+    for (const columnBy of columns) expect(syncState('homeView', { ...state, columnBy })).toEqual({ ...state, columnBy });
   });
 
   test('parses a valid payload, rejects malformed ones, and recognises its type', () => {
@@ -251,7 +250,7 @@ describe('restored sync groups', () => {
     const replay = replayOf([
       { contentTypeId: CATEGORY, content: { order: ['category:a'], at: 5 }, sentNs: 1 },
       { contentTypeId: CATEGORY, content: { order: ['category:b'], at: 9 }, sentNs: 2 },
-      { contentTypeId: 'stage.box/boardState:1.0', content: { order: ['label:c'], at: 12 }, sentNs: 3 },
+      { contentTypeId: BOARD, content: { order: ['label:c'], at: 12 }, sentNs: 3 },
     ]);
     expect(replay.categoryOrder).toEqual({ order: ['category:b'], at: 9 });
     expect(replay.board).toEqual({ order: ['label:c'], at: 12 });
@@ -260,12 +259,7 @@ describe('restored sync groups', () => {
 
   test('keeps the newest search by its own clock, not by arrival', () => {
     const SEARCH = 'stage.box/searchState:1.0';
-    const search = (query: string, at: number): { query: string; labels: string[]; unreadOnly: boolean; at: number } => ({
-      query,
-      labels: [],
-      unreadOnly: false,
-      at,
-    });
+    const search = (query: string, at: number) => ({ query, labels: [], unreadOnly: false, at });
     const replay = replayOf([
       { contentTypeId: SEARCH, content: search('a', 5), sentNs: 1 },
       { contentTypeId: SEARCH, content: search('b', 9), sentNs: 2 },
@@ -278,7 +272,6 @@ describe('restored sync groups', () => {
   });
 
   test('keeps the newest home view by its own clock, not by arrival', () => {
-    const VIEW = 'stage.box/homeView:1.0';
     const view = (groupBy: string, at: number): Record<string, unknown> => ({ view: 'chats', groupBy, columnBy: 'label', at });
     const replay = replayOf([
       { contentTypeId: VIEW, content: view('label', 5), sentNs: 1 },
@@ -293,13 +286,7 @@ describe('restored sync groups', () => {
 
   test('keeps the newest dashboard by its own clock and never reads it as a board', () => {
     const DASHBOARD = 'stage.box/dashboardLayout:1.0';
-    const frame = (id: string, w = 'half', h = 1): Record<string, unknown> => ({
-      id,
-      w,
-      h,
-      kind: 'frame',
-      source: { conversationId: 'conv', messageId: id },
-    });
+    const frame = (id: string, w = 'half', h = 1) => ({ id, w, h, kind: 'frame', source: { conversationId: 'conv', messageId: id } });
     const replay = replayOf([
       { contentTypeId: DASHBOARD, content: { widgets: [frame('a')], at: 5 }, sentNs: 1 },
       { contentTypeId: DASHBOARD, content: { widgets: [frame('b', 'full', 2), frame('x', 'wide')], at: 9 }, sentNs: 2 },
@@ -319,7 +306,6 @@ describe('restored sync groups', () => {
   });
 
   test('replays the latest supplied sort choices across newer legacy snapshots', () => {
-    const VIEW = 'stage.box/homeView:1.0';
     const base: HomeViewContent = { view: 'chats', groupBy: 'none', columnBy: 'status', at: 10 };
     const chatsSort: HomeSort = { by: 'created', direction: 'asc' };
     const boardSort: HomeSort = { by: 'updated', direction: 'desc' };

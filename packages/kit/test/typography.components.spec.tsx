@@ -5,6 +5,7 @@ import { FONT_SIZE, fontName, kitPalette, resolveColorToken } from '../src/token
 import { derivePalette } from '../src/theme-derive';
 import { TEXT_FONTS } from '../src/text.styles';
 import { KitThemeProvider } from '../src/react-native/theme-context';
+import type { TitleProps } from '../src/react-native/title';
 
 mock.module('react-native', () => ReactNativeWeb);
 mock.module('../src/react-native/spinner', () => ({ Spinner: () => null }));
@@ -62,34 +63,25 @@ function cssColor(hex: string): string {
 }
 
 describe('Title', () => {
+  const titleHtml = (props: TitleProps): string => renderToStaticMarkup(<Title {...props}>Example</Title>);
+
   test('levels pick the heading size in the head font, a level wins over a size and the default is level 2', () => {
-    const html = (title: React.ReactElement): string => renderToStaticMarkup(title);
-    expect(html(<Title>Example</Title>)).toContain('font-size:24px');
-    expect(html(<Title>Example</Title>)).toContain(`font-family:${fontName.head}`);
-    expect(html(<Title level={1}>Example</Title>)).toContain('font-size:30px');
-    expect(html(<Title level={3}>Example</Title>)).toContain('font-size:21px');
-    expect(html(<Title size="lg">Example</Title>)).toContain('font-size:30px');
-    expect(html(<Title size="sm">Example</Title>)).toContain('font-size:21px');
-    expect(
-      html(
-        <Title level={1} size="sm">
-          Example
-        </Title>,
-      ),
-    ).toContain('font-size:30px');
+    expect(titleHtml({})).toContain('font-size:24px');
+    expect(titleHtml({})).toContain(`font-family:${fontName.head}`);
+    expect(titleHtml({ level: 1 })).toContain('font-size:30px');
+    expect(titleHtml({ level: 3 })).toContain('font-size:21px');
+    expect(titleHtml({ size: 'lg' })).toContain('font-size:30px');
+    expect(titleHtml({ size: 'sm' })).toContain('font-size:21px');
+    expect(titleHtml({ level: 1, size: 'sm' })).toContain('font-size:30px');
   });
 
   test('hero titles take the landing sizes in the regular font, whatever the level', () => {
-    const big = renderToStaticMarkup(
-      <Title hero="4xl" level={3}>
-        Example
-      </Title>,
-    );
+    const big = titleHtml({ hero: '4xl', level: 3 });
     expect(big).toContain('font-size:76px');
     expect(big).toContain('line-height:83.6px');
     expect(big).toContain(`font-family:${fontName.sans}`);
     expect(big).not.toContain(fontName.head);
-    const onboarding = renderToStaticMarkup(<Title hero="3xl">Example</Title>);
+    const onboarding = titleHtml({ hero: '3xl' });
     expect(onboarding).toContain('font-size:38px');
     expect(onboarding).toContain('line-height:46px');
   });
@@ -126,11 +118,11 @@ describe('Title', () => {
   });
 
   test('a style prop wins over the computed style, as an object or a list', () => {
-    const single = renderToStaticMarkup(<Title style={{ fontSize: 13, color: '#abcdef' }}>Example</Title>);
+    const single = titleHtml({ style: { fontSize: 13, color: '#abcdef' } });
     expect(single).toContain('font-size:13px');
     expect(single).not.toContain('font-size:24px');
     expect(single).toContain(cssColor('#abcdef'));
-    const list = renderToStaticMarkup(<Title style={[{ fontSize: 14 }, { lineHeight: 20 }]}>Example</Title>);
+    const list = titleHtml({ style: [{ fontSize: 14 }, { lineHeight: 20 }] });
     expect(list).toContain('font-size:14px');
     expect(list).toContain('line-height:20px');
   });

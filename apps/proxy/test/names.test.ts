@@ -7,6 +7,7 @@ import type { NamesChain, NamesDeps, NamesStore } from '../src/namesTypes.ts';
 import { restoreFetch, stubFetch } from './fakeFetch.ts';
 
 const ALICE = '0x00000000000000000000000000000000000000A1';
+const BOB = '0x00000000000000000000000000000000000000B0';
 const NOW = 1_800_000_000_000;
 
 function memoryStore(): NamesStore & { data: Map<string, string> } {
@@ -49,6 +50,10 @@ function claimRequest(body: unknown): Request {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+}
+
+function get(path: string, d: NamesDeps): Promise<Response> {
+  return handleNames(new Request(`https://proxy.stage.box/names/${path}`), d);
 }
 
 const goodClaim = { label: 'fabien', address: ALICE, issuedAt: NOW - 1000, signature: '0x5169' };
@@ -95,12 +100,8 @@ describe('claim', () => {
     expect(await store.get('label:fabien')).toBe(ALICE.toLowerCase());
     expect(await store.get(`addr:${ALICE.toLowerCase()}`)).toBe('fabien');
     const d = deps(fakeChain(), store);
-    expect(await (await handleNames(new Request(`https://proxy.stage.box/names/status?address=${ALICE}`), d)).json()).toEqual({
-      name: null,
-    });
-    expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=fabien'), d)).json()).toEqual({
-      address: null,
-    });
+    expect(await (await get(`status?address=${ALICE}`, d)).json()).toEqual({ name: null });
+    expect(await (await get('resolve?label=fabien', d)).json()).toEqual({ address: null });
   });
 
   test('a broadcast with no returned hash is never resubmitted by a signed retry', async () => {
@@ -156,9 +157,7 @@ describe('claim', () => {
       const d = deps(chain, store);
       expect((await handleNames(claimRequest(goodClaim), d)).status).toBe(502);
       expect(chain.issued).toEqual([]);
-      expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=fabien'), d)).json()).toEqual({
-        address: null,
-      });
+      expect(await (await get('resolve?label=fabien', d)).json()).toEqual({ address: null });
     }
   });
 
@@ -194,43 +193,26 @@ describe('claim', () => {
 describe('check and status', () => {
   test('reports validity and availability', async () => {
     const d = deps(fakeChain({ taken: ['fabien'] }), memoryStore());
-    const taken = await (await handleNames(new Request('https://proxy.stage.box/names/check?label=fabien'), d)).json();
-    expect(taken).toEqual({ valid: true, available: false });
-    const free = await (await handleNames(new Request('https://proxy.stage.box/names/check?label=someone'), d)).json();
-    expect(free).toEqual({ valid: true, available: true });
-    const invalid = (await (await handleNames(new Request('https://proxy.stage.box/names/check?label=ab'), d)).json()) as {
-      valid: boolean;
-    };
-    expect(invalid.valid).toBe(false);
+    expect(await (await get('check?label=fabien', d)).json()).toEqual({ valid: true, available: false });
+    expect(await (await get('check?label=someone', d)).json()).toEqual({ valid: true, available: true });
+    expect(((await (await get('check?label=ab', d)).json()) as { valid: boolean }).valid).toBe(false);
   });
 
   test('status returns the name owned by an address, or null', async () => {
-    const store = memoryStore();
-    const d = deps(fakeChain(), store);
-    expect(await (await handleNames(new Request(`https://proxy.stage.box/names/status?address=${ALICE}`), d)).json()).toEqual({
-      name: null,
-    });
+    const d = deps(fakeChain(), memoryStore());
+    expect(await (await get(`status?address=${ALICE}`, d)).json()).toEqual({ name: null });
     await handleNames(claimRequest(goodClaim), d);
-    expect(await (await handleNames(new Request(`https://proxy.stage.box/names/status?address=${ALICE}`), d)).json()).toEqual({
-      name: 'fabien.stage.base.eth',
-    });
-    expect((await handleNames(new Request('https://proxy.stage.box/names/status'), d)).status).toBe(400);
+    expect(await (await get(`status?address=${ALICE}`, d)).json()).toEqual({ name: 'fabien.stage.base.eth' });
+    expect((await get('status', d)).status).toBe(400);
   });
 
   test('resolve returns the onchain owner, the claimed address, or null', async () => {
-    const store = memoryStore();
-    const d = deps(fakeChain({ taken: ['ownedname'] }), store);
-    expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=ownedname'), d)).json()).toEqual({
-      address: '0x00000000000000000000000000000000000000b2',
-    });
+    const d = deps(fakeChain({ taken: ['ownedname'] }), memoryStore());
+    expect(await (await get('resolve?label=ownedname', d)).json()).toEqual({ address: '0x00000000000000000000000000000000000000b2' });
     await handleNames(claimRequest(goodClaim), d);
-    expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=fabien'), d)).json()).toEqual({
-      address: ALICE.toLowerCase(),
-    });
-    expect(await (await handleNames(new Request('https://proxy.stage.box/names/resolve?label=nobody'), d)).json()).toEqual({
-      address: null,
-    });
-    expect((await handleNames(new Request('https://proxy.stage.box/names/resolve?label=ab'), d)).status).toBe(400);
+    expect(await (await get('resolve?label=fabien', d)).json()).toEqual({ address: ALICE.toLowerCase() });
+    expect(await (await get('resolve?label=nobody', d)).json()).toEqual({ address: null });
+    expect((await get('resolve?label=ab', d)).status).toBe(400);
   });
 });
 
@@ -240,7 +222,7 @@ describe('failures', () => {
     chain.subnameOwner = async () => {
       throw new Error('over rate limit\nmore details');
     };
-    const res = await handleNames(new Request('https://proxy.stage.box/names/check?label=someone'), deps(chain, memoryStore()));
+    const res = await get('check?label=someone', deps(chain, memoryStore()));
     expect(res.status).toBe(502);
     expect(res.headers.get('access-control-allow-origin')).toBe('*');
     expect(await res.json()).toEqual({ error: 'name service error: over rate limit' });
@@ -248,8 +230,6 @@ describe('failures', () => {
 });
 
 describe('claims durable object', () => {
-  const BOB = '0x00000000000000000000000000000000000000B0';
-
   test('concurrent claims for one label are serialized, so only the first wins', async () => {
     const chain = fakeChain();
     const store = memoryStore();
@@ -281,13 +261,13 @@ describe('claims durable object', () => {
 });
 
 describe('the client names api against the handler', () => {
+  const base = 'https://proxy.stage.box';
+  const signature = '0x5169' as const;
   afterEach(restoreFetch);
 
   test('reads every answer the handler writes', async () => {
     const d = deps(fakeChain({ taken: ['ownedname'] }), memoryStore());
     stubFetch((request) => handleNames(request, d));
-    const base = 'https://proxy.stage.box';
-    const signature = '0x5169' as const;
     expect(await fetchIssuedName(base, ALICE)).toBeNull();
     expect(await fetchIssuedAddress(base, 'fabien')).toBeNull();
     expect(await fetchNameCheck(base, 'fabien')).toEqual({ valid: true, available: true });
@@ -306,13 +286,10 @@ describe('the client names api against the handler', () => {
   test('sends claims the handler accepts or refuses in the shape the client reads', async () => {
     const d = deps(fakeChain(), memoryStore());
     stubFetch((request) => handleNames(request, d));
-    const base = 'https://proxy.stage.box';
-    const signature = '0x5169' as const;
-    const bob = '0x00000000000000000000000000000000000000B0';
     const mailKey = `0x${'ab'.repeat(32)}`;
     expect((await postNameClaim(base, { ...goodClaim, signature })).kind).toBe('claimed');
-    expect(await postNameClaim(base, { ...goodClaim, address: bob, signature })).toEqual({ kind: 'taken' });
-    expect(await postNameClaim(base, { ...goodClaim, label: 'second', address: bob, signature, mailKey })).toEqual({
+    expect(await postNameClaim(base, { ...goodClaim, address: BOB, signature })).toEqual({ kind: 'taken' });
+    expect(await postNameClaim(base, { ...goodClaim, label: 'second', address: BOB, signature, mailKey })).toEqual({
       kind: 'claimed',
       name: 'second.stage.base.eth',
       mailKeyFailed: true,

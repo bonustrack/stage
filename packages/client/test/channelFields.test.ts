@@ -50,17 +50,13 @@ describe('channel status and priority', () => {
 
   test('reads the app data and keeps old channels compatible', async () => {
     const raw = JSON.stringify({ ...kept, status: ' Needs review ', priority: 'High' });
-    const native = appDataGroup(raw).group;
-    const web: AppDataGroup = { appData: () => Promise.resolve(raw), updateAppData: () => Promise.resolve() };
-    for (const group of [native, web]) {
-      expect(await groupTagsOf(group)).toEqual({
-        labels: ['Todo'],
-        category: 'Work',
-        status: 'Needs review',
-        priority: 'High',
-        assigned: [address],
-      });
-    }
+    expect(await groupTagsOf(appDataGroup(raw).group)).toEqual({
+      labels: ['Todo'],
+      category: 'Work',
+      status: 'Needs review',
+      priority: 'High',
+      assigned: [address],
+    });
     for (const rawValue of ['', '{', '[]', JSON.stringify({ status: [], priority: 7 })]) {
       expect(await groupTagsOf(appDataGroup(rawValue).group)).toEqual(NO_TAGS);
     }

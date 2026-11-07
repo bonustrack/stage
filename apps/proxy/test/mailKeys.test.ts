@@ -112,9 +112,7 @@ async function keyStatus(): Promise<KeyStatus> {
 beforeEach(() => {
   owners.clear();
   boxes.clear();
-  failing.issue = false;
-  failing.mailbox = 0;
-  failing.mailboxCalls = 0;
+  Object.assign(failing, { issue: false, mailbox: 0, mailboxCalls: 0 });
   stubFetch((request) => handleMail(request, mailDeps));
 });
 

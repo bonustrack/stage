@@ -4,6 +4,7 @@ import { groupUpdateInboxIds, humanizeGroupUpdated } from '../src/xmtp/humanize'
 import { previewOf } from './helpers';
 
 const blob = (labels: string[], github?: string): string => JSON.stringify({ v: 1, labels, ...(github ? { github } : {}) });
+const generic = 'updated the channel settings';
 
 describe('describeAppDataChange', () => {
   test('names the labels that were added and removed', () => {
@@ -12,7 +13,7 @@ describe('describeAppDataChange', () => {
   });
 
   test('ignores label case changes and reorders', () => {
-    expect(describeAppDataChange(blob(['a', 'B']), blob(['b', 'a']))).toBe('updated the channel settings');
+    expect(describeAppDataChange(blob(['a', 'B']), blob(['b', 'a']))).toBe(generic);
   });
 
   test('describes the GitHub link', () => {
@@ -21,7 +22,7 @@ describe('describeAppDataChange', () => {
   });
 
   test('falls back for unreadable data', () => {
-    expect(describeAppDataChange('not json', '[1]')).toBe('updated the channel settings');
+    expect(describeAppDataChange('not json', '[1]')).toBe(generic);
   });
 
   test('replaces the vague app data line in group updates', () => {
@@ -32,7 +33,6 @@ describe('describeAppDataChange', () => {
 
 describe('description changes in appData', () => {
   const data = (description?: unknown): string => JSON.stringify({ v: 1, ...(description === undefined ? {} : { description }) });
-  const generic = 'updated the channel settings';
   const notice = 'updated the channel description';
 
   test('describes setting, editing and clearing a description without including its contents', () => {
@@ -135,7 +135,7 @@ describe('assignment changes in appData', () => {
 
   test('ignores case, duplicate and order-only changes', () => {
     const upper = `0x${'A'.repeat(40)}`;
-    expect(describeAppDataChange(assigned([upper, bob, bob]), assigned([bob, alice]))).toBe('updated the channel settings');
+    expect(describeAppDataChange(assigned([upper, bob, bob]), assigned([bob, alice]))).toBe(generic);
   });
 
   test('normalizes valid addresses and ignores invalid array entries', () => {
@@ -146,12 +146,12 @@ describe('assignment changes in appData', () => {
 
   test('does not invent deltas from missing or malformed event values', () => {
     for (const unknown of [undefined, 'not json', '[1]', 'null', 'false']) {
-      expect(describeAppDataChange(unknown, assigned([alice]))).toBe('updated the channel settings');
-      expect(describeAppDataChange(assigned([alice]), unknown)).toBe('updated the channel settings');
+      expect(describeAppDataChange(unknown, assigned([alice]))).toBe(generic);
+      expect(describeAppDataChange(assigned([alice]), unknown)).toBe(generic);
     }
     for (const malformed of [null, 17, 'bad', {}]) {
-      expect(describeAppDataChange(assigned(malformed), assigned([alice]))).toBe('updated the channel settings');
-      expect(describeAppDataChange(assigned([alice]), assigned(malformed))).toBe('updated the channel settings');
+      expect(describeAppDataChange(assigned(malformed), assigned([alice]))).toBe(generic);
+      expect(describeAppDataChange(assigned([alice]), assigned(malformed))).toBe(generic);
     }
   });
 
@@ -161,9 +161,7 @@ describe('assignment changes in appData', () => {
     expect(describeAppDataChange(before, after)).toBe(
       `added label "Stage" • removed label "Todo" • linked github.com/o/r • assigned @${bob} • unassigned @${alice}`,
     );
-    expect(describeAppDataChange(assigned([alice]), JSON.stringify({ assigned: [alice], preview: 'new', future: true }))).toBe(
-      'updated the channel settings',
-    );
+    expect(describeAppDataChange(assigned([alice]), JSON.stringify({ assigned: [alice], preview: 'new', future: true }))).toBe(generic);
   });
 
   test('works through both native and browser metadata field aliases', () => {

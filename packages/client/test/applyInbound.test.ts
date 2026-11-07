@@ -10,9 +10,7 @@ describe('applyInbound', () => {
     const result = applyInbound(rows, { ...update, convId: 'b' });
     expect(result).not.toBeNull();
     expect(result?.next.map((r) => r.convId)).toEqual(['b', 'a']);
-    expect(result?.next[0]?.unreadCount).toBe(2);
-    expect(result?.next[0]?.lastPreview).toBe('hi');
-    expect(result?.next[0]?.markedUnread).toBe(false);
+    expect(result?.next[0]).toMatchObject({ unreadCount: 2, lastPreview: 'hi', markedUnread: false });
     expect(result?.wasUnread).toBe(true);
     expect(result?.current.unreadCount).toBe(1);
   });

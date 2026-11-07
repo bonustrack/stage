@@ -16,8 +16,7 @@ describe('resolveColors', () => {
   });
 
   test('secondary solid gets a border, other solids do not', () => {
-    expect(resolveColors('secondary', 'solid', false).borderColor).toBe(schemePalette(false).border);
-    expect(resolveColors('secondary', 'solid', true).borderColor).toBe(schemePalette(true).border);
+    for (const dark of [false, true]) expect(resolveColors('secondary', 'solid', dark).borderColor).toBe(schemePalette(dark).border);
     expect(resolveColors('info', 'solid', false).borderColor).toBeUndefined();
   });
 });

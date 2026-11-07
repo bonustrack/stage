@@ -3,9 +3,7 @@ import { heroIconPaths, iconStroke } from '../src/icons';
 
 describe('iconStroke', () => {
   test('explicit color always wins', () => {
-    expect(iconStroke('#ff0000', true)).toBe('#ff0000');
-    expect(iconStroke('#ff0000', false)).toBe('#ff0000');
-    expect(iconStroke('#ff0000', undefined)).toBe('#ff0000');
+    for (const dark of [true, false, undefined]) expect(iconStroke('#ff0000', dark)).toBe('#ff0000');
   });
 
   test('dark true -> white', () => {

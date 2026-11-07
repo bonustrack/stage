@@ -69,3 +69,11 @@ export function syncState<K extends SyncKind>(kind: K, content: unknown): SyncCo
   const parsed = syncCodecOf(kind).schema.safeParse(content);
   return parsed.success ? parsed.data : null;
 }
+
+export function deferred(): { promise: Promise<void>; release: () => void } {
+  let release = (): void => undefined;
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { promise, release };
+}

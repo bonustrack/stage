@@ -32,7 +32,7 @@ function streamed(m: RowMessage, dm: boolean): StreamOutcome {
 const update = { initiatedByInboxId: 'x', addedInboxes: [{ inboxId: 'y' }], removedInboxes: [], metadataFieldChanges: [] };
 const leftOnly = { initiatedByInboxId: 'x', addedInboxes: [], removedInboxes: [], leftInboxes: [{ inboxId: 'y' }] };
 
-const MESSAGES: Record<string, RowMessage> = {
+const MESSAGES = {
   text: { contentTypeId: 'text', content: 'hi', senderInboxId: 'peer', sentNs: 1 },
   control: { contentTypeId: 'text', content: CONTROL, senderInboxId: 'peer', sentNs: 1 },
   reply: { contentTypeId: 'reply', content: { reference: 'm0', text: 'yes' }, senderInboxId: 'peer', sentNs: 1 },
@@ -50,7 +50,7 @@ const MESSAGES: Record<string, RowMessage> = {
   deleted: { contentTypeId: 'deletedMessage', content: { deletedBy: 'sender' }, senderInboxId: 'peer', sentNs: 1 },
   sync: { contentTypeId: 'readState', content: {}, senderInboxId: 'peer', sentNs: 1 },
   unknown: { contentTypeId: 'somethingNew', content: { a: 1 }, senderInboxId: 'peer', sentNs: 1 },
-};
+} satisfies Record<string, RowMessage>;
 
 const LINE = 'stage://xmtp/c';
 const enveloped = (id: string, contentTypeId: string, content: unknown): HistoryEntry =>
@@ -71,25 +71,13 @@ const ENTRIES: Record<string, HistoryEntry> = {
   unknown: enveloped('u', 'somethingNew', { a: 1 }),
 };
 
-function table<T>(rows: Record<string, unknown>, of: (key: string) => T): Record<string, T> {
-  return Object.fromEntries(Object.keys(rows).map((key) => [key, of(key)]));
-}
-
-function message(key: string): RowMessage {
-  const m = MESSAGES[key];
-  if (m === undefined) throw new Error(key);
-  return m;
-}
-
-function historyEntry(key: string): HistoryEntry {
-  const e = ENTRIES[key];
-  if (e === undefined) throw new Error(key);
-  return e;
+function table<V, T>(rows: Record<string, V>, of: (row: V) => T): Record<string, T> {
+  return Object.fromEntries(Object.entries(rows).map(([key, row]) => [key, of(row)]));
 }
 
 describe('what each context shows', () => {
   test('chat list: which message can be the row preview', () => {
-    expect(table(MESSAGES, (k) => [isRowCandidate(message(k), true), isRowCandidate(message(k), false)])).toEqual({
+    expect(table(MESSAGES, (m) => [isRowCandidate(m, true), isRowCandidate(m, false)])).toEqual({
       text: [true, true],
       control: [false, false],
       reply: [true, true],
@@ -111,7 +99,7 @@ describe('what each context shows', () => {
   });
 
   test('chat list: which message brings a deleted chat back', () => {
-    expect(table(MESSAGES, (k) => [revivesRow(message(k), true), revivesRow(message(k), false)])).toEqual({
+    expect(table(MESSAGES, (m) => [revivesRow(m, true), revivesRow(m, false)])).toEqual({
       text: [true, true],
       control: [false, false],
       reply: [true, true],
@@ -133,7 +121,7 @@ describe('what each context shows', () => {
   });
 
   test('unread: which message from someone else counts', () => {
-    expect(table(MESSAGES, (k) => countsAsUnread(message(k)))).toEqual({
+    expect(table(MESSAGES, countsAsUnread)).toEqual({
       text: true,
       control: false,
       reply: true,
@@ -155,7 +143,7 @@ describe('what each context shows', () => {
   });
 
   test('stream and notification: what an arriving message does to its row', () => {
-    expect(table(MESSAGES, (k) => [streamed(message(k), true), streamed(message(k), false)])).toEqual({
+    expect(table(MESSAGES, (m) => [streamed(m, true), streamed(m, false)])).toEqual({
       text: ['unread', 'unread'],
       control: ['drop', 'drop'],
       reply: ['unread', 'unread'],
@@ -177,7 +165,7 @@ describe('what each context shows', () => {
   });
 
   test('search, feed cache and feed bubbles: which entry each one keeps', () => {
-    expect(table(ENTRIES, (k) => [isSearchable(historyEntry(k)), isShownInFeed(historyEntry(k)), isFeedBubble(historyEntry(k))])).toEqual({
+    expect(table(ENTRIES, (e) => [isSearchable(e), isShownInFeed(e), isFeedBubble(e)])).toEqual({
       text: [true, true, true],
       control: [false, false, true],
       reaction: [true, true, false],
@@ -204,12 +192,12 @@ describe('what each context shows', () => {
 
   test('the unread count skips my own messages and what does not count', () => {
     const entries = [
-      { ...message('text'), sentNs: 500 },
-      { ...message('control'), sentNs: 400 },
-      { ...message('reaction'), sentNs: 300 },
-      { ...message('text'), sentNs: 200, senderInboxId: 'me' },
-      { ...message('groupUpdate'), sentNs: 150 },
-      { ...message('text'), sentNs: 50 },
+      { ...MESSAGES.text, sentNs: 500 },
+      { ...MESSAGES.control, sentNs: 400 },
+      { ...MESSAGES.reaction, sentNs: 300 },
+      { ...MESSAGES.text, sentNs: 200, senderInboxId: 'me' },
+      { ...MESSAGES.groupUpdate, sentNs: 150 },
+      { ...MESSAGES.text, sentNs: 50 },
     ];
     expect(countUnreadEntries(entries, 100, 'me')).toBe(2);
   });

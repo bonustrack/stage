@@ -2,8 +2,8 @@ import type { Story } from '../gallery/story';
 import { Column, type FlexProps } from '../src/react-native/column';
 import { Row, type PressFeedback } from '../src/react-native/row';
 import { Text } from '../src/react-native/text';
-import { Cell, FLEX_ARG_TYPES, SURFACES, select } from './_controls';
-import { PRESS_FEEDBACKS } from '../src/kit-vocabulary';
+import { Cell, FLEX_ARG_TYPES, select } from './_controls';
+import { PRESS_FEEDBACKS, SURFACES } from '../src/kit-vocabulary';
 
 export default { title: 'Column' };
 

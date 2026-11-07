@@ -13,8 +13,6 @@ const OPTIONS = [
   { label: 'SMS', value: 'sms' },
   { label: 'Fax', value: 'fax', disabled: true },
 ];
-const VARIANTS = CHOICE_PICKER_VARIANTS;
-const DISPLAY_STYLES = CHOICE_PICKER_DISPLAY_STYLES;
 
 export const Controls: Story<ChoicePickerProps> = (args) => {
   const [value, setValue] = useState<string[]>(['email']);
@@ -30,8 +28,8 @@ Controls.args = {
 };
 Controls.argTypes = {
   label: text,
-  variant: select(VARIANTS),
-  displayStyle: select(DISPLAY_STYLES),
+  variant: select(CHOICE_PICKER_VARIANTS),
+  displayStyle: select(CHOICE_PICKER_DISPLAY_STYLES),
   filterable: bool,
   disabled: bool,
   direction: select(['row', 'col']),
@@ -41,8 +39,8 @@ export const Matrix: Story = () => {
   const dark = useDark();
   return (
     <Column gap={24}>
-      {VARIANTS.flatMap((variant) =>
-        DISPLAY_STYLES.map((displayStyle) => (
+      {CHOICE_PICKER_VARIANTS.flatMap((variant) =>
+        CHOICE_PICKER_DISPLAY_STYLES.map((displayStyle) => (
           <ChoicePicker
             key={`${variant}-${displayStyle}`}
             dark={dark}
