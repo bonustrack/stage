@@ -117,18 +117,31 @@ const openSession: Handler = async (request, deps) => {
   return session.ok ? reply(await session.json()) : fail(502, 'could not open a session');
 };
 
-async function access(request: Request, deps: MailDeps): Promise<Access | Response> {
+interface SessionRequest {
+  label: string;
+  token: string;
+  id: string;
+}
+
+function sessionRequest(request: Request): SessionRequest | Response {
   const params = new URL(request.url).searchParams;
   const label = (params.get('label') ?? '').toLowerCase();
   const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
   if (!isMailboxLabel(label)) return fail(400, 'label required');
   if (token === '') return fail(401, 'sign in first');
+  return { label, token, id: params.get('id') ?? '' };
+}
+
+async function access(request: Request, deps: MailDeps): Promise<Access | Response> {
+  const session = sessionRequest(request);
+  if (session instanceof Response) return session;
+  const { label, token, id } = session;
   const stub = deps.mailbox(label);
   const [auth, current] = await Promise.all([mailboxCall(stub, 'auth', { token }), deps.chain.owner(label)]);
   if (!auth.ok) return fail(401, 'session expired, sign in again');
   const { owner } = (await auth.json()) as { owner: string };
   if (current === null || current.toLowerCase() !== owner) return fail(403, 'this name has a new owner');
-  return { stub, owner, id: params.get('id') ?? '' };
+  return { stub, owner, id };
 }
 
 function withAccess(run: (granted: Access) => Promise<Response>, needsId = false): Handler {
@@ -147,12 +160,9 @@ function ownerMismatch(found: Response, current: Hex | null): Response | null {
 }
 
 async function signedRead(request: Request, deps: MailDeps, op: string, needsId: boolean): Promise<Response> {
-  const params = new URL(request.url).searchParams;
-  const label = (params.get('label') ?? '').toLowerCase();
-  const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
-  const id = params.get('id') ?? '';
-  if (!isMailboxLabel(label)) return fail(400, 'label required');
-  if (token === '') return fail(401, 'sign in first');
+  const session = sessionRequest(request);
+  if (session instanceof Response) return session;
+  const { label, token, id } = session;
   const [found, current] = await Promise.all([mailboxCall(deps.mailbox(label), op, { token, id }), deps.chain.owner(label)]);
   const denied = ownerMismatch(found, current);
   if (denied !== null) return denied;
