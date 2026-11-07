@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -9,6 +9,15 @@ const CENTER = { textAlign: 'center' } as const;
 
 const ACTIONS_GAP = 20;
 
+function IntroAbout({ about }: { about: string | ReactElement }): ReactElement {
+  if (typeof about !== 'string') return about;
+  return (
+    <Text size="xl" style={{ ...CENTER, ...PAGE_INTRO_TYPE.about }}>
+      {about}
+    </Text>
+  );
+}
+
 export function IntroCard({
   title,
   about,
@@ -17,7 +26,7 @@ export function IntroCard({
   children,
 }: {
   title: string;
-  about?: string;
+  about?: string | ReactElement;
   footer?: ReactNode;
   after?: ReactNode;
   children?: ReactNode;
@@ -28,11 +37,7 @@ export function IntroCard({
         <Title hero="3xl" style={CENTER}>
           {title}
         </Title>
-        {about === undefined ? null : (
-          <Text size="xl" style={{ ...CENTER, ...PAGE_INTRO_TYPE.about }}>
-            {about}
-          </Text>
-        )}
+        {about === undefined ? null : <IntroAbout about={about} />}
       </Column>
       {children === undefined || children === null ? null : <Column gap={16}>{children}</Column>}
       <Column gap={ACTIONS_GAP}>

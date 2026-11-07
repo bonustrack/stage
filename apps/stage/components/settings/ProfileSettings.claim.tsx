@@ -5,22 +5,55 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { UsernameField, useUsernameInput } from '../profile/UsernameField';
 import { USERNAME_COPY, normalizeLabel, usernameReady } from '../profile/username.model';
 import { IntroCard } from '../chrome/IntroCard';
+import { PAGE_INTRO_TYPE } from '../chrome/PageIntro.model';
+import { FORM_FIELD_HEIGHT, FORM_FIELD_RADIUS } from '../FormField';
+import { PlaceholderBar, PlaceholderBlock } from '../Placeholder';
+import { Column } from '../layout';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { claimAndSetUpStageName, ownedStageName, setUpStageName } from '../../lib/profile';
 import { reported } from '../../lib/errorPolicy';
 
-function useOwnedLabel(address: string): string | null {
-  const [owned, setOwned] = useState<string | null>(null);
+const reportOwnedName = reported('settings.ownedName');
+
+function useOwnedLabel(address: string): string | null | undefined {
+  const [owned, setOwned] = useState<{ address: string; label: string | null } | null>(null);
   useEffect(() => {
     let cancelled = false;
-    void ownedStageName(address).then((name) => {
-      if (!cancelled) setOwned(name ? normalizeLabel(name) : null);
-    }, reported('settings.ownedName'));
+    const settle = (label: string | null): void => {
+      if (!cancelled) setOwned({ address, label });
+    };
+    void ownedStageName(address).then(
+      (name) => {
+        settle(name ? normalizeLabel(name) : null);
+      },
+      (err: unknown) => {
+        reportOwnedName(err);
+        settle(null);
+      },
+    );
     return () => {
       cancelled = true;
     };
   }, [address]);
-  return owned;
+  return owned?.address === address ? owned.label : undefined;
+}
+
+const BUTTON_LG_HEIGHT = 48;
+const ABOUT_LINES = ['100%', '70%'] as const;
+
+function ClaimCardPlaceholder(): React.ReactElement {
+  const about = (
+    <Column>
+      {ABOUT_LINES.map((width) => (
+        <PlaceholderBar key={width} width={width} height={14} line={PAGE_INTRO_TYPE.about.lineHeight} center />
+      ))}
+    </Column>
+  );
+  return (
+    <IntroCard title={USERNAME_COPY.title} about={about} footer={<PlaceholderBlock width="100%" height={BUTTON_LG_HEIGHT} />}>
+      <PlaceholderBlock width="100%" height={FORM_FIELD_HEIGHT} radius={FORM_FIELD_RADIUS} />
+    </IntroCard>
+  );
 }
 
 const SET_PRIMARY_ABOUT = 'You already claimed this username. One signature makes it the name people see.';
@@ -54,6 +87,7 @@ function SetPrimaryCard({ address, label, onDone }: { address: string; label: st
 
 export function ClaimStageName({ address, onClaimed }: { address: string; onClaimed: () => void }): React.ReactElement {
   const owned = useOwnedLabel(address);
+  if (owned === undefined) return <ClaimCardPlaceholder />;
   if (owned !== null) return <SetPrimaryCard address={address} label={owned} onDone={onClaimed} />;
   return <ClaimForm address={address} onClaimed={onClaimed} />;
 }
