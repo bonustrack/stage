@@ -19,6 +19,7 @@ import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radiu
 import { useHover } from '../../hover';
 import { nextBalanceCurrency, walletBalanceDisplay, type BalanceDisplayInput } from './balance.model';
 import { cycleBalanceCurrency } from './currency';
+import { WALLET_LINKS, type WalletLink } from '../../../lib/links';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, Row, PAGE_GUTTER } from '../../layout';
 
@@ -57,11 +58,9 @@ function WalletActionButton({
   );
 }
 
-type WalletAction = '/wallet/send' | '/wallet/receive';
-
-const HERO_ACTIONS: readonly (readonly [string, CentralIcon, WalletAction])[] = [
-  ['Send', IconPaperPlane, '/wallet/send'],
-  ['Receive', IconArrowDown, '/wallet/receive'],
+const HERO_ACTIONS: readonly (readonly [string, CentralIcon, WalletLink])[] = [
+  ['Send', IconPaperPlane, WALLET_LINKS.send],
+  ['Receive', IconArrowDown, WALLET_LINKS.receive],
 ];
 
 function useBalancePulse(active: boolean): ReturnType<typeof useAnimatedStyle> {
@@ -84,7 +83,7 @@ export function WalletBalanceCard({
 }: {
   balance: BalanceDisplayInput;
   border: string;
-  onAction: (action: WalletAction) => void;
+  onAction: (action: WalletLink) => void;
 }): React.ReactElement {
   const hero = walletBalanceDisplay(balance);
   const { hovered, hoverProps } = useHover();

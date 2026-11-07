@@ -1,17 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
-import {
-  frameCardModel,
-  frameLinkOf,
-  frameMoreBelow,
-  frameMediaUrl,
-  framePreviewCap,
-  frameScreenTitle,
-} from '../components/frame/frame.model';
+import { frameCardModel, frameMoreBelow, frameMediaUrl, framePreviewCap, frameScreenTitle } from '../components/frame/frame.model';
 import { frameActionContent, frameLocked, frameNodeOf, frameOf, frameRenders, nodeRequestOf } from '../lib/frames/frame.model';
 import { isFrameActionEntry } from '@stage-labs/client/xmtp/entryPayload';
 import { frameKeysOf } from '../lib/frames/frameKeys';
+import { frameLinkOf } from '../lib/links';
 import { frameStackOf, makeFrameStacks, navigateFrame, withFrameNav, type FrameStacks } from '../lib/frames/frameStacks';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf } from './frameFixtures';

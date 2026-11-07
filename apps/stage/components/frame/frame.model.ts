@@ -3,17 +3,10 @@ import type { FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import { filledText } from '../../lib/frames/frame.model';
 import { ATTACHMENT_MAX_HEIGHT } from '../media/imageBox.model';
 
-export const FRAME_ROUTE = '/frame';
-
 export const FRAME_PREVIEW_BORDER = 1;
 export const FRAME_PREVIEW_FADE = 48;
 export const FRAME_PREVIEW_PADDING = 12;
 export const FRAME_PREVIEW_BAR = 40;
-
-export interface FrameLink {
-  pathname: typeof FRAME_ROUTE;
-  params: { convId: string; id: string };
-}
 
 export interface FrameCardModel {
   title: string;
@@ -25,10 +18,6 @@ export function frameCardModel(frame: FrameContent): FrameCardModel {
   const title = filledText(frame.title) ?? filledText(derived.title) ?? 'Frame';
   const description = filledText(frame.description) ?? filledText(derived.description);
   return description === undefined || description === title ? { title } : { title, description };
-}
-
-export function frameLinkOf(convId: string, messageId: string): FrameLink {
-  return { pathname: FRAME_ROUTE, params: { convId, id: messageId } };
 }
 
 export function frameScreenTitle(frame: FrameContent, screen: string): string {

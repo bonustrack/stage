@@ -4,6 +4,7 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
+import { mailLinkOf } from '../../lib/links';
 import { channelTimestamp } from '../../lib/format';
 import { useInbox, useMailboxes, useReadMail, type InboxState, type Mailbox } from '../../lib/mail';
 import { usePalette } from '../../lib/theme';
@@ -11,17 +12,12 @@ import { RetryNotice } from '../chrome/RetryNotice';
 import { inboxRows, type InboxRow } from './Inbox.model';
 import { SettingsGroup } from '../settings/SettingsPage';
 import { MenuPage } from '../tabs/MenuPage';
-import { PAGES } from '../tabs/pages';
 import { IconEmail1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconEmail1';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const ROW_PADDING = { paddingTop: 12, paddingBottom: 12, paddingLeft: 14, paddingRight: 14 };
 const DOT = 8;
-
-function mailRoute(label: string, id: string): string {
-  return `${PAGES.inbox.href}/mail?label=${encodeURIComponent(label)}&id=${encodeURIComponent(id)}`;
-}
 
 function InboxRowView({ row }: { row: InboxRow }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
@@ -33,7 +29,7 @@ function InboxRowView({ row }: { row: InboxRow }): React.ReactElement {
       dark={dark}
       padding={ROW_PADDING}
       onPress={() => {
-        capabilities.navigate(mailRoute(row.label, row.id));
+        capabilities.navigate(mailLinkOf(row.label, row.id));
       }}
     >
       <Column width={DOT} height={DOT} radius="full" background={row.unread ? primary : 'transparent'} />

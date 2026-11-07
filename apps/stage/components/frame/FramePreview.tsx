@@ -20,11 +20,11 @@ import {
   FRAME_PREVIEW_BORDER,
   FRAME_PREVIEW_FADE,
   FRAME_PREVIEW_PADDING,
-  frameLinkOf,
   frameMoreBelow,
   framePreviewCap,
   frameScreenTitle,
 } from './frame.model';
+import { frameLinkOf } from '../../lib/links';
 import { FrameHeader } from './FrameHeader';
 import { FrameView } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';

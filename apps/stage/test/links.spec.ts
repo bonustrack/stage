@@ -1,10 +1,13 @@
 import { describe, expect, test } from 'bun:test';
+import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
 import {
   channelLinkOf,
   channelProfileLinkOf,
   conversationLinkOf,
   dmLinkOf,
   isActiveConversationPath,
+  mailLinkOf,
+  messageShareUrlOf,
   profileKindOf,
   profileLinkOf,
 } from '../lib/links';
@@ -106,5 +109,25 @@ describe('conversation links', () => {
       expect(isActiveConversationPath(`/${label}`, 'conv-1', PEER, handle)).toBe(false);
       expect(isActiveConversationPath(`/${PEER.toLowerCase()}`, 'conv-1', PEER, handle)).toBe(true);
     }
+  });
+});
+
+describe('links the app reads back', () => {
+  test('a mail link opens the same mail, whatever its label and id hold', () => {
+    expect(routeForUrl(mailLinkOf('work inbox', 'id&1=2'))).toEqual({
+      pathname: '/inbox/mail',
+      params: { label: 'work inbox', id: 'id&1=2' },
+    });
+  });
+
+  test('a shared message link opens its conversation and carries the message id', () => {
+    expect(routeForUrl(messageShareUrlOf(CHANNEL, null, 'msg-1'))).toEqual({
+      pathname: '/channel/[convId]',
+      params: { convId: CHANNEL, m: 'msg-1' },
+    });
+    expect(routeForUrl(messageShareUrlOf('conv-1', PEER, 'msg-2'))).toEqual({
+      pathname: '/[convId]',
+      params: { convId: PEER.toLowerCase(), m: 'msg-2' },
+    });
   });
 });

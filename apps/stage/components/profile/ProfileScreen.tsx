@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { dmLinkOf } from '../../lib/links';
+import { dmLinkOf, walletSendLinkOf } from '../../lib/links';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../../lib/theme';
@@ -126,7 +126,7 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
   };
 
   const onSend = (): void => {
-    router.push({ pathname: '/wallet/send', params: { to: addr } });
+    router.push(walletSendLinkOf(addr));
   };
   const menuActions: MenuActions<PeerProfileId> = {
     message: onMessage,

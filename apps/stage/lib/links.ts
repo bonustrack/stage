@@ -15,6 +15,20 @@ interface DmLink {
 
 export type ConversationLink = DmLink | ChannelLink;
 
+export interface FrameLink {
+  pathname: '/frame';
+  params: { convId: string; id: string };
+}
+
+export const WALLET_LINKS = { send: '/wallet/send', receive: '/wallet/receive' } as const;
+
+export type WalletLink = (typeof WALLET_LINKS)[keyof typeof WALLET_LINKS];
+
+interface WalletSendLink {
+  pathname: typeof WALLET_LINKS.send;
+  params: { to: string };
+}
+
 export interface ProfileLink {
   pathname: '/profile/[id]';
   params: { id: string };
@@ -32,8 +46,12 @@ export function channelLinkOf(convId: string): ChannelLink {
   return { pathname: '/channel/[convId]', params: { convId } };
 }
 
+export function conversationSlugLinkOf(slug: string): DmLink {
+  return { pathname: '/[convId]', params: { convId: slug } };
+}
+
 export function dmLinkOf(peerAddress: string, handle: string | null | undefined = getPeerHandle(peerAddress)): DmLink {
-  return { pathname: '/[convId]', params: { convId: conversationSlugFor(peerAddress, handle) } };
+  return conversationSlugLinkOf(conversationSlugFor(peerAddress, handle));
 }
 
 export function conversationLinkOf(
@@ -58,6 +76,18 @@ export function conversationSharePath(
   handle: string | null | undefined = getPeerHandle(peerAddress),
 ): string {
   return peerAddress ? conversationPathFor(peerAddress, handle) : channelPath(convId);
+}
+
+export function frameLinkOf(convId: string, messageId: string): FrameLink {
+  return { pathname: '/frame', params: { convId, id: messageId } };
+}
+
+export function mailLinkOf(label: string, id: string): string {
+  return `/inbox/mail?label=${encodeURIComponent(label)}&id=${encodeURIComponent(id)}`;
+}
+
+export function walletSendLinkOf(to: string): WalletSendLink {
+  return { pathname: WALLET_LINKS.send, params: { to } };
 }
 
 export function messageShareUrlOf(convId: string, peerAddress: string | null, messageId: string): string {

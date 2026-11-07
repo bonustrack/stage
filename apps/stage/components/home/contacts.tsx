@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { isAddress } from 'viem';
 import { Eyebrow } from '../Eyebrow';
 import { EmptyState } from '../chrome/EmptyState';
@@ -7,7 +8,7 @@ import { shortAddress } from '@stage-labs/client/identity/format';
 import { usePersonLookup } from '../../lib/resolveHandle';
 import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
 import { usePeerProfiles, getPeerName, peerLabel } from '../../lib/peerProfiles';
-import { dmLinkOf } from '../../lib/links';
+import { conversationSlugLinkOf, dmLinkOf } from '../../lib/links';
 import type { CachedRow as HomeRow } from '../../lib/cachedRows.model';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
@@ -61,14 +62,12 @@ function peerRow(p: Peer): ResultRow {
   return { address: p.address, convId: p.convId, title: peerLabel(p.address), subtitle: name ? shortAddress(p.address) : undefined };
 }
 
-function openPeer(address: string, convId?: string): void {
-  const target = isAddress(address) ? dmLinkOf(address) : { pathname: '/[convId]' as const, params: { convId: convId ?? address } };
-  void import('expo-router').then(({ router }) => {
-    router.push(target);
-  });
+function peerLink(address: string, convId?: string): ReturnType<typeof dmLinkOf> {
+  return isAddress(address) ? dmLinkOf(address) : conversationSlugLinkOf(convId ?? address);
 }
 
 function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): React.ReactElement {
+  const router = useRouter();
   return (
     <Column>
       <Column padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
@@ -82,7 +81,7 @@ function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): Rea
           square={false}
           subtitle={r.subtitle ?? null}
           onPress={() => {
-            openPeer(r.address, r.convId);
+            router.push(peerLink(r.address, r.convId));
           }}
         />
       ))}
