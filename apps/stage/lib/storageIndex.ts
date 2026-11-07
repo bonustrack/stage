@@ -13,13 +13,16 @@ import { listedConvRow } from './messaging/convRow.model';
 import { makeListeners, useStoreValue } from './storeCore';
 import { report, reported } from './errorPolicy';
 import { onStorageIndexForgotten, readStorageIndex, writeStorageIndex } from './storageIndexStore';
+import { convMembers } from './xmtp.identity';
+import { deleteRightsOf } from './messaging/deleteRights';
 import {
+  NO_DELETE_RIGHTS,
   applyFindings,
   emptyIndex,
   findingsOf,
   finishScan,
   nextCursorNs,
-  type ScanFindings,
+  settleFindings,
   type StorageIndex,
   type StoredFile,
 } from './storageIndex.model';
@@ -122,7 +125,12 @@ function sourceFor(context: AccountClient, live: () => boolean): ScanSource<Conv
     idOf: (conv) => conv.id,
     page: async (conv, query) => (await sdk.messages(conv, query)).map((m) => ({ ...sdk.rowOf(m), convId: conv.id })),
     skip: async (conv) => sdk.isGroup(conv) && (await isSyncConv(conv)),
-    superAdmins: async (conv) => new Set((await sdk.groupAdmins(conv)).superAdmins.map((id) => id.toLowerCase())),
+    deleteRights: async (conv) => {
+      const admins = sdk.isGroup(conv)
+        ? { convId: conv.id, inboxToAddr: (await convMembers(conv)).inboxToAddr, where: 'storage.superAdmins' }
+        : null;
+      return deleteRightsOf(admins, sdk.inboxIdOf(context.client));
+    },
     current: () => live() && context.current(),
     failed: reported('storage.scanChat'),
   };
@@ -219,7 +227,7 @@ export function retryStorage(): void {
 function onStreamMessage({ convId, msg }: StreamMsg): void {
   if (held === null || convId === null) return;
   const { accountId, index } = held;
-  const findings: ScanFindings = findingsOf([{ ...msg, convId }], index.inboxId);
+  const findings = settleFindings(index, findingsOf([{ ...msg, convId }], index.inboxId), NO_DELETE_RIGHTS);
   if (findings.files.length > 0 || findings.deletedIds.length > 0) commit(accountId, applyFindings(index, findings));
 }
 

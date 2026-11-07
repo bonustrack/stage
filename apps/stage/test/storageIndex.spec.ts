@@ -2,16 +2,18 @@ import { describe, expect, test } from 'bun:test';
 import {
   DELETED_LIMIT,
   FILE_PAGE_SIZE,
+  NO_DELETE_RIGHTS,
   applyFindings,
   decodeIndex,
-  deletesToCheck,
   emptyIndex,
   encodeIndex,
   fileKey,
   filesOfMessage,
   findingsOf,
   finishScan,
+  needsDeleteRights,
   nextCursorNs,
+  settleFindings,
   type ScannedMessage,
   type StorageIndex,
   type StoredFile,
@@ -135,11 +137,17 @@ describe('storage index model', () => {
       ME,
     );
     expect(findings.files.map((f) => f.messageId)).toEqual(['mine']);
-    expect(findings.deletedIds).toEqual(['gone', 'old']);
-    expect(findings.foreignDeletes).toEqual([{ convId: 'c1', target: 'mine', by: PEER }]);
-    expect(deletesToCheck(emptyIndex(ME), findings)).toEqual(findings.foreignDeletes);
-    expect(deletesToCheck(emptyIndex(ME), { ...findings, files: [] })).toEqual([]);
-    expect(deletesToCheck(indexWith({ files: [file('mine', 1, 0, 'c2')] }), { ...findings, files: [] })).toEqual([]);
+    expect(findings.deletedIds).toEqual(['gone']);
+    expect(findings.deleteRequests.map((m) => m.id)).toEqual(['del1', 'del2']);
+    const admin = { superAdmins: new Set([PEER]) };
+    expect(settleFindings(emptyIndex(ME), findings, NO_DELETE_RIGHTS).deletedIds).toEqual(['gone', 'old']);
+    expect(settleFindings(emptyIndex(ME), findings, admin).deletedIds).toEqual(['gone', 'old', 'mine']);
+    expect(settleFindings(emptyIndex(ME), { ...findings, files: [] }, admin).deletedIds).toEqual(['gone', 'old']);
+    const elsewhere = indexWith({ files: [file('mine', 1, 0, 'c2')] });
+    expect(settleFindings(elsewhere, { ...findings, files: [] }, admin).deletedIds).toEqual(['gone', 'old']);
+    expect(needsDeleteRights(emptyIndex(ME), findings)).toBe(true);
+    expect(needsDeleteRights(emptyIndex(ME), { ...findings, files: [] })).toBe(false);
+    expect(needsDeleteRights(elsewhere, { ...findings, files: [] })).toBe(false);
   });
 
   test('merges files once each, newest first, and drops deleted messages for good', () => {
@@ -213,7 +221,7 @@ function source(page: ScanSource<string>['page'], overrides: Partial<ScanSource<
     idOf: (conv) => conv,
     page,
     skip: (conv) => Promise.resolve(conv === 'sync'),
-    superAdmins: () => Promise.resolve(new Set<string>()),
+    deleteRights: () => Promise.resolve(NO_DELETE_RIGHTS),
     current: () => true,
     failed: () => undefined,
     ...overrides,
@@ -270,13 +278,14 @@ describe('storage scan', () => {
       c2: [del('x3', 'inbox-admin', 'f3', 'c2')],
     });
     const sink = memorySink(emptyIndex(ME));
-    await scanConversations(
-      ['c1', 'c2'],
-      emptyIndex(ME),
-      source(chats.page, { superAdmins: () => Promise.resolve(new Set(['inbox-admin'])) }),
-      sink,
-    );
+    let asked = 0;
+    const deleteRights = (): Promise<{ superAdmins: ReadonlySet<string> }> => {
+      asked += 1;
+      return Promise.resolve({ superAdmins: new Set(['inbox-admin']) });
+    };
+    await scanConversations(['c1', 'c2'], emptyIndex(ME), source(chats.page, { deleteRights }), sink);
     expect(ids(sink.index())).toEqual(['f3', 'f1']);
+    expect(asked).toBe(1);
   });
 
   test('a broken chat is retried from its own cursor while the others move on', async () => {

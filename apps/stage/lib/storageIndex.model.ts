@@ -1,4 +1,5 @@
 import { deleteTargetOfContent, isDeleteRequestType, isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
+import { deletedRowBy, type DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { attachedFilesOf } from '@stage-labs/client/xmtp/contentTypes';
 
@@ -28,19 +29,17 @@ export interface ScannedMessage extends StreamedMessage {
   convId: string;
 }
 
-interface ForeignDelete {
-  convId: string;
-  target: string;
-  by: string;
-}
-
 export interface ScanFindings {
   files: StoredFile[];
   deletedIds: string[];
-  foreignDeletes: ForeignDelete[];
+  deleteRequests: ScannedMessage[];
 }
 
-export const NO_FINDINGS: ScanFindings = { files: [], deletedIds: [], foreignDeletes: [] };
+export type SettledFindings = Pick<ScanFindings, 'files' | 'deletedIds'>;
+
+export const NO_FINDINGS: ScanFindings = { files: [], deletedIds: [], deleteRequests: [] };
+
+export const NO_DELETE_RIGHTS: DeleteRights = {};
 
 export function emptyIndex(inboxId: string): StorageIndex {
   return { inboxId, cursorNs: 0, files: [], deleted: [], retry: {} };
@@ -84,22 +83,14 @@ export function filesOfMessage(m: ScannedMessage): StoredFile[] {
 export function findingsOf(messages: readonly ScannedMessage[], selfInboxId: string): ScanFindings {
   const files: StoredFile[] = [];
   const deletedIds: string[] = [];
-  const foreignDeletes: ForeignDelete[] = [];
+  const deleteRequests: ScannedMessage[] = [];
   for (const m of messages) {
-    if (isDeletedPlaceholderType(m.contentTypeId)) {
-      deletedIds.push(m.id);
-      continue;
-    }
-    if (isDeleteRequestType(m.contentTypeId)) {
-      const target = deleteTargetOfContent(m.content);
-      if (target === undefined) continue;
-      if (m.senderInboxId === selfInboxId) deletedIds.push(target);
-      else foreignDeletes.push({ convId: m.convId, target, by: m.senderInboxId });
-      continue;
-    }
-    if (m.senderInboxId === selfInboxId) files.push(...filesOfMessage(m));
+    if (isDeletedPlaceholderType(m.contentTypeId)) deletedIds.push(m.id);
+    else if (isDeleteRequestType(m.contentTypeId)) {
+      if (deleteTargetOfContent(m.content) !== undefined) deleteRequests.push(m);
+    } else if (m.senderInboxId === selfInboxId) files.push(...filesOfMessage(m));
   }
-  return { files, deletedIds, foreignDeletes };
+  return { files, deletedIds, deleteRequests };
 }
 
 export function joinFindings(a: ScanFindings, b: ScanFindings): ScanFindings {
@@ -108,14 +99,33 @@ export function joinFindings(a: ScanFindings, b: ScanFindings): ScanFindings {
   return {
     files: [...a.files, ...b.files],
     deletedIds: [...a.deletedIds, ...b.deletedIds],
-    foreignDeletes: [...a.foreignDeletes, ...b.foreignDeletes],
+    deleteRequests: [...a.deleteRequests, ...b.deleteRequests],
   };
 }
 
-export function deletesToCheck(index: StorageIndex, findings: ScanFindings): ForeignDelete[] {
-  if (findings.foreignDeletes.length === 0) return [];
+function deletesToCheck(index: StorageIndex, findings: ScanFindings): ScannedMessage[] {
+  if (findings.deleteRequests.length === 0) return [];
   const chatOf = new Map([...index.files, ...findings.files].map((f) => [f.messageId, f.convId]));
-  return findings.foreignDeletes.filter((d) => chatOf.get(d.target) === d.convId);
+  return findings.deleteRequests.filter((request) => {
+    const target = deleteTargetOfContent(request.content);
+    return request.senderInboxId === index.inboxId || (target !== undefined && chatOf.get(target) === request.convId);
+  });
+}
+
+export function needsDeleteRights(index: StorageIndex, findings: ScanFindings): boolean {
+  return deletesToCheck(index, findings).some((request) => request.senderInboxId !== index.inboxId);
+}
+
+function ownOriginal(id: string, selfInboxId: string): StreamedMessage {
+  return { id, senderInboxId: selfInboxId, contentTypeId: undefined, content: undefined, sentNs: 0 };
+}
+
+export function settleFindings(index: StorageIndex, findings: ScanFindings, rights: DeleteRights): SettledFindings {
+  const deleted = deletesToCheck(index, findings).flatMap((request) => {
+    const target = deleteTargetOfContent(request.content);
+    return target !== undefined && deletedRowBy(ownOriginal(target, index.inboxId), [request], rights) !== null ? [target] : [];
+  });
+  return { files: findings.files, deletedIds: [...findings.deletedIds, ...deleted] };
 }
 
 export function newestFirst(a: StoredFile, b: StoredFile): number {
@@ -130,7 +140,7 @@ function withDeleted(deleted: readonly string[], ids: readonly string[]): string
   return [...deleted, ...new Set(fresh)].slice(-DELETED_LIMIT);
 }
 
-export function applyFindings(index: StorageIndex, findings: Pick<ScanFindings, 'files' | 'deletedIds'>): StorageIndex {
+export function applyFindings(index: StorageIndex, findings: SettledFindings): StorageIndex {
   if (findings.files.length === 0 && findings.deletedIds.length === 0) return index;
   const deleted = withDeleted(index.deleted, findings.deletedIds);
   const gone = new Set(deleted);
