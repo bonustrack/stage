@@ -2,6 +2,7 @@ import { sha256 } from 'viem';
 import { SENDER_FILTER_BATCH_SIZE, senderFilterTopics, signedSenderFilters, type SenderFilterTopic } from './pushServer';
 import type { PushTopics } from './pushRegistration';
 import { abortable } from '../abortable';
+import { linkedDeadline } from '../timing';
 import { timeSendPhase, type SendTiming } from './sendTiming';
 
 export interface SenderFilterInput {
@@ -74,47 +75,41 @@ export function makeSenderFilterPublisher(now = Date.now, timeoutMs = 30_000, sy
   }
 
   async function publish(input: SenderFilterInput): Promise<void> {
-    const controller = new AbortController();
+    const { signal, release } = linkedDeadline(timeoutMs, input.signal, {
+      cancelled: () => new Error('Sender filter refresh cancelled'),
+      timedOut: () => new Error('Sender filter refresh timed out'),
+    });
     const capturedEpoch = epoch;
     const assertCurrent = (): void => {
-      if (capturedEpoch !== epoch || !input.current() || controller.signal.aborted) throw new Error('Sender filter account changed');
+      if (capturedEpoch !== epoch || !input.current() || signal.aborted) throw new Error('Sender filter account changed');
     };
-    const abort = (): void => {
-      controller.abort(new Error('Sender filter refresh cancelled'));
-    };
-    if (input.signal.aborted) abort();
-    else input.signal.addEventListener('abort', abort, { once: true });
-    const timer = setTimeout(() => {
-      controller.abort(new Error('Sender filter refresh timed out'));
-    }, timeoutMs);
     let releaseForeground: (() => void) | undefined;
     try {
-      let prepared = await abortable(preparePublication(state, input, controller.signal, assertCurrent), controller.signal);
+      let prepared = await abortable(preparePublication(state, input, signal, assertCurrent), signal);
       while (true) {
-        const result = await queuePublication(pending, input, controller.signal, (waited) => {
+        const result = await queuePublication(pending, input, signal, (waited) => {
           assertCurrent();
           if (input.topic && waited) {
             releaseForeground = foreground.hold(input.installationId);
             return Promise.resolve('retry');
           }
           if (!input.topic && foreground.blocked(input.installationId)) return Promise.resolve('yield');
-          return updatePublication(state, input, prepared, controller.signal, assertCurrent);
+          return updatePublication(state, input, prepared, signal, assertCurrent);
         });
         if (result === 'done' || result === 'unchanged') return;
         if (result === 'retry') {
           try {
-            prepared = await abortable(preparePublication(state, input, controller.signal, assertCurrent), controller.signal);
+            prepared = await abortable(preparePublication(state, input, signal, assertCurrent), signal);
           } finally {
             releaseForeground?.();
             releaseForeground = undefined;
           }
         }
-        if (result === 'yield') await foreground.wait(input.installationId, controller.signal);
+        if (result === 'yield') await foreground.wait(input.installationId, signal);
       }
     } finally {
       releaseForeground?.();
-      clearTimeout(timer);
-      input.signal.removeEventListener('abort', abort);
+      release();
     }
   }
 

@@ -45,6 +45,35 @@ export function backoffDelay(attempt: number, backoff: Backoff = RETRY_BACKOFF):
   return Math.min(backoff.baseMs * 2 ** Math.max(0, attempt - 1), backoff.maxMs);
 }
 
+export interface LinkedDeadline {
+  signal: AbortSignal;
+  release: () => void;
+}
+
+export interface DeadlineReasons {
+  cancelled?: () => unknown;
+  timedOut?: () => unknown;
+}
+
+export function linkedDeadline(timeoutMs: number, outer: AbortSignal | undefined, reasons: DeadlineReasons = {}): LinkedDeadline {
+  const controller = new AbortController();
+  const cancel = (): void => {
+    controller.abort(reasons.cancelled?.());
+  };
+  if (outer?.aborted) cancel();
+  else outer?.addEventListener('abort', cancel, { once: true });
+  const timer = setTimeout(() => {
+    controller.abort(reasons.timedOut?.());
+  }, timeoutMs);
+  return {
+    signal: controller.signal,
+    release: () => {
+      clearTimeout(timer);
+      outer?.removeEventListener('abort', cancel);
+    },
+  };
+}
+
 export interface FetchDeadline {
   timeoutMs: number;
   signal?: AbortSignal;
@@ -63,25 +92,20 @@ export async function fetchWithin<T = Response>(
   deadline: FetchDeadline,
   read: (response: Response) => Promise<T> | T = (response) => response as T,
 ): Promise<T> {
-  const controller = new AbortController();
-  const abort = (): void => {
-    controller.abort();
-  };
-  const { signal } = deadline;
-  if (signal?.aborted) abort();
-  else signal?.addEventListener('abort', abort, { once: true });
-  let timer: ReturnType<typeof setTimeout> | undefined;
+  let expire: (error: FetchTimeoutError) => void = () => undefined;
   const timedOut = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new FetchTimeoutError());
-      abort();
-    }, deadline.timeoutMs);
+    expire = reject;
+  });
+  const linked = linkedDeadline(deadline.timeoutMs, deadline.signal, {
+    timedOut: () => {
+      expire(new FetchTimeoutError());
+      return undefined;
+    },
   });
   try {
-    const request = fetch(input, { ...init, signal: controller.signal }).then(read);
+    const request = fetch(input, { ...init, signal: linked.signal }).then(read);
     return await Promise.race([request, timedOut]);
   } finally {
-    if (timer !== undefined) clearTimeout(timer);
-    signal?.removeEventListener('abort', abort);
+    linked.release();
   }
 }
