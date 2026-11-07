@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { bytesToBase64 } from '@stage-labs/client/text/base64';
-import { dataUriDecodeSize, viewerResizeMethod } from '../components/imageDecode.model';
+import { dataUriDecodeSize, viewerResizeMethod } from '../components/media/imageDecode.model';
 
 function be(value: number, length: number): number[] {
   return Array.from({ length }, (_, k) => (value >> (8 * (length - 1 - k))) & 0xff);
@@ -13,35 +13,10 @@ function png(width: number, height: number, bitDepth = 8): Uint8Array {
 
 function jpeg(width: number, height: number, frameMarker = 0xc0): Uint8Array {
   const exif = new Array<number>(3000).fill(0x2a);
-  return Uint8Array.from([
-    0xff,
-    0xd8,
-    0xff,
-    0xe0,
-    ...be(16, 2),
-    ...new Array<number>(14).fill(0),
-    0xff,
-    0xe1,
-    ...be(exif.length + 2, 2),
-    ...exif,
-    0xff,
-    0xdb,
-    ...be(4, 2),
-    0,
-    0,
-    0xff,
-    frameMarker,
-    ...be(17, 2),
-    8,
-    ...be(height, 2),
-    ...be(width, 2),
-    3,
-    ...new Array<number>(9).fill(0),
-    0xff,
-    0xda,
-    0,
-    0,
-  ]);
+  const app0 = [0xff, 0xe0, ...be(16, 2), ...new Array<number>(14).fill(0)];
+  const app1 = [0xff, 0xe1, ...be(exif.length + 2, 2), ...exif];
+  const frame = [0xff, frameMarker, ...be(17, 2), 8, ...be(height, 2), ...be(width, 2), 3, ...new Array<number>(9).fill(0)];
+  return Uint8Array.from([0xff, 0xd8, ...app0, ...app1, 0xff, 0xdb, ...be(4, 2), 0, 0, ...frame, 0xff, 0xda, 0, 0]);
 }
 
 function dataUri(mime: string, bytes: Uint8Array): string {

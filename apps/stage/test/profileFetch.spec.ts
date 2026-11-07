@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test';
 import { profileRequest } from '../lib/profileFetch';
+import { fetchHandler } from './helpers';
 
 const originalFetch = globalThis.fetch;
 afterEach(() => {
@@ -9,7 +10,7 @@ afterEach(() => {
 describe('profile request deadline', () => {
   test('an unresponsive transport settles even when it ignores abort', async () => {
     const pending = Promise.withResolvers<Response>();
-    const fetch = spyOn(globalThis, 'fetch').mockImplementation(() => pending.promise);
+    const fetch = spyOn(globalThis, 'fetch').mockImplementation(fetchHandler(() => pending.promise));
     await expect(profileRequest('https://synthetic.invalid', {}, (res) => res.text(), 5)).rejects.toThrow('timed out');
     expect(fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
     pending.resolve(new Response('late'));

@@ -1,58 +1,11 @@
-import type { HistoryEntry } from '@stage-labs/client/types';
-import { clearAppDataWrites } from '@stage-labs/client/xmtp/labels';
+import { createAppDataWriter, type AppDataWriter } from '@stage-labs/client/xmtp/channelMeta';
 import { makeListeners, makeValue } from './storeCore';
-import { resetFeedLines } from './feedLines';
+import { resetFeed } from './feed/cache';
 import { attempt } from './errorPolicy';
+import { settleWithin } from '@stage-labs/client/timing';
+import { AccountChangedError } from './accountSelection';
 
 export const inboxEthCache = new Map<string, string>();
-
-let feedGeneration = 0;
-const feedSlices = new Map<string, HistoryEntry[]>();
-const cachedFeedIds = new Map<string, ReadonlySet<string>>();
-const feedChanges = makeListeners<{ line: string; slice: HistoryEntry[] | undefined }>();
-
-function setFeedSlice(line: string, slice: HistoryEntry[]): void {
-  feedSlices.set(line, slice);
-  feedChanges.notify({ line, slice });
-}
-
-export const feedCache = {
-  generation: (): number => feedGeneration,
-  get: (line: string): HistoryEntry[] | undefined => feedSlices.get(line),
-  set: setFeedSlice,
-  showCached(line: string, slice: HistoryEntry[]): void {
-    cachedFeedIds.set(line, new Set(slice.map((e) => e.id)));
-    setFeedSlice(line, slice);
-  },
-  cachedIds: (line: string): ReadonlySet<string> | undefined => cachedFeedIds.get(line),
-  settleCached(line: string): void {
-    cachedFeedIds.delete(line);
-  },
-  subscribeAll(cb: (line: string, slice: HistoryEntry[] | undefined) => void): () => void {
-    return feedChanges.subscribe(({ line, slice }) => {
-      cb(line, slice);
-    });
-  },
-  clear(): void {
-    feedGeneration += 1;
-    const lines = [...feedSlices.keys()];
-    feedSlices.clear();
-    cachedFeedIds.clear();
-    for (const line of lines) feedChanges.notify({ line, slice: undefined });
-  },
-};
-
-export { activeFeedLines } from './feedLines';
-
-const hiddenConvs = new Set<string>();
-
-export function registerHiddenConv(convId: string): void {
-  hiddenConvs.add(convId);
-}
-
-export function isHiddenConv(convId: string | null | undefined): boolean {
-  return convId !== null && convId !== undefined && hiddenConvs.has(convId);
-}
 
 let activeConvId: string | null = null;
 
@@ -61,8 +14,7 @@ export function setActiveConvId(convId: string | null): void {
 }
 
 export function isActiveConv(convId: string | null | undefined): boolean {
-  if (!convId || !activeConvId) return false;
-  return convId.toLowerCase() === activeConvId;
+  return !!convId && convId.toLowerCase() === activeConvId;
 }
 
 const bootstrap = makeValue<'idle' | 'registering'>('idle');
@@ -70,6 +22,8 @@ const bootstrap = makeValue<'idle' | 'registering'>('idle');
 export const getXmtpBootstrapPhase = bootstrap.get;
 
 export const useXmtpBootstrapPhase = bootstrap.use;
+
+export const subscribeXmtpBootstrapPhase = bootstrap.subscribe;
 
 export async function whileRegistering<T>(work: () => Promise<T>): Promise<T> {
   bootstrap.set('registering');
@@ -85,27 +39,41 @@ export function registerGlobalStreamTeardown(fn: () => void): void {
   globalStreamTeardown = fn;
 }
 
+let appDataWriter = createAppDataWriter();
+
+export function channelMetaWriter(): AppDataWriter {
+  return appDataWriter;
+}
+
 export function resetSharedXmtpState(): void {
-  clearAppDataWrites();
+  appDataWriter.close();
+  appDataWriter = createAppDataWriter();
   globalStreamTeardown?.();
-  resetFeedLines();
-  feedCache.clear();
+  resetFeed();
   inboxEthCache.clear();
 }
 
 const READY_CAP_MS = 60_000;
 
-interface ClientSlot<C> {
+export interface ClientSlot<C> {
   get: () => C | null;
   getOrCreate: (create: () => Promise<C>) => Promise<C>;
   waitForReady: () => Promise<boolean>;
   reset: () => void;
+  discard: (client: C) => void;
 }
 
-export function createClientSlot<C>(onReset: () => void, discard?: (client: C) => void): ClientSlot<C> {
+export function createClientSlot<C>(onReset: () => void, close?: (client: C) => void): ClientSlot<C> {
   let cached: C | null = null;
   let inFlight: Promise<C> | null = null;
   let generation = 0;
+  const ready = makeListeners();
+  const discard = (client: C): void => {
+    if (close)
+      attempt(() => {
+        close(client);
+      }, 'cleanup');
+  };
   return {
     get: () => cached,
     getOrCreate: async (create) => {
@@ -115,13 +83,11 @@ export function createClientSlot<C>(onReset: () => void, discard?: (client: C) =
       const pending = (async (): Promise<C> => {
         const client = await create();
         if (generation !== started) {
-          if (discard)
-            attempt(() => {
-              discard(client);
-            }, 'cleanup');
-          throw new Error('The account changed while messaging was starting.');
+          discard(client);
+          throw new AccountChangedError('The account changed while messaging was starting.');
         }
         cached = client;
+        ready.notify();
         return client;
       })();
       inFlight = pending;
@@ -132,15 +98,26 @@ export function createClientSlot<C>(onReset: () => void, discard?: (client: C) =
       }
     },
     waitForReady: async () => {
-      const start = Date.now();
-      while (cached === null && Date.now() - start < READY_CAP_MS) await new Promise((r) => setTimeout(r, 250));
-      return cached !== null;
+      if (cached !== null) return true;
+      let stop = (): void => undefined;
+      const set = new Promise<boolean>((resolve) => {
+        stop = ready.subscribe(() => {
+          resolve(true);
+        });
+      });
+      try {
+        return await settleWithin(set, READY_CAP_MS, false);
+      } finally {
+        stop();
+      }
     },
     reset: () => {
+      if (cached) discard(cached);
       generation += 1;
       cached = null;
       inFlight = null;
       onReset();
     },
+    discard,
   };
 }

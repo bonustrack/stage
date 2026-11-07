@@ -21,6 +21,7 @@
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250601.0",
+        "@types/bun": "^1.2.0",
         "wrangler": "^4.100.0",
       },
     },
@@ -33,6 +34,7 @@
       },
       "devDependencies": {
         "@cloudflare/workers-types": "^4.20250601.0",
+        "@types/bun": "^1.2.0",
         "wrangler": "^4.100.0",
       },
     },
@@ -96,6 +98,7 @@
         "react-native-worklets": "0.10.1",
         "unicode-segmenter": "0.17.3",
         "viem": "^2.51.0",
+        "zod": "^3.25.76",
       },
       "devDependencies": {
         "@stage-labs/config": "workspace:*",
@@ -109,6 +112,8 @@
       "name": "stage-desktop",
       "version": "0.1.5",
       "devDependencies": {
+        "@stage-labs/client": "workspace:*",
+        "@types/bun": "^1.2.0",
         "@types/node": "^22.0.0",
         "electron": "44.3.0",
         "electron-builder": "26.15.3",
@@ -123,6 +128,7 @@
         "@noble/ciphers": "^1.3.0",
         "@noble/curves": "^1.9.1",
         "@noble/hashes": "^1.8.0",
+        "@stage-labs/kit": "workspace:*",
         "@zerodev/ecdsa-validator": "5.4.9",
         "@zerodev/sdk": "5.5.10",
         "viem": "^2.51.0",
@@ -135,7 +141,7 @@
     },
     "packages/config": {
       "name": "@stage-labs/config",
-      "version": "0.1.0-beta.7",
+      "version": "0.1.0-beta.8",
       "bin": {
         "stage": "./bin/stage.js",
       },
@@ -162,6 +168,7 @@
       },
       "devDependencies": {
         "@stage-labs/config": "workspace:*",
+        "@types/bun": "^1.2.0",
         "@types/react": "~19.2.0",
         "@types/react-dom": "~19.2.0",
         "expo-modules-core": "~57.0.19",

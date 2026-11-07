@@ -1,0 +1,81 @@
+import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Image } from '@stage-labs/kit/react-native/image';
+import { RoundOverflowMenu, type OverflowMenuItem } from '../MenuRows';
+import { RoundIconButton } from '../RoundIconButton';
+import { TooltipHost } from '../system/TooltipHost';
+import { downloadImage } from '../../lib/fileDownload';
+import { describeError } from '../../lib/errorPolicy';
+import { useSafeAreaInsets } from '../layout/safeArea';
+import { isCoarsePointer, lockDocumentScroll } from '../layout/webLayout';
+import { ZoomableImage } from './ZoomableImage';
+import { IconArrowInbox } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowInbox';
+import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
+import { Overlay } from '@stage-labs/kit/react-native/modal';
+import { Column, PAGE_GUTTER, Row } from '../layout';
+import { capabilities } from '../../lib/capabilities';
+
+const FRAME = Platform.OS === 'web' ? { x: 18, y: 104 } : { x: 0, y: 0 };
+
+const VIEWER_MENU: OverflowMenuItem<'download'>[] = [{ id: 'download', label: 'Download', icon: IconArrowInbox }];
+
+export function ImageViewer({
+  uri,
+  visible,
+  onClose,
+  onStep,
+}: {
+  uri: string;
+  visible: boolean;
+  onClose: () => void;
+  onStep?: (delta: number) => void;
+}): React.ReactElement {
+  const [saving, setSaving] = useState(false);
+  const insets = useSafeAreaInsets();
+
+  useEffect(() => (visible ? lockDocumentScroll() : undefined), [visible]);
+
+  const onDownload = async (): Promise<void> => {
+    if (saving || !uri) return;
+    setSaving(true);
+    try {
+      await downloadImage(uri);
+    } catch (e) {
+      capabilities.alert('Download failed', describeError(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Overlay open={visible} onClose={onClose} animationType="fade" backdrop={false} gestureRoot>
+      <Column background={'rgba(0,0,0,0.97)'} weight={1}>
+        {(uri || onStep) && isCoarsePointer() ? (
+          <ZoomableImage key={uri} uri={uri} frame={FRAME} onTap={onClose} onStep={onStep} />
+        ) : (
+          <Pressable
+            onPress={onClose}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: FRAME.x, paddingVertical: FRAME.y }}
+          >
+            {uri ? <Image url={uri} style={{ width: '100%', height: '100%' }} fit="contain" /> : null}
+          </Pressable>
+        )}
+
+        <Row gap={8} style={{ position: 'absolute', top: insets.top + PAGE_GUTTER, right: PAGE_GUTTER }}>
+          <RoundOverflowMenu
+            items={VIEWER_MENU}
+            loading={saving}
+            actions={{
+              download: () => {
+                void onDownload();
+              },
+            }}
+          />
+          <RoundIconButton icon={IconCrossMedium} label="Close" onPress={onClose} />
+        </Row>
+        <TooltipHost />
+      </Column>
+    </Overlay>
+  );
+}

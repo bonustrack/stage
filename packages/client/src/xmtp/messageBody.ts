@@ -1,6 +1,7 @@
 import { splitChannelRefs, withChannelLabels } from './channelRefs';
 import { parseMentions, type MentionSegment } from './mentions';
 import { stageChannelIdOf } from './line';
+import { trimTrailingPunctuation } from '../routing/stageLinks';
 import { channelFallbackLabel, MARKDOWN_LINK_RE } from './channelLinks';
 
 export type BodyView = 'plain' | 'namedPlain' | 'mention' | 'markdown';
@@ -33,7 +34,7 @@ export function mentionAddresses(text: string): string[] {
   return parseMentions(text).flatMap((seg) => (seg.type === 'mention' ? [seg.address] : []));
 }
 
-export function withMentionLabels(text: string, labelOf: (address: string) => string): string {
+function withMentionLabels(text: string, labelOf: (address: string) => string): string {
   return parseMentions(withChannelLabels(text))
     .map((seg) => (seg.type === 'mention' ? labelOf(seg.address) : seg.text))
     .join('');
@@ -52,8 +53,7 @@ export function bodyView(body: string, plain: boolean, findLinks?: LinkFinder): 
   const channels = segments.some((s) => s.type === 'channel');
   if (plain) return mentions || channels ? 'namedPlain' : 'plain';
   if (mentions) return 'mention';
-  const links = segments.some((s) => s.type === 'link');
-  return links || channels || MARKDOWN_SYNTAX.test(body) ? 'markdown' : 'plain';
+  return segments.some((s) => s.type === 'link') || channels || MARKDOWN_SYNTAX.test(body) ? 'markdown' : 'plain';
 }
 
 function splitSpans(text: string, spans: Span[], between: (text: string) => BodySegment[]): BodySegment[] {
@@ -92,7 +92,7 @@ function markdownLinkSpans(text: string, findLinks: LinkFinder, plain: boolean):
 
 function bareLinkSpans(text: string, findLinks: LinkFinder): Span[] {
   return (findLinks(text) ?? []).map((m): Span => {
-    const clean = m.url.replace(/[.,;:!?)\]}'"`>]+$/, '');
+    const clean = trimTrailingPunctuation(m.url);
     const url = stageChannelIdOf(clean) ? clean : m.url;
     const lastIndex = m.lastIndex - (m.url.length - url.length);
     return { index: m.index, lastIndex, segment: linkSegment(url, text.slice(m.index, lastIndex)) };

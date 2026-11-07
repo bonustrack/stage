@@ -2,19 +2,18 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
-import { OnboardingCard, SkipLink } from './OnboardingCard';
+import { IntroCard, SkipLink } from '../chrome/IntroCard';
 import type { HistoryControls } from './useSetupRunner';
 import { DANGER, usePalette } from '../../lib/theme';
-import type { Stage } from './flow';
+import type { Stage } from '../../lib/onboarding';
 import {
   setupHint,
-  setupLinks,
+  canStartOver,
   setupStages,
   setupTitle,
   stageLabel,
   stageState,
   type SetupErr,
-  type SetupLinkKind,
   type SetupPlan,
   type StageState,
 } from './Onboarding.setup.model';
@@ -23,9 +22,10 @@ import { IconCircleX } from '@central-icons-react-native/round-outlined-radius-1
 import { useEffect, useState } from 'react';
 import { historySyncDeadline, historySyncProblem, useHistorySyncPhase } from '../../lib/history';
 import { historySyncIsActive, historySyncPhaseLabel, timeLeftLabel } from '../../lib/history.model';
+import { settingsBreadcrumb } from '../settings/settingsCatalog.model';
 import { Column, Row } from '../layout';
 
-const CONTINUE_HINT = 'You can also continue without it and sync later from Settings > Devices and history.';
+const CONTINUE_HINT = `You can also continue without it and sync later from ${settingsBreadcrumb('devices')}.`;
 
 function useNow(running: boolean): number {
   const [now, setNow] = useState(() => Date.now());
@@ -91,17 +91,10 @@ function SetupActions({
   onRetry: () => void;
   history: HistoryControls;
 }): React.ReactElement | null {
-  if (setupErr === null) {
-    return history.stalled ? (
-      <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" onPress={history.retry} />
-    ) : null;
-  }
-  return (
-    <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" disabled={busy} onPress={onRetry} />
-  );
+  if (setupErr === null && !history.stalled) return null;
+  const retry = setupErr === null ? { onPress: history.retry } : { disabled: busy, onPress: onRetry };
+  return <Button dark={dark} size="lg" fullWidth pill color="primary" variant="solid" label="Try again" {...retry} />;
 }
-
-const SETUP_LINK_LABELS: Record<SetupLinkKind, string> = { startOver: 'Start over' };
 
 function SetupLink({
   busy,
@@ -115,14 +108,10 @@ function SetupLink({
   history: HistoryControls;
 }): React.ReactElement | null {
   if (setupErr === null && history.stalled) return <SkipLink label="Continue without history" onPress={history.continueWithout} />;
-  if (setupErr === null) return null;
-  const links = setupLinks(setupErr);
-  if (links.length === 0) return null;
+  if (!canStartOver(setupErr)) return null;
   return (
     <Column gap={16}>
-      {links.map((kind) => (
-        <SkipLink key={kind} label={SETUP_LINK_LABELS[kind]} disabled={busy} onPress={onBack} />
-      ))}
+      <SkipLink label="Start over" disabled={busy} onPress={onBack} />
     </Column>
   );
 }
@@ -153,7 +142,7 @@ export function SetupStep({
   const actions = SetupActions({ dark, busy, setupErr, onRetry, history });
   const link = SetupLink({ busy, setupErr, onBack, history });
   return (
-    <OnboardingCard
+    <IntroCard
       title={setupTitle(setupErr, plan)}
       about={historyHint ?? setupHint(setupErr)}
       footer={actions}
@@ -176,6 +165,6 @@ export function SetupStep({
           />
         ))}
       </Column>
-    </OnboardingCard>
+    </IntroCard>
   );
 }

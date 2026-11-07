@@ -9,6 +9,7 @@ import { parseIncomingShare, shareError } from './share.model';
 import { ShareSession } from './ShareSession';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { Column } from '../layout';
+import { report } from '../../lib/errorPolicy';
 
 function useIncomingShare() {
   const [pending, setPending] = useState<IncomingShare | null>(null);
@@ -21,7 +22,8 @@ function useIncomingShare() {
       if (generation.current !== request) return;
       setPending(parseIncomingShare(value));
       setError(null);
-    } catch {
+    } catch (err) {
+      report('share.pending', err);
       if (generation.current === request) setError('Could not open the pending share. Try again.');
     }
   }, []);
@@ -58,7 +60,8 @@ export function ShareHost({ active }: { active: boolean }): React.ReactElement {
       .finally(() => {
         setClosing(false);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        report('share.dismiss', err);
         void refresh();
       });
   };

@@ -1,14 +1,12 @@
 import type { HistoryEntry } from '../types';
+import { reactionOf, type EntryReaction } from './entryPayload';
 
-function isPollVote(p: { reactTo?: string; emoji?: string; schema?: string } | undefined, pollOptionCounts: Map<string, number>): boolean {
+function isPollVote(p: EntryReaction | null, pollOptionCounts: Map<string, number>): boolean {
   if (!p) return false;
-  if (p.schema === 'custom') return true;
+  if (p.custom) return true;
   if (!p.reactTo || !p.emoji) return false;
   const optionCount = pollOptionCounts.get(p.reactTo);
-  if (optionCount === undefined) return false;
-  if (!/^\d+$/.test(p.emoji)) return false;
-  const idx = Number.parseInt(p.emoji, 10);
-  return Number.isInteger(idx) && idx >= 0 && idx < optionCount;
+  return optionCount !== undefined && /^\d+$/.test(p.emoji) && Number.parseInt(p.emoji, 10) < optionCount;
 }
 
 interface ReactionPayload {
@@ -18,10 +16,10 @@ interface ReactionPayload {
 }
 
 function reactionPayloadOf(e: HistoryEntry, pollOptionCounts: Map<string, number>): ReactionPayload | null {
-  const p = e.payload as { reactTo?: string; emoji?: string; removed?: boolean; schema?: string } | undefined;
+  const p = reactionOf(e);
   if (isPollVote(p, pollOptionCounts)) return null;
   if (!p?.reactTo || !p.emoji) return null;
-  return { reactTo: p.reactTo, emoji: p.emoji, removed: !!p.removed };
+  return { reactTo: p.reactTo, emoji: p.emoji, removed: p.removed };
 }
 
 interface LatestReaction extends ReactionPayload {

@@ -32,13 +32,10 @@ export interface MentionQuery {
 
 export function computeMentionQuery(text: string, cursor: number, candidates: MentionCandidate[] | undefined): MentionQuery {
   if (!candidates || candidates.length === 0) return { matches: [], range: null };
-  const before = text.slice(0, cursor);
-  const m = /(^|\s)@(\S*)$/.exec(before);
+  const m = /(^|\s)@(\S*)$/.exec(text.slice(0, cursor));
   if (!m) return { matches: [], range: null };
   const query = (m[2] ?? '').toLowerCase();
-  const start = cursor - query.length - 1;
-  const matches = matchMembers(candidates, query);
-  return { matches, range: { start, end: cursor } };
+  return { matches: matchMembers(candidates, query), range: { start: cursor - query.length - 1, end: cursor } };
 }
 
 function matchTier(candidate: MentionCandidate, q: string): number {
@@ -48,7 +45,7 @@ function matchTier(candidate: MentionCandidate, q: string): number {
   return candidate.address.toLowerCase().includes(q) ? 2 : -1;
 }
 
-export function matchMembers<T extends MentionCandidate>(candidates: T[], query: string, limit = 6): T[] {
+function matchMembers<T extends MentionCandidate>(candidates: T[], query: string, limit = 6): T[] {
   const q = query.toLowerCase();
   if (!q) return candidates.slice(0, limit);
   const tiers: T[][] = [[], [], []];

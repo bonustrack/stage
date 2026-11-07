@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
 import RNMarkdown, { MarkdownIt } from 'react-native-markdown-display';
+import type { TEXT_TRANSFORMS } from '../kit-vocabulary';
 import { markdownStyles } from '../markdown.styles';
 import { FONT_SIZE, resolvePaletteColor, type ColorToken } from '../tokens';
 import {
@@ -16,10 +17,7 @@ import {
 } from '../text.styles';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { useContentColor } from './content-color';
-import { useKitPalette, useKitScheme } from './theme-context';
-import { loadKitFonts } from './fonts.load';
-
-loadKitFonts();
+import { useKitColors } from './theme-context';
 
 export type { TextAlign, TextFontFamily, TextSizeToken, TextVariant, TextWeight };
 
@@ -41,7 +39,7 @@ export interface TextProps extends Omit<RNTextProps, 'style' | 'role'>, A2uiComm
   style?: TextStyle | TextStyle[];
 }
 
-export type TextTransform = 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+export type TextTransform = (typeof TEXT_TRANSFORMS)[number];
 
 type StyleProps = Pick<
   TextProps,
@@ -60,12 +58,6 @@ function baseStyle(p: StyleProps, color: string): TextStyle {
   if (p.letterSpacing !== undefined) base.letterSpacing = p.letterSpacing;
   if (p.textTransform !== undefined) base.textTransform = p.textTransform;
   return { ...base, ...weightStyle(p.weight) };
-}
-
-function useTextColor(color: TextProps['color'], variant: TextVariant | undefined): string {
-  const palette = useKitPalette();
-  const inherited = useContentColor();
-  return color != null ? resolvePaletteColor(color, palette) : textDefaultColor(variant, palette, inherited);
 }
 
 const PLAIN_LINE_HEIGHT = 1.22;
@@ -99,14 +91,14 @@ function MarkdownText({
   base: TextStyle;
   style: TextProps['style'];
 }): React.ReactElement {
-  const dark = useKitScheme() === 'dark';
+  const { dark, roles } = useKitColors(undefined, 'static');
   const styles = useMemo(() => {
     const fontSize = base.fontSize ?? FONT_SIZE.md;
-    const sheet = markdownStyles({ fg: color, dark, fontSize, lineHeight: Math.round(fontSize * PLAIN_LINE_HEIGHT) });
+    const sheet = markdownStyles({ fg: color, dark, roles, fontSize, lineHeight: Math.round(fontSize * PLAIN_LINE_HEIGHT) });
     for (const block of FLOW_BLOCKS) sheet[block] = { ...sheet[block], marginTop: 0, marginBottom: 0 };
     sheet.body = { ...sheet.body, ...base, ...StyleSheet.flatten(style), gap: MARKDOWN_BLOCK_GAP };
     return sheet;
-  }, [base, color, dark, style]);
+  }, [base, color, dark, roles, style]);
   return (
     <RNMarkdown markdownit={A2UI_MARKDOWN} style={styles}>
       {value}
@@ -136,7 +128,9 @@ export function Text(props: TextProps): React.ReactElement {
     children,
     ...rest
   } = props;
-  const resolved = useTextColor(color, variant);
+  const { palette } = useKitColors(undefined, 'provider');
+  const inherited = useContentColor();
+  const resolved = color != null ? resolvePaletteColor(color, palette) : textDefaultColor(variant, palette, inherited);
   const base = baseStyle(
     { variant, size, fontWeight, textAlign, italic, lineThrough, fontFamily, letterSpacing, textTransform, weight },
     resolved,

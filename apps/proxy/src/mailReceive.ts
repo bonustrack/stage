@@ -8,10 +8,10 @@ import {
   sealMailPart,
   type MailIndex,
 } from '@stage-labs/client/mail/mailbox';
-import type { ArchiveStub } from './historyStore.ts';
+import type { ObjectStub } from './durableChunks.ts';
 import type { MailChain } from './mailApi.ts';
 import { readMailKey, storeMail, type MailKeyRecord } from './mailBox.ts';
-import { readCappedBytes } from './ssrf.ts';
+import { readCappedBytes } from '@stage-labs/client/net/cappedBody';
 
 const HEADER_MAX_CHARS = 512;
 
@@ -30,14 +30,14 @@ export interface IncomingMail {
 }
 
 interface ReceiveDeps {
-  mailbox: (label: string) => ArchiveStub;
+  mailbox: (label: string) => ObjectStub;
   chain: MailChain;
   now?: () => number;
 }
 
 interface Destination {
   label: string;
-  stub: ArchiveStub;
+  stub: ObjectStub;
   key: MailKeyRecord;
   publicKey: Uint8Array;
 }
@@ -72,7 +72,7 @@ async function destination(message: IncomingMail, deps: ReceiveDeps): Promise<De
 }
 
 async function sealAndStore(message: IncomingMail, target: Destination, deps: ReceiveDeps): Promise<string | null> {
-  const raw = await readCappedBytes(new Response(message.raw), MAIL_MAX_BYTES, 'reject');
+  const raw = await readCappedBytes(message.raw, MAIL_MAX_BYTES, 'reject');
   if (raw === null) return REJECT_TOO_LARGE;
   const { label, stub, key, publicKey } = target;
   const id = newMailId((deps.now ?? Date.now)());

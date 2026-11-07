@@ -3,11 +3,9 @@ import type { Story } from '../gallery/story';
 import { Column } from '../src/react-native/column';
 import { TextField, type TextFieldProps } from '../src/react-native/text-field';
 import { bool, color, CONTROL_SIZES, number, select, text, useDark } from './_controls';
+import { TEXT_FIELD_APPEARANCES, TEXT_FIELD_VARIANTS } from '../src/kit-vocabulary';
 
 export default { title: 'Text Field' };
-
-const VARIANTS = ['shortText', 'longText', 'number', 'obscured'] as const;
-const APPEARANCES = ['soft', 'outline', 'plain'] as const;
 
 export const Controls: Story<TextFieldProps> = (args) => {
   const [value, setValue] = useState(args.value ?? '');
@@ -26,8 +24,8 @@ Controls.args = {
 Controls.argTypes = {
   label: text,
   placeholder: text,
-  variant: select(VARIANTS),
-  appearance: select(APPEARANCES),
+  variant: select(TEXT_FIELD_VARIANTS),
+  appearance: select(TEXT_FIELD_APPEARANCES),
   size: select(CONTROL_SIZES),
   inputType: select(['text', 'email', 'tel', 'url']),
   pill: bool,
@@ -63,8 +61,8 @@ export const Matrix: Story = () => {
   const dark = useDark();
   return (
     <Column gap={12}>
-      {APPEARANCES.flatMap((appearance) =>
-        VARIANTS.map((variant) => (
+      {TEXT_FIELD_APPEARANCES.flatMap((appearance) =>
+        TEXT_FIELD_VARIANTS.map((variant) => (
           <TextField
             key={`${appearance}-${variant}`}
             dark={dark}

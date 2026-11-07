@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
-import { Platform, useWindowDimensions } from 'react-native';
+import { useWindowDimensions } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Title } from '@stage-labs/kit/react-native/title';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { desktopTitleBarInset } from '../../lib/webLayout';
-import { SIGNUP_ROUTE } from '../onboarding/nextRoute.model';
+import { useWindowTopInset } from '../layout/insets';
+import { ROUTES } from '../tabs/pages';
 import { ScrollingBanner } from './ScrollingBanner';
 import {
   BANNER_HEIGHT,
@@ -56,11 +55,6 @@ function StageLogo({ size, color }: { size: number; color: string }): React.Reac
   );
 }
 
-interface Frame {
-  width: number;
-  height: number;
-}
-
 function BoxLayer({ layer, width, heroHeight }: { layer: HeroBoxLayer; width: number; heroHeight: number }): React.ReactElement {
   const [boxes] = useState<HeroBox[]>(() => heroBoxes(layer.count, width, HERO_LAYOUT.boxFrameHeight, Math.random));
   return (
@@ -79,7 +73,7 @@ function BoxLayer({ layer, width, heroHeight }: { layer: HeroBoxLayer; width: nu
   );
 }
 
-function HeroBackdrop({ width, height }: Frame): React.ReactElement {
+function HeroBackdrop({ width, height }: { width: number; height: number }): React.ReactElement {
   return (
     <>
       <Column
@@ -139,7 +133,7 @@ function HeroAction(): React.ReactElement {
           tintFg={HERO_WHITE}
           accessibilityLabel="Get started"
           onPress={() => {
-            router.navigate(SIGNUP_ROUTE);
+            router.navigate(ROUTES.signup);
           }}
         />
       </Column>
@@ -149,8 +143,7 @@ function HeroAction(): React.ReactElement {
 
 export function Landing(): React.ReactElement {
   const { width, height } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-  const topInset = Platform.OS === 'web' ? desktopTitleBarInset() : insets.top;
+  const topInset = useWindowTopInset();
   const heroHeight = height - topInset - BANNER_HEIGHT;
   return (
     <ScreenScroll style={{ flex: 1, backgroundColor: HERO_WHITE }} contentContainerStyle={{ flexGrow: 1 }}>

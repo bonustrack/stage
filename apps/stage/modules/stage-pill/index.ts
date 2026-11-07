@@ -1,5 +1,4 @@
-import { Platform } from 'react-native';
-import { NativeModule, requireNativeModule } from 'expo';
+import { NativeModule, requireOptionalNativeModule } from 'expo';
 import { attempt } from '../../lib/errorPolicy';
 
 interface XmtpPushEvent {
@@ -18,14 +17,7 @@ declare class StagePillModule extends NativeModule<StagePillEvents> {
   setAppForeground(foreground: boolean): boolean;
 }
 
-let resolved: StagePillModule | null = null;
-try {
-  resolved = requireNativeModule<StagePillModule>('StagePill');
-} catch {
-  resolved = null;
-}
-
-const native = Platform.OS === 'android' ? resolved : null;
+const native = requireOptionalNativeModule<StagePillModule>('StagePill');
 
 export function setActiveConversation(convId: string | null): boolean {
   return native?.setActiveConversation?.(convId) ?? false;

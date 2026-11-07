@@ -1,9 +1,11 @@
-import { isRowCleared, isSyncGroupName, type ClearedChats } from '@stage-labs/client/xmtp/readState';
-import type { CachedChannelRow } from '@stage-labs/client/xmtp/channelsCache';
+import { isRowCleared, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import type { IncomingShare, SharedFile } from '../../lib/incomingShare.types';
 import { attachmentMimeType } from '../../lib/attachmentFiles';
 import type { Attachment } from '../composer/types';
+import type { ShareDestination } from '../../lib/shareDestination.model';
 
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const MAX_TOTAL_BYTES = 50 * 1024 * 1024;
@@ -78,15 +80,7 @@ export function sharedAttachments(share: Extract<IncomingShare, { status: 'ready
   });
 }
 
-export interface ShareDestination {
-  convId: string;
-  title: string;
-  peerAddress: string | null;
-  avatarUri: string | null;
-  lastBubbleTs: number | null;
-}
-
-function destinationOf(row: CachedChannelRow, cleared: ClearedChats): ShareDestination | null {
+function destinationOf(row: CachedRow, cleared: ClearedChats): ShareDestination | null {
   if (row.consent !== 'allowed' || typeof row.title !== 'string') return null;
   if (typeof row.groupName === 'string' && isSyncGroupName(row.groupName)) return null;
   const peerAddress = typeof row.peerAddress === 'string' ? row.peerAddress : null;
@@ -102,21 +96,13 @@ function destinationOf(row: CachedChannelRow, cleared: ClearedChats): ShareDesti
   };
 }
 
-export function acceptedShareConsent(group: boolean, hidden: boolean | undefined, consent: string | null): boolean {
-  if (hidden === true) return false;
-  return group && hidden !== undefined ? true : consent === 'allowed';
+export function shareDestinations(rows: readonly CachedRow[] | null, cleared: ClearedChats): ShareDestination[] {
+  return (rows ?? []).map((row) => destinationOf(row, cleared)).filter((row): row is ShareDestination => row !== null);
 }
 
-export function mergeShareRows<T extends { convId: string }>(previous: readonly T[] | null, updates: readonly T[] | null): T[] {
-  const rows = new Map((previous ?? []).map((row) => [row.convId, row]));
-  for (const row of updates ?? []) rows.set(row.convId, row);
-  return [...rows.values()];
-}
-
-export function shareDestinations(rows: readonly CachedChannelRow[] | null, cleared: ClearedChats, query: string): ShareDestination[] {
-  return (rows ?? [])
-    .map((row) => destinationOf(row, cleared))
-    .filter((row): row is ShareDestination => row !== null && row.title.toLowerCase().includes(query.trim().toLowerCase()));
+export function matchingDestinations(rows: readonly ShareDestination[], query: string): ShareDestination[] {
+  const needle = query.trim().toLowerCase();
+  return rows.filter((row) => row.title.toLowerCase().includes(needle));
 }
 
 export function shareError(error: string): string {

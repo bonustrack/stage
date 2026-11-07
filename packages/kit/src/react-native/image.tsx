@@ -1,3 +1,4 @@
+import type { IMAGE_FITS, IMAGE_VARIANTS } from '../kit-vocabulary';
 import {
   Image as RNImage,
   StyleSheet,
@@ -11,11 +12,11 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { flushBleed } from '../layout';
-import { BLOCK_RADIUS_DEFAULT, type RadiusValue } from '../tokens';
+import { BLOCK_RADIUS_DEFAULT, RADIUS_FULL, type RadiusValue } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 
-export type ImageFit = 'contain' | 'cover' | 'fill' | 'none' | 'scaleDown';
-export type ImageVariant = 'icon' | 'avatar' | 'smallFeature' | 'mediumFeature' | 'largeFeature' | 'header';
+export type ImageFit = (typeof IMAGE_FITS)[number];
+export type ImageVariant = (typeof IMAGE_VARIANTS)[number];
 export type ImagePosition = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top left' | 'top right' | 'bottom left' | 'bottom right';
 export type ImageRadius = RadiusValue;
 
@@ -46,15 +47,13 @@ const RADIUS: Record<ImageRadius, number> = {
   '2xl': 20,
   '3xl': 24,
   '4xl': 28,
-  full: 999,
-  '100%': 999,
+  full: RADIUS_FULL,
+  '100%': RADIUS_FULL,
 };
-
-const FULL_ROUND = 999;
 
 const VARIANT_BOX: Record<ImageVariant, ImageStyle> = {
   icon: { width: 24, height: 24 },
-  avatar: { width: 40, height: 40, borderRadius: FULL_ROUND },
+  avatar: { width: 40, height: 40, borderRadius: RADIUS_FULL },
   smallFeature: { width: 100, height: 100 },
   mediumFeature: { width: '100%', maxWidth: 300, aspectRatio: 4 / 3 },
   largeFeature: { width: '100%', maxHeight: 400, aspectRatio: 16 / 9 },
@@ -133,9 +132,7 @@ export function Image(props: ImageProps): React.ReactElement {
   const { url, headers, description, fit = 'fill', style, resizeMethod, resizeMultiplier, onLoad, onError, accessibility } = props;
   const base = imageBox(props);
   const flattened = style === undefined ? base : StyleSheet.flatten([base, style]);
-  if (url.trim() === '') {
-    return <View style={flattened} {...accessibilityProps(accessibility)} />;
-  }
+  if (url.trim() === '') return <View style={flattened} {...accessibilityProps(accessibility)} />;
   return (
     <RNImage
       source={headers ? { uri: url, headers } : { uri: url }}

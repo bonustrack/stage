@@ -7,33 +7,18 @@ import {
   applyUnread,
   applySentPatch,
   normalizeChannelRowTitle,
-  type CachedChannelRow,
+  type ChannelRow,
   type GroupRowMeta,
 } from '../src/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS } from '../src/xmtp/summarizeRow';
+import { channelRow } from './helpers';
 
-interface Row extends CachedChannelRow {
-  lastTs?: number;
-  lastPreview?: string;
-  lastFromSelf?: boolean;
-}
-
-const base: Row[] = [
-  { convId: 'a', unreadCount: 3, lastReadNs: 100, markedUnread: true, lastTs: 1 },
-  { convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2 },
-];
+const rowA = channelRow('a', { unreadCount: 3, lastReadNs: 100, markedUnread: true, lastTs: 1 });
+const rowB = channelRow('b', { lastTs: 2 });
+const base: ChannelRow[] = [rowA, rowB];
 
 describe('normalizeChannelRowTitle', () => {
-  const row = {
-    convId: 'a',
-    unreadCount: 0,
-    lastReadNs: 0,
-    peerAddress: null,
-    groupName: '',
-    title: 'proto',
-    selfInboxId: 'self',
-    inboxToAddr: {},
-  };
+  const row = channelRow('a', { groupName: '', title: 'proto', selfInboxId: 'self' });
 
   test('normalizes known group metadata before the row is published or searched', () => {
     expect(normalizeChannelRowTitle(row).title).toBe('Untitled channel');
@@ -57,8 +42,8 @@ describe('applyRead', () => {
   test('zeros unread, sets lastReadNs, clears markedUnread, keeps order', () => {
     const out = applyRead(base, 'a', 999);
     expect(out).not.toBeNull();
-    expect(out?.[0]).toEqual({ convId: 'a', unreadCount: 0, lastReadNs: 999, markedUnread: false, lastTs: 1 });
-    expect(out?.[1]).toBe(base[1]);
+    expect(out?.[0]).toEqual({ ...rowA, unreadCount: 0, lastReadNs: 999, markedUnread: false });
+    expect(out?.[1]).toBe(rowB);
   });
   test('missing conv returns null', () => {
     expect(applyRead(base, 'zzz', 1)).toBeNull();
@@ -66,15 +51,10 @@ describe('applyRead', () => {
 });
 
 describe('applyReadUpTo', () => {
-  const rows: Row[] = [{ convId: 'a', unreadCount: 1, lastReadNs: 5_000_000, markedUnread: true, lastTs: 9 }];
+  const row = channelRow('a', { unreadCount: 1, lastReadNs: 5_000_000, markedUnread: true, lastTs: 9 });
+  const rows = [row];
   test('a read older than the last message keeps the unread count', () => {
-    expect(applyReadUpTo(rows, 'a', 7_000_000)?.[0]).toEqual({
-      convId: 'a',
-      unreadCount: 1,
-      lastReadNs: 7_000_000,
-      markedUnread: false,
-      lastTs: 9,
-    });
+    expect(applyReadUpTo(rows, 'a', 7_000_000)?.[0]).toEqual({ ...row, lastReadNs: 7_000_000, markedUnread: false });
   });
   test('a read that covers the last message zeros the count', () => {
     expect(applyReadUpTo(rows, 'a', 9_000_000)?.[0]?.unreadCount).toBe(0);
@@ -89,7 +69,7 @@ describe('applyReadUpTo', () => {
 
 describe('applyUnread', () => {
   test('sets markedUnread and leaves the count and read marker alone', () => {
-    expect(applyUnread(base, 'b')?.[1]).toEqual({ convId: 'b', unreadCount: 0, lastReadNs: 0, markedUnread: true, lastTs: 2 });
+    expect(applyUnread(base, 'b')?.[1]).toEqual({ ...rowB, markedUnread: true });
     expect(applyUnread(base, 'a')?.[0]?.unreadCount).toBe(3);
   });
   test('missing returns null', () => {
@@ -101,10 +81,8 @@ describe('applySentPatch', () => {
   test('moves row to front, truncates preview, marks self', () => {
     const longPreview = 'x'.repeat(300);
     const out = applySentPatch(base, 'b', longPreview, 555);
-    expect(out?.[0]?.convId).toBe('b');
-    expect((out?.[0]?.lastPreview as string).length).toBe(ROW_PREVIEW_MAX_CHARS);
-    expect(out?.[0]?.lastFromSelf).toBe(true);
-    expect(out?.[0]?.lastTs).toBe(555);
+    expect(out?.[0]).toMatchObject({ convId: 'b', lastFromSelf: true, lastTs: 555 });
+    expect(out?.[0]?.lastPreview.length).toBe(ROW_PREVIEW_MAX_CHARS);
     expect(out?.[1]?.convId).toBe('a');
   });
   test('missing returns null', () => {
@@ -113,7 +91,7 @@ describe('applySentPatch', () => {
 });
 
 describe('applyInbound', () => {
-  const rows = [{ ...base[1], convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2, lastPreview: '', selfInboxId: 'me' }];
+  const rows = [rowB];
   const update = { convId: 'b', senderInboxId: 'other', sentNs: 50, lastTs: 3, lastPreview: 'hi' };
 
   test('counts a new message from someone else', () => {
@@ -122,8 +100,7 @@ describe('applyInbound', () => {
 
   test('moves the row without counting a message that does not count as unread', () => {
     const out = applyInbound(rows, { ...update, lastPreview: 'added label "Blocked"', countsAsUnread: false });
-    expect(out?.next[0]?.unreadCount).toBe(0);
-    expect(out?.next[0]?.lastPreview).toBe('added label "Blocked"');
+    expect(out?.next[0]).toMatchObject({ unreadCount: 0, lastPreview: 'added label "Blocked"' });
     expect(out?.wasUnread).toBe(false);
   });
 });
@@ -139,10 +116,8 @@ describe('applyGroupMeta', () => {
     priority: null,
     assigned: [],
   };
-  const rows: Row[] = [
-    { convId: 'a', unreadCount: 2, lastReadNs: 7, lastTs: 9, lastPreview: 'hi', ...meta },
-    { convId: 'b', unreadCount: 0, lastReadNs: 0, lastTs: 2 },
-  ];
+  const metaRow = channelRow('a', { unreadCount: 2, lastReadNs: 7, lastTs: 9, lastPreview: 'hi', ...meta });
+  const rows = [metaRow, rowB];
 
   test.each<[string, Partial<GroupRowMeta>]>([
     ['labels', { labels: ['In progress'] }],
@@ -159,17 +134,17 @@ describe('applyGroupMeta', () => {
     ['members', { inboxToAddr: { i1: '0x1111111111111111111111111111111111111111' } }],
   ])('patches a %s change in place and keeps the rest of the row', (_field, change) => {
     const out = applyGroupMeta(rows, 'a', { ...meta, ...change });
-    expect(out?.[0]).toEqual({ ...rows[0], convId: 'a', ...change });
-    expect(out?.[1]).toBe(rows[1]);
+    expect(out?.[0]).toEqual({ ...metaRow, ...change });
+    expect(out?.[1]).toBe(rowB);
   });
 
   test('fills metadata on a row that had none', () => {
-    expect(applyGroupMeta(rows, 'b', meta)?.[1]).toEqual({ ...rows[1], convId: 'b', ...meta });
+    expect(applyGroupMeta(rows, 'b', meta)?.[1]).toEqual({ ...rowB, ...meta });
   });
 
   test.each(['status', 'priority'])('clears %s without changing other row fields', (field) => {
-    const filled: Row[] = [{ ...rows[0], convId: 'a', [field]: 'High' }];
-    expect(applyGroupMeta(filled, 'a', meta)?.[0]).toEqual({ ...filled[0], [field]: null });
+    const filled = { ...metaRow, [field]: 'High' };
+    expect(applyGroupMeta([filled], 'a', meta)?.[0]).toEqual({ ...filled, [field]: null });
   });
 
   test('returns null when nothing changed', () => {
@@ -178,18 +153,13 @@ describe('applyGroupMeta', () => {
 
   test('compares members by content', () => {
     const members = { i1: '0x1', i2: '0x2' };
-    const withMembers: Row[] = [{ ...rows[0], convId: 'a', inboxToAddr: members }];
+    const withMembers = [channelRow('a', { ...metaRow, inboxToAddr: members })];
     expect(applyGroupMeta(withMembers, 'a', { ...meta, inboxToAddr: { ...members } })).toBeNull();
     expect(applyGroupMeta(withMembers, 'a', { ...meta, inboxToAddr: { i1: '0x1' } })?.[0]?.inboxToAddr).toEqual({ i1: '0x1' });
   });
 
-  test('reads a cached row without a category as no category', () => {
-    const old: Row = { convId: 'a', unreadCount: 0, lastReadNs: 0, title: 'Ops', avatarUri: null, avatarAddress: 'seed', labels: ['Todo'] };
-    expect(applyGroupMeta([old], 'a', meta)).toBeNull();
-  });
-
   test('treats a label reorder as a change', () => {
-    const two: Row[] = [{ ...rows[0], convId: 'a', labels: ['A', 'B'] }];
+    const two = [{ ...metaRow, labels: ['A', 'B'] }];
     expect(applyGroupMeta(two, 'a', { ...meta, labels: ['B', 'A'] })?.[0]?.labels).toEqual(['B', 'A']);
   });
 

@@ -2,6 +2,7 @@ import { resolveInboxEthCached, primeInboxEthCache } from '@stage-labs/client/xm
 import { inboxEthCache } from './xmtp.state.core';
 import { sdk } from './xmtp.sdk';
 import { ignored, report, recover } from './errorPolicy';
+import { memoized } from './storeCore';
 
 type InboxEthMap = Record<string, string>;
 type IdentityClient = Awaited<ReturnType<typeof sdk.client>>;
@@ -26,14 +27,7 @@ function resolve(client: IdentityClient, ids: string[]): Promise<InboxEthMap> {
 const memberIdsByConv = new WeakMap<IdentityConv, Promise<string[]>>();
 
 function memberIdsOf(conv: IdentityConv): Promise<string[]> {
-  const known = memberIdsByConv.get(conv);
-  if (known) return known;
-  const ids = conv.members().then((ms) => ms.map((m) => m.inboxId));
-  memberIdsByConv.set(conv, ids);
-  ids.catch(() => {
-    memberIdsByConv.delete(conv);
-  });
-  return ids;
+  return memoized(memberIdsByConv, conv, () => sdk.memberInboxIds(conv));
 }
 
 export async function primeConversationMembers(client: IdentityClient, convs: IdentityConv[]): Promise<void> {
@@ -77,7 +71,7 @@ export async function convMembers(conv: IdentityConv): Promise<ConvMembers> {
     }
     const otherAddresses = sdk.isGroup(conv)
       ? memberIds
-          .filter((id) => id !== client.inboxId)
+          .filter((id) => id !== sdk.inboxIdOf(client))
           .map((id) => found[id])
           .filter((a): a is string => !!a)
       : [];

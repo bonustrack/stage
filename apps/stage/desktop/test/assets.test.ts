@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { ISOLATION_HEADERS, mimeFor, webFilePath } from '../src/assets';
 
@@ -27,9 +28,16 @@ describe('mimeFor', () => {
   });
 });
 
+interface NetlifyConfig {
+  headers: { for: string; values: Record<string, string> }[];
+}
+
 describe('ISOLATION_HEADERS', () => {
   test('matches the headers the web deploy sends', () => {
-    expect(ISOLATION_HEADERS['cross-origin-opener-policy']).toBe('same-origin');
+    const config = Bun.TOML.parse(readFileSync(new URL('../../netlify.toml', import.meta.url), 'utf8')) as NetlifyConfig;
+    const site = config.headers.find((header) => header.for === '/*')?.values ?? {};
+    expect(ISOLATION_HEADERS['cross-origin-opener-policy']).toBe(site['Cross-Origin-Opener-Policy']);
+    expect(ISOLATION_HEADERS['cross-origin-embedder-policy']).toBe(site['Cross-Origin-Embedder-Policy']);
     expect(ISOLATION_HEADERS['cross-origin-embedder-policy']).toBe('credentialless');
   });
 });

@@ -1,10 +1,17 @@
 import { useEffect, useReducer } from 'react';
+import { z } from 'zod';
 import { PersistentStore } from './cache.shared';
 import { createValueStore } from './persistedStore';
+import { valueWith } from './storeCore';
 
 const PERSIST_DEBOUNCE_MS = 800;
 
-const store = new PersistentStore<Record<string, unknown>>('composer-drafts.json', PERSIST_DEBOUNCE_MS);
+type Drafts = Record<string, unknown>;
+
+const store = new PersistentStore<Drafts>('composer-drafts.json', {
+  parse: valueWith(z.record(z.unknown())),
+  flushDelayMs: PERSIST_DEBOUNCE_MS,
+});
 
 export async function loadDrafts(): Promise<void> {
   await store.hydrate();
@@ -19,11 +26,15 @@ export function getDraft(convId: string): string {
   return typeof draft === 'string' ? draft : '';
 }
 
-export function setDraftValue(key: string, value: unknown): void {
-  const next = { ...store.get() };
+function withDraft(drafts: Drafts | null, key: string, value: unknown): Drafts | null {
+  const next = { ...drafts };
   if (value === undefined) Reflect.deleteProperty(next, key);
   else next[key] = value;
-  store.set(Object.keys(next).length ? next : null);
+  return Object.keys(next).length ? next : null;
+}
+
+export function setDraftValue(key: string, value: unknown): void {
+  store.update((drafts) => withDraft(drafts, key, value));
 }
 
 export function setDraft(convId: string, text: string): void {
@@ -45,17 +56,30 @@ export function useDraftsVersion(): number {
   return version;
 }
 
-const LAST_ATTACHMENT_KEY = 'composer:lastAttachment';
+const STORED_ATTACHMENT_NAMES = {
+  voice: 'Voice message',
+  image: 'Image',
+  camera: 'Camera',
+  file: 'File',
+  location: 'Location',
+  poll: 'Poll',
+  sign: 'Sign',
+  payment: 'Payment',
+} as const;
 
-const lastAttachment = createValueStore<string | undefined>({
-  key: LAST_ATTACHMENT_KEY,
+export type AttachmentId = keyof typeof STORED_ATTACHMENT_NAMES;
+
+const ATTACHMENT_IDS = Object.keys(STORED_ATTACHMENT_NAMES) as AttachmentId[];
+
+const lastAttachment = createValueStore<AttachmentId | undefined>({
+  key: 'composer:lastAttachment',
   default: undefined,
-  serialize: (v) => v ?? '',
-  deserialize: (raw) => raw,
+  serialize: (id) => (id === undefined ? '' : STORED_ATTACHMENT_NAMES[id]),
+  deserialize: (stored) => ATTACHMENT_IDS.find((id) => STORED_ATTACHMENT_NAMES[id] === stored),
 });
 
-export const setLastAttachment = (label: string): void => {
-  lastAttachment.set(label);
+export const setLastAttachment = (id: AttachmentId): void => {
+  lastAttachment.set(id);
 };
 
-export const useLastAttachment = (): string | undefined => lastAttachment.use();
+export const useLastAttachment = (): AttachmentId | undefined => lastAttachment.use();

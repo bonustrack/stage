@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { AvatarImage } from '../Avatar';
-import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
+import { channelAvatarUrl } from '../../lib/convIdentity';
 import { errorLine } from '@stage-labs/client/errors';
 import type { GroupEditRights, GroupMetaPatch } from '@stage-labs/client/xmtp/groups';
 import { AppModal } from '../AppModal';
@@ -13,20 +12,19 @@ import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
 import { uploadAvatar } from '../../lib/profile';
 import { addLabel, removeLabel } from '@stage-labs/client/xmtp/labels';
-import { refreshConv } from '../../modules/messaging/queries';
+import { refreshConv } from '../../lib/messaging/queries';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { updateGroupMeta } from '../../lib/xmtp.groups';
 import { ChannelLabelsEditor, writeLabels } from './channel.labels';
 import { channelChanges, channelDraftFrom, channelDraftProblem, type ChannelCurrent, type ChannelDraft } from './EditChannelModal.model';
-import { hasListEdits, listEdits, type ListEdits } from '../conversation/SidebarSection.model';
+import { hasListEdits, listEdits, type ListEdits } from './SidebarSection.model';
 import { Column } from '../layout';
 
 const AVATAR_PX = 96;
 
 function channelAvatarSrc(convId: string, imageUrl: string, picture: PictureChoice): string {
   if (picture.kind === 'new') return picture.file.uri;
-  if (picture.kind === 'keep' && imageUrl.trim()) return avatarRenderUrl(imageUrl);
-  return stampAvatarUrl(channelStampSeed(convId), AVATAR_PX);
+  return channelAvatarUrl(convId, picture.kind === 'keep' ? imageUrl : '', AVATAR_PX);
 }
 
 async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<void> {

@@ -1,11 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  claimStatusText,
-  claimStatusTone,
-  localLabelProblem,
-  normalizeLabel,
-  sanitizeLabelInput,
-} from '../components/settings/ProfileSettings.claim.model';
+import { claimStatusTone, localLabelProblem, normalizeLabel, sanitizeLabelInput, usernameHint } from '../components/profile/username.model';
 
 describe('claim model', () => {
   test('normalises input and reports local problems before hitting the network', () => {
@@ -16,11 +10,15 @@ describe('claim model', () => {
     expect(localLabelProblem('fabien')).toBeNull();
   });
 
-  test('every phase has a message and a tone', () => {
-    expect(claimStatusText({ label: 'fabien', phase: 'available' })).toBe('Available');
+  test('each phase has a tone, and a failed claim says why', () => {
     expect(claimStatusTone({ label: 'fabien', phase: 'available' })).toBe('success');
+    expect(claimStatusTone({ label: 'fabien', phase: 'claimed' })).toBe('success');
     expect(claimStatusTone({ label: 'fabien', phase: 'unavailable' })).toBe('danger');
-    expect(claimStatusText({ label: 'fabien', phase: 'failed', detail: 'boom' })).toContain('boom');
+    expect(claimStatusTone({ label: 'fabien', phase: 'checking' })).toBe('secondary');
+    expect(usernameHint({ label: 'fabien', phase: 'failed', detail: 'boom' }, 'fabien')).toBe('Could not claim the name: boom');
+    expect(usernameHint({ label: 'fabien', phase: 'claimed' }, 'fabien')).toBe(
+      '@fabien is yours. It can take a minute to show everywhere.',
+    );
   });
 });
 

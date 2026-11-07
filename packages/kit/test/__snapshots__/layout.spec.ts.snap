@@ -13,7 +13,7 @@ exports[`boxStyleEntries representative full input snapshot 1`] = `
   "backgroundColor": "#0e0f10",
   "borderBottomColor": "#222222",
   "borderBottomWidth": 2,
-  "borderRadius": "soft",
+  "borderRadius": 12,
   "borderStyle": "dashed",
   "borderTopColor": "#111111",
   "borderTopWidth": 1,

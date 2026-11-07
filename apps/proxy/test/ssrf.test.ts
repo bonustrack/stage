@@ -1,5 +1,14 @@
 import { expect, test } from 'bun:test';
-import { assertPublicUrl, isPrivateIp, SsrfError } from '../src/ssrf.ts';
+import { assertPublicUrl, SsrfError } from '../src/ssrf.ts';
+
+function refusal(url: string): string | null {
+  try {
+    assertPublicUrl(url);
+    return null;
+  } catch (e) {
+    return e instanceof SsrfError ? e.message : 'not an SsrfError';
+  }
+}
 
 test('rejects non-http(s) schemes', () => {
   expect(() => assertPublicUrl('file:///etc/passwd')).toThrow(SsrfError);
@@ -17,32 +26,26 @@ test('rejects blocked internal hosts', () => {
   }
 });
 
-test('rejects literal private IPv4', () => {
-  for (const ip of ['127.0.0.1', '10.1.2.3', '192.168.0.1', '172.16.0.1', '169.254.169.254', '0.0.0.0']) {
-    expect(isPrivateIp(ip), ip).toBe(true);
-    expect(() => assertPublicUrl(`http://${ip}/`), ip).toThrow(SsrfError);
+test('rejects local names shared with the node policies', () => {
+  for (const url of ['http://intranet/', 'http://nas.lan/', 'http://box.home.arpa/', 'http://localhost.localdomain/']) {
+    expect([url, refusal(url)]).toEqual([url, 'blocked host']);
   }
 });
 
-test('rejects IPv4-mapped IPv6 - dotted-quad form', () => {
-  expect(isPrivateIp('::ffff:127.0.0.1')).toBe(true);
+test('rejects literal private IPv4', () => {
+  for (const ip of ['127.0.0.1', '10.1.2.3', '192.168.0.1', '172.16.0.1', '169.254.169.254', '0.0.0.0', '198.18.0.1', '2130706433']) {
+    expect([ip, refusal(`http://${ip}/`)]).toEqual([ip, 'private ip not allowed']);
+  }
 });
 
-test('rejects IPv4-mapped IPv6 - packed hex form', () => {
-  expect(isPrivateIp('::ffff:7f00:1')).toBe(true);
-  expect(isPrivateIp('::ffff:a00:1')).toBe(true);
-  expect(isPrivateIp('::ffff:c0a8:1')).toBe(true);
-  expect(() => assertPublicUrl('http://[::ffff:7f00:1]/')).toThrow(SsrfError);
-});
-
-test('rejects other private IPv6', () => {
-  expect(isPrivateIp('::1')).toBe(true);
-  expect(isPrivateIp('fe80::1')).toBe(true);
-  expect(isPrivateIp('fd00::1')).toBe(true);
+test('rejects private IPv6 in every form', () => {
+  for (const ip of ['::ffff:7f00:1', '::1', 'fe80::1', 'fe90::1', 'fd00::1', '64:ff9b::7f00:1', '2002:7f00:1::1', '::7f00:1']) {
+    expect([ip, refusal(`http://[${ip}]/`)]).toEqual([ip, 'private ip not allowed']);
+  }
 });
 
 test('allows a normal public URL', () => {
   const u = assertPublicUrl('https://example.com/page?a=1');
   expect(u.hostname).toBe('example.com');
-  expect(isPrivateIp('::ffff:0808:0808')).toBe(false);
+  expect(assertPublicUrl('http://[::ffff:0808:0808]/').hostname).toBe('[::ffff:808:808]');
 });

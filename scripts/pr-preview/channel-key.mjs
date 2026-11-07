@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { channelKey } from '../../apps/proxy/src/branchChannel.ts';
+import { channelKey } from '../../packages/client/src/endpoints.ts';
 
 const [branch] = process.argv.slice(2);
 if (!branch) {

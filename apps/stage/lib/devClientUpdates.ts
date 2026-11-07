@@ -1,8 +1,9 @@
 import { requireOptionalNativeModule } from 'expo';
 import { NativeModules, Platform } from 'react-native';
 import * as Updates from 'expo-updates';
-import { freshUrl, isDevClientLauncher, loadedCommit, type MainUpdate } from '../components/settings/DevClientUpdate.model';
+import { freshUrl, isDevClientLauncher, loadedCommit, type MainUpdate } from './devClientUpdates.model';
 import { findCompatibleMainUpdate, type UpdateRequest } from './devClientUpdates.core';
+import { fetchWithin } from '@stage-labs/client/timing';
 
 interface DevLauncher {
   loadApp(url: string): Promise<void>;
@@ -14,23 +15,18 @@ export function devClientInfo(): { runtime: string | null; updateId: string | nu
   return launcher ? { runtime: Updates.runtimeVersion, updateId: Updates.updateId, gitHash: loadedCommit(Updates.manifest) } : null;
 }
 
-const requestUpdate: UpdateRequest = async (url, headers) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => {
-    controller.abort();
-  }, 15000);
-  try {
-    const response = await fetch(url, {
-      headers: { ...headers, 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`Could not check the main update (HTTP ${response.status}). Nothing was loaded.`);
-    return { body: await response.text(), contentType: response.headers.get('content-type') ?? '' };
-  } finally {
-    clearTimeout(timeout);
-  }
-};
+const UPDATE_CHECK_TIMEOUT_MS = 15_000;
+
+const requestUpdate: UpdateRequest = (url, headers) =>
+  fetchWithin(
+    url,
+    { headers: { ...headers, 'Cache-Control': 'no-cache', Pragma: 'no-cache' }, cache: 'no-store' },
+    { timeoutMs: UPDATE_CHECK_TIMEOUT_MS },
+    async (response) => {
+      if (!response.ok) throw new Error(`Could not check the main update (HTTP ${response.status}). Nothing was loaded.`);
+      return { body: await response.text(), contentType: response.headers.get('content-type') ?? '' };
+    },
+  );
 
 export async function checkMainUpdate(): Promise<MainUpdate> {
   if (!launcher || !Updates.runtimeVersion) throw new Error('A dev-client APK with a known runtime is required.');

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useWindowDimensions, type ViewStyle } from 'react-native';
 import { Tooltip } from '@stage-labs/kit/react-native/tooltip';
 import { Kbd } from '../Kbd';
-import { bubbleShift, useRailTooltip, type RailTooltipState } from '../../lib/railTooltip';
+import { bubbleShift, useRailTooltip, type RailTooltipState } from './railTooltip';
 import { TOOLTIP } from '../menuStyle';
 import { Column, viewportFill } from '../layout';
 

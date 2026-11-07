@@ -5,9 +5,11 @@ import {
   arrowKeyOf,
   revealScrollDelta,
   stepRow,
-  type ArrowKeyEvent,
-  type ArrowKeyTarget,
-} from '../components/arrowKeys.model';
+  type KeyEventLike,
+  type KeyTarget,
+} from '../components/keys/keys.model';
+
+type ArrowKeyEvent = Omit<KeyEventLike, 'isComposing'>;
 
 const press = (key: string, extra: Partial<ArrowKeyEvent> = {}): ArrowKeyEvent => ({
   key,
@@ -19,32 +21,26 @@ const press = (key: string, extra: Partial<ArrowKeyEvent> = {}): ArrowKeyEvent =
   ...extra,
 });
 
-const field = (tagName: string, text: string, contentEditable = false): ArrowKeyTarget => ({ tagName, contentEditable, text });
+const field = (tagName: string, text: string, contentEditable = false): KeyTarget => ({ tagName, contentEditable, text });
 
 const rows = ['a', 'b', 'c'].map((convId) => ({ convId }));
 
 describe('arrowKeyOf', () => {
   test('reads the four arrow keys', () => {
-    expect(arrowKeyOf(press('ArrowLeft'), null, ALL_ARROWS)).toBe('ArrowLeft');
-    expect(arrowKeyOf(press('ArrowRight'), null, ALL_ARROWS)).toBe('ArrowRight');
-    expect(arrowKeyOf(press('ArrowUp'), null, ALL_ARROWS)).toBe('ArrowUp');
-    expect(arrowKeyOf(press('ArrowDown'), null, ALL_ARROWS)).toBe('ArrowDown');
+    for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'] as const)
+      expect(arrowKeyOf(press(key), null, ALL_ARROWS)).toBe(key);
   });
 
   test('reads only the arrows it is given', () => {
-    expect(arrowKeyOf(press('ArrowUp'), null, VERTICAL_ARROWS)).toBe('ArrowUp');
-    expect(arrowKeyOf(press('ArrowDown'), null, VERTICAL_ARROWS)).toBe('ArrowDown');
-    expect(arrowKeyOf(press('ArrowLeft'), null, VERTICAL_ARROWS)).toBeNull();
-    expect(arrowKeyOf(press('ArrowRight'), null, VERTICAL_ARROWS)).toBeNull();
+    for (const key of ['ArrowUp', 'ArrowDown'] as const) expect(arrowKeyOf(press(key), null, VERTICAL_ARROWS)).toBe(key);
+    for (const key of ['ArrowLeft', 'ArrowRight']) expect(arrowKeyOf(press(key), null, VERTICAL_ARROWS)).toBeNull();
   });
 
   test('ignores other keys, modified arrows and handled events', () => {
     expect(arrowKeyOf(press('Enter'), null, ALL_ARROWS)).toBeNull();
-    expect(arrowKeyOf(press('ArrowDown', { shiftKey: true }), null, ALL_ARROWS)).toBeNull();
-    expect(arrowKeyOf(press('ArrowDown', { altKey: true }), null, ALL_ARROWS)).toBeNull();
-    expect(arrowKeyOf(press('ArrowDown', { metaKey: true }), null, ALL_ARROWS)).toBeNull();
-    expect(arrowKeyOf(press('ArrowDown', { ctrlKey: true }), null, ALL_ARROWS)).toBeNull();
-    expect(arrowKeyOf(press('ArrowDown', { defaultPrevented: true }), null, ALL_ARROWS)).toBeNull();
+    for (const extra of [{ shiftKey: true }, { altKey: true }, { metaKey: true }, { ctrlKey: true }, { defaultPrevented: true }]) {
+      expect(arrowKeyOf(press('ArrowDown', extra), null, ALL_ARROWS)).toBeNull();
+    }
   });
 
   test('leaves the arrows to a field that holds text', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { migrateSeeds } from '../lib/colorOverrides.model';
+import { migrateSeeds, seedColorHex, withSeedColor } from '../lib/colorOverrides.model';
 import { DEFAULT_SEED } from '@stage-labs/kit/theme-derive';
 
 const PERSISTED = {
@@ -29,5 +29,15 @@ describe('migrateSeeds', () => {
     expect(migrateSeeds(null).dark).toEqual(DEFAULT_SEED.dark);
     expect(migrateSeeds({}).light).toEqual(DEFAULT_SEED.light);
     expect(migrateSeeds({ dark: { accent: 42, grayscale: [], surface: 'nope' } }).dark).toEqual(DEFAULT_SEED.dark);
+  });
+});
+
+describe('withSeedColor', () => {
+  test('writes the field that seedColorHex reads, lower-cased', () => {
+    const seeds = migrateSeeds(PERSISTED);
+    const next = withSeedColor(seeds, 'dark', 'accent', ' #00AA33 ');
+    expect(next === null ? null : seedColorHex(next, 'dark', 'accent')).toBe('#00aa33');
+    expect(next?.light).toEqual(seeds.light);
+    expect(withSeedColor(seeds, 'light', 'background', '#fff')).toBeNull();
   });
 });

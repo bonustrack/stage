@@ -1,10 +1,10 @@
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { HoverIconButton } from '../hover';
 import { usePalette } from '../../lib/theme';
-import { useOpenNewChat } from './newChatFocus';
-import { setNewChatProject } from './newChatDefaults';
-import { groupedChatMetadata } from './newChatMetadata.model';
+import { useOpenNewChat } from '../newChat/newChatFocus';
+import { setNewChatProject } from '../newChat/newChatDefaults';
+import { groupedChatMetadata } from '../newChat/newChatMetadata.model';
 
 export function NewChatAction({ by, groupKey, title }: { by: GroupKey; groupKey: string; title: string }): React.ReactElement {
   const { sub } = usePalette();

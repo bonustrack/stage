@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { parseMentions, matchMembers, computeMentionQuery, MENTION_RE } from '../src/xmtp/mentions';
+import { parseMentions, computeMentionQuery, MENTION_RE, type MentionCandidate } from '../src/xmtp/mentions';
 
 const A = '0x42e167e6bff0a3a701d8fa14f96a0f840eb939df';
 const B = '0xabc0000000000000000000000000000000000def';
@@ -33,23 +33,26 @@ describe('parseMentions', () => {
   });
 });
 
-describe('matchMembers', () => {
-  const members = [
-    { address: A, name: 'Alice' },
-    { address: B, name: 'Bob' },
-  ];
+const matchesFor = (query: string, candidates: MentionCandidate[]): MentionCandidate[] =>
+  computeMentionQuery(`hi @${query}`, `hi @${query}`.length, candidates).matches;
 
-  test('empty query returns all (capped by limit)', () => {
-    expect(matchMembers(members, '')).toHaveLength(2);
-    expect(matchMembers(members, '', 1)).toHaveLength(1);
+describe('mention suggestions', () => {
+  const alice = { address: A, name: 'Alice' };
+  const bob = { address: B, name: 'Bob' };
+  const members = [alice, bob];
+
+  test('a bare @ offers every member, at most six', () => {
+    expect(matchesFor('', members)).toEqual(members);
+    const crowd = [...'01234567'].map((d) => ({ address: `0x${d.repeat(40)}`, name: `user ${d}` }));
+    expect(matchesFor('', crowd)).toEqual(crowd.slice(0, 6));
   });
 
   test('matches on name substring case-insensitively', () => {
-    expect(matchMembers(members, 'ali')).toEqual([members[0]]);
+    expect(matchesFor('ALI', members)).toEqual([alice]);
   });
 
   test('matches on address substring', () => {
-    expect(matchMembers(members, 'abc0')).toEqual([members[1]]);
+    expect(matchesFor('abc0', members)).toEqual([bob]);
   });
 
   test('ranks a name that starts with the query before other matches', () => {
@@ -60,13 +63,13 @@ describe('matchMembers', () => {
       { address: hex('1'), name: 'Ann Dee' },
       { address: hex('2'), name: 'dana.stage.eth' },
     ];
-    expect(matchMembers(ranked, 'd').map((m) => m.name)).toEqual(['Ann Dee', 'dana.stage.eth', '0xdddd…dddd', 'Eddie']);
+    expect(matchesFor('d', ranked).map((m) => m.name)).toEqual(['Ann Dee', 'dana.stage.eth', '0xdddd…dddd', 'Eddie']);
   });
 
-  test('keeps a name match when address matches fill the limit', () => {
+  test('keeps a name match when address matches fill the list', () => {
     const crowd = [...'0123456'].map((d) => ({ address: `0x${d.repeat(39)}d`, name: `user ${d}` }));
     const dana = { address: A, name: 'Dana' };
-    expect(matchMembers([...crowd, dana], 'd')[0]).toEqual(dana);
+    expect(matchesFor('d', [...crowd, dana])[0]).toEqual(dana);
   });
 });
 

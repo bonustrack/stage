@@ -5,7 +5,6 @@ import type { DeviceBoundAccessOptions } from '../../platform/types';
 import { privateKeyToAccount, type PrivateKeyAccount, type HDAccount } from 'viem/accounts';
 import { keccak256, stringToBytes, type Hex } from 'viem';
 import { generateWalletMnemonic, normalizeMnemonic, isValidMnemonic, deriveOwner } from '@stage-labs/client/zerodev/derive';
-import { PK_PREFIX, LEGACY_PK_KEY } from '@stage-labs/client/accounts/keys';
 import { recover, ignored } from '../errorPolicy';
 
 const STORE_OPTS: DeviceBoundAccessOptions = { thisDeviceOnly: true };
@@ -30,14 +29,11 @@ async function requireDeviceAuth(): Promise<boolean> {
   return (await secureStorage.get(AUTH_SENTINEL_KEY, SENTINEL_OPTS).catch(ignored(null, 'probe'))) !== null;
 }
 
+const PK_PREFIX = 'wallet.pk.';
+const LEGACY_PK_KEY = 'wallet.privateKey';
 const PHRASE_KEY_PREFIX = 'wallet.mnemonic.';
 const PRIMARY_PHRASE_KEY = 'wallet.mnemonic.primary';
 const LEGACY_MNEMONIC_KEY = 'wallet.mnemonic';
-
-export interface SmartKeyRef {
-  hdIndex: number;
-  phraseId?: string;
-}
 
 export function phraseIdOf(phrase: string): string {
   return keccak256(stringToBytes(normalizeMnemonic(phrase))).slice(2, 18);
@@ -62,7 +58,7 @@ async function migrateLegacyPhrase(): Promise<void> {
     await secureStorage.set(PRIMARY_PHRASE_KEY, id, STORE_OPTS);
     await migrateLegacyHdIndex(id);
   }
-  await secureStorage.delete(LEGACY_MNEMONIC_KEY).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(LEGACY_MNEMONIC_KEY).catch(recover('keyring.deleteLegacyPhrase', undefined));
 }
 
 let migration: Promise<void> | null = null;
@@ -116,13 +112,13 @@ export async function deletePhrase(phraseId: string, nextPrimary: string | null)
   sessionPhrases.delete(phraseId);
   for (const key of [...ownerCache.keys()]) if (key.startsWith(`${phraseId}:`)) ownerCache.delete(key);
   await resetSmartHdIndex(phraseId);
-  await secureStorage.delete(phraseKey(phraseId)).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(phraseKey(phraseId)).catch(recover('keyring.deletePhrase', undefined));
   if ((await primaryPhraseId()) !== phraseId) return;
   if (nextPrimary) await secureStorage.set(PRIMARY_PHRASE_KEY, nextPrimary, STORE_OPTS);
   else await secureStorage.delete(PRIMARY_PHRASE_KEY).catch(ignored(undefined, 'cleanup'));
 }
 
-async function ownerFor(ref: SmartKeyRef): Promise<HDAccount> {
+export async function smartOwnerSigner(ref: { hdIndex: number; phraseId?: string }): Promise<HDAccount> {
   const phraseId = await phraseIdFor(ref);
   const key = `${phraseId}:${ref.hdIndex}`;
   const cached = ownerCache.get(key);
@@ -134,31 +130,25 @@ async function ownerFor(ref: SmartKeyRef): Promise<HDAccount> {
   return owner;
 }
 
-export async function smartOwnerSigner(ref: SmartKeyRef): Promise<HDAccount> {
-  return ownerFor(ref);
+function legacyKeyOf(raw: string | null): Hex | null {
+  return raw && /^0x[0-9a-fA-F]{64}$/.test(raw) ? (('0x' + raw.slice(2).toLowerCase()) as Hex) : null;
+}
+
+function ownedBy(pk: Hex, id: string): boolean {
+  try {
+    return privateKeyToAccount(pk).address.toLowerCase() === id.toLowerCase();
+  } catch {
+    return false;
+  }
 }
 
 async function loadPrivateKey(id: string): Promise<Hex | null> {
   const pk = await secureStorage.get(PK_PREFIX + id, STORE_OPTS);
   if (pk && /^0x[0-9a-f]{64}$/.test(pk)) return pk as Hex;
-  const legacy = await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS);
-  const norm = legacy && /^0x[0-9a-fA-F]{64}$/.test(legacy) ? legacyKeyOwnedBy(legacy, id) : null;
-  if (norm === null) return null;
-  await secureStorage.set(PK_PREFIX + id, norm, STORE_OPTS).catch(ignored(undefined, 'cache'));
-  return norm;
-}
-
-function legacyKeyOwnedBy(legacy: string, id: string): Hex | null {
-  const norm = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
-  try {
-    return privateKeyToAccount(norm).address.toLowerCase() === id.toLowerCase() ? norm : null;
-  } catch {
-    return null;
-  }
-}
-
-async function storePrivateKey(id: string, pk: Hex): Promise<void> {
-  await secureStorage.set(PK_PREFIX + id, pk, STORE_OPTS);
+  const legacy = legacyKeyOf(await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS));
+  if (legacy === null || !ownedBy(legacy, id)) return null;
+  await secureStorage.set(PK_PREFIX + id, legacy, STORE_OPTS).catch(ignored(undefined, 'cache'));
+  return legacy;
 }
 
 export async function getViemAccount(id: string): Promise<PrivateKeyAccount | null> {
@@ -169,22 +159,17 @@ export async function getViemAccount(id: string): Promise<PrivateKeyAccount | nu
 export async function importPrivateKey(pk: Hex): Promise<{ id: string; address: string }> {
   const acct = privateKeyToAccount(pk);
   const id = acct.address.toLowerCase();
-  await storePrivateKey(id, pk);
+  await secureStorage.set(PK_PREFIX + id, pk, STORE_OPTS);
   return { id, address: acct.address };
 }
 
 export async function adoptLegacyKey(): Promise<{ id: string; address: string } | null> {
-  const legacy = await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS).catch(recover('keyring.adoptLegacyKey', null));
-  if (!legacy || !/^0x[0-9a-fA-F]{64}$/.test(legacy)) return null;
-  const pk = ('0x' + legacy.slice(2).toLowerCase()) as Hex;
-  const acct = privateKeyToAccount(pk);
-  const id = acct.address.toLowerCase();
-  await storePrivateKey(id, pk);
-  return { id, address: acct.address };
+  const pk = legacyKeyOf(await secureStorage.get(LEGACY_PK_KEY, STORE_OPTS).catch(recover('keyring.adoptLegacyKey', null)));
+  return pk === null ? null : importPrivateKey(pk);
 }
 
 export async function deleteKey(id: string): Promise<void> {
-  await secureStorage.delete(PK_PREFIX + id).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(PK_PREFIX + id).catch(recover('keyring.deleteKey', undefined));
 }
 
 export async function revealActiveRecoveryPhrase(expectedAccountId: string): Promise<string | null> {

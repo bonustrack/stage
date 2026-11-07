@@ -1,11 +1,12 @@
-import { colors, resolveBoxRadius, type ColorToken, type RadiusValue } from './tokens';
+import type { BOX_ALIGNS, FLEX_JUSTIFY, SURFACES } from './kit-vocabulary';
+import { BOX_RADIUS_SCALE, colors, isRadiusValue, type ColorToken, type RadiusValue } from './tokens';
 
 export type { RadiusValue };
 
 export type Size = number | string;
 
-export type Align = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
-export type Justify = 'start' | 'center' | 'end' | 'spaceBetween' | 'spaceAround' | 'spaceEvenly' | 'stretch';
+export type Align = (typeof BOX_ALIGNS)[number];
+export type Justify = (typeof FLEX_JUSTIFY)[number];
 
 export interface Spacing {
   top?: number | string;
@@ -75,31 +76,23 @@ export type BoxStyleEntries = Record<string, string | number>;
 
 function applySpacing(s: BoxStyleEntries, prefix: 'padding' | 'margin', value: number | string | Spacing | undefined): void {
   if (value === undefined) return;
+  const sides: Spacing = typeof value === 'object' ? value : { top: value, right: value, bottom: value, left: value };
   const Top = `${prefix}Top`;
   const Right = `${prefix}Right`;
   const Bottom = `${prefix}Bottom`;
   const Left = `${prefix}Left`;
-
-  if (typeof value === 'number' || typeof value === 'string') {
-    s[Top] = value;
-    s[Right] = value;
-    s[Bottom] = value;
-    s[Left] = value;
-    return;
+  if (sides.x !== undefined) {
+    s[Left] = sides.x;
+    s[Right] = sides.x;
   }
-
-  if (value.x !== undefined) {
-    s[Left] = value.x;
-    s[Right] = value.x;
+  if (sides.y !== undefined) {
+    s[Top] = sides.y;
+    s[Bottom] = sides.y;
   }
-  if (value.y !== undefined) {
-    s[Top] = value.y;
-    s[Bottom] = value.y;
-  }
-  if (value.top !== undefined) s[Top] = value.top;
-  if (value.right !== undefined) s[Right] = value.right;
-  if (value.bottom !== undefined) s[Bottom] = value.bottom;
-  if (value.left !== undefined) s[Left] = value.left;
+  if (sides.top !== undefined) s[Top] = sides.top;
+  if (sides.right !== undefined) s[Right] = sides.right;
+  if (sides.bottom !== undefined) s[Bottom] = sides.bottom;
+  if (sides.left !== undefined) s[Left] = sides.left;
 }
 
 function setIf(s: BoxStyleEntries, key: string, value: string | number | undefined): void {
@@ -114,7 +107,15 @@ function applyFlex(s: BoxStyleEntries, props: BoxBaseProps): void {
   setIf(s, 'flex', props.weight);
   if (props.wrap !== undefined) s.flexWrap = props.wrap ? 'wrap' : 'nowrap';
   if (props.background !== undefined) s.backgroundColor = resolveBg(props.background);
-  if (props.radius !== undefined) s.borderRadius = resolveBoxRadius(props.radius);
+  setIf(s, 'borderRadius', boxRadius(props.radius));
+}
+
+const RADIUS_LENGTH = /^\d+(?:\.\d+)?(?:%|px)?$/;
+
+function boxRadius(radius: BoxBaseProps['radius']): number | string | undefined {
+  if (radius === undefined || typeof radius === 'number') return radius;
+  if (isRadiusValue(radius)) return BOX_RADIUS_SCALE[radius];
+  return RADIUS_LENGTH.test(radius) ? radius : undefined;
 }
 
 function applySizing(s: BoxStyleEntries, props: BoxBaseProps): void {
@@ -174,7 +175,7 @@ export function boxStyleEntries(props: BoxBaseProps): BoxStyleEntries {
   return s;
 }
 
-export type Surface = 'none' | 'surface' | 'raised' | 'sunken' | 'toolbar';
+export type Surface = (typeof SURFACES)[number];
 
 export interface SurfacePalette {
   bg: string;

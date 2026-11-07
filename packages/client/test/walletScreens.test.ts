@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'bun:test';
-import { parsePositiveAmount, tokenAmountFromInput, toggleAmountUnit, trimDecimalString } from '../src/wallet/sendAmount';
+import { tokenAmountFromInput, toggleAmountUnit } from '../src/wallet/sendAmount';
 
 describe('sendAmount', () => {
-  it('parsePositiveAmount guards empty / non-finite / non-positive', () => {
-    expect(parsePositiveAmount('')).toBeNull();
-    expect(parsePositiveAmount('  ')).toBeNull();
-    expect(parsePositiveAmount('abc')).toBeNull();
-    expect(parsePositiveAmount('0')).toBeNull();
-    expect(parsePositiveAmount('-1')).toBeNull();
-    expect(parsePositiveAmount('1.5')).toBe(1.5);
+  it('an empty, non-numeric or non-positive amount is no amount', () => {
+    for (const amount of ['', '  ', 'abc', '0', '-1', 'Infinity']) {
+      expect(tokenAmountFromInput(amount, 'primary', 100)).toBe(0);
+      expect(toggleAmountUnit(amount, 'primary', 100)).toEqual({ amount, unit: 'usd' });
+    }
+    expect(tokenAmountFromInput(' 1.5 ', 'primary', 100)).toBe(1.5);
   });
 
   it('tokenAmountFromInput converts only in usd unit with price', () => {
@@ -30,12 +29,7 @@ describe('sendAmount', () => {
 
   it('toggleAmountUnit converts usd->primary trimming trailing zeros', () => {
     expect(toggleAmountUnit('100', 'usd', 4)).toEqual({ amount: '25', unit: 'primary' });
+    expect(toggleAmountUnit('1', 'usd', 4)).toEqual({ amount: '0.25', unit: 'primary' });
     expect(toggleAmountUnit('1', 'usd', 3)).toEqual({ amount: '0.333333', unit: 'primary' });
-  });
-
-  it('trimDecimalString strips trailing zeros and dot', () => {
-    expect(trimDecimalString('0.250000')).toBe('0.25');
-    expect(trimDecimalString('5.000000')).toBe('5');
-    expect(trimDecimalString('5')).toBe('5');
   });
 });

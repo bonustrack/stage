@@ -1,12 +1,11 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { rememberLocalAttachments } from '../../lib/localAttachmentCache';
 import { uploadAttachments, xmtpSendMultiRemoteAttachment } from '../../lib/xmtp.attachments';
 import { xmtpReply, xmtpSendText } from '../../lib/xmtp.messages';
 import { fileInputs, planSendSteps, unsentDraft, type SendStep } from './send.model';
 import type { ComposerState } from './state';
 import type { Attachment, PostHooks } from './types';
-
-let seq = 0;
-export const mintLocalId = (): string => `tmp_${Date.now()}_${(seq++).toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
+import { mintLocalId } from './outbound';
 
 export type DraftArgs = Pick<PostHooks, 'setErr' | 'onOptimistic' | 'onSent'> &
   Pick<ComposerState, 'text' | 'pending' | 'setPending' | 'setText'> & {
@@ -44,7 +43,7 @@ async function runStep(step: SendStep, previewUri?: (uri: string) => string): Pr
     if (previews.length > 0) rememberLocalAttachments(id, previews);
     return { id };
   } catch (e) {
-    return { error: (e as Error).message };
+    return { error: errorMessage(e) };
   }
 }
 

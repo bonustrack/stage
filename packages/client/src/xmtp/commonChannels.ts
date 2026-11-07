@@ -1,4 +1,5 @@
 import { isUnnamedChannelRow } from './summarizeRow';
+import type { ChannelRow } from './channelsCache';
 
 export interface CommonChannel {
   convId: string;
@@ -15,20 +16,23 @@ export interface CommonChannel {
   markedUnread: boolean;
 }
 
-export interface CommonChannelRow {
-  convId: string;
-  peerAddress?: string | null;
-  title?: string | null;
-  groupName?: string | null;
-  avatarUri?: string | null;
-  avatarAddress?: string | null;
-  lastTs?: number | null;
-  lastPreview?: string | null;
-  lastSenderAddress?: string | null;
-  lastFromSelf?: boolean;
-  unreadCount?: number;
-  markedUnread?: boolean;
-}
+export type CommonChannelRow = Pick<ChannelRow, 'convId'> &
+  Partial<
+    Pick<
+      ChannelRow,
+      | 'peerAddress'
+      | 'title'
+      | 'groupName'
+      | 'avatarUri'
+      | 'avatarAddress'
+      | 'lastTs'
+      | 'lastPreview'
+      | 'lastSenderAddress'
+      | 'lastFromSelf'
+      | 'unreadCount'
+      | 'markedUnread'
+    >
+  >;
 
 function str(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
@@ -38,11 +42,7 @@ export type ChannelAvatarSeed = (row: CommonChannelRow) => string | null;
 
 const defaultAvatarSeed: ChannelAvatarSeed = (row) => str(row.avatarAddress);
 
-export function commonChannelFromRow(
-  row: CommonChannelRow,
-  members: string[],
-  avatarSeedOf: ChannelAvatarSeed = defaultAvatarSeed,
-): CommonChannel {
+function commonChannelFromRow(row: CommonChannelRow, members: string[], avatarSeedOf: ChannelAvatarSeed): CommonChannel {
   const avatarUri = str(row.avatarUri);
   const title = str(row.title)?.trim() ?? '';
   return {

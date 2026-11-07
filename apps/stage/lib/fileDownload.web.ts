@@ -1,3 +1,4 @@
+import { nativeFileName } from '@stage-labs/client/files';
 import { ignored } from './errorPolicy';
 import { imageFileName } from './imageDownload.model';
 
@@ -27,8 +28,8 @@ async function saveOrOpen(uri: string, nameOf: (blob: Blob) => string, unreadabl
   window.open(uri, '_blank', 'noopener');
 }
 
-export function downloadFile(uri: string, name: string): Promise<void> {
-  return saveOrOpen(uri, () => name, 'Could not read this file.');
+export function downloadFile(uri: string, name: string, mime?: string): Promise<void> {
+  return saveOrOpen(uri, () => nativeFileName(name, mime), 'Could not read this file.');
 }
 
 export function downloadImage(uri: string): Promise<void> {

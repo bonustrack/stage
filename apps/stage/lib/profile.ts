@@ -1,16 +1,11 @@
-import { Platform } from 'react-native';
 import {
-  parseNameCheck,
-  parseNameClaim,
-  type NameCheck,
   type ProfileImage,
   type ProfileProgress,
   type ProfileSetup,
   ProfileNameTakenError,
   runProfileSetup,
 } from '@stage-labs/client/profile/setup';
-import { base } from 'viem/chains';
-import { createWalletClient, namehash, type Hex } from 'viem';
+import { namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
 import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
@@ -21,16 +16,24 @@ import {
   baseProfileClient,
   inspectNameSetup,
 } from '@stage-labs/client/identity/onchainProfile';
-import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
-import { broviderTransport } from '@stage-labs/client/wallet/client';
-import { getSelectedAccount, getViemAccount, type AccountRecord } from './accounts';
-import { getAccountSelection } from './accountSelection';
+import { claimMessage, stageNameOf } from '@stage-labs/client/identity/stageNames';
+import {
+  fetchIssuedName,
+  fetchNameCheck,
+  postNameClaim,
+  type NameCheck,
+  type NameClaimOutcome,
+} from '@stage-labs/client/identity/namesApi';
+import { getSelectedAccount } from './accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { selectionScope } from './accountSelection';
 import { linkProxyBase } from './linkProxy';
 import { invalidatePeerProfile } from './peerProfiles';
-import { kernelClientForRecord } from './zerodev/client';
+import { sendCallsFrom, signFrom } from './tx';
 import { ignore, recover, reported } from './errorPolicy';
 import { claimMailKey, registerOwnMailKey } from './mailKey';
-import { profileRequest, readPicture } from './profileFetch';
+import { profileRequest } from './profileFetch';
+import { avatarFilePart } from './avatarFile';
 
 interface ProfileAccount {
   record: AccountRecord;
@@ -38,10 +41,10 @@ interface ProfileAccount {
 }
 
 async function profileAccount(address?: string): Promise<ProfileAccount> {
-  const selected = getAccountSelection();
+  const scope = selectionScope();
   const record = await getSelectedAccount();
   const assertCurrent = (): void => {
-    if (selected !== getAccountSelection()) throw new Error('The account changed while saving your profile.');
+    scope.assertCurrent('The account changed while saving your profile.');
   };
   assertCurrent();
   if (record === null || (address !== undefined && record.address.toLowerCase() !== address.toLowerCase())) {
@@ -50,16 +53,9 @@ async function profileAccount(address?: string): Promise<ProfileAccount> {
   return { record, assertCurrent };
 }
 
-async function filePart(uri: string, mime: string, name: string): Promise<Blob | { uri: string; name: string; type: string }> {
-  if (Platform.OS !== 'web') return { uri, name, type: mime };
-  const blob = await readPicture(uri);
-  if (blob.size === 0 || !(mime || blob.type).startsWith('image/')) throw new Error('Choose a valid image for your profile picture.');
-  return new File([blob], name, { type: mime || blob.type });
-}
-
 export async function uploadAvatar(uri: string, mime: string, name = 'avatar'): Promise<string> {
   const form = new FormData();
-  form.append('file', (await filePart(uri, mime, name)) as Blob);
+  form.append('file', (await avatarFilePart(uri, mime, name)) as Blob);
   return profileRequest(PINEAPPLE_UPLOAD_URL, { method: 'POST', body: form }, async (res) => {
     if (!res.ok) throw new Error(`Image upload failed (${res.status})`);
     return parsePineappleResponse(await res.json());
@@ -75,32 +71,25 @@ export interface ProfileChanges {
   removeImage?: boolean;
 }
 
+async function succeededOnBase(hash: Hex): Promise<boolean> {
+  return (await baseProfileClient().waitForTransactionReceipt({ hash })).status === 'success';
+}
+
 async function confirmedOnBase(hash: Hex): Promise<Hex> {
-  const receipt = await baseProfileClient().waitForTransactionReceipt({ hash });
-  if (receipt.status !== 'success') throw new Error('The transaction reverted.');
+  if (!(await succeededOnBase(hash))) throw new Error('The transaction reverted.');
   return hash;
 }
 
+const NO_PROFILE_KEY = 'This account cannot save a profile.';
+
 async function sendOnBase(account: ProfileAccount, calls: ContractCall[]): Promise<Hex> {
-  const { record, assertCurrent } = account;
-  if (record.type === 'smart') {
-    const kernel = await kernelClientForRecord(record);
-    const batch = calls.map((call) => ({ to: call.to, data: call.data, value: 0n }));
-    assertCurrent();
-    const hash = await confirmedOnBase(await kernel.sendTransaction({ calls: batch }));
-    assertCurrent();
-    return hash;
-  }
-  const local = await getViemAccount(record.id);
-  if (!local) throw new Error('This account cannot save a profile.');
-  const wallet = createWalletClient({ account: local, chain: base, transport: broviderTransport(base.id) });
-  let hash: Hex = '0x';
-  for (const call of calls) {
-    assertCurrent();
-    hash = await confirmedOnBase(await wallet.sendTransaction({ to: call.to, data: call.data }));
-  }
-  assertCurrent();
-  return hash;
+  const sent = await sendCallsFrom(account.record, calls, {
+    missingKey: NO_PROFILE_KEY,
+    before: account.assertCurrent,
+    confirm: confirmedOnBase,
+  });
+  account.assertCurrent();
+  return sent.hash;
 }
 
 function refreshProfileCaches(address: string, avatarChanged = false): void {
@@ -141,32 +130,34 @@ export async function saveBasenameProfile(address: string, name: string, changes
   return hash;
 }
 
-export type { NameCheck } from '@stage-labs/client/profile/setup';
-
-const HEADERS = { 'content-type': 'application/json', 'x-stage-client': '1' };
-
 async function signForAccount(account: ProfileAccount, message: string): Promise<Hex> {
-  const { record, assertCurrent } = account;
-  if (record.type === 'smart') {
-    const kernel = await kernelClientForRecord(record);
-    assertCurrent();
-    return kernel.signMessage({ message } as Parameters<typeof kernel.signMessage>[0]);
-  }
-  const local = await getViemAccount(record.id);
-  if (!local) throw new Error('This account cannot sign messages');
-  assertCurrent();
-  return local.signMessage({ message });
+  const signed = await signFrom(
+    account.record,
+    { message },
+    { missingKey: 'This account cannot sign messages', before: account.assertCurrent },
+  );
+  return signed.signature;
 }
 
 export function checkStageName(label: string): Promise<NameCheck> {
-  return profileRequest(`${linkProxyBase()}/names/check?label=${encodeURIComponent(label)}`, { headers: HEADERS }, async (res) => {
-    if (!res.ok) throw new Error(`name service responded ${res.status}`);
-    return parseNameCheck(await res.json());
-  });
+  return fetchNameCheck(linkProxyBase(), label, profileRequest);
 }
 
 export function ownedStageName(address: string): Promise<string | null> {
   return fetchIssuedName(linkProxyBase(), address);
+}
+
+function claimedName(outcome: NameClaimOutcome): string {
+  switch (outcome.kind) {
+    case 'claimed':
+      return outcome.name;
+    case 'taken':
+      throw new ProfileNameTakenError();
+    case 'refused':
+      throw new Error(outcome.error ?? `claim failed (${outcome.status})`);
+    case 'unconfirmed':
+      throw new Error('The name service did not confirm your username.');
+  }
 }
 
 async function claimForAccount(account: ProfileAccount, label: string): Promise<string> {
@@ -177,33 +168,28 @@ async function claimForAccount(account: ProfileAccount, label: string): Promise<
   const issuedAt = Date.now();
   const signature = await signForAccount(account, claimMessage({ label, address, issuedAt, mailKey }));
   assertCurrent();
-  const name = await profileRequest(
-    `${linkProxyBase()}/names/claim`,
-    { method: 'POST', headers: HEADERS, body: JSON.stringify({ label, address, issuedAt, signature, mailKey }) },
-    async (res) => {
-      const body = parseNameClaim(await res.json());
-      if (res.status === 409 && body.error === 'name already taken') throw new ProfileNameTakenError();
-      if (!res.ok) throw new Error(body.error ?? `claim failed (${res.status})`);
-      if (body.name !== stageNameOf(label)) throw new Error('The name service did not confirm your username.');
-      if (body.mailKey === 'failed') void registerOwnMailKey(record, label).catch(reported('mail.key'));
-      return body.name;
-    },
-  );
+  const outcome = await postNameClaim(linkProxyBase(), { label, address, issuedAt, signature, mailKey }, profileRequest);
+  const name = claimedName(outcome);
+  if (outcome.kind === 'claimed' && outcome.mailKeyFailed) void registerOwnMailKey(record, label).catch(reported('mail.key'));
   assertCurrent();
   return name;
 }
 
-export async function claimStageName(label: string): Promise<string> {
-  return claimForAccount(await profileAccount(), label);
+async function nameSetupCalls(address: string, label: string, records: Record<string, string>): Promise<ContractCall[]> {
+  const name = stageNameOf(label);
+  return encodeNameSetup(name, address as Hex, records, await nameResolver(name));
 }
 
 export async function setUpStageName(address: string, label: string, records: Record<string, string> = {}): Promise<Hex> {
   const account = await profileAccount(address);
-  const name = stageNameOf(label);
-  const calls = encodeNameSetup(name, address as Hex, records, await nameResolver(name));
-  const hash = await sendOnBase(account, calls);
+  const hash = await sendOnBase(account, await nameSetupCalls(address, label, records));
   refreshProfileCaches(address, records[PROFILE_TEXT_KEYS.avatar] !== undefined);
   return hash;
+}
+
+export async function claimAndSetUpStageName(address: string, label: string): Promise<Hex> {
+  await claimForAccount(await profileAccount(), label);
+  return setUpStageName(address, label);
 }
 
 export async function applyProfileSetup(
@@ -221,13 +207,10 @@ export async function applyProfileSetup(
       claim: (label) => claimForAccount(account, label),
       send: async (label, records) => {
         if (account.record.type !== 'smart') throw new Error('The prepared account is not a smart wallet.');
-        const name = stageNameOf(label);
-        const calls = encodeNameSetup(name, address as Hex, records, await nameResolver(name));
-        const kernel = await kernelClientForRecord(account.record);
-        account.assertCurrent();
-        return kernel.sendTransaction({ calls: calls.map((call) => ({ ...call, value: 0n })) });
+        const calls = await nameSetupCalls(address, label, records);
+        return (await sendCallsFrom(account.record, calls, { missingKey: NO_PROFILE_KEY, before: account.assertCurrent })).hash;
       },
-      confirm: async (hash) => (await baseProfileClient().waitForTransactionReceipt({ hash })).status === 'success',
+      confirm: succeededOnBase,
     },
     profile,
     progress,

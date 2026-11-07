@@ -1,4 +1,5 @@
 import type { MediaStream as NativeStream, MediaStreamTrack as NativeTrack } from 'react-native-webrtc';
+import type { AudioRoutes } from './calls.route.core';
 
 export type CallStream = { platform: 'web'; value: MediaStream } | { platform: 'native'; value: NativeStream };
 
@@ -12,9 +13,33 @@ export interface Outgoing {
   video: CallTrack | null;
 }
 
-export interface CapturedMedia {
-  audio: CallTrack | null;
-  video: CallTrack | null;
+export type CapturedMedia = Outgoing;
+
+export interface CallToken {
+  live: () => boolean;
+}
+
+export interface ScreenPicker {
+  show: () => void;
+}
+
+export interface CallMediaPort {
+  userMedia: (video: boolean, audio: boolean) => Promise<CapturedMedia | null>;
+  displayMedia: (token: CallToken, picker: ScreenPicker | null) => Promise<CallTrack | null>;
+  previewOf: (video: CallTrack) => CallStream;
+  watchScreenEnd: (video: CallTrack, ended: () => void) => void;
+  prepareAudio: (token: CallToken) => Promise<void>;
+  startAudio: (video: boolean, token: CallToken) => Promise<void>;
+  stopAudio: () => void;
+  startRingtone: () => () => void;
+}
+
+export interface CallMediaSeam extends CallMediaPort {
+  callsSupported: boolean;
+  screenShareSupported: boolean;
+  watchCallLifecycle: (leave: () => void) => () => void;
+  useAudioRoutes: () => AudioRoutes;
+  toggleSpeaker: () => void;
 }
 
 export function stopTrack(track: CallTrack | null): null {

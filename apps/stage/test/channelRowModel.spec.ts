@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { FONT_SIZE } from '@stage-labs/kit/tokens';
-import { channelRowModel } from '../components/ChannelRow.model';
+import { channelRowModel } from '../components/chatRow/ChannelRow.model';
 
 describe('channelRowModel', () => {
   test('minimal domain maps to empty-preview params', () => {

@@ -5,7 +5,6 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { shortAddress } from '@stage-labs/client/identity/format';
 import { IconAudio } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconAudio';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { IconFileText } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileText';
@@ -13,24 +12,30 @@ import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1
 import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
 import { RetryNotice } from '../chrome/RetryNotice';
-import { StackHeader } from '../chrome/StackHeader';
 import { LabelChip } from '../LabelChip';
-import { SearchTopnavBar } from '../SearchTopnavBar';
+import { SearchField } from '../search/SearchField';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
 import { useAccountEpoch } from '../../lib/accountEpoch';
+import { accountQueryKeyAt, useAccountGeneration } from '../../lib/queryClient';
 import { useOwnDeletes } from '../../lib/ownDeletes';
-import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
-import { SETTINGS_ROUTE } from '../../lib/routes';
-import { useWebTabRail } from '../../lib/webLayout';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { forgetStorageFile, retryStorage, storageChatOf, storageFileGone, useStorage, type StorageState } from '../../lib/storage';
+import { useStoredChat } from '../../lib/storedChat';
+import { chatLabelOf } from '../../lib/convIdentity';
+import { MenuPage } from '../tabs/MenuPage';
+import { useSafeAreaInsets } from '../layout/safeArea';
+import {
+  FileUnavailableError,
+  forgetStorageFile,
+  retryStorage,
+  storageFileGone,
+  useStorage,
+  type StorageState,
+} from '../../lib/storageIndex';
 import { fileKey, type StoredFile } from '../../lib/storageIndex.model';
 import { usePalette } from '../../lib/theme';
-import { FileUnavailableError, openStoredFile } from './storageOpen';
+import { openStoredFile } from './storageOpen';
 import {
   STORAGE_FILTERS,
-  chatLabelOf,
   storageRows,
   storageStatusLabel,
   type StorageFilter,
@@ -49,27 +54,14 @@ const KIND_ICONS: Readonly<Record<StorageKind, typeof IconFileBend>> = {
   other: IconFileBend,
 };
 const ROW_PADDING = { paddingTop: 10, paddingBottom: 10, paddingLeft: PAGE_GUTTER, paddingRight: PAGE_GUTTER };
-const CHAT_STALE_MS = 5 * 60_000;
+
 const UNAVAILABLE = 'No longer available';
 const OPEN_FAILED = 'Could not open this file. It may no longer be available.';
 
-function useChatLabel(convId: string): string {
-  const epoch = useAccountEpoch();
-  const { data } = useQuery({
-    queryKey: ['storageChat', epoch, convId],
-    queryFn: () => storageChatOf(convId),
-    staleTime: CHAT_STALE_MS,
-    retry: false,
-  });
-  const peer = data?.peerAddress ?? null;
-  usePeerProfiles([peer]);
-  return chatLabelOf(data, peer === null ? undefined : getPeerName(peer), shortAddress);
-}
-
 function useGoneCheck(messageId: string): void {
-  const epoch = useAccountEpoch();
+  const epoch = useAccountGeneration('client');
   const { data: gone } = useQuery({
-    queryKey: ['storageGone', epoch, messageId],
+    queryKey: accountQueryKeyAt('client', epoch, 'storageGone', messageId),
     queryFn: () => storageFileGone(messageId),
     staleTime: Infinity,
     retry: false,
@@ -92,7 +84,7 @@ function FileRow({
 }): React.ReactElement {
   const dark = useKitScheme() === 'dark';
   const { text: fg } = usePalette();
-  const chat = useChatLabel(row.file.convId);
+  const chat = chatLabelOf(useStoredChat(row.file.convId), 'Unnamed channel');
   useGoneCheck(row.file.messageId);
   const detail = unavailable ? UNAVAILABLE : [row.detail, chat].filter(Boolean).join(' · ');
   return (
@@ -148,44 +140,6 @@ function StatusLine({ storage, hidden }: { storage: StorageState; hidden: Readon
   );
 }
 
-function ListHeader({
-  query,
-  onQuery,
-  filter,
-  onFilter,
-  storage,
-  hidden,
-}: {
-  query: string;
-  onQuery: (query: string) => void;
-  filter: StorageFilter;
-  onFilter: (filter: StorageFilter) => void;
-  storage: StorageState;
-  hidden: ReadonlySet<string>;
-}): React.ReactElement {
-  const { link: head, sub, border } = usePalette();
-  return (
-    <Column gap={12} padding={{ top: LIST_TOP_GAP, bottom: 8 }}>
-      <SearchTopnavBar
-        field
-        inline
-        persistent
-        query={query}
-        setQuery={onQuery}
-        onClose={() => {
-          onQuery('');
-        }}
-        head={head}
-        sub={sub}
-        border={border}
-        placeholder="Search files"
-      />
-      <TypeChips filter={filter} onFilter={onFilter} />
-      <StatusLine storage={storage} hidden={hidden} />
-    </Column>
-  );
-}
-
 function EmptyList({ storage, filtered }: { storage: StorageState; filtered: boolean }): React.ReactElement | null {
   const { sub } = usePalette();
   if (storage.failed && !storage.scanning && storage.files.length === 0) {
@@ -222,10 +176,6 @@ function Footnote({ show }: { show: boolean }): React.ReactElement | null {
   );
 }
 
-function withoutKey(keys: ReadonlySet<string>, key: string): ReadonlySet<string> {
-  return keys.has(key) ? new Set([...keys].filter((k) => k !== key)) : keys;
-}
-
 function useFileOpener(): { opening: string | null; unavailable: ReadonlySet<string>; open: (file: StoredFile) => void } {
   const busy = useRef(false);
   const [opening, setOpening] = useState<string | null>(null);
@@ -237,7 +187,7 @@ function useFileOpener(): { opening: string | null; unavailable: ReadonlySet<str
     setOpening(key);
     openStoredFile(file)
       .then(() => {
-        setUnavailable((prev) => withoutKey(prev, key));
+        setUnavailable((prev) => (prev.has(key) ? new Set([...prev].filter((k) => k !== key)) : prev));
       })
       .catch((err: unknown) => {
         if (!(err instanceof FileUnavailableError)) report('storage.openFile', err);
@@ -257,7 +207,6 @@ function StorageBody(): React.ReactElement {
   const hidden = useOwnDeletes();
   const insets = useSafeAreaInsets();
   const { bg } = usePalette();
-  const rail = useWebTabRail();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<StorageFilter>('all');
   const { opening, unavailable, open } = useFileOpener();
@@ -269,27 +218,42 @@ function StorageBody(): React.ReactElement {
     [opening, unavailable, open],
   );
   return (
-    <Column surface="surface" weight={1}>
-      <StackHeader title="Storage" backTo={SETTINGS_ROUTE} back={!rail} />
-      <VirtualList
-        data={rows}
-        keyExtractor={(row) => row.key}
-        renderItem={renderItem}
-        extraData={`${opening ?? ''}:${unavailable.size}`}
-        estimatedItemSize={64}
-        keyboardShouldPersistTaps="handled"
-        style={{ backgroundColor: bg }}
-        contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
-        ListHeaderComponent={
-          <ListHeader query={query} onQuery={setQuery} filter={filter} onFilter={setFilter} storage={storage} hidden={hidden} />
-        }
-        ListEmptyComponent={<EmptyList storage={storage} filtered={query.trim() !== '' || filter !== 'all'} />}
-        ListFooterComponent={<Footnote show={rows.length > 0} />}
-      />
-    </Column>
+    <VirtualList
+      data={rows}
+      keyExtractor={(row) => row.key}
+      renderItem={renderItem}
+      extraData={`${opening ?? ''}:${unavailable.size}`}
+      estimatedItemSize={64}
+      keyboardShouldPersistTaps="handled"
+      style={{ backgroundColor: bg }}
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 32 + insets.bottom }}
+      ListHeaderComponent={
+        <Column gap={12} padding={{ top: LIST_TOP_GAP, bottom: 8 }}>
+          <SearchField
+            inline
+            muted="sub"
+            query={query}
+            setQuery={setQuery}
+            onClose={() => {
+              setQuery('');
+            }}
+            placeholder="Search files"
+          />
+          <TypeChips filter={filter} onFilter={setFilter} />
+          <StatusLine storage={storage} hidden={hidden} />
+        </Column>
+      }
+      ListEmptyComponent={<EmptyList storage={storage} filtered={query.trim() !== '' || filter !== 'all'} />}
+      ListFooterComponent={<Footnote show={rows.length > 0} />}
+    />
   );
 }
 
-export function StorageScreen(): React.ReactElement {
-  return <StorageBody key={useAccountEpoch()} />;
+export function StorageScreen(): React.ReactElement | null {
+  const epoch = useAccountEpoch();
+  return (
+    <MenuPage id="storage" list>
+      <StorageBody key={epoch} />
+    </MenuPage>
+  );
 }

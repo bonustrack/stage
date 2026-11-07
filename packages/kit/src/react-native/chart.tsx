@@ -16,11 +16,11 @@ import {
   type ChartYAxisConfig,
 } from '../chart';
 import { OVERLAY_SHADOW } from '../overlay.styles';
-import { kitPalette, type KitPalette, type Scheme } from '../tokens';
+import type { KitPalette, Scheme } from '../tokens';
 import { ChartBands } from './chart.bands';
 import { ChartPlot } from './chart.plot';
 import { Text } from './text';
-import { useKitPalette, useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 import { TOOLTIP } from './tooltip';
 import { Row } from './row';
 
@@ -88,14 +88,6 @@ const TIP_ROW_GAP = 6;
 const TIP_NAME_GAP = 12;
 const TABULAR: TextStyle = { fontVariant: ['tabular-nums'] };
 const MAX_NATIVE_AREA = 1_500_000;
-
-function useChartTheme(dark: boolean | undefined): { scheme: Scheme; palette: KitPalette } {
-  const contextScheme = useKitScheme();
-  const contextPalette = useKitPalette();
-  if (dark === undefined || (dark ? 'dark' : 'light') === contextScheme) return { scheme: contextScheme, palette: contextPalette };
-  const scheme = dark ? 'dark' : 'light';
-  return { scheme, palette: kitPalette(scheme) };
-}
 
 function boxStyle(props: ChartProps): ViewStyle {
   const height = props.height ?? props.size;
@@ -278,7 +270,7 @@ function ChartBody({ props, model, palette, size: measured }: BodyProps): React.
 }
 
 export function Chart(props: ChartProps): React.ReactElement {
-  const { scheme, palette } = useChartTheme(props.dark);
+  const { scheme, palette } = useKitColors(props.dark, 'matching');
   const model = useChartModel(props, scheme);
   const [size, setSize] = useState<Size | undefined>(() => initialSize(props, model.legend));
   const onLayout = (e: LayoutChangeEvent): void => {

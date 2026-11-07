@@ -3,18 +3,19 @@ import { makeListeners, useStoreValue } from './storeCore';
 import { attempt } from './errorPolicy';
 import type { UploadedAttachment } from './xmtp.types';
 import { makeLocalAttachmentCache, type LocalAttachmentPreview } from './localAttachmentCache.core';
+import { randomHex } from '@stage-labs/client/ids';
+import { fileExtension, withoutQuery } from '@stage-labs/client/files';
 
 const cache = makeLocalAttachmentCache();
 
 const listeners = makeListeners();
-const emit = listeners.notify;
 
 export function rememberLocalAttachments(
   messageId: string,
   previews: readonly LocalAttachmentPreview[],
   uploaded?: readonly UploadedAttachment[],
 ): void {
-  if (cache.remember(messageId, previews, uploaded)) emit();
+  if (cache.remember(messageId, previews, uploaded)) listeners.notify();
 }
 
 export function useUploadedAttachments(): ReadonlyMap<string, readonly string[]> {
@@ -22,7 +23,7 @@ export function useUploadedAttachments(): ReadonlyMap<string, readonly string[]>
 }
 
 function safeExtFor(srcUri: string): string {
-  const ext = srcUri.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
+  const ext = fileExtension(withoutQuery(srcUri));
   return ext.length > 0 && ext.length <= 5 ? ext : 'bin';
 }
 
@@ -33,7 +34,7 @@ export function asFileUri(uri: string): string {
 export function stashLocalAttachment(srcUri: string): string {
   if (!srcUri.startsWith('file://')) return srcUri;
   try {
-    const name = `stage-pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExtFor(srcUri)}`;
+    const name = `stage-pending-${Date.now()}-${randomHex(3)}.${safeExtFor(srcUri)}`;
     const src = new File(srcUri);
     const dest = new File(Paths.cache, name);
     if (dest.exists)

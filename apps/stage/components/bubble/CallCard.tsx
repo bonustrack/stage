@@ -8,13 +8,12 @@ import { IconCall } from '@central-icons-react-native/round-outlined-radius-1-st
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
-import { joinCall } from '../../lib/calls';
-import { setCallMinimized, useCallView } from '../../lib/calls.store';
-import { ignore } from '../../lib/errorPolicy';
+import { joinCall, setCallMinimized, useCallView } from '../../lib/calls';
+import { reported } from '../../lib/errorPolicy';
 import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { callCardModel, callLiveOf, type CallCardModel, type CallRecord } from './callCard.model';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
-import { IconTileRow } from '../MediaCard';
+import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
+import { IconTileRow } from '../media/MediaCard';
 import { Column } from '../layout';
 
 const TICK_MS = 1_000;
@@ -46,7 +45,7 @@ export function CallCard({ record, line }: { record: CallRecord; line: string })
   useTicking(model.tone === 'live');
   const pressable = convId !== null && model.action !== null;
   const onPress = (): void => {
-    if (convId !== null && model.action === 'join') ignore(joinCall(convId, record.dm), 'ui');
+    if (convId !== null && model.action === 'join') void joinCall(convId, record.dm).catch(reported('call.join'));
     if (model.action === 'open') setCallMinimized(false);
   };
   return (
@@ -58,7 +57,7 @@ export function CallCard({ record, line }: { record: CallRecord; line: string })
       disabled={!pressable}
       onPress={onPress}
       pressedOpacity={0.85}
-      style={{ width: '100%', maxWidth: ATTACHMENT_MAX_WIDTH }}
+      style={{ width: '100%', maxWidth: FEED_CONTENT_WIDTH }}
       {...hoverProps}
     >
       <Card dark={scheme === 'dark'} background={pal.bg} padding={12}>

@@ -1,5 +1,8 @@
+import { z } from 'zod';
 import { appStorage } from '../platform/storage';
 import { ignore, ignored } from './errorPolicy';
+import { jsonWith } from './storeCore';
+import { writeBehind } from './writeBehind';
 
 export const CHANNELS_SCROLL_KEY = 'scroll:channels';
 export function convScrollKey(convId: string): string {
@@ -16,14 +19,14 @@ export interface FeedAnchor {
 
 const WRITE_DEBOUNCE_MS = 300;
 
-export const AT_BOTTOM_THRESHOLD_PX = 24;
-
 function debouncedKv<T>(parse: (raw: string | null) => T | undefined, write: (key: string, value: T) => Promise<void>) {
   const values = new Map<string, T>();
-  const timers = new Map<string, ReturnType<typeof setTimeout>>();
-  const persist = (key: string): void => {
-    const v = values.get(key);
-    if (v !== undefined) ignore(write(key, v), 'cache');
+  const writes = writeBehind<T>({ delayMs: WRITE_DEBOUNCE_MS }, (key, value) => {
+    ignore(write(key, value), 'cache');
+  });
+  const save = (key: string, value: T): void => {
+    values.set(key, value);
+    writes.set(key, value);
   };
   return {
     peek: (key: string): T | undefined => values.get(key),
@@ -33,25 +36,10 @@ function debouncedKv<T>(parse: (raw: string | null) => T | undefined, write: (ke
       if (v !== undefined) values.set(key, v);
       return v;
     },
-    save(key: string, value: T): void {
-      values.set(key, value);
-      clearTimeout(timers.get(key));
-      timers.set(
-        key,
-        setTimeout(() => {
-          timers.delete(key);
-          persist(key);
-        }, WRITE_DEBOUNCE_MS),
-      );
-    },
+    save,
     flush(key: string, override?: T): void {
-      const t = timers.get(key);
-      if (t) {
-        clearTimeout(t);
-        timers.delete(key);
-      }
-      if (override !== undefined) values.set(key, override);
-      if (override !== undefined || t) persist(key);
+      if (override !== undefined) save(key, override);
+      writes.flush(key);
     },
   };
 }
@@ -66,14 +54,10 @@ function parseOffset(raw: string | null): number | undefined {
   return isOffset(n) ? n : undefined;
 }
 
+const anchorJson = jsonWith(z.object({ key: z.string(), offset: z.number() }));
+
 function parseAnchor(raw: string | null): FeedAnchor | null {
-  if (raw === null) return null;
-  try {
-    const v = JSON.parse(raw) as Partial<FeedAnchor> | null;
-    return typeof v?.key === 'string' && typeof v.offset === 'number' ? { key: v.key, offset: v.offset } : null;
-  } catch {
-    return null;
-  }
+  return raw === null ? null : (anchorJson(raw) ?? null);
 }
 
 const offsets = debouncedKv<number>(parseOffset, (key, v) => appStorage.set(key, String(v)));
@@ -103,27 +87,6 @@ export function getScrollOffset(key: string): Promise<number | undefined> {
 
 export function saveScrollOffset(key: string, offset: number): void {
   if (isOffset(offset)) offsets.save(key, offset);
-}
-
-export function planFeedRestore(args: {
-  loaded: boolean;
-  contentHeight: number;
-  itemCount: number;
-  savedOffset: number | undefined;
-  now: number;
-  pinUntil: number;
-  setPinUntil: (t: number) => void;
-}): 'skip' | 'bottom' | { offset: number; done: true } {
-  const { loaded, contentHeight, itemCount, savedOffset, now, pinUntil, setPinUntil } = args;
-  if (!loaded || contentHeight <= 0 || itemCount === 0) return 'skip';
-  if (savedOffset == null || savedOffset <= 0) {
-    if (pinUntil === 0) {
-      setPinUntil(now + 1200);
-      return 'bottom';
-    }
-    return now > pinUntil ? 'skip' : 'bottom';
-  }
-  return { offset: Math.min(savedOffset, Math.max(0, contentHeight)), done: true };
 }
 
 export function markConvAtBottom(convId: string): void {

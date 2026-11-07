@@ -2,9 +2,10 @@ import { describe, expect, mock, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import * as ReactNativeWeb from 'react-native-web';
 import { FONT_SIZE, fontName, kitPalette, resolveColorToken } from '../src/tokens';
-import { HERO_TITLE_STYLE } from '../src/title.styles';
+import { derivePalette } from '../src/theme-derive';
 import { TEXT_FONTS } from '../src/text.styles';
 import { KitThemeProvider } from '../src/react-native/theme-context';
+import type { TitleProps } from '../src/react-native/title';
 
 mock.module('react-native', () => ReactNativeWeb);
 mock.module('../src/react-native/spinner', () => ({ Spinner: () => null }));
@@ -54,49 +55,77 @@ for (const kind of ['shortText', 'longText'] as const) {
   });
 }
 
-function normalizeInlineStyleOrder(html: string): string {
-  return html.replace(/style="([^"]*)"/g, (_match, declarations: string) => `style="${declarations.split(';').sort().join(';')}"`);
+function cssColor(hex: string): string {
+  const html = renderToStaticMarkup(<ReactNativeWeb.Text style={{ color: hex }}>Example</ReactNativeWeb.Text>);
+  const match = /color:([^;"]+)/.exec(html);
+  if (!match?.[1]) throw new Error(`no rendered colour for ${hex}`);
+  return match[1];
 }
 
-describe('Title style parity', () => {
-  for (const hero of [undefined, '3xl', '4xl'] as const) {
-    test(`${hero ?? 'default'} preserves levels, sizes, colors, themes and style overrides`, () => {
-      const levelSizes = { 1: 30, 2: 24, 3: 21 };
-      const sizeLevels = { sm: 3, md: 2, lg: 1 } as const;
-      for (const scheme of ['light', 'dark'] as const) {
-        const palette = kitPalette(scheme);
-        for (const level of [undefined, 1, 2, 3] as const) {
-          for (const size of [undefined, 'sm', 'md', 'lg'] as const) {
-            for (const color of [undefined, 'secondary', '#123456'] as const) {
-              for (const style of [undefined, { fontSize: 13, color: '#abcdef' }, [{ fontSize: 14 }, { lineHeight: 20 }]]) {
-                const base = Object.assign(
-                  {
-                    color: color != null ? resolveColorToken(color, scheme) : palette.link,
-                    fontSize: levelSizes[level ?? (size ? sizeLevels[size] : 2)],
-                    fontFamily: fontName.head,
-                  },
-                  hero === undefined ? {} : HERO_TITLE_STYLE[hero],
-                );
-                const actual = renderToStaticMarkup(
-                  <KitThemeProvider value={palette} scheme={scheme}>
-                    <Title level={level} size={size} hero={hero} color={color} style={style} numberOfLines={2}>
-                      Example
-                    </Title>
-                  </KitThemeProvider>,
-                );
-                const expected = renderToStaticMarkup(
-                  <ReactNativeWeb.Text style={style ? [base, style] : base} numberOfLines={2}>
-                    Example
-                  </ReactNativeWeb.Text>,
-                );
-                expect(normalizeInlineStyleOrder(actual)).toBe(normalizeInlineStyleOrder(expected));
-              }
-            }
-          }
-        }
-      }
-    });
-  }
+describe('Title', () => {
+  const titleHtml = (props: TitleProps): string => renderToStaticMarkup(<Title {...props}>Example</Title>);
+
+  test('levels pick the heading size in the head font, a level wins over a size and the default is level 2', () => {
+    expect(titleHtml({})).toContain('font-size:24px');
+    expect(titleHtml({})).toContain(`font-family:${fontName.head}`);
+    expect(titleHtml({ level: 1 })).toContain('font-size:30px');
+    expect(titleHtml({ level: 3 })).toContain('font-size:21px');
+    expect(titleHtml({ size: 'lg' })).toContain('font-size:30px');
+    expect(titleHtml({ size: 'sm' })).toContain('font-size:21px');
+    expect(titleHtml({ level: 1, size: 'sm' })).toContain('font-size:30px');
+  });
+
+  test('hero titles take the landing sizes in the regular font, whatever the level', () => {
+    const big = titleHtml({ hero: '4xl', level: 3 });
+    expect(big).toContain('font-size:76px');
+    expect(big).toContain('line-height:83.6px');
+    expect(big).toContain(`font-family:${fontName.sans}`);
+    expect(big).not.toContain(fontName.head);
+    const onboarding = titleHtml({ hero: '3xl' });
+    expect(onboarding).toContain('font-size:38px');
+    expect(onboarding).toContain('line-height:46px');
+  });
+
+  test('the default colour follows the provided palette, even a derived one', () => {
+    const derived = derivePalette(
+      {
+        accent: { primary: '#ff6600', level: 3 },
+        grayscale: { hue: 210, tint: 4, shade: 1 },
+        surface: { background: '#101820', foreground: '#c0c8d0' },
+      },
+      'dark',
+    );
+    expect(derived.link).not.toBe(kitPalette('dark').link);
+    const html = renderToStaticMarkup(
+      <KitThemeProvider value={derived} scheme="dark">
+        <Title>Example</Title>
+      </KitThemeProvider>,
+    );
+    expect(html).toContain(cssColor(derived.link));
+  });
+
+  test('a colour token resolves for the scheme and a hex colour is used as given', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const html = renderToStaticMarkup(
+        <KitThemeProvider value={kitPalette(scheme)} scheme={scheme}>
+          <Title color="secondary">Example</Title>
+          <Title color="#123456">Example</Title>
+        </KitThemeProvider>,
+      );
+      expect(html).toContain(cssColor(resolveColorToken('secondary', scheme)));
+      expect(html).toContain(cssColor('#123456'));
+    }
+  });
+
+  test('a style prop wins over the computed style, as an object or a list', () => {
+    const single = titleHtml({ style: { fontSize: 13, color: '#abcdef' } });
+    expect(single).toContain('font-size:13px');
+    expect(single).not.toContain('font-size:24px');
+    expect(single).toContain(cssColor('#abcdef'));
+    const list = titleHtml({ style: [{ fontSize: 14 }, { lineHeight: 20 }] });
+    expect(list).toContain('font-size:14px');
+    expect(list).toContain('line-height:20px');
+  });
 });
 
 describe('Button labels', () => {

@@ -1,9 +1,10 @@
+import { errorLine } from '@stage-labs/client/errors';
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'expo-router';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { addGroupMembers } from '../../lib/xmtp.groups';
-import { refreshConv, useConvRow } from '../../modules/messaging/queries';
-import { memberAddressesOf } from '../../modules/messaging/convRow.model';
+import { refreshConv, useConvRow } from '../../lib/messaging/queries';
+import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { capabilities } from '../../lib/capabilities';
 import { closeAddMembers, useAddMembersConv } from '../../lib/memberList';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
@@ -33,7 +34,7 @@ export function AddMembersForm({ convId, onDone }: { convId: string; onDone: () 
       onDone();
       capabilities.toast(count === 1 ? 'Member added' : `${count} members added`);
     } catch (err) {
-      capabilities.toast((err as Error)?.message ?? "Couldn't add members");
+      capabilities.toast(errorLine(err, "Couldn't add members"));
       setSubmitting(false);
     }
   };

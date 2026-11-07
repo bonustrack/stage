@@ -1,5 +1,6 @@
+import type { RefObject } from 'react';
 import type { FlatListProps } from 'react-native';
-import type { SimultaneousRefs } from '../SwipeTabs.types';
+import type { SimultaneousRefs } from './simultaneousRefs';
 
 type SharedFlatListProps<T> = Pick<
   FlatListProps<T>,
@@ -37,12 +38,20 @@ type SharedFlatListProps<T> = Pick<
 
 export type ListScrollMode = 'window' | 'self';
 
+export interface PersistedScroll {
+  listRef: RefObject<VirtualListHandle | null>;
+  save(offset: number): void;
+  restore(contentHeight: number, documentRestoresReturns?: boolean): void;
+  resetToTop(): void;
+}
+
 export interface VirtualListProps<T> extends SharedFlatListProps<T> {
   simultaneousHandlers?: SimultaneousRefs;
   scroll?: ListScrollMode;
   anchor?: 'start' | 'end';
   estimatedItemSize?: number;
   stickToEnd?: () => boolean;
+  persist?: PersistedScroll;
 }
 
 export interface ListAnchor {

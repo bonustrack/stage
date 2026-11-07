@@ -28,18 +28,21 @@ import { IconArrowUpRight } from '@central-icons-react-native/round-outlined-rad
 import { IconArrowsShow } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowsShow';
 import { IconAt } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconAt';
 import { IconAudio } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconAudio';
+import { IconBackward } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBackward';
 import { IconBarcode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBarcode';
 import { IconBarsThree } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBarsThree';
 import { IconBarsThree2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBarsThree2';
 import { IconBarsTwo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBarsTwo';
 import { IconBasket1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBasket1';
 import { IconBell } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBell';
+import { IconBellOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBellOff';
 import { IconBento } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBento';
 import { IconBirthdayCake } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBirthdayCake';
 import { IconBlock } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBlock';
 import { IconBluetooth } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBluetooth';
 import { IconBook } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBook';
 import { IconBookmark } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBookmark';
+import { IconBrokenHeart } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBrokenHeart';
 import { IconBrush } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBrush';
 import { IconBubble2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble2';
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
@@ -188,6 +191,7 @@ import { IconMinimize } from '@central-icons-react-native/round-outlined-radius-
 import { IconMinusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMinusLarge';
 import { IconMinusSmall } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMinusSmall';
 import { IconMoon } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMoon';
+import { IconMute } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMute';
 import { IconNewspaper } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconNewspaper';
 import { IconNotebook } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconNotebook';
 import { IconPageAdd } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPageAdd';
@@ -240,6 +244,7 @@ import { IconShoppingBag1 } from '@central-icons-react-native/round-outlined-rad
 import { IconSidebar } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSidebar';
 import { IconSidebarSimpleLeftWide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSidebarSimpleLeftWide';
 import { IconSidebarSimpleRightWide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSidebarSimpleRightWide';
+import { IconSkip } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSkip';
 import { IconSparkle } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSparkle';
 import { IconSparklesThree } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSparklesThree';
 import { IconSquareArrowTopRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareArrowTopRight';
@@ -250,6 +255,7 @@ import { IconSquareChecklist } from '@central-icons-react-native/round-outlined-
 import { IconSquarePlaceholder } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquarePlaceholder';
 import { IconSquarePlus } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquarePlus';
 import { IconStar } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconStar';
+import { IconStarLines } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconStarLines';
 import { IconStop } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconStop';
 import { IconSuitcaseWork } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSuitcaseWork';
 import { IconSun } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSun';
@@ -273,6 +279,7 @@ import { IconVariables } from '@central-icons-react-native/round-outlined-radius
 import { IconVideo } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideo';
 import { IconVideoClip } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideoClip';
 import { IconVideoOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVideoOff';
+import { IconVolumeDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVolumeDown';
 import { IconVolumeFull } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVolumeFull';
 import { IconVolumeOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVolumeOff';
 import { IconVolumeUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVolumeUp';
@@ -532,18 +539,21 @@ export const CENTRAL_ICONS: Record<CentralIconName, { line: CentralIcon; solid?:
   arrowsShow: { line: IconArrowsShow, solid: IconArrowsShowSolid },
   at: { line: IconAt, solid: IconAtSolid },
   audio: { line: IconAudio, solid: IconAudioSolid },
+  backward: { line: IconBackward },
   barcode: { line: IconBarcode },
   barsThree: { line: IconBarsThree, solid: IconBarsThreeSolid },
   barsThree2: { line: IconBarsThree2, solid: IconBarsThree2Solid },
   barsTwo: { line: IconBarsTwo, solid: IconBarsTwoSolid },
   basket1: { line: IconBasket1, solid: IconBasket1Solid },
   bell: { line: IconBell, solid: IconBellSolid },
+  bellOff: { line: IconBellOff },
   bento: { line: IconBento },
   birthdayCake: { line: IconBirthdayCake, solid: IconBirthdayCakeSolid },
   block: { line: IconBlock },
   bluetooth: { line: IconBluetooth },
   book: { line: IconBook, solid: IconBookSolid },
   bookmark: { line: IconBookmark, solid: IconBookmarkSolid },
+  brokenHeart: { line: IconBrokenHeart },
   brush: { line: IconBrush },
   bubble2: { line: IconBubble2, solid: IconBubble2Solid },
   bubble3: { line: IconBubble3, solid: IconBubble3Solid },
@@ -692,6 +702,7 @@ export const CENTRAL_ICONS: Record<CentralIconName, { line: CentralIcon; solid?:
   minusLarge: { line: IconMinusLarge, solid: IconMinusLargeSolid },
   minusSmall: { line: IconMinusSmall, solid: IconMinusSmallSolid },
   moon: { line: IconMoon, solid: IconMoonSolid },
+  mute: { line: IconMute },
   newspaper: { line: IconNewspaper, solid: IconNewspaperSolid },
   notebook: { line: IconNotebook },
   pageAdd: { line: IconPageAdd, solid: IconPageAddSolid },
@@ -744,6 +755,7 @@ export const CENTRAL_ICONS: Record<CentralIconName, { line: CentralIcon; solid?:
   sidebar: { line: IconSidebar },
   sidebarSimpleLeftWide: { line: IconSidebarSimpleLeftWide },
   sidebarSimpleRightWide: { line: IconSidebarSimpleRightWide },
+  skip: { line: IconSkip },
   sparkle: { line: IconSparkle },
   sparklesThree: { line: IconSparklesThree, solid: IconSparklesThreeSolid },
   squareArrowTopRight: { line: IconSquareArrowTopRight, solid: IconSquareArrowTopRightSolid },
@@ -754,6 +766,7 @@ export const CENTRAL_ICONS: Record<CentralIconName, { line: CentralIcon; solid?:
   squarePlaceholder: { line: IconSquarePlaceholder },
   squarePlus: { line: IconSquarePlus, solid: IconSquarePlusSolid },
   star: { line: IconStar, solid: IconStarSolid },
+  starLines: { line: IconStarLines },
   stop: { line: IconStop, solid: IconStopSolid },
   suitcaseWork: { line: IconSuitcaseWork, solid: IconSuitcaseWorkSolid },
   sun: { line: IconSun, solid: IconSunSolid },
@@ -777,6 +790,7 @@ export const CENTRAL_ICONS: Record<CentralIconName, { line: CentralIcon; solid?:
   video: { line: IconVideo, solid: IconVideoSolid },
   videoClip: { line: IconVideoClip, solid: IconVideoClipSolid },
   videoOff: { line: IconVideoOff },
+  volumeDown: { line: IconVolumeDown },
   volumeFull: { line: IconVolumeFull },
   volumeOff: { line: IconVolumeOff, solid: IconVolumeOffSolid },
   volumeUp: { line: IconVolumeUp, solid: IconVolumeUpSolid },

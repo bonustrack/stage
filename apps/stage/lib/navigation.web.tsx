@@ -17,7 +17,7 @@ import {
 } from 'expo-router/react-navigation';
 import { useEffect, useLayoutEffect } from 'react';
 import { usePathname, withLayoutContext } from 'expo-router';
-import { WEB_TAB_BACK_BEHAVIOR } from './navigation.model';
+import { hashPath } from '@stage-labs/client/routing/stageLinks';
 import { Column } from '@stage-labs/kit/react-native/column';
 
 type FlowScreenOptions = Record<string, unknown>;
@@ -86,7 +86,7 @@ function FlowTabNavigator({
   screenListeners,
   screenOptions,
   screenLayout,
-  backBehavior = WEB_TAB_BACK_BEHAVIOR,
+  backBehavior = 'fullHistory',
 }: FlowProps<TabNavigationState<ParamListBase>, TabRouterOptions>): React.ReactElement {
   const { state, descriptors, NavigationContent } = useNavigationBuilder<
     TabNavigationState<ParamListBase>,
@@ -126,4 +126,14 @@ export function useDocumentScrollRestore(): void {
   useLayoutEffect(() => {
     window.scrollTo({ top: positions.get(pathname) ?? 0, behavior: 'instant' });
   }, [pathname]);
+}
+
+export function currentRoute(pathname: string): string {
+  return hashPath(window.location.hash) ?? pathname;
+}
+
+export function prettifyRouteQuery(): void {
+  const hash = window.location.hash;
+  const pretty = hash.replace(/%2F/gi, '/');
+  if (pretty !== hash) window.history.replaceState(window.history.state, '', pretty);
 }

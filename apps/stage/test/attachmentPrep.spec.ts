@@ -1,5 +1,8 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { makeAttachmentPrep, sendPreparedAttachment } from '../lib/xmtp.attachmentPrep.core';
+import { makeAttachmentPrep } from '../lib/xmtp.attachmentPrep.core';
+import { sendPreparedAttachment, sendPreparedMessage, type SendTarget } from '../lib/xmtp.messageSend.core';
+
+const targetOf = <C>(conv: C): SendTarget<C> => ({ conv, assertCurrent: () => undefined });
 
 const photo = { fileUri: 'blob:photo', mimeType: 'image/png', filename: 'photo.png' };
 const clip = { fileUri: 'blob:clip', mimeType: 'video/mp4', filename: 'clip.mp4' };
@@ -34,7 +37,7 @@ describe('attachment send account capture', () => {
           },
           find: async () => {
             if (phase === 'find') current = false;
-            return 'shared group';
+            return targetOf('shared group');
           },
           send: async () => {
             sent = true;
@@ -52,16 +55,14 @@ describe('attachment send account capture', () => {
       const send = mock(async () => 'id');
       await expect(
         sendPreparedAttachment({
-          assertCurrent: () => {
-            return;
-          },
+          assertCurrent: () => undefined,
           uploaded: async () => {
             if (phase === 'upload') accepted = false;
             return ['encrypted'];
           },
           find: async () => {
             if (phase === 'find') accepted = false;
-            return 'conversation';
+            return targetOf('conversation');
           },
           beforeSend: async () => {
             if (!accepted) throw new Error('destination changed');
@@ -82,7 +83,7 @@ describe('attachment send account capture', () => {
           if (!current) throw new Error('account changed');
         },
         uploaded: async () => ['encrypted'],
-        find: async () => 'conversation',
+        find: async () => targetOf('conversation'),
         beforeSend: async () => {
           current = false;
         },
@@ -105,7 +106,7 @@ describe('attachment send account capture', () => {
         },
         find: async () => {
           order.push('prepare');
-          return 'conversation';
+          return targetOf('conversation');
         },
         send: async (_conv, infos) => {
           order.push('send');
@@ -115,6 +116,27 @@ describe('attachment send account capture', () => {
       }),
     ).toBe('id');
     expect(order).toEqual(['check', 'upload', 'check', 'check', 'prepare', 'check', 'send']);
+  });
+});
+
+describe('message send', () => {
+  test('rechecks the conversation target after the before-send hook, before transport', async () => {
+    let current = true;
+    const send = mock(async () => 'id');
+    const target: SendTarget<string> = {
+      conv: 'conversation',
+      assertCurrent: () => {
+        if (!current) throw new Error('account changed');
+      },
+    };
+    const beforeSend = async (): Promise<void> => {
+      current = false;
+    };
+    await expect(sendPreparedMessage({ find: async () => target, beforeSend, send })).rejects.toThrow('account changed');
+    expect(send).not.toHaveBeenCalled();
+    current = true;
+    expect(await sendPreparedMessage({ find: async () => target, send })).toBe('id');
+    expect(send).toHaveBeenCalledWith('conversation');
   });
 });
 

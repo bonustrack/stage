@@ -1,4 +1,6 @@
+import { backoffDelay } from '@stage-labs/client/timing';
 import type { SpeechBridge, SpeechEvent } from '../../lib/speech.types';
+import { report } from '../../lib/errorPolicy';
 import { dictationDraft, type DictationDraft, type DictationPhase } from './dictation.model';
 
 interface DictationHost {
@@ -119,7 +121,8 @@ async function finishCapture(r: Runtime, s: Session, request: boolean): Promise<
   if (!request) return;
   try {
     await r.bridge.stop(capture.id);
-  } catch {
+  } catch (err) {
+    report('dictation.stop', err);
     failed(r, s, 'Could not finish dictation. Your draft was kept.');
   }
 }
@@ -131,7 +134,8 @@ async function stop(r: Runtime): Promise<void> {
   if (!s.capture || s.capture.state === 'starting') {
     try {
       await cancel(r);
-    } catch {
+    } catch (err) {
+      report('dictation.cancel', err);
       r.host.error('Could not release dictation audio. Try stopping again. Your draft was kept.');
     }
     return;
@@ -192,7 +196,7 @@ function completed(r: Runtime, s: Session, event: SpeechEvent): void {
     return;
   }
   phase(r, s, 'restarting');
-  const delay = Math.min(r.restartMs * 2 ** s.rapidEnds, 2000);
+  const delay = backoffDelay(s.rapidEnds + 1, { baseMs: r.restartMs, maxMs: 2000 });
   s.timer = setTimeout(() => {
     void startCapture(r, s);
   }, delay);
@@ -292,7 +296,8 @@ async function recordVoice(r: Runtime, action: () => Promise<void>): Promise<voi
       return;
     }
     await action();
-  } catch {
+  } catch (err) {
+    report('dictation.voice', err);
     r.host.error('Could not release dictation audio. Try again before recording voice. Your draft was kept.');
   } finally {
     r.voiceStarting = false;

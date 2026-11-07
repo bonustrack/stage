@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { bubbleShift } from '../lib/railTooltip';
+import { bubbleShift } from '../components/system/railTooltip';
 
 describe('tooltip bubble stays on screen', () => {
   test('no shift when it fits', () => {

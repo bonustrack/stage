@@ -7,11 +7,8 @@ export interface PublicSendCall {
   data?: Hex;
 }
 
-export function parseSendAmount(amount: string, decimals: number): bigint {
+function parseSendAmount(amount: string, decimals: number): bigint {
   const trimmed = typeof amount === 'string' ? amount.trim() : '';
-  if (!/^\d+(\.\d+)?$/.test(trimmed)) throw new Error('Invalid amount');
-  const frac = trimmed.split('.')[1] ?? '';
-  if (frac.length > decimals) throw new Error('Invalid amount');
   let value: bigint;
   try {
     value = parseUnits(trimmed, decimals);

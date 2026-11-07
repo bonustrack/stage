@@ -1,15 +1,19 @@
 import { describe, expect, mock, test } from 'bun:test';
 import {
-  acceptedShareConsent,
-  mergeShareRows,
+  matchingDestinations,
   parseIncomingShare,
   sharedAttachments,
   shareDestinations,
   shareError,
 } from '../components/share/share.model';
+import { acceptedShareConsent } from '../lib/shareDestination.model';
 import { currentShareDraft, makeShareSender } from '../components/share/shareSend.model';
 import { planSendSteps } from '../components/composer/send.model';
-import { sendPreparedMessage } from '../lib/xmtp.messageSend.core';
+import { sendPreparedMessage, type SendTarget } from '../lib/xmtp.messageSend.core';
+import type { CachedRow as Row } from '../lib/cachedRows.model';
+import { row } from './rowFixture';
+
+const targetOf = <C>(conv: C): SendTarget<C> => ({ conv, assertCurrent: () => undefined });
 
 const id = 'f1363f20-9a10-4e7c-9adc-5da913462fc4';
 const file = (index = 0, size = 1_024) => ({
@@ -22,18 +26,12 @@ const ready = (files: unknown[] = [file()]) => ({ id, status: 'ready', files });
 
 function sendEffects() {
   return {
-    validate: mock(async () => () => {
-      return;
-    }),
+    validate: mock(async () => (): void => undefined),
     start: mock(() => 'started'),
     finish: mock(async () => true),
-    success: mock(async () => {
-      return;
-    }),
+    success: mock(async () => undefined),
     busy: mock((value: boolean) => value),
-    error: mock(() => {
-      return;
-    }),
+    error: mock(() => undefined),
   };
 }
 
@@ -108,29 +106,27 @@ describe('incoming share boundary', () => {
     expect(acceptedShareConsent(true, false, 'denied')).toBe(true);
   });
 
-  test('cache updates retain newly discovered destinations while applying changed rows', () => {
-    const discovered = { convId: 'new', title: 'New channel' };
-    const previous = { convId: 'old', title: 'Old title' };
-    const changed = { ...previous, title: 'Changed title' };
-    expect(mergeShareRows([discovered, previous], [changed])).toEqual([discovered, changed]);
-    expect(mergeShareRows(null, [changed])).toEqual([changed]);
-    expect(mergeShareRows([discovered], null)).toEqual([discovered]);
-  });
-
   test('only offers accepted existing destinations, never sync groups or deleted chats', () => {
-    const base = { convId: 'channel', title: 'Design', unreadCount: 0, lastReadNs: 0, consent: 'allowed', peerAddress: null };
-    const rows = [
+    const base = row('channel', { title: 'Design', lastBubbleTs: null });
+    const rows: Row[] = [
       base,
       { ...base, convId: 'request', consent: 'unknown' },
       { ...base, convId: 'blocked', consent: 'denied' },
       { ...base, convId: 'sync', groupName: 'stage.sync:owner' },
       { ...base, convId: 'deleted', peerAddress: '0xpeer', lastBubbleTs: 10 },
     ];
-    expect(shareDestinations(rows, { '0xpeer': 11 }, 'DES')).toEqual([
+    expect(shareDestinations(rows, { '0xpeer': 11 })).toEqual([
       { convId: 'channel', title: 'Design', peerAddress: null, avatarUri: null, lastBubbleTs: null },
     ]);
-    expect(shareDestinations(null, {}, '')).toEqual([]);
-    expect(shareDestinations(rows, {}, 'missing')).toEqual([]);
+    expect(shareDestinations(null, {})).toEqual([]);
+  });
+
+  test('the picker lists the destinations whose title matches the search, ignoring case and spaces', () => {
+    const design = { convId: 'channel', title: 'Design', peerAddress: null, avatarUri: null, lastBubbleTs: null };
+    const team = { ...design, convId: 'team', title: 'Team' };
+    expect(matchingDestinations([design, team], ' DES ')).toEqual([design]);
+    expect(matchingDestinations([design, team], '')).toEqual([design, team]);
+    expect(matchingDestinations([design, team], 'missing')).toEqual([]);
   });
 });
 
@@ -170,9 +166,7 @@ describe('explicit share send gate', () => {
     await sender.send();
     expect(effects.validate).toHaveBeenCalledTimes(1);
     expect(effects.start).not.toHaveBeenCalled();
-    checked.resolve(() => {
-      return;
-    });
+    checked.resolve(() => undefined);
     await first;
     expect(effects.start).toHaveBeenCalledTimes(1);
     expect(effects.success).toHaveBeenCalledTimes(1);
@@ -210,14 +204,14 @@ describe('explicit share send gate', () => {
     });
     const transport = mock(async () => 'sent-caption');
     const submit = (guard?: () => Promise<void>) =>
-      sendPreparedMessage(
-        () => {
+      sendPreparedMessage({
+        find: () => {
           entered.resolve(true);
-          return prepared.promise;
+          return prepared.promise.then(targetOf);
         },
-        transport,
-        guard,
-      );
+        beforeSend: guard,
+        send: transport,
+      });
     const steps = planSendSteps(
       'line',
       'caption',
@@ -229,9 +223,7 @@ describe('explicit share send gate', () => {
         attachments: mock(async () => 'files'),
       },
       () => 'local',
-      () => {
-        return;
-      },
+      () => undefined,
       validate,
     );
     const result = steps[0]?.run();
@@ -254,7 +246,7 @@ describe('explicit share send gate', () => {
       [],
       undefined,
       {
-        text: (_line, _text, guard) => sendPreparedMessage(async () => 'channel', transport, guard),
+        text: (_line, _text, guard) => sendPreparedMessage({ find: async () => targetOf('channel'), beforeSend: guard, send: transport }),
         reply: mock(async () => 'reply'),
         attachments: mock(async () => 'files'),
       },

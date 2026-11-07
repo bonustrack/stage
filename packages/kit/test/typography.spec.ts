@@ -1,90 +1,37 @@
 import { describe, expect, test } from 'bun:test';
-import { resolveBadgeStyle, type BadgeSize } from '../src/badge';
-import { SIZES } from '../src/button.styles';
-import { CONTROL_SIZES, controlBoxStyle, controlColors, controlTextStyle, textFieldStyle, type ControlSize } from '../src/control.styles';
+import { BUTTON_SIZES, SIZES } from '../src/button.styles';
+import { CONTROL_SIZES, controlColors, controlTextStyle, type ControlSize } from '../src/control.styles';
 import { markdownStyles } from '../src/markdown.styles';
 import { resolveTextSize } from '../src/text.styles';
-import { FONT_SIZE, FONT_SIZE_SNAP, fontName, fontSize, type FontSizeName } from '../src/tokens';
-import { BALANCE_TITLE_STYLE, HERO_TITLE_STYLE } from '../src/title.styles';
+import { FONT_SIZE, fontFamily, fontName, fontSize, kitTheme, type FontSizeName } from '../src/tokens';
 
-const TEXT_SIZES: Record<FontSizeName, number> = { '3xs': 13, '2xs': 14, xs: 16, sm: 17, md: 18, lg: 19, xl: 20, '2xl': 24, '3xl': 26 };
-
-describe('hero title typography', () => {
-  test('4xl matches the landing headline without a semibold font', () => {
-    expect(HERO_TITLE_STYLE['4xl']).toEqual({ fontSize: 76, lineHeight: 83.6, fontFamily: fontName.sans });
-  });
-
-  test('balance typography keeps the former wallet hero appearance', () => {
-    expect(BALANCE_TITLE_STYLE).toEqual({ fontSize: 60, lineHeight: 63, fontFamily: fontName.head });
-  });
-
-  test('3xl matches the onboarding heading without a semibold font', () => {
-    expect(HERO_TITLE_STYLE['3xl']).toEqual({ fontSize: 38, lineHeight: 46, fontFamily: fontName.sans });
+describe('font families', () => {
+  test('the theme reports the families the components draw with, the whole mono stack on web', () => {
+    expect(fontName.mono).toBe('Menlo, ui-monospace, monospace');
+    expect(fontName.mono).toBe(fontFamily.mono.join(', '));
+    expect(kitTheme('light').typography).toMatchObject({ fontFamily: fontName.sans, fontFamilyMono: fontName.mono });
   });
 });
 
 describe('text size tokens', () => {
-  test('all options resolve to their named numeric sizes', () => {
-    expect(FONT_SIZE).toEqual(TEXT_SIZES);
-    for (const name of Object.keys(TEXT_SIZES) as FontSizeName[]) {
-      expect(fontSize(name)).toBe(TEXT_SIZES[name]);
-      expect(resolveTextSize(name, 'body')).toBe(TEXT_SIZES[name]);
-      expect(resolveTextSize(name, 'caption')).toBe(TEXT_SIZES[name]);
+  test('every Text size resolves through fontSize and resolveTextSize alike, whatever the variant', () => {
+    for (const name of Object.keys(FONT_SIZE) as FontSizeName[]) {
+      expect(fontSize(name)).toBe(FONT_SIZE[name]);
+      expect(resolveTextSize(name, 'body')).toBe(FONT_SIZE[name]);
+      expect(resolveTextSize(name, 'caption')).toBe(FONT_SIZE[name]);
     }
-    expect(Object.hasOwn(FONT_SIZE, '4xs')).toBe(false);
-    expect(Object.hasOwn(FONT_SIZE, '4xl')).toBe(false);
-    expect(Object.values(FONT_SIZE)).not.toContain(15);
   });
 
-  test('snapping uses current names and promotes removed 15px text to xs', () => {
-    expect(FONT_SIZE_SNAP).toEqual({
-      '10': '3xs',
-      '11': '3xs',
-      '12': '3xs',
-      '13': '3xs',
-      '14': '2xs',
-      '15': 'xs',
-      '16': 'xs',
-      '17': 'sm',
-      '18': 'md',
-      '19': 'lg',
-      '20': 'xl',
-      '22': '2xl',
-      '24': '2xl',
-      '26': '3xl',
-      '28': '3xl',
-      '34': '3xl',
-      '38': '3xl',
-    });
-    for (const token of Object.values(FONT_SIZE_SNAP)) expect(FONT_SIZE[token]).toBeDefined();
-  });
-
-  test('button and badge text follow their size mapping', () => {
-    expect(Object.values(SIZES).map((size) => size.fontSize)).toEqual([14, 16, 17, 18, 19]);
-    const badgeText: Record<BadgeSize, number> = { '3xs': 13, '2xs': 13, sm: 13, md: 15, lg: 16 };
-    for (const scheme of ['light', 'dark'] as const) {
-      for (const size of Object.keys(badgeText) as BadgeSize[]) {
-        expect(resolveBadgeStyle(undefined, undefined, size, scheme).fontSize).toBe(badgeText[size]);
-      }
-    }
+  test('button labels are Text sizes that grow with the button', () => {
+    const labels = BUTTON_SIZES.map((size) => SIZES[size].fontSize);
+    for (const label of labels) expect(Object.values(FONT_SIZE)).toContain(label);
+    expect(labels).toEqual([...labels].sort((a, b) => a - b));
+    expect(new Set(labels).size).toBe(labels.length);
   });
 });
 
-describe('xs typography', () => {
-  test('xs text is 16px and body and caption sizes are unchanged', () => {
-    expect(resolveTextSize('xs', undefined)).toBe(16);
-    expect(resolveTextSize(undefined, 'body')).toBe(18);
-    expect(resolveTextSize(undefined, 'caption')).toBe(13);
-  });
-
-  test('input text matches each Text size without resizing controls or changing TextField', () => {
-    expect(CONTROL_SIZES).toEqual({
-      xs: { minHeight: 32, paddingHorizontal: 10, paddingVertical: 5, fontSize: 14 },
-      sm: { minHeight: 36, paddingHorizontal: 11, paddingVertical: 6, fontSize: 14 },
-      md: { minHeight: 40, paddingHorizontal: 12, paddingVertical: 8, fontSize: 16 },
-      lg: { minHeight: 48, paddingHorizontal: 14, paddingVertical: 10, fontSize: 16 },
-      xl: { minHeight: 56, paddingHorizontal: 16, paddingVertical: 12, fontSize: 17 },
-    });
+describe('control typography', () => {
+  test('input text matches the Text of the same size in every variant and theme', () => {
     for (const size of Object.keys(CONTROL_SIZES) as ControlSize[]) {
       for (const variant of ['soft', 'outline'] as const) {
         for (const dark of [false, true]) {
@@ -96,12 +43,6 @@ describe('xs typography', () => {
             padding: 0,
             margin: 0,
           });
-          expect(controlBoxStyle(size, variant, colors, 8)).toMatchObject({
-            minHeight: CONTROL_SIZES[size].minHeight,
-            paddingHorizontal: CONTROL_SIZES[size].paddingHorizontal,
-            paddingVertical: CONTROL_SIZES[size].paddingVertical,
-          });
-          expect(textFieldStyle({ baseColors: colors }).text.fontSize).toBe(16);
         }
       }
     }
@@ -109,12 +50,9 @@ describe('xs typography', () => {
 
   test('Markdown defaults use xs, preserving larger headings and code sizes', () => {
     const styles = markdownStyles({ fg: '#fff', dark: true });
-    for (const key of ['body', 'strong', 'em', 'bullet_list_icon', 'ordered_list_icon']) {
+    for (const key of ['body', 'strong', 'em', 'bullet_list_icon', 'ordered_list_icon'])
       expect(styles[key]).toMatchObject({ fontSize: 16, lineHeight: 23 });
-    }
-    for (const [index, fontSize] of [24, 20, 17, 16, 16, 16].entries()) {
-      expect(styles[`heading${index + 1}`]).toMatchObject({ fontSize });
-    }
+    for (const [index, fontSize] of [24, 20, 17, 16, 16, 16].entries()) expect(styles[`heading${index + 1}`]).toMatchObject({ fontSize });
     expect(styles.code_inline).toMatchObject({ fontSize: 14 });
     expect(styles.code_block).toMatchObject({ fontSize: 13 });
   });
@@ -122,8 +60,6 @@ describe('xs typography', () => {
   test('explicit Markdown body size and scaled headings are unchanged', () => {
     const styles = markdownStyles({ fg: '#000', dark: false, fontSize: 18, lineHeight: 27 });
     expect(styles.body).toMatchObject({ fontSize: 18, lineHeight: 27 });
-    for (const [index, fontSize] of [29, 24, 21, 18, 18, 18].entries()) {
-      expect(styles[`heading${index + 1}`]).toMatchObject({ fontSize });
-    }
+    for (const [index, fontSize] of [29, 24, 21, 18, 18, 18].entries()) expect(styles[`heading${index + 1}`]).toMatchObject({ fontSize });
   });
 });

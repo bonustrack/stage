@@ -1,4 +1,6 @@
-import type { PollOption, PollQuestion } from '@stage-labs/client/xmtp/poll';
+import type { HistoryEntry } from '@stage-labs/client/types';
+import { normalizeQuestions, type PollOption, type PollQuestion } from '@stage-labs/client/xmtp/poll';
+import { pollContentOf } from '@stage-labs/client/xmtp/entryPayload';
 
 export interface PollOptionRow {
   label: string;
@@ -56,4 +58,18 @@ export function pollQuestionBlocks(
 ): PollQuestionBlock[] {
   const multiQuestion = questions.length > 1;
   return questions.map((q, qi) => questionBlock(q, qi, multiQuestion, votes?.get(qi), ownVotes?.get(qi)));
+}
+
+export interface Poll {
+  question?: string;
+  questions: PollQuestion[];
+}
+
+export function pollOf(entry: HistoryEntry): Poll | undefined {
+  const raw = pollContentOf(entry);
+  if (!raw) return undefined;
+  const questions = normalizeQuestions(raw);
+  const first = questions[0];
+  if (first === undefined) return undefined;
+  return { question: first.question, questions };
 }

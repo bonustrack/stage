@@ -1,4 +1,3 @@
-import { WALLET_ASSETS, WALLET_CHAIN_ID } from '@stage-labs/client/wallet/assets';
 import { isValidUsdPrice } from './balance.model';
 
 export interface WalletTotalRow {
@@ -17,60 +16,4 @@ export function walletTotalUsd(rows: readonly WalletTotalRow[] | null): number |
     total += row.priceUsd * balance;
   }
   return Number.isFinite(total) ? total : null;
-}
-
-export interface TokenRowAsset {
-  symbol: string;
-  name: string;
-  balance: string;
-  priceUsd: number | null;
-  change24h: number | null;
-  logoUrl: string;
-}
-
-export interface TokenRowFormat {
-  fmtUsd: (v: number, maxFrac?: number) => string;
-  fmtBalance: (v: string) => string;
-}
-
-export interface TokenRowFields {
-  title: string;
-  subtitle: string;
-  amount: string;
-  detail: string;
-  change: string;
-  logoUri: string;
-}
-
-export function tokenPriceText(r: Pick<TokenRowAsset, 'priceUsd' | 'symbol'>, fmtUsd: TokenRowFormat['fmtUsd']): string {
-  return r.priceUsd === null ? r.symbol : fmtUsd(r.priceUsd, r.priceUsd < 1 ? 4 : 2);
-}
-
-export function tokenChangeText(change24h: number | null): string {
-  return change24h === null ? '' : `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`;
-}
-
-export function tokenRowModel(r: TokenRowAsset, f: TokenRowFormat): TokenRowFields {
-  const valueUsd = r.priceUsd === null ? null : r.priceUsd * Number(r.balance);
-  const priceText = tokenPriceText(r, f.fmtUsd);
-  const changeText = tokenChangeText(r.change24h);
-  return {
-    title: r.name,
-    subtitle: priceText,
-    detail: `${f.fmtBalance(r.balance)} ${r.symbol}`,
-    amount: valueUsd !== null ? f.fmtUsd(valueUsd) : Number(r.balance) === 0 ? f.fmtUsd(0) : '',
-    change: changeText,
-    logoUri: r.logoUrl,
-  };
-}
-
-export interface TokenChoice {
-  symbol: string;
-  chainId: number;
-}
-
-export function sendTokenFor(symbol?: string, chainId?: string): TokenChoice {
-  const cid = chainId ? Number(chainId) : WALLET_CHAIN_ID;
-  const hit = WALLET_ASSETS.find((a) => a.symbol === symbol && a.chainId === cid);
-  return { symbol: hit?.symbol ?? 'ETH', chainId: WALLET_CHAIN_ID };
 }

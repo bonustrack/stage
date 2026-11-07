@@ -2,7 +2,7 @@ import { shortAddress } from '../identity/format';
 
 const MEMBER_ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 const NO_INBOX_RE = /inbox|identity|not.*regist|cannot.*find|address.*not found/i;
-const PERMISSION_RE = /permission|admin|not.*allow|denied|unauthor/i;
+const PERMISSION_RE = /permission|admin|not.*allow|not authori[sz]ed|denied|unauthor/i;
 
 export function validMemberAddresses(addresses: string[]): string[] {
   return addresses.map((a) => a.trim()).filter((a) => MEMBER_ADDRESS_RE.test(a));
@@ -21,7 +21,7 @@ export async function currentMemberAddresses(
   });
 }
 
-export function isNoInboxError(msg: string): boolean {
+function isNoInboxError(msg: string): boolean {
   return NO_INBOX_RE.test(msg);
 }
 
@@ -44,17 +44,6 @@ function createFailed(err: unknown): Error {
 }
 
 const NOT_ON_XMTP = "One or more addresses aren't on XMTP yet, so they can't be added.";
-
-export function mapCreateGroupError(err: unknown): Error {
-  return isNoInboxError(errorMessage(err)) ? new Error(NOT_ON_XMTP) : createFailed(err);
-}
-
-export function mapAddMembersError(err: unknown): Error {
-  const msg = errorMessage(err);
-  if (isNoInboxError(msg)) return new Error(NOT_ON_XMTP);
-  if (isPermissionError(msg)) return new Error('Only a channel admin can add members.');
-  return new Error(`Couldn't add members: ${msg}`);
-}
 
 function notOnXmtpError(addresses: string[]): Error {
   const who = addresses.map(shortAddress).join(', ');
@@ -86,7 +75,7 @@ export async function createGroupWith(
     const group = await create(members);
     return { line: lineOf(group.id), id: group.id };
   } catch (err) {
-    throw mapCreateGroupError(err);
+    throw isNoInboxError(errorMessage(err)) ? new Error(NOT_ON_XMTP) : createFailed(err);
   }
 }
 
@@ -95,7 +84,10 @@ export async function addGroupMembersWith(addresses: string[], add: (members: st
   try {
     await add(members);
   } catch (err) {
-    throw mapAddMembersError(err);
+    const msg = errorMessage(err);
+    if (isNoInboxError(msg)) throw new Error(NOT_ON_XMTP);
+    if (isPermissionError(msg)) throw new Error('Only a channel admin can add members.');
+    throw new Error(`Couldn't add members: ${msg}`);
   }
 }
 
@@ -133,24 +125,6 @@ export const UNKNOWN_GROUP_POLICY: GroupMetaPolicy = {
 const ROLE_RANK: Record<GroupRole, number> = { member: 0, admin: 1, owner: 2 };
 
 const POLICY_RANK: Record<GroupPolicyOption, number> = { allow: 0, unknown: 0, admin: 1, superAdmin: 2, deny: Number.POSITIVE_INFINITY };
-
-export function groupMetaPolicyOfSet(set: {
-  updateGroupNamePolicy: GroupPolicyOption;
-  updateGroupDescriptionPolicy: GroupPolicyOption;
-  updateGroupImagePolicy: GroupPolicyOption;
-  updateAppDataPolicy: GroupPolicyOption;
-  addMemberPolicy: GroupPolicyOption;
-  removeMemberPolicy: GroupPolicyOption;
-}): GroupMetaPolicy {
-  return {
-    name: set.updateGroupNamePolicy,
-    description: set.updateGroupDescriptionPolicy,
-    image: set.updateGroupImagePolicy,
-    appData: set.updateAppDataPolicy,
-    addMember: set.addMemberPolicy,
-    removeMember: set.removeMemberPolicy,
-  };
-}
 
 export function groupRoleOf(inboxId: string, staff: { admins: string[]; superAdmins: string[] }): GroupRole {
   const id = inboxId.toLowerCase();
@@ -190,11 +164,6 @@ export function canEditGroup(rights: GroupEditRights): boolean {
   return rights.name || rights.description || rights.image || rights.appData;
 }
 
-export function mapUpdateGroupError(err: unknown): Error {
-  const msg = errorMessage(err);
-  return new Error(isPermissionError(msg) ? "You don't have permission to edit this channel." : msg);
-}
-
 export interface GroupMetaPatch {
   name?: string;
   imageUrl?: string;
@@ -213,6 +182,7 @@ export async function updateGroupMetaWith(patch: GroupMetaPatch, ops: GroupMetaW
     if (patch.imageUrl !== undefined) await ops.updateImageUrl(patch.imageUrl);
     if (patch.description !== undefined) await ops.updateDescription(patch.description);
   } catch (err) {
-    throw mapUpdateGroupError(err);
+    const msg = errorMessage(err);
+    throw new Error(isPermissionError(msg) ? "You don't have permission to edit this channel." : msg);
   }
 }

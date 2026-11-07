@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { Animated, View, type StyleProp, type ViewStyle } from 'react-native';
-import { liftToBody } from './sortable.platform';
+import { liftToBody } from './dom';
 
 const OUT_OF_FLOW: ViewStyle = { position: 'absolute', left: 0, top: 0 };
 

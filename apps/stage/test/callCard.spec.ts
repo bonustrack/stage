@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { EMPTY_CALLS, type CallsState } from '@stage-labs/client/xmtp/callMachine';
 import { callCardModel, callLiveOf, callRecordsOf, type CallRecord } from '../components/bubble/callCard.model';
+import { messageEntry } from './helpers';
 
 const ME = 'xmtp:user:me';
 const PEER = 'xmtp:user:peer';
@@ -13,28 +14,11 @@ function at(sec: number): string {
 }
 
 function invite(id: string, from: string, sec: number, callId = 'call-0001', video = false): HistoryEntry {
-  return {
-    id,
-    ts: at(sec),
-    station: 'xmtp',
-    line: 'l',
-    from,
-    to: 'l',
-    text: '📞 Voice call',
-    payload: { contentType: 'callInvite', callInvite: { callId, from: `peer-${from.slice(-4)}`, video } },
-  };
+  return messageEntry(id, 'callInvite', { callId, from: `peer-${from.slice(-4)}`, video }, { ts: at(sec), from });
 }
 
 function signal(id: string, from: string, sec: number, kind: 'join' | 'leave', callId = 'call-0001'): HistoryEntry {
-  return {
-    id,
-    ts: at(sec),
-    station: 'xmtp',
-    line: 'l',
-    from,
-    to: 'l',
-    payload: { contentType: 'callSignal', callSignal: { kind, callId, from: `peer-${from.slice(-4)}` } },
-  };
+  return messageEntry(id, 'callSignal', { kind, callId, from: `peer-${from.slice(-4)}` }, { ts: at(sec), from });
 }
 
 const IDLE = { mine: null, joinable: false, busy: false };

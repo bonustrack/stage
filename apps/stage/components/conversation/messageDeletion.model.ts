@@ -1,9 +1,10 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { deletedTextOf, type DeletedBy } from '@stage-labs/client/xmtp/deleteMessage';
-import { deletedByOf, deletedEntryView, isDeletableEntry, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
+import { deletedEntryView, isDeletableEntry, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
+import { deletedByOf, isFrameActionEntry } from '@stage-labs/client/xmtp/entryPayload';
 import type { ConfirmOptions } from '../../lib/capabilities';
 import { previewOf } from './feed-helpers';
-import { isFrameActionEntry } from '../frame/frame.model';
+import { isLocalId } from '../composer/outbound';
 
 const DELETE_MESSAGE_CONFIRM: ConfirmOptions = {
   title: 'Delete message?',
@@ -30,7 +31,7 @@ export function isAdminDelete(entry: HistoryEntry, myUri: string): boolean {
 }
 
 export function canDeleteMessage(entry: HistoryEntry | null, { myUri, deleted, superAdmin }: DeleteAccess): boolean {
-  if (entry === null || entry.id.startsWith('tmp_') || !isDeletableEntry(entry) || deleted.has(entry.id)) return false;
+  if (entry === null || isLocalId(entry.id) || !isDeletableEntry(entry) || deleted.has(entry.id)) return false;
   return !isAdminDelete(entry, myUri) || superAdmin;
 }
 

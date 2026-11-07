@@ -1,14 +1,18 @@
+import type { DeleteRights } from '@stage-labs/client/xmtp/deletions';
 import type { MessageQuery } from './xmtp.sdk.core';
 import {
   FILE_PAGE_SIZE,
+  NO_DELETE_RIGHTS,
   NO_FINDINGS,
-  deletesToCheck,
   findingsOf,
   joinFindings,
+  needsDeleteRights,
   nextPageBeforeNs,
+  settleFindings,
   sinceFor,
   type ScanFindings,
   type ScannedMessage,
+  type SettledFindings,
   type StorageIndex,
 } from './storageIndex.model';
 
@@ -22,14 +26,14 @@ export interface ScanSource<C> {
   idOf: (conv: C) => string;
   page: (conv: C, query: MessageQuery) => Promise<ScannedMessage[]>;
   skip: (conv: C) => Promise<boolean>;
-  superAdmins: (conv: C) => Promise<ReadonlySet<string>>;
+  deleteRights: (conv: C) => Promise<DeleteRights>;
   current: () => boolean;
   failed: (err: unknown) => void;
 }
 
 export interface ScanSink {
   index: () => StorageIndex;
-  apply: (findings: Pick<ScanFindings, 'files' | 'deletedIds'>) => void;
+  apply: (findings: SettledFindings) => void;
   progress: (done: number, total: number) => void;
 }
 
@@ -64,25 +68,13 @@ async function conversationFindings<C>(conv: C, sinceNs: number, selfInboxId: st
   }
 }
 
-async function settledFindings<C>(
-  conv: C,
-  index: StorageIndex,
-  findings: ScanFindings,
-  source: ScanSource<C>,
-): Promise<Pick<ScanFindings, 'files' | 'deletedIds'>> {
-  const toCheck = deletesToCheck(index, findings);
-  if (toCheck.length === 0) return findings;
-  const supers = await source.superAdmins(conv);
-  const allowed = toCheck.filter((d) => supers.has(d.by.toLowerCase())).map((d) => d.target);
-  return { files: findings.files, deletedIds: [...findings.deletedIds, ...allowed] };
-}
-
 async function scanOne<C>(conv: C, sinceNs: number, source: ScanSource<C>, sink: ScanSink): Promise<boolean> {
   try {
     const findings = await conversationFindings(conv, sinceNs, sink.index().inboxId, source);
-    const settled = await settledFindings(conv, sink.index(), findings, source);
+    const index = sink.index();
+    const rights = needsDeleteRights(index, findings) ? await source.deleteRights(conv) : NO_DELETE_RIGHTS;
     assertCurrent(source);
-    sink.apply(settled);
+    sink.apply(settleFindings(index, findings, rights));
     return true;
   } catch (err) {
     if (err instanceof ScanStopped) throw err;

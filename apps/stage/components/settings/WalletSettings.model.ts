@@ -1,12 +1,8 @@
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+
 export type WalletDeployState = 'loading' | 'deployed' | 'counterfactual' | 'unknown';
 
-export interface WalletAccountModel {
-  label: string;
-  hdIndex: number | null;
-  isSmart: boolean;
-  rec: { type: string };
-  activeSigner: string;
-}
+const ACTIVE_SIGNER = 'Recovery key';
 
 export function walletDeployLabel(d: WalletDeployState): string {
   if (d === 'loading') return 'Checking…';
@@ -15,15 +11,16 @@ export function walletDeployLabel(d: WalletDeployState): string {
   return 'Unknown';
 }
 
-export interface WalletValueRow {
+interface WalletValueRow {
   label: string;
   value: string;
 }
 
-export function walletAccountRows(model: WalletAccountModel): WalletValueRow[] {
-  const rows: WalletValueRow[] = [{ label: 'Name', value: model.label }];
-  if (model.hdIndex != null) rows.push({ label: 'HD index', value: `#${model.hdIndex}` });
-  rows.push({ label: 'Type', value: model.isSmart ? 'Smart account (ZeroDev Kernel)' : `Legacy (${model.rec.type})` });
-  if (model.isSmart) rows.push({ label: 'Active signer', value: model.activeSigner });
+export function walletAccountRows(rec: Pick<AccountRecord, 'type' | 'label' | 'hdIndex'>): WalletValueRow[] {
+  const smart = rec.type === 'smart';
+  const rows: WalletValueRow[] = [{ label: 'Name', value: rec.label ?? 'Account' }];
+  if (rec.hdIndex != null) rows.push({ label: 'HD index', value: `#${rec.hdIndex}` });
+  rows.push({ label: 'Type', value: smart ? 'Smart account (ZeroDev Kernel)' : `Legacy (${rec.type})` });
+  if (smart) rows.push({ label: 'Active signer', value: ACTIVE_SIGNER });
   return rows;
 }

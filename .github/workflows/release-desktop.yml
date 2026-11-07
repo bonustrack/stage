@@ -1,10 +1,7 @@
 name: Release Desktop
 
-# Builds the Electron desktop app for macOS (universal), Linux and Windows and
-# attaches the installers plus the electron-updater manifests to the shared
-# `v<version>` GitHub Release when the `version` in apps/stage/app.config.js
-# changes on main (the same trigger as release-mobile.yml, so one bump releases
-# every platform). Also runnable manually. See docs/desktop-release.md.
+# Same version trigger as release-mobile.yml, appending to the same GitHub
+# Release. docs/desktop-release.md lists the jobs and the signing secrets.
 on:
   push:
     branches: [main]

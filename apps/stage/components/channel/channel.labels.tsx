@@ -1,41 +1,28 @@
 import { useCallback, useMemo, useState } from 'react';
-import { isStringList } from '@stage-labs/client/collections';
+import { includesKey, uniqueKeys } from '@stage-labs/client/collections';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Glyph } from '@stage-labs/kit/react-native/glyph';
+import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
+import { appIcon } from '../widgets';
+import { GROUPING_FIELDS } from '../../lib/grouping.model';
 import { FormField } from '../FormField';
 import { LabelChip, LABEL_CHIP_ICON_SIZE } from '../LabelChip';
-import {
-  PickerList,
-  PickerNote,
-  PickerRow,
-  PickerSearch,
-  SectionNote,
-  SidebarSection,
-  type SectionDraft,
-} from '../conversation/SidebarSection';
-import { includesKey, selectedFirst, tagSearch, uniqueKeys, type ListEdits } from '../conversation/SidebarSection.model';
+import { PickerList, PickerNote, PickerRow, PickerSearch } from '../PickerRows';
+import { SectionNote, SidebarSection, type SectionDraft } from './SidebarSection';
+import { selectedFirst, tagSearch, type ListEdits } from './SidebarSection.model';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
-import { addGroupLabel, removeGroupLabel, setGroupCategory, setGroupField, suggestLabels } from '../../lib/xmtp.groups';
-import {
-  CHANNEL_FIELD_NOUNS,
-  CHANNEL_PRIORITIES,
-  channelFieldOf,
-  LabelPermissionError,
-  MAX_LABEL_LEN,
-  MAX_LABELS,
-  type ChannelField,
-} from '@stage-labs/client/xmtp/labels';
-import { getCachedRows, subscribeCachedRows } from '../../lib/channelsCache';
+import { addGroupLabel, removeGroupLabel, suggestLabels } from '../../lib/xmtp.groups';
+import { CHANNEL_PRIORITIES, MAX_LABEL_LEN, MAX_LABELS } from '@stage-labs/client/xmtp/labels';
+import { CHANNEL_FIELD_NOUNS, channelFieldOf, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
+import { subscribeCachedRows } from '../../lib/channelsCache';
+import { homeRowOf } from '../../lib/messaging/homeRows';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { useStoreValue } from '../../lib/storeCore';
-import { useChannelEditRights } from './channel.detail';
-import { useSearchFilterSources } from '../FilterSearch';
+import { useChannelEditRights } from '../../lib/messaging/queries';
+import { setChannelField, toastLabelError } from './channelActions';
+import { useKnownFieldValues } from '../home/listing';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
-import { IconFolder1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFolder1';
-import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
-import { IconFlag1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFlag1';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { IconTag } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTag';
 import { SEARCH_INPUT_PROPS } from '@stage-labs/kit/react-native/text-field';
@@ -43,33 +30,18 @@ import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const MAX_SUGGESTIONS = 8;
 
-export function toastLabelError(e: unknown, what = 'labels'): void {
-  if (e instanceof LabelPermissionError) capabilities.toast(e.message);
-  else capabilities.toast(`Could not update ${what}. Try again.`);
-}
-
-export function setChannelCategory(convId: string, category: string | null): void {
-  void setGroupCategory(lineOfConv(convId), category).catch((e: unknown) => {
-    toastLabelError(e, `the ${CHANNEL_FIELD_NOUNS.category}`);
-  });
-}
-
 const NO_LABELS: string[] = [];
 
 export function useLiveChannelLabels(convId: string | undefined): string[] {
   const read = useCallback((): string => {
-    const labels = getCachedRows()?.find((row) => row.convId === convId)?.labels;
-    return isStringList(labels) ? labels.join('\n') : '';
+    return (convId === undefined ? undefined : homeRowOf(convId))?.labels.join('\n') ?? '';
   }, [convId]);
   const key = useStoreValue(subscribeCachedRows, read);
   return useMemo(() => (key === '' ? NO_LABELS : key.split('\n')), [key]);
 }
 
-function useLiveChannelField(convId: string | undefined, field: ChannelField): string | null {
-  const read = useCallback(
-    (): string | null => channelFieldOf(field, getCachedRows()?.find((row) => row.convId === convId)?.[field]),
-    [convId, field],
-  );
+function useLiveChannelField(convId: string, field: ChannelField): string | null {
+  const read = useCallback((): string | null => channelFieldOf(field, homeRowOf(convId)?.[field]), [convId, field]);
   return useStoreValue(subscribeCachedRows, read);
 }
 
@@ -260,7 +232,7 @@ export function LabelPicker({ draft, toggle, current }: SectionDraft & { current
 }
 
 function FieldPicker({ draft, toggle, field }: SectionDraft & { field: ChannelField }): React.ReactElement {
-  const sources = useSearchFilterSources('chats');
+  const sources = useKnownFieldValues('chats');
   if (field === 'priority')
     return (
       <PickerList>
@@ -316,11 +288,12 @@ export function ChannelLabels({ convId, labels }: { convId: string; labels: stri
   );
 }
 
-export const FIELD_SECTIONS = {
-  category: { title: 'Project', icon: IconFolder1 },
-  status: { title: 'Status', icon: IconCircleDashed },
-  priority: { title: 'Priority', icon: IconFlag1 },
-};
+const fieldSection = (field: ChannelField): { title: string; icon: CentralIcon } => ({
+  title: GROUPING_FIELDS[field].label,
+  icon: appIcon(GROUPING_FIELDS[field].icon),
+});
+
+export const FIELD_SECTIONS = { category: fieldSection('category'), status: fieldSection('status'), priority: fieldSection('priority') };
 
 function ChannelFieldSection({ convId, field }: { convId: string; field: ChannelField }): React.ReactElement | null {
   const rights = useChannelEditRights(convId);
@@ -329,9 +302,7 @@ function ChannelFieldSection({ convId, field }: { convId: string; field: Channel
   const current = value === null ? [] : [value];
   const noun = CHANNEL_FIELD_NOUNS[field];
   const commit = (edits: ListEdits): void => {
-    void setGroupField(lineOfConv(convId), field, edits.added[0] ?? null).catch((e: unknown) => {
-      toastLabelError(e, `the ${noun}`);
-    });
+    setChannelField(convId, field, edits.added[0] ?? null);
   };
   return (
     <SidebarSection

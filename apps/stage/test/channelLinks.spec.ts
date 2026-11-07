@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { bubbleLinkProps as nativeProps } from '../components/bubble/linkProps';
-import { bubbleLinkProps as webProps } from '../components/bubble/linkProps.web';
-import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
-import { internalLinkPath } from '../lib/safeOpenLink';
+import { bubbleLinkProps as nativeProps } from '../components/links/linkProps';
+import { bubbleLinkProps as webProps } from '../components/links/linkProps.web';
+import { internalLinkPath, routeForUrl } from '@stage-labs/client/routing/deepLinks';
 
 const CONV = '47bf58a8f56cad829b2263797a7e25e4';
 

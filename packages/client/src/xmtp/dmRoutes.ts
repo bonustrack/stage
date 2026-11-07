@@ -1,4 +1,4 @@
-import { uniqueBy } from '../collections';
+import type { ChannelRow } from './channelsCache';
 
 export type ConvRoutes = Readonly<Record<string, string>>;
 
@@ -20,10 +20,7 @@ export function withRoute(routes: ConvRoutes, from: string, to: string): ConvRou
   return { ...routes, [from]: target };
 }
 
-export interface DmRowRef {
-  convId: string;
-  peerAddress: string | null;
-}
+export type DmRowRef = Pick<ChannelRow, 'convId' | 'peerAddress'>;
 
 export function dmIdsByPeer(rows: readonly DmRowRef[]): ReadonlyMap<string, string> {
   const byPeer = new Map<string, string>();
@@ -45,12 +42,4 @@ export function dmRowId(routes: ConvRoutes, convId: string, peerAddress: string 
   const known = knownByPeer.get(peerAddress.toLowerCase());
   if (known === undefined || known === convId) return { rowId: convId, route: null };
   return { rowId: known, route: { from: convId, to: known } };
-}
-
-export function uniqueByConvId<R extends { convId: string }>(rows: readonly R[]): R[] {
-  return uniqueBy(rows, (row) => row.convId);
-}
-
-export function isImportReplay(sentNs: number, importedUntilNs: number): boolean {
-  return importedUntilNs > 0 && sentNs > 0 && sentNs <= importedUntilNs;
 }

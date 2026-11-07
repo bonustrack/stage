@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { visibleRowsDiff } from '../components/home/model';
+import { visibleRowsDiff } from '../lib/messaging/channelsSync.model';
 
 describe('chat list consent reconcile', () => {
   test('nothing to do when the visible chats match the rows', () => {

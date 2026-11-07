@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { collectSyncReplay, searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/readState';
+import { searchStateSchema, type SearchStateContent } from '@stage-labs/client/xmtp/sync/search';
+import { collectSyncReplay } from '@stage-labs/client/xmtp/sync/registry';
 import { EMPTY_SEARCH, editFilters, receiveSearch, restoreSearch, syncedSearch, toggledLabel } from '../lib/syncedSettings.model';
 
 const SEARCH_TYPE = 'stage.box/searchState:1.0';
@@ -70,7 +71,7 @@ describe('two devices through the sync group', () => {
     const send = (content: SearchStateContent): void => {
       log.push({ contentTypeId: SEARCH_TYPE, content, senderInboxId: OWN_INBOX, sentNs: log.length + 1 });
     };
-    const latest = (): SearchStateContent | null => collectSyncReplay(log, 0, MINE).latest.search;
+    const latest = (): SearchStateContent | null => collectSyncReplay(log, 0, MINE).search;
 
     let phone = editFilters({ ...EMPTY_SEARCH, query: 'bob' }, { labels: ['work'] }, 100);
     send(syncedSearch(phone));
@@ -90,7 +91,7 @@ describe('two devices through the sync group', () => {
 
   test('search text sent by an older version is ignored', () => {
     const log = [{ contentTypeId: SEARCH_TYPE, content: state('from old app', 300, ['home']), senderInboxId: OWN_INBOX, sentNs: 1 }];
-    const incoming = collectSyncReplay(log, 0, MINE).latest.search;
+    const incoming = collectSyncReplay(log, 0, MINE).search;
     expect(incoming).not.toBeNull();
     if (incoming === null) return;
     expect(receiveSearch(state('mine', 100), incoming)).toEqual(state('mine', 300, ['home']));

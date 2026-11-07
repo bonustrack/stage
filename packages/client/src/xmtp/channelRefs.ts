@@ -1,4 +1,5 @@
-import { shareUrlFor } from '../routing/handles';
+import { channelPath } from '../routing/routes';
+import { escapeRegExp, shareUrlFor } from '../routing/stageLinks';
 
 export interface ChannelRef {
   index: number;
@@ -9,13 +10,11 @@ export interface ChannelRef {
 
 export type ChannelRefSegment = { type: 'text'; text: string } | { type: 'channel'; convId: string; label: string };
 
-const CHANNEL_URL_PREFIX = shareUrlFor('/channel/');
+const CHANNEL_URL_PREFIX = shareUrlFor(channelPath(''));
 
-const ESCAPED_PREFIX = CHANNEL_URL_PREFIX.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+const CHANNEL_REF_RE = new RegExp(`\\[#([^\\]\\n]+)\\]\\(${escapeRegExp(CHANNEL_URL_PREFIX)}([^\\s/?#()]+)\\)`, 'g');
 
-const CHANNEL_REF_RE = new RegExp(`\\[#([^\\]\\n]+)\\]\\(${ESCAPED_PREFIX}([^\\s/?#()]+)\\)`, 'g');
-
-export function channelRefLabel(name: string): string {
+function channelRefLabel(name: string): string {
   const label = name
     .replace(/[[\]()]/g, '')
     .replace(/\s+/g, ' ')

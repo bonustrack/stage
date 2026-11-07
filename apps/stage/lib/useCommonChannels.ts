@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { getCachedRows, hydrateCachedRows, getActiveAccountIdSync } from './channelsCache';
-import { convOfLine } from './xmtp.sdk';
+import { getCachedRows, hydrateCachedRows } from './channelsCache';
+import { convOfLine } from './xmtp.find';
 import { convMembers } from './xmtp.identity';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { channelStampSeed } from '@stage-labs/kit/avatar';
+import { channelAvatar } from './convIdentity';
 import { getAccountEpoch } from './accountEpoch';
 import {
   resolveCommonChannels,
@@ -12,6 +12,8 @@ import {
   type CommonChannelRow,
 } from '@stage-labs/client/xmtp/commonChannels';
 import { reported } from './errorPolicy';
+import { useKnownActiveAccountId } from './accountSelection';
+import { accountQueryKeyAt, useAccountGeneration } from './queryClient';
 
 const memberSetCache = createMemberSetCache();
 
@@ -23,15 +25,17 @@ async function fetchMembers(convId: string): Promise<string[]> {
 
 async function resolveChannels(peerAddress: string): Promise<CommonChannel[]> {
   await hydrateCachedRows().catch(reported('commonChannels.hydrate'));
-  const rows = (getCachedRows() ?? []) as CommonChannelRow[];
+  const rows: CommonChannelRow[] = getCachedRows() ?? [];
   const memberSetOf = memberSetCache.resolver(getAccountEpoch(), fetchMembers);
-  return resolveCommonChannels(peerAddress, rows, memberSetOf, (row) => channelStampSeed(row.convId));
+  return resolveCommonChannels(peerAddress, rows, memberSetOf, (row) => channelAvatar(row.convId, row.avatarUri).avatarAddress);
 }
 
 export function useCommonChannels(peerAddress: string | null): { channels: CommonChannel[]; loading: boolean } {
   const active = !!peerAddress;
+  const selection = useAccountGeneration('selection');
+  const accountId = useKnownActiveAccountId();
   const { data, isLoading } = useQuery({
-    queryKey: ['commonChannels', getActiveAccountIdSync(), peerAddress?.toLowerCase() ?? ''],
+    queryKey: accountQueryKeyAt('selection', selection, 'commonChannels', accountId, peerAddress?.toLowerCase() ?? ''),
     queryFn: () => resolveChannels(peerAddress ?? ''),
     enabled: active,
     staleTime: 5 * 60_000,

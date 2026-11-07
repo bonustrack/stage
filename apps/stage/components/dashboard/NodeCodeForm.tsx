@@ -1,22 +1,26 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { RENDERER_CAPABILITIES } from '../../lib/frameSession';
-import { loadNode, newNodeKey, nodeUrlOf, type NodeResult } from '@stage-labs/client/nodes/protocol';
+import { newNodeKey, nodeUrlOf, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import { deleteNode, publishNode } from '@stage-labs/client/nodes/publish';
+import { NODES_HOST, NODE_LIMITS } from '@stage-labs/client/nodes/hosting';
 import { FormField } from '../FormField';
 import { FrameSurface } from '../frame/FramePreview';
 import { capabilities } from '../../lib/capabilities';
 import { ignore } from '../../lib/errorPolicy';
 import { linkProxyBase } from '../../lib/linkProxy';
-import { addLivePreview } from '../../lib/liveWidget';
+import { addLivePreview } from '../../lib/frames/addToDashboard';
+import { frameKeysOf } from '../../lib/frames/frameKeys';
+import type { LivePreview } from '../../lib/frames/live.model';
+import { frameNodes } from '../../lib/frames/nodeTransport';
 import { useEffectiveColorScheme } from '../../lib/theme';
-import { livePreviewOf, publishProblemText, type LivePreview } from './liveWidget.model';
+import { livePreviewOf, publishProblemText } from './liveWidget.model';
 import { Column, Row } from '../layout';
+import { sleep } from '@stage-labs/client/timing';
 
 const NOTE =
-  'Stage runs this code at nodes.stage.box in its own sandbox: no secrets, only public https calls, ' +
-  '50 ms of CPU and 5 requests per call. Anyone with the link can call it. Removing the widget deletes the node.';
+  `Stage runs this code at ${NODES_HOST} in its own sandbox: no secrets, only public https calls, ` +
+  `${NODE_LIMITS.cpuMs} ms of CPU and ${NODE_LIMITS.subRequests} requests per call. Anyone with the link can call it. Removing the widget deletes the node.`;
 const PLACEHOLDER = [
   'export default {',
   "  fetch: () => Response.json([{ version: 'v1.0', createSurface: {",
@@ -38,12 +42,10 @@ function buttonLabel(busy: boolean, ready: boolean): string {
 }
 
 async function loadFresh(url: string, key: string): Promise<NodeResult> {
-  const first = await loadNode(url, key, { capabilities: RENDERER_CAPABILITIES });
+  const first = await frameNodes.load({ url, key });
   if (first.ok || first.status !== 404) return first;
-  await new Promise((resolve) => {
-    setTimeout(resolve, FRESH_RETRY_MS);
-  });
-  return loadNode(url, key, { capabilities: RENDERER_CAPABILITIES });
+  await sleep(FRESH_RETRY_MS);
+  return frameNodes.load({ url, key });
 }
 
 async function publishAndLoad(key: string, code: string): Promise<Published | string> {
@@ -75,30 +77,6 @@ function useUnaddedNodeCleanup(key: string): { track: (work: Promise<unknown>) =
   };
 }
 
-function PublishedNode({ node, stackId }: { node: Published; stackId: string }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  return (
-    <Column gap={6}>
-      <Row align="center" gap={8}>
-        <Column weight={1} minWidth={0}>
-          <Text text={node.url} size="xs" color="secondary" truncate />
-        </Column>
-        <Button
-          label="Copy link"
-          size="sm"
-          color="secondary"
-          variant="ghost"
-          dark={dark}
-          onPress={() => {
-            capabilities.copy('Link', node.url);
-          }}
-        />
-      </Row>
-      <FrameSurface frame={node.frame} stackId={stackId} />
-    </Column>
-  );
-}
-
 export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const [key] = useState(newNodeKey);
@@ -122,8 +100,10 @@ export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactEle
 
   const add = async (node: Published): Promise<void> => {
     setBusy(true);
-    if (await addLivePreview(node, key, 'dashboard.addNode', cleanup.keep)) onDone();
-    else setBusy(false);
+    const outcome = await addLivePreview(node, key);
+    if (outcome === 'added') cleanup.keep();
+    if (outcome === null) setBusy(false);
+    else onDone();
   };
 
   const submit = (): void => {
@@ -149,7 +129,26 @@ export function NodeCodeForm({ onDone }: { onDone: () => void }): React.ReactEle
         hint={hint ?? undefined}
         hintTone="danger"
       />
-      {ready ? <PublishedNode node={published} stackId={`node:${key}`} /> : null}
+      {ready ? (
+        <Column gap={6}>
+          <Row align="center" gap={8}>
+            <Column weight={1} minWidth={0}>
+              <Text text={published.url} size="xs" color="secondary" truncate />
+            </Column>
+            <Button
+              label="Copy link"
+              size="sm"
+              color="secondary"
+              variant="ghost"
+              dark={dark}
+              onPress={() => {
+                capabilities.copy('Link', published.url);
+              }}
+            />
+          </Row>
+          <FrameSurface frame={published.frame} keys={frameKeysOf({ kind: 'codePreview', nodeKey: key })} />
+        </Column>
+      ) : null}
       <Text text={NOTE} size="xs" color="secondary" />
       <Button
         label={buttonLabel(busy, ready)}

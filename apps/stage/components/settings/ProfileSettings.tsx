@@ -1,17 +1,16 @@
-import { useState } from 'react';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
-import { useCopiedFlag } from '../../lib/useCopiedFlag';
+import { useCopiedFlag } from '../useCopiedFlag';
 import { getPeerHandle, getPeerName, getPeerProfileSource, invalidatePeerProfile, usePeerProfiles } from '../../lib/peerProfiles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
+import { useActiveAccount } from '../../lib/messaging/account';
 import { Avatar } from '../Avatar';
 import { SettingsPage } from './SettingsPage';
 import { profileView, type ProfileView } from './ProfileSettings.model';
 import { ClaimStageName } from './ProfileSettings.claim';
-import { EditProfileModal } from './EditProfileModal';
+import { useEditProfile } from '../profile/useEditProfile';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, PAGE_GUTTER } from '../layout';
@@ -62,9 +61,8 @@ function EditPane({
   view: ProfileView;
 }): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
-  const [editing, setEditing] = useState(false);
+  const editProfile = useEditProfile(view.canChangePicture);
   const name = getPeerName(address);
-  const editable = address !== null && handle !== undefined && view.canChangePicture;
   return (
     <>
       <ProfileHeader address={address} name={name} handle={handle}>
@@ -75,27 +73,10 @@ function EditPane({
           <Text text={view.explanation} size="xs" color="secondary" />
         </Column>
       )}
-      {editable ? (
+      {editProfile.editable ? (
         <Column padding={{ x: PAGE_GUTTER, bottom: 16 }}>
-          <Button
-            label="Edit profile"
-            block
-            size="lg"
-            color="secondary"
-            variant="solid"
-            dark={dark}
-            onPress={() => {
-              setEditing(true);
-            }}
-          />
-          <EditProfileModal
-            visible={editing}
-            onClose={() => {
-              setEditing(false);
-            }}
-            address={address}
-            handle={handle}
-          />
+          <Button label="Edit profile" block size="lg" color="secondary" variant="solid" dark={dark} onPress={editProfile.open} />
+          {editProfile.modal}
         </Column>
       ) : null}
     </>
@@ -103,15 +84,16 @@ function EditPane({
 }
 
 export function ProfileSettings(): React.ReactElement {
-  const address = useActiveAccountRecord()?.address ?? null;
+  const { record, loaded } = useActiveAccount();
+  const address = record?.address ?? null;
   usePeerProfiles([address]);
   const handle = getPeerHandle(address);
   const source = getPeerProfileSource(address);
   const view = profileView({ address, name: handle, source });
 
   return (
-    <SettingsPage title="Profile">
-      {address && view.claimVisible ? (
+    <SettingsPage section="profile">
+      {!loaded ? null : address && view.claimVisible ? (
         <Column align="center" padding={{ top: 24, bottom: 16 }}>
           <ClaimStageName
             address={address}

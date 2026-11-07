@@ -1,13 +1,12 @@
 import { getActiveViemAccount } from './accounts';
 import { linkProxyBase } from './linkProxy';
-import type { X402Accept } from './useLinkPreview';
+import type { X402Accept } from '@stage-labs/client/x402';
 import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from '@stage-labs/client/x402/payment';
+import { readSettleReply, type X402SettleRequest, type X402SettleResult } from '@stage-labs/client/x402/settle';
+import { PROXY_ROUTES, STAGE_CLIENT_HEADERS } from '@stage-labs/client/endpoints';
+import { fetchWithin } from '@stage-labs/client/timing';
 
-export interface X402PayResult {
-  ok: boolean;
-  status: number;
-  body?: string;
-}
+const SETTLE_TIMEOUT_MS = 30_000;
 
 function assertExactChallenge(accept: X402Accept): void {
   if (accept.scheme !== 'exact') throw new Error('Unsupported x402 scheme');
@@ -16,19 +15,24 @@ function assertExactChallenge(accept: X402Accept): void {
   if (!accept.asset) throw new Error('Challenge missing asset');
 }
 
-async function settlePayment(resource: string, paymentHeader: string): Promise<X402PayResult> {
-  const res = await fetch(`${linkProxyBase()}/x402-settle`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'x-stage-client': '1' },
-    body: JSON.stringify({ url: resource, paymentHeader }),
-  });
+async function settledResult(res: Response): Promise<X402SettleResult> {
   if (!res.ok) return { ok: false, status: res.status };
-  const j = (await res.json()) as { ok?: boolean; status?: number; body?: string };
-  return {
-    ok: j.ok === true && (j.status == null || j.status === 200),
-    status: typeof j.status === 'number' ? j.status : res.status,
-    body: typeof j.body === 'string' ? j.body : undefined,
-  };
+  const settled = readSettleReply(await res.json());
+  return { ok: settled.ok && settled.status === 200, status: settled.status, body: settled.body };
+}
+
+function settlePayment(resource: string, paymentHeader: string): Promise<X402SettleResult> {
+  const request: X402SettleRequest = { url: resource, paymentHeader };
+  return fetchWithin(
+    `${linkProxyBase()}${PROXY_ROUTES.settle}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...STAGE_CLIENT_HEADERS },
+      body: JSON.stringify(request),
+    },
+    { timeoutMs: SETTLE_TIMEOUT_MS },
+    settledResult,
+  );
 }
 
 export async function payX402Exact({
@@ -39,7 +43,7 @@ export async function payX402Exact({
   resource: string;
   accept: X402Accept;
   x402Version?: number;
-}): Promise<X402PayResult> {
+}): Promise<X402SettleResult> {
   assertExactChallenge(accept);
   const local = await getActiveViemAccount();
   if (!local) throw new Error('No in-app wallet to pay with');

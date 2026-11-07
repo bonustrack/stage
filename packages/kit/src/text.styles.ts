@@ -1,14 +1,15 @@
+import type { TEXT_ALIGNS, TEXT_FONT_FAMILIES, TEXT_VARIANTS, TEXT_WEIGHTS } from './kit-vocabulary';
 import { FONT_SIZE, FONT_SIZE_DEFAULT, fontName, type FontSizeName } from './tokens';
 
-export type TextVariant = 'body' | 'caption';
+export type TextVariant = (typeof TEXT_VARIANTS)[number];
 
-export type TextWeight = 'normal' | 'medium' | 'semibold' | 'bold';
+export type TextWeight = (typeof TEXT_WEIGHTS)[number];
 
 export type TextSizeToken = FontSizeName;
 
-export type TextAlign = 'start' | 'center' | 'end';
+export type TextAlign = (typeof TEXT_ALIGNS)[number];
 
-export type TextFontFamily = 'sans' | 'head' | 'mono';
+export type TextFontFamily = (typeof TEXT_FONT_FAMILIES)[number];
 
 export type ResolvedTextAlign = 'left' | 'center' | 'right';
 
@@ -18,10 +19,10 @@ export interface TextDefaultPalette {
 }
 
 export const TEXT_FONTS: Record<TextWeight, string> = {
-  normal: 'Calibre-Medium',
-  medium: 'Calibre-Medium',
-  semibold: 'Calibre-Semibold',
-  bold: 'Calibre-Semibold',
+  normal: fontName.sans,
+  medium: fontName.sans,
+  semibold: fontName.head,
+  bold: fontName.head,
 };
 
 export function resolveTextSize(size: TextSizeToken | undefined, variant: TextVariant | undefined): number {

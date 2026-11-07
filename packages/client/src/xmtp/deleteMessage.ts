@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import type { XmtpContentTypeId } from './codecs';
+import { shortTypeId } from './typeId';
 
-export const DELETE_MESSAGE_CONTENT_TYPE: XmtpContentTypeId = {
+const DELETE_MESSAGE_CONTENT_TYPE: XmtpContentTypeId = {
   authorityId: 'xmtp.org',
   typeId: 'deleteMessage',
   versionMajor: 1,
@@ -17,24 +18,13 @@ export const STAGE_DELETE_CONTENT_TYPE: XmtpContentTypeId = {
   versionMinor: 0,
 };
 
-export const STAGE_DELETE_TYPE_ID = STAGE_DELETE_CONTENT_TYPE.typeId;
-
-const XMTP_DELETABLE_TYPE_IDS: readonly string[] = [
-  'text',
-  'markdown',
-  'reply',
-  'attachment',
-  'remoteStaticAttachment',
-  'multiRemoteStaticAttachment',
-  'transactionReference',
-  'walletSendCalls',
-];
+const STAGE_DELETE_TYPE_ID = STAGE_DELETE_CONTENT_TYPE.typeId;
 
 export const DELETED_MESSAGE_TYPE_ID = 'deletedMessage';
 
 export const DELETED_MESSAGE_TEXT = 'Message deleted';
 
-export const DELETED_BY_ADMIN_TEXT = 'Message deleted by an admin';
+const DELETED_BY_ADMIN_TEXT = 'Message deleted by an admin';
 
 export type DeletedBy = 'sender' | 'admin';
 
@@ -136,18 +126,9 @@ export const DELETE_MESSAGE_CODEC = {
   shouldPush: (): boolean => false,
 };
 
-export function shortTypeId(contentTypeId: string | undefined | null): string {
-  if (!contentTypeId) return '';
-  return contentTypeId.split('/').pop()?.split(':')[0] ?? contentTypeId;
-}
-
 export function isDeleteRequestType(contentTypeId: string | undefined | null): boolean {
   const typeId = shortTypeId(contentTypeId);
   return typeId === DELETE_MESSAGE_TYPE_ID || typeId === STAGE_DELETE_TYPE_ID;
-}
-
-export function isXmtpDeletableType(contentTypeId: string | undefined | null): boolean {
-  return XMTP_DELETABLE_TYPE_IDS.includes(shortTypeId(contentTypeId));
 }
 
 export function isDeletedPlaceholderType(contentTypeId: string | undefined | null): boolean {
@@ -159,9 +140,6 @@ export function deleteTargetOfContent(content: unknown): string | undefined {
   return parsed.success ? parsed.data.messageId : undefined;
 }
 
-const ADMIN_VALUES: readonly unknown[] = [1, 'Admin', 'admin'];
-
 export function deletedByOfContent(content: unknown): DeletedBy {
-  const by = (content as { deletedBy?: unknown } | null | undefined)?.deletedBy;
-  return ADMIN_VALUES.includes(by) ? 'admin' : 'sender';
+  return (content as { deletedBy?: unknown } | null | undefined)?.deletedBy === 'admin' ? 'admin' : 'sender';
 }

@@ -1,9 +1,17 @@
 import { useEffect, useRef, type ComponentRef, type ReactNode, type Ref, type RefObject } from 'react';
 import type { TextInputProps } from 'react-native';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
-import { TextField, type TextFieldProps } from '@stage-labs/kit/react-native/text-field';
+import {
+  FORM_FIELD_HEIGHT,
+  FORM_FIELD_LABEL_GAP,
+  FORM_FIELD_RADIUS,
+  TextField,
+  type TextFieldProps,
+} from '@stage-labs/kit/react-native/text-field';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Column } from './layout';
 
-export { FORM_FIELD_HEIGHT, FORM_FIELD_RADIUS } from '@stage-labs/kit/react-native/text-field';
+export { FORM_FIELD_HEIGHT, FORM_FIELD_RADIUS };
 
 type NativeInputProps = Omit<
   TextInputProps,
@@ -61,51 +69,37 @@ function plainInputProps(inputProps: NativeInputProps | undefined) {
 }
 
 export function FormField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
   multiline,
   rows = 3,
-  disabled,
   inputType,
   variant,
-  inputProps,
   inputRef,
   autoFocus,
   onSubmit,
-  leading,
-  trailing,
-  trailingWidth,
-  labelTrailing,
-  hint,
-  hintTone,
   appearance = 'filled',
-  style,
+  ...field
 }: FormFieldProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const line = multiline === true ? {} : { ref: inputRef, variant, inputType, autoFocus, onSubmit };
   return (
     <TextField
       appearance={appearance}
-      style={style}
-      {...(appearance === 'plain' ? plainInputProps(inputProps) : {})}
-      label={label}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
+      {...(appearance === 'plain' ? plainInputProps(field.inputProps) : {})}
+      {...field}
       dark={dark}
-      disabled={disabled}
       variant={multiline === true ? 'longText' : undefined}
       rows={rows}
-      inputProps={inputProps}
       {...line}
-      leading={leading}
-      trailing={trailing}
-      trailingWidth={trailingWidth}
-      labelTrailing={labelTrailing}
-      hint={hint}
-      hintTone={hintTone}
     />
+  );
+}
+
+export function FormFieldPlaceholder(): React.ReactElement {
+  const { border } = usePalette();
+  return (
+    <Column radius={FORM_FIELD_RADIUS} background={border} gap={FORM_FIELD_LABEL_GAP}>
+      <Text text=" " size="xs" />
+      <Column height={FORM_FIELD_HEIGHT} />
+    </Column>
   );
 }

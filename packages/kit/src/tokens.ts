@@ -1,3 +1,11 @@
+import { luminance, parseHex } from './color-math';
+import { fontFamily } from './font-families';
+import { MONO_FONT } from './mono-font';
+
+export { fontFamily } from './font-families';
+
+export { BUTTON_RADIUS_DEFAULT, FONT_SIZE_SNAP, RADIUS_DEFAULT, RADIUS_MAX, RADIUS_MIN } from './legacy';
+
 export const colors = {
   'bg-dark': '#0e0f10',
   'bg-light': '#ffffff',
@@ -46,18 +54,8 @@ export const semanticColors = {
 } as const;
 
 export function semanticPalette(scheme: 'light' | 'dark'): Record<keyof typeof semanticColors, string> {
-  return {
-    bgColor: semanticColors.bgColor[scheme],
-    borderColor: semanticColors.borderColor[scheme],
-    textColor: semanticColors.textColor[scheme],
-    subColor: semanticColors.subColor[scheme],
-    linkColor: semanticColors.linkColor[scheme],
-    primaryColor: semanticColors.primaryColor[scheme],
-    dangerColor: semanticColors.dangerColor[scheme],
-    successColor: semanticColors.successColor[scheme],
-    inputBgColor: semanticColors.inputBgColor[scheme],
-    toolbarBgColor: semanticColors.toolbarBgColor[scheme],
-  };
+  const entries = Object.entries(semanticColors).map(([role, pair]) => [role, pair[scheme]]);
+  return Object.fromEntries(entries) as Record<keyof typeof semanticColors, string>;
 }
 
 export interface KitPalette {
@@ -98,13 +96,8 @@ export interface ThemeColor {
 
 export type Color = string | ThemeColor;
 
-function isThemeColor(value: Color): value is ThemeColor {
-  return typeof value === 'object' && value !== null;
-}
-
 export function resolveColor(value: Color, scheme: Scheme): string {
-  if (isThemeColor(value)) return value[scheme];
-  return resolveColorToken(value, scheme);
+  return typeof value === 'object' && value !== null ? value[scheme] : resolveColorToken(value, scheme);
 }
 
 export function resolveOptionalColor(value: Color | undefined, scheme: Scheme): string | undefined {
@@ -112,15 +105,9 @@ export function resolveOptionalColor(value: Color | undefined, scheme: Scheme): 
 }
 
 export function readableForeground(hex: string): string {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  const group = m?.[1];
-  if (group === undefined) return '#ffffff';
-  const n = Number.parseInt(group, 16);
-  const r = (n >> 16) & 0xff;
-  const g = (n >> 8) & 0xff;
-  const b = n & 0xff;
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.6 ? '#000000' : '#ffffff';
+  const rgb = parseHex(hex, { bare: true });
+  if (rgb === null) return '#ffffff';
+  return luminance(rgb) > 0.6 ? '#000000' : '#ffffff';
 }
 
 export type ColorToken = 'text' | 'secondary' | 'muted' | 'link' | 'primary' | 'danger' | 'success' | 'border' | 'surface';
@@ -137,26 +124,6 @@ export const COLOR_TOKENS: readonly ColorToken[] = [
   'surface',
 ];
 
-const COLOR_TOKEN_MAP: Record<ColorToken, keyof typeof semanticColors> = {
-  text: 'textColor',
-  secondary: 'subColor',
-  muted: 'subColor',
-  link: 'linkColor',
-  primary: 'primaryColor',
-  danger: 'dangerColor',
-  success: 'successColor',
-  border: 'borderColor',
-  surface: 'bgColor',
-};
-
-export function isColorToken(c: string): c is ColorToken {
-  return Object.hasOwn(COLOR_TOKEN_MAP, c);
-}
-
-export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
-  return isColorToken(c) ? semanticColors[COLOR_TOKEN_MAP[c]][scheme] : c;
-}
-
 const PALETTE_TOKEN_MAP: Record<ColorToken, keyof KitPalette> = {
   text: 'text',
   secondary: 'sub',
@@ -168,6 +135,14 @@ const PALETTE_TOKEN_MAP: Record<ColorToken, keyof KitPalette> = {
   border: 'border',
   surface: 'bg',
 };
+
+export function isColorToken(c: string): c is ColorToken {
+  return Object.hasOwn(PALETTE_TOKEN_MAP, c);
+}
+
+export function resolveColorToken(c: string, scheme: 'light' | 'dark'): string {
+  return isColorToken(c) ? kitPalette(scheme)[PALETTE_TOKEN_MAP[c]] : c;
+}
 
 export function resolvePaletteColor(c: string, palette: KitPalette): string {
   return isColorToken(c) ? palette[PALETTE_TOKEN_MAP[c]] : c;
@@ -182,22 +157,22 @@ export interface SchemePalette {
   border: string;
 }
 
-export function schemePalette(dark: boolean): SchemePalette {
-  const k = dark ? 'dark' : 'light';
+export function schemeRolesOf(palette: KitPalette): SchemePalette {
   return {
-    head: colors[`head-${k}`],
-    text: colors[`fg-${k}`],
-    sub: colors[`sub-${k}`],
-    surface: colors[`hover-${k}`],
-    pressed: colors[`hover-${k}`],
-    border: colors[`border-${k}`],
+    head: palette.link,
+    text: palette.text,
+    sub: palette.sub,
+    surface: palette.inputBg,
+    pressed: palette.inputBg,
+    border: palette.border,
   };
 }
 
-export const RADIUS_DEFAULT = 999;
-export const RADIUS_MIN = 0;
-export const RADIUS_MAX = 999;
-export const BUTTON_RADIUS_DEFAULT = 999;
+export function schemePalette(dark: boolean): SchemePalette {
+  return schemeRolesOf(kitPalette(dark ? 'dark' : 'light'));
+}
+
+export const RADIUS_FULL = 999;
 export const BLOCK_RADIUS_DEFAULT = 12;
 export const CONTROL_RADIUS_DEFAULT = 8;
 
@@ -221,37 +196,13 @@ export function fontSize(name: FontSizeName): number {
   return FONT_SIZE[name];
 }
 
-export const FONT_SIZE_SNAP: Record<string, FontSizeName> = {
-  '10': '3xs',
-  '11': '3xs',
-  '12': '3xs',
-  '13': '3xs',
-  '14': '2xs',
-  '15': 'xs',
-  '16': 'xs',
-  '17': 'sm',
-  '18': 'md',
-  '19': 'lg',
-  '20': 'xl',
-  '22': '2xl',
-  '24': '2xl',
-  '26': '3xl',
-  '28': '3xl',
-  '34': '3xl',
-  '38': '3xl',
-} as const;
+export const fontName = { sans: fontFamily.sans[0], head: fontFamily.head[0], mono: MONO_FONT } as const;
 
-export const fontFamily = {
-  sans: ['Calibre-Medium', 'system-ui', 'sans-serif'],
-  head: ['Calibre-Semibold', 'system-ui', 'sans-serif'],
-  mono: ['Menlo', 'ui-monospace', 'monospace'],
-} as const;
+export const RADIUS_NAMES = ['pill', 'round', 'soft', 'sharp'] as const;
 
-export const fontName = { sans: fontFamily.sans[0], head: fontFamily.head[0], mono: fontFamily.mono[0] } as const;
+export type RadiusName = (typeof RADIUS_NAMES)[number];
 
-export type RadiusName = 'pill' | 'round' | 'soft' | 'sharp';
-
-export const RADIUS_SCALE: Record<RadiusName, number> = { pill: 999, round: 16, soft: 12, sharp: 0 } as const;
+export const RADIUS_SCALE: Record<RadiusName, number> = { pill: RADIUS_FULL, round: 16, soft: 12, sharp: 0 } as const;
 
 export const RADIUS_NAME_DEFAULT: RadiusName = 'pill';
 
@@ -268,7 +219,7 @@ export const BOX_RADIUS_SCALE: Record<RadiusValue, number | string> = {
   '2xl': 20,
   '3xl': 24,
   '4xl': 32,
-  full: 999,
+  full: RADIUS_FULL,
   '100%': '50%',
 } as const;
 
@@ -280,7 +231,9 @@ export function resolveBoxRadius(r: number | string): number | string {
   return typeof r === 'string' && isRadiusValue(r) ? BOX_RADIUS_SCALE[r] : r;
 }
 
-export type Density = 'compact' | 'normal' | 'spacious';
+export const DENSITIES = ['compact', 'normal', 'spacious'] as const;
+
+export type Density = (typeof DENSITIES)[number];
 
 export const DENSITY_SCALE: Record<Density, { paddingX: number; paddingY: number; gap: number }> = {
   compact: { paddingX: 10, paddingY: 6, gap: 6 },
@@ -290,7 +243,9 @@ export const DENSITY_SCALE: Record<Density, { paddingX: number; paddingY: number
 
 export const DENSITY_DEFAULT: Density = 'normal';
 
-export type BaseSize = 14 | 15 | 16 | 17 | 18;
+export const BASE_SIZES = [14, 15, 16, 17, 18] as const;
+
+export type BaseSize = (typeof BASE_SIZES)[number];
 
 export const BASE_SIZE_DEFAULT: BaseSize = 15;
 
@@ -325,6 +280,6 @@ export function kitTheme(scheme: 'light' | 'dark', opts: KitThemeOptions = {}): 
     border: semanticColors.borderColor[scheme],
     radius: { name: radiusName, px: RADIUS_SCALE[radiusName] },
     density: { name: densityName, ...density },
-    typography: { baseSize: opts.baseSize ?? BASE_SIZE_DEFAULT, fontFamily: fontFamily.sans[0], fontFamilyMono: fontFamily.mono[0] },
+    typography: { baseSize: opts.baseSize ?? BASE_SIZE_DEFAULT, fontFamily: fontName.sans, fontFamilyMono: fontName.mono },
   };
 }

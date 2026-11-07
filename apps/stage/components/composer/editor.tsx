@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Platform, type GestureResponderEvent, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
-import { fontSize } from '@stage-labs/kit/tokens';
+import { fontName, fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
@@ -16,55 +16,65 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuRow } from '../MenuRows';
 import { IconArrowUp } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowUp';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
-import { IconCamera1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCamera1';
-import { IconChart3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChart3';
-import { IconImages1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconImages1';
-import { IconMapPin } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMapPin';
-import { IconPaperclip3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperclip3';
-import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
-import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
+import type { AttachAction } from './attachActions';
 import { usePalette } from '../../lib/theme';
+import { MESSAGE_BODY } from '../bubble/MessageText';
 import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
 import { Column, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
 
 const COMPOSER_ICON_INSET = 7;
 
-type AttachAction = [CentralIcon, string, () => void | Promise<void>];
-
-interface EditorProps {
+interface EditorTextProps {
   dark: boolean;
   fg: string;
   head: string;
   bg: string;
   sub: string;
   chipBg: string;
-  recording: boolean;
-  levels: number[];
-  recordSecs: number;
-  slideThresholdPx?: number;
   text: string;
   setText: (v: string) => void;
   selection: { start: number; end: number };
   setSelection: (s: { start: number; end: number }) => void;
-  focusNonce: number;
-  blurNonce: number;
-  attachMenuOpen: boolean;
-  setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
-  attachActions?: AttachAction[];
-  quickIcon?: CentralIcon;
-  quickLabel?: string;
-  onQuick?: () => void;
+  focusNonce?: number;
+  blurNonce?: number;
   hasContent: boolean;
   busy?: boolean;
-  dictation?: { phase: DictationPhase; press: ReturnType<typeof makeDictationPress> };
   placeholder?: string;
   rounded?: boolean;
   onMentionKey?: (key: string, shift: boolean) => boolean;
+  onSend: () => void;
+}
+
+interface EditorMediaProps {
+  recording: boolean;
+  levels: number[];
+  recordSecs: number;
+  attachMenuOpen: boolean;
+  setAttachMenuOpen: (fn: (o: boolean) => boolean) => void;
+  attachActions?: AttachAction[];
+  quick?: AttachAction;
+  dictation?: { phase: DictationPhase; press: ReturnType<typeof makeDictationPress> };
   onStartRec: () => void;
   onCancelRec: () => void;
   onStopRec: () => void;
-  onSend: () => void;
+}
+
+type EditorProps = EditorTextProps & EditorMediaProps;
+
+type ComposerEditorProps = EditorTextProps & ((EditorMediaProps & { textOnly?: undefined }) | { textOnly: { onUnavailable: () => void } });
+
+function textOnlyMedia(onUnavailable: () => void): EditorMediaProps {
+  return {
+    recording: false,
+    levels: [],
+    recordSecs: 0,
+    attachMenuOpen: false,
+    setAttachMenuOpen: onUnavailable,
+    onStartRec: onUnavailable,
+    onCancelRec: onUnavailable,
+    onStopRec: onUnavailable,
+  };
 }
 
 function ComposerBtn({
@@ -141,26 +151,24 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         appearance="plain"
         variant="longText"
         autoGrow
-        fontSize={fontSize('lg')}
-        fontFamily="Calibre-Medium"
+        fontSize={fontSize(MESSAGE_BODY.size)}
+        fontFamily={fontName.sans}
         color={p.head}
         placeholderColor={p.sub}
         paddingX={8}
         paddingTop={4}
         paddingBottom={8}
-        lineHeight={23}
+        lineHeight={MESSAGE_BODY.lineHeight}
         minHeight={24}
         maxHeight={210}
         autoCapitalize="sentences"
-        focusNonce={p.focusNonce}
-        blurNonce={p.blurNonce}
+        focusNonce={p.focusNonce ?? 0}
+        blurNonce={p.blurNonce ?? 0}
         selection={p.selection}
         dark={dark}
         disabled={p.busy}
         dataSet={SELF_SCROLLBAR.dataSet}
-        onChangeText={(text) => {
-          p.setText(text);
-        }}
+        onChangeText={p.setText}
         onSelectionChange={(range) => {
           p.setSelection({ start: range.start, end: range.end });
         }}
@@ -169,17 +177,9 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
   );
 }
 
-function quickSlot(p: EditorProps): React.ReactElement | null {
-  if (!p.quickIcon || !p.onQuick) return null;
-  return (
-    <ComposerBtn icon={p.quickIcon} label={p.quickLabel ?? 'Attach'} onPress={p.onQuick} fg={p.fg} hoverFg={p.head} chipBg={p.chipBg} />
-  );
-}
-
 function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
-  const { fg, chipBg } = p;
+  const { fg, chipBg, quick } = p;
   const [anchor, setAnchor] = useState<MenuPoint | null>(null);
-  const quick = quickSlot(p);
   const close = (): void => {
     p.setAttachMenuOpen(() => false);
   };
@@ -195,18 +195,20 @@ function ComposerLeftControls({ p }: { p: EditorProps }): React.ReactElement {
         fg={fg}
         hoverFg={p.head}
         chipBg={chipBg}
-        mr={quick === null ? undefined : -12}
+        mr={quick ? -12 : undefined}
       />
-      {quick}
+      {quick ? (
+        <ComposerBtn icon={quick.icon} label={quick.label} onPress={() => void quick.run()} fg={fg} hoverFg={p.head} chipBg={chipBg} />
+      ) : null}
       <AnchoredMenu visible={p.attachMenuOpen} onClose={close} anchor={anchor}>
-        {(p.attachActions ?? []).map(([icon, label, action]) => (
+        {(p.attachActions ?? []).map((action) => (
           <MenuRow
-            key={label}
-            icon={icon}
-            label={label}
+            key={action.id}
+            icon={action.icon}
+            label={action.label}
             onPress={() => {
               close();
-              void action();
+              void action.run();
             }}
           />
         ))}
@@ -272,7 +274,8 @@ export function composerRadius(rounded: boolean | undefined): 'sm' | 'none' {
   return rounded === true ? 'sm' : 'none';
 }
 
-export function ComposerEditor(p: EditorProps): React.ReactElement {
+export function ComposerEditor(props: ComposerEditorProps): React.ReactElement {
+  const p: EditorProps = props.textOnly ? { ...props, ...textOnlyMedia(props.textOnly.onUnavailable) } : props;
   const { primary, border } = usePalette();
   return (
     <Column
@@ -290,7 +293,6 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
         recording={p.recording}
         levels={p.levels}
         recordSecs={p.recordSecs}
-        slideThresholdPx={p.slideThresholdPx}
         fg={p.fg}
         head={p.head}
         sub={p.sub}
@@ -308,27 +310,4 @@ export function ComposerEditor(p: EditorProps): React.ReactElement {
       />
     </Column>
   );
-}
-
-export function buildAttachActions(a: {
-  pickImage: () => void;
-  takePhoto: () => void;
-  pickFile: () => void;
-  pickLocation: () => Promise<void>;
-  openPoll: () => void;
-  openSig: () => void;
-  openTx: () => void;
-  recordVoice?: () => Promise<void>;
-}): AttachAction[] {
-  const voice: AttachAction[] = a.recordVoice ? [[IconMicrophone, 'Voice message', a.recordVoice]] : [];
-  return [
-    ...voice,
-    [IconImages1, 'Image', a.pickImage],
-    [IconCamera1, 'Camera', a.takePhoto],
-    [IconPaperclip3, 'File', a.pickFile],
-    [IconMapPin, 'Location', a.pickLocation],
-    [IconChart3, 'Poll', a.openPoll],
-    [IconPencil, 'Sign', a.openSig],
-    [IconWallet4, 'Payment', a.openTx],
-  ];
 }

@@ -1,4 +1,5 @@
-import { NODE_CODE_MAX_BYTES, NODE_PUBLISH_PATH, hostedNodeUrl, nodeIdOf } from './hosting';
+import { PROXY_ROUTES } from '../endpoints';
+import { NODE_CODE_MAX_BYTES, NODE_PUBLISH_STATUS, hostedNodeUrl, nodeIdOf } from './hosting';
 import { nodeHeaders, nodeKeyId } from './protocol';
 
 const PUBLISH_TIMEOUT_MS = 30_000;
@@ -10,13 +11,9 @@ export type PublishResult = { ok: true; url: string } | { ok: false; problem: Pu
 
 type PublishMethod = 'PUT' | 'DELETE';
 
-const STATUS_PROBLEMS: ReadonlyMap<number, PublishProblem> = new Map([
-  [400, 'refused'],
-  [413, 'too-large'],
-  [429, 'busy'],
-  [503, 'not-ready'],
-  [507, 'full'],
-]);
+const STATUS_PROBLEMS: ReadonlyMap<number, PublishProblem> = new Map(
+  (Object.keys(NODE_PUBLISH_STATUS) as (keyof typeof NODE_PUBLISH_STATUS)[]).map((problem) => [NODE_PUBLISH_STATUS[problem], problem]),
+);
 
 export function ownNodeUrl(key: string): string | null {
   const id = nodeIdOf(nodeKeyId(key));
@@ -28,7 +25,7 @@ export function nodeCodeTooLarge(code: string): boolean {
 }
 
 async function call(method: PublishMethod, proxyBase: string, key: string, body: string): Promise<Response | null> {
-  const url = `${proxyBase}${NODE_PUBLISH_PATH}`;
+  const url = `${proxyBase}${PROXY_ROUTES.nodes}`;
   const headers: Record<string, string> = nodeHeaders(method, url, body, key, Date.now());
   if (body !== '') headers['Content-Type'] = 'application/javascript';
   try {

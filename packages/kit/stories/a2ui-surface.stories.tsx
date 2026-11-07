@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Story } from '../gallery/story';
 import { createA2uiClient } from '../src/a2ui/client';
+import { KIT_CATALOG_ID } from '../src/a2ui/kit-catalog';
 import type { JsonObject, JsonValue, RendererMessage } from '../src/a2ui/protocol';
 import { MEDIA_RENDERERS } from '../src/react-native/a2ui-media';
 import { A2uiSurface } from '../src/react-native/a2ui-surface';
@@ -92,7 +93,7 @@ Controls.args = {
       version: 'v1.0',
       createSurface: {
         surfaceId: 'playground',
-        catalogId: 'https://kit.stage.box/a2ui/v1_0/catalog.json',
+        catalogId: KIT_CATALOG_ID,
         components: [{ id: 'root', component: 'Text', text: 'Edit the **JSON** control.', size: 'xl' }],
       },
     },

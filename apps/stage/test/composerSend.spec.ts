@@ -2,11 +2,22 @@ import { describe, expect, mock, test } from 'bun:test';
 import { planSendSteps, unsentDraft } from '../components/composer/send.model';
 import { locationAttachment } from '../components/composer/location.model';
 import type { Attachment } from '../components/composer/types';
-import type { LocalAttachmentInput, OnAttachmentsUploaded } from '../lib/xmtp.types';
+
+type Ports = Parameters<typeof planSendSteps>[4];
 
 function makeSenders() {
-  return { text: mock(async () => 'text-id'), reply: mock(async () => 'reply-id'), attachments: mock(async () => 'attachment-id') };
+  return {
+    text: mock<Ports['text']>(async () => 'text-id'),
+    reply: mock<Ports['reply']>(async () => 'reply-id'),
+    attachments: mock<Ports['attachments']>(async () => 'attachment-id'),
+  };
 }
+
+type Senders = ReturnType<typeof makeSenders>;
+
+const sentFiles = (senders: Senders) => senders.attachments.mock.calls.map(([line, files]) => [line, files]);
+const sentTexts = (senders: Senders) => senders.text.mock.calls.map(([line, text]) => [line, text]);
+const sentReplies = (senders: Senders) => senders.reply.mock.calls.map(([line, replyTo, text]) => [line, replyTo, text]);
 
 function attachment(kind: string, size = 11_000_000): Attachment {
   const mime = kind === 'audio' ? 'audio/m4a' : 'video/mp4';
@@ -22,11 +33,7 @@ describe('composer sends encrypted remote attachments', () => {
     expect(steps).toHaveLength(1);
     expect(steps[0]?.attachments).toEqual([audio]);
     expect(await steps[0]?.run()).toBe('attachment-id');
-    expect(senders.attachments).toHaveBeenCalledWith(
-      'line',
-      [{ fileUri: audio.url, mimeType: 'audio/m4a', filename: 'voice.m4a' }],
-      undefined,
-    );
+    expect(sentFiles(senders)).toEqual([['line', [{ fileUri: audio.url, mimeType: 'audio/m4a', filename: 'voice.m4a' }]]]);
   });
 
   test('mixed audio and video keep their order and metadata in one attachment step', async () => {
@@ -36,14 +43,15 @@ describe('composer sends encrypted remote attachments', () => {
     expect(steps).toHaveLength(1);
     expect(steps[0]?.attachments).toEqual(files);
     await steps[0]?.run();
-    expect(senders.attachments).toHaveBeenCalledWith(
-      'line',
+    expect(sentFiles(senders)).toEqual([
       [
-        { fileUri: 'file:///voice.m4a', mimeType: 'audio/m4a', filename: 'voice.m4a' },
-        { fileUri: 'file:///clip.mp4', mimeType: 'video/mp4', filename: 'clip.mp4' },
+        'line',
+        [
+          { fileUri: 'file:///voice.m4a', mimeType: 'audio/m4a', filename: 'voice.m4a' },
+          { fileUri: 'file:///clip.mp4', mimeType: 'video/mp4', filename: 'clip.mp4' },
+        ],
       ],
-      undefined,
-    );
+    ]);
   });
 
   test('text precedes attachments with distinct optimistic ids', async () => {
@@ -54,7 +62,7 @@ describe('composer sends encrypted remote attachments', () => {
     expect(steps[0]?.text).toBe('caption');
     expect(steps[0]?.attachments).toEqual([]);
     expect(await steps[0]?.run()).toBe('text-id');
-    expect(senders.text).toHaveBeenCalledWith('line', 'caption');
+    expect(sentTexts(senders)).toEqual([['line', 'caption']]);
     expect(await steps[1]?.run()).toBe('attachment-id');
   });
 
@@ -62,9 +70,42 @@ describe('composer sends encrypted remote attachments', () => {
     const senders = makeSenders();
     const steps = planSendSteps('line', 'reply', [], 'reference', senders, () => 'local-id');
     expect(await steps[0]?.run()).toBe('reply-id');
-    expect(senders.reply).toHaveBeenCalledWith('line', 'reference', 'reply');
+    expect(sentReplies(senders)).toEqual([['line', 'reference', 'reply']]);
     expect(senders.text).not.toHaveBeenCalled();
     expect(senders.attachments).not.toHaveBeenCalled();
+  });
+
+  test('a send gate checks the account before each send and the reply rides on the first step only', async () => {
+    const senders = makeSenders();
+    const checks: string[] = [];
+    const steps = planSendSteps(
+      'line',
+      'caption',
+      [attachment('video')],
+      'reference',
+      senders,
+      () => 'local-id',
+      () => {
+        checks.push('current');
+      },
+      async () => {
+        checks.push('before');
+      },
+    );
+    for (const step of steps) await step.run();
+    await senders.reply.mock.calls[0]?.[3]?.();
+    await senders.attachments.mock.calls[0]?.[3]?.();
+    expect(sentReplies(senders)).toEqual([['line', 'reference', 'caption']]);
+    expect(senders.attachments.mock.calls[0]?.[4]).toBeUndefined();
+    expect(checks).toEqual(['before', 'current', 'current', 'before', 'current', 'before', 'current']);
+  });
+
+  test('without a gate nothing is checked before the send', async () => {
+    const senders = makeSenders();
+    const steps = planSendSteps('line', 'hi', [attachment('audio')], undefined, senders, () => 'local-id');
+    for (const step of steps) await step.run();
+    expect(senders.text.mock.calls[0]?.[2]).toBeUndefined();
+    expect(senders.attachments.mock.calls[0]?.[3]).toBeUndefined();
   });
 
   test('empty drafts do not allocate ids or send anything', () => {
@@ -85,7 +126,7 @@ describe('composer sends encrypted remote attachments', () => {
       undefined,
       {
         ...makeSenders(),
-        attachments: async (_line: string, _files: LocalAttachmentInput[], notify?: OnAttachmentsUploaded) => {
+        attachments: async (_line, _files, notify) => {
           notify?.(await upload.promise);
           return sent.promise;
         },
@@ -129,15 +170,11 @@ describe('composer sends a pending location', () => {
     expect(steps.map((step) => step.attachments)).toEqual([[], [photo], []]);
     expect(steps[2]?.location).toEqual(location);
     for (const step of steps) await step.run();
-    expect(senders.text.mock.calls).toEqual([
+    expect(sentTexts(senders)).toEqual([
       ['line', 'meet here'],
       ['line', locationText],
     ]);
-    expect(senders.attachments).toHaveBeenCalledWith(
-      'line',
-      [{ fileUri: 'file:///photo.jpg', mimeType: 'image/jpeg', filename: 'photo.jpg' }],
-      undefined,
-    );
+    expect(sentFiles(senders)).toEqual([['line', [{ fileUri: 'file:///photo.jpg', mimeType: 'image/jpeg', filename: 'photo.jpg' }]]]);
   });
 
   test('a location alone replies when a reply is set, and never goes out as a file', async () => {
@@ -145,7 +182,7 @@ describe('composer sends a pending location', () => {
     const steps = planSendSteps('line', '', [location], 'reference', senders, () => 'local-id');
     expect(steps).toHaveLength(1);
     expect(await steps[0]?.run()).toBe('reply-id');
-    expect(senders.reply).toHaveBeenCalledWith('line', 'reference', locationText);
+    expect(sentReplies(senders)).toEqual([['line', 'reference', locationText]]);
     expect(senders.attachments).not.toHaveBeenCalled();
   });
 
@@ -153,8 +190,8 @@ describe('composer sends a pending location', () => {
     const senders = makeSenders();
     const steps = planSendSteps('line', 'here', [location], 'reference', senders, () => 'local-id');
     for (const step of steps) await step.run();
-    expect(senders.reply).toHaveBeenCalledWith('line', 'reference', 'here');
-    expect(senders.text).toHaveBeenCalledWith('line', locationText);
+    expect(sentReplies(senders)).toEqual([['line', 'reference', 'here']]);
+    expect(sentTexts(senders)).toEqual([['line', locationText]]);
   });
 });
 

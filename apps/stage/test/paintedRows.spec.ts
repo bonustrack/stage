@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { mergePaintedRows } from '../components/home/model';
+import { mergePaintedRows } from '../lib/messaging/channelsSync.model';
 
 const row = (convId: string, lastTs: number): { convId: string; lastTs: number } => ({ convId, lastTs });
 

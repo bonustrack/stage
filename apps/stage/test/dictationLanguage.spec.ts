@@ -5,21 +5,20 @@ const harness = makeDictationHarness();
 const fallback = { state: 'ended', reason: 'fallback', notice: 'Continuing in en-US. Check your draft.' } as const;
 
 describe('dictation language fallback', () => {
-  it('reports unsupported automatic switching without blocking default-language dictation', async () => {
-    const notice = 'Dictation uses en-US. Automatic language switching needs Android 14 or later.';
+  it.each([
+    [
+      'reports unsupported automatic switching without blocking default-language dictation',
+      'Dictation uses en-US. Automatic language switching needs Android 14 or later.',
+    ],
+    [
+      'keeps engine-dependent switching provisional without blocking on-device capture',
+      'Automatic language switching depends on the device speech engine.',
+    ],
+  ])('%s', async (_name, notice) => {
     const h = harness({ availability: async () => ({ available: true, download: false, locale: 'en-US', notice }) });
     await h.control.start();
     expect(h.phases.at(-1)).toBe('listening');
     expect(h.errors).toEqual([null, notice]);
-    expect(h.downloads()).toBe(0);
-  });
-
-  it('keeps engine-dependent switching provisional without blocking on-device capture', async () => {
-    const notice = 'Automatic language switching depends on the device speech engine.';
-    const h = harness({ availability: async () => ({ available: true, download: false, locale: 'en-US', notice }) });
-    await h.control.start();
-    expect(h.errors).toEqual([null, notice]);
-    expect(h.phases.at(-1)).toBe('listening');
     expect(h.downloads()).toBe(0);
   });
 
@@ -59,6 +58,7 @@ describe('dictation language fallback', () => {
     const h = harness();
     await h.control.start();
     const old = h.starts[0];
+    if (old === undefined) throw new Error('dictation did not start');
     h.event({ text: 'Bonjour' });
     h.event(fallback);
     await tick();

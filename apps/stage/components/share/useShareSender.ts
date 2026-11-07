@@ -2,19 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { startSend, showSend, finishSend, type StartedSend } from '../composer/sendRun';
 import type { ComposerState } from '../composer/state';
-import { assertShareAccount, checkShareDestination } from '../../lib/shareDestination';
-import { getAccountEpoch } from '../../lib/accountEpoch';
-import { knownActiveAccountId } from '../../lib/channelsCache';
+import { checkShareDestination, type ShareScope } from '../../lib/shareDestination';
 import { capabilities } from '../../lib/capabilities';
+import { report } from '../../lib/errorPolicy';
 import { conversationSharePath } from '../../lib/links';
 import { stashLocalAttachment } from '../../lib/localAttachmentCache';
 import { currentShareDraft, makeShareSender } from './shareSend.model';
-import type { ShareDestination } from './share.model';
+import type { ShareDestination } from '../../lib/shareDestination.model';
 
 export interface ShareSelection {
   destination: ShareDestination;
-  accountId: string;
-  epoch: number;
+  scope: ShareScope;
 }
 
 export function useShareSender(props: {
@@ -43,10 +41,9 @@ export function useShareSender(props: {
       validate: async () => {
         const picked = current.current.selection;
         if (picked === null || !current.current.active || !mounted.current) throw new Error('Choose a channel first.');
-        const context = await checkShareDestination(picked.accountId, picked.epoch, picked.destination);
+        const context = await checkShareDestination(picked.scope, picked.destination);
         return () => {
           context.assertCurrent();
-          assertShareAccount(picked.accountId, picked.epoch);
           if (current.current.selection !== picked || !current.current.active || !mounted.current)
             throw new Error('Choose a channel again.');
         };
@@ -58,7 +55,7 @@ export function useShareSender(props: {
         const started = startSend(lineOfConv(picked.destination.convId), draft.text, draft.pending, undefined, {
           assertCurrent,
           beforeSend: async () => {
-            await checkShareDestination(picked.accountId, picked.epoch, picked.destination);
+            await checkShareDestination(picked.scope, picked.destination);
             assertCurrent();
           },
           previewUri: (uri) => {
@@ -83,12 +80,13 @@ export function useShareSender(props: {
         const picked = current.current.selection;
         await current.current.onDismiss(true);
         capabilities.toast('Shared to channel');
-        if (picked !== null && getAccountEpoch() === picked.epoch && knownActiveAccountId() === picked.accountId) {
+        if (picked !== null && picked.scope.current()) {
           capabilities.navigate(conversationSharePath(picked.destination.convId, picked.destination.peerAddress));
         }
       },
       busy: setBusy,
-      error: () => {
+      error: (err) => {
+        report('share.send', err);
         setError(
           sentRef.current
             ? 'Message sent. Close this share to continue.'
@@ -100,7 +98,8 @@ export function useShareSender(props: {
   const close = (): void => {
     if (!sender.close()) return;
     setClosed(true);
-    void current.current.onDismiss(sentRef.current).catch(() => {
+    void current.current.onDismiss(sentRef.current).catch((err: unknown) => {
+      report('share.close', err);
       setError('Could not close this share. Try again.');
     });
   };

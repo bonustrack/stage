@@ -37,6 +37,7 @@
     "./avatar": "./src/avatar.ts",
     "./badge": "./src/badge.ts",
     "./chart": "./src/chart.ts",
+    "./color-math": "./src/color-math.ts",
     "./icons": "./src/icons.ts",
     "./icons-a2ui": "./src/icons.a2ui.ts",
     "./layout": "./src/layout.ts",
@@ -63,6 +64,7 @@
     "./react-native/content-color": "./src/react-native/content-color.tsx",
     "./react-native/date-time-input": "./src/react-native/date-time-input.tsx",
     "./react-native/divider": "./src/react-native/divider.tsx",
+    "./react-native/dom": "./src/react-native/dom-helpers.ts",
     "./react-native/dropdown-menu": "./src/react-native/dropdown-menu.tsx",
     "./react-native/file-picker": "./src/react-native/file-picker.tsx",
     "./react-native/fonts": "./src/react-native/fonts.ts",
@@ -118,6 +120,7 @@
   },
   "devDependencies": {
     "@stage-labs/config": "workspace:*",
+    "@types/bun": "^1.2.0",
     "@types/react": "~19.2.0",
     "@types/react-dom": "~19.2.0",
     "expo-modules-core": "~57.0.19",

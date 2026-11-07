@@ -2,6 +2,7 @@ import { youtubeIdOf, mapCoordsOf } from './detect';
 import { githubLinkOf } from '../api/github';
 import { stageChannelIdOf, stageDmPeerOf } from '../xmtp/line';
 import { wholeLinkUrl, type LinkFinder } from '../xmtp/messageBody';
+import { isLinkSchemeUrl, previewLaunchOf } from '../routing/stageLinks';
 
 export type CardLink =
   | { kind: 'dm'; url: string; peerAddress: string }
@@ -18,8 +19,6 @@ interface PreviewLinkRef {
   shortGroup: string;
 }
 
-const PREVIEW_RE = /(?:(?:metro|stage):\/\/expo-development-client\/\?url=|https?:\/\/stage\.box\/preview-launcher\.html\?u=)(\S+)/i;
-
 function decodedOrRaw(raw: string): string {
   try {
     return decodeURIComponent(raw);
@@ -30,17 +29,10 @@ function decodedOrRaw(raw: string): string {
 
 export function previewLinkOf(text?: string | null): PreviewLinkRef | null {
   if (!text) return null;
-  const m = PREVIEW_RE.exec(text);
-  if (!m) return null;
-  const url = m[0];
-  const rawInner = m[1];
-  if (rawInner === undefined) return null;
-  const inner = decodedOrRaw(rawInner);
-  const g = /u\.expo\.dev\/[^/\s]+\/group\/([A-Za-z0-9-]+)/i.exec(inner);
-  if (!g) return null;
-  const groupId = g[1];
-  if (groupId === undefined) return null;
-  return { url, groupId, shortGroup: groupId.slice(0, 8) };
+  const launch = previewLaunchOf(text);
+  if (launch === null) return null;
+  const groupId = /u\.expo\.dev\/[^/\s]+\/group\/([A-Za-z0-9-]+)/i.exec(decodedOrRaw(launch.inner))?.[1];
+  return groupId === undefined ? null : { url: launch.url, groupId, shortGroup: groupId.slice(0, 8) };
 }
 
 type Detector = (token: string) => CardLink | null;
@@ -72,14 +64,6 @@ const DETECTORS: Detector[] = [
   },
 ];
 
-function specificCard(token: string): CardLink | null {
-  for (const detect of DETECTORS) {
-    const card = detect(token);
-    if (card) return card;
-  }
-  return null;
-}
-
 function isWebUrlWithHost(token: string): boolean {
   try {
     const u = new URL(token);
@@ -91,10 +75,12 @@ function isWebUrlWithHost(token: string): boolean {
 
 export function cardLinksOf(text: string | null | undefined, findLinks: LinkFinder): CardLink[] {
   const body = text?.trim() ?? '';
-  if (!/^(?:https?|metro|stage):\/\//i.test(body)) return [];
+  if (!isLinkSchemeUrl(body)) return [];
   const url = wholeLinkUrl(body, findLinks);
   if (!url) return [];
-  const card = specificCard(url);
-  if (card) return [card];
+  for (const detect of DETECTORS) {
+    const card = detect(url);
+    if (card) return [card];
+  }
   return isWebUrlWithHost(url) ? [{ kind: 'generic', url }] : [];
 }

@@ -1,8 +1,8 @@
 import path from 'node:path';
+import { STAGE_HOST } from '@stage-labs/client/endpoints';
 
-export const APP_SCHEME = 'stage-app';
-const APP_HOST = 'stage.box';
-export const APP_HOME = `${APP_SCHEME}://${APP_HOST}/`;
+export const BUNDLE_SCHEME = 'stage-app';
+export const APP_HOME = `${BUNDLE_SCHEME}://${STAGE_HOST}/`;
 
 export const ISOLATION_HEADERS: Readonly<Record<string, string>> = {
   'cross-origin-opener-policy': 'same-origin',

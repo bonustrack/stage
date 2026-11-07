@@ -1,37 +1,18 @@
+import { memo } from 'react';
 import { useRouter } from 'expo-router';
-import { DROPDOWN_MENU, DropdownMenuSeparator } from '@stage-labs/kit/react-native/menu';
-import { PickerRow } from '../conversation/SidebarSection';
-import { AppIcon } from '../widgets';
-import { CHANNEL_FIELDS, visibleChannelFieldCount, type ChannelFields } from './fields.model';
-import { toggleChannelField, useChannelFields } from '../../lib/channelFields';
-import { useOpenNewChat } from './newChatFocus';
-import { HoverIconButton } from '../hover';
-import {
-  CHANNELS_OVERFLOW_ITEMS,
-  homeActivityMenu,
-  homeLayoutMenu,
-  homeSortMenu,
-  homeViewEdit,
-  homeViewMenu,
-  type ViewMenuSection,
-} from './model';
-import { isLastActivity, lastActivityLabel } from './activity.model';
-import { setLastActivity, useLastActivity } from '../../lib/lastActivity';
-import { MenuHeading, MenuRow, OverflowMenu } from '../MenuRows';
-import { AnchoredMenu, menuPointBelow, menuPointOnLayout } from '../AnchoredMenu';
-import type { MenuPoint } from '../AnchoredMenu.model';
-import { getActiveAccount } from '../../lib/accounts';
-import { setHomeView, useHomeViewOf } from '../../lib/homeView';
-import { homeRouteOf } from '../tabs/splitRoutes';
-import { capabilities } from '../../lib/capabilities';
-import { profileLinkOf } from '../../lib/links';
-import { memo, useEffect, useState } from 'react';
-import { SearchFilterMenu } from '../SearchFilterMenu';
-import { searchFilterCount, type FilterScope } from '../searchFilter.model';
 import { Path } from 'react-native-svg';
 import { CentralIconBase, type CentralIconBaseProps } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/CentralIconBase';
-import { IconSettingsSliderVer } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSettingsSliderVer';
-import type { LayoutChangeEvent } from 'react-native';
+import type { HomeView } from '../../lib/homeView';
+import { useOpenNewChat } from '../newChat/newChatFocus';
+import { HoverIconButton } from '../hover';
+import { CHANNELS_OVERFLOW_ITEMS, type HomeOverflowId } from './model';
+import { OverflowMenu, type MenuActions } from '../MenuRows';
+import { getActiveAccount } from '../../lib/accounts';
+import { capabilities } from '../../lib/capabilities';
+import { profileLinkOf } from '../../lib/links';
+import { PAGES } from '../tabs/pages';
+import { HomeViewOptions, type HomeMenuState } from './viewMenu';
+import { reported } from '../../lib/errorPolicy';
 
 const BUBBLE =
   'M12.363 3.007A9 9 0 0 0 3 12C3 13.4247 3.33104 14.7721 3.9204 15.9694C3.9709 16.072 3.98746 16.1883 3.96447 16.3003L3.14957 20.2712C3.07816 20.6191 3.38218 20.9285 3.73132 20.8632L7.83545 20.0953C7.94223 20.0753 8.05242 20.091 8.15059 20.1376C9.31767 20.6906 10.6227 21 12 21A9 9 0 0 0 20.942 13.016';
@@ -46,234 +27,22 @@ const IconBubbleSparkle = memo((props: CentralIconBaseProps) => (
   </CentralIconBase>
 ));
 
-function copyActiveAddress(): void {
-  void getActiveAccount().then((acct) => {
-    if (!acct?.address) return;
-    capabilities.copy('Address', acct.address);
-  });
-}
-
-export interface HomeMenuState {
-  anchor: MenuPoint | null;
-  setAnchor: React.Dispatch<React.SetStateAction<MenuPoint | null>>;
-}
-
-interface HomeFilterProps {
-  query: string;
-  setQuery: (query: string) => void;
-  scope: FilterScope;
-  onFilterMenu: (open: boolean) => void;
-}
-
-function HomeViewMenu({
-  anchor,
-  onClose,
-  ...filter
-}: HomeFilterProps & { anchor: MenuPoint | null; onClose: () => void }): React.ReactElement {
-  const router = useRouter();
-  const current = useHomeViewOf(filter.scope);
-  const fields = useChannelFields(filter.scope);
-  const activity = useLastActivity(filter.scope);
-  const [page, setPage] = useState('view');
-  const close = (): void => {
-    setPage('view');
-    onClose();
-  };
-  const back = (): void => {
-    setPage(page === 'activity' ? 'filter' : 'view');
-  };
-  const open = anchor !== null;
-  const { onFilterMenu } = filter;
-  useEffect(() => {
-    onFilterMenu(open);
-    return () => {
-      onFilterMenu(false);
-    };
-  }, [open, onFilterMenu]);
-  const pick = (id: string): void => {
-    if (['layout', 'grouping', 'sorting', 'filter', 'fields', 'activity'].includes(id)) {
-      setPage(id);
-      return;
-    }
-    if (id.startsWith('activity:')) {
-      const window = id.slice('activity:'.length);
-      if (isLastActivity(window)) setLastActivity(filter.scope, window);
-      return;
-    }
-    const edit = homeViewEdit(current, id);
-    if (edit === null) return;
-    if (page !== 'sorting') close();
-    setHomeView(edit);
-    if (edit.view !== undefined) router.navigate(homeRouteOf(edit.view));
-  };
-  const filterCount = searchFilterCount(filter.query);
-  const counts: Record<string, number | undefined> = {
-    filter: filterCount > 0 ? filterCount : undefined,
-    fields: visibleChannelFieldCount(fields),
-  };
-  const picker = ['sorting', 'activity', 'layout'].includes(page);
-  const sections =
-    page === 'activity'
-      ? homeActivityMenu(activity)
-      : page === 'layout'
-        ? homeLayoutMenu(current)
-        : page === 'sorting'
-          ? homeSortMenu(current)
-          : homeViewMenu(current, page === 'grouping');
-  return (
-    <AnchoredMenu visible={open} onClose={close} anchor={anchor} avoidKeyboard>
-      {page === 'filter' ? (
-        <SearchFilterMenu {...filter} onBack={back}>
-          <MenuRow
-            icon="IconClock"
-            label="Last activity"
-            value={lastActivityLabel(activity)}
-            onPress={() => {
-              setPage('activity');
-            }}
-          />
-        </SearchFilterMenu>
-      ) : (
-        <>
-          {page === 'view' ? null : (
-            <>
-              <MenuRow icon="IconArrowLeft" label={page === 'activity' ? 'Filter' : 'View'} onPress={back} />
-              <DropdownMenuSeparator />
-            </>
-          )}
-          {page === 'fields' ? (
-            <FieldsPage scope={filter.scope} fields={fields} />
-          ) : (
-            <SectionsPage sections={sections} picker={picker} page={page} counts={counts} onPick={pick} />
-          )}
-        </>
-      )}
-    </AnchoredMenu>
-  );
-}
-
-function FieldsPage({ scope, fields }: { scope: FilterScope; fields: ChannelFields }): React.ReactElement {
-  return (
-    <>
-      <MenuHeading text="Fields" />
-      {CHANNEL_FIELDS.map((field) => (
-        <PickerRow
-          key={field.id}
-          label={field.label}
-          selected={fields[field.id]}
-          leading={field.icon === undefined ? undefined : <AppIcon name={field.icon} size={DROPDOWN_MENU.icon} color="link" />}
-          onPress={() => {
-            toggleChannelField(scope, field.id);
-          }}
-        />
-      ))}
-    </>
-  );
-}
-
-function SectionsPage({
-  sections,
-  picker,
-  page,
-  counts,
-  onPick,
-}: {
-  sections: ViewMenuSection[];
-  picker: boolean;
-  page: string;
-  counts: Record<string, number | undefined>;
-  onPick: (id: string) => void;
-}): React.ReactElement {
-  return (
-    <>
-      {sections.map((section, index) => (
-        <Section key={section.heading ?? index} divider={index > 0} heading={section.heading}>
-          {section.rows.map((row) =>
-            picker ? (
-              <PickerRow
-                key={row.id}
-                label={row.label}
-                selected={row.selected}
-                role={page === 'sorting' ? 'checkbox' : 'radio'}
-                autoFocus={page !== 'sorting' && row.selected}
-                leading={row.icon === undefined ? undefined : <AppIcon name={row.icon} size={DROPDOWN_MENU.icon} color="link" />}
-                onPress={() => {
-                  onPick(row.id);
-                }}
-              />
-            ) : (
-              <MenuRow
-                key={row.id}
-                icon={row.icon}
-                label={row.label}
-                value={row.value}
-                count={counts[row.id]}
-                selected={row.selected}
-                onPress={() => {
-                  onPick(row.id);
-                }}
-              />
-            ),
-          )}
-        </Section>
-      ))}
-    </>
-  );
-}
-
-function Section({ divider, heading, children }: { divider: boolean; heading?: string; children: React.ReactNode }): React.ReactElement {
-  return (
-    <>
-      {divider ? <DropdownMenuSeparator /> : null}
-      {heading === undefined ? null : <MenuHeading text={heading} />}
-      {children}
-    </>
-  );
-}
-
-function HomeViewOptions({ color, menu, ...filter }: HomeFilterProps & { color: string; menu: HomeMenuState }): React.ReactElement {
-  const { anchor, setAnchor } = menu;
-  const reanchor = (event: LayoutChangeEvent): void => {
-    const point = menuPointOnLayout(event);
-    if (point !== null) setAnchor((current) => (current === null ? null : point));
-  };
-  return (
-    <>
-      <HoverIconButton
-        icon={IconSettingsSliderVer}
-        label="View options"
-        color={color}
-        placement="below"
-        role="button"
-        expanded={anchor !== null}
-        onLayout={reanchor}
-        onPress={(event) => {
-          setAnchor(menuPointBelow(event));
-        }}
-      />
-      <HomeViewMenu
-        {...filter}
-        anchor={anchor}
-        onClose={() => {
-          setAnchor(null);
-        }}
-      />
-    </>
-  );
-}
-
-export function HomeTopnavRight({ head, ...filter }: HomeFilterProps & { head: string; menu: HomeMenuState }): React.ReactElement {
+export function HomeTopnavRight({ head, view, menu }: { head: string; view: HomeView; menu: HomeMenuState }): React.ReactElement {
   const router = useRouter();
   const openCompose = useOpenNewChat();
-  const handlers: Record<string, (() => void) | undefined> = {
-    'copy-address': copyActiveAddress,
+  const actions: MenuActions<HomeOverflowId> = {
+    'copy-address': () => {
+      void getActiveAccount().then((acct) => {
+        if (acct?.address) capabilities.copy('Address', acct.address);
+      }, reported('home.copyAddress'));
+    },
     profile: () => {
       void getActiveAccount().then((acct) => {
         if (acct?.address) router.push(profileLinkOf(acct.address));
-      });
+      }, reported('home.profile'));
     },
     settings: () => {
-      router.push('/settings');
+      router.push(PAGES.settings.href);
     },
   };
   return (
@@ -287,15 +56,8 @@ export function HomeTopnavRight({ head, ...filter }: HomeFilterProps & { head: s
         onShortcut={openCompose}
         onPress={openCompose}
       />
-      <HomeViewOptions {...filter} color={head} />
-      <OverflowMenu
-        color={head}
-        label="More"
-        items={CHANNELS_OVERFLOW_ITEMS}
-        onSelect={(id) => {
-          handlers[id]?.();
-        }}
-      />
+      <HomeViewOptions view={view} color={head} menu={menu} />
+      <OverflowMenu color={head} label="More" items={CHANNELS_OVERFLOW_ITEMS} actions={actions} />
     </>
   );
 }

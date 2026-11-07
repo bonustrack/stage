@@ -1,21 +1,19 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test';
+import type { Hex } from 'viem';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import type { SignMessage } from '@stage-labs/client/mail/api';
 import { deriveMailKey, mailPublicKeyHex, sealMailIndex, sealMailPart } from '@stage-labs/client/mail/mailbox';
+import { AccountChangedError } from '../lib/accountSelection';
 import { makeMailAccess, type Mailbox } from '../lib/mail.core';
+import { fetchHandler } from './helpers';
 
 const A: AccountRecord = { id: 'a', address: `0x${'aa'.repeat(20)}`, type: 'generated', dbDir: 'a', createdAt: 0 };
 const B: AccountRecord = { ...A, id: 'b', address: `0x${'bb'.repeat(20)}`, dbDir: 'b' };
 const ID = '1759430000000-9ef6fdd0-0635-4130-8b77-aaeae0f65158';
 const SIGN: Record<string, SignMessage> = {
-  a: () => Promise.resolve(`0x${'ab'.repeat(65)}`),
-  b: () => Promise.resolve(`0x${'cd'.repeat(65)}`),
+  a: () => Promise.resolve<Hex>(`0x${'ab'.repeat(65)}`),
+  b: () => Promise.resolve<Hex>(`0x${'cd'.repeat(65)}`),
 };
-
-function deferred<T>() {
-  const { promise, resolve, reject } = Promise.withResolvers<T>();
-  return { promise, resolve, reject };
-}
 
 async function harness() {
   let active: AccountRecord | null = A;
@@ -52,8 +50,8 @@ async function harness() {
       body: sealMailPart(keys.publicKey, label, ID, 'body', new TextEncoder().encode(raw)),
     });
   }
-  const pauses = new Map<string, ReturnType<typeof deferred<Response>>>();
-  const started = new Map<string, ReturnType<typeof deferred<undefined>>>();
+  const pauses = new Map<string, PromiseWithResolvers<Response>>();
+  const started = new Map<string, PromiseWithResolvers<undefined>>();
   const lookup = { run: (address: string): Promise<string | null> => Promise.resolve(names.get(address) ?? null) };
   const signing = {
     run: (rec: AccountRecord): Promise<SignMessage> => {
@@ -63,26 +61,28 @@ async function harness() {
       return Promise.resolve(sign);
     },
   };
-  fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
-    const request = new Request(input, init);
-    const url = new URL(request.url);
-    const body = request.method === 'POST' ? ((await request.json()) as { label: string }) : null;
-    const label = body?.label ?? url.searchParams.get('label') ?? '';
-    const key = `${url.pathname}/${label}`;
-    requests.push(key);
-    started.get(key)?.resolve(undefined);
-    const pause = pauses.get(key);
-    if (pause !== undefined) return pause.promise;
-    const fixture = fixtures.get(label);
-    if (fixture === undefined) throw new Error('unexpected mailbox');
-    if (url.pathname === '/mail/key') return Response.json(fixture);
-    if (url.pathname === '/mail/challenge') return Response.json({ nonce: 'nonce', expiresAt: Date.now() + 60_000 });
-    if (url.pathname === '/mail/session') return Response.json({ token: label, expiresAt: Date.now() + 900_000 });
-    if (request.headers.get('authorization') !== `Bearer ${label}`) throw new Error('wrong session');
-    if (url.pathname === '/mail/list') return Response.json({ mails: [{ id: ID, ts: 1759430000000, size: 10, index: fixture.index }] });
-    if (url.pathname === '/mail/message') return new Response(fixture.body);
-    throw new Error('unexpected request');
-  });
+  fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(
+    fetchHandler(async (input, init) => {
+      const request = new Request(input, init);
+      const url = new URL(request.url);
+      const body = request.method === 'POST' ? ((await request.json()) as { label: string }) : null;
+      const label = body?.label ?? url.searchParams.get('label') ?? '';
+      const key = `${url.pathname}/${label}`;
+      requests.push(key);
+      started.get(key)?.resolve(undefined);
+      const pause = pauses.get(key);
+      if (pause !== undefined) return pause.promise;
+      const fixture = fixtures.get(label);
+      if (fixture === undefined) throw new Error('unexpected mailbox');
+      if (url.pathname === '/mail/key') return Response.json(fixture);
+      if (url.pathname === '/mail/challenge') return Response.json({ nonce: 'nonce', expiresAt: Date.now() + 60_000 });
+      if (url.pathname === '/mail/session') return Response.json({ token: label, expiresAt: Date.now() + 900_000 });
+      if (request.headers.get('authorization') !== `Bearer ${label}`) throw new Error('wrong session');
+      if (url.pathname === '/mail/list') return Response.json({ mails: [{ id: ID, ts: 1759430000000, size: 10, index: fixture.index }] });
+      if (url.pathname === '/mail/message') return new Response(fixture.body.slice());
+      throw new Error('unexpected request');
+    }),
+  );
   const activeLookup = { run: (): Promise<AccountRecord | null> => Promise.resolve(active) };
   const access = makeMailAccess({
     activeAccount: () => activeLookup.run(),
@@ -111,8 +111,8 @@ async function harness() {
     boxes: () => access.mailboxes(selection),
     inbox: (boxes: Mailbox[]) => access.inbox(boxes, selection),
     pause(path: string) {
-      const response = deferred<Response>();
-      const start = deferred<undefined>();
+      const response = Promise.withResolvers<Response>();
+      const start = Promise.withResolvers<undefined>();
       pauses.set(path, response);
       started.set(path, start);
       return { response, started: start.promise };
@@ -168,7 +168,7 @@ describe('active account mail', () => {
 
   test('drops a delayed name lookup even when the user switches back to the same account', async () => {
     const h = await harness();
-    const lookup = deferred<string | null>();
+    const lookup = Promise.withResolvers<string | null>();
     h.lookup.run = () => lookup.promise;
     const pending = h.boxes();
     const rejected = pending.catch((err: unknown) => err);
@@ -176,7 +176,7 @@ describe('active account mail', () => {
     h.select(B);
     h.select(A);
     lookup.resolve('alice1');
-    expect(await rejected).toEqual(new Error('The active account changed.'));
+    expect(await rejected).toEqual(new AccountChangedError('The active account changed.'));
   });
 
   test('never reuses signers, keys or sessions after switch or logout and relogin', async () => {
@@ -207,7 +207,7 @@ describe('active account mail', () => {
     h.select(B);
     expect((await h.inbox(await h.boxes())).entries[0]?.index?.subject).toBe('Only b');
     pause.response.resolve(path === 'list' ? Response.json({ mails: [] }) : new Response('stale body'));
-    expect(await rejected).toEqual(new Error('The active account changed.'));
+    expect(await rejected).toEqual(new AccountChangedError('The active account changed.'));
     expect(h.requests.filter((request) => request === '/mail/session/alice1')).toHaveLength(1);
   });
 
@@ -219,14 +219,14 @@ describe('active account mail', () => {
     await pause.started;
     h.select(B);
     pause.response.resolve(new Response('expired', { status: 401 }));
-    expect(await rejected).toEqual(new Error('The active account changed.'));
+    expect(await rejected).toEqual(new AccountChangedError('The active account changed.'));
     expect(h.requests.filter((path) => path === '/mail/session/alice1')).toHaveLength(1);
   });
 
   test('does not start mail requests with a signer that arrives after switching', async () => {
     const h = await harness();
-    const signer = deferred<SignMessage>();
-    const started = deferred<undefined>();
+    const signer = Promise.withResolvers<SignMessage>();
+    const started = Promise.withResolvers<undefined>();
     h.signing.run = () => {
       started.resolve(undefined);
       return signer.promise;
@@ -238,7 +238,7 @@ describe('active account mail', () => {
     const sign = SIGN.a;
     if (sign === undefined) throw new Error('missing signer');
     signer.resolve(sign);
-    expect(await rejected).toEqual(new Error('The active account changed.'));
+    expect(await rejected).toEqual(new AccountChangedError('The active account changed.'));
     expect(h.requests).toEqual([]);
   });
 });

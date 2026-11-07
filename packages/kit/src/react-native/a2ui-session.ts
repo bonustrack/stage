@@ -13,10 +13,7 @@ export function useA2uiClient(messages: readonly unknown[], options: A2uiSession
   });
   return useMemo(() => {
     const client: A2uiClient = createA2uiClient({
-      catalogs: latest.current.catalogs,
-      functions: latest.current.functions,
-      locale: latest.current.locale,
-      validate: latest.current.validate,
+      ...latest.current,
       openUrl: (url) => {
         latest.current.openUrl?.(url);
       },

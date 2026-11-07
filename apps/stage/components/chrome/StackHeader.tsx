@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { Href } from 'expo-router';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -6,7 +7,7 @@ import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { Title } from '@stage-labs/kit/react-native/title';
 import { resolveColorToken } from '@stage-labs/kit/tokens';
 import { Row, STICKY_TOP, PAGE_GUTTER } from '../layout';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { capabilities } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { HoverTint } from '../hover';
@@ -16,7 +17,7 @@ import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius
 const BACK_PAD = { padding: 4 } as const;
 const TITLE_SHRINK = { flexShrink: 1 } as const;
 
-function BackButton({ onBack, backTo, backColor }: { onBack?: () => void; backTo?: string; backColor: string }): React.ReactElement {
+function BackButton({ onBack, backTo, backColor }: { onBack?: () => void; backTo?: Href; backColor: string }): React.ReactElement {
   const scheme = useKitScheme();
   const { link } = usePalette();
   const press =
@@ -56,7 +57,7 @@ export function StackHeader({
 }: {
   title: string;
   trailing?: ReactNode;
-  backTo?: string;
+  backTo?: Href;
   onBack?: () => void;
   wallet?: boolean;
   back?: boolean;

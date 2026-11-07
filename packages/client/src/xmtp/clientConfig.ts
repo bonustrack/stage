@@ -1,5 +1,6 @@
 import { dbDirFor } from '../accounts/registry';
 import { STORE_LOCKED_MESSAGE } from './clientErrors';
+import { sleep as defaultSleep } from '../timing';
 
 export function webXmtpDbPath(accountId: string, env: string): string {
   return `${dbDirFor(accountId)}-${env}.db3`;
@@ -22,19 +23,6 @@ export function installationCreatedAtMs(clientTimestampNs: bigint | null | undef
   return clientTimestampNs != null ? Number(clientTimestampNs / 1_000_000n) : null;
 }
 
-const NATIVE_TIMESTAMP_SCALES: readonly { above: number; toMs: number }[] = [
-  { above: 1e17, toMs: 1e-6 },
-  { above: 1e14, toMs: 1e-3 },
-  { above: 1e11, toMs: 1 },
-  { above: 0, toMs: 1e3 },
-];
-
-export function nativeInstallationCreatedAtMs(createdAt: unknown): number | undefined {
-  if (typeof createdAt !== 'number' || !Number.isFinite(createdAt) || createdAt <= 0) return undefined;
-  const scale = NATIVE_TIMESTAMP_SCALES.find(({ above }) => createdAt > above);
-  return scale === undefined ? undefined : Math.round(createdAt * scale.toMs);
-}
-
 export type PersistedClientEvent = 'open-failed' | 'installation-mismatch' | 'installation-adopted' | 'registered';
 
 export interface PersistedClientDeps<C> {
@@ -55,14 +43,8 @@ export interface OpenedClient<C> {
   registered: boolean;
 }
 
-export const OPEN_ATTEMPTS = 5;
+const OPEN_ATTEMPTS = 5;
 const OPEN_RETRY_MS = 800;
-
-function defaultSleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
 
 function matchesSavedInstallation<C>(deps: PersistedClientDeps<C>, client: C, saved: string | null): boolean {
   return saved === null || deps.installationIdOf(client) === saved;

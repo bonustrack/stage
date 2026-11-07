@@ -6,7 +6,6 @@ on:
       - 'apps/stage/**'
       - 'packages/**'
       - 'patches/**'
-      - 'scripts/build-extension.mjs'
       - 'bun.lock'
       - 'package.json'
       - '.github/workflows/build-extension.yml'
@@ -35,7 +34,7 @@ jobs:
             exit 1
           }
       - run: bun install --frozen-lockfile
-      - run: bun scripts/build-extension.mjs "$RUNNER_TEMP/stage-extension"
+      - run: bun apps/stage/extension/build.mjs "$RUNNER_TEMP/stage-extension"
       - uses: actions/upload-artifact@v4
         with:
           name: stage-chrome-extension

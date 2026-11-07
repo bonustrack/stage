@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '../src/types';
 import {
-  voteEventsOf,
   pollQuestionsInFeed,
   pollOptionCountsInFeed,
   votesByMessage,
@@ -59,21 +58,13 @@ describe('poll-feed shared tally helpers', () => {
     expect(pollOptionCountsInFeed(feed).get('p1')).toBe(3);
   });
 
-  test('voteEventsOf only picks custom-schema reactions', () => {
-    const feed = [
-      voteEntry('stage:user/a', 'p1', voteKey(0, 0)),
-      {
-        id: 'r1',
-        ts: ts(),
-        station: 'xmtp',
-        line: LINE,
-        from: 'stage:user/b',
-        to: LINE,
-        text: '[react 👍]',
-        payload: { contentType: 'reaction', reactTo: 'p1', emoji: '👍' },
-      } as HistoryEntry,
-    ];
-    expect(voteEventsOf(feed)).toHaveLength(1);
+  test('only custom-schema reactions count as votes', () => {
+    const plain: HistoryEntry = {
+      ...voteEntry('stage:user/b', 'p1', voteKey(0, 0)),
+      payload: { contentType: 'reaction', reactTo: 'p1', emoji: voteKey(0, 0), removed: false },
+    };
+    const feed = [pollEntry('p1', 'Lunch?', ['Pizza', 'Sushi']), voteEntry('stage:user/a', 'p1', voteKey(0, 0)), plain];
+    expect([...(votesByMessage(feed).get('p1')?.get(0)?.get(0) ?? [])]).toEqual(['stage:user/a']);
   });
 
   test('single-select tally counts distinct voters per option', () => {
@@ -128,33 +119,6 @@ describe('poll-feed shared tally helpers', () => {
     const own = ownVotesByMessage(feed, 'stage:user/me').get('p1')?.get(0);
     expect(own?.has(1)).toBe(true);
     expect(own?.has(0)).toBe(false);
-  });
-
-  test('web-shaped vote (SDK string schema/action) is counted', () => {
-    const sdkReaction = { reference: 'p1', referenceInboxId: 'inbox-me', action: 'added', content: voteKey(0, 0), schema: 'custom' };
-    const isCustom = sdkReaction.schema === 'custom';
-    const removed = sdkReaction.action === 'removed';
-    const mapped: HistoryEntry = {
-      id: `v-web-${++seq}`,
-      ts: ts(),
-      station: 'xmtp',
-      line: LINE,
-      from: 'stage:user/me',
-      to: LINE,
-      text: `[vote ${sdkReaction.content}]`,
-      payload: {
-        contentType: 'reaction',
-        reactTo: sdkReaction.reference,
-        emoji: sdkReaction.content,
-        ...(isCustom ? { schema: 'custom' } : {}),
-        removed,
-      },
-    };
-    expect(isCustom).toBe(true);
-    const feed = [pollEntry('p1', 'Lunch?', ['Pizza', 'Sushi']), mapped];
-    expect(voteEventsOf(feed)).toHaveLength(1);
-    expect(votesByMessage(feed).get('p1')?.get(0)?.get(0)?.size).toBe(1);
-    expect(ownVotesByMessage(feed, 'stage:user/me').get('p1')?.get(0)?.has(0)).toBe(true);
   });
 
   test('open answers are decoded from open-vote custom reactions', () => {

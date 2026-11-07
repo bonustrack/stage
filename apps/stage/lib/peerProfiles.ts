@@ -1,54 +1,30 @@
 import { useEffect, useReducer } from 'react';
-import {
-  ensurePeerProfiles,
-  getPeerAvatar,
-  peerProfileEntries,
-  seedPeerProfiles,
-  setOnchainProfileResolver,
-  subscribePeerProfiles,
-  type PeerProfileEntries,
-} from '@stage-labs/client/identity/peerProfiles';
+import { createPeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import { avatarCacheKey, baseProfileClient, resolveOnchainProfile } from '@stage-labs/client/identity/onchainProfile';
-import { fetchIssuedName } from '@stage-labs/client/identity/stageNames';
+import { fetchIssuedName } from '@stage-labs/client/identity/namesApi';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { PersistentStore } from './cache.shared';
 import { linkProxyBase } from './linkProxy';
-import { recover } from './errorPolicy';
 
-export {
-  isPeerResolved,
-  getPeerName,
-  getPeerDisplayName,
-  getPeerHandle,
-  peerLabel,
-  getPeerDescription,
-  getPeerAvatar,
-  getPeerProfileSource,
-  invalidatePeerProfile,
-} from '@stage-labs/client/identity/peerProfiles';
+const profiles = createPeerProfiles({
+  resolveOnchain: (address) => resolveOnchainProfile(baseProfileClient(), address, (peer) => fetchIssuedName(linkProxyBase(), peer)),
+});
 
-setOnchainProfileResolver((address) =>
-  resolveOnchainProfile(baseProfileClient(), address, (peer) => fetchIssuedName(linkProxyBase(), peer)),
-);
+export const ensurePeerProfiles = profiles.ensure;
+export const seedPeerProfiles = profiles.seed;
+export const peerProfileEntries = profiles.entries;
+export const subscribePeerProfiles = profiles.subscribe;
+export const invalidatePeerProfile = profiles.invalidate;
+export const isPeerResolved = profiles.isResolved;
+export const getPeerName = profiles.name;
+export const getPeerDisplayName = profiles.displayName;
+export const getPeerHandle = profiles.handle;
+export const getPeerDescription = profiles.description;
+export const getPeerAvatar = profiles.avatar;
+export const getPeerProfileSource = profiles.source;
+export const peerLabel = profiles.label;
 
 export function peerAvatarUrl(address: string, displayPx: number): string {
   return stampAvatarUrl(address, displayPx, avatarCacheKey(getPeerAvatar(address)));
-}
-
-const persisted = new PersistentStore<PeerProfileEntries>('peer-profiles.json');
-let hydration: Promise<void> | null = null;
-
-async function hydrateAndMirror(): Promise<void> {
-  const saved = await persisted.hydrate().catch(recover('peerProfiles.hydrate', null));
-  if (saved) seedPeerProfiles(saved);
-  subscribePeerProfiles(() => {
-    persisted.set(peerProfileEntries());
-  });
-}
-
-export function hydratePeerProfiles(): Promise<void> {
-  hydration ??= hydrateAndMirror();
-  return hydration;
 }
 
 export function usePeerProfiles(addresses: (string | null | undefined)[]): number {

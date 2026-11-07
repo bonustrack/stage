@@ -1,10 +1,10 @@
 import * as Linking from 'expo-linking';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
 import { appStorage } from '../platform/storage';
 import { loadAccounts } from './accounts';
 import { ignore, ignored } from './errorPolicy';
+import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
 
 const STORAGE_KEY = 'stage:lastRoute:v1';
 
@@ -14,12 +14,6 @@ let restoredTarget: string | null = null;
 let persistResumed = false;
 let reachedTarget = false;
 
-const UNRESTORABLE = new Set(['', '/', '/accounts', '/wallet', '/settings']);
-
-function isRestorable(path: string): boolean {
-  return !UNRESTORABLE.has(path) && !path.startsWith('/(tabs)');
-}
-
 async function readSavedRoute(): Promise<string | null> {
   const saved = await appStorage.get(STORAGE_KEY);
   ignore(appStorage.delete(STORAGE_KEY), 'cleanup');
@@ -28,16 +22,11 @@ async function readSavedRoute(): Promise<string | null> {
 
 function hasColdStartDeepLink(url: string | null): boolean {
   if (!url) return false;
-  const hash = url.indexOf('#');
-  const body = hash !== -1 ? url.slice(hash + 1) : url.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/?]*/i, '');
-  return /[a-z0-9]/i.test(body.replace(/^\/+/, '').split(/[?#]/)[0] ?? '');
+  const route = routeForUrl(url);
+  return route !== null && route.pathname !== '/(tabs)';
 }
 
-interface RestoreGate {
-  ready: boolean;
-}
-
-export function useRestoreGate(): RestoreGate {
+export function useRestoreGate(isRestorable: (path: string) => boolean): { ready: boolean } {
   const pathname = usePathname();
   const navState = useRootNavigationState();
   const [ready, setReady] = useState(false);
@@ -57,7 +46,7 @@ export function useRestoreGate(): RestoreGate {
         ]);
         const deepLink = hasColdStartDeepLink(initialUrl);
         const restorable = !!saved && isRestorable(saved);
-        const willRestore = Platform.OS !== 'web' && restorable && !deepLink && accounts.length > 0;
+        const willRestore = restorable && !deepLink && accounts.length > 0;
         if (willRestore) {
           processSavedRoute = saved;
           restoredTarget = saved;

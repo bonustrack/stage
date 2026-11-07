@@ -2,15 +2,19 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { useFeedRenderItem } from './useFeedRenderItem';
-import { searchLocalHistory, type SearchScanResult } from '../../modules/messaging/searchLocal';
-import type { useConversationState } from './useConversationState';
+import { useFeedRenderItem, type BubbleFeed } from './useFeedRenderItem';
+import { searchLocalHistory, type SearchScanResult } from '../../lib/messaging/searchLocal';
 import { usePalette } from '../../lib/theme';
 import { Column, Row, VirtualList, PAGE_GUTTER } from '../layout';
+import { reported } from '../../lib/errorPolicy';
 
-type ConvState = ReturnType<typeof useConversationState>;
+const SEARCH_MIN_CHARS = 2;
 
-export function ConversationSearch({ line, query, c }: { line: string; query: string; c: ConvState }): React.ReactElement {
+export function searchesFor(query: string): boolean {
+  return query.trim().length >= SEARCH_MIN_CHARS;
+}
+
+export function ConversationSearch({ line, query, bubbles }: { line: string; query: string; bubbles: BubbleFeed }): React.ReactElement {
   const { text: sub, bg } = usePalette();
   const [result, setResult] = useState<SearchScanResult>({ hits: [], truncated: false });
   const [scanning, setScanning] = useState(false);
@@ -18,11 +22,11 @@ export function ConversationSearch({ line, query, c }: { line: string; query: st
 
   const q = query.trim();
 
-  const { renderItem, extraData } = useFeedRenderItem(c, q);
+  const { renderItem, extraData } = useFeedRenderItem(bubbles, result.hits, q);
 
   useEffect(() => {
     const epoch = ++scanEpoch.current;
-    if (q.length < 2) {
+    if (!searchesFor(q)) {
       setResult({ hits: [], truncated: false });
       setScanning(false);
       return;
@@ -36,9 +40,11 @@ export function ConversationSearch({ line, query, c }: { line: string; query: st
           if (scanEpoch.current === epoch) setResult(partial);
         },
         () => scanEpoch.current !== epoch,
-      ).finally(() => {
-        if (scanEpoch.current === epoch) setScanning(false);
-      });
+      )
+        .finally(() => {
+          if (scanEpoch.current === epoch) setScanning(false);
+        })
+        .catch(reported('chat.search'));
     }, 220);
     return () => {
       clearTimeout(t);
@@ -52,7 +58,7 @@ export function ConversationSearch({ line, query, c }: { line: string; query: st
     [],
   );
 
-  const showEmpty = q.length >= 2 && !scanning && result.hits.length === 0;
+  const showEmpty = searchesFor(q) && !scanning && result.hits.length === 0;
 
   return (
     <VirtualList<HistoryEntry>

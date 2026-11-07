@@ -35,18 +35,18 @@ describe('wallet index reservation', () => {
   });
   test('a storage failure is visible and does not poison later explicit reservation', async () => {
     let failed = true;
-    let saved: string | null = null;
+    const disk: { saved: string | null } = { saved: null };
     const store = makeHdIndexStore({
-      get: () => (failed ? Promise.reject(new Error('storage unavailable')) : Promise.resolve(saved)),
+      get: () => (failed ? Promise.reject(new Error('storage unavailable')) : Promise.resolve(disk.saved)),
       set: (_key, value) => {
-        saved = value;
+        disk.saved = value;
         return Promise.resolve(undefined);
       },
     });
     await expect(store.reserve('synthetic', 0)).rejects.toThrow('storage unavailable');
-    expect(saved).toBeNull();
+    expect(disk.saved).toBeNull();
     failed = false;
     await store.reserve('synthetic', 0);
-    expect(saved).toBe('1');
+    expect(disk.saved).toBe('1');
   });
 });

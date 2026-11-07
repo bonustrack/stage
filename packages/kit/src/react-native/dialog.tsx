@@ -1,12 +1,13 @@
+import type { MODAL_SIDES } from '../kit-vocabulary';
 import type { ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { resolveBoxRadius, resolveOptionalColor, type Color, type RadiusValue, type Scheme } from '../tokens';
 import { spacingEntries, type SpacingValue } from '../layout';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
-export type DialogSide = 'center' | 'bottom' | 'end';
+export type DialogSide = (typeof MODAL_SIDES)[number];
 
 export interface DialogProps {
   open: boolean;
@@ -94,8 +95,7 @@ function Handle(props: { color: string }): ReactNode {
   return <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: props.color, alignSelf: 'center', marginBottom: 12 }} />;
 }
 
-function PanelBody(bodyProps: { props: DialogProps; content: ReactNode }): ReactNode {
-  const { props, content } = bodyProps;
+function PanelBody({ props, content }: { props: DialogProps; content: ReactNode }): ReactNode {
   if (props.scroll !== true) return content;
   return (
     <ScrollView
@@ -132,7 +132,7 @@ function Panel(panelProps: { props: DialogProps; scheme: Scheme; insetBottom: nu
 }
 
 export function Dialog(props: DialogProps): ReactNode {
-  const scheme = useKitScheme();
+  const { scheme } = useKitColors(undefined, 'static');
   const insets = useSafeAreaInsets();
   const { open, onClose, children } = props;
   const backdrop = props.backdrop !== false;

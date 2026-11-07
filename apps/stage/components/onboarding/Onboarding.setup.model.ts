@@ -1,6 +1,6 @@
-import type { Stage } from './flow';
+import type { Stage } from '../../lib/onboarding';
 
-export type SetupRetry = 'restart' | 'messaging' | 'create';
+type SetupRetry = 'restart' | 'messaging' | 'create';
 
 export interface SetupErr {
   message: string;
@@ -9,8 +9,6 @@ export interface SetupErr {
 }
 
 export type StageState = 'done' | 'active' | 'pending';
-
-export type SetupLinkKind = 'startOver';
 
 const STAGE_LABELS: Record<Stage, string> = {
   wallet: 'Creating your wallet',
@@ -49,9 +47,8 @@ export function setupStages(plan: SetupPlan): Stage[] {
   ];
 }
 
-export function setupLinks(err: SetupErr | null): SetupLinkKind[] {
-  if (err === null || err.retry !== 'restart') return [];
-  return ['startOver'];
+export function canStartOver(err: SetupErr | null): boolean {
+  return err !== null && err.retry === 'restart';
 }
 
 export function stageState(stage: Stage, current: Stage, stages: Stage[]): StageState {

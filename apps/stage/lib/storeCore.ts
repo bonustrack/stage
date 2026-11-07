@@ -1,19 +1,43 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { z } from 'zod';
 import { report } from './errorPolicy';
 
-interface StoredSchema<T> {
+export interface StoredSchema<T> {
   safeParse: (value: unknown) => { success: true; data: T } | { success: false };
 }
 
-export function jsonWith<T>(schema: StoredSchema<T>): (raw: string) => T | undefined {
+export const storedStrings = z.array(z.unknown()).transform((items) => items.filter((item): item is string => typeof item === 'string'));
+
+export function storedRecordOf<V>(isValue: (value: unknown) => value is V) {
+  return z
+    .record(z.unknown())
+    .transform((entries) => Object.fromEntries(Object.entries(entries).filter((entry): entry is [string, V] => isValue(entry[1]))));
+}
+
+export function valueWith<T>(schema: StoredSchema<T>): (value: unknown) => T | null {
+  return (value) => {
+    const parsed = schema.safeParse(value);
+    return parsed.success ? parsed.data : null;
+  };
+}
+
+export function jsonWith<T>(schema: StoredSchema<T>, reviver?: (key: string, value: unknown) => unknown): (raw: string) => T | undefined {
   return (raw) => {
     try {
-      const parsed = schema.safeParse(JSON.parse(raw));
+      const parsed = schema.safeParse(JSON.parse(raw, reviver));
       return parsed.success ? parsed.data : undefined;
     } catch {
       return undefined;
     }
   };
+}
+
+export function sameList<T>(a: readonly T[], b: readonly T[]): boolean {
+  return a.length === b.length && a.every((item, i) => item === b[i]);
+}
+
+export function keepUnlessChanged<T>(current: T, next: T): T {
+  return JSON.stringify(next) === JSON.stringify(current) ? current : next;
 }
 
 export function useStoreValue<T>(subscribe: (cb: () => void) => () => void, get: () => T, prime?: () => void): T {
@@ -27,7 +51,13 @@ export function useStoreValue<T>(subscribe: (cb: () => void) => () => void, get:
   return useSyncExternalStore(subscribeAndPrime, get, get);
 }
 
-export function memoized<T>(cache: Map<string, Promise<T>>, key: string, make: () => Promise<T>): Promise<T> {
+interface PromiseCache<K, T> {
+  get(key: K): Promise<T> | undefined;
+  set(key: K, value: Promise<T>): unknown;
+  delete(key: K): boolean;
+}
+
+export function memoized<K, T>(cache: PromiseCache<K, T>, key: K, make: () => Promise<T>): Promise<T> {
   const known = cache.get(key);
   if (known !== undefined) return known;
   const pending = make();
@@ -106,12 +136,7 @@ export function makeSharedSource<S, T = void>(
   };
 }
 
-export function hydrateOnce<T>(reader: () => Promise<T>): {
-  run: () => Promise<T>;
-  done: () => boolean;
-  markDone: () => void;
-  reset: () => void;
-} {
+export function hydrateOnce<T>(reader: () => Promise<T>): { run: () => Promise<T>; done: () => boolean; markDone: () => void } {
   let loaded = false;
   let inFlight: Promise<T> | null = null;
   return {
@@ -130,10 +155,6 @@ export function hydrateOnce<T>(reader: () => Promise<T>): {
     done: (): boolean => loaded,
     markDone(): void {
       loaded = true;
-      inFlight = null;
-    },
-    reset(): void {
-      loaded = false;
       inFlight = null;
     },
   };

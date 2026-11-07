@@ -4,6 +4,8 @@ import { evaluateChecks, resolveDynamic, safeResolve, toDiagnostic, type Diagnos
 import { checkedUrl, createBasicFunctions, type FunctionImpl } from './functions';
 import { coerceToString, resolveLocale } from './functions.format';
 import { KIT_CATALOG, KIT_CATALOG_ID } from './kit-catalog';
+import { inheritKitFunctions } from './kit-catalog.extend';
+import { kitFunctionImpls, type SurfaceNav } from './kit-catalog.functions';
 import { setAt } from './pointer';
 import {
   A2UI_VERSION,
@@ -27,7 +29,7 @@ import { BASIC_CATALOG } from './schemas';
 import { parseMessages } from './stream';
 import { createSurfaceEvents, type Listener, type SurfaceState } from './surface';
 
-export type SurfaceNav = { kind: 'open'; surfaceId: string } | { kind: 'close' };
+export type { SurfaceNav };
 
 export interface TransportMetadata {
   a2uiRendererDataModel: RendererDataModel;
@@ -69,23 +71,12 @@ export interface A2uiClient {
 
 function functionTable(options: A2uiClientOptions, catalogs: readonly JsonObject[]): Runtime['functions'] {
   const basic = createBasicFunctions(options.locale);
-  const { navigate } = options;
-  const kit: Record<string, FunctionImpl> = {
-    ...basic,
-    openSurface: (args) => {
-      if (typeof args.surfaceId !== 'string' || args.surfaceId === '') throw new Error('openSurface needs a surfaceId.');
-      navigate?.({ kind: 'open', surfaceId: args.surfaceId });
-    },
-    closeSurface: () => {
-      navigate?.({ kind: 'close' });
-    },
-    equals: (args) => JSON.stringify(args.value ?? null) === JSON.stringify(args.other ?? null),
-  };
+  const kit = kitFunctionImpls(basic, options.navigate);
   const table: Record<string, Record<string, FunctionImpl>> = { [BASIC_CATALOG_ID]: basic, [KIT_CATALOG_ID]: kit };
   for (const catalog of catalogs) {
     const id = catalog.catalogId;
     if (typeof id !== 'string' || table[id] !== undefined || !isJsonObject(catalog.functions)) continue;
-    table[id] = Object.fromEntries(Object.keys(catalog.functions).flatMap((name) => (kit[name] === undefined ? [] : [[name, kit[name]]])));
+    table[id] = inheritKitFunctions(catalog, kit);
   }
   for (const [catalogId, fns] of Object.entries(options.functions ?? {})) table[catalogId] = { ...(table[catalogId] ?? {}), ...fns };
   return (catalogId) => table[catalogId];

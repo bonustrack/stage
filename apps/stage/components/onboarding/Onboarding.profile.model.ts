@@ -1,5 +1,3 @@
-import { DESCRIPTION_MAX, DISPLAY_NAME_MAX } from '../settings/ProfileSettings.edit.model';
-
 import type { ProfileImage, ProfileSetup } from '@stage-labs/client/profile/setup';
 export type { ProfileImage, ProfileSetup } from '@stage-labs/client/profile/setup';
 
@@ -29,11 +27,4 @@ export function profileSetupFrom(label: string, details: ProfileDetails): Profil
           },
         }),
   };
-}
-
-export function profileDetailsProblem(details: ProfileDetails): string | null {
-  if (details.displayName.trim().length > DISPLAY_NAME_MAX) return `Name is limited to ${DISPLAY_NAME_MAX} characters.`;
-  if (/[\r\n]/.test(details.displayName)) return 'Name cannot span several lines.';
-  if (details.description.trim().length > DESCRIPTION_MAX) return `About is limited to ${DESCRIPTION_MAX} characters.`;
-  return null;
 }

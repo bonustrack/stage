@@ -1,19 +1,18 @@
 import { describe, expect, test } from 'bun:test';
+import { CHANNEL_PRIORITIES, LabelPermissionError, priorityOf } from '../src/xmtp/labels';
 import {
-  CHANNEL_PRIORITIES,
   channelFieldOf,
+  createAppDataWriter,
   groupTagsOf,
-  LabelPermissionError,
   NO_TAGS,
-  priorityOf,
-  writeAssigned,
-  writeChannelField,
-  writeLabels,
+  sameGroupTags,
+  type AppDataGroup,
   type ChannelField,
-  type Group,
-} from '../src/xmtp/labels';
+} from '../src/xmtp/channelMeta';
 import { describeAppDataChange } from '../src/xmtp/appDataChange';
 import { appDataGroup } from './helpers';
+
+const { writeAssigned, writeChannelField, writeLabels } = createAppDataWriter();
 
 const address = '0x1111111111111111111111111111111111111111';
 const kept = {
@@ -26,11 +25,20 @@ const kept = {
 };
 const fields: ChannelField[] = ['status', 'priority'];
 
+describe('channel metadata table', () => {
+  test('compares cached rows field by field, treating missing assignees as none', () => {
+    const tags = { ...NO_TAGS, labels: ['Todo'], status: 'Doing' };
+    expect(sameGroupTags({ labels: ['Todo'], status: 'Doing' }, tags)).toBe(true);
+    expect(sameGroupTags({ status: 'Doing' }, tags)).toBe(false);
+    expect(sameGroupTags({ labels: ['Todo'], status: 'Done' }, tags)).toBe(false);
+    expect(sameGroupTags({ labels: ['Todo'], status: 'Doing', assigned: [address] }, tags)).toBe(false);
+  });
+});
+
 describe('channel status and priority', () => {
   test('normalizes status like category and uses the exact priority options', () => {
     expect(channelFieldOf('status', '  Needs   review ')).toBe('Needs review');
     expect(channelFieldOf('status', 'x'.repeat(40))).toBe('x'.repeat(24));
-    expect(CHANNEL_PRIORITIES).toEqual(['Urgent', 'High', 'Medium', 'Low']);
     for (const priority of CHANNEL_PRIORITIES) expect(priorityOf(` ${priority} `)).toBe(priority);
     for (const value of [undefined, null, '', '   ', 7, ['Work'], { name: 'Work' }]) {
       expect(channelFieldOf('status', value)).toBeNull();
@@ -40,19 +48,15 @@ describe('channel status and priority', () => {
     expect(priorityOf('Other')).toBeNull();
   });
 
-  test('reads both SDK appData shapes and keeps old channels compatible', async () => {
+  test('reads the app data and keeps old channels compatible', async () => {
     const raw = JSON.stringify({ ...kept, status: ' Needs review ', priority: 'High' });
-    const native = appDataGroup(raw).group;
-    const web: Group = { appData: raw, updateAppData: () => Promise.resolve() };
-    for (const group of [native, web]) {
-      expect(await groupTagsOf(group)).toEqual({
-        labels: ['Todo'],
-        category: 'Work',
-        status: 'Needs review',
-        priority: 'High',
-        assigned: [address],
-      });
-    }
+    expect(await groupTagsOf(appDataGroup(raw).group)).toEqual({
+      labels: ['Todo'],
+      category: 'Work',
+      status: 'Needs review',
+      priority: 'High',
+      assigned: [address],
+    });
     for (const rawValue of ['', '{', '[]', JSON.stringify({ status: [], priority: 7 })]) {
       expect(await groupTagsOf(appDataGroup(rawValue).group)).toEqual(NO_TAGS);
     }
@@ -90,10 +94,11 @@ describe('channel status and priority', () => {
   test.each([null, 'Doing'])('a guarded status change to %s preserves a newer status found by sync', async (next) => {
     const writes: string[] = [];
     const fresh = JSON.stringify({ ...kept, status: 'Done' });
-    const group: Group = {
-      appData: JSON.stringify({ ...kept, status: 'Todo' }),
+    let current = JSON.stringify({ ...kept, status: 'Todo' });
+    const group: AppDataGroup = {
+      appData: () => Promise.resolve(current),
       sync: () => {
-        group.appData = fresh;
+        current = fresh;
         return Promise.resolve();
       },
       updateAppData: (value) => {
@@ -102,7 +107,7 @@ describe('channel status and priority', () => {
       },
     };
     await expect(writeChannelField(group, 'status', next, 'Todo')).rejects.toThrow('The status changed. Try again.');
-    expect(group.appData).toBe(fresh);
+    expect(await group.appData()).toBe(fresh);
     expect(writes).toEqual([]);
   });
 
@@ -147,7 +152,7 @@ describe('channel status and priority', () => {
   });
 
   test.each(fields)('reports a permission error for %s', async (field) => {
-    const group: Group = { appData: '', updateAppData: () => Promise.reject(new Error('not authorized')) };
+    const group: AppDataGroup = { appData: () => Promise.resolve(''), updateAppData: () => Promise.reject(new Error('not authorized')) };
     const failure = writeChannelField(group, field, 'High');
     await expect(failure).rejects.toBeInstanceOf(LabelPermissionError);
     await expect(failure).rejects.toThrow(`You don't have permission to edit the ${field} in this channel.`);

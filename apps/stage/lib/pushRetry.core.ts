@@ -1,3 +1,4 @@
+import { backoffDelay } from '@stage-labs/client/timing';
 export function makePushRetry(schedule: (run: () => void, delay: number) => () => void) {
   const pending = new Map<string, { attempts: number; cancel: (() => void) | null }>();
   function success(id: string): void {
@@ -13,13 +14,10 @@ export function makePushRetry(schedule: (run: () => void, delay: number) => () =
     const attempts = (previous?.attempts ?? 0) + 1;
     const entry = { attempts, cancel: null as (() => void) | null };
     pending.set(id, entry);
-    entry.cancel = schedule(
-      () => {
-        entry.cancel = null;
-        run();
-      },
-      Math.min(5_000 * 2 ** (attempts - 1), 60_000),
-    );
+    entry.cancel = schedule(() => {
+      entry.cancel = null;
+      run();
+    }, backoffDelay(attempts));
   }
   return { failed, success, clear };
 }

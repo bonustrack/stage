@@ -1,3 +1,4 @@
+import { MAIN_BRANCH } from '@stage-labs/client/endpoints';
 import {
   compatibleMainUrl,
   freshUrl,
@@ -8,7 +9,7 @@ import {
   statusUrl,
   type MainUpdate,
   type PreviewManifest,
-} from '../components/settings/DevClientUpdate.model';
+} from './devClientUpdates.model';
 
 export type UpdateRequest = (url: string, headers: Record<string, string>) => Promise<{ body: string; contentType: string }>;
 
@@ -34,7 +35,7 @@ export async function findCompatibleMainUpdate(
     const response = await request(freshUrl(url, stamp), manifestHeaders);
     return parsePreviewManifest(response.body, response.contentType);
   }
-  const latestPreview = await preview('main');
+  const latestPreview = await preview(MAIN_BRANCH);
   const latest = await manifest(latestPreview.url);
   if (latest.gitHash !== latestPreview.gitHash) throw new Error('The main preview does not match its commit. Nothing was loaded.');
   const compatible = await manifest(compatibleMainUrl(runtime, platform));

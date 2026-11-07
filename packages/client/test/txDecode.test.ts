@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { encodeFunctionData, parseAbi } from 'viem';
 import { decodeCall, spoofWarning, type DecodedCall } from '../src/wallet/txDecode';
+import { fakeFetch } from './helpers';
 
 const verified = (functionName: string): DecodedCall => ({
   decoded: true,
@@ -59,22 +60,17 @@ const POSTER_ABI = parseAbi(['function post(string content, string tag)']);
 const postStringStringData = encodeFunctionData({ abi: POSTER_ABI, functionName: 'post', args: ['hello', 'stage'] });
 const postStringData = encodeFunctionData({ abi: parseAbi(['function post(string content)']), functionName: 'post', args: ['hello'] });
 
-type FetchMock = (url: string) => { ok: boolean; json: () => Promise<unknown> };
-function mockFetch(impl: FetchMock): void {
-  const mocked: typeof globalThis.fetch = (input) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    return Promise.resolve(impl(url) as unknown as Response);
-  };
-  globalThis.fetch = mocked;
+function mockFetch(impl: (url: string) => { ok: boolean; body: unknown }): void {
+  globalThis.fetch = fakeFetch(async (input) => {
+    const { ok, body } = impl(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url);
+    return Response.json(body, { status: ok ? 200 : 404 });
+  });
 }
 const realFetch = globalThis.fetch;
 
 const sourcifyHit = (url: string) => ({
   ok: true,
-  json: () =>
-    Promise.resolve(
-      url.includes('sourcify') ? { abi: POSTER_ABI, match: 'match' } : { results: [{ id: 1, text_signature: 'post(string)' }] },
-    ),
+  body: url.includes('sourcify') ? { abi: POSTER_ABI, match: 'match' } : { results: [{ id: 1, text_signature: 'post(string)' }] },
 });
 
 describe('decodeCall selector mismatch detection', () => {
@@ -109,12 +105,9 @@ describe('decodeCall selector mismatch detection', () => {
     const proxyAbi = parseAbi(['function implementation() view returns (address)']);
     mockFetch((url) => ({
       ok: true,
-      json: () =>
-        Promise.resolve(
-          url.includes(impl)
-            ? { abi: POSTER_ABI, match: 'exact_match' }
-            : { abi: proxyAbi, match: 'exact_match', proxyResolution: { isProxy: true, implementations: [{ address: impl }] } },
-        ),
+      body: url.includes(impl)
+        ? { abi: POSTER_ABI, match: 'exact_match' }
+        : { abi: proxyAbi, match: 'exact_match', proxyResolution: { isProxy: true, implementations: [{ address: impl }] } },
     }));
     const r = await decodeCall(proxy, postStringStringData, 8453);
     expect(r.source).toBe('sourcify');
@@ -129,19 +122,10 @@ describe('decodeCall selector mismatch detection', () => {
     const impl = '0x000000000000000000000000000000000000aaa7';
     const proxyAbi = parseAbi(['function implementation() view returns (address)']);
     mockFetch((url) => {
-      if (url.includes(impl)) return { ok: false, json: () => Promise.resolve({}) };
-      if (url.includes('sourcify')) {
-        return {
-          ok: true,
-          json: () =>
-            Promise.resolve({
-              abi: proxyAbi,
-              match: 'exact_match',
-              proxyResolution: { isProxy: true, implementations: [{ address: impl }] },
-            }),
-        };
-      }
-      return { ok: true, json: () => Promise.resolve({ results: [{ id: 1, text_signature: 'post(string,string)' }] }) };
+      if (url.includes(impl)) return { ok: false, body: {} };
+      const proxyResolution = { isProxy: true, implementations: [{ address: impl }] };
+      if (url.includes('sourcify')) return { ok: true, body: { abi: proxyAbi, match: 'exact_match', proxyResolution } };
+      return { ok: true, body: { results: [{ id: 1, text_signature: 'post(string,string)' }] } };
     });
     const r = await decodeCall(proxy, postStringStringData, 8453);
     expect(r.source).toBe('4byte');
@@ -151,9 +135,7 @@ describe('decodeCall selector mismatch detection', () => {
 
   test('(c) non-Sourcify contract + 4byte hit -> neutral note, no scary warning', async () => {
     mockFetch((url) =>
-      url.includes('sourcify')
-        ? { ok: false, json: () => Promise.resolve({}) }
-        : { ok: true, json: () => Promise.resolve({ results: [{ id: 1, text_signature: 'post(string)' }] }) },
+      url.includes('sourcify') ? { ok: false, body: {} } : { ok: true, body: { results: [{ id: 1, text_signature: 'post(string)' }] } },
     );
     const r = await decodeCall('0x000000000000000000000000000000000000aaa3', postStringData, 1);
     expect(r.source).toBe('4byte');

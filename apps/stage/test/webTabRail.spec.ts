@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { chatsTabOpensNewChat, homeTabPresentation } from '../components/tabs/WebTabRail.model';
-import { newChatNav } from '../components/home/newChat.model';
+import { newChatNav } from '../components/newChat/newChat.model';
 import { homeViewAt, isBoardHome, isRailOnlyRoute, isSplitRoute } from '../components/tabs/splitRoutes';
 import { homeViewNavigation, type HomeViewNavigationState } from '../components/tabs/homeViewNavigation.model';
 
@@ -76,7 +76,8 @@ describe('phone home footer follows the selected mode', () => {
     const home = homeTabPresentation(isBoardHome(pathname, view));
     expect(home.label).toBe(view === 'board' ? 'Board' : 'Chats');
     expect(home.icon).toBe(view === 'board' ? 'IconColumns3Wide' : 'IconBubble3');
-    expect(home.href).toBe(pathname);
+    const href: string = home.href;
+    expect(href).toBe(pathname);
     expect(homeViewNavigation(home.href, view, initial.state, 0).remember).toBeNull();
     expect(chatsTabOpensNewChat(pathname, false, view === 'board')).toBe(view === 'chats');
   });

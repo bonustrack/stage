@@ -25,13 +25,3 @@ export async function fetchUsdPrice(id: string | null): Promise<number | null> {
   inflight.set(id, p);
   return p;
 }
-
-export function fmtUsdValue(amount: string, priceUsd: number | null): string | null {
-  if (priceUsd === null) return null;
-  const n = Number(amount);
-  if (!isFinite(n) || n === 0) return null;
-  const v = n * priceUsd;
-  if (v > 0 && v < 0.01) return '~<$0.01';
-  const frac = v < 1 ? 4 : 2;
-  return `~$${v.toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: frac })}`;
-}

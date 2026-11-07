@@ -1,6 +1,6 @@
 export const STAGE_NAMES_PARENT = 'stage.base.eth';
-export const STAGE_NAME_MIN_LENGTH = 6;
-export const STAGE_NAME_MAX_LENGTH = 32;
+const STAGE_NAME_MIN_LENGTH = 6;
+const STAGE_NAME_MAX_LENGTH = 32;
 const CLAIM_TTL_MS = 10 * 60 * 1000;
 
 const LABEL_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -33,8 +33,14 @@ export function isStageName(name: string): boolean {
   return name.toLowerCase().endsWith(`.${STAGE_NAMES_PARENT}`);
 }
 
+export function stageLabelOf(handle: string | null | undefined): string | null {
+  if (!handle || !isStageName(handle)) return null;
+  return handle.slice(0, -(STAGE_NAMES_PARENT.length + 1)).toLowerCase();
+}
+
 export function displayHandle(name: string): string {
-  return isStageName(name) ? `@${name.slice(0, -(STAGE_NAMES_PARENT.length + 1)).toLowerCase()}` : name;
+  const label = stageLabelOf(name);
+  return label === null ? name : `@${label}`;
 }
 
 export interface ClaimRequest {
@@ -51,24 +57,6 @@ export function claimMessage(claim: ClaimRequest): string {
 
 export function claimIsFresh(issuedAt: number, now: number): boolean {
   return Number.isFinite(issuedAt) && now - issuedAt >= -60_000 && now - issuedAt <= CLAIM_TTL_MS;
-}
-
-function nonEmptyString(value: unknown): string | null {
-  return typeof value === 'string' && value !== '' ? value : null;
-}
-
-async function namesGet(proxyBase: string, path: string): Promise<Record<string, unknown> | null> {
-  const res = await fetch(`${proxyBase}/names/${path}`);
-  if (!res.ok) return null;
-  return (await res.json()) as Record<string, unknown> | null;
-}
-
-export async function fetchIssuedName(proxyBase: string, address: string): Promise<string | null> {
-  return nonEmptyString((await namesGet(proxyBase, `status?address=${encodeURIComponent(address)}`))?.name);
-}
-
-export async function fetchIssuedAddress(proxyBase: string, label: string): Promise<string | null> {
-  return nonEmptyString((await namesGet(proxyBase, `resolve?label=${encodeURIComponent(label)}`))?.address);
 }
 
 export interface UsernameWords {

@@ -1,23 +1,24 @@
 import { useState } from 'react';
-import { usePathname } from 'expo-router';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
 import type { EditableProfile } from '../../lib/onboarding.core';
-import type { ProfileSetup } from './Onboarding.profile.model';
-import type { Stage } from './flow';
+import type { Stage } from '../../lib/onboarding';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRunner';
-import { IMPORT_ROUTE } from './nextRoute.model';
-import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
+import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails, type ProfileSetup } from './Onboarding.profile.model';
+import { reported } from '../../lib/errorPolicy';
 
 export type Step = 'username' | 'profile' | 'import' | 'setup' | 'edit';
 
-export interface OnboardingFlow {
+export type OnboardingMode = 'signup' | 'import';
+
+interface OnboardingFlow {
   step: Step;
   busy: boolean;
   stage: Stage;
   setupErr: SetupErr | null;
   plan: SetupPlan;
   onUsernameContinue: (label: string) => void;
+  onUsernameSkip: () => void;
   onProfileContinue: (details: ProfileDetails) => void;
   onProfileSkip: () => void;
   onProfileBack: () => void;
@@ -36,18 +37,14 @@ function createChoice(label: string, details: ProfileDetails): Choice {
   return profile === null ? { kind: 'create' } : { kind: 'create', profile };
 }
 
-function importChoice(transfer: AccountTransfer): Choice {
-  return transfer.kind === 'phrase' ? { kind: 'restore', phrase: transfer.phrase } : { kind: 'importKey', pk: transfer.pk };
-}
-
-export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
+export function useOnboardingFlow(mode: OnboardingMode, onDone: () => void): OnboardingFlow {
   const [flowStep, setStep] = useState<Step>('username');
   const [label, setLabel] = useState('');
   const [pending, setPending] = useState<Choice | null>(null);
   const [profileRecovery, setProfileRecovery] = useState<EditableProfile | null>(null);
   const runner = useSetupRunner(onDone);
-  const atImportRoute = usePathname() === IMPORT_ROUTE;
-  const step: Step = runner.recovering && flowStep !== 'edit' ? 'setup' : flowStep === 'username' && atImportRoute ? 'import' : flowStep;
+  const step: Step =
+    runner.recovering && flowStep !== 'edit' ? 'setup' : flowStep === 'username' && mode === 'import' ? 'import' : flowStep;
 
   const start = (choice: Choice): void => {
     setPending(choice);
@@ -61,7 +58,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
       setPending(null);
       setLabel('');
       setStep('username');
-    });
+    }, reported('onboarding.startOver'));
   };
 
   const onSetupRetry = (): void => {
@@ -83,8 +80,11 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     plan: runner.plan,
     onUsernameContinue: (next) => {
       setLabel(next);
-      if (next === '') start({ kind: 'create' });
-      else setStep('profile');
+      setStep('profile');
+    },
+    onUsernameSkip: () => {
+      setLabel('');
+      start({ kind: 'create' });
     },
     onProfileContinue: (details) => {
       start(createChoice(label, details));
@@ -96,7 +96,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
       setStep('username');
     },
     onImportTransfer: (transfer) => {
-      start(importChoice(transfer));
+      start(transfer.kind === 'phrase' ? { kind: 'restore', phrase: transfer.phrase } : { kind: 'importKey', pk: transfer.pk });
     },
     history: runner.history,
     onSetupRetry,
@@ -107,7 +107,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
           setProfileRecovery(value);
           setStep('edit');
         }
-      });
+      }, reported('onboarding.editProfile'));
     },
     profileRecovery,
     onRecoverySave: (profile) => {

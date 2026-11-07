@@ -6,10 +6,10 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row } from '../layout';
 import { FormField } from '../FormField';
-import { OnboardingCard } from './OnboardingCard';
+import { IntroCard } from '../chrome/IntroCard';
 import { usePalette, DANGER } from '../../lib/theme';
-import { QrScanner } from '../accounts/QrScanner';
-import { parseImportInput } from '../accounts/ImportAccountPanel.model';
+import { QrScanner } from '../qr/QrScanner';
+import { parseImportInput } from './importInput.model';
 import {
   replaceWordAt,
   typePhrase,
@@ -58,11 +58,7 @@ function inputHint(text: string, err: string | null): InputHint {
   if (!looksLikePhrase(text)) return null;
   const invalid = invalidWords(text);
   if (invalid.length > 0) return { text: `Not in the word list: ${invalid.join(', ')}`, danger: true };
-  const count = text
-    .trim()
-    .split(/\s+/)
-    .filter((w) => w.length > 0).length;
-  return count > 0 ? { text: `${count} of 12 to 24 words`, danger: false } : null;
+  return { text: `${text.trim().split(/\s+/).length} of 12 to 24 words`, danger: false };
 }
 
 function PhraseField({
@@ -255,7 +251,7 @@ export function ImportStep({
     />
   );
   return (
-    <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
+    <IntroCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
       {scanning ? (
         <QrScanner dark={dark} onScan={onScan} />
       ) : scanned ? (
@@ -265,6 +261,6 @@ export function ImportStep({
       ) : (
         phraseField
       )}
-    </OnboardingCard>
+    </IntroCard>
   );
 }

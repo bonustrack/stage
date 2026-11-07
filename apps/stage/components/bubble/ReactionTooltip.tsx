@@ -2,7 +2,7 @@ import { useMemo, useRef, type ReactNode } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
 import { View } from 'react-native';
-import { hideRailTooltip, showRailTooltip, tooltipLabel, tooltipState } from '../../lib/railTooltip';
+import { hideRailTooltip, showRailTooltip, tooltipLabel, tooltipState } from '../system/railTooltip';
 
 const PEEK_MS = 250;
 

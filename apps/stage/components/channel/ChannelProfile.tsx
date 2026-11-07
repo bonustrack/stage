@@ -1,17 +1,16 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'expo-router';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
-import { ProfileCoverBar, ProfileCoverMenu, PROFILE_AVATAR_SIZE, ProfileCover } from '../ProfileCover';
-import { ImageViewer } from '../ImageViewer';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { cachedSelfEthAddress, selfEthAddress } from '../../lib/xmtp.client';
+import { ProfileCoverBar, ProfileCoverMenu, PROFILE_AVATAR_SIZE, ProfileCover } from '../profile/ProfileCover';
+import { ImageViewer } from '../media/ImageViewer';
+import { useSafeAreaInsets } from '../layout/safeArea';
+import { useSelfAddress } from '../../lib/messaging/account';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, DANGER, usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
-import { reported } from '../../lib/errorPolicy';
-import { channelProfileMenuItems, memberRowModel, type ChannelMemberRole, type MemberRowBadge } from './channel.parts.model';
-import { ChannelAssignees, ChannelMembersSection } from '../conversation/MemberListSidebar';
+import { channelProfileMenuItems, memberRowModel, type ChannelMemberRole } from './channel.parts.model';
+import { ChannelAssignees, ChannelMembersSection } from './MemberListSidebar';
 import { EditChannelModal } from './EditChannelModal';
 import { useChannelDetail } from './channel.detail';
 import { ChannelFields, ChannelLabels, useLiveChannelLabels } from './channel.labels';
@@ -21,12 +20,12 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
-import { stampAvatarUrl, channelStampSeed } from '@stage-labs/kit/avatar';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Eyebrow } from '../Eyebrow';
 import { TitleText } from '../TitleText';
-import { channelTitle } from '../conversation/convTitle';
+import { channelAvatarUrl, channelTitle } from '../../lib/convIdentity';
+import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { Column, VirtualList, Row, PAGE_GUTTER } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 
@@ -44,7 +43,6 @@ function ChannelProfileHeader({
   children: ReactNode;
 }): React.ReactElement {
   const { bg, border: rowBg } = usePalette();
-  const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), PROFILE_AVATAR_SIZE) : '';
   return (
     <ProfileCover
       insetTop={insetTop}
@@ -52,7 +50,7 @@ function ChannelProfileHeader({
         <Pressable onPress={onView} disabled={!imageUrl} hitSlop={8}>
           <Image
             fit="cover"
-            url={imageUrl ? avatarRenderUrl(imageUrl) : fallbackUri}
+            url={channelAvatarUrl(channelId, imageUrl, PROFILE_AVATAR_SIZE)}
             style={{
               width: PROFILE_AVATAR_SIZE,
               height: PROFILE_AVATAR_SIZE,
@@ -76,7 +74,13 @@ function ChannelTitle({ name, description }: { name: string | null; description:
   return (
     <>
       <Column padding={{ x: PAGE_GUTTER, top: 14, bottom: 16 }}>
-        <TitleText title={channelTitle(name)} fontWeight="semibold" size="2xl" color={head} style={{ textAlign: 'left' }} />
+        <TitleText
+          title={channelTitle(name, 'Untitled channel')}
+          fontWeight="semibold"
+          size="2xl"
+          color={head}
+          style={{ textAlign: 'left' }}
+        />
       </Column>
       {about ? (
         <Column padding={{ x: PAGE_GUTTER, bottom: 16 }}>
@@ -87,29 +91,6 @@ function ChannelTitle({ name, description }: { name: string | null; description:
         </Column>
       ) : null}
     </>
-  );
-}
-
-function MemberBadge({
-  badge,
-  border,
-  sub,
-  dark,
-}: {
-  badge: MemberRowBadge;
-  border: string;
-  sub: string;
-  dark: boolean;
-}): React.ReactElement {
-  const owner = badge.role === 'owner';
-  return (
-    <Badge
-      label={badge.label}
-      fontWeight="medium"
-      color={owner ? MEMBER_OWNER_FG : sub}
-      background={owner ? MEMBER_OWNER_BG : border}
-      dark={dark}
-    />
   );
 }
 
@@ -155,7 +136,15 @@ function MemberRow({
               <Text size="md" variant="caption" text={model.addressLine} color="secondary" truncate />
             )}
           </Column>
-          {model.badge === undefined ? null : <MemberBadge badge={model.badge} border={border} sub={sub} dark={dark} />}
+          {model.badge === undefined ? null : (
+            <Badge
+              label={model.badge.label}
+              fontWeight="medium"
+              color={model.badge.role === 'owner' ? MEMBER_OWNER_FG : sub}
+              background={model.badge.role === 'owner' ? MEMBER_OWNER_BG : border}
+              dark={dark}
+            />
+          )}
           {isSelf ? null : (
             <Button
               color="primary"
@@ -184,22 +173,9 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
   const dark = useEffectiveColorScheme() === 'dark';
   const g = useChannelDetail(convId);
   const labels = useLiveChannelLabels(convId);
-  const [selfAddress, setSelfAddress] = useState<string>('');
+  const selfAddress = useSelfAddress();
   const [viewerOpen, setViewerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-
-  useEffect(() => {
-    const cached = cachedSelfEthAddress();
-    if (cached) {
-      setSelfAddress(cached.toLowerCase());
-      return;
-    }
-    void selfEthAddress()
-      .then((addr) => {
-        if (addr) setSelfAddress(addr.toLowerCase());
-      })
-      .catch(reported('channel.selfAddress'));
-  }, []);
 
   return (
     <Column surface="surface" weight={1}>
@@ -209,9 +185,13 @@ export function ChannelProfile({ convId }: { convId: string }): React.ReactEleme
           <ProfileCoverMenu
             items={channelProfileMenuItems(canEditGroup(g.rights))}
             loading={g.leaving}
-            onSelect={(id) => {
-              if (id === 'edit') setEditOpen(true);
-              else void g.leaveChannel();
+            actions={{
+              edit: () => {
+                setEditOpen(true);
+              },
+              leave: () => {
+                void g.leaveChannel();
+              },
             }}
           />
         }

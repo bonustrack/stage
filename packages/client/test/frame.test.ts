@@ -12,10 +12,9 @@ import {
   type FrameContent,
 } from '../src/xmtp/frame';
 import { FRAME_MAX_CHARS, frameActionSchema, frameContentSchema } from '../src/xmtp/frame.schema';
-import { mapDecodedToEnvelope } from '../src/xmtp/envelope';
-import { previewOfXmtpContent } from '../src/xmtp/humanize';
-
-const NS = 1_717_000_000_000 * 1_000_000;
+import { envelopeOf } from '../src/xmtp/envelope';
+import { xmtpMessage } from './fixtures/decoded-messages';
+import { previewOf } from './helpers';
 
 const KIT = 'https://kit.stage.box/a2ui/v1_0/catalog.json';
 const surface = (surfaceId: string, components: Record<string, unknown>[]) => ({
@@ -63,12 +62,8 @@ describe('frame content types', () => {
 
   test('a frame is a list of A2UI v1.0 surface messages within its limits', () => {
     const big = [surface('a', [{ id: 'root', component: 'Text', text: 'x'.repeat(FRAME_MAX_CHARS) }])];
-    const many = [
-      surface(
-        'a',
-        Array.from({ length: 501 }, (_, i) => ({ id: `c${i}`, component: 'Text', text: '' })),
-      ),
-    ];
+    const components = Array.from({ length: 501 }, (_, i) => ({ id: `c${i}`, component: 'Text', text: '' }));
+    const many = [surface('a', components)];
     for (const messages of [
       [],
       {},
@@ -124,9 +119,8 @@ describe('frame content types', () => {
     expect(frameActionSchema.safeParse({ frameId: 'f', action: { type: 'a' } }).success).toBe(false);
     expect(frameActionSchema.safeParse({ frameId: 'f', action: { ...TAP, context: [] } }).success).toBe(false);
     expect(frameActionSchema.safeParse({ frameId: 'f', action: { ...TAP, context: { big: 'x'.repeat(20_000) } } }).success).toBe(false);
-    expect(frameActionSchema.parse({ frameId: 'f', action: TAP, dataModel: { report: { week: 39 } } }).dataModel).toEqual({
-      report: { week: 39 },
-    });
+    const dataModel = { report: { week: 39 } };
+    expect(frameActionSchema.parse({ frameId: 'f', action: TAP, dataModel }).dataModel).toEqual(dataModel);
   });
 
   test('display texts', () => {
@@ -139,37 +133,23 @@ describe('frame content types', () => {
 });
 
 describe('frame envelopes', () => {
+  const entryOf = (fields: Parameters<typeof xmtpMessage>[0]) => envelopeOf(xmtpMessage(fields), 'stage://xmtp/a/conv1');
+
   test('a decoded frame becomes an entry with the frame in its payload', () => {
-    const e = mapDecodedToEnvelope(
-      { id: 'msg-frame-1', senderInboxId: 'inbox-agent', sentNs: NS, contentTypeId: 'stage.box/frame:2.0', content: () => frame },
-      'stage://xmtp/a/conv1',
-    );
+    const e = entryOf({ id: 'msg-frame-1', senderInboxId: 'inbox-agent', contentTypeId: 'frame', content: frame });
     expect(e.text).toBe('Frame: Weekly report\nSales up 12%');
     expect(e.payload).toEqual({ contentType: 'frame', frame });
   });
 
   test('a decoded frame action reads as a tap on its label and quotes its frame', () => {
-    const e = mapDecodedToEnvelope(
-      { id: 'msg-action-1', senderInboxId: 'inbox-less', sentNs: NS, contentTypeId: 'stage.box/frameAction:2.0', content: () => action },
-      'stage://xmtp/a/conv1',
-    );
+    const e = entryOf({ id: 'msg-action-1', senderInboxId: 'inbox-less', contentTypeId: 'frameAction', content: action });
     expect(e.text).toBe('Tapped "Approve"');
     expect(e.replyTo).toBe('msg-frame-1');
     expect(e.payload).toEqual({ contentType: 'frameAction', frameAction: action });
   });
 
   test('a frame whose codec failed falls back to its fallback text', () => {
-    const e = mapDecodedToEnvelope(
-      {
-        id: 'msg-frame-2',
-        senderInboxId: 'inbox-agent',
-        sentNs: NS,
-        contentTypeId: 'stage.box/frame:2.0',
-        content: () => undefined,
-        fallback: 'Frame: Broken',
-      },
-      'stage://xmtp/a/conv1',
-    );
+    const e = entryOf({ id: 'msg-frame-2', contentTypeId: 'frame', content: undefined, fallback: 'Frame: Broken' });
     expect(e.text).toBe('Frame: Broken');
     expect(e.payload).toEqual({ contentType: 'frame' });
   });
@@ -177,17 +157,14 @@ describe('frame envelopes', () => {
 
 describe('frame chat-list previews', () => {
   test('a frame reads as its title, an action as a tap on its label or type', () => {
-    expect(previewOfXmtpContent(frame, 'stage.box/frame:2.0')).toBe('Frame: Weekly report');
-    expect(previewOfXmtpContent({ messages: [] }, 'stage.box/frame:2.0')).toBe('Frame');
-    expect(previewOfXmtpContent(action, 'stage.box/frameAction:2.0')).toBe('Tapped "Approve"');
-    expect(previewOfXmtpContent({ frameId: 'f', action: { name: 'pick' } }, 'stage.box/frameAction:2.0')).toBe('Tapped pick');
-    expect(previewOfXmtpContent({ frameId: 'f', label: '', action: {} }, 'stage.box/frameAction:2.0')).toBe('[frame action]');
-    expect(previewOfXmtpContent(null, 'stage.box/frameAction:2.0')).toBe('[frame action]');
-    expect(previewOfXmtpContent({ frameId: 'f', label: '', action: { name: '', userMessage: ' ' } }, 'stage.box/frameAction:2.0')).toBe(
-      '[frame action]',
-    );
-    expect(previewOfXmtpContent({ frameId: 'f', action: { name: 'book', userMessage: 'Book table' } }, 'stage.box/frameAction:2.0')).toBe(
-      'Tapped "Book table"',
-    );
+    const tap = 'stage.box/frameAction:2.0';
+    expect(previewOf(frame, 'stage.box/frame:2.0')).toBe('Frame: Weekly report');
+    expect(previewOf({ messages: [] }, 'stage.box/frame:2.0')).toBe('Frame');
+    expect(previewOf(action, tap)).toBe('Tapped "Approve"');
+    expect(previewOf({ frameId: 'f', action: { name: 'pick' } }, tap)).toBe('Tapped pick');
+    expect(previewOf({ frameId: 'f', label: '', action: {} }, tap)).toBe('[frame action]');
+    expect(previewOf(null, tap)).toBe('[frame action]');
+    expect(previewOf({ frameId: 'f', label: '', action: { name: '', userMessage: ' ' } }, tap)).toBe('[frame action]');
+    expect(previewOf({ frameId: 'f', action: { name: 'book', userMessage: 'Book table' } }, tap)).toBe('Tapped "Book table"');
   });
 });

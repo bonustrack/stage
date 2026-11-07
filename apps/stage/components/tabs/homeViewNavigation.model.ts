@@ -1,4 +1,4 @@
-import type { HomeViewContent } from '@stage-labs/client/xmtp/readState';
+import type { HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { homeRouteOf, homeViewAt } from './splitRoutes';
 
 type HomeView = HomeViewContent['view'];

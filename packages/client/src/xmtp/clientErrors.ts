@@ -45,15 +45,8 @@ export function classifyKeyPackageStatuses(validationErrors: (string | null | un
 
 export function convIdFromTopic(topic: string | undefined): string | null {
   if (!topic) return null;
-  const m = /\/g-([0-9a-fA-F]+)\//.exec(topic);
-  return m?.[1] ?? null;
+  return /\/g-([0-9a-fA-F]+)\//.exec(topic)?.[1] ?? null;
 }
-
-export const CHANNEL_WAITING_NOTICE =
-  'This device is waiting to be added to this channel. That happens automatically when someone in the channel sends a ' +
-  'message, or when a member opens Stage (it checks for new devices every 30 minutes).';
-
-export const OUTSIDE_CHANNEL_NOTICE = 'You’re not in this channel';
 
 export const INACTIVE_SEND_MESSAGE =
   'This device is not in this conversation yet, so the message was not sent. It is added automatically when ' +

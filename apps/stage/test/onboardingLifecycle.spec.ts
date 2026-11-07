@@ -75,13 +75,12 @@ describe('durable account onboarding', () => {
       expect(h.pending()?.account?.id).toBe(record.id);
       expect(h.pending()?.profile).toEqual(profile);
       expect(h.log).not.toContain('finish');
-      h.deps[boundary] =
-        boundary === 'messaging'
-          ? () => Promise.resolve()
-          : (_account, value) => {
-              h.log.push(`profile:${value.label}:${value.image?.uri ?? 'none'}`);
-              return Promise.resolve(undefined);
-            };
+      if (boundary === 'messaging') h.deps.messaging = () => Promise.resolve();
+      else
+        h.deps.profile = (_account, value) => {
+          h.log.push(`profile:${value.label}:${value.image?.uri ?? 'none'}`);
+          return Promise.resolve(undefined);
+        };
       await makeOnboarding(h.deps).resume();
       expect(h.log.filter((value) => value === 'prepare')).toHaveLength(1);
       expect(h.log).toContain(`resume:${record.id}`);

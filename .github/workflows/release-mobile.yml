@@ -1,19 +1,10 @@
 name: Release Mobile
 
-# One version-driven release for both stores. When the `version` value in
-# apps/stage/app.config.js changes on main (or on manual dispatch):
-#   android-store : EAS cloud build (production-prod, AAB) -> eas submit to the
-#                   Play internal + closed tracks; production is allowed to fail
-#                   while the Play account gate is in place.
-#   android-apk   : EAS cloud build (preview-prod, APK), checked with
-#                   scripts/verify-apk.mjs -> direct stage.apk download on the
-#                   GitHub Release v<version> and Firebase App Distribution for
-#                   the `testers` group.
-#   ios           : EAS cloud build (production-prod) -> eas submit to TestFlight.
-#                   EAS creates/reuses the distribution certificate and profile
-#                   from the App Store Connect API key, so no Xcode or macOS
-#                   runner is involved. Skips itself until the Apple secrets exist.
-# See docs/mobile-release.md for the secrets and the one-time Apple setup.
+# One version-driven release for both stores, when the `version` value in
+# apps/stage/app.config.js changes on main (or on manual dispatch). iOS needs no
+# Xcode or macOS runner: EAS creates or reuses the distribution certificate and
+# profiles from the App Store Connect API key. docs/mobile-release.md lists the
+# jobs, the secrets and the one-time Apple setup.
 on:
   push:
     branches: [main]

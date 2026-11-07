@@ -1,20 +1,18 @@
-import { getPeerHandle } from '@stage-labs/client/identity/peerProfiles';
-import { conversationPathFor, profileSlugFor, stageLabelOf } from '@stage-labs/client/routing/handles';
+import { getPeerHandle } from './peerProfiles';
+import {
+  conversationLinkFor,
+  conversationSharePathFor,
+  dmLinkFor,
+  isActiveConversationPathFor,
+  messageShareUrlFor,
+  profileLinkFor,
+  type ConversationLink,
+  type DmLink,
+  type ProfileLink,
+} from '@stage-labs/client/routing/deepLinks';
 
-export type ConversationLink =
-  { pathname: '/[convId]'; params: { convId: string } } | { pathname: '/channel/[convId]'; params: { convId: string } };
-
-export interface ProfileLink {
-  pathname: '/profile/[id]';
-  params: { id: string };
-}
-
-type ProfileKind = 'channel' | 'user';
-
-const CHANNEL_ID_RE = /^[0-9a-f]{32}$/i;
-
-export function profileKindOf(id: string | null | undefined): ProfileKind {
-  return CHANNEL_ID_RE.test((id ?? '').trim()) ? 'channel' : 'user';
+export function dmLinkOf(peerAddress: string, handle: string | null | undefined = getPeerHandle(peerAddress)): DmLink {
+  return dmLinkFor(peerAddress, handle);
 }
 
 export function conversationLinkOf(
@@ -22,16 +20,11 @@ export function conversationLinkOf(
   peerAddress?: string | null,
   handle: string | null | undefined = getPeerHandle(peerAddress),
 ): ConversationLink {
-  if (peerAddress) return { pathname: '/[convId]', params: { convId: profileSlugFor(peerAddress, handle) } };
-  return { pathname: '/channel/[convId]', params: { convId } };
+  return conversationLinkFor(convId, peerAddress, handle);
 }
 
 export function profileLinkOf(address: string, handle: string | null | undefined = getPeerHandle(address)): ProfileLink {
-  return { pathname: '/profile/[id]', params: { id: profileSlugFor(address, handle) } };
-}
-
-export function channelProfileLinkOf(convId: string): ProfileLink {
-  return { pathname: '/profile/[id]', params: { id: convId } };
+  return profileLinkFor(address, handle);
 }
 
 export function conversationSharePath(
@@ -39,8 +32,11 @@ export function conversationSharePath(
   peerAddress?: string | null,
   handle: string | null | undefined = getPeerHandle(peerAddress),
 ): string {
-  if (peerAddress) return conversationPathFor(peerAddress, handle);
-  return `/channel/${convId}`;
+  return conversationSharePathFor(convId, peerAddress, handle);
+}
+
+export function messageShareUrlOf(convId: string, peerAddress: string | null, messageId: string): string {
+  return messageShareUrlFor(conversationSharePath(convId, peerAddress), messageId);
 }
 
 export function isActiveConversationPath(
@@ -49,11 +45,5 @@ export function isActiveConversationPath(
   peerAddress?: string | null,
   handle: string | null | undefined = getPeerHandle(peerAddress),
 ): boolean {
-  if (!pathname) return false;
-  const path = pathname.toLowerCase();
-  if (path === `/channel/${convId}`.toLowerCase()) return true;
-  if (!peerAddress) return false;
-  if (path === `/${peerAddress}`.toLowerCase()) return true;
-  const label = stageLabelOf(handle);
-  return label !== null && path === `/${label}`;
+  return isActiveConversationPathFor(pathname, convId, peerAddress, handle);
 }

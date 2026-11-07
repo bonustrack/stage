@@ -1,46 +1,35 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Platform } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
-import { XMTP_USER_PREFIX, lineOfConv } from '@stage-labs/client/xmtp/line';
-import { useXmtpFeed } from '../../lib/xmtp.feed';
-import { xmtpReply } from '../../lib/xmtp.messages';
-import { useConvDetails, useConvRow } from '../../modules/messaging/queries';
-import { isGroupRow, memberAddressesOf } from '../../modules/messaging/convRow.model';
+import { inboxIdOfUri, lineOfConv, userUriOf } from '@stage-labs/client/xmtp/line';
+import { useXmtpFeed } from '../../lib/feed/useXmtpFeed';
+import { useChannelRoles, useConvDetails, useConvRow } from '../../lib/messaging/queries';
+import { memberAddressesOf } from '../../lib/messaging/convRow.model';
 import { markConvRead } from '../../lib/channelsCache';
 import { isAppInFront, subscribeAppInFront } from '../../lib/appInFront';
-import { useConvConsentState } from '../../modules/messaging/useConvConsent';
+import { useConvConsentState } from '../../lib/messaging/useConvConsent';
 import { inboxEthAddresses } from '../../lib/xmtp.identity';
-import { setActiveConversation } from '../../modules/stage-pill';
-import { setActiveConvId } from '../../lib/xmtp.state.core';
-import {
-  markConvAtBottom,
-  convScrollKey,
-  getScrollOffset,
-  peekScrollOffset,
-  flushScrollOffset,
-  getFeedAnchor,
-  peekFeedAnchor,
-  type FeedAnchor,
-} from '../../lib/scrollPos';
-import { isCoarsePointer } from '../../lib/webLayout';
+import { showConversation } from '../../lib/activeConversation';
+import { isCoarsePointer } from '../layout/webLayout';
 import { useReconciledMap } from '../../lib/mapReconcile';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
+import { isSystemEntry } from '@stage-labs/client/xmtp/entryPayload';
 import { deletedMessages, type DeletedMessages } from '@stage-labs/client/xmtp/deletions';
 import { superAdminInboxIds } from '@stage-labs/client/xmtp/groups';
 import { useOwnDeletes } from '../../lib/ownDeletes';
-import { useChannelRoles } from '../channel/channel.detail';
 import { useLiveChannelLabels } from '../channel/channel.labels';
-import type { MenuAnchor } from '../bubble/props';
+import type { MenuAnchor } from '../bubble/model';
 import { callRecordsOf } from '../bubble/callCard.model';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { useReactionsLayer } from './useReactionsLayer';
 import { useVotesLayer } from './useVotesLayer';
 import { useTxSignLayer } from './useTxSignLayer';
 import { makeSeenCheck } from './markRead.model';
-import { useOutboundLayer } from './useOutboundLayer';
-import { useClearedChats } from '../../lib/clearedChats';
+import { useFeedBubbles, useOutboundLayer } from './useOutboundLayer';
+import { useFeedScroll } from './useFeedScroll';
+import { useBubbleFeed } from './useBubbleFeed';
+import { convKindOf } from './convKind.model';
+import { useClearedChats } from '../../lib/sync/clearedChats';
 import { entriesAfterClear, feedReachedClear, countFromOthers } from './feed-helpers';
 import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
 import { pollOptionCountsInFeed, votesByMessage, ownVotesByMessage, openAnswersByMessage } from '@stage-labs/client/xmtp/poll-feed';
@@ -71,18 +60,7 @@ function useActiveConvSuppression(convId: string | undefined): void {
   useFocusEffect(
     useCallback(() => {
       if (!activeConvId) return;
-      setActiveConversation(activeConvId);
-      setActiveConvId(activeConvId);
-      const sub = AppState.addEventListener('change', (s) => {
-        const open = s === 'active' ? activeConvId : null;
-        setActiveConversation(open);
-        setActiveConvId(open);
-      });
-      return () => {
-        sub.remove();
-        setActiveConversation(null);
-        setActiveConvId(null);
-      };
+      return showConversation(activeConvId);
     }, [activeConvId]),
   );
 }
@@ -92,7 +70,7 @@ function useMarkReadWhileSeen(convId: string | undefined, fromOthers: number): v
     useCallback(() => {
       if (!convId) return;
       const check = makeSeenCheck(isAppInFront, () => {
-        void markConvRead(convId);
+        void markConvRead(convId).catch(reported('chat.markRead'));
       });
       check();
       return subscribeAppInFront(check);
@@ -130,39 +108,6 @@ function useConsentGate(convId: string | undefined) {
   return { consent: allowedHere ? 'allowed' : (streamed ?? undefined), consentKnown: allowedHere || streamed !== undefined, markAllowed };
 }
 
-function useConvScrollPersistence(convId: string | undefined) {
-  const savedScrollRef = useRef<number | undefined>(undefined);
-  const savedAnchorRef = useRef<FeedAnchor | null>(null);
-  const savedScrollLoaded = useRef(false);
-  const didRestoreScroll = useRef(false);
-  const pinBottomUntil = useRef(0);
-  const isAtBottomRef = useRef(true);
-  useLayoutEffect(() => {
-    if (!convId) return;
-    const key = convScrollKey(convId);
-    isAtBottomRef.current = true;
-    didRestoreScroll.current = false;
-    pinBottomUntil.current = 0;
-    const cached = peekScrollOffset(key);
-    const cachedAnchor = peekFeedAnchor(convId);
-    if (cached !== undefined && cachedAnchor !== undefined) {
-      savedScrollRef.current = cached;
-      savedAnchorRef.current = cachedAnchor;
-      savedScrollLoaded.current = true;
-    } else {
-      void Promise.all([getScrollOffset(key), getFeedAnchor(convId)]).then(([o, anchor]) => {
-        savedScrollRef.current = o;
-        savedAnchorRef.current = anchor;
-        savedScrollLoaded.current = true;
-      });
-    }
-    return () => {
-      flushScrollOffset(key);
-    };
-  }, [convId]);
-  return { savedScrollRef, savedAnchorRef, savedScrollLoaded, didRestoreScroll, pinBottomUntil, isAtBottomRef };
-}
-
 function useFeedDerivations(events: HistoryEntry[], myUri: string, dm: boolean) {
   const pollOptionCounts = useMemo(() => pollOptionCountsInFeed(events), [events]);
   const reactions = useReconciledMap(useMemo(() => reactionsByMessage(events, pollOptionCounts), [events, pollOptionCounts]));
@@ -177,11 +122,11 @@ function useFeedDerivations(events: HistoryEntry[], myUri: string, dm: boolean) 
 }
 
 function useReplyTarget() {
-  const [replyingTo, setReplyingTo] = useState<{ id: string; preview: string; sender?: string | null; nonce: number } | null>(null);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; sender?: string | null; nonce: number } | null>(null);
   const replyNonceRef = useRef(0);
-  const setReplyTarget = useCallback((id: string, preview: string, sender?: string | null) => {
+  const setReplyTarget = useCallback((id: string, sender?: string | null) => {
     replyNonceRef.current += 1;
-    setReplyingTo({ id, preview, sender, nonce: replyNonceRef.current });
+    setReplyingTo({ id, sender, nonce: replyNonceRef.current });
   }, []);
   return { replyingTo, setReplyingTo, setReplyTarget };
 }
@@ -199,8 +144,10 @@ function useConvFields(convId: string | undefined) {
   const row = useConvRow(convId);
   const { description } = useConvDetails(convId, row);
   const memberAddrs = useMemo(() => memberAddressesOf(row), [row]);
-  const isGroup = isGroupRow(row);
+  const kind = convKindOf(row);
+  const isGroup = kind === 'group';
   return {
+    kind,
     peerAddr: row?.peerAddress ?? null,
     memberAddrs,
     inboxToAddr: row?.inboxToAddr ?? NO_MAP,
@@ -220,7 +167,7 @@ function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr:
 
 function useConvFeed(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
-  const autoFocusNonce = useMemo(() => (focus || (Platform.OS === 'web' && !isCoarsePointer()) ? Date.now() : undefined), [focus, convId]);
+  const autoFocusNonce = useMemo(() => (focus || !isCoarsePointer() ? Date.now() : undefined), [focus, convId]);
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
   const fields = useConvFields(convId);
@@ -238,7 +185,7 @@ function useConvFeed(convId: string | undefined, focus: string | undefined) {
   );
   const { loadOlder, loadingOlder, retry: retryFeed } = xmtpFeed;
   const hasMore = xmtpFeed.hasMore && !feedReachedClear(xmtpFeed.events, clearedAt);
-  const myUri = xmtpFeed.inboxId ? `${XMTP_USER_PREFIX}${xmtpFeed.inboxId}` : XMTP_USER_PREFIX;
+  const myUri = userUriOf(xmtpFeed.inboxId);
   useMarkReadWhileSeen(convId, countFromOthers(events, myUri));
   useActiveConvSuppression(convId);
   const status = feedStatus(xmtpFeed.status);
@@ -247,7 +194,7 @@ function useConvFeed(convId: string | undefined, focus: string | undefined) {
 }
 
 function useConvMenus(convId: string | undefined) {
-  const { replyingTo, setReplyingTo, setReplyTarget } = useReplyTarget();
+  const reply = useReplyTarget();
   const [menuFor, setMenuFor] = useState<HistoryEntry | null>(null);
   const [selectedForCopy, setSelectedForCopy] = useState<string | null>(null);
   useFocusEffect(
@@ -262,9 +209,7 @@ function useConvMenus(convId: string | undefined) {
   const [overflowOpen, setOverflowOpen] = useState(false);
   const [overflowAnchor, setOverflowAnchor] = useState<MenuPoint | null>(null);
   return {
-    replyingTo,
-    setReplyingTo,
-    setReplyTarget,
+    ...reply,
     menuFor,
     setMenuFor,
     menuAnchor,
@@ -283,9 +228,8 @@ function useConvPeople(events: HistoryEntry[], fields: ReturnType<typeof useConv
   const knownAddrs = useSystemLineAddresses(events, inboxToAddr);
   const senderEthOf = useCallback(
     (from: string): string | null => {
-      if (!from.startsWith(XMTP_USER_PREFIX)) return null;
-      const inboxId = from.slice(XMTP_USER_PREFIX.length);
-      return knownAddrs[inboxId] ?? null;
+      const inboxId = inboxIdOfUri(from);
+      return inboxId === '' ? null : (knownAddrs[inboxId] ?? null);
     },
     [knownAddrs],
   );
@@ -296,20 +240,25 @@ function useConvPeople(events: HistoryEntry[], fields: ReturnType<typeof useConv
   return { senderEthOf, profilesVersion, mentionCandidates };
 }
 
+function useConvSummary(convId: string | undefined, fields: ReturnType<typeof useConvFields>) {
+  const { kind, isGroup, peerAddr, groupName, groupImage, groupDescription } = fields;
+  const groupLabels = useLiveChannelLabels(convId);
+  return { kind, isGroup, peerAddr, groupName, groupImage, groupDescription, groupLabels };
+}
+
+export type ConvSummary = ReturnType<typeof useConvSummary>;
+
 export function useConversationState(convId: string | undefined, focus: string | undefined) {
   const { feed, inboxId, fields } = useConvFeed(convId, focus);
   const { activeLine, events, myUri } = feed;
-  const { peerAddr, inboxToAddr, groupName, groupImage, groupDescription, isGroup } = fields;
+  const { inboxToAddr, isGroup } = fields;
+  const conv = useConvSummary(convId, fields);
 
   const menus = useConvMenus(convId);
   const { consent, consentKnown, markAllowed: markConsentAllowed } = useConsentGate(convId);
   const consentAllowed = consent === undefined ? undefined : consent === 'allowed';
-  const groupLabels = useLiveChannelLabels(convId);
 
   const people = useConvPeople(events, fields, inboxId);
-
-  const scroll = useConvScrollPersistence(convId);
-  const { isAtBottomRef } = scroll;
 
   const { reactions, ownReactions, votes, ownVotes, openAnswers, callRecords } = useFeedDerivations(events, myUri, !isGroup);
   const { deletedIds, isSuperAdmin } = useFeedDeletions(events, isGroup ? convId : undefined, inboxToAddr, inboxId);
@@ -317,46 +266,96 @@ export function useConversationState(convId: string | undefined, focus: string |
   const reactionsLayer = useReactionsLayer(activeLine, ownReactions);
   const votesLayer = useVotesLayer(activeLine, events, votes, ownVotes, openAnswers, myUri);
   const txSignLayer = useTxSignLayer(activeLine);
-  const outbound = useOutboundLayer(events, myUri, convId, activeLine, isAtBottomRef, deletedIds);
+  const { confirmedIds, setOutbound, allBubbles, rowKeyOf } = useFeedBubbles(events, myUri, deletedIds);
+  const scroll = useFeedScroll(convId, allBubbles, feed.loadOlder);
+  const outbound = useOutboundLayer(setOutbound, myUri, convId, activeLine, scroll.followNewest);
 
-  const markAtBottom = useCallback(() => {
-    isAtBottomRef.current = true;
-    if (convId) markConvAtBottom(convId);
-  }, [convId]);
-  const onAnswer = useCallback(
-    (messageId: string, label: string) => {
-      void xmtpReply(activeLine, messageId, label).catch((e: unknown) => {
-        console.warn('xmtp answer failed', e);
-      });
+  const bubbles = useBubbleFeed(
+    {
+      events,
+      reactions,
+      profilesVersion: people.profilesVersion,
+      replyingTo: menus.replyingTo,
+      menuFor: menus.menuFor,
+      myUri,
+      consentAllowed,
+      senderEthOf: people.senderEthOf,
+      deletedIds,
+      confirmedIds,
+      jumpHighlightId: scroll.jumpHighlightId,
+      selectedForCopy: menus.selectedForCopy,
+      optimisticReactions: reactionsLayer.optimisticReactions,
+      optimisticRemovals: reactionsLayer.optimisticRemovals,
+      ownReactions,
+      votes: votesLayer.displayVotes,
+      ownVotes: votesLayer.displayOwnVotes,
+      openAnswers: votesLayer.displayOpenAnswers,
+      callRecords,
+      signingIds: txSignLayer.signingIds,
+      payingIds: txSignLayer.payingIds,
     },
-    [activeLine],
+    {
+      onReact: reactionsLayer.onReact,
+      setReplyTarget: menus.setReplyTarget,
+      setMenuAnchor: menus.setMenuAnchor,
+      setMenuFor: menus.setMenuFor,
+      jumpToMessage: scroll.jumpToMessage,
+      onVote: votesLayer.onVote,
+      onOpenAnswer: votesLayer.onOpenAnswer,
+      onSign: txSignLayer.onSign,
+      onPay: txSignLayer.onPay,
+      setSelectedForCopy: menus.setSelectedForCopy,
+    },
   );
 
   return {
-    ...feed,
-    ...menus,
-    ...outbound,
-    ...reactionsLayer,
-    ...votesLayer,
-    ...txSignLayer,
-    ...people,
-    ...scroll,
-    peerAddr,
-    groupName,
-    groupImage,
-    groupDescription,
-    groupLabels,
-    isGroup,
-    reactions,
-    ownReactions,
-    callRecords,
-    deletedIds,
-    isSuperAdmin,
-    onAnswer,
-    markAtBottom,
-    consent,
-    consentKnown,
-    consentAllowed,
-    markConsentAllowed,
+    conv,
+    feed: {
+      line: activeLine,
+      status: feed.status,
+      hasMore: feed.hasMore,
+      loadingOlder: feed.loadingOlder,
+      retryFeed: feed.retryFeed,
+      bubbles: allBubbles,
+      rowKeyOf,
+      scroll,
+    },
+    bubbles,
+    composer: {
+      line: activeLine,
+      autoFocusNonce: feed.autoFocusNonce,
+      mentionCandidates: people.mentionCandidates,
+      replyingTo: menus.replyingTo,
+      setReplyingTo: menus.setReplyingTo,
+      onOptimistic: outbound.onOptimistic,
+      onSent: outbound.onSent,
+      consent,
+      consentKnown,
+      markConsentAllowed,
+    },
+    overflow: {
+      open: menus.overflowOpen,
+      setOpen: menus.setOverflowOpen,
+      anchor: menus.overflowAnchor,
+      setAnchor: menus.setOverflowAnchor,
+    },
+    messageMenu: {
+      target: menus.menuFor,
+      setTarget: menus.setMenuFor,
+      anchor: menus.menuAnchor,
+      onReact: reactionsLayer.onReact,
+      setReplyTarget: menus.setReplyTarget,
+      senderEthOf: people.senderEthOf,
+      setSelectedForCopy: menus.setSelectedForCopy,
+      myUri,
+      deletedIds,
+      isSuperAdmin,
+    },
   };
 }
+
+type ConversationState = ReturnType<typeof useConversationState>;
+export type FeedSlice = ConversationState['feed'];
+export type ComposerSlice = ConversationState['composer'];
+export type OverflowSlice = ConversationState['overflow'];
+export type MessageMenuSlice = ConversationState['messageMenu'];

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { A2UI_VERSION, type AgentMessage, type RendererMessage } from '@stage-labs/kit/a2ui/protocol';
 
 export const FRAME_MAX_CHARS = 64 * 1024;
 
@@ -7,8 +8,6 @@ export const FRAME_ACTION_MAX_CHARS = 16 * 1024;
 export const FRAME_MAX_COMPONENTS = 500;
 
 export const FRAME_MAX_MESSAGES = 200;
-
-export const A2UI_MESSAGE_VERSION = 'v1.0';
 
 const MAX_TITLE = 200;
 const MAX_DESCRIPTION = 1000;
@@ -31,26 +30,34 @@ const clipped = (max: number) => z.string().transform((s) => s.trim().slice(0, m
 const surfaceIdSchema = z.string().min(1).max(MAX_SURFACE_ID);
 const functionCallIdSchema = z.string().min(1).max(MAX_ID);
 
-type MessageKinds = Readonly<Record<string, (body: Record<string, unknown>) => boolean>>;
+type BodyCheck = (body: Record<string, unknown>) => boolean;
+type MessageKinds = Readonly<Record<string, BodyCheck>>;
+type KindOf<M> = M extends unknown ? Exclude<keyof M, 'version'> : never;
+type ReplyKind = KindOf<AgentMessage>;
+type SurfaceKind = Exclude<ReplyKind, 'callRendererFunction' | 'agentFunctionResponse'>;
 
 const withSurface = (body: Record<string, unknown>): boolean => surfaceIdSchema.safeParse(body.surfaceId).success;
 const withCallId = (body: Record<string, unknown>): boolean => functionCallIdSchema.safeParse(body.functionCallId).success;
 
-const SURFACE_KINDS: MessageKinds = {
+const SURFACE_KINDS: Readonly<Record<SurfaceKind, BodyCheck>> = {
   createSurface: withSurface,
   updateComponents: withSurface,
   updateDataModel: withSurface,
   deleteSurface: withSurface,
 };
-const REPLY_KINDS: MessageKinds = { ...SURFACE_KINDS, callRendererFunction: withCallId, agentFunctionResponse: withCallId };
-const RENDERER_KINDS: MessageKinds = {
+const REPLY_KINDS: Readonly<Record<ReplyKind, BodyCheck>> = {
+  ...SURFACE_KINDS,
+  callRendererFunction: withCallId,
+  agentFunctionResponse: withCallId,
+};
+const RENDERER_KINDS: Readonly<Record<KindOf<RendererMessage>, BodyCheck>> = {
   action: withSurface,
   callAgentFunction: withCallId,
   rendererFunctionResponse: withCallId,
   error: () => true,
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -63,7 +70,7 @@ function a2uiMessage(kinds: MessageKinds, extraKeys: readonly string[]) {
       const body = kind === undefined ? undefined : m[kind];
       const extras = Object.keys(m).filter((key) => key !== 'version' && key !== kind);
       return (
-        m.version === A2UI_MESSAGE_VERSION &&
+        m.version === A2UI_VERSION &&
         present.length === 1 &&
         check !== undefined &&
         isRecord(body) &&
@@ -71,7 +78,7 @@ function a2uiMessage(kinds: MessageKinds, extraKeys: readonly string[]) {
         extras.every((key) => extraKeys.includes(key))
       );
     },
-    { message: `not one A2UI ${A2UI_MESSAGE_VERSION} message of an allowed kind` },
+    { message: `not one A2UI ${A2UI_VERSION} message of an allowed kind` },
   );
 }
 

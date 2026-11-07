@@ -1,66 +1,65 @@
 import { useState } from 'react';
-import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useRouter } from 'expo-router';
-import * as Clipboard from 'expo-clipboard';
-import { convTitle } from './convTitle';
+import { convTitle } from '../../lib/convIdentity';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { ChannelMenu } from '../ChannelMenu';
+import { ChannelMenu } from '../chatRow/ChannelMenu';
 import { menuPointOf } from '../AnchoredMenu';
-import { isPinned } from '../../lib/pins';
-import { getCachedRows } from '../../lib/channelsCache';
-import { useGroupAccess } from '../../modules/messaging/useConvConsent';
+import { useGroupAccess } from '../../lib/messaging/useConvConsent';
 import { xmtpDeleteMessage } from '../../lib/xmtp.messages';
 import { ConversationSidebarToggle } from './ConversationSidebarToggle';
 import { CallButtons } from '../call/CallButtons';
 import { capabilities } from '../../lib/capabilities';
 import { BubbleActionMenu, ConvTopnavIdentity, ConvTopnavShell } from './parts';
-import { previewOf } from './feed-helpers';
 import { canDeleteMessage, isAdminDelete, deleteConfirmOf } from './messageDeletion.model';
-import { SearchTopnavBar } from '../SearchTopnavBar';
-import { RequestActionBar } from '../RequestActionBar';
+import { TopnavSearch } from '../search/TopnavSearch';
+import { RequestActionBar } from './RequestActionBar';
 import { canApproveConversation, canComposeConversation, composerAccess } from './consent.model';
-import type { useConversationState } from './useConversationState';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import type { ComposerSlice, ConvSummary, FeedSlice, MessageMenuSlice, OverflowSlice } from './useConversationState';
+import { gatedAsChannel } from './convKind.model';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { ComposerDock } from './FooterDock';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { channelProfileLinkOf, conversationSharePath, profileLinkOf } from '../../lib/links';
+import { channelProfileLinkOf } from '@stage-labs/client/routing/deepLinks';
+import { messageShareUrlOf, profileLinkOf } from '../../lib/links';
 import { canEditGroup } from '@stage-labs/client/xmtp/groups';
 import { EditChannelModal } from '../channel/EditChannelModal';
-import { useChannelEditRights } from '../channel/channel.detail';
-import { shareUrlFor } from '@stage-labs/client/routing/handles';
+import { useChannelEditRights } from '../../lib/messaging/queries';
 import { HoverIconButton } from '../hover';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
 import { IconDotGrid1x3Vertical } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDotGrid1x3Vertical';
-import { markOwnDelete, unmarkOwnDelete } from '../../lib/ownDeletes';
-import { report } from '../../lib/errorPolicy';
-import { frameOf } from '../frame/frame.model';
-import { addChatFrameToDashboard } from '../frame/frameDashboard';
+import { deleteForEveryone } from '../../lib/ownDeletes';
+import { report, reported } from '../../lib/errorPolicy';
+import { useAddChatFrameToDashboard, type AddChatFrame } from '../../lib/frames/addToDashboard';
+import { frameOf } from '../../lib/frames/frame.model';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
+import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '../channel/accessNotices';
 import { homeRoute } from '../tabs/boardHome';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
 import { type TextField } from '@stage-labs/kit/react-native/text-field';
 
 async function confirmDeleteMessage(messageId: string, asAdmin: boolean): Promise<void> {
   if (!(await capabilities.confirm(deleteConfirmOf(asAdmin)))) return;
-  await markOwnDelete(messageId);
   try {
-    await xmtpDeleteMessage(messageId);
+    await deleteForEveryone(messageId, xmtpDeleteMessage);
   } catch (err) {
     report('message.delete', err);
-    await unmarkOwnDelete(messageId);
     capabilities.toast('Couldn’t delete the message');
   }
 }
 
-function frameAdder(convId: string, entry: HistoryEntry | null, close: () => void): (() => void) | undefined {
+function frameAdder(
+  add: AddChatFrame | undefined,
+  convId: string,
+  entry: HistoryEntry | null,
+  close: () => void,
+): (() => void) | undefined {
   const frame = frameOf(entry ?? undefined);
-  if (entry === null || frame === null) return undefined;
+  if (add === undefined || entry === null || frame === null) return undefined;
   return () => {
-    void addChatFrameToDashboard(convId, entry.id, frame);
+    void add(convId, entry.id, frame);
     close();
   };
 }
@@ -78,13 +77,19 @@ function ChannelAccessNotice({ outside }: { outside: boolean }): React.ReactElem
   );
 }
 
-type Conv = ReturnType<typeof useConversationState>;
-
-export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
+export function ConversationTopnav({
+  conv,
+  overflow,
+  convId,
+}: {
+  conv: ConvSummary;
+  overflow: OverflowSlice;
+  convId: string;
+}): React.ReactElement {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { text: fg, link: head, border } = usePalette();
-  const { isGroup, peerAddr, groupImage, setOverflowOpen, setOverflowAnchor } = c;
+  const { isGroup, peerAddr, groupImage } = conv;
   const back = (): void => {
     router.replace(homeRoute());
   };
@@ -97,7 +102,7 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
         isGroup={isGroup}
         border={border}
         head={head}
-        title={convTitle(c)}
+        title={convTitle(conv, 'Untitled channel')}
         onPress={() => {
           if (isGroup) router.push(channelProfileLinkOf(convId));
           else if (peerAddr) router.push(profileLinkOf(peerAddr));
@@ -113,8 +118,8 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
           placement="below"
           role="button"
           onPress={(e) => {
-            setOverflowAnchor(menuPointOf(e));
-            setOverflowOpen(true);
+            overflow.setAnchor(menuPointOf(e));
+            overflow.setOpen(true);
           }}
         />
       </Row>
@@ -122,38 +127,32 @@ export function ConversationTopnav({ c, convId }: { c: Conv; convId: string }): 
   );
 }
 
-export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
+export function ConversationFooter({
+  conv,
+  composer,
+  scroll,
+  convId,
+}: {
+  conv: ConvSummary;
+  composer: ComposerSlice;
+  scroll: FeedSlice['scroll'];
+  convId: string;
+}): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const { border: rowBg } = usePalette();
-  const {
-    showJump,
-    setShowJump,
-    scrollToNewest,
-    markAtBottom,
-    activeLine,
-    mentionCandidates,
-    replyingTo,
-    setReplyingTo,
-    autoFocusNonce,
-    jumpToMessage,
-    onOptimistic,
-    onSent,
-    consent,
-    consentKnown,
-    markConsentAllowed,
-  } = c;
-  const isGroup = c.peerAddr === null;
+  const { consent, replyingTo, setReplyingTo } = composer;
+  const isGroup = gatedAsChannel(conv.kind);
   const access = useGroupAccess(convId, isGroup);
   const requestPending = canApproveConversation(consent, isGroup, access);
-  const composerShown = consentKnown && canComposeConversation(consent, isGroup, composerAccess(access, consent));
+  const composerShown = composer.consentKnown && canComposeConversation(consent, isGroup, composerAccess(access, consent));
   return (
     <ComposerDock>
-      {showJump ? (
+      {scroll.showJump ? (
         <Pressable
           onPress={() => {
-            markAtBottom();
-            scrollToNewest();
-            setShowJump(false);
+            scroll.markAtBottom();
+            scroll.scrollToNewest();
+            scroll.setShowJump(false);
           }}
           style={{
             position: 'absolute',
@@ -172,25 +171,24 @@ export function ConversationFooter({ c, convId }: { c: Conv; convId: string }): 
           <Glyph icon={IconArrowDown} size={18} color="#ffffff" />
         </Pressable>
       ) : null}
-      {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={markConsentAllowed} /> : null}
+      {requestPending ? <RequestActionBar convId={convId} dark={dark} onAccepted={composer.markConsentAllowed} /> : null}
       {access === 'waiting' || access === 'outside' ? <ChannelAccessNotice outside={access === 'outside'} /> : null}
       {composerShown ? (
         <MessengerComposer
-          dark={dark}
-          xmtpLine={activeLine}
-          mentionCandidates={mentionCandidates}
-          suggestContacts={c.peerAddr !== null}
+          xmtpLine={composer.line}
+          mentionCandidates={composer.mentionCandidates}
+          suggestContacts={conv.kind === 'dm'}
           replyingTo={replyingTo ?? undefined}
-          autoFocusNonce={autoFocusNonce}
+          autoFocusNonce={composer.autoFocusNonce}
           onClearReply={() => {
             setReplyingTo(null);
           }}
           onRestoreReply={() => {
             setReplyingTo((current) => current ?? replyingTo);
           }}
-          onJumpToReply={jumpToMessage}
-          onOptimistic={onOptimistic}
-          onSent={onSent}
+          onJumpToReply={scroll.jumpToMessage}
+          onOptimistic={composer.onOptimistic}
+          onSent={composer.onSent}
         />
       ) : null}
     </ComposerDock>
@@ -208,18 +206,14 @@ export function ConversationSearchTopnav({
   setQuery: (s: string) => void;
   onClose: () => void;
 }): React.ReactElement {
-  const { text: sub, link: head, border } = usePalette();
   const topInset = useSafeAreaInsets().top;
   return (
     <Column style={pinnedTop(2)}>
-      <SearchTopnavBar
+      <TopnavSearch
         ref={searchInputRef}
-        border={border}
         query={query}
         setQuery={setQuery}
         onClose={onClose}
-        head={head}
-        sub={sub}
         placeholder="Search this conversation"
         topInset={topInset}
       />
@@ -227,51 +221,47 @@ export function ConversationSearchTopnav({
   );
 }
 
-function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
-  const {
-    isGroup,
-    peerAddr,
-    menuFor,
-    setMenuFor,
-    menuAnchor,
-    onReact,
-    setReplyTarget,
-    senderEthOf,
-    setSelectedForCopy,
-    myUri,
-    deletedIds,
-    isSuperAdmin,
-  } = c;
+function ConversationMessageMenu({
+  conv,
+  menu,
+  convId,
+}: {
+  conv: ConvSummary;
+  menu: MessageMenuSlice;
+  convId: string;
+}): React.ReactElement {
+  const { isGroup, peerAddr } = conv;
+  const { target: menuFor, setTarget: setMenuFor, myUri } = menu;
+  const addFrame = useAddChatFrameToDashboard();
   return (
     <BubbleActionMenu
       target={menuFor}
-      anchor={menuAnchor}
-      canDelete={canDeleteMessage(menuFor, { myUri, deleted: deletedIds, superAdmin: isSuperAdmin })}
+      anchor={menu.anchor}
+      canDelete={canDeleteMessage(menuFor, { myUri, deleted: menu.deletedIds, superAdmin: menu.isSuperAdmin })}
       onClose={() => {
         setMenuFor(null);
       }}
       onReact={(emoji) => {
-        if (menuFor) onReact(menuFor.id, emoji);
+        if (menuFor) menu.onReact(menuFor.id, emoji);
         setMenuFor(null);
       }}
       onReply={() => {
-        if (menuFor) setReplyTarget(menuFor.id, previewOf(menuFor), senderEthOf(menuFor.from));
+        if (menuFor) menu.setReplyTarget(menuFor.id, menu.senderEthOf(menuFor.from));
         setMenuFor(null);
       }}
       onCopy={() => {
-        if (menuFor?.text) void Clipboard.setStringAsync(menuFor.text);
+        if (menuFor?.text) void Promise.resolve(capabilities.copyToClipboard(menuFor.text)).catch(reported('message.copy'));
         setMenuFor(null);
       }}
       onSelect={() => {
-        if (menuFor) setSelectedForCopy(menuFor.id);
+        if (menuFor) menu.setSelectedForCopy(menuFor.id);
         setMenuFor(null);
       }}
-      onAddToDashboard={frameAdder(convId, menuFor, () => {
+      onAddToDashboard={frameAdder(addFrame, convId, menuFor, () => {
         setMenuFor(null);
       })}
       onShareLink={() => {
-        const path = conversationSharePath(convId, !isGroup ? peerAddr : null);
-        if (menuFor) void Share.share({ message: `${shareUrlFor(path)}?m=${menuFor.id}` });
+        if (menuFor) capabilities.shareLink(messageShareUrlOf(convId, !isGroup ? peerAddr : null, menuFor.id));
         setMenuFor(null);
       }}
       onDelete={() => {
@@ -283,16 +273,20 @@ function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): Re
 }
 
 export function ConversationOverlays({
-  c,
+  conv,
+  overflow,
+  messageMenu,
   convId,
   onOpenSearch,
 }: {
-  c: Conv;
+  conv: ConvSummary;
+  overflow: OverflowSlice;
+  messageMenu: MessageMenuSlice;
   convId: string;
   onOpenSearch: () => void;
 }): React.ReactElement {
-  const { overflowOpen, setOverflowOpen, overflowAnchor, isGroup, peerAddr } = c;
-  const isUnread = (getCachedRows()?.find((r) => r.convId === convId)?.unreadCount ?? 0) > 0;
+  const { open: overflowOpen, setOpen: setOverflowOpen, anchor: overflowAnchor } = overflow;
+  const { isGroup } = conv;
   const rights = useChannelEditRights(convId, isGroup);
   const [editOpen, setEditOpen] = useState(false);
   const canEdit = isGroup && canEditGroup(rights);
@@ -301,15 +295,11 @@ export function ConversationOverlays({
       <ChannelMenu
         visible={overflowOpen}
         convId={convId}
-        isGroup={isGroup}
-        peerAddress={peerAddr}
-        isUnread={isUnread}
-        isPinned={convId ? isPinned(convId) : false}
         onClose={() => {
           setOverflowOpen(false);
         }}
         anchor={overflowAnchor}
-        context="view"
+        from="chat"
         onSearch={onOpenSearch}
         onEdit={
           canEdit
@@ -318,9 +308,6 @@ export function ConversationOverlays({
               }
             : undefined
         }
-        onAfterLeave={(result) => {
-          capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden');
-        }}
       />
       {canEdit ? (
         <EditChannelModal
@@ -329,14 +316,14 @@ export function ConversationOverlays({
             setEditOpen(false);
           }}
           convId={convId}
-          name={c.groupName}
-          description={c.groupDescription}
-          imageUrl={c.groupImage}
+          name={conv.groupName}
+          description={conv.groupDescription}
+          imageUrl={conv.groupImage}
           rights={rights}
-          labels={c.groupLabels}
+          labels={conv.groupLabels}
         />
       ) : null}
-      <ConversationMessageMenu c={c} convId={convId} />
+      <ConversationMessageMenu conv={conv} menu={messageMenu} convId={convId} />
     </>
   );
 }

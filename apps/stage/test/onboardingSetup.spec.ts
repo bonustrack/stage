@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { setupHint, setupLinks, setupStages, setupTitle, stageLabel, stageState } from '../components/onboarding/Onboarding.setup.model';
+import { canStartOver, setupHint, setupStages, setupTitle, stageLabel, stageState } from '../components/onboarding/Onboarding.setup.model';
 
 describe('setupStages', () => {
   test('creates an account with wallet, messaging and optional profile', () => {
@@ -33,10 +33,10 @@ describe('setup copy', () => {
   });
 
   test('a messaging retry keeps the existing wallet, other failures may start over', () => {
-    expect(setupLinks({ message: 'x', retry: 'restart' })).toEqual(['startOver']);
-    expect(setupLinks({ message: 'x', accountId: '0xabc', retry: 'messaging' })).toEqual([]);
-    expect(setupLinks({ message: 'unreadable checkpoint', retry: 'create' })).toEqual([]);
-    expect(setupLinks({ message: 'x', accountId: '0xabc', retry: 'create' })).toEqual([]);
-    expect(setupLinks(null)).toEqual([]);
+    expect(canStartOver({ message: 'x', retry: 'restart' })).toBe(true);
+    expect(canStartOver({ message: 'x', accountId: '0xabc', retry: 'messaging' })).toBe(false);
+    expect(canStartOver({ message: 'unreadable checkpoint', retry: 'create' })).toBe(false);
+    expect(canStartOver({ message: 'x', accountId: '0xabc', retry: 'create' })).toBe(false);
+    expect(canStartOver(null)).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { getCurrentPrices, getPriceChanges } from '../src/api/defillama';
+import { fakeFetch } from './helpers';
 
 const realFetch = globalThis.fetch;
 const eth = 'ethereum:0x0000000000000000000000000000000000000000';
@@ -9,10 +10,10 @@ const quote = { price: 4000, timestamp: now, confidence: 0.99 };
 let requests: string[] = [];
 
 function respond(body: unknown, status = 200): void {
-  globalThis.fetch = (input) => {
+  globalThis.fetch = fakeFetch((input) => {
     requests.push(String(input));
     return Promise.resolve(Response.json(body, { status }));
-  };
+  });
 }
 
 afterEach(() => {

@@ -14,8 +14,8 @@ runtime - no Express, no origin, no laptop dependency.
 - **Stage names:** `/names/*` issues free `<label>.stage.base.eth` subnames on
   Base. The Worker holds the operator key (`NAMES_OPERATOR_KEY`) and a KV of
   issued labels (`NAMES_KV`); claims are signed by the wallet in the app and
-  labels are validated server-side (`a-z0-9`, single hyphens, none at the
-  ends, 6+ chars). Every claim runs inside one `NamesClaims` Durable Object,
+  labels are validated server-side with the client's `validateStageLabel`.
+  Every claim runs inside one `NamesClaims` Durable Object,
   one at a time, whose storage is the source of truth for reservations (KV
   mirrors it for `status`, `check` and `resolve`), so a label or an address
   can never be claimed twice.
@@ -86,67 +86,54 @@ runtime - no Express, no origin, no laptop dependency.
   sold name loses access at once. A new owner's key wipes the old mail. Client
   helpers: `@stage-labs/client/mail/mailbox` and `/mail/api`.
 
-## API
+## Routes
 
-```
-GET  /health                     -> "ok"
-GET  /preview?url=<encoded>      -> 200 { url, title, description, image, siteName, favicon }
-                                    OR { kind:'x402', endpoint, accepts:[...], raw, ... }
-    400 invalid/blocked url   422 no previewable content   429 rate limited   502 fetch failed
-GET  /img?url=<encoded>&w=<px>   -> resized image
-POST /x402-settle                -> settlement result
-OPTIONS /preview, /img, /x402-settle -> 204 CORS preflight (allows the x-stage-client header)
-GET  /names/check?label=<label>  -> { valid, available, reason? }
-GET  /names/status?address=<0x>  -> { name | null }
-GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then the KV record)
-POST /names/claim                -> { label, address, issuedAt, signature, mailKey? } -> { name, txHash, mailKey?: 'stored' | 'failed' }
-POST /xmtp-history/<env>/upload  -> archive id (text)       413 too large   429 rate limited
-POST /xmtp-history/<env>/upload?size=<bytes> -> archive id, first part of a bigger archive
-POST /xmtp-history/<env>/upload/<id> -> archive id, next part   404 no open archive   413 past its size
-GET  /xmtp-history/<env>/files/<id> -> archive bytes       404 unknown, expired or not complete
-*    /xmtp-push/*                -> relayed upstream
-POST /mail/key                   -> { label, publicKey, issuedAt, signature } -> { address }   401 not the owner   409 older key
-GET  /mail/key?label=<l>         -> { address, owner, publicKey | null }   (null: no key from the current owner)
-POST /mail/challenge             -> { label } -> { nonce, expiresAt }   (5 minutes, single use)
-POST /mail/session               -> { label, nonce, signature } -> { token, expiresAt }   (15 minutes)
-GET  /mail/list?label=<l>        -> { mails: [{ id, ts, size, index }] }   Bearer token
-GET  /mail/message?label=&id=    -> sealed mail bytes       Bearer token   404 not this owner's mail
-DELETE /mail/message?label=&id=  -> 204                     Bearer token
-DELETE /mail/box?label=<l>       -> 204, wipes the mailbox  Bearer token
-     /mail/* 401 bad or expired session   403 the name has a new owner   429 rate limited (30 a minute per IP)
-PUT  /nodes                      -> ES module source, signed -> { id, url }   (url https://nodes.stage.box/<id>)
-DELETE /nodes                    -> signed, no body -> { id }   404 no such node
-     /nodes 400 code refused by Cloudflare (reason in error)   401 bad or stale signature   411 no length
-            413 code over 64 KB   429 rate limited (10 a minute per IP, 60 in all)   503 not set up   507 node limit reached
-```
-
-Every response carries `x-served-by: worker`.
+Each route is one entry of the `ROUTES` table in `src/index.ts`: its path
+(from `@stage-labs/client/endpoints`, which the app and the client helpers
+use too), its preflight CORS, its rate limits, its request body cap and its
+handler. The router answers every `OPTIONS` with the route's preflight CORS
+itself, before any rate limit or configuration check, so a preflight never
+costs a request of the route's budget and is a 204 even where a binding is
+missing. A route whose handler reads the body whole declares `maxBody`: 64 KB
+for the names, mail and settle JSON, 64 KB of code for `/nodes` and 2 MB for
+the push relay. The router reads at most that many bytes, declared or
+streamed, and answers a bigger body with a JSON `413` and the route's CORS
+before the handler runs. Attachments and history archives stream into
+storage, so their handlers keep their own caps (100 MB a request). The handler
+modules hold the request and reply shapes and their statuses; the node
+publish statuses are `NODE_PUBLISH_STATUS` in
+`@stage-labs/client/nodes/hosting`, documented for node authors in
+[`NODES.md`](../../NODES.md).
 
 ## Security / SSRF
 
 The Workers runtime **refuses to route `fetch()` to private / loopback /
 link-local / RFC1918 destinations** by design, so DNS-rebinding to an internal
 IP is neutralised at the platform layer (no DNS resolution is done in-Worker;
-see `src/ssrf.ts`). On top of that we keep:
+see `src/ssrf.ts`). On top of that:
 
-- a host allowlist block for our own internal surface (`*.stage.box`,
-  `localhost`, `*.local`, `*.internal`, cloud metadata hosts),
-  re-checked on every redirect hop,
-- a literal private-IP guard (cheap defence-in-depth),
-- http(s)-only, credential stripping, 5s timeout, 1.5 MB body cap, 3-redirect
-  cap, desktop User-Agent, never executes JS (regex head-parse).
+- every target and every redirect hop goes through `src/ssrf.ts`: http(s)
+  only, the shared host policy of `@stage-labs/client/net/publicHost` (the
+  one the node client and the nodes outbound Worker use), plus Stage's own
+  `stage.box` hosts and the cloud metadata name,
+- per-route timeouts, body caps and redirect caps, a desktop User-Agent, and
+  it never executes JS (regex head-parse).
 
 ## Caching
 
-Successful results are stored in `caches.default` (the Cloudflare edge cache),
-keyed by the normalised `/preview?url=...` request, TTL ~1 day. Cache hits add
+Successful `/preview` and `/img` results are stored in `caches.default` (the
+Cloudflare edge cache), keyed by the normalised `/preview?url=...` request
+(TTL about 1 day) or the `/img?url=...&w=...` request (TTL 7 days), always on
+`proxy.stage.box` so every entry host shares the cache. Cache hits add
 `x-cache: HIT`.
 
 ## Rate limit
 
-Best-effort per-IP 60/min within a single isolate (isolates are ephemeral, so
-this only bounds bursts - use Cloudflare Rate Limiting Rules for a hard global
-limit).
+The route table declares each route's limits: a best-effort budget of 60 a
+minute per IP within a single isolate (isolates are ephemeral, so this only
+bounds bursts) and, where a route needs a hard limit, a Workers RateLimit
+binding from `wrangler.toml`. Every limit keys on `cf-connecting-ip`
+(`@stage-labs/client/net/clientIp`), never on the spoofable `x-forwarded-for`.
 
 ## Deploy
 
@@ -159,10 +146,12 @@ bunx wrangler deploy
 ```
 
 `wrangler.toml` binds the Worker to the routes `proxy.stage.box/*` and
-`bundler.stage.box/*` on the `stage.box` zone, the `NAMES_KV` namespace and
-the `NAMES_CLAIMS` Durable Object (SQLite-backed, created by the `v1` migration)
-and the `ATTACHMENTS` R2 bucket (`stage`, created once in the
-dashboard; a deploy fails while it does not exist);
+`bundler.stage.box/*` on the `stage.box` zone, the `NAMES_KV` namespace, the
+SQLite-backed Durable Objects `NAMES_CLAIMS`, `HISTORY_ARCHIVES` and
+`MAIL_BOXES` (created by the `v1`, `v2` and `v4` migrations), the `ATTACHMENTS`
+R2 bucket (`stage`, created once in the dashboard; a deploy fails while it does
+not exist) and the RateLimit bindings `ATTACHMENT_UPLOADS`, `MAIL_REQUESTS`,
+`NODE_PUBLISHES` and `NODE_PUBLISHES_ALL`;
 `NAMES_OPERATOR_KEY` (and the optional `NAMES_RPC_URL`) are Worker secrets set
 with `wrangler secret put`, never committed. So are `NODES_CF_API_TOKEN` (an
 account API token, owned by the account rather than a person so its API budget

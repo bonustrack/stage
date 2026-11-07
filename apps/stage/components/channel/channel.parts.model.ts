@@ -1,9 +1,9 @@
 import type { MenuItem } from '../appIcons';
-import { EDIT_CHANNEL_ITEM, LEAVE_CHANNEL_ITEM } from '../ChannelMenu.model';
+import { EDIT_CHANNEL_ITEM, LEAVE_CHANNEL_ITEM } from '../chatRow/ChannelMenu.model';
 
 export type ChannelMemberRole = 'owner' | 'admin' | 'member' | undefined;
 
-export interface MemberRowBadge {
+interface MemberRowBadge {
   role: 'owner' | 'admin';
   label: string;
 }

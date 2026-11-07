@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { attachmentsOf } from '@stage-labs/client/xmtp/entryPayload';
 import {
   EMPTY_SNAPSHOT,
   INLINE_DATA_LIMIT,
@@ -10,20 +11,22 @@ import {
   snapshotEntries,
   withLine,
   withSelf,
-} from '../lib/feedSnapshot.model';
-import { entry } from './helpers';
+} from '../lib/feed/snapshot.model';
+import { entry, messageEntry } from './helpers';
 
 const ids = (entries: readonly HistoryEntry[]): string[] => entries.map((e) => e.id);
 const messages = (n: number): HistoryEntry[] => Array.from({ length: n }, (_, i) => entry(`m${i}`));
+const reaction = (id: string, reference: string): HistoryEntry =>
+  messageEntry(id, 'reaction', { reference, content: '+1', removed: false, custom: false });
 
 describe('feed snapshot', () => {
   test('keeps the newest messages with their reactions and skips sends still in flight', () => {
     const slice = [
       entry('sending', { pending: true }),
-      entry('r1', { payload: { reactTo: 'm0', emoji: '+1' } }),
+      reaction('r1', 'm0'),
       entry('m0'),
       entry('m1'),
-      entry('r2', { payload: { reactTo: 'm2', emoji: '+1' } }),
+      reaction('r2', 'm2'),
       entry('m2'),
       entry('m3'),
     ];
@@ -66,19 +69,20 @@ describe('feed snapshot', () => {
 
   test('round-trips file keys and big numbers', () => {
     const secret = new Uint8Array([1, 2, 3, 250]);
+    const keys = { secret, salt: new Uint8Array([4]), nonce: new Uint8Array([5]) };
     const remote = entry('remote', {
-      payload: { attachments: [{ kind: 'image', remote: { url: 'https://x', secret, contentLength: 12n } }] },
+      payload: { attachments: [{ kind: 'image', remote: { url: 'https://x', contentDigest: 'd', ...keys, contentLength: 12 } }] },
     });
-    const snapshot = withSelf(withLine(EMPTY_SNAPSHOT, 'line-a', [remote], 5), 'inbox-a');
+    const bigPayload = { contentType: 'custom', count: 12n };
+    const big = entry('big', { payload: bigPayload });
+    const snapshot = withSelf(withLine(EMPTY_SNAPSHOT, 'line-a', [remote, big], 5), 'inbox-a');
     const decoded = decodeSnapshot(encodeSnapshot(snapshot));
     expect(decoded?.self).toBe('inbox-a');
-    const att = (
-      lineEntries(decoded ?? EMPTY_SNAPSHOT, 'line-a')?.[0]?.payload as {
-        attachments: { remote: { secret: Uint8Array; contentLength: bigint } }[];
-      }
-    ).attachments[0];
-    expect(att?.remote.secret).toEqual(secret);
-    expect(att?.remote.contentLength).toBe(12n);
+    const entries = lineEntries(decoded ?? EMPTY_SNAPSHOT, 'line-a');
+    const att = attachmentsOf(entries?.[0])[0];
+    expect(att?.remote?.secret).toEqual(secret);
+    expect(att?.remote?.contentLength).toBe(12);
+    expect(entries?.[1]?.payload).toEqual(bigPayload);
   });
 
   test('reads nothing from a damaged record', () => {

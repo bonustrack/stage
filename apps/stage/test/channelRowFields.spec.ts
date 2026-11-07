@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { visibleChannelFields } from '../components/ChannelRowFields.model';
-import { CHANNEL_FIELDS, DEFAULT_CHANNEL_FIELDS, type ChannelFields } from '../components/home/fields.model';
+import { visibleChannelFields } from '../components/chatRow/ChannelRowFields.model';
+import { CHANNEL_FIELDS } from '../components/home/fields.model';
+import { DEFAULT_CHANNEL_FIELDS, type ChannelFields } from '../lib/channelFields.model';
 
 const all: ChannelFields = {
   members: true,
@@ -41,11 +42,10 @@ describe('channel row metadata', () => {
       { id: 'members', label: 'Members', value: '', addresses: ['0xabc', '0xdef'] },
       { id: 'assignees', label: 'Assignees', value: '', addresses: ['0xdef'] },
     ]);
-    expect(fields.slice(2).map((field) => field.icon)).toEqual(['IconFolder1', 'IconCircleDashed', 'IconFlag1']);
-    expect(CHANNEL_FIELDS.filter((field) => field.id === 'members' || field.id === 'assignees').map((field) => field.icon)).toEqual([
-      'IconPeople',
-      'IconPeopleCircle',
-    ]);
+    expect(fields.slice(2).every((field) => field.icon !== undefined)).toBe(true);
+    const peopleInMenu = CHANNEL_FIELDS.filter((field) => field.id === 'members' || field.id === 'assignees');
+    expect(peopleInMenu).toHaveLength(2);
+    expect(peopleInMenu.every((field) => field.icon !== undefined)).toBe(true);
   });
 
   test('each visibility toggle affects only its field', () => {

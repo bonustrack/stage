@@ -1,62 +1,60 @@
 import { formatEther, formatUnits, type Hex } from 'viem';
 import { getCurrentPrices, getPriceChanges, type UsdQuote } from '../api/defillama';
-import { ETH_PRICE_ID, MULTICALL3, WALLET_ASSETS, WALLET_CHAIN_ID, erc20Abi, multicall3Abi, type Asset, type AssetRow } from './assets';
+import { ETH_PRICE_ID, MULTICALL3, WALLET_ASSETS, erc20Abi, multicall3Abi, type Asset, type AssetRow } from './assets';
+import { WALLET_CHAIN_ID } from './chains';
 import { publicClientFor } from './client';
-
-export type TokenLogoResolver = (chainId: number, contract: string, displayPx: number) => string;
-
-export interface FetchAssetRowsOptions {
-  tokenLogo: TokenLogoResolver;
-}
 
 export interface WalletPortfolio {
   rows: AssetRow[];
   prices: Partial<Record<'ethereum' | 'bitcoin', UsdQuote>>;
 }
 
-const BTC_PRICE_ID = 'bitcoin:btc';
-
-export async function fetchAssetRows(addr: string, opts: FetchAssetRowsOptions): Promise<AssetRow[]> {
-  return (await fetchWalletPortfolio(addr, opts, false)).rows;
+export interface PortfolioRead extends WalletPortfolio {
+  priceError: Error | undefined;
 }
 
-export async function fetchWalletPortfolio(addr: string, opts: FetchAssetRowsOptions, requirePrices = true): Promise<WalletPortfolio> {
+const BTC_PRICE_ID = 'bitcoin:btc';
+
+export async function fetchAssetRows(addr: string): Promise<AssetRow[]> {
+  return (await fetchWalletPortfolio(addr)).rows;
+}
+
+function settledPrices(prices: Promise<Record<string, UsdQuote>>): Promise<{ quotes: Record<string, UsdQuote>; error?: Error }> {
+  return prices.then(
+    (quotes) => ({ quotes }),
+    (error: unknown) => ({ quotes: {}, error: error instanceof Error ? error : new Error(String(error)) }),
+  );
+}
+
+export async function fetchWalletPortfolio(addr: string): Promise<PortfolioRead> {
   const calls = WALLET_ASSETS.map((a) =>
     a.address === null
       ? { address: MULTICALL3, abi: multicall3Abi, functionName: 'getEthBalance' as const, args: [addr as Hex] }
       : { address: a.address, abi: erc20Abi, functionName: 'balanceOf' as const, args: [addr as Hex] },
   );
   const balances = await publicClientFor(WALLET_CHAIN_ID).multicall({ contracts: calls, allowFailure: false });
-
   const ids = [...new Set([...WALLET_ASSETS.flatMap((a) => a.priceId ?? []), BTC_PRICE_ID])];
-  const currentPrices = getCurrentPrices(ids);
-  const [prices, changes] = await Promise.all([
-    requirePrices ? currentPrices : currentPrices.catch((): Record<string, UsdQuote> => ({})),
+  const [current, changes] = await Promise.all([
+    settledPrices(getCurrentPrices(ids)),
     getPriceChanges(ids).catch((): Record<string, number> => ({})),
   ]);
+  const prices = current.quotes;
   return {
-    rows: WALLET_ASSETS.map((a, i) => buildAssetRow(a, balances[i] ?? 0n, prices, changes, opts.tokenLogo)),
+    rows: WALLET_ASSETS.map((a, i) => buildAssetRow(a, balances[i] ?? 0n, prices, changes)),
     prices: { ethereum: prices[ETH_PRICE_ID], bitcoin: prices[BTC_PRICE_ID] },
+    priceError: current.error,
   };
 }
 
-function buildAssetRow(
-  a: Asset,
-  raw: bigint,
-  prices: Record<string, UsdQuote>,
-  changes: Record<string, number>,
-  tokenLogo: TokenLogoResolver,
-): AssetRow {
-  const balance = a.address === null ? formatEther(raw) : formatUnits(raw, a.decimals);
+function buildAssetRow(a: Asset, raw: bigint, prices: Record<string, UsdQuote>, changes: Record<string, number>): AssetRow {
   const price = a.priceId === undefined ? undefined : prices[a.priceId];
-  const change24h = a.priceId === undefined ? null : (changes[a.priceId] ?? null);
   return {
     symbol: a.symbol,
     name: a.name,
     chainId: a.chainId,
-    balance,
+    balance: a.address === null ? formatEther(raw) : formatUnits(raw, a.decimals),
     priceUsd: price?.usd ?? null,
-    change24h,
-    logoUrl: tokenLogo(a.chainId, a.logoAddress, 32),
+    change24h: a.priceId === undefined ? null : (changes[a.priceId] ?? null),
+    logoAddress: a.logoAddress,
   };
 }

@@ -1,21 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import {
   validMemberAddresses,
-  isNoInboxError,
-  isPermissionError,
   requireValidMembers,
-  mapCreateGroupError,
-  mapAddMembersError,
   createGroupWith,
   addGroupMembersWith,
   groupRoleOf,
   superAdminInboxIds,
   groupEditRightsOf,
   canEditGroup,
-  mapUpdateGroupError,
   updateGroupMetaWith,
   UNKNOWN_GROUP_POLICY,
-  groupMetaPolicyOfSet,
   missingInstallationIds,
   type GroupMetaPolicy,
 } from '../src/xmtp/groups';
@@ -34,19 +28,6 @@ describe('validMemberAddresses', () => {
   });
 });
 
-describe('error classification', () => {
-  test('isNoInboxError', () => {
-    expect(isNoInboxError('no inbox found')).toBe(true);
-    expect(isNoInboxError('cannot find user')).toBe(true);
-    expect(isNoInboxError(LIBXMTP_ADDRESS_NOT_FOUND)).toBe(true);
-    expect(isNoInboxError('boom')).toBe(false);
-  });
-  test('isPermissionError', () => {
-    expect(isPermissionError('only admin allowed')).toBe(true);
-    expect(isPermissionError('boom')).toBe(false);
-  });
-});
-
 describe('requireValidMembers', () => {
   test('throws on empty', () => {
     expect(() => requireValidMembers(['bad'])).toThrow('Add at least one valid member address.');
@@ -56,116 +37,63 @@ describe('requireValidMembers', () => {
   });
 });
 
-describe('error mappers', () => {
-  test('create no-inbox', () => {
-    expect(mapCreateGroupError(new Error('no inbox')).message).toBe("One or more addresses aren't on XMTP yet, so they can't be added.");
+const NOT_ON_XMTP = "One or more addresses aren't on XMTP yet, so they can't be added.";
+const sameId = (id: string): string => id;
+const createFailingWith = (message: string): Promise<unknown> =>
+  createGroupWith([ADDR_A], sameId, () => Promise.reject(new Error(message)), onXmtp);
+const addFailingWith = (message: string): Promise<void> => addGroupMembersWith([ADDR_A], () => Promise.reject(new Error(message)));
+
+async function expectNothingCreated(addresses: string[], inboxIdOf: (address: string) => Promise<string | undefined>, error: string) {
+  let called = false;
+  const create = (): Promise<{ id: string }> => {
+    called = true;
+    return Promise.resolve({ id: 'x' });
+  };
+  await expect(createGroupWith(addresses, sameId, create, inboxIdOf)).rejects.toThrow(error);
+  expect(called).toBe(false);
+}
+
+describe('create and add errors', () => {
+  test('a create that finds no inbox says the members are not on XMTP', async () => {
+    for (const message of ['no inbox', 'cannot find user', LIBXMTP_ADDRESS_NOT_FOUND]) {
+      await expect(createFailingWith(message)).rejects.toThrow(NOT_ON_XMTP);
+    }
   });
-  test('create libxmtp address not found', () => {
-    expect(mapCreateGroupError(new Error(LIBXMTP_ADDRESS_NOT_FOUND)).message).toBe(
-      "One or more addresses aren't on XMTP yet, so they can't be added.",
-    );
+  test('any other create failure keeps its reason', async () => {
+    await expect(createFailingWith('boom')).rejects.toThrow("Couldn't create the channel: boom");
   });
-  test('create generic', () => {
-    expect(mapCreateGroupError(new Error('boom')).message).toBe("Couldn't create the channel: boom");
+  test('an add that finds no inbox says the members are not on XMTP', async () => {
+    await expect(addFailingWith('not registered')).rejects.toThrow(NOT_ON_XMTP);
   });
-  test('add no-inbox', () => {
-    expect(mapAddMembersError(new Error('not registered')).message).toBe(
-      "One or more addresses aren't on XMTP yet, so they can't be added.",
-    );
+  test('an add without the right says only an admin can add members', async () => {
+    for (const message of ['admin only', 'only admin allowed']) {
+      await expect(addFailingWith(message)).rejects.toThrow('Only a channel admin can add members.');
+    }
   });
-  test('add permission', () => {
-    expect(mapAddMembersError(new Error('admin only')).message).toBe('Only a channel admin can add members.');
-  });
-  test('add generic', () => {
-    expect(mapAddMembersError(new Error('boom')).message).toBe("Couldn't add members: boom");
+  test('any other add failure keeps its reason', async () => {
+    await expect(addFailingWith('boom')).rejects.toThrow("Couldn't add members: boom");
   });
 });
 
 describe('createGroupWith', () => {
   test('builds line + id from injected create', async () => {
-    const res = await createGroupWith(
-      [ADDR_A],
-      (id) => `stage://xmtp/${id}`,
-      async () => ({ id: 'gid' }),
-      onXmtp,
-    );
-    expect(res).toEqual({ line: 'stage://xmtp/gid', id: 'gid' });
-  });
-  test('maps create error', async () => {
-    await expect(
-      createGroupWith(
-        [ADDR_A],
-        (id) => id,
-        async () => {
-          throw new Error('no inbox');
-        },
-        onXmtp,
-      ),
-    ).rejects.toThrow("One or more addresses aren't on XMTP yet, so they can't be added.");
+    const created = () => Promise.resolve({ id: 'gid' });
+    expect(await createGroupWith([ADDR_A], (id) => `stage://xmtp/${id}`, created, onXmtp)).toEqual({ line: 'stage://xmtp/gid', id: 'gid' });
   });
   test('validates before calling create', async () => {
-    let called = false;
-    await expect(
-      createGroupWith(
-        ['bad'],
-        (id) => id,
-        async () => {
-          called = true;
-          return { id: 'x' };
-        },
-        onXmtp,
-      ),
-    ).rejects.toThrow('Add at least one valid member address.');
-    expect(called).toBe(false);
+    await expectNothingCreated(['bad'], onXmtp, 'Add at least one valid member address.');
   });
   test('names the member not on XMTP and creates nothing', async () => {
-    let called = false;
     const inboxIdOf = async (address: string): Promise<string | undefined> => (address === ADDR_B ? undefined : 'inbox');
-    await expect(
-      createGroupWith(
-        [ADDR_A, ADDR_B],
-        (id) => id,
-        async () => {
-          called = true;
-          return { id: 'x' };
-        },
-        inboxIdOf,
-      ),
-    ).rejects.toThrow("0x2539…79d5 isn't on XMTP yet, so they can't be added.");
-    expect(called).toBe(false);
+    await expectNothingCreated([ADDR_A, ADDR_B], inboxIdOf, "0x2539…79d5 isn't on XMTP yet, so they can't be added.");
   });
   test('names every member not on XMTP', async () => {
-    let called = false;
-    await expect(
-      createGroupWith(
-        [ADDR_A, ADDR_B],
-        (id) => id,
-        async () => {
-          called = true;
-          return { id: 'x' };
-        },
-        async () => undefined,
-      ),
-    ).rejects.toThrow("0x0bA0…651A, 0x2539…79d5 aren't on XMTP yet, so they can't be added.");
-    expect(called).toBe(false);
+    const noInbox = async (): Promise<string | undefined> => undefined;
+    await expectNothingCreated([ADDR_A, ADDR_B], noInbox, "0x0bA0…651A, 0x2539…79d5 aren't on XMTP yet, so they can't be added.");
   });
   test('a failed member lookup is not reported as a missing inbox', async () => {
-    let called = false;
-    const lookupDown = async (): Promise<string | undefined> => {
-      throw new Error('identity api unreachable');
-    };
-    await expect(
-      createGroupWith(
-        [ADDR_A],
-        (id) => id,
-        async () => {
-          called = true;
-          return { id: 'x' };
-        },
-        lookupDown,
-      ),
-    ).rejects.toThrow("Couldn't create the channel: identity api unreachable");
-    expect(called).toBe(false);
+    const lookupDown = (): Promise<string | undefined> => Promise.reject(new Error('identity api unreachable'));
+    await expectNothingCreated([ADDR_A], lookupDown, "Couldn't create the channel: identity api unreachable");
   });
 });
 
@@ -176,13 +104,6 @@ describe('addGroupMembersWith', () => {
       received = m;
     });
     expect(received).toEqual([ADDR_A]);
-  });
-  test('maps add permission error', async () => {
-    await expect(
-      addGroupMembersWith([ADDR_A], async () => {
-        throw new Error('admin only');
-      }),
-    ).rejects.toThrow('Only a channel admin can add members.');
   });
 });
 
@@ -204,21 +125,6 @@ describe('groupRoleOf', () => {
   });
 });
 
-describe('groupMetaPolicyOfSet', () => {
-  test('reads name, description and image from their own policies', () => {
-    expect(
-      groupMetaPolicyOfSet({
-        updateGroupNamePolicy: 'admin',
-        updateGroupDescriptionPolicy: 'deny',
-        updateGroupImagePolicy: 'superAdmin',
-        updateAppDataPolicy: 'admin',
-        addMemberPolicy: 'allow',
-        removeMemberPolicy: 'admin',
-      }),
-    ).toEqual({ name: 'admin', description: 'deny', image: 'superAdmin', appData: 'admin', addMember: 'allow', removeMember: 'admin' });
-  });
-});
-
 describe('groupEditRightsOf', () => {
   const policy = (p: GroupMetaPolicy['name']): GroupMetaPolicy => ({
     name: p,
@@ -229,15 +135,9 @@ describe('groupEditRightsOf', () => {
     removeMember: p,
   });
   const members = { addMember: 'allow', removeMember: 'admin' } as const;
+  const everyRight = { name: true, description: true, image: true, appData: true, addMembers: true, removeMembers: true };
   test('allow lets every member edit', () => {
-    expect(groupEditRightsOf(policy('allow'), 'member')).toEqual({
-      name: true,
-      description: true,
-      image: true,
-      appData: true,
-      addMembers: true,
-      removeMembers: true,
-    });
+    expect(groupEditRightsOf(policy('allow'), 'member')).toEqual(everyRight);
   });
   test('admin policy needs an admin or the owner', () => {
     expect(canEditGroup(groupEditRightsOf(policy('admin'), 'member'))).toBe(false);
@@ -252,14 +152,7 @@ describe('groupEditRightsOf', () => {
     expect(canEditGroup(groupEditRightsOf(policy('deny'), 'owner'))).toBe(false);
   });
   test('unknown metadata policies stay open but assignment waits for a known policy', () => {
-    expect(groupEditRightsOf(UNKNOWN_GROUP_POLICY, 'member')).toEqual({
-      name: true,
-      description: true,
-      image: true,
-      appData: false,
-      addMembers: true,
-      removeMembers: true,
-    });
+    expect(groupEditRightsOf(UNKNOWN_GROUP_POLICY, 'member')).toEqual({ ...everyRight, appData: false });
   });
   test('rights are per field', () => {
     const rights = groupEditRightsOf({ name: 'admin', description: 'allow', image: 'deny', appData: 'admin', ...members }, 'member');
@@ -316,8 +209,13 @@ describe('updateGroupMetaWith', () => {
       "You don't have permission to edit this channel.",
     );
   });
-  test('keeps other errors as they are', () => {
-    expect(mapUpdateGroupError(new Error('network down')).message).toBe('network down');
+  test('keeps other errors as they are', async () => {
+    const ops = {
+      updateName: () => Promise.reject(new Error('network down')),
+      updateImageUrl: () => Promise.resolve(),
+      updateDescription: () => Promise.resolve(),
+    };
+    await expect(updateGroupMetaWith({ name: 'Crew' }, ops)).rejects.toThrow('network down');
   });
 });
 

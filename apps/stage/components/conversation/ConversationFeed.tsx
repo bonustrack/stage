@@ -1,143 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, type ViewStyle } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ConversationIntro } from './ConversationIntro';
-import { AT_BOTTOM_THRESHOLD_PX, convScrollKey, planFeedRestore, saveFeedAnchor, saveScrollOffset } from '../../lib/scrollPos';
-import {
-  FEED_MIN_BATCH,
-  feedDistanceFromNewest,
-  feedPositionHold,
-  planUprightRestore,
-  shouldPageOlder,
-  uprightFirstBatch,
-  uprightScrollOffset,
-  type FeedScrollMetrics,
-} from './feed-helpers';
-import { useFeedRenderItem } from './useFeedRenderItem';
-import type { useConversationState } from './useConversationState';
+import { feedOrientation } from './feedOrientation';
+import { useFeedRenderItem, type BubbleFeed } from './useFeedRenderItem';
+import type { ConvSummary, FeedSlice } from './useConversationState';
 import { usePalette } from '../../lib/theme';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { TOPNAV_HEIGHT } from '../Topnav';
-import type { HistoryEntry } from '@stage-labs/client/types';
-import { attempt } from '../../lib/errorPolicy';
-import { ChatGalleryProvider } from '../bubble/ChatGallery';
-import { useChatColumnFill } from './ConversationSidebar';
+import { ChatGalleryProvider } from '../media/ChatGallery';
+import { useChatColumnFill } from './FooterDock';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { Column, VirtualList } from '../layout';
 
-const UPRIGHT = Platform.OS === 'web';
 const FEED_ESTIMATED_ROW = 80;
-
-type ConvState = ReturnType<typeof useConversationState>;
-
-function handleFeedScroll(c: ConvState, convId: string, distance: number): void {
-  const next = distance > 12;
-  c.setShowJump((prev) => (prev === next ? prev : next));
-  const atBottom = distance <= AT_BOTTOM_THRESHOLD_PX;
-  c.isAtBottomRef.current = atBottom;
-  if (!convId) return;
-  saveScrollOffset(convScrollKey(convId), atBottom ? 0 : distance);
-  if (UPRIGHT) saveFeedAnchor(convId, atBottom ? null : (c.listRef.current?.visibleAnchor() ?? null));
-}
-
-function scrollFeedTo(c: ConvState, offset: number): void {
-  const apply = (): void => {
-    attempt(() => {
-      c.listRef.current?.scrollToOffset({ offset, animated: false });
-    }, 'ui');
-  };
-  if (UPRIGHT) {
-    apply();
-    return;
-  }
-  requestAnimationFrame(apply);
-}
-
-const RESTORE_SETTLE_MS = 400;
-
-function restoreUprightScroll(c: ConvState, contentHeight: number, refs: FeedScrollRefs): number | null {
-  const viewportHeight = refs.viewportHeight.current;
-  const plan = planUprightRestore({
-    loaded: c.savedScrollLoaded.current,
-    restoredSaved: c.didRestoreScroll.current,
-    savedDistance: c.savedScrollRef.current,
-    userDragged: refs.userDragged.current,
-    atNewest: c.isAtBottomRef.current,
-  });
-  if (plan === 'skip') return null;
-  if (plan === 'saved') {
-    c.didRestoreScroll.current = true;
-    c.isAtBottomRef.current = false;
-    refs.settleUntil.current = Date.now() + RESTORE_SETTLE_MS;
-    const anchor = c.savedAnchorRef.current;
-    if (anchor !== null && c.listRef.current?.scrollToAnchor(anchor) === true)
-      return uprightScrollOffset(c.savedScrollRef.current ?? 0, contentHeight, viewportHeight);
-  }
-  const distance = plan === 'saved' ? (c.savedScrollRef.current ?? 0) : 0;
-  const offset = uprightScrollOffset(distance, contentHeight, viewportHeight);
-  scrollFeedTo(c, offset);
-  return offset;
-}
-
-function restoreFeedScroll(c: ConvState, contentHeight: number, refs: FeedScrollRefs): number | null {
-  if (UPRIGHT) return restoreUprightScroll(c, contentHeight, refs);
-  if (c.didRestoreScroll.current) return null;
-  const plan = planFeedRestore({
-    loaded: c.savedScrollLoaded.current,
-    contentHeight,
-    itemCount: c.allBubbles.length,
-    savedOffset: c.savedScrollRef.current,
-    now: Date.now(),
-    pinUntil: c.pinBottomUntil.current,
-    setPinUntil: (t) => {
-      c.pinBottomUntil.current = t;
-    },
-  });
-  if (plan === 'skip') {
-    if (c.pinBottomUntil.current !== 0) c.didRestoreScroll.current = true;
-    return null;
-  }
-  const distance = plan === 'bottom' ? 0 : plan.offset;
-  if (plan !== 'bottom') c.didRestoreScroll.current = true;
-  scrollFeedTo(c, distance);
-  return distance;
-}
-
-function feedPager(loadOlder: () => Promise<void>, refs: FeedScrollRefs): () => void {
-  return () => {
-    refs.olderPending.current = UPRIGHT && !shouldPageOlder(refs.metrics.current, refs.positioned.current);
-    if (!refs.olderPending.current) void loadOlder();
-  };
-}
-
-function flushPendingOlder(c: ConvState, refs: FeedScrollRefs): void {
-  if (!refs.olderPending.current || !shouldPageOlder(refs.metrics.current, refs.positioned.current)) return;
-  refs.olderPending.current = false;
-  setTimeout(() => {
-    void c.loadOlder();
-  }, 0);
-}
-
-interface OrientedFeed {
-  inverted: boolean;
-  onStartReached?: () => void;
-  onEndReached?: () => void;
-  contentPadding: ViewStyle;
-  header?: React.ReactElement;
-  footer?: React.ReactElement;
-}
-
-function orientFeed(loadOlder: () => void, headPad: number, footPad: number, olderEdge: React.ReactElement): OrientedFeed {
-  if (UPRIGHT) {
-    return {
-      inverted: false,
-      onStartReached: loadOlder,
-      contentPadding: { paddingTop: headPad, paddingBottom: footPad, flexGrow: 1, justifyContent: 'flex-end' },
-      header: olderEdge,
-    };
-  }
-  return { inverted: true, onEndReached: loadOlder, contentPadding: { paddingTop: footPad, paddingBottom: headPad }, footer: olderEdge };
-}
 
 function FeedOlderEdge({
   loading,
@@ -160,66 +35,6 @@ function FeedOlderEdge({
       {!hasMore ? intro : null}
     </>
   );
-}
-
-interface FeedScrollRefs {
-  viewportHeight: React.MutableRefObject<number>;
-  userDragged: React.MutableRefObject<boolean>;
-  metrics: React.MutableRefObject<FeedScrollMetrics>;
-  positioned: React.MutableRefObject<boolean>;
-  settleUntil: React.MutableRefObject<number>;
-  olderPending: React.MutableRefObject<boolean>;
-}
-
-function useFeedScrollRefs(convId: string): FeedScrollRefs {
-  const viewportHeight = useRef(0);
-  const userDragged = useRef(false);
-  const metrics = useRef<FeedScrollMetrics>({ offset: 0, contentHeight: 0, viewportHeight: 0 });
-  const positioned = useRef(false);
-  const settleUntil = useRef(0);
-  const olderPending = useRef(false);
-  const shownConv = useRef(convId);
-  if (shownConv.current !== convId) {
-    shownConv.current = convId;
-    userDragged.current = false;
-    positioned.current = false;
-    settleUntil.current = 0;
-    olderPending.current = false;
-  }
-  return { viewportHeight, userDragged, metrics, positioned, settleUntil, olderPending };
-}
-
-function feedScrollEvents(
-  c: ConvState,
-  convId: string,
-  refs: FeedScrollRefs,
-): Pick<React.ComponentProps<typeof VirtualList<HistoryEntry>>, 'onLayout' | 'onScroll' | 'onScrollBeginDrag' | 'onContentSizeChange'> {
-  const { viewportHeight, userDragged, metrics, positioned, settleUntil } = refs;
-  return {
-    onLayout: UPRIGHT
-      ? undefined
-      : (ev) => {
-          viewportHeight.current = ev.nativeEvent.layout.height;
-        },
-    onScroll: (ev) => {
-      const m = ev.nativeEvent;
-      viewportHeight.current = m.layoutMeasurement.height;
-      metrics.current = { offset: m.contentOffset.y, contentHeight: m.contentSize.height, viewportHeight: m.layoutMeasurement.height };
-      flushPendingOlder(c, refs);
-      if (UPRIGHT && (!positioned.current || Date.now() < settleUntil.current)) return;
-      handleFeedScroll(c, convId, feedDistanceFromNewest(metrics.current, UPRIGHT));
-    },
-    onScrollBeginDrag: () => {
-      userDragged.current = true;
-      settleUntil.current = 0;
-    },
-    onContentSizeChange: (_w, h) => {
-      const applied = restoreFeedScroll(c, h, refs);
-      if (applied !== null) positioned.current = true;
-      metrics.current = { offset: applied ?? metrics.current.offset, contentHeight: h, viewportHeight: viewportHeight.current };
-      flushPendingOlder(c, refs);
-    },
-  };
 }
 
 const LOADER_DELAY_MS = 180;
@@ -264,23 +79,26 @@ function FeedPending({
 }
 
 export function ConversationFeed({
-  c,
+  feed,
+  bubbles,
+  conv,
   convId,
   bottomInset = 0,
   searchSlot,
 }: {
-  c: ConvState;
+  feed: FeedSlice;
+  bubbles: BubbleFeed;
+  conv: ConvSummary;
   convId: string;
   bottomInset?: number;
   searchSlot?: React.ReactNode;
 }): React.ReactElement {
-  const { loadOlder, hasMore, loadingOlder, status, listRef, allBubbles } = c;
+  const { hasMore, loadingOlder, status, scroll, bubbles: allBubbles } = feed;
   const { text: sub, link: head } = usePalette();
   const topPad = useSafeAreaInsets().top + TOPNAV_HEIGHT;
-  const { renderItem, extraData } = useFeedRenderItem(c);
-  const intro = <ConversationIntro c={c} convId={convId} />;
-  const refs = useFeedScrollRefs(convId);
-  const rows = useMemo(() => (UPRIGHT ? [...allBubbles].reverse() : allBubbles), [allBubbles]);
+  const { renderItem, extraData } = useFeedRenderItem(bubbles, allBubbles);
+  const intro = <ConversationIntro conv={conv} convId={convId} />;
+  const rows = useMemo(() => feedOrientation.rows(allBubbles), [allBubbles]);
   const empty = rows.length === 0 && (status !== 'open' || hasMore);
   const slowOpen = useSlowOpen(empty);
   const loaderFill = useChatColumnFill(bottomInset);
@@ -294,29 +112,27 @@ export function ConversationFeed({
   }
 
   if (empty) {
-    return <FeedPending failed={status === 'error'} slow={slowOpen} color={head} style={loaderFill} onRetry={c.retryFeed} />;
+    return <FeedPending failed={status === 'error'} slow={slowOpen} color={head} style={loaderFill} onRetry={feed.retryFeed} />;
   }
 
-  const olderEdge = <FeedOlderEdge loading={loadingOlder && c.showJump} sub={sub} hasMore={hasMore} intro={intro} />;
-  const firstBatch = UPRIGHT ? uprightFirstBatch(rows.length) : FEED_MIN_BATCH;
-  const o = orientFeed(feedPager(loadOlder, refs), topPad + 24, 24 + bottomInset, olderEdge);
+  const olderEdge = <FeedOlderEdge loading={loadingOlder && scroll.showJump} sub={sub} hasMore={hasMore} intro={intro} />;
+  const o = feedOrientation.orient(scroll.pageOlder, topPad + 24, 24 + bottomInset, olderEdge);
 
   return (
     <ChatGalleryProvider entries={allBubbles}>
       <VirtualList
         key={convId}
-        ref={listRef}
+        ref={scroll.listRef}
         data={rows}
         extraData={extraData}
         inverted={o.inverted}
-        anchor={UPRIGHT ? 'end' : 'start'}
-        stickToEnd={() => refs.positioned.current && c.isAtBottomRef.current}
+        anchor={feedOrientation.listAnchor}
+        stickToEnd={scroll.stickToNewest}
         estimatedItemSize={FEED_ESTIMATED_ROW}
-        showsVerticalScrollIndicator={Platform.OS === 'web'}
-        maintainVisibleContentPosition={feedPositionHold(UPRIGHT, c.showJump, AT_BOTTOM_THRESHOLD_PX)}
-        keyExtractor={c.rowKeyOf}
+        maintainVisibleContentPosition={feedOrientation.positionHold(scroll.showJump)}
+        keyExtractor={feed.rowKeyOf}
         windowSize={11}
-        initialNumToRender={firstBatch}
+        initialNumToRender={feedOrientation.firstBatch(rows.length)}
         maxToRenderPerBatch={10}
         removeClippedSubviews
         onEndReached={o.onEndReached}
@@ -324,7 +140,7 @@ export function ConversationFeed({
         onStartReached={o.onStartReached}
         onStartReachedThreshold={0.5}
         contentContainerStyle={o.contentPadding}
-        {...feedScrollEvents(c, convId, refs)}
+        {...scroll.feedListEvents}
         scrollEventThrottle={16}
         onScrollToIndexFailed={() => undefined}
         renderItem={renderItem}

@@ -1,15 +1,14 @@
-import { Dimensions, Platform, useWindowDimensions } from 'react-native';
+import { Dimensions, useWindowDimensions } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
-import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
+import { DROPDOWN_MENU, DropdownMenu } from '@stage-labs/kit/react-native/menu';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Avatar } from '../Avatar';
-import { channelStampSeed } from '@stage-labs/kit/avatar';
-import { REACT_PRESETS } from '../bubble/helpers';
+import { ConvAvatar, type ConvAvatarProps } from '../ConvAvatar';
+import { REACT_PRESETS } from '../bubble/reactions.model';
+import { offersSelectMode } from '../bubble/interaction';
 import { usePalette } from '../../lib/theme';
-import { useDeveloperMode } from '../../lib/developerMode';
-import { useWebTabRail } from '../../lib/webLayout';
+import { useWebTabRail } from '../layout/webLayout';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { menuPlacement, STRIP_GAP, MENU_STRIP_HEIGHT } from './menuPlacement';
 import { bubbleMenuItems } from './bubbleMenu.model';
@@ -17,34 +16,13 @@ import { AnchoredOverlay, MENU_WIDTH, useAnchoredMenus } from '../AnchoredMenu';
 import { OVERLAY_SHADOW } from '@stage-labs/kit/overlay.styles';
 import { MenuRow } from '../MenuRows';
 import { anchoredMenuStyle, type MenuPoint } from '../AnchoredMenu.model';
-import type { MenuAnchor } from '../bubble/props';
+import type { MenuAnchor } from '../bubble/model';
 import { useHover } from '../hover';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { TitleText } from '../TitleText';
-import type { ConvTitle } from './convTitle';
-import { Modal } from '@stage-labs/kit/react-native/modal';
+import type { ConvTitle } from '../../lib/convIdentity';
+import { MODAL, Overlay } from '@stage-labs/kit/react-native/modal';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
-
-interface HeaderAvatarProps {
-  peerAddr: string | null;
-  groupImage: string;
-  channelId: string;
-  isGroup: boolean;
-  border: string;
-}
-
-export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: HeaderAvatarProps): React.ReactElement | null {
-  if (peerAddr) {
-    return <Avatar address={peerAddr} size="sm" style={{ backgroundColor: border }} />;
-  }
-  if (groupImage) {
-    return <Avatar imageUri={groupImage} size="sm" square style={{ backgroundColor: border }} />;
-  }
-  if (isGroup && channelId) {
-    return <Avatar address={channelStampSeed(channelId)} size="sm" square style={{ backgroundColor: border }} />;
-  }
-  return null;
-}
 
 export function ConvTopnavShell({
   fg,
@@ -94,14 +72,14 @@ export function ConvTopnavIdentity({
   title,
   onPress,
   ...avatar
-}: HeaderAvatarProps & { head: string; title: ConvTitle; onPress?: () => void }): React.ReactElement {
+}: ConvAvatarProps & { head: string; title: ConvTitle; onPress?: () => void }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
       disabled={!onPress}
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
     >
-      <HeaderAvatar {...avatar} />
+      <ConvAvatar {...avatar} size="sm" />
       <TitleText
         title={title}
         fontWeight={avatar.isGroup ? 'medium' : 'semibold'}
@@ -140,26 +118,7 @@ function ReactionStrip({ stripBg, onReact }: { stripBg: string; onReact: (e: str
   );
 }
 
-interface BubbleActions {
-  reply: () => void;
-  copy: () => void;
-  select: () => void;
-  addToDashboard: () => void;
-  shareLink: () => void;
-  delete: () => void;
-}
-
-const SELECT_TEXT = Platform.OS !== 'web';
-
-function ActionDropdown({ items, on }: { items: ReturnType<typeof bubbleMenuItems>; on: BubbleActions }): React.ReactElement {
-  return (
-    <DropdownMenu>
-      {items.map((item) => (
-        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={on[item.id]} />
-      ))}
-    </DropdownMenu>
-  );
-}
+const ACTION_ROW_HEIGHT = 2 * DROPDOWN_MENU.itemPadY + DROPDOWN_MENU.lineHeight;
 
 function AnchoredBubbleMenu({
   open,
@@ -192,19 +151,7 @@ function AnchoredBubbleMenu({
   );
 }
 
-export function BubbleActionMenu({
-  target,
-  anchor,
-  canDelete,
-  onClose,
-  onReact,
-  onReply,
-  onCopy,
-  onSelect,
-  onAddToDashboard,
-  onShareLink,
-  onDelete,
-}: {
+export function BubbleActionMenu(p: {
   target: HistoryEntry | null;
   anchor: MenuAnchor;
   canDelete: boolean;
@@ -217,35 +164,37 @@ export function BubbleActionMenu({
   onShareLink: () => void;
   onDelete: () => void;
 }): React.ReactElement {
+  const { target, anchor, onClose } = p;
   const anchored = useAnchoredMenus();
 
   const pal = usePalette();
   const windowHeight = Dimensions.get('window').height;
-  const developerMode = useDeveloperMode();
   const items = bubbleMenuItems(!!target?.text, {
-    selectText: SELECT_TEXT,
-    canDelete,
-    frame: onAddToDashboard !== undefined,
-    developerMode,
+    selectText: offersSelectMode,
+    canDelete: p.canDelete,
+    addToDashboard: p.onAddToDashboard !== undefined,
   });
-  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, items.length, windowHeight);
+  const dropdownHeight = items.length * ACTION_ROW_HEIGHT + 2 * DROPDOWN_MENU.padY;
+  const { stripTop, dropdownAbove } = menuPlacement(anchor.y, dropdownHeight, windowHeight);
   const reactAndClose = (e: string): void => {
-    onReact(e);
+    p.onReact(e);
     onClose();
+  };
+  const on = {
+    reply: p.onReply,
+    copy: p.onCopy,
+    select: p.onSelect,
+    addToDashboard: p.onAddToDashboard ?? onClose,
+    shareLink: p.onShareLink,
+    delete: p.onDelete,
   };
 
   const dropdown = (
-    <ActionDropdown
-      items={items}
-      on={{
-        reply: onReply,
-        copy: onCopy,
-        select: onSelect,
-        addToDashboard: onAddToDashboard ?? onClose,
-        shareLink: onShareLink,
-        delete: onDelete,
-      }}
-    />
+    <DropdownMenu>
+      {items.map((item) => (
+        <MenuRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onPress={on[item.id]} />
+      ))}
+    </DropdownMenu>
   );
   const strip = <ReactionStrip stripBg={pal.border} onReact={reactAndClose} />;
 
@@ -254,7 +203,7 @@ export function BubbleActionMenu({
   }
 
   return (
-    <Modal open={!!target} onClose={onClose} animationType="none" backdropColor="rgba(0,0,0,0.45)" fullBleedPanel>
+    <Overlay open={!!target} onClose={onClose} animationType="none" backdropColor={MODAL.backdrop}>
       <Column
         align="start"
         pointerEvents="box-none"
@@ -275,6 +224,6 @@ export function BubbleActionMenu({
           </>
         )}
       </Column>
-    </Modal>
+    </Overlay>
   );
 }

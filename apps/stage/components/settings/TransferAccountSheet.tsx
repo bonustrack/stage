@@ -1,0 +1,99 @@
+import { useEffect, useRef, useState } from 'react';
+import { QR_INK, QrPanel } from '../qr/QrPanel';
+import { Button } from '@stage-labs/kit/react-native/button';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { AppModal } from '../AppModal';
+import { Spinner } from '@stage-labs/kit/react-native/spinner';
+import { capabilities } from '../../lib/capabilities';
+import { DANGER } from '../../lib/theme';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { transferKindFor, transferPayloadFor } from '../../lib/accountTransfer';
+import { TRANSFER_HOW_TO, transferWarning } from '../onboarding/importInput.model';
+import { Column } from '../layout';
+import { reported } from '../../lib/errorPolicy';
+
+const QR_SIZE = 240;
+const UNAVAILABLE_MESSAGE = 'This account cannot be linked: it has no exportable key on this device.';
+
+function usePayload(rec: AccountRecord | null, onClose: () => void): string | null {
+  const [payload, setPayload] = useState<string | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => {
+    setPayload(null);
+    if (rec === null) return;
+    let alive = true;
+    void transferPayloadFor(rec).then((next) => {
+      if (!alive) return;
+      if (next === null) {
+        onCloseRef.current();
+        capabilities.alert('Not available', UNAVAILABLE_MESSAGE);
+        return;
+      }
+      setPayload(next);
+    }, reported('settings.transferCode'));
+    return () => {
+      alive = false;
+    };
+  }, [rec]);
+  return payload;
+}
+
+function TransferQr({ payload }: { payload: string | null }): React.ReactElement {
+  return (
+    <QrPanel
+      value={payload}
+      size={QR_SIZE}
+      padding={12}
+      radius="lg"
+      placeholder={
+        <Column width={QR_SIZE} height={QR_SIZE} align="center" justify="center">
+          <Spinner size={24} color={QR_INK} />
+        </Column>
+      }
+    />
+  );
+}
+
+export function TransferAccountSheet({
+  rec,
+  dark,
+  onClose,
+}: {
+  rec: AccountRecord | null;
+  dark: boolean;
+  onClose: () => void;
+}): React.ReactElement {
+  const kind = rec === null ? null : transferKindFor(rec);
+  const payload = usePayload(rec, onClose);
+  const copy = (): void => {
+    if (payload === null) return;
+    capabilities.copy('Link code', payload);
+  };
+  return (
+    <AppModal visible={rec !== null} onClose={onClose} title="Link a device">
+      <Column gap={14} align="center">
+        {kind !== null ? (
+          <Text size="3xs" color={DANGER} textAlign="center">
+            {transferWarning(kind)}
+          </Text>
+        ) : null}
+        <TransferQr payload={payload} />
+        <Text size="2xs" color="secondary" textAlign="center">
+          {TRANSFER_HOW_TO}
+        </Text>
+        <Button
+          dark={dark}
+          variant="soft"
+          color="primary"
+          size="lg"
+          fullWidth
+          label="Copy code"
+          disabled={payload === null}
+          onPress={copy}
+        />
+        <Button dark={dark} variant="ghost" color="primary" size="lg" fullWidth label="Done" onPress={onClose} />
+      </Column>
+    </AppModal>
+  );
+}

@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
-import { startCallService } from '../../lib/calls';
+import { startCallService, useCallMinimized, useCallView } from '../../lib/calls';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { useCallMinimized, useCallView } from '../../lib/calls.store';
 import { CallBubble } from './CallBubble';
 import { CallMediaView } from './CallMediaView';
 import { CallScreen } from './CallScreen';

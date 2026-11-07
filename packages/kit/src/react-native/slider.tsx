@@ -9,10 +9,10 @@ import {
 } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import { styleList } from '../control.styles';
-import { FONT_SIZE, fontName, schemePalette } from '../tokens';
+import { FONT_SIZE, fontName } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { WithChecks } from './control-trigger';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export interface SliderProps extends A2uiCommonProps {
   label?: string;
@@ -89,8 +89,7 @@ function useDrag(props: SliderProps, update: (next: number) => void, latest: { c
 export function Slider(props: SliderProps): React.ReactElement {
   const { label, max, steps, checks, disabled = false, showValue = true, style, weight, accessibility } = props;
   const min = props.min ?? 0;
-  const scheme = useKitScheme();
-  const p = schemePalette(props.dark ?? scheme === 'dark');
+  const p = useKitColors(props.dark, 'static').roles;
   const [value, update] = useSliderState(props);
   const latest = useRef(value);
   latest.current = value;

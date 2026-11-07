@@ -11,6 +11,5 @@ function summarize(error: unknown): string {
 export function parseOrThrow<T>(where: string, schema: OutputSchema<T>, data: unknown): T {
   const r = schema.safeParse(data);
   if (r.success) return r.data;
-  console.warn(`[boundary:${where}] validation failed -> ${summarize(r.error)}`);
   throw new Error(`[boundary:${where}] invalid payload: ${summarize(r.error)}`);
 }

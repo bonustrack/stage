@@ -3,6 +3,7 @@ import type { Story } from '../gallery/story';
 import { ChoicePicker, type ChoicePickerProps } from '../src/react-native/choice-picker';
 import { Column } from '../src/react-native/column';
 import { bool, select, text, useDark } from './_controls';
+import { CHOICE_PICKER_DISPLAY_STYLES, CHOICE_PICKER_VARIANTS } from '../src/kit-vocabulary';
 
 export default { title: 'Choice Picker' };
 
@@ -12,8 +13,6 @@ const OPTIONS = [
   { label: 'SMS', value: 'sms' },
   { label: 'Fax', value: 'fax', disabled: true },
 ];
-const VARIANTS = ['mutuallyExclusive', 'multipleSelection'] as const;
-const DISPLAY_STYLES = ['checkbox', 'chips'] as const;
 
 export const Controls: Story<ChoicePickerProps> = (args) => {
   const [value, setValue] = useState<string[]>(['email']);
@@ -29,8 +28,8 @@ Controls.args = {
 };
 Controls.argTypes = {
   label: text,
-  variant: select(VARIANTS),
-  displayStyle: select(DISPLAY_STYLES),
+  variant: select(CHOICE_PICKER_VARIANTS),
+  displayStyle: select(CHOICE_PICKER_DISPLAY_STYLES),
   filterable: bool,
   disabled: bool,
   direction: select(['row', 'col']),
@@ -40,8 +39,8 @@ export const Matrix: Story = () => {
   const dark = useDark();
   return (
     <Column gap={24}>
-      {VARIANTS.flatMap((variant) =>
-        DISPLAY_STYLES.map((displayStyle) => (
+      {CHOICE_PICKER_VARIANTS.flatMap((variant) =>
+        CHOICE_PICKER_DISPLAY_STYLES.map((displayStyle) => (
           <ChoicePicker
             key={`${variant}-${displayStyle}`}
             dark={dark}

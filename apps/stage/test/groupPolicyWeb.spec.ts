@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { PermissionPolicy, type PermissionPolicySet } from '@xmtp/browser-sdk';
-import { webGroupMetaPolicy } from '../lib/groupPolicyWeb.model';
+import { webGroupMetaPolicy } from '../lib/xmtp.sdk.web.groupPolicy';
 
 function policySet(overrides: Partial<PermissionPolicySet>): PermissionPolicySet {
   return {

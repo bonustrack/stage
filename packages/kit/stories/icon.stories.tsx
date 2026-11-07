@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import type { Story } from '../gallery/story';
-import { CENTRAL_ICONS } from '../src/central-icons.data';
+import { KIT_ICON_ALIASES, type KitIconAliasName, type KitIconAliasTarget } from '../src/central-icons.aliases';
+import { CENTRAL_ICONS } from '../src/central-icons.named.data';
+import type { CentralIconName } from '../src/central-icons.names.data';
 import { A2UI_ICONS, A2UI_ICON_NAMES } from '../src/icons.a2ui';
 import { BRAND_ICON_NAMES } from '../src/brand-icons.data';
-import { CENTRAL_ICON_ALIASES, Icon, type HeroIconName, type IconProps } from '../src/react-native/icon';
+import { Icon, type IconProps } from '../src/react-native/icon';
 import { Glyph, type CentralIcon, type IconStyle } from '../src/react-native/glyph';
 import { Column } from '../src/react-native/column';
 import { Row } from '../src/react-native/row';
@@ -13,34 +15,35 @@ import { color, range, select, useDark } from './_controls';
 
 export default { title: 'Icon' };
 
-type CentralName = keyof typeof CENTRAL_ICONS;
-
-const ICONS: Record<CentralName, { line: CentralIcon; solid?: CentralIcon }> = CENTRAL_ICONS;
+const ICONS: Record<CentralIconName, { line: CentralIcon; solid?: CentralIcon }> = CENTRAL_ICONS;
 const STYLES = ['line', 'solid'] as const;
-const NAMES = Object.keys(ICONS) as CentralName[];
-const ALIAS_NAMES = Object.keys(CENTRAL_ICON_ALIASES) as HeroIconName[];
-const NAME_OF = new Map<CentralIcon, CentralName>(NAMES.map((name) => [ICONS[name].line, name]));
+const NAMES = Object.keys(ICONS) as CentralIconName[];
+const ALIAS_NAMES = Object.keys(KIT_ICON_ALIASES) as KitIconAliasName[];
 
-function aliasesByName(): Map<CentralName, string[]> {
-  const out = new Map<CentralName, string[]>([['IconThumbtack', ['pin']]]);
+function targetName(target: KitIconAliasTarget): CentralIconName {
+  return typeof target === 'string' ? target : target.name;
+}
+
+function aliasesByName(): Map<CentralIconName, string[]> {
+  const out = new Map<CentralIconName, string[]>();
   for (const alias of ALIAS_NAMES) {
-    const name = NAME_OF.get(CENTRAL_ICON_ALIASES[alias].line);
-    if (name !== undefined) out.set(name, [...(out.get(name) ?? []), alias]);
+    const name = targetName(KIT_ICON_ALIASES[alias]);
+    out.set(name, [...(out.get(name) ?? []), alias]);
   }
   return out;
 }
 
 const ALIASES_OF = aliasesByName();
 
-function namesIn(style: IconStyle): CentralName[] {
+function namesIn(style: IconStyle): CentralIconName[] {
   return style === 'solid' ? NAMES.filter((name) => ICONS[name].solid !== undefined) : NAMES;
 }
 
-function glyph(name: CentralName, style: IconStyle): CentralIcon {
+function glyph(name: CentralIconName, style: IconStyle): CentralIcon {
   return style === 'solid' ? (ICONS[name].solid ?? ICONS[name].line) : ICONS[name].line;
 }
 
-function matches(name: CentralName, query: string): boolean {
+function matches(name: CentralIconName, query: string): boolean {
   if (query === '') return true;
   if (name.toLowerCase().includes(query)) return true;
   return (ALIASES_OF.get(name) ?? []).some((alias) => alias.toLowerCase().includes(query));
@@ -84,7 +87,7 @@ function Catalogue({ style }: { style: IconStyle }): React.ReactElement {
 }
 
 interface GlyphArgs {
-  name: CentralName;
+  name: CentralIconName;
   style: IconStyle;
   size: number;
   color?: string;
@@ -93,7 +96,7 @@ interface GlyphArgs {
 export const Controls: Story<IconProps> = (args) => <Icon dark={useDark()} {...args} />;
 Controls.args = { name: 'send', size: 32, variant: 'line' };
 Controls.argTypes = {
-  name: select([...ALIAS_NAMES, ...A2UI_ICON_NAMES, ...BRAND_ICON_NAMES]),
+  name: select([...new Set([...ALIAS_NAMES, ...A2UI_ICON_NAMES, ...BRAND_ICON_NAMES])]),
   size: range(12, 96, 4),
   color,
   variant: select(['line', 'solid']),
@@ -102,7 +105,7 @@ Controls.argTypes = {
 export const CentralGlyph: Story<GlyphArgs> = ({ name, style, size, color: tint }) => (
   <Glyph icon={glyph(name, style)} size={size} color={tint} dark={useDark()} />
 );
-CentralGlyph.args = { name: 'IconPaperPlane', style: 'line', size: 32 };
+CentralGlyph.args = { name: 'paperPlane', style: 'line', size: 32 };
 CentralGlyph.argTypes = { name: select(NAMES), style: select(STYLES), size: range(12, 96, 4), color };
 
 export const All: Story<{ style: IconStyle }> = ({ style }) => <Catalogue style={style} />;
@@ -128,7 +131,7 @@ function NamedCell({
 export const Aliases: Story<{ style: IconStyle }> = ({ style }) => (
   <Row gap={8} wrap>
     {ALIAS_NAMES.map((alias) => (
-      <NamedCell key={alias} name={alias} variant={style} detail={NAME_OF.get(CENTRAL_ICON_ALIASES[alias].line) ?? ''} />
+      <NamedCell key={alias} name={alias} variant={style} detail={targetName(KIT_ICON_ALIASES[alias])} />
     ))}
   </Row>
 );

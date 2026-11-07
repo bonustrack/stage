@@ -1,134 +1,19 @@
-import { NODE_PUBLISH_PATH, clientRateKey } from '@stage-labs/client/nodes/hosting';
-import { BUNDLER_HOST, handleBundler } from './bundler.ts';
-import { fetchPage } from './fetchPage.ts';
-import { fetchImage, parseWidth } from './fetchImage.ts';
-import { parseMeta } from './parse.ts';
-import { proxyPreviewImages } from './imgProxy.ts';
-import { parseSettleBody, settleX402 } from './settle.ts';
-import { SsrfError } from './ssrf.ts';
-import { HISTORY_PREFIX, handleHistory } from './historyStore.ts';
-import { handleAttachments, isAttachmentPath, r2AttachmentStore } from './attachments.ts';
-import { PUSH_PREFIX, handlePush } from './pushProxy.ts';
-import { NAMES_PREFIX, configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
-import { MAIL_PREFIX, handleMail, type MailChain } from './mailApi.ts';
-import { mailboxStub } from './mailBox.ts';
+import { BUNDLER_HOST, PROXY_ROUTES } from '@stage-labs/client/endpoints';
+import { declaredLength, readCappedBytes } from '@stage-labs/client/net/cappedBody';
+import { clientRateKey } from '@stage-labs/client/net/clientIp';
+import { NODE_CODE_MAX_BYTES } from '@stage-labs/client/nodes/hosting';
+import { handleBundler } from './bundler.ts';
+import { handleImg, handlePreview, handleSettle } from './linkRoutes.ts';
+import { HISTORY_CORS_HEADERS, handleHistory } from './historyStore.ts';
+import { ATTACHMENT_CORS, handleAttachments, r2AttachmentStore } from './attachments.ts';
+import { PUSH_BODY_MAX_BYTES, PUSH_CORS_HEADERS, handlePush } from './pushProxy.ts';
+import { configuredChain, handleNamesRequest, type NamesEnv } from './names.ts';
+import { MAIL_CORS, handleMail, type MailChain } from './mailApi.ts';
 import { receiveMail, type IncomingMail } from './mailReceive.ts';
-import { cloudflareApi, handleNodes } from './nodes.ts';
-import { CLIENT_CORS, corsResponse, jsonResponse, type HeaderMap } from './respond.ts';
-
-const CACHE_TTL = 24 * 60 * 60;
-const IMG_CACHE_TTL = 7 * 24 * 60 * 60;
-
-const RL_WINDOW_MS = 60_000;
-const RL_MAX = 60;
-const hits = new Map<string, { count: number; reset: number }>();
-
-type RateBudget = 'preview' | 'img' | 'settle' | 'history' | 'names' | 'attachments' | 'nodes';
-
-function clientIp(request: Request): string {
-  return request.headers.get('cf-connecting-ip') ?? request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
-}
-
-function rateLimited(request: Request, budget: RateBudget): boolean {
-  const key = `${budget}:${clientIp(request)}`;
-  const now = Date.now();
-  const e = hits.get(key);
-  if (!e || now > e.reset) {
-    hits.set(key, { count: 1, reset: now + RL_WINDOW_MS });
-    return false;
-  }
-  e.count++;
-  return e.count > RL_MAX;
-}
-
-const BASE_HEADERS = { 'x-served-by': 'worker', 'access-control-allow-origin': '*' };
-
-function json(body: unknown, status = 200, extra: HeaderMap = {}): Response {
-  return jsonResponse(body, status, { ...BASE_HEADERS, ...extra });
-}
-
-function errorResponse(e: unknown, fallback: string): Response {
-  if (e instanceof SsrfError) return json({ error: e.message }, 400);
-  return json({ error: e instanceof Error ? e.message : fallback }, 502);
-}
-
-function previewPayload(page: NonNullable<Awaited<ReturnType<typeof fetchPage>>>, request: Request): unknown {
-  if ('kind' in page) return page;
-  const selfOrigin = new URL(request.url).origin;
-  return proxyPreviewImages(parseMeta(page.html, page.finalUrl), selfOrigin);
-}
-
-async function cached(cacheUrl: string, ctx: ExecutionContext, fresh: () => Promise<Response>): Promise<Response> {
-  const cacheKey = new Request(cacheUrl);
-  const hit = await caches.default.match(cacheKey);
-  if (hit) {
-    const headers = new Headers(hit.headers);
-    headers.set('x-cache', 'HIT');
-    return new Response(hit.body, { status: hit.status, headers });
-  }
-  try {
-    const res = await fresh();
-    if (res.status === 200) ctx.waitUntil(caches.default.put(cacheKey, res.clone()));
-    return res;
-  } catch (e) {
-    return errorResponse(e, 'fetch failed');
-  }
-}
-
-async function handlePreview(request: Request, ctx: ExecutionContext): Promise<Response> {
-  if (request.headers.get('x-stage-client') !== '1') return json({ error: 'forbidden' }, 403);
-  if (rateLimited(request, 'preview')) return json({ error: 'rate limited' }, 429);
-  const url = new URL(request.url).searchParams.get('url')?.trim() ?? '';
-  if (!url) return json({ error: 'url query param required' }, 400);
-  return cached(`https://proxy.stage.box/preview?url=${encodeURIComponent(url)}`, ctx, async () => {
-    const page = await fetchPage(url);
-    if (!page) return json({ error: 'no previewable content' }, 422);
-    return json(previewPayload(page, request), 200, { 'x-cache': 'MISS', 'cache-control': `public, max-age=${CACHE_TTL}` });
-  });
-}
-
-async function handleImg(request: Request, ctx: ExecutionContext): Promise<Response> {
-  if (rateLimited(request, 'img')) return json({ error: 'rate limited' }, 429);
-  const params = new URL(request.url).searchParams;
-  const url = params.get('url')?.trim() ?? '';
-  if (!url) return json({ error: 'url query param required' }, 400);
-  const width = parseWidth(params.get('w'));
-  return cached(`https://proxy.stage.box/img?url=${encodeURIComponent(url)}&w=${width ?? ''}`, ctx, async () => {
-    const img = await fetchImage(url, width);
-    if (!img) return json({ error: 'not a fetchable image' }, 422);
-    return new Response(img.body, {
-      status: 200,
-      headers: {
-        'content-type': img.contentType,
-        'cache-control': `public, max-age=${IMG_CACHE_TTL}`,
-        'x-cache': 'MISS',
-        'x-img-resized': img.resized ? '1' : '0',
-        ...BASE_HEADERS,
-      },
-    });
-  });
-}
-
-async function handleSettle(request: Request): Promise<Response> {
-  if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
-  if (rateLimited(request, 'settle')) return json({ error: 'rate limited' }, 429);
-
-  let parsed: unknown;
-  try {
-    parsed = await request.json();
-  } catch {
-    return json({ error: 'invalid json body' }, 400);
-  }
-  const req = parseSettleBody(parsed);
-  if (!req) return json({ error: 'url and paymentHeader required' }, 400);
-
-  try {
-    const result = await settleX402(req);
-    return json(result, 200);
-  } catch (e) {
-    return errorResponse(e, 'settle failed');
-  }
-}
+import { NODES_CORS, cloudflareApi, handleNodes } from './nodes.ts';
+import { objectNamed, type ObjectStub } from './durableChunks.ts';
+import { limitsAtRouter, overLimit, type RouteLimit } from './rateLimit.ts';
+import { CLIENT_CORS, OPEN_CORS, RATE_LIMITED, corsResponse, jsonResponse, openJson, type HeaderMap } from './respond.ts';
 
 export { NamesClaims } from './names.ts';
 export { HistoryArchives } from './historyStore.ts';
@@ -145,8 +30,25 @@ type ProxyEnv = NamesEnv & {
   NODE_PUBLISHES_ALL?: RateLimit;
 };
 
+interface RouteScope {
+  env: ProxyEnv;
+  ctx: ExecutionContext;
+  limited: () => Promise<boolean>;
+}
+
+const JSON_BODY_MAX_BYTES = 64 * 1024;
+
+interface ProxyRoute {
+  path: string;
+  match: 'exact' | 'prefix' | 'tree';
+  preflight: HeaderMap;
+  limit?: RouteLimit<ProxyEnv>;
+  maxBody?: number;
+  handle: (request: Request, scope: RouteScope) => Promise<Response> | Response;
+}
+
 interface MailWiring {
-  mailbox: (label: string) => ReturnType<typeof mailboxStub>;
+  mailbox: (label: string) => ObjectStub;
   chain: MailChain;
 }
 
@@ -155,7 +57,7 @@ function mailWiring(env: ProxyEnv): MailWiring | null {
   const boxes = env.MAIL_BOXES;
   if (chain === null || boxes === undefined) return null;
   return {
-    mailbox: (label) => mailboxStub(boxes, label),
+    mailbox: (label) => objectNamed(boxes, label),
     chain: {
       owner: (label) => chain.subnameOwner(label),
       verify: (address, message, signature) => chain.verifyClaim(address, message, signature),
@@ -163,64 +65,113 @@ function mailWiring(env: ProxyEnv): MailWiring | null {
   };
 }
 
-function routeMail(request: Request, env: ProxyEnv): Promise<Response> | Response {
+function routeMail(request: Request, { env, limited }: RouteScope): Promise<Response> | Response {
   const wiring = mailWiring(env);
-  if (wiring === null) return json({ error: 'mail is not configured' }, 503);
-  return handleMail(request, { ...wiring, limiter: env.MAIL_REQUESTS, clientIp: clientIp(request) });
+  if (wiring === null) return openJson({ error: 'mail is not configured' }, 503);
+  return handleMail(request, { ...wiring, limited });
 }
 
-const CLIENT_ROUTES: ReadonlyMap<string, (request: Request, ctx: ExecutionContext) => Promise<Response>> = new Map([
-  ['/preview', handlePreview],
-  ['/img', handleImg],
-  ['/x402-settle', handleSettle],
-]);
+const ROUTES: readonly ProxyRoute[] = [
+  { path: PROXY_ROUTES.health, match: 'exact', preflight: OPEN_CORS, handle: () => corsResponse(OPEN_CORS, 'ok', 200, 'text/plain') },
+  {
+    path: PROXY_ROUTES.preview,
+    match: 'exact',
+    preflight: CLIENT_CORS,
+    limit: { budget: 'preview', inHandler: true },
+    handle: (request, { ctx, limited }) => handlePreview(request, ctx, limited),
+  },
+  {
+    path: PROXY_ROUTES.img,
+    match: 'exact',
+    preflight: CLIENT_CORS,
+    limit: { budget: 'img' },
+    handle: (request, { ctx }) => handleImg(request, ctx),
+  },
+  {
+    path: PROXY_ROUTES.settle,
+    match: 'exact',
+    preflight: CLIENT_CORS,
+    limit: { budget: 'settle', inHandler: true },
+    maxBody: JSON_BODY_MAX_BYTES,
+    handle: (request, { limited }) => handleSettle(request, limited),
+  },
+  {
+    path: PROXY_ROUTES.attachments,
+    match: 'tree',
+    preflight: ATTACHMENT_CORS,
+    limit: { budget: 'attachments', methods: ['POST'], edge: (env, ip) => [{ binding: env.ATTACHMENT_UPLOADS, key: ip }] },
+    handle: (request, { env }) =>
+      handleAttachments(request, env.ATTACHMENTS === undefined ? undefined : r2AttachmentStore(env.ATTACHMENTS)),
+  },
+  {
+    path: PROXY_ROUTES.nodes,
+    match: 'exact',
+    preflight: NODES_CORS,
+    maxBody: NODE_CODE_MAX_BYTES,
+    limit: {
+      budget: 'nodes',
+      inHandler: true,
+      edge: (env, ip) => [
+        { binding: env.NODE_PUBLISHES, key: clientRateKey(ip) },
+        { binding: env.NODE_PUBLISHES_ALL, key: 'all' },
+      ],
+    },
+    handle: (request, { env, limited }) =>
+      handleNodes(request, { api: cloudflareApi(env.NODES_CF_API_TOKEN, env.NODES_CF_ACCOUNT_ID), limited }),
+  },
+  {
+    path: PROXY_ROUTES.history,
+    match: 'prefix',
+    preflight: HISTORY_CORS_HEADERS,
+    limit: { budget: 'history', methods: ['POST'] },
+    handle: (request, { env }) => handleHistory(request, env.HISTORY_ARCHIVES),
+  },
+  { path: PROXY_ROUTES.push, match: 'prefix', preflight: PUSH_CORS_HEADERS, maxBody: PUSH_BODY_MAX_BYTES, handle: handlePush },
+  {
+    path: PROXY_ROUTES.mail,
+    match: 'prefix',
+    preflight: MAIL_CORS,
+    limit: { inHandler: true, edge: (env, ip) => [{ binding: env.MAIL_REQUESTS, key: ip }] },
+    maxBody: JSON_BODY_MAX_BYTES,
+    handle: routeMail,
+  },
+  {
+    path: PROXY_ROUTES.names,
+    match: 'prefix',
+    preflight: CLIENT_CORS,
+    limit: { budget: 'names' },
+    maxBody: JSON_BODY_MAX_BYTES,
+    handle: (request, { env }) => handleNamesRequest(request, env),
+  },
+];
 
-function routeHistory(request: Request, env: ProxyEnv): Promise<Response> | Response {
-  if (request.method === 'POST' && rateLimited(request, 'history')) return json({ error: 'rate limited' }, 429);
-  return handleHistory(request, env.HISTORY_ARCHIVES);
+function matches({ path, match }: ProxyRoute, pathname: string): boolean {
+  if (match === 'prefix') return pathname.startsWith(path);
+  return pathname === path || (match === 'tree' && pathname.startsWith(`${path}/`));
 }
 
-async function limitedBy(request: Request, budget: RateBudget, limiter: RateLimit | undefined, key = clientIp(request)): Promise<boolean> {
-  if (rateLimited(request, budget)) return true;
-  return limiter !== undefined && !(await limiter.limit({ key })).success;
+async function cappedRequest(request: Request, maxBody: number | undefined): Promise<Request | null> {
+  if (maxBody === undefined || request.body === null || request.method === 'GET' || request.method === 'HEAD') return request;
+  if ((declaredLength(request.headers) ?? 0) > maxBody) return null;
+  const bytes = await readCappedBytes(request.body, maxBody, 'reject');
+  return bytes === null ? null : new Request(request, { body: bytes });
 }
 
-async function routeAttachments(request: Request, env: ProxyEnv): Promise<Response> {
-  if (request.method === 'POST' && (await limitedBy(request, 'attachments', env.ATTACHMENT_UPLOADS)))
-    return json({ error: 'rate limited' }, 429);
-  return handleAttachments(request, env.ATTACHMENTS === undefined ? undefined : r2AttachmentStore(env.ATTACHMENTS));
-}
-
-function routeNodes(request: Request, env: ProxyEnv): Promise<Response> {
-  return handleNodes(request, {
-    api: cloudflareApi(env.NODES_CF_API_TOKEN, env.NODES_CF_ACCOUNT_ID),
-    limited: async () =>
-      (await limitedBy(request, 'nodes', env.NODE_PUBLISHES, clientRateKey(clientIp(request)))) ||
-      (env.NODE_PUBLISHES_ALL !== undefined && !(await env.NODE_PUBLISHES_ALL.limit({ key: 'all' })).success),
-  });
-}
-
-function routePrefixed(request: Request, env: ProxyEnv, pathname: string): Promise<Response> | Response | null {
-  if (isAttachmentPath(pathname)) return routeAttachments(request, env);
-  if (pathname === NODE_PUBLISH_PATH) return routeNodes(request, env);
-  if (pathname.startsWith(HISTORY_PREFIX)) return routeHistory(request, env);
-  if (pathname.startsWith(PUSH_PREFIX)) return handlePush(request);
-  if (pathname.startsWith(MAIL_PREFIX)) return routeMail(request, env);
-  if (!pathname.startsWith(NAMES_PREFIX)) return null;
-  if (rateLimited(request, 'names')) return json({ error: 'rate limited' }, 429);
-  return handleNamesRequest(request, env);
+async function serve(route: ProxyRoute, request: Request, env: ProxyEnv, ctx: ExecutionContext): Promise<Response> {
+  if (request.method === 'OPTIONS') return corsResponse(route.preflight, null, 204);
+  const limited = (): Promise<boolean> => overLimit(route.limit, request, env);
+  if (limitsAtRouter(route.limit, request.method) && (await limited())) return RATE_LIMITED();
+  const capped = await cappedRequest(request, route.maxBody);
+  if (capped === null) return jsonResponse({ error: 'request too large' }, 413, route.preflight);
+  return route.handle(capped, { env, ctx, limited });
 }
 
 export default {
   async fetch(request: Request, env: ProxyEnv, ctx: ExecutionContext): Promise<Response> {
     const { hostname, pathname } = new URL(request.url);
     if (hostname === BUNDLER_HOST) return handleBundler(request);
-    if (pathname === '/health') {
-      return new Response('ok', { headers: { 'content-type': 'text/plain', ...BASE_HEADERS } });
-    }
-    const clientRoute = CLIENT_ROUTES.get(pathname);
-    if (clientRoute) return request.method === 'OPTIONS' ? corsResponse(CLIENT_CORS, null, 204) : clientRoute(request, ctx);
-    return routePrefixed(request, env, pathname) ?? json({ error: 'not found' }, 404);
+    const route = ROUTES.find((candidate) => matches(candidate, pathname));
+    return route === undefined ? openJson({ error: 'not found' }, 404) : serve(route, request, env, ctx);
   },
 
   async email(message: IncomingMail, env: ProxyEnv): Promise<void> {

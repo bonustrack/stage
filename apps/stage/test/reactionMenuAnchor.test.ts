@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { initialMenuAnchor } from '../components/bubble/props';
+import { initialMenuAnchor } from '../components/bubble/model';
 
 describe('initialMenuAnchor', () => {
   test('fresh bubble (never measured) waits for measurement instead of opening at y:0', () => {

@@ -11,7 +11,7 @@ export interface ShareSendEffects<T> {
   finish: (started: T) => Promise<boolean>;
   success: () => Promise<void>;
   busy: (value: boolean) => void;
-  error: () => void;
+  error: (err: unknown) => void;
 }
 
 export function makeShareSender<T>(effects: ShareSendEffects<T>): {
@@ -37,8 +37,8 @@ export function makeShareSender<T>(effects: ShareSendEffects<T>): {
         assertCurrent();
         const started = effects.start(assertCurrent);
         if (await effects.finish(started)) await effects.success();
-      } catch {
-        effects.error();
+      } catch (err) {
+        effects.error(err);
       } finally {
         busy = false;
         effects.busy(false);

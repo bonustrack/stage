@@ -1,59 +1,34 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { isAddress } from 'viem';
 import { Eyebrow } from '../Eyebrow';
 import { EmptyState } from '../chrome/EmptyState';
-import { ChannelRow } from '../ChannelRow';
+import { ChannelRow } from '../chatRow/ChannelRow';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { resolveHandleToAddress } from '../../lib/resolveHandle';
-import { usePeerProfiles, getPeerName } from '../../lib/peerProfiles';
-import { peopleLookup } from './contacts.model';
-import { homeRows } from './state';
+import { usePersonLookup } from '../../lib/resolveHandle';
+import { WITH_MAINNET_ENS } from '@stage-labs/client/identity/personLookup';
+import { usePeerProfiles, getPeerName, peerLabel } from '../../lib/peerProfiles';
+import { conversationSlugLinkOf } from '@stage-labs/client/routing/deepLinks';
+import { dmLinkOf } from '../../lib/links';
+import type { CachedRow } from '../../lib/cachedRows.model';
 import { uniqueBy } from '@stage-labs/client/collections';
 import { Column, PAGE_GUTTER } from '../layout';
-
-function getExistingPeers(): { address: string; convId: string }[] {
-  const peers = (homeRows() ?? []).flatMap(({ peerAddress: address, convId }) => (address && convId ? [{ address, convId }] : []));
-  return uniqueBy(peers, (p) => p.address.toLowerCase());
-}
-
-const LOOKUP_DEBOUNCE_MS = 300;
-const NO_MATCH_HINT = 'No matches. Try a username, a full address or a name.eth to start a chat.';
-
-interface ResolvedPeer {
-  address: string;
-  title: string;
-}
-
-function useResolvedPeer(q: string, enabled: boolean): ResolvedPeer | null {
-  const [resolved, setResolved] = useState<ResolvedPeer | null>(null);
-  const lookup = useMemo(() => (enabled ? peopleLookup(q) : null), [q, enabled]);
-  useEffect(() => {
-    if (!lookup) {
-      setResolved(null);
-      return;
-    }
-    if (isAddress(lookup.handle)) {
-      setResolved({ address: lookup.handle, title: lookup.title });
-      return;
-    }
-    let cancelled = false;
-    setResolved(null);
-    const t = setTimeout(() => {
-      void resolveHandleToAddress(lookup.handle).then((addr) => {
-        if (!cancelled && addr) setResolved({ address: addr.toLowerCase(), title: lookup.title });
-      });
-    }, LOOKUP_DEBOUNCE_MS);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [lookup?.handle, enabled]);
-  return resolved;
-}
 
 interface Peer {
   address: string;
   convId: string;
+}
+
+function existingPeers(rows: readonly CachedRow[] | null): Peer[] {
+  const peers = (rows ?? []).flatMap(({ peerAddress: address, convId }) => (address && convId ? [{ address, convId }] : []));
+  return uniqueBy(peers, (p) => p.address.toLowerCase());
+}
+
+const NO_MATCH_HINT = 'No matches. Try a username, a full address or a name.eth to start a chat.';
+
+interface ResolvedPeer {
+  address: string;
+  label: string | null;
 }
 
 interface ResultRow {
@@ -74,28 +49,17 @@ function filterPeers(existing: Peer[], q: string): Peer[] {
 }
 
 function resolvedRow(resolved: ResolvedPeer): ResultRow {
-  const fallback = resolved.title === '' ? shortAddress(resolved.address) : resolved.title;
+  const fallback = resolved.label ?? shortAddress(resolved.address);
   return { address: resolved.address, convId: undefined, title: getPeerName(resolved.address) ?? fallback, subtitle: 'Start chat' };
 }
 
 function peerRow(p: Peer): ResultRow {
   const name = getPeerName(p.address);
-  return {
-    address: p.address,
-    convId: p.convId,
-    title: name ?? shortAddress(p.address),
-    subtitle: name ? shortAddress(p.address) : undefined,
-  };
-}
-
-function openPeer(address: string, convId?: string): void {
-  const target = isAddress(address) ? address : (convId ?? address);
-  void import('expo-router').then(({ router }) => {
-    router.push({ pathname: '/[convId]', params: { convId: target } });
-  });
+  return { address: p.address, convId: p.convId, title: peerLabel(p.address), subtitle: name ? shortAddress(p.address) : undefined };
 }
 
 function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): React.ReactElement {
+  const router = useRouter();
   return (
     <Column>
       <Column padding={{ x: PAGE_GUTTER, top: 16, bottom: 6 }}>
@@ -109,7 +73,7 @@ function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): Rea
           square={false}
           subtitle={r.subtitle ?? null}
           onPress={() => {
-            openPeer(r.address, r.convId);
+            router.push(isAddress(r.address) ? dmLinkOf(r.address) : conversationSlugLinkOf(r.convId ?? r.address));
           }}
         />
       ))}
@@ -117,11 +81,21 @@ function ContactRows({ rows, label }: { rows: ResultRow[]; label: string }): Rea
   );
 }
 
-export function HomeContactResults({ query, noChannels }: { query: string; noChannels: boolean }): React.ReactElement | null {
+export function HomeContactResults({
+  query,
+  noChannels,
+  rows: chats,
+}: {
+  query: string;
+  noChannels: boolean;
+  rows: readonly CachedRow[] | null;
+}): React.ReactElement | null {
   const q = query.trim();
-  const existing = useMemo(() => getExistingPeers(), []);
+  const existing = useMemo(() => existingPeers(chats), [chats]);
   const filtered = useMemo(() => filterPeers(existing, q), [existing, q]);
-  const resolved = useResolvedPeer(q, filtered.length === 0);
+  const lookup = usePersonLookup(q, WITH_MAINNET_ENS, filtered.length === 0);
+  const resolved: ResolvedPeer | null =
+    filtered.length === 0 && lookup.kind === 'resolved' ? { address: lookup.address, label: lookup.label } : null;
   usePeerProfiles([resolved?.address, ...existing.map((p) => p.address)]);
 
   const extra = resolved && !filtered.some((p) => p.address.toLowerCase() === resolved.address) ? [resolvedRow(resolved)] : [];

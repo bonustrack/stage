@@ -25,7 +25,6 @@ if [ "${XMTP_LISTENER_TLS:-true}" = "true" ]; then
   set -- "$@" --xmtp-listener-tls
 fi
 
-# Delivery backends switch on when their credentials are present.
 if [ -n "${FCM_CREDENTIALS_JSON:-}" ]; then
   set -- "$@" --fcm-enabled
 fi

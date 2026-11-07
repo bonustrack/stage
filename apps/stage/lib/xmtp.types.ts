@@ -1,6 +1,8 @@
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 
-export type XmtpEnv = 'production' | 'dev' | 'local';
+export const XMTP_ENV = 'production';
+
+export type XmtpEnv = typeof XMTP_ENV;
 
 export type XmtpConsent = 'allowed' | 'denied' | 'unknown';
 
@@ -32,11 +34,3 @@ export interface StreamStatus {
   lastCloseAt: () => number;
   ensure: () => void;
 }
-
-const CONTROL_BODY_PREFIX = 'METRO_CTRL:';
-
-export function isControlBody(text: unknown): boolean {
-  return typeof text === 'string' && text.startsWith(CONTROL_BODY_PREFIX);
-}
-
-export const XMTP_ENV_KEY = 'xmtp.env';

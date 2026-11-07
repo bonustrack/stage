@@ -7,25 +7,27 @@ import { TopChrome } from '../components/system/TopChrome';
 import { useAccountGate, useShellGates } from '../lib/accountGate';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
-import { Platform, Text, TextInput } from 'react-native';
+import { Text, TextInput } from 'react-native';
 import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore } from '../lib/navigation';
 import { usePathname } from 'expo-router';
-import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
-import { useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { isOnboardingRoute, isRestorableRoute } from '../components/tabs/pages';
+import { useEffectiveColorScheme, usePalette, useThemeFromSettings } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { bootKitFonts, useKitFontsLoaded } from '../lib/kitFonts';
-import { parseHex } from '@stage-labs/kit/theme-derive';
+import { LUMA_REC709, luminance, parseHex } from '@stage-labs/kit/color-math';
+import { fontName } from '@stage-labs/kit/tokens';
 import { useDeepLinks } from '../lib/deepLinks';
 import { useRestoreGate } from '../lib/lastRoute';
-import { usePushDeepLinks } from '../lib/pushRegister';
-import { ensureActiveAccount } from '../lib/xmtp.recover.core';
-import { useOwnMailKey } from '../lib/mailKey';
-import { ensureMessagingStreamSync } from '../modules/messaging/streamSync';
-import { getOrCreateXmtpClient } from '../lib/xmtp.client';
+import { usePushDeepLinks } from '../lib/pushNotify';
+import { useOwnMailKey } from '../lib/mail';
+import { useMessagingBoot } from '../lib/messaging/boot';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { getQueryClient } from '../lib/queryClient';
-import { applyWebGlobalStyles } from '../platform/webStyles';
+import { applyWebGlobalStyles, useDocumentTheme } from '../components/layout/webChrome';
+import { bootWebMessaging } from '../components/system/webBoot';
+import { ContentFrame } from '../components/layout/ContentFrame';
 import { installPlainTextCopy } from '../lib/plainCopy';
+import { reportUnhandledRejections } from '../lib/rejectionReporter';
 import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
@@ -34,67 +36,38 @@ import { ShareHost } from '../components/share/ShareHost';
 import { KeyboardResync } from '../components/system/KeyboardResync';
 import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
-import { installAlertShim } from '../lib/alertHost';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
-import { ignored, reported } from '../lib/errorPolicy';
 import { useTabRole } from '../lib/tabLock';
 import { TabStandby } from '../components/system/TabStandby';
-import { Column, PANE_LEFT_PAD, viewportFill } from '../components/layout';
+import { Column, viewportFill } from '../components/layout';
 
 const queryClient = getQueryClient();
 
 applyWebGlobalStyles();
 installPlainTextCopy();
-installAlertShim();
+reportUnhandledRejections();
 bootKitFonts();
-if (Platform.OS === 'web' && location.protocol !== 'chrome-extension:' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
-  void ensureActiveAccount()
-    .then(() => getOrCreateXmtpClient('production'))
-    .catch(ignored(undefined, 'optional'));
-}
+bootWebMessaging();
 
 (function applyDefaultFont(): void {
   const TextAny = Text as unknown as { defaultProps?: Record<string, unknown> };
   TextAny.defaultProps = TextAny.defaultProps ?? {};
-  TextAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextAny.defaultProps.style];
+  TextAny.defaultProps.style = [{ fontFamily: fontName.sans }, TextAny.defaultProps.style];
   TextAny.defaultProps.selectable = true;
   const TextInputAny = TextInput as unknown as { defaultProps?: Record<string, unknown> };
   TextInputAny.defaultProps = TextInputAny.defaultProps ?? {};
-  TextInputAny.defaultProps.style = [{ fontFamily: 'Calibre-Medium' }, TextInputAny.defaultProps.style];
+  TextInputAny.defaultProps.style = [{ fontFamily: fontName.sans }, TextInputAny.defaultProps.style];
 })();
 
 function isDarkBg(hex: string): boolean {
-  const rgb = parseHex(hex.trim().replace(/^#?/, '#'));
-  if (rgb === null) return true;
-  const [r, g, b] = rgb;
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
-}
-
-function WebContentFrame({ children }: { children: React.ReactNode }): React.ReactElement {
-  if (Platform.OS !== 'web') return <>{children}</>;
-  return (
-    <Column surface="surface" weight={1} width="100%" style={PANE_LEFT_PAD}>
-      {children}
-    </Column>
-  );
-}
-
-function useDocumentTheme(ready: boolean, dark: boolean, bg: string, sub: string): void {
-  useEffect(() => {
-    if (!ready || Platform.OS !== 'web' || typeof document === 'undefined') return;
-    const root = document.documentElement;
-    root.style.colorScheme = dark ? 'dark' : 'light';
-    root.style.backgroundColor = bg;
-    root.style.setProperty('--stage-scrollbar-thumb', sub);
-    document.getElementById('stage-boot')?.remove();
-  }, [ready, dark, bg, sub]);
+  const rgb = parseHex(hex, { bare: true });
+  return rgb === null || luminance(rgb, LUMA_REC709) < 0.5;
 }
 
 export default function RootLayout(): React.ReactElement {
-  const scheme = useEffectiveColorScheme();
-  const palette = usePalette();
+  const { scheme, palette } = useThemeFromSettings();
   const tab = useTabRole();
-  useDocumentTheme(tab !== 'pending', scheme === 'dark', palette.bg, palette.sub);
+  useDocumentTheme(tab !== 'pending', { dark: scheme === 'dark', background: palette.bg, scrollbarThumb: palette.sub });
   return (
     <KitThemeProvider value={palette} scheme={scheme}>
       {tab === 'active' ? <RootLayoutInner /> : null}
@@ -115,22 +88,14 @@ function RootLayoutInner(): React.ReactElement {
   useDeepLinks();
   useDocumentScrollRestore();
 
-  const restore = useRestoreGate();
+  const restore = useRestoreGate(isRestorableRoute);
 
   usePushDeepLinks();
 
   const onboarding = useAccountGate();
   const pathname = usePathname();
 
-  useEffect(() => {
-    if (!onboarding.hasAccount) return;
-    void ensureActiveAccount()
-      .then(() => (isOnboardingRoute(pathname) ? undefined : getOrCreateXmtpClient('production')))
-      .catch(reported('boot.client'));
-  }, [onboarding.hasAccount]);
-  useEffect(() => {
-    ensureMessagingStreamSync();
-  }, []);
+  useMessagingBoot(onboarding, !isOnboardingRoute(pathname));
   useOwnMailKey(onboarding.hasAccount);
 
   const loaded = useKitFontsLoaded();
@@ -145,11 +110,11 @@ function RootLayoutInner(): React.ReactElement {
         <KeyboardProvider>
           <KeyboardResync />
           <StatusBar style={barStyle} />
-          <WebContentFrame>
+          <ContentFrame>
             <RootStack detachInactiveScreens screenOptions={rootStackScreenOptions(bg)}>
               <RootStack.Screen name="(tabs)" options={TABS_SCREEN_OPTIONS} />
             </RootStack>
-          </WebContentFrame>
+          </ContentFrame>
           <SplitSidebar visible={shell.sidebarVisible} />
           {!gatesOpen || routing ? (
             <Column surface="surface" align="center" justify="center" style={viewportFill()}>

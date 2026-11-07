@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useColorScheme } from 'react-native';
+import { z } from 'zod';
 import { secureStorage } from '../platform/storage';
 import { THEME_STORAGE_KEY as STORAGE_KEY, isThemePreference, type ThemePreference } from '@stage-labs/kit/theme';
 import {
@@ -11,16 +12,10 @@ import {
   type Density,
   type BaseSize,
 } from '@stage-labs/kit/tokens';
-import {
-  derivePalette,
-  grayscaleFromHex,
-  type ThemeSeed,
-  type AccentLevel,
-  type GrayscaleShade,
-  type GrayscaleTint,
-} from '@stage-labs/kit/theme-derive';
-import { createValueStore } from './persistedStore';
-import { cloneSeed, defaultSeeds, migrateSeeds, type SeedColorKey, type ThemeSeeds } from './colorOverrides.model';
+import { derivePalette, type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint } from '@stage-labs/kit/theme-derive';
+import type { KitThemeValue } from '@stage-labs/kit/react-native/theme-context';
+import { createValueStore, flagCodec } from './persistedStore';
+import { cloneSeed, defaultSeeds, migrateSeeds, withSeedColor, type SeedColorKey, type ThemeSeeds } from './colorOverrides.model';
 
 export type { ThemePreference, SeedColorKey };
 export { isHex, seedColorHex } from './colorOverrides.model';
@@ -35,79 +30,45 @@ const preference = createValueStore<ThemePreference>({
   deserialize: (raw) => (isThemePreference(raw) ? raw : undefined),
 });
 
-export async function setThemePreference(p: ThemePreference): Promise<void> {
-  if (!isThemePreference(p)) return;
-  await preference.setAsync(p);
-}
-
 export const useThemePreference = (): ThemePreference => preference.use();
-
-export function useEffectiveColorScheme(): 'light' | 'dark' {
-  const pref = useThemePreference();
-  const sys = useColorScheme();
-  if (pref !== 'system') return pref;
-  return sys === 'dark' ? 'dark' : 'light';
-}
 
 export type Palette = KitPalette;
 
-export function withAlpha(color: string, alpha: number): string {
-  const a = Math.max(0, Math.min(1, alpha));
-  const hex = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.exec(color.trim());
-  if (hex) {
-    let h = hex[1] ?? '';
-    if (h.length === 3) {
-      h = Array.from(h, (ch) => ch + ch).join('');
-    }
-    const r = parseInt(h.slice(0, 2), 16);
-    const g = parseInt(h.slice(2, 4), 16);
-    const b = parseInt(h.slice(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${a})`;
-  }
-  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(color.trim());
-  if (rgb) return `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${a})`;
-  return color;
+export function useThemeFromSettings(): KitThemeValue {
+  const pref = useThemePreference();
+  const sys = useColorScheme();
+  const scheme = pref !== 'system' ? pref : sys === 'dark' ? 'dark' : 'light';
+  const isCustom = useCustomTheme();
+  const themeSeeds = useThemeSeeds();
+  const palette = useMemo(
+    () => (isCustom ? { ...derivePalette(themeSeeds[scheme], scheme) } : kitPalette(scheme)),
+    [scheme, isCustom, themeSeeds],
+  );
+  return { palette, scheme };
 }
 
-export function usePalette(): Palette {
-  const scheme = useEffectiveColorScheme();
-  const custom = useCustomTheme();
-  const seeds = useThemeSeeds();
-  return useMemo(() => {
-    if (custom) return { ...derivePalette(seeds[scheme], scheme) };
-    return kitPalette(scheme);
-  }, [scheme, custom, seeds]);
-}
+export { useKitPalette as usePalette, useKitScheme as useEffectiveColorScheme } from '@stage-labs/kit/react-native/theme-context';
 
-function parseSeeds(raw: string): ThemeSeeds | undefined {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? migrateSeeds(parsed) : undefined;
-  } catch {
-    return undefined;
-  }
-}
+const storedSeedsSchema = z.custom<object>((value) => value !== null && typeof value === 'object').transform(migrateSeeds);
 
-const seeds = createValueStore<ThemeSeeds>({
-  key: 'theme:seed',
-  default: defaultSeeds(),
-  serialize: (v) => JSON.stringify(v),
-  deserialize: parseSeeds,
-});
+const seeds = createValueStore<ThemeSeeds>({ key: 'theme:seed', default: defaultSeeds(), schema: storedSeedsSchema });
 
-const custom = createValueStore<boolean>({
-  key: 'theme:custom',
-  default: false,
-  serialize: (on) => (on ? '1' : '0'),
-  deserialize: (raw) => raw === '1',
-});
+const custom = createValueStore<boolean>({ key: 'theme:custom', default: false, ...flagCodec(false) });
 
 export const useThemeSeeds = (): ThemeSeeds => seeds.use();
 
 export const useCustomTheme = (): boolean => custom.use();
 
-export function setCustomTheme(on: boolean): void {
-  custom.set(on);
+export type ThemeChoice = ThemePreference | 'custom';
+
+export function useThemeChoice(): ThemeChoice {
+  const pref = useThemePreference();
+  return useCustomTheme() ? 'custom' : pref;
+}
+
+export function chooseTheme(choice: ThemeChoice): void {
+  custom.set(choice === 'custom');
+  if (choice !== 'custom') void preference.setAsync(choice);
 }
 
 function patchSeeds(patch: Partial<ThemeSeeds>): void {
@@ -121,14 +82,8 @@ function editSeed(scheme: Scheme, edit: (seed: ThemeSeed) => void): void {
 }
 
 export function setSeedColor(scheme: Scheme, key: SeedColorKey, hex: string): void {
-  const v = hex.trim().toLowerCase();
-  if (!/^#([0-9a-f]{6})$/.test(v)) return;
-  editSeed(scheme, (seed) => {
-    if (key === 'background') seed.surface.background = v;
-    else if (key === 'foreground') seed.surface.foreground = v;
-    else if (key === 'accent') seed.accent.primary = v;
-    else seed.grayscale = grayscaleFromHex(v, scheme);
-  });
+  const next = withSeedColor(seeds.get(), scheme, key, hex);
+  if (next !== null) seeds.set(next);
 }
 
 export function setAccentLevel(scheme: Scheme, level: AccentLevel): void {

@@ -8,13 +8,14 @@ import {
   mailRegisterMessage,
   mailSessionMessage,
 } from '@stage-labs/client/mail/mailbox';
-import type { ArchiveStub } from './historyStore.ts';
-import { mailboxCall, readMailKey, saveMailKey } from './mailBox.ts';
-import { corsHeaders, corsResponse, jsonResponse } from './respond.ts';
+import type { ObjectStub } from './durableChunks.ts';
+import { mailboxCall, readMailKey, saveMailKey, stringOf } from './mailBox.ts';
+import { PROXY_ROUTES, type MailOp } from '@stage-labs/client/endpoints';
+import { corsHeaders, corsResponse, guarded, repliesWith } from './respond.ts';
 
-export const MAIL_PREFIX = '/mail/';
+const MAIL_PREFIX = PROXY_ROUTES.mail;
 
-const CORS = corsHeaders('GET, POST, DELETE, OPTIONS', 'content-type, authorization');
+export const MAIL_CORS = corsHeaders('GET, POST, DELETE, OPTIONS', 'content-type, authorization');
 const SIGNATURE = /^0x[0-9a-fA-F]+$/;
 
 export interface MailChain {
@@ -22,29 +23,22 @@ export interface MailChain {
   verify(address: Hex, message: string, signature: Hex): Promise<boolean>;
 }
 
-interface RequestLimiter {
-  limit(options: { key: string }): Promise<{ success: boolean }>;
-}
-
 export interface MailDeps {
-  mailbox: (label: string) => ArchiveStub;
+  mailbox: (label: string) => ObjectStub;
   chain: MailChain;
-  limiter?: RequestLimiter;
-  clientIp: string;
+  limited?: () => Promise<boolean>;
   now?: () => number;
 }
 
 type Fields = Record<string, unknown>;
 type Handler = (request: Request, deps: MailDeps) => Promise<Response>;
 interface Access {
-  stub: ArchiveStub;
+  stub: ObjectStub;
   owner: string;
   id: string;
 }
 
-const reply = (body: unknown, status = 200): Response => jsonResponse(body, status, CORS);
-const fail = (status: number, error: string): Response => reply({ error }, status);
-const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+const { json: reply, fail, text: empty } = repliesWith(MAIL_CORS);
 const isSignature = (value: string): value is Hex => SIGNATURE.test(value);
 
 async function readFields(request: Request): Promise<Fields> {
@@ -67,9 +61,9 @@ interface KeyClaim {
 }
 
 function parseKeyClaim(body: Fields): KeyClaim | null {
-  const label = text(body.label).toLowerCase();
-  const publicKey = text(body.publicKey).toLowerCase();
-  const signature = text(body.signature);
+  const label = stringOf(body.label).toLowerCase();
+  const publicKey = stringOf(body.publicKey).toLowerCase();
+  const signature = stringOf(body.signature);
   const { issuedAt } = body;
   if (!isMailboxLabel(label) || !isMailPublicKey(publicKey) || !isSignature(signature) || typeof issuedAt !== 'number') return null;
   return { label, publicKey, issuedAt, signature };
@@ -99,7 +93,7 @@ const keyStatus: Handler = async (request, deps) => {
 };
 
 const challenge: Handler = async (request, deps) => {
-  const label = text((await readFields(request)).label).toLowerCase();
+  const label = stringOf((await readFields(request)).label).toLowerCase();
   if (!isMailboxLabel(label)) return fail(400, 'label required');
   if ((await deps.chain.owner(label)) === null) return fail(404, 'no such name');
   const issued = await mailboxCall(deps.mailbox(label), 'challenge');
@@ -109,9 +103,9 @@ const challenge: Handler = async (request, deps) => {
 
 const openSession: Handler = async (request, deps) => {
   const body = await readFields(request);
-  const label = text(body.label).toLowerCase();
-  const nonce = text(body.nonce);
-  const signature = text(body.signature);
+  const label = stringOf(body.label).toLowerCase();
+  const nonce = stringOf(body.nonce);
+  const signature = stringOf(body.signature);
   if (!isMailboxLabel(label) || !isSignature(signature)) return fail(400, 'label, nonce and signature required');
   const stub = deps.mailbox(label);
   const [consumed, owner] = await Promise.all([mailboxCall(stub, 'consume', { nonce }), deps.chain.owner(label)]);
@@ -123,18 +117,31 @@ const openSession: Handler = async (request, deps) => {
   return session.ok ? reply(await session.json()) : fail(502, 'could not open a session');
 };
 
-async function access(request: Request, deps: MailDeps): Promise<Access | Response> {
+interface SessionRequest {
+  label: string;
+  token: string;
+  id: string;
+}
+
+function sessionRequest(request: Request): SessionRequest | Response {
   const params = new URL(request.url).searchParams;
   const label = (params.get('label') ?? '').toLowerCase();
   const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
   if (!isMailboxLabel(label)) return fail(400, 'label required');
   if (token === '') return fail(401, 'sign in first');
+  return { label, token, id: params.get('id') ?? '' };
+}
+
+async function access(request: Request, deps: MailDeps): Promise<Access | Response> {
+  const session = sessionRequest(request);
+  if (session instanceof Response) return session;
+  const { label, token, id } = session;
   const stub = deps.mailbox(label);
   const [auth, current] = await Promise.all([mailboxCall(stub, 'auth', { token }), deps.chain.owner(label)]);
   if (!auth.ok) return fail(401, 'session expired, sign in again');
   const { owner } = (await auth.json()) as { owner: string };
   if (current === null || current.toLowerCase() !== owner) return fail(403, 'this name has a new owner');
-  return { stub, owner, id: params.get('id') ?? '' };
+  return { stub, owner, id };
 }
 
 function withAccess(run: (granted: Access) => Promise<Response>, needsId = false): Handler {
@@ -153,12 +160,9 @@ function ownerMismatch(found: Response, current: Hex | null): Response | null {
 }
 
 async function signedRead(request: Request, deps: MailDeps, op: string, needsId: boolean): Promise<Response> {
-  const params = new URL(request.url).searchParams;
-  const label = (params.get('label') ?? '').toLowerCase();
-  const token = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
-  const id = params.get('id') ?? '';
-  if (!isMailboxLabel(label)) return fail(400, 'label required');
-  if (token === '') return fail(401, 'sign in first');
+  const session = sessionRequest(request);
+  if (session instanceof Response) return session;
+  const { label, token, id } = session;
   const [found, current] = await Promise.all([mailboxCall(deps.mailbox(label), op, { token, id }), deps.chain.owner(label)]);
   const denied = ownerMismatch(found, current);
   if (denied !== null) return denied;
@@ -173,20 +177,19 @@ const listMail: Handler = async (request, deps) => {
 const readMail: Handler = async (request, deps) => {
   const found = await signedRead(request, deps, 'signedRead', true);
   if (!found.headers.has('x-mail-owner')) return found;
-  return found.ok ? corsResponse(CORS, found.body, 200, 'application/octet-stream') : fail(404, 'no such mail');
+  return found.ok ? corsResponse(MAIL_CORS, found.body, 200, 'application/octet-stream') : fail(404, 'no such mail');
 };
 
 const deleteMail = withAccess(async ({ stub, owner, id }) => {
-  const removed = await mailboxCall(stub, 'delete', { owner, id });
-  return removed.ok ? corsResponse(CORS, null, 204) : fail(404, 'no such mail');
+  return (await mailboxCall(stub, 'delete', { owner, id })).ok ? empty(null, 204) : fail(404, 'no such mail');
 }, true);
 
 const closeBox = withAccess(async ({ stub, owner }) => {
   await mailboxCall(stub, 'close', { owner });
-  return corsResponse(CORS, null, 204);
+  return empty(null, 204);
 });
 
-const ROUTES: Record<string, Handler> = {
+const ROUTES: Readonly<Record<string, Handler | undefined>> = {
   'POST key': registerKey,
   'GET key': keyStatus,
   'POST challenge': challenge,
@@ -195,18 +198,14 @@ const ROUTES: Record<string, Handler> = {
   'GET message': readMail,
   'DELETE message': deleteMail,
   'DELETE box': closeBox,
-};
+} satisfies Partial<Record<`${'GET' | 'POST' | 'DELETE'} ${MailOp}`, Handler>>;
 
 export async function handleMail(request: Request, deps: MailDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return corsResponse(CORS, null, 204);
   const handler = ROUTES[`${request.method} ${new URL(request.url).pathname.slice(MAIL_PREFIX.length)}`];
   if (handler === undefined) return fail(404, 'not found');
-  if (deps.limiter !== undefined && !(await deps.limiter.limit({ key: deps.clientIp })).success) {
-    return fail(429, 'too many requests');
-  }
-  try {
-    return await handler(request, deps);
-  } catch {
-    return fail(502, 'mail service error');
-  }
+  if (deps.limited !== undefined && (await deps.limited())) return fail(429, 'too many requests');
+  return guarded(
+    () => handler(request, deps),
+    () => fail(502, 'mail service error'),
+  );
 }

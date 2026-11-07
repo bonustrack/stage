@@ -1,26 +1,11 @@
 import { createValueStore } from './persistedStore';
-import { makeListeners, useStoreValue } from './storeCore';
+import { makeListeners, storedStrings, useStoreValue } from './storeCore';
 import { reported } from './errorPolicy';
 
 const MAX_IDS = 500;
 const NO_IDS: readonly string[] = [];
 
-function parseIds(raw: string): readonly string[] {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : NO_IDS;
-  } catch {
-    return NO_IDS;
-  }
-}
-
-const stored = createValueStore<readonly string[]>({
-  key: 'messages.deleted.',
-  default: NO_IDS,
-  deserialize: parseIds,
-  serialize: (ids) => JSON.stringify(ids),
-  perAccount: true,
-});
+const stored = createValueStore<readonly string[]>({ key: 'messages.deleted.', default: NO_IDS, schema: storedStrings, perAccount: true });
 const listeners = makeListeners();
 let snapshotOf: readonly string[] = NO_IDS;
 let snapshot: ReadonlySet<string> = new Set();
@@ -44,12 +29,14 @@ async function update(next: (ids: readonly string[]) => readonly string[]): Prom
   listeners.notify();
 }
 
-export function markOwnDelete(messageId: string): Promise<void> {
-  return update((ids) => (ids.includes(messageId) ? ids : [...ids, messageId].slice(-MAX_IDS)));
-}
-
-export function unmarkOwnDelete(messageId: string): Promise<void> {
-  return update((ids) => (ids.includes(messageId) ? ids.filter((id) => id !== messageId) : ids));
+export async function deleteForEveryone(messageId: string, send: (messageId: string) => Promise<unknown>): Promise<void> {
+  await update((ids) => (ids.includes(messageId) ? ids : [...ids, messageId].slice(-MAX_IDS)));
+  try {
+    await send(messageId);
+  } catch (err) {
+    await update((ids) => (ids.includes(messageId) ? ids.filter((id) => id !== messageId) : ids));
+    throw err;
+  }
 }
 
 function primeOwnDeletes(): void {

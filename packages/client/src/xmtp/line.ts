@@ -1,18 +1,25 @@
 import { routeForUrl } from '../routing/deepLinks';
+import { STAGE_LINK_START, STAGE_SCHEMES, appUrlFor, hasTrailingPunctuation } from '../routing/stageLinks';
 
-export const XMTP_USER_PREFIX = 'stage://xmtp/user/';
+export const XMTP_USER_PREFIX = appUrlFor('/xmtp/user/');
+
+export function userUriOf(inboxId: string): string {
+  return `${XMTP_USER_PREFIX}${inboxId}`;
+}
+
+export function inboxIdOfUri(uri: string): string {
+  return uri.startsWith(XMTP_USER_PREFIX) ? uri.slice(XMTP_USER_PREFIX.length) : '';
+}
 
 export function lineOfConv(convId: string): string {
-  return `stage://xmtp/${convId}`;
+  return appUrlFor(`/xmtp/${convId}`);
 }
 
 export function lineOfDmPeer(address: string): string {
   return `${XMTP_USER_PREFIX}${address}`;
 }
 
-const LINK_PREFIX = '(?:(?:metro|stage):\\/\\/' + '|https?:\\/\\/stage\\.box\\/(?:#\\/)?)';
-
-const DM_PEER_RE = new RegExp(LINK_PREFIX + '(?:xmtp\\/)?(?:user\\/)?(0x[a-fA-F0-9]{40})(?![a-fA-F0-9])');
+const DM_PEER_RE = new RegExp(STAGE_LINK_START + '(?:xmtp\\/)?(?:user\\/)?(0x[a-fA-F0-9]{40})(?![a-fA-F0-9])');
 
 export function stageDmPeerOf(text?: string | null): string | null {
   if (!text) return null;
@@ -20,15 +27,17 @@ export function stageDmPeerOf(text?: string | null): string | null {
   return m?.[1] ?? null;
 }
 
+const LINE_RE = new RegExp(`^(?:${STAGE_SCHEMES.join('|')}):\\/\\/xmtp\\/([^/]+)$`);
+
 export function convIdOfLine(line: string): string | null {
-  const m = /^(?:metro|stage):\/\/xmtp\/([^/]+)$/.exec(line);
+  const m = LINE_RE.exec(line);
   return m?.[1] ?? null;
 }
 
-const CHANNEL_LINK_RE = new RegExp('^' + LINK_PREFIX + '(?:xmtp|channel)\\/[A-Za-z0-9_-]+\\/?(?:\\?[^\\s<>#]*)?$', 'i');
+const CHANNEL_LINK_RE = new RegExp('^' + STAGE_LINK_START + '(?:xmtp|channel)\\/[A-Za-z0-9_-]+\\/?(?:\\?[^\\s<>#]*)?$', 'i');
 
 export function stageChannelIdOf(url: string): string | null {
-  if (!CHANNEL_LINK_RE.test(url) || /[.,;:!?)\]}'"`>]+$/.test(url) || stageDmPeerOf(url)) return null;
+  if (!CHANNEL_LINK_RE.test(url) || hasTrailingPunctuation(url) || stageDmPeerOf(url)) return null;
   const route = routeForUrl(url);
   return route?.pathname === '/channel/[convId]' ? route.params.convId : null;
 }

@@ -4,12 +4,12 @@ import {
   historySyncIsActive,
   historySyncPhaseLabel,
   isMissingArchive,
-  settleBy,
   timeLeftLabel,
   within,
   HISTORY_COPY,
   HistoryProblem,
 } from '../lib/history.model';
+import { settleBy } from '@stage-labs/client/timing';
 
 function afterFakeTime<T>(ms: number, start: () => Promise<T>): Promise<T> {
   jest.useFakeTimers();

@@ -1,9 +1,10 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { useRef, useState } from 'react';
 import { attachmentKindOf } from '@stage-labs/client/xmtp/humanize';
 import { useVoiceRecorder } from './voice';
 import type { ComposerState } from './state';
 import type { PostHooks } from './types';
-import { Alert, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import { KeyboardController } from 'react-native-keyboard-controller';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -14,11 +15,13 @@ import { fileInputs } from './send.model';
 import { prepareAttachments } from '../../lib/xmtp.attachments';
 import { finishSend, showSend, startSend, type DraftArgs, type StartedSend } from './sendRun';
 import { locationAttachment, withLocation } from './location.model';
-import { ignored } from '../../lib/errorPolicy';
+import { ignored, reported } from '../../lib/errorPolicy';
+import { randomHex } from '@stage-labs/client/ids';
+import { capabilities } from '../../lib/capabilities';
 
 type ComposerActionsArgs = DraftArgs & PostHooks & Pick<ComposerState, 'setUploading' | 'setRecording' | 'setRecordSecs' | 'setLevels'>;
 
-const mintAttachmentId = (): string => `local_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const mintAttachmentId = (): string => `local_${Date.now()}_${randomHex(3)}`;
 
 async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: string, name?: string): Promise<void> {
   a.setUploading(true);
@@ -33,7 +36,7 @@ async function uploadAttachment(a: ComposerActionsArgs, uri: string, mime: strin
     a.setPending((prev) => [...prev, attachment]);
     prepareAttachments(fileInputs([attachment]));
   } catch (e) {
-    a.setErr((e as Error).message);
+    a.setErr(errorMessage(e));
   } finally {
     a.setUploading(false);
   }
@@ -56,7 +59,7 @@ async function uploadEach(upload: Upload, files: ComposerPickedFile[]): Promise<
 
 async function onPickedImages(upload: Upload, files: ComposerPickedFile[]): Promise<void> {
   if (files.length === 0) return;
-  setLastAttachment('Image');
+  setLastAttachment('image');
   await uploadEach(upload, files);
 }
 
@@ -64,16 +67,16 @@ async function requestCameraPermission(a: ComposerActionsArgs): Promise<boolean>
   a.setErr(null);
   const perm = await ImagePicker.requestCameraPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('Camera permission denied');
+    capabilities.alert('Camera permission denied');
     return false;
   }
   return true;
 }
 
-async function onPickedOne(upload: Upload, files: ComposerPickedFile[], label: 'Camera' | 'File'): Promise<void> {
+async function onPickedOne(upload: Upload, files: ComposerPickedFile[], id: 'camera' | 'file'): Promise<void> {
   const file = files[0];
   if (file === undefined) return;
-  setLastAttachment(label);
+  setLastAttachment(id);
   await upload(file.uri, file.mime, file.name);
 }
 
@@ -81,31 +84,29 @@ async function pickLocation(a: ComposerActionsArgs): Promise<void> {
   a.setErr(null);
   const perm = await Location.requestForegroundPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('Location permission denied');
+    capabilities.alert('Location permission denied');
     return;
   }
   try {
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
     const location = locationAttachment(pos.coords.latitude, pos.coords.longitude, mintAttachmentId());
     a.setPending((prev) => withLocation(prev, location));
-    setLastAttachment('Location');
+    setLastAttachment('location');
   } catch (e) {
-    a.setErr((e as Error).message);
+    a.setErr(errorMessage(e));
   }
+}
+
+function adoptSend(a: ComposerActionsArgs, started: StartedSend, current: () => ComposerActionsArgs): Promise<void> {
+  showSend(a, started);
+  return finishSend(a, started, current);
 }
 
 async function performSend(a: ComposerActionsArgs, current: () => ComposerActionsArgs): Promise<void> {
   if (!a.text.trim() && a.pending.length === 0) return;
   const line = await a.openLine();
   if (line === null) return;
-  const started = startSend(line, a.text, a.pending, a.replyingTo?.id);
-  showSend(a, started);
-  await finishSend(a, started, current);
-}
-
-function adoptSend(a: ComposerActionsArgs, started: StartedSend, current: () => ComposerActionsArgs): Promise<void> {
-  showSend(a, started);
-  return finishSend(a, started, current);
+  await adoptSend(a, startSend(line, a.text, a.pending, a.replyingTo?.id), current);
 }
 
 const KEYBOARD_HIDE_WAIT_MS = 500;
@@ -118,7 +119,7 @@ function afterKeyboardHides(open: () => void): void {
   const waited = new Promise<void>((done) => {
     setTimeout(done, KEYBOARD_HIDE_WAIT_MS);
   });
-  void Promise.race([KeyboardController.dismiss(), waited]).then(open);
+  void Promise.race([KeyboardController.dismiss(), waited]).then(open, reported('composer.keyboard'));
 }
 
 export function useComposerActions(a: ComposerActionsArgs) {
@@ -135,7 +136,7 @@ export function useComposerActions(a: ComposerActionsArgs) {
 
   const voice = useVoiceRecorder({
     upload: (uri, mime, name) => {
-      setLastAttachment('Voice message');
+      setLastAttachment('voice');
       return upload(uri, mime, name);
     },
     setErr: a.setErr,
@@ -168,8 +169,8 @@ export function useComposerActions(a: ComposerActionsArgs) {
     cameraNonce,
     fileNonce,
     onPickedImages: (files: ComposerPickedFile[]) => onPickedImages(upload, files),
-    onPickedCamera: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'Camera'),
-    onPickedFile: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'File'),
+    onPickedCamera: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'camera'),
+    onPickedFile: (files: ComposerPickedFile[]) => onPickedOne(upload, files, 'file'),
     onDroppedFiles: (files: ComposerPickedFile[]) => uploadEach(upload, files),
     send: () => performSend(a, () => current.current),
     adoptSend: (started: StartedSend) => adoptSend(current.current, started, () => current.current),

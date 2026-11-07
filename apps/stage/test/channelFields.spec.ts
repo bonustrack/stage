@@ -1,39 +1,19 @@
-import { beforeEach, describe, expect, mock, spyOn, test } from 'bun:test';
-import {
-  CHANNEL_FIELDS,
-  DEFAULT_CHANNEL_FIELDS,
-  parseChannelFields,
-  toggleChannelFieldIn,
-  visibleChannelFieldCount,
-} from '../components/home/fields.model';
+import { beforeEach, describe, expect, spyOn, test } from 'bun:test';
+import { CHANNEL_FIELDS, visibleChannelFieldCount } from '../components/home/fields.model';
+import { DEFAULT_CHANNEL_FIELDS, parseChannelFields, toggleChannelFieldIn } from '../lib/channelFields.model';
+import { selectAccount, selectedAccount } from './activeAccount';
+import { mockAppStorage } from './memoryStorage';
+import { settle } from './helpers';
 
-const values = new Map<string, string>();
-const writes: string[] = [];
-let activeId = 'alice';
+selectAccount('alice');
 let failedKey: string | null = null;
 let account = 0;
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => {
-      if (key === failedKey) throw new Error('storage unavailable');
-      return values.get(key) ?? null;
-    },
-    set: async (key: string, value: string): Promise<void> => {
-      writes.push(key);
-      values.set(key, value);
-    },
+const { values, writes } = mockAppStorage({
+  read: (key) => {
+    if (key === failedKey) throw new Error('storage unavailable');
   },
-}));
-mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => ({ id: activeId }),
-  getActiveAccountStrict: async () => ({ id: activeId }),
-}));
+});
 const { toggleChannelField } = await import('../lib/channelFields');
-const settle = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
 const stored = (id: string): unknown => JSON.parse(values.get(`home.fields.${id}`) ?? 'null');
 
 const hidden = {
@@ -51,21 +31,11 @@ beforeEach(() => {
   values.clear();
   writes.length = 0;
   failedKey = null;
-  activeId = `account-${++account}`;
+  selectAccount(`account-${++account}`);
 });
 
 describe('channel field preferences', () => {
-  test('lists all eight fields in display order and preserves existing view defaults', () => {
-    expect(CHANNEL_FIELDS.map(({ id, label }) => [id, label])).toEqual([
-      ['members', 'Members'],
-      ['assignees', 'Assignees'],
-      ['category', 'Project'],
-      ['status', 'Status'],
-      ['labels', 'Labels'],
-      ['priority', 'Priority'],
-      ['avatar', 'Avatar'],
-      ['lastMessage', 'Last message'],
-    ]);
+  test('the chat list shows labels, avatars and the last message by default, the board only the last message', () => {
     expect(DEFAULT_CHANNEL_FIELDS).toEqual({ chats: { ...hidden, labels: true, avatar: true }, board: hidden });
   });
 
@@ -185,7 +155,7 @@ describe('channel field preferences', () => {
 
 describe('channel field storage', () => {
   test('hydrates, persists and restores view preferences separately for each account', async () => {
-    activeId = 'alice';
+    selectAccount('alice');
     values.set('home.fields.alice', '{"chats":{"members":true}}');
     toggleChannelField('chats', 'labels');
     toggleChannelField('board', 'priority');
@@ -193,13 +163,13 @@ describe('channel field storage', () => {
     const aliceChats = { ...hidden, members: true, avatar: true };
     expect(stored('alice')).toEqual({ chats: aliceChats, board: { ...hidden, priority: true } });
 
-    activeId = 'bob';
+    selectAccount('bob');
     toggleChannelField('board', 'avatar');
     await settle();
     expect(stored('bob')).toEqual({ chats: DEFAULT_CHANNEL_FIELDS.chats, board: { ...hidden, avatar: true } });
     expect(stored('alice')).toEqual({ chats: aliceChats, board: { ...hidden, priority: true } });
 
-    activeId = 'alice';
+    selectAccount('alice');
     toggleChannelField('chats', 'avatar');
     await settle();
     expect(stored('alice')).toEqual({ chats: { ...aliceChats, avatar: false }, board: { ...hidden, priority: true } });
@@ -208,24 +178,24 @@ describe('channel field storage', () => {
   });
 
   test('persists last message choices independently by view and account', async () => {
-    activeId = 'last-message-alice';
-    values.set(`home.fields.${activeId}`, '{"chats":{"status":true},"board":{"labels":true}}');
+    selectAccount('last-message-alice');
+    values.set(`home.fields.${selectedAccount()}`, '{"chats":{"status":true},"board":{"labels":true}}');
     toggleChannelField('chats', 'lastMessage');
     await settle();
     const alice = {
       chats: { ...DEFAULT_CHANNEL_FIELDS.chats, status: true, lastMessage: false },
       board: { ...DEFAULT_CHANNEL_FIELDS.board, labels: true },
     };
-    expect(stored(activeId)).toEqual(alice);
-    activeId = 'last-message-bob';
+    expect(stored(selectedAccount())).toEqual(alice);
+    selectAccount('last-message-bob');
     toggleChannelField('board', 'lastMessage');
     await settle();
-    expect(stored(activeId)).toEqual({ chats: DEFAULT_CHANNEL_FIELDS.chats, board: { ...hidden, lastMessage: false } });
+    expect(stored(selectedAccount())).toEqual({ chats: DEFAULT_CHANNEL_FIELDS.chats, board: { ...hidden, lastMessage: false } });
     expect(stored('last-message-alice')).toEqual(alice);
-    activeId = 'last-message-alice';
+    selectAccount('last-message-alice');
     toggleChannelField('board', 'lastMessage');
     await settle();
-    expect(stored(activeId)).toEqual({ ...alice, board: { ...alice.board, lastMessage: false } });
+    expect(stored(selectedAccount())).toEqual({ ...alice, board: { ...alice.board, lastMessage: false } });
   });
 
   test('migrates missing storage and six-field preferences from legacy avatars without writing the global key', async () => {
@@ -237,11 +207,11 @@ describe('channel field storage', () => {
       if (avatars === null) values.delete('channels.avatars');
       else values.set('channels.avatars', avatars);
       for (const prior of [undefined, sixFields]) {
-        activeId = `migration-${avatars}-${prior ? 'six' : 'empty'}`;
-        if (prior) values.set(`home.fields.${activeId}`, JSON.stringify(prior));
+        selectAccount(`migration-${avatars}-${prior ? 'six' : 'empty'}`);
+        if (prior) values.set(`home.fields.${selectedAccount()}`, JSON.stringify(prior));
         toggleChannelField('board', 'avatar');
         await settle();
-        expect(stored(activeId)).toEqual({
+        expect(stored(selectedAccount())).toEqual({
           chats: { ...DEFAULT_CHANNEL_FIELDS.chats, ...prior?.chats, avatar: avatars !== '0' },
           board: { ...hidden, ...prior?.board, avatar: true },
         });
@@ -253,12 +223,12 @@ describe('channel field storage', () => {
 
   test('explicit avatar choices win over legacy values in either direction', async () => {
     for (const avatar of [false, true]) {
-      activeId = `explicit-${avatar}`;
+      selectAccount(`explicit-${avatar}`);
       values.set('channels.avatars', avatar ? '0' : '1');
-      values.set(`home.fields.${activeId}`, JSON.stringify({ chats: { avatar }, board: { avatar: !avatar } }));
+      values.set(`home.fields.${selectedAccount()}`, JSON.stringify({ chats: { avatar }, board: { avatar: !avatar } }));
       toggleChannelField('chats', 'status');
       await settle();
-      expect(stored(activeId)).toEqual({
+      expect(stored(selectedAccount())).toEqual({
         chats: { ...DEFAULT_CHANNEL_FIELDS.chats, status: true, avatar },
         board: { ...hidden, avatar: !avatar },
       });
@@ -273,8 +243,8 @@ describe('channel field storage', () => {
       await settle();
       values.set('channels.avatars', '0');
       for (const source of ['fields', 'legacy']) {
-        activeId = `failed-${source}`;
-        const key = `home.fields.${activeId}`;
+        selectAccount(`failed-${source}`);
+        const key = `home.fields.${selectedAccount()}`;
         values.set(key, '{"chats":{"priority":true},"board":{"members":true}}');
         const before = [...values];
         writes.length = 0;
@@ -286,7 +256,7 @@ describe('channel field storage', () => {
         failedKey = null;
         toggleChannelField('chats', 'avatar');
         await settle();
-        expect(stored(activeId)).toEqual({
+        expect(stored(selectedAccount())).toEqual({
           chats: { ...DEFAULT_CHANNEL_FIELDS.chats, priority: true },
           board: { ...hidden, members: true },
         });

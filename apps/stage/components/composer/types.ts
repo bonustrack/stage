@@ -1,10 +1,10 @@
-export interface Attachment {
+import type { EntryAttachment, EntryPayload } from '@stage-labs/client/xmtp/entryPayload';
+
+export interface Attachment extends EntryAttachment {
   id: string;
   url: string;
-  kind: string;
   mime: string;
   size: number;
-  name?: string;
 }
 
 export interface OptimisticEntry {
@@ -12,7 +12,7 @@ export interface OptimisticEntry {
   text: string;
   attachments: Attachment[];
   replyTo?: string;
-  payload?: unknown;
+  payload?: EntryPayload;
 }
 
 export interface PostHooks {

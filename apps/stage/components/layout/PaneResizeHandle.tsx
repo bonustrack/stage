@@ -1,0 +1,113 @@
+import { useEffect, useRef, useState } from 'react';
+import type { PointerEvent, ViewStyle } from 'react-native';
+import { usePalette } from '../../lib/theme';
+import type { PaneWidth } from './paneWidth';
+import { setChromeClass } from './webChrome';
+import { Column } from './';
+
+const DOUBLE_TAP_MS = 300;
+const TAP_SLOP_PX = 3;
+const HANDLE_WIDTH = 8;
+const BAR_WIDTH = 4;
+
+type Edge = 'left' | 'right';
+
+const GROW_DIRECTION: Record<Edge, number> = { left: -1, right: 1 };
+const HANDLE_INPUT = { zIndex: 4, cursor: 'col-resize', touchAction: 'none' };
+
+function atEdge(edge: Edge, offset: number, extra?: object): ViewStyle {
+  return { position: 'absolute', top: 0, bottom: 0, [edge]: offset, ...extra };
+}
+
+const HANDLE_STYLES: Record<Edge, ViewStyle> = {
+  left: atEdge('left', -HANDLE_WIDTH / 2, HANDLE_INPUT),
+  right: atEdge('right', -HANDLE_WIDTH / 2, HANDLE_INPUT),
+};
+const BAR_STYLES: Record<Edge, ViewStyle> = { left: atEdge('left', HANDLE_WIDTH / 2 - 1), right: atEdge('right', HANDLE_WIDTH / 2 - 1) };
+
+interface Drag {
+  pointerId: number;
+  x: number;
+  y: number;
+  width: number;
+}
+
+function capturePointer(target: unknown, pointerId: number): void {
+  (target as { setPointerCapture?: (id: number) => void } | null)?.setPointerCapture?.(pointerId);
+}
+
+function isTap(drag: Drag, x: number, y: number): boolean {
+  return Math.abs(x - drag.x) < TAP_SLOP_PX && Math.abs(y - drag.y) < TAP_SLOP_PX;
+}
+
+export function PaneResizeHandle({ pane, edge }: { pane: PaneWidth; edge: Edge }): React.ReactElement {
+  const { border } = usePalette();
+  const drag = useRef<Drag | null>(null);
+  const lastTapAt = useRef(0);
+  const [hovered, setHovered] = useState(false);
+  const [dragging, setDragging] = useState(false);
+
+  useEffect(
+    () => () => {
+      setChromeClass('resizing', false);
+    },
+    [],
+  );
+
+  const active = (event: PointerEvent): Drag | null => {
+    const current = drag.current;
+    return current?.pointerId === event.nativeEvent.pointerId ? current : null;
+  };
+
+  const finish = (event: PointerEvent): Drag | null => {
+    const current = active(event);
+    if (current === null) return null;
+    drag.current = null;
+    setChromeClass('resizing', false);
+    setDragging(false);
+    return current;
+  };
+
+  const onPointerDown = (event: PointerEvent): void => {
+    const { button, pointerId, clientX, clientY } = event.nativeEvent;
+    if (button !== 0) return;
+    event.preventDefault();
+    capturePointer(event.currentTarget, pointerId);
+    drag.current = { pointerId, x: clientX, y: clientY, width: pane.get() };
+    setChromeClass('resizing', true);
+    setDragging(true);
+  };
+
+  const onPointerMove = (event: PointerEvent): void => {
+    const current = active(event);
+    if (current === null) return;
+    pane.set(current.width + GROW_DIRECTION[edge] * (event.nativeEvent.clientX - current.x));
+  };
+
+  const onPointerUp = (event: PointerEvent): void => {
+    const ended = finish(event);
+    if (ended === null || !isTap(ended, event.nativeEvent.clientX, event.nativeEvent.clientY)) return;
+    const now = Date.now();
+    if (now - lastTapAt.current < DOUBLE_TAP_MS) pane.reset();
+    lastTapAt.current = now;
+  };
+
+  return (
+    <Column
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={finish}
+      onPointerEnter={() => {
+        setHovered(true);
+      }}
+      onPointerLeave={() => {
+        setHovered(false);
+      }}
+      width={HANDLE_WIDTH}
+      style={HANDLE_STYLES[edge]}
+    >
+      <Column pointerEvents="none" width={BAR_WIDTH} background={hovered || dragging ? border : undefined} style={BAR_STYLES[edge]} />
+    </Column>
+  );
+}

@@ -25,7 +25,9 @@ import {
   type ListScrollMetrics,
 } from './VirtualList.model';
 import type { VirtualListHandle, VirtualListProps } from './VirtualList.types';
+import { withPersistedScroll } from './VirtualList.persist';
 import { SELF_SCROLL, SELF_SCROLLBAR } from './webChrome';
+import { attempt } from '../../lib/errorPolicy';
 
 const ESTIMATED_ITEM_SIZE = 72;
 const OVERSCAN = 6;
@@ -98,10 +100,10 @@ function virtualizerOptions<T>(props: VirtualListProps<T>, scrollMargin: number,
   };
 }
 
-function useEdgeCallbacks<T>(props: VirtualListProps<T>, host: ScrollHost, count: number): () => void {
+type Latest<T> = RefObject<VirtualListProps<T>>;
+
+function useEdgeCallbacks<T>(latest: Latest<T>, host: ScrollHost, count: number): () => void {
   const fired = useRef({ start: -1, end: -1 });
-  const latest = useRef(props);
-  latest.current = props;
   return useCallback(() => {
     const p = latest.current;
     const m = host.metrics();
@@ -117,9 +119,7 @@ function useEdgeCallbacks<T>(props: VirtualListProps<T>, host: ScrollHost, count
   }, [host, count]);
 }
 
-function useEndStick<T>(props: VirtualListProps<T>, host: ScrollHost): () => void {
-  const latest = useRef(props);
-  latest.current = props;
+function useEndStick<T>(latest: Latest<T>, host: ScrollHost): () => void {
   const height = useRef(-1);
   return useCallback(() => {
     const m = host.metrics();
@@ -129,10 +129,8 @@ function useEndStick<T>(props: VirtualListProps<T>, host: ScrollHost): () => voi
   }, [host]);
 }
 
-function useScrollSubscription<T>(props: VirtualListProps<T>, host: ScrollHost, check: () => void): void {
+function useScrollSubscription<T>(latest: Latest<T>, host: ScrollHost, check: () => void): void {
   const dragged = useRef(false);
-  const latest = useRef(props);
-  latest.current = props;
   useEffect(() => {
     const onUserScroll = (): void => {
       if (dragged.current) return;
@@ -151,14 +149,12 @@ function useScrollSubscription<T>(props: VirtualListProps<T>, host: ScrollHost, 
 }
 
 function useContentObserver<T>(
-  props: VirtualListProps<T>,
+  latest: Latest<T>,
   refs: ListRefs,
   host: ScrollHost,
   setScrollMargin: (m: number) => void,
   check: () => void,
 ): void {
-  const latest = useRef(props);
-  latest.current = props;
   const reported = useRef({ width: -1, height: -1 });
   useLayoutEffect(() => {
     const content = refs.content.current;
@@ -199,25 +195,29 @@ function useInitialPosition<T>(props: VirtualListProps<T>, host: ScrollHost, vir
 
 function useListHandle<T>(
   handle: ForwardedRef<VirtualListHandle>,
-  props: VirtualListProps<T>,
+  latest: Latest<T>,
   refs: ListRefs,
   host: ScrollHost,
   virtualizer: ListVirtualizer,
 ): void {
-  const latest = useRef(props);
-  latest.current = props;
   useImperativeHandle(
     handle,
     () => ({
       scrollToOffset: ({ offset, animated }) => {
-        host.scrollTo(offset, animated === true);
+        attempt(() => {
+          host.scrollTo(offset, animated === true);
+        }, 'ui');
       },
       scrollToEnd: (params) => {
-        host.scrollTo(endOffset(host.metrics()), params?.animated === true);
+        attempt(() => {
+          host.scrollTo(endOffset(host.metrics()), params?.animated === true);
+        }, 'ui');
       },
       scrollToIndex: ({ index, animated, viewPosition }) => {
         const align = viewPosition === 1 ? 'end' : viewPosition === 0.5 ? 'center' : 'start';
-        virtualizer.scrollToIndex(index, { align, behavior: animated === true ? 'smooth' : 'auto' });
+        attempt(() => {
+          virtualizer.scrollToIndex(index, { align, behavior: animated === true ? 'smooth' : 'auto' });
+        }, 'ui');
       },
       visibleAnchor: () => visibleAnchor(latest.current, refs, virtualizer),
       scrollToAnchor: (anchor) => scrollToAnchor(latest.current, refs, host, virtualizer, anchor),
@@ -259,8 +259,10 @@ function VirtualRows<T>({
 
 function ListBody<T>({ props, handle, refs, host, virtualizer, setScrollMargin }: BodyProps<T>): React.ReactElement {
   const count = props.data?.length ?? 0;
-  const stick = useEndStick(props, host);
-  const edges = useEdgeCallbacks(props, host, count);
+  const latest = useRef(props);
+  latest.current = props;
+  const stick = useEndStick(latest, host);
+  const edges = useEdgeCallbacks(latest, host, count);
   const rememberAnchor = usePrependAnchor(props, refs, host, virtualizer);
   const check = useCallback(() => {
     if (!host.shown()) return;
@@ -268,10 +270,10 @@ function ListBody<T>({ props, handle, refs, host, virtualizer, setScrollMargin }
     edges();
     rememberAnchor();
   }, [host, stick, edges, rememberAnchor]);
-  useScrollSubscription(props, host, check);
-  useContentObserver(props, refs, host, setScrollMargin, check);
+  useScrollSubscription(latest, host, check);
+  useContentObserver(latest, refs, host, setScrollMargin, check);
   useInitialPosition(props, host, virtualizer, count);
-  useListHandle(handle, props, refs, host, virtualizer);
+  useListHandle(handle, latest, refs, host, virtualizer);
   useEffect(() => {
     check();
   }, [count, check]);
@@ -319,10 +321,11 @@ function SelfList<T>({ props, handle }: { props: VirtualListProps<T>; handle: Fo
 }
 
 function VirtualListInner<T>(props: VirtualListProps<T>, ref: ForwardedRef<VirtualListHandle>): React.ReactElement {
+  const listProps = withPersistedScroll(props, props.scroll !== 'self');
   return props.scroll === 'self' ? (
-    <SelfList key="self" props={props} handle={ref} />
+    <SelfList key="self" props={listProps} handle={ref} />
   ) : (
-    <WindowList key="window" props={props} handle={ref} />
+    <WindowList key="window" props={listProps} handle={ref} />
   );
 }
 

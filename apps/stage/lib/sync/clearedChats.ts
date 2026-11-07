@@ -1,0 +1,33 @@
+import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/sync/clear';
+import { createValueStore, type StoreSource } from '../persistedStore';
+import { keepUnlessChanged, makeListeners, storedRecordOf } from '../storeCore';
+
+const isClearedAt = (value: unknown): value is number => typeof value === 'number';
+
+const prefs = createValueStore<ClearedChats>({
+  key: 'channels.cleared.',
+  default: {},
+  schema: storedRecordOf(isClearedAt),
+  perAccount: true,
+});
+
+const localChanges = makeListeners<string>();
+export const onClearedChatsChanged = localChanges.subscribe;
+
+export const clearedChatsSource: StoreSource<ClearedChats> = prefs;
+
+export const useClearedChats = prefs.use;
+
+export const subscribeClearedChats = prefs.subscribe;
+
+export const loadClearedChats = prefs.loadFor;
+
+export async function markChatCleared(peerAddress: string, atMs: number): Promise<void> {
+  await prefs.update((cleared) => mergeClearedChats(cleared, { [peerAddress]: atMs }));
+  const accountId = prefs.accountId();
+  if (accountId !== null) localChanges.notify(accountId);
+}
+
+export function applyRemoteClearedChats(forAccount: string, incoming: ClearedChats): Promise<void> {
+  return prefs.updateFor(forAccount, (cleared) => keepUnlessChanged(cleared, mergeClearedChats(cleared, incoming)));
+}

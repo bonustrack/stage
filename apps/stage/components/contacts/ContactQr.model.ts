@@ -1,6 +1,8 @@
 import { getAddress, isAddress, zeroAddress } from 'viem';
+import { profilePath } from '@stage-labs/client/routing/routes';
+import { appUrlFor } from '@stage-labs/client/routing/stageLinks';
 
-const CONTACT_PREFIX = 'stage://profile/';
+const CONTACT_PREFIX = appUrlFor(profilePath(''));
 
 function publicAddress(value: string): string | null {
   return isAddress(value) && value.toLowerCase() !== zeroAddress ? getAddress(value) : null;
@@ -22,10 +24,10 @@ export function contactScanResult(
   ownAddress: string,
   selection: number,
   currentSelection: number,
-): { path: string; error?: never } | { error: string; path?: never } | null {
+): { address: string; error?: never } | { error: string; address?: never } | null {
   if (selection !== currentSelection) return null;
   const address = parseContactQr(value);
   if (address === null) return { error: 'Use a Stage contact QR code or a public address.' };
   if (address.toLowerCase() === ownAddress.toLowerCase()) return { error: 'This is your own address. Scan someone else’s QR code.' };
-  return { path: `/profile/${address}` };
+  return { address };
 }

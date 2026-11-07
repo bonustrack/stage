@@ -1,24 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  ATTACHMENTS_PATH,
-  MAX_ATTACHMENT_BYTES,
-  handleAttachments,
-  newAttachmentId,
-  parseAttachmentRoute,
-  r2AttachmentStore,
-  type AttachmentStore,
-} from '../src/attachments.ts';
+import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
+import { UPLOAD_MAX_BYTES } from '@stage-labs/client/uploads';
+import { handleAttachments, newAttachmentId, parseAttachmentRoute, r2AttachmentStore, type AttachmentStore } from '../src/attachments.ts';
+import { randomBytes } from './memoryArchive.ts';
 
 const ORIGIN = 'https://proxy.stage.box';
+const ATTACHMENTS_PATH = PROXY_ROUTES.attachments;
 const ID = 'A'.repeat(32);
-
-function randomBytes(length: number): Uint8Array {
-  const bytes = new Uint8Array(length);
-  for (let offset = 0; offset < length; offset += 65_536) {
-    crypto.getRandomValues(bytes.subarray(offset, Math.min(length, offset + 65_536)));
-  }
-  return bytes;
-}
+const FILE_URL = `${ORIGIN}${ATTACHMENTS_PATH}/${ID}`;
 
 function memoryStore(): AttachmentStore & { objects: Map<string, Uint8Array> } {
   const objects = new Map<string, Uint8Array>();
@@ -109,13 +98,6 @@ describe('r2AttachmentStore', () => {
 });
 
 describe('handleAttachments', () => {
-  test('answers preflight with CORS headers for GET, HEAD and POST', async () => {
-    const res = await handleAttachments(new Request(`${ORIGIN}${ATTACHMENTS_PATH}`, { method: 'OPTIONS' }), memoryStore());
-    expect(res.status).toBe(204);
-    expect(res.headers.get('access-control-allow-origin')).toBe('*');
-    expect(res.headers.get('access-control-allow-methods')).toBe('GET, HEAD, POST, OPTIONS');
-  });
-
   test('stores an upload under a fresh id and serves the same bytes back', async () => {
     const store = memoryStore();
     const bytes = randomBytes(2_500_000);
@@ -150,27 +132,24 @@ describe('handleAttachments', () => {
     unsized.headers.delete('content-length');
     expect((await handleAttachments(unsized, store)).status).toBe(411);
     expect((await handleAttachments(upload(new Uint8Array(0)), store)).status).toBe(400);
-    expect((await handleAttachments(upload(randomBytes(8), MAX_ATTACHMENT_BYTES + 1), store)).status).toBe(413);
+    expect((await handleAttachments(upload(randomBytes(8), UPLOAD_MAX_BYTES + 1), store)).status).toBe(413);
     expect(store.objects.size).toBe(0);
   });
 
   test('a missing id is a CORS-tagged 404 and other paths are 404', async () => {
     const store = memoryStore();
-    const missing = await handleAttachments(new Request(`${ORIGIN}${ATTACHMENTS_PATH}/${ID}`), store);
+    const missing = await handleAttachments(new Request(FILE_URL), store);
     expect(missing.status).toBe(404);
     expect(missing.headers.get('access-control-allow-origin')).toBe('*');
-    expect((await handleAttachments(new Request(`${ORIGIN}${ATTACHMENTS_PATH}/${ID}`, { method: 'HEAD' }), store)).status).toBe(404);
+    expect((await handleAttachments(new Request(FILE_URL, { method: 'HEAD' }), store)).status).toBe(404);
     expect((await handleAttachments(new Request(`${ORIGIN}${ATTACHMENTS_PATH}/nope`), store)).status).toBe(404);
   });
 
   test('reports a missing bucket as 503 and a failing one as 502', async () => {
     expect((await handleAttachments(upload(randomBytes(8)), undefined)).status).toBe(503);
-    const broken: AttachmentStore = {
-      put: () => Promise.reject(new Error('r2 down')),
-      get: () => Promise.reject(new Error('r2 down')),
-      head: () => Promise.reject(new Error('r2 down')),
-    };
+    const down = (): Promise<never> => Promise.reject(new Error('r2 down'));
+    const broken: AttachmentStore = { put: down, get: down, head: down };
     expect((await handleAttachments(upload(randomBytes(8)), broken)).status).toBe(502);
-    expect((await handleAttachments(new Request(`${ORIGIN}${ATTACHMENTS_PATH}/${ID}`), broken)).status).toBe(502);
+    expect((await handleAttachments(new Request(FILE_URL), broken)).status).toBe(502);
   });
 });

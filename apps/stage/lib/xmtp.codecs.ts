@@ -9,9 +9,9 @@ import {
   DeleteMessageCodec,
   type Signer,
 } from '@xmtp/react-native-sdk';
-import { STAGE_JSON_CODECS, TRANSACTION_REFERENCE_CODEC } from '@stage-labs/client/xmtp/jsonCodecs';
-import type { AccountRecord } from './accounts';
-import { signingKeyForRecord } from './xmtp.signing.core';
+import { stageCodecsFor } from '@stage-labs/client/xmtp/contentTypes';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { signingKeyForRecord } from './accountSigning';
 
 export const XMTP_CODECS = [
   new ReactionCodec(),
@@ -21,8 +21,7 @@ export const XMTP_CODECS = [
   new MultiRemoteAttachmentCodec(),
   new GroupUpdatedCodec(),
   new DeleteMessageCodec(),
-  ...STAGE_JSON_CODECS,
-  TRANSACTION_REFERENCE_CODEC,
+  ...stageCodecsFor('native'),
 ];
 
 export async function signerForRecord(rec: AccountRecord): Promise<Signer> {

@@ -1,19 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { deriveMailKey, openMailIndex, openMailPart, sealMailIndex, sealMailPart, type MailIndex } from '@stage-labs/client/mail/mailbox';
 import { parseMail } from '@stage-labs/client/mail/mime';
-import {
-  inboxRows,
-  mailBody,
-  mailReadKey,
-  mailReceivedAt,
-  parseReadKeys,
-  safeFileName,
-  senderLabel,
-  subjectLabel,
-  visibleBlocks,
-  withReadKey,
-  type InboxEntry,
-} from '../components/settings/Inbox.model';
+import { inboxRows, mailBody, mailReceivedAt, senderLabel, subjectLabel, visibleBlocks } from '../components/inbox/Inbox.model';
+import { mailReadKey, withReadKey, type InboxEntry } from '../lib/mail.core';
+import { jsonWith, storedStrings } from '../lib/storeCore';
+import { nativeFileName } from '@stage-labs/client/files';
+import type { Hex } from 'viem';
 
 const index = (from: string, subject: string): MailIndex => ({
   envelopeFrom: 'bounce@example.com',
@@ -81,8 +73,8 @@ describe('inbox list', () => {
     const capped = withReadKey(many, 'new');
     expect(capped.length).toBe(2000);
     expect(capped[0]).toBe('k1');
-    expect(parseReadKeys('["a",1,"b"]')).toEqual(['a', 'b']);
-    expect(parseReadKeys('{')).toBeUndefined();
+    expect(jsonWith(storedStrings)('["a",1,"b"]')).toEqual(['a', 'b']);
+    expect(jsonWith(storedStrings)('{')).toBeUndefined();
   });
 
   test('reads the receive time from the mail id', () => {
@@ -93,7 +85,7 @@ describe('inbox list', () => {
 
 describe('mail view', () => {
   test('decrypts a sealed mail and its index into the view model', async () => {
-    const keys = await deriveMailKey('alice1', () => Promise.resolve(`0x${'ab'.repeat(65)}`));
+    const keys = await deriveMailKey('alice1', () => Promise.resolve<Hex>(`0x${'ab'.repeat(65)}`));
     const id = '1759430000000-9ef6fdd0-0635-4130-8b77-aaeae0f65158';
     const sealedIndex = sealMailIndex(keys.publicKey, 'alice1', id, index('Ann <ann@example.com>', 'Report'));
     const sealedBody = sealMailPart(keys.publicKey, 'alice1', id, 'body', new TextEncoder().encode(RAW));
@@ -106,7 +98,8 @@ describe('mail view', () => {
     expect(visibleBlocks(body.blocks, false).map((block) => block.type)).toEqual(['text', 'image']);
     expect(visibleBlocks(body.blocks, true)).toHaveLength(3);
     expect(body.attachments.map((row) => [row.title, row.subtitle])).toEqual([['r/../report.pdf', 'PDF · 9 B']]);
-    expect(safeFileName(body.attachments[0]?.attachment.filename ?? '')).toBe('r_.._report.pdf');
+    const saved = body.attachments[0]?.attachment;
+    expect(nativeFileName(saved?.filename ?? '', saved?.mimeType)).toBe('r_.._report.pdf');
   });
 
   test('falls back to the text part and lists inline images when there is no html', () => {
@@ -136,7 +129,8 @@ describe('mail view', () => {
   });
 
   test('cleans file names for saving', () => {
-    expect(safeFileName('..')).toBe('attachment');
-    expect(safeFileName('a\u0007b:c.txt')).toBe('ab_c.txt');
+    expect(nativeFileName('..', undefined)).toBe('attachment');
+    expect(nativeFileName('a\u0007b:c.txt', 'text/plain')).toBe('a_b_c.txt');
+    expect(nativeFileName('invoice\u202efdp.exe', 'application/octet-stream')).toBe('invoice_fdp.exe');
   });
 });

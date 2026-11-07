@@ -1,10 +1,11 @@
+import type { FLEX_ALIGNS, LIST_DIRECTIONS } from '../kit-vocabulary';
 import { forwardRef } from 'react';
 import { Platform, ScrollView, type ScrollViewProps, type StyleProp, type ViewStyle } from 'react-native';
 import { FLEX_ALIGN, spacingEntries, type SpacingValue } from '../layout';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 
-export type ListDirection = 'vertical' | 'horizontal';
-export type ListAlign = 'start' | 'center' | 'end' | 'stretch';
+export type ListDirection = (typeof LIST_DIRECTIONS)[number];
+export type ListAlign = (typeof FLEX_ALIGNS)[number];
 
 export interface ListProps extends Omit<ScrollViewProps, 'horizontal' | 'style'>, A2uiCommonProps {
   direction?: ListDirection;

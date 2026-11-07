@@ -5,11 +5,10 @@ const TRANSFER_FNS = new Set(['transfer', 'transferfrom', 'send', 'safetransferf
 export function isTransferRequest(decoded: DecodedCall | null, isErc20Transfer: boolean): boolean {
   if (isErc20Transfer) return true;
   if (!decoded?.decoded) return true;
-  const fn = (decoded.functionName ?? '').toLowerCase();
-  return TRANSFER_FNS.has(fn);
+  return TRANSFER_FNS.has((decoded.functionName ?? '').toLowerCase());
 }
 
-export function humanizeAction(decoded: DecodedCall | null): string {
+function humanizeAction(decoded: DecodedCall | null): string {
   const fn = decoded?.functionName;
   if (!fn) return 'Confirm';
   const lower = fn.toLowerCase();

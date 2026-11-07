@@ -1,11 +1,10 @@
-import { BOARD_ROUTE, isRailOnlyRoute } from './splitRoutes';
+import { PAGES } from './pages';
 
 export function chatsTabOpensNewChat(pathname: string, wide: boolean, board = false): boolean {
-  return wide ? board && isRailOnlyRoute(pathname) : !board && pathname === '/';
+  return wide ? board && pathname === PAGES.board.href : !board && pathname === PAGES.chats.href;
 }
 
 export function homeTabPresentation(board: boolean) {
-  return board
-    ? ({ icon: 'IconColumns3Wide', label: 'Board', href: BOARD_ROUTE } as const)
-    : ({ icon: 'IconBubble3', label: 'Chats', href: '/' } as const);
+  const { icon, label, href } = board ? PAGES.board : PAGES.chats;
+  return { icon, label, href };
 }

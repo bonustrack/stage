@@ -1,8 +1,17 @@
-import { NODE_REPLY_MAX_BYTES, clientRateKey, isNodeId, nodeScriptName } from '@stage-labs/client/nodes/hosting';
+import {
+  NODE_CAPABILITIES_HEADER,
+  NODE_LIMITS,
+  NODE_REPLY_MAX_BYTES,
+  NODE_REQUEST_MAX_BYTES,
+  NODE_SIGNATURE_HEADERS,
+  NODE_TIMEOUT_MS,
+  isNodeId,
+  nodeScriptName,
+} from '@stage-labs/client/nodes/hosting';
+import { declaredLength, readCappedResponse } from '@stage-labs/client/net/cappedBody';
+import { clientIp, clientRateKey } from '@stage-labs/client/net/clientIp';
+import { settleWithin } from '@stage-labs/client/timing';
 
-export const NODE_LIMITS = { cpuMs: 50, subRequests: 5 };
-export const REQUEST_MAX_BYTES = 64 * 1024;
-const NODE_TIMEOUT_MS = 10_000;
 const NULL_BODY = new Set([204, 205]);
 const CALLER_HEADERS = [
   'cookie',
@@ -27,7 +36,9 @@ const CALLER_HEADERS = [
 const HEADERS: Record<string, string> = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, OPTIONS',
-  'access-control-allow-headers': 'content-type, stage-key, stage-timestamp, stage-signature, stage-a2ui-capabilities',
+  'access-control-allow-headers': ['content-type', ...Object.values(NODE_SIGNATURE_HEADERS), NODE_CAPABILITIES_HEADER]
+    .join(', ')
+    .toLowerCase(),
   'access-control-max-age': '86400',
   'content-type': 'application/json; charset=utf-8',
   'cache-control': 'no-store',
@@ -50,14 +61,13 @@ interface DispatchEnv {
   NODE_CALLS?: RateLimit;
 }
 
-const answer = (body: BodyInit | null, status: number): Response => new Response(body, { status, headers: HEADERS });
+const answer = (body: string | Blob | null, status: number): Response => new Response(body, { status, headers: HEADERS });
 const fail = (status: number, error: string): Response => answer(JSON.stringify({ error }), status);
 
 function bodyTooLarge(request: Request): boolean {
   if (request.body === null) return false;
-  const raw = request.headers.get('content-length');
-  const size = raw === null ? Number.NaN : Number(raw);
-  return !(Number.isSafeInteger(size) && size >= 0 && size <= REQUEST_MAX_BYTES);
+  const size = declaredLength(request.headers);
+  return size === null || size > NODE_REQUEST_MAX_BYTES;
 }
 
 async function over(limiter: RateLimit | undefined, key: string): Promise<boolean> {
@@ -65,33 +75,16 @@ async function over(limiter: RateLimit | undefined, key: string): Promise<boolea
 }
 
 async function limited(request: Request, id: string, deps: DispatchDeps): Promise<boolean> {
-  return (await over(deps.limiter, clientRateKey(request.headers.get('cf-connecting-ip') ?? 'unknown'))) || over(deps.nodeLimiter, id);
-}
-
-async function cappedBody(response: Response): Promise<Blob | null> {
-  if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return null;
-  const reader: ReadableStreamDefaultReader<Uint8Array> | undefined = response.body?.getReader();
-  if (reader === undefined) return new Blob([]);
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  for (let part = await reader.read(); !part.done; part = await reader.read()) {
-    size += part.value.byteLength;
-    if (size > NODE_REPLY_MAX_BYTES) {
-      await reader.cancel();
-      return null;
-    }
-    chunks.push(part.value);
-  }
-  return new Blob(chunks);
+  return (await over(deps.limiter, clientRateKey(clientIp(request.headers)))) || over(deps.nodeLimiter, id);
 }
 
 const passable = (status: number): boolean => (status >= 200 && status < 300) || (status >= 400 && status < 600);
 
 async function relay(response: Response): Promise<Response> {
   if (!passable(response.status)) return fail(502, 'node answered with a redirect or an upgrade');
-  const body = await cappedBody(response);
-  if (body === null) return fail(502, 'node reply too large');
-  return answer(NULL_BODY.has(response.status) ? null : body, response.status);
+  const bytes = await readCappedResponse(response, NODE_REPLY_MAX_BYTES);
+  if (bytes === null) return fail(502, 'node reply too large');
+  return answer(NULL_BODY.has(response.status) ? null : new Blob([bytes]), response.status);
 }
 
 function anonymous(request: Request): Request {
@@ -106,18 +99,6 @@ async function runNode(nodes: DispatchNamespace, id: string, request: Request): 
   } catch (err) {
     return err instanceof Error && err.message.startsWith('Worker not found') ? fail(404, 'no such node') : fail(502, 'node failed');
   }
-}
-
-function withTimeout(work: Promise<Response>, ms: number): Promise<Response> {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      resolve(fail(504, 'node timed out'));
-    }, ms);
-    void work.then((response) => {
-      clearTimeout(timer);
-      resolve(response);
-    });
-  });
 }
 
 function refused(request: Request, id: string): Response | null {
@@ -135,7 +116,7 @@ export async function dispatchNode(request: Request, deps: DispatchDeps): Promis
   const { nodes } = deps;
   if (nodes === undefined) return fail(503, 'nodes are not set up');
   if (await limited(request, id, deps)) return fail(429, 'rate limited');
-  return withTimeout(runNode(nodes, id, request), deps.timeoutMs ?? NODE_TIMEOUT_MS);
+  return settleWithin(runNode(nodes, id, request), deps.timeoutMs ?? NODE_TIMEOUT_MS, fail(504, 'node timed out'));
 }
 
 export default {

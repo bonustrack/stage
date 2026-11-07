@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { StoredFile } from '../lib/storageIndex.model';
 import {
-  chatLabelOf,
   extensionOf,
   scanProgressLabel,
   storageDateLabel,
@@ -59,14 +58,5 @@ describe('storage page model', () => {
     expect(storageStatusLabel(status, NONE)).toBe('1 file · 1 KB · Some chats could not be read');
     expect(storageStatusLabel({ ...status, scanning: true }, NONE)).toBe('1 file · 1 KB');
     expect(storageStatusLabel({ ...status, firstScan: true }, NONE)).toBe('Finding your files… 2 of 2 chats');
-  });
-
-  test('names the chat a file was sent in', () => {
-    const short = (address: string): string => address.slice(0, 6);
-    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, 'Alice', short)).toBe('Alice');
-    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, undefined, short)).toBe('0xabcd');
-    expect(chatLabelOf({ peerAddress: null, groupName: ' Design ' }, undefined, short)).toBe('Design');
-    expect(chatLabelOf({ peerAddress: null, groupName: '' }, undefined, short)).toBe('Unnamed channel');
-    expect(chatLabelOf(null, undefined, short)).toBe('');
   });
 });

@@ -1,5 +1,6 @@
 import {
   DEFAULT_SEED,
+  grayscaleFromHex,
   grayscaleHex,
   type ThemeSeed,
   type AccentLevel,
@@ -15,6 +16,7 @@ import {
   type Density,
   type BaseSize,
 } from '@stage-labs/kit/tokens';
+import { isHexColor } from '@stage-labs/kit/color-math';
 
 export interface ThemeSeeds {
   light: ThemeSeed;
@@ -24,11 +26,7 @@ export interface ThemeSeeds {
   baseSize: BaseSize;
 }
 
-const HEX_RE = /^#([0-9a-fA-F]{6})$/;
-
-export function isHex(v: string): boolean {
-  return HEX_RE.test(v.trim());
-}
+export const isHex = isHexColor;
 
 export function cloneSeed(s: ThemeSeed): ThemeSeed {
   return { accent: { ...s.accent }, grayscale: { ...s.grayscale }, surface: { ...s.surface } };
@@ -101,4 +99,15 @@ export function seedColorHex(seeds: ThemeSeeds, scheme: Scheme, key: SeedColorKe
   if (key === 'foreground') return seed.surface.foreground;
   if (key === 'accent') return seed.accent.primary;
   return grayscaleHex(seed.grayscale, scheme);
+}
+
+export function withSeedColor(seeds: ThemeSeeds, scheme: Scheme, key: SeedColorKey, hex: string): ThemeSeeds | null {
+  const value = hex.trim().toLowerCase();
+  if (!isHex(value)) return null;
+  const seed = cloneSeed(seeds[scheme]);
+  if (key === 'background') seed.surface.background = value;
+  else if (key === 'foreground') seed.surface.foreground = value;
+  else if (key === 'accent') seed.accent.primary = value;
+  else seed.grayscale = grayscaleFromHex(value, scheme);
+  return { ...seeds, [scheme]: seed };
 }

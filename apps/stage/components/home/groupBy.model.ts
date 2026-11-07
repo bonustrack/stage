@@ -1,5 +1,6 @@
 import { categoryOf } from '@stage-labs/client/xmtp/labels';
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
+import { GROUPING_FIELDS } from '../../lib/grouping.model';
 
 export interface GroupableRow {
   peerAddress?: string | null;
@@ -11,14 +12,13 @@ export interface GroupableRow {
 
 export type NameOf = (address: string) => string;
 
-export const GROUP_BY_LABELS: Record<GroupKey, string> = { assignee: 'Assignees', category: 'Project', label: 'Label', status: 'Status' };
+export function groupByLabel(by: GroupKey): string {
+  return GROUPING_FIELDS[by].label;
+}
 
-export const NO_GROUP_TITLES: Record<GroupKey, string> = {
-  assignee: 'Unassigned',
-  category: 'No project',
-  label: 'No label',
-  status: 'No status',
-};
+export function noGroupTitle(by: GroupKey): string {
+  return GROUPING_FIELDS[by].unset;
+}
 
 export function groupValuesOf(row: GroupableRow, by: GroupKey): string[] {
   if (by === 'label') return row.labels ?? [];

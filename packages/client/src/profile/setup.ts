@@ -1,6 +1,7 @@
 import type { Hex } from 'viem';
 import { z } from 'zod';
 import type { AccountRecord } from '../accounts/types';
+import { dbDirFor } from '../accounts/registry';
 import { PROFILE_TEXT_KEYS } from '../identity/onchainProfile';
 import { validateStageLabel } from '../identity/stageNames';
 import { parseOrThrow } from '../validate';
@@ -35,7 +36,7 @@ const account = z
   })
   .strict()
   .refine(
-    (value) => value.id === value.address.toLowerCase() && value.dbDir === `xmtp-${value.id}`,
+    (value) => value.id === value.address.toLowerCase() && value.dbDir === dbDirFor(value.id),
     'wallet storage must match the prepared account',
   );
 const durableProfile = profile.extend({
@@ -73,16 +74,6 @@ export type ProfileImage = z.infer<typeof image>;
 export type ProfileSetup = z.infer<typeof profile>;
 export type ProfileProgress = z.infer<typeof progress>;
 export type PendingSetup = z.infer<typeof pending>;
-
-const nameCheck = z.object({ valid: z.boolean(), available: z.boolean(), reason: z.string().optional() });
-const nameClaim = z.object({ name: z.string().optional(), error: z.string().optional(), mailKey: z.string().optional() });
-export type NameCheck = z.infer<typeof nameCheck>;
-export function parseNameCheck(raw: unknown): NameCheck {
-  return parseOrThrow('username availability', nameCheck, raw);
-}
-export function parseNameClaim(raw: unknown): z.infer<typeof nameClaim> {
-  return parseOrThrow('username registration', nameClaim, raw);
-}
 
 function preparedIdentity(value: AccountRecord): (string | number | undefined)[] {
   return [value.id, value.address.toLowerCase(), value.type, value.dbDir, value.phraseId, value.hdIndex, value.ownerAddress?.toLowerCase()];

@@ -4,11 +4,10 @@ import { Column } from '../src/react-native/column';
 import { Row } from '../src/react-native/row';
 import { Text } from '../src/react-native/text';
 import { bool, color, number, RADII, select, svgSwatch, text } from './_controls';
+import { IMAGE_FITS, IMAGE_VARIANTS } from '../src/kit-vocabulary';
 
 export default { title: 'Image' };
 
-const FIT = ['contain', 'cover', 'fill', 'none', 'scaleDown'] as const;
-const VARIANTS = ['icon', 'avatar', 'smallFeature', 'mediumFeature', 'largeFeature', 'header'] as const;
 const POSITION = ['center', 'top', 'bottom', 'left', 'right', 'top left', 'top right', 'bottom left', 'bottom right'] as const;
 const URL = svgSwatch('#5b8def', 'IMG');
 
@@ -17,8 +16,8 @@ Controls.args = { url: URL, description: 'Blue swatch', fit: 'cover', position: 
 Controls.argTypes = {
   url: text,
   description: text,
-  fit: select(FIT),
-  variant: select(VARIANTS),
+  fit: select(IMAGE_FITS),
+  variant: select(IMAGE_VARIANTS),
   position: select(POSITION),
   frame: bool,
   flush: number,
@@ -33,7 +32,7 @@ Controls.argTypes = {
 
 export const Variants: Story = () => (
   <Column gap={12} width={360}>
-    {VARIANTS.map((v) => (
+    {IMAGE_VARIANTS.map((v) => (
       <Column key={v} gap={4}>
         <Text variant="caption" text={v} />
         <Image url={svgSwatch('#57b375', v.slice(0, 3))} variant={v} fit="cover" description={v} />

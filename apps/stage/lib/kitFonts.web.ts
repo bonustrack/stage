@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Asset } from 'expo-asset';
-import { KIT_FONT_STYLE_ID, KIT_FONTS } from '@stage-labs/kit/react-native/fonts';
+import { KIT_FONTS, fontFaceCss, setKitFontFaces, type KitFontFace } from '@stage-labs/kit/react-native/fonts';
 import { fontName } from '@stage-labs/kit/tokens';
 import cereal from '../assets/fonts/airbnb-cereal-vf.woff2';
 import anthropicSans from '../assets/fonts/claude-anthropic-sans-var.woff2';
@@ -69,12 +69,15 @@ function sourceOf(font: FontSource): string {
   return `url("${Asset.fromModule(font).uri}")`;
 }
 
-function faceRule(family: string, font: FontSource, scale: number, weight = '100 900'): string {
-  const lines =
-    scale === 1
-      ? ''
-      : ` ascent-override: ${percent(CALIBRE_ASCENT / scale)}; descent-override: ${percent(CALIBRE_DESCENT / scale)}; line-gap-override: ${percent(CALIBRE_LINE_GAP / scale)};`;
-  return `@font-face { font-family: "${family}"; src: ${sourceOf(font)}; font-weight: ${weight}; font-display: swap; size-adjust: ${percent(scale * 100)};${lines} }`;
+function fontFace(family: string, font: FontSource, scale: number, weight = '100 900'): KitFontFace {
+  const face: KitFontFace = { family, src: sourceOf(font), weight, display: 'swap', sizeAdjust: percent(scale * 100) };
+  if (scale === 1) return face;
+  return {
+    ...face,
+    ascentOverride: percent(CALIBRE_ASCENT / scale),
+    descentOverride: percent(CALIBRE_DESCENT / scale),
+    lineGapOverride: percent(CALIBRE_LINE_GAP / scale),
+  };
 }
 
 function styleSheet(id: string): HTMLStyleElement {
@@ -88,10 +91,10 @@ function styleSheet(id: string): HTMLStyleElement {
 
 async function applyFont(choice: FontChoice): Promise<void> {
   const font = KIT_FONT_FACES[choice];
-  styleSheet(KIT_FONT_STYLE_ID).textContent = [
-    faceRule(fontName.sans, font.sans, font.scale, font.weights?.[0]),
-    faceRule(fontName.head, font.head, font.scale, font.weights?.[1]),
-  ].join('\n');
+  setKitFontFaces([
+    fontFace(fontName.sans, font.sans, font.scale, font.weights?.[0]),
+    fontFace(fontName.head, font.head, font.scale, font.weights?.[1]),
+  ]);
   await Promise.all([fontName.sans, fontName.head].map((family) => document.fonts.load(`16px "${family}"`))).catch(reported('fonts.load'));
 }
 
@@ -129,7 +132,7 @@ function addPreviews(): void {
   sheet.textContent = FONT_CHOICES.map(({ id }) => {
     const font = KIT_FONT_FACES[id];
     const scope = `[data-fontpreview="${id}"] * { font-family: "${previewFamily(id)}", system-ui, sans-serif !important; }`;
-    return `${faceRule(previewFamily(id), font.sans, font.scale, font.weights?.[0])}\n${scope}`;
+    return `${fontFaceCss(fontFace(previewFamily(id), font.sans, font.scale, font.weights?.[0]))}\n${scope}`;
   }).join('\n');
 }
 

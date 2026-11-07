@@ -1,46 +1,37 @@
 import {
   DEFAULT_LAST_ACTIVITY,
   lastActivityCutoff,
-  parseLastActivity,
-  type ActivityView,
+  lastActivitySchema,
+  type ActivityPreferences,
   type LastActivity,
-} from '../components/home/activity.model';
-import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
+} from './lastActivity.model';
+import type { HomeView } from './homeView';
+import { accountScope } from './accountSelection';
 import { isAppInFront, subscribeAppInFront } from './appInFront';
 import { reported } from './errorPolicy';
-import { createValueStore } from './persistedStore';
+import { createValueStore, type StoreSource } from './persistedStore';
 import { makeSharedSource, useStoreValue } from './storeCore';
 
-const prefs = createValueStore({
+const prefs = createValueStore<ActivityPreferences>({
   key: 'home.activity.',
   default: DEFAULT_LAST_ACTIVITY,
-  deserialize: parseLastActivity,
-  serialize: JSON.stringify,
+  schema: lastActivitySchema,
   perAccount: true,
 });
 
-function subscribePreferences(onChange: () => void): () => void {
-  const offPrefs = prefs.subscribe(onChange);
-  const offAccount = subscribeAccountEpoch(onChange);
-  return () => {
-    offPrefs();
-    offAccount();
-  };
+export const lastActivitySource: StoreSource<ActivityPreferences> = prefs;
+
+export function getLastActivity(view: HomeView): LastActivity {
+  return prefs.loaded() ? prefs.get()[view] : 'all';
 }
 
-export function getLastActivity(view: ActivityView): LastActivity {
-  return prefs.isCurrentAccount() ? prefs.get()[view] : 'all';
+export function useLastActivity(view: HomeView): LastActivity {
+  return useStoreValue(prefs.subscribe, () => getLastActivity(view), prefs.loadAsync);
 }
 
-export function useLastActivity(view: ActivityView): LastActivity {
-  return useStoreValue(subscribePreferences, () => getLastActivity(view), prefs.loadAsync);
-}
-
-export function setLastActivity(view: ActivityView, window: LastActivity): void {
-  const epoch = getAccountEpoch();
-  void prefs
-    .update((current) => (epoch === getAccountEpoch() ? { ...current, [view]: window } : current))
-    .catch(reported('lastActivity.save'));
+export function setLastActivity(view: HomeView, window: LastActivity): void {
+  const scope = accountScope();
+  void prefs.update((current) => (scope.current() ? { ...current, [view]: window } : current)).catch(reported('lastActivity.save'));
 }
 
 let now = Date.now();
@@ -63,8 +54,7 @@ const subscribeClock = (onChange: () => void): (() => void) => clock(undefined, 
 const noClock = (): (() => void) => () => undefined;
 const clockNow = (): number => now;
 
-export function useLastActivityCutoff(view: ActivityView): number | null {
-  const window = useLastActivity(view);
+export function useActivityCutoff(window: LastActivity): number | null {
   const current = useStoreValue(window === 'all' ? noClock : subscribeClock, clockNow);
   return lastActivityCutoff(window, current);
 }

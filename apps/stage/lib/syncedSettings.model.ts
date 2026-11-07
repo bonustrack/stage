@@ -1,15 +1,14 @@
-import {
-  DEFAULT_HOME_VIEW,
-  type DashboardContent,
-  type DashboardWidget,
-  type DeveloperModeContent,
-  type HomeViewContent,
-  type HomeViewEdit,
-  type SearchStateContent,
-} from '@stage-labs/client/xmtp/readState';
+import type { SearchStateContent } from '@stage-labs/client/xmtp/sync/search';
+import { DEFAULT_HOME_VIEW, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/sync/homeView';
+import type { DashboardContent, DashboardWidget } from '@stage-labs/client/xmtp/sync/dashboard';
+import type { DeveloperModeContent } from '@stage-labs/client/xmtp/sync/developerMode';
+
+export function nextStamp(previousAt: number | undefined, now: number): number {
+  return Math.max(now, (previousAt ?? 0) + 1);
+}
 
 function stamped<T extends { at: number }>(current: T, change: Partial<NoInfer<T>>, now: number): T {
-  return { ...current, ...change, at: Math.max(now, current.at + 1) };
+  return { ...current, ...change, at: nextStamp(current.at, now) };
 }
 
 function receiveKeeping<T extends { at: number }>(local: keyof T): (current: T, incoming: T) => T {

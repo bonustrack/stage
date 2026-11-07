@@ -1,15 +1,8 @@
 import { useMemo, type ReactNode } from 'react';
-import {
-  SortableHandle,
-  SortableItem,
-  SortableList,
-  SortableScope,
-  useSortableTarget,
-  type SortMove,
-} from '@stage-labs/kit/react-native/sortable';
-import { setChannelCategory } from '../channel/channel.labels';
+import { SortableItem, SortableList, SortableScope, useSortableTarget, type SortMove } from '@stage-labs/kit/react-native/sortable';
+import { setChannelField } from '../channel/channelActions';
 import { moveCategory } from '../../lib/channelGroups';
-import { movePin } from '../../lib/pins';
+import { movePin } from '../../lib/sync/pins';
 import { usePalette } from '../../lib/theme';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { HomeListItem } from './groups.model';
@@ -20,6 +13,7 @@ const PIN_LIST = 'home-pins';
 const SECTION_LIST = 'home-sections';
 const ROW_LIST = 'home-rows';
 const FILL = { flex: 1 };
+const NESTED_LIST = { keyboard: false, touchAction: 'pan-y', style: FILL } as const;
 
 export interface HomeDrag {
   model: HomeDragModel;
@@ -50,7 +44,7 @@ export function useHomeDrag(
       },
       onZone: (move) => {
         const next = zoneMove(model, move);
-        if (next !== null) setChannelCategory(next.convId, next.category);
+        if (next !== null) setChannelField(next.convId, 'category', next.category);
       },
     }),
     [model, pinned, visiblePinned],
@@ -60,31 +54,13 @@ export function useHomeDrag(
 export function HomeDragLists({ drag, children }: { drag: HomeDrag; children: ReactNode }): React.ReactElement {
   return (
     <SortableScope style={FILL}>
-      <SortableList
-        listId={PIN_LIST}
-        itemIds={drag.pins}
-        indicator="shift"
-        keyboard={false}
-        touchAction="pan-y"
-        style={FILL}
-        onMove={drag.onPin}
-      >
-        <SortableList
-          listId={SECTION_LIST}
-          itemIds={drag.model.sections}
-          indicator="shift"
-          keyboard={false}
-          touchAction="pan-y"
-          style={FILL}
-          onMove={drag.onSection}
-        >
+      <SortableList {...NESTED_LIST} listId={PIN_LIST} itemIds={drag.pins} indicator="shift" onMove={drag.onPin}>
+        <SortableList {...NESTED_LIST} listId={SECTION_LIST} itemIds={drag.model.sections} indicator="shift" onMove={drag.onSection}>
           <SortableList
+            {...NESTED_LIST}
             listId={ROW_LIST}
             itemIds={drag.model.rows}
             indicator="follow"
-            keyboard={false}
-            touchAction="pan-y"
-            style={FILL}
             accepts={(move) => zoneMove(drag.model, move) !== null}
             onMove={drag.onZone}
           >
@@ -126,10 +102,6 @@ export function PinnedRow({
       {({ dragging }) => <Lifted dragging={dragging}>{children}</Lifted>}
     </SortableItem>
   );
-}
-
-export function SectionHandle({ children }: { children: React.ReactElement }): React.ReactElement {
-  return <SortableHandle>{children}</SortableHandle>;
 }
 
 export function DragCell({

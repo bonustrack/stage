@@ -5,6 +5,7 @@ import { Text } from '../src/react-native/text';
 import { bool, number, select, text } from './_controls';
 import { Column } from '../src/react-native/column';
 import { Row } from '../src/react-native/row';
+import { CHART_SERIES_TYPES } from '../src/kit-vocabulary';
 
 export default { title: 'Chart' };
 
@@ -102,7 +103,7 @@ Controls.args = {
   height: 0,
 };
 Controls.argTypes = {
-  type: select(['bar', 'line', 'area']),
+  type: select(CHART_SERIES_TYPES),
   stacked: bool,
   seriesCount: select([1, 2, 3]),
   curveType: select(CHART_CURVE_TYPES),

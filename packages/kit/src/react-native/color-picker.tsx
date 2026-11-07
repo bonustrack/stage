@@ -8,7 +8,7 @@ import { Row } from './row';
 import { Glyph } from './glyph';
 import { TextField } from './text-field';
 import { Text } from './text';
-import { useKitPalette } from './theme-context';
+import { useKitColors } from './theme-context';
 import { hexToHsv, hsvToHex, isHexColor } from '../color-math';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 
@@ -110,10 +110,6 @@ function Track({
   );
 }
 
-function hueStops(): string[] {
-  return Array.from({ length: 24 }, (_, i) => hsvToHex((i / 23) * 360, 1, 1));
-}
-
 function Label({ text, p }: { text: string; p: HsvPalette }): React.ReactElement {
   return (
     <Text fontWeight="semibold" size="3xs" color={p.sub} style={{ marginTop: 16, marginBottom: 6 }}>
@@ -133,6 +129,7 @@ function HsvPicker({ value, onChange, p }: { value: string; onChange: (hex: stri
     onChange(hsvToHex(h, s, v));
   };
 
+  const hueStops = Array.from({ length: 24 }, (_, i) => hsvToHex((i / 23) * 360, 1, 1));
   const satStops = Array.from({ length: 12 }, (_, i) => hsvToHex(hsv.h, i / 11, hsv.v));
   const valStops = Array.from({ length: 12 }, (_, i) => hsvToHex(hsv.h, hsv.s, i / 11));
 
@@ -152,7 +149,7 @@ function HsvPicker({ value, onChange, p }: { value: string; onChange: (hex: stri
 
       <Label text="Hue" p={p} />
       <Track
-        colors={hueStops()}
+        colors={hueStops}
         thumb={hsv.h / 360}
         p={p}
         onFraction={(f) => {
@@ -243,7 +240,7 @@ function Swatches({ value, swatches = DEFAULT_SWATCHES, onChange, dark = false }
 
 export function ColorPicker(props: ColorPickerProps): React.ReactElement {
   const { value, mode = 'swatches', onChange, dark = false } = props;
-  const palette = useKitPalette();
+  const { palette } = useKitColors(undefined, 'provider');
   if (mode === 'hsv') {
     const p: HsvPalette = {
       dark,

@@ -2,18 +2,9 @@ import { afterEach, describe, expect, test } from 'bun:test';
 import { ed25519 } from '@noble/curves/ed25519';
 import { utf8ToBytes } from '@noble/hashes/utils';
 import { base64ToBytes } from '../src/text/base64';
-import {
-  loadNode,
-  loadReplyOf,
-  messageReplyOf,
-  newNodeKey,
-  nodeHeaders,
-  nodeKeyId,
-  nodeRequestBody,
-  nodeUrlOf,
-  sendNodeMessage,
-} from '../src/nodes/protocol';
+import { loadNode, newNodeKey, nodeHeaders, nodeKeyId, nodeUrlOf, sendNodeMessage, type NodeResult } from '../src/nodes/protocol';
 import { nodeSigningText } from '../src/nodes/signing';
+import { fakeFetch } from './helpers';
 
 const RFC8032_KEY = '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60';
 const RFC8032_PUBLIC = '11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo';
@@ -35,9 +26,9 @@ const VOTE_MESSAGE = { version: 'v1.0', action: VOTE };
 const CAPABILITIES = { 'v1.0': { supportedCatalogIds: [KIT] } };
 const realFetch = globalThis.fetch;
 
-function bytesOf(base64url: string): Uint8Array {
+function bytesOf(base64url: string): Uint8Array<ArrayBuffer> {
   const b64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
-  return base64ToBytes(b64 + '='.repeat((4 - (b64.length % 4)) % 4));
+  return new Uint8Array(base64ToBytes(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
 }
 
 interface Seen {
@@ -47,14 +38,11 @@ interface Seen {
 
 function stubFetch(respond: (seen: Seen) => Response | Promise<Response>): Seen[] {
   const seen: Seen[] = [];
-  globalThis.fetch = Object.assign(
-    async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const call = { url: String(input), init: init ?? {} };
-      seen.push(call);
-      return respond(call);
-    },
-    { preconnect: realFetch.preconnect },
-  );
+  globalThis.fetch = fakeFetch(async (input, init) => {
+    const call = { url: String(input), init: init ?? {} };
+    seen.push(call);
+    return respond(call);
+  });
   return seen;
 }
 
@@ -138,6 +126,8 @@ describe('node url safety', () => {
       'https://localhost..',
       'https://nas.local..',
       'https://printer.local...',
+      'https://[fec0::1]',
+      'https://[2001:db8::ffff:7f00:1]',
     ];
     for (const url of blocked) expect([url, nodeUrlOf(url)]).toEqual([url, { ok: false, problem: 'local' }]);
     expect(nodeUrlOf('https://172.32.0.1').ok).toBe(true);
@@ -168,45 +158,63 @@ describe('node request signing', () => {
   });
 
   test('a node verifies the signature with WebCrypto Ed25519', async () => {
-    const body = nodeRequestBody({ message: VOTE_MESSAGE });
+    const body = JSON.stringify(VOTE_MESSAGE);
     const headers = nodeHeaders('POST', URL_A, body, RFC8032_KEY, NOW);
     const publicKey = await crypto.subtle.importKey('raw', bytesOf(RFC8032_PUBLIC), { name: 'Ed25519' }, false, ['verify']);
-    const signed = utf8ToBytes(nodeSigningText('POST', URL_A, headers['Stage-Timestamp'] ?? '', body));
+    const signed = new TextEncoder().encode(nodeSigningText('POST', URL_A, headers['Stage-Timestamp'] ?? '', body));
     expect(await crypto.subtle.verify({ name: 'Ed25519' }, publicKey, bytesOf(headers['Stage-Signature'] ?? ''), signed)).toBe(true);
   });
 });
 
+const replyWith = (json: unknown): Response => (json === undefined ? new Response(null) : Response.json(json));
+
+async function loaded(json: unknown): Promise<NodeResult> {
+  stubFetch(() => replyWith(json));
+  return loadNode(URL_A, RFC8032_KEY);
+}
+
+const sendVote = (options?: Parameters<typeof sendNodeMessage>[3]): Promise<NodeResult> =>
+  sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, options);
+
+async function answered(json: unknown): Promise<NodeResult> {
+  stubFetch(() => replyWith(json));
+  return sendVote();
+}
+
 describe('node requests', () => {
-  test('are the A2UI renderer message, with capabilities and the data model in its metadata', () => {
-    expect(JSON.parse(nodeRequestBody({ message: VOTE_MESSAGE }))).toEqual(VOTE_MESSAGE);
-    expect(JSON.parse(nodeRequestBody({ message: VOTE_MESSAGE, dataModel: { main: { price: 1 } } }, CAPABILITIES)).metadata).toEqual({
-      a2uiRendererCapabilities: CAPABILITIES,
-      a2uiRendererDataModel: { version: 'v1.0', surfaces: { main: { price: 1 } } },
+  test('are the A2UI renderer message, with capabilities and the data model in its metadata', async () => {
+    const seen = stubFetch(() => Response.json([]));
+    await sendVote();
+    await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE, dataModel: { main: { price: 1 } } }, { capabilities: CAPABILITIES });
+    expect(JSON.parse(String(seen[0]?.init.body))).toEqual(VOTE_MESSAGE);
+    expect(JSON.parse(String(seen[1]?.init.body))).toEqual({
+      ...VOTE_MESSAGE,
+      metadata: { a2uiRendererCapabilities: CAPABILITIES, a2uiRendererDataModel: { version: 'v1.0', surfaces: { main: { price: 1 } } } },
     });
   });
 });
 
 describe('node replies', () => {
-  const frame = { kind: 'frame', frame: { messages: MESSAGES } };
+  const frame: NodeResult = { ok: true, reply: { kind: 'frame', frame: { messages: MESSAGES } } };
+  const unchanged: NodeResult = { ok: true, reply: { kind: 'unchanged' } };
+  const invalid: NodeResult = { ok: false, problem: 'invalid' };
   const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'main.1', value: 42 } };
   const call = {
     version: 'v1.0',
     callRendererFunction: { functionCallId: 'f1', callFunction: { '@call': 'formatNumber', catalogId: KIT, args: { value: 1 } } },
   };
 
-  test('a load answers A2UI messages as an array, a messages object or one message', () => {
-    expect(loadReplyOf(MESSAGES)).toEqual(frame);
-    expect(loadReplyOf({ messages: MESSAGES })).toEqual(frame);
-    expect(loadReplyOf(MESSAGES[0])).toEqual(frame);
+  test('a load answers A2UI messages as an array, a messages object or one message', async () => {
+    for (const json of [MESSAGES, { messages: MESSAGES }, MESSAGES[0]]) expect(await loaded(json)).toEqual(frame);
   });
 
-  test('a request answers any agent message, function calls and answers included, and no messages keep the current frame', () => {
-    expect(messageReplyOf([UPDATE])).toEqual({ kind: 'messages', messages: [UPDATE] });
-    expect(messageReplyOf([answer, call, UPDATE])).toEqual({ kind: 'messages', messages: [answer, call, UPDATE] });
-    for (const empty of [[], {}, { messages: [] }, undefined]) expect(messageReplyOf(empty)).toEqual({ kind: 'unchanged' });
+  test('a request answers any agent message, function calls and answers included, and no messages keep the current frame', async () => {
+    expect(await answered([UPDATE])).toEqual({ ok: true, reply: { kind: 'messages', messages: [UPDATE] } });
+    expect(await answered([answer, call, UPDATE])).toEqual({ ok: true, reply: { kind: 'messages', messages: [answer, call, UPDATE] } });
+    for (const empty of [[], {}, { messages: [] }, undefined]) expect(await answered(empty)).toEqual(unchanged);
   });
 
-  test('a load refuses anything but A2UI frame messages', () => {
+  test('a load refuses anything but A2UI frame messages', async () => {
     const refused = [
       null,
       undefined,
@@ -223,10 +231,10 @@ describe('node replies', () => {
       { messages: MESSAGES, title: 'x' },
       [{ version: 'v1.0', createSurface: { surfaceId: 'a', note: 'x'.repeat(70_000) } }],
     ];
-    for (const reply of refused) expect([reply, loadReplyOf(reply)]).toEqual([reply, null]);
+    for (const reply of refused) expect<unknown>([reply, await loaded(reply)]).toEqual([reply, invalid]);
   });
 
-  test('a request refuses anything but A2UI agent messages', () => {
+  test('a request refuses anything but A2UI agent messages', async () => {
     const refused = [
       null,
       'Card',
@@ -236,7 +244,7 @@ describe('node replies', () => {
       [{ version: 'v1.0', agentFunctionResponse: { value: 1 } }],
       [{ version: 'v1.0', callRendererFunction: {} }],
     ];
-    for (const reply of refused) expect([reply, messageReplyOf(reply)]).toEqual([reply, null]);
+    for (const reply of refused) expect<unknown>([reply, await answered(reply)]).toEqual([reply, invalid]);
   });
 });
 
@@ -265,8 +273,7 @@ describe('node calls', () => {
 
   test('posts an action as JSON and returns the A2UI messages it answers, JSON lines included', async () => {
     const seen = stubFetch(() => new Response(`${JSON.stringify(UPDATE)}\n${JSON.stringify(UPDATE)}\n`));
-    const result = await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE });
-    expect(result).toEqual({ ok: true, reply: { kind: 'messages', messages: [UPDATE, UPDATE] } });
+    expect(await sendVote()).toEqual({ ok: true, reply: { kind: 'messages', messages: [UPDATE, UPDATE] } });
     expect(seen[0]?.init.method).toBe('POST');
     expect((seen[0]?.init.headers as Record<string, string>)['Content-Type']).toBe('application/json');
     expect(JSON.parse(String(seen[0]?.init.body)).action).toEqual(VOTE);
@@ -313,13 +320,13 @@ describe('node calls', () => {
 
   test('a load needs a surface, a tap may answer nothing', async () => {
     stubFetch(() => Response.json([]));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
+    expect(await sendVote()).toEqual({ ok: true, reply: { kind: 'unchanged' } });
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
     stubFetch(() => new Response(null, { status: 204 }));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE })).toEqual({ ok: true, reply: { kind: 'unchanged' } });
+    expect(await sendVote()).toEqual({ ok: true, reply: { kind: 'unchanged' } });
     expect(await loadNode(URL_A, RFC8032_KEY)).toEqual({ ok: false, problem: 'invalid' });
     stubFetch(() => Response.json({ updated_item: { type: 'widget' } }));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE })).toEqual({ ok: false, problem: 'invalid' });
+    expect(await sendVote()).toEqual({ ok: false, problem: 'invalid' });
   });
 
   test('refuses an action payload that is too large', async () => {
@@ -335,7 +342,13 @@ describe('node calls', () => {
 
 describe('streamed node replies', () => {
   const jsonl = (messages: unknown[]): string => messages.map((m) => JSON.stringify(m)).join('\n');
+  const lines = (body: BodyInit, type = 'application/jsonl'): Response => new Response(body, { headers: { 'content-type': type } });
   const PRICE = (value: number) => ({ version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/price', value } });
+  const into = (seen: unknown[]) => ({
+    onMessage: (m: unknown) => {
+      seen.push(m);
+    },
+  });
 
   test('a JSON Lines reply delivers each message as soon as its line arrives', async () => {
     const second = Promise.withResolvers<undefined>();
@@ -348,45 +361,26 @@ describe('streamed node replies', () => {
         controller.close();
       },
     });
-    stubFetch(() => new Response(body, { headers: { 'content-type': 'application/jsonl' } }));
+    stubFetch(() => lines(body));
     const seen: unknown[] = [];
-    const pending = sendNodeMessage(
-      URL_A,
-      RFC8032_KEY,
-      { message: VOTE_MESSAGE },
-      {
-        onMessage: (message) => {
-          seen.push(message);
-          if (seen.length === 1) second.resolve(undefined);
-        },
+    const pending = sendVote({
+      onMessage: (message) => {
+        seen.push(message);
+        if (seen.length === 1) second.resolve(undefined);
       },
-    );
+    });
     expect(await pending).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     expect(seen).toEqual([PRICE(1), PRICE(2)]);
   });
 
   test('a load streams frame messages only, and stops at the first bad line', async () => {
     const seen: unknown[] = [];
-    stubFetch(() => new Response(jsonl([...MESSAGES, PRICE(3)]), { headers: { 'content-type': 'application/x-ndjson' } }));
-    expect(
-      await loadNode(URL_A, RFC8032_KEY, {
-        onMessage: (m) => {
-          seen.push(m);
-        },
-      }),
-    ).toEqual({ ok: true, reply: { kind: 'streamed', load: true } });
-    stubFetch(
-      () => new Response(`${jsonl(MESSAGES)}\n{nope\n${JSON.stringify(PRICE(4))}`, { headers: { 'content-type': 'application/jsonl' } }),
-    );
-    expect(
-      await loadNode(URL_A, RFC8032_KEY, {
-        onMessage: (m) => {
-          seen.push(m);
-        },
-      }),
-    ).toEqual({ ok: false, problem: 'invalid' });
+    stubFetch(() => lines(jsonl([...MESSAGES, PRICE(3)]), 'application/x-ndjson'));
+    expect(await loadNode(URL_A, RFC8032_KEY, into(seen))).toEqual({ ok: true, reply: { kind: 'streamed', load: true } });
+    stubFetch(() => lines(`${jsonl(MESSAGES)}\n{nope\n${JSON.stringify(PRICE(4))}`));
+    expect(await loadNode(URL_A, RFC8032_KEY, into(seen))).toEqual({ ok: false, problem: 'invalid' });
     const answer = { version: 'v1.0', agentFunctionResponse: { functionCallId: 'f', value: 1 } };
-    stubFetch(() => new Response(jsonl([answer]), { headers: { 'content-type': 'application/jsonl' } }));
+    stubFetch(() => lines(jsonl([answer])));
     expect(await loadNode(URL_A, RFC8032_KEY, { onMessage: () => undefined })).toEqual({ ok: false, problem: 'invalid' });
     expect(seen).toEqual([...MESSAGES, PRICE(3), ...MESSAGES]);
   });
@@ -394,65 +388,24 @@ describe('streamed node replies', () => {
   test('a plain JSON reply is delivered the same way, and an empty one delivers nothing', async () => {
     const seen: unknown[] = [];
     stubFetch(() => Response.json([PRICE(5)]));
-    expect(
-      await sendNodeMessage(
-        URL_A,
-        RFC8032_KEY,
-        { message: VOTE_MESSAGE },
-        {
-          onMessage: (m) => {
-            seen.push(m);
-          },
-        },
-      ),
-    ).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
+    expect(await sendVote(into(seen))).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     stubFetch(() => new Response(null, { status: 204 }));
-    expect(
-      await sendNodeMessage(
-        URL_A,
-        RFC8032_KEY,
-        { message: VOTE_MESSAGE },
-        {
-          onMessage: (m) => {
-            seen.push(m);
-          },
-        },
-      ),
-    ).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
+    expect(await sendVote(into(seen))).toEqual({ ok: true, reply: { kind: 'streamed', load: false } });
     expect(seen).toEqual([PRICE(5)]);
   });
 
   test('a plain JSON reply is checked whole first, so a bad message applies nothing', async () => {
     const seen: unknown[] = [];
     stubFetch(() => Response.json([PRICE(6), { version: 'v1.0', updateDataModel: {} }]));
-    expect(
-      await sendNodeMessage(
-        URL_A,
-        RFC8032_KEY,
-        { message: VOTE_MESSAGE },
-        {
-          onMessage: (m) => {
-            seen.push(m);
-          },
-        },
-      ),
-    ).toEqual({ ok: false, problem: 'invalid' });
+    expect(await sendVote(into(seen))).toEqual({ ok: false, problem: 'invalid' });
     expect(seen).toEqual([]);
   });
 
   test('a stream past the size or message limits stops', async () => {
-    stubFetch(
-      () => new Response(jsonl(Array.from({ length: 201 }, (_, i) => PRICE(i))), { headers: { 'content-type': 'application/jsonl' } }),
-    );
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: () => undefined })).toEqual({
-      ok: false,
-      problem: 'invalid',
-    });
+    stubFetch(() => lines(jsonl(Array.from({ length: 201 }, (_, i) => PRICE(i)))));
+    expect(await sendVote({ onMessage: () => undefined })).toEqual({ ok: false, problem: 'invalid' });
     const big = { version: 'v1.0', updateDataModel: { surfaceId: 'main', path: '/x', value: 'x'.repeat(140 * 1024) } };
-    stubFetch(() => new Response(jsonl([big]), { headers: { 'content-type': 'application/jsonl' } }));
-    expect(await sendNodeMessage(URL_A, RFC8032_KEY, { message: VOTE_MESSAGE }, { onMessage: () => undefined })).toEqual({
-      ok: false,
-      problem: 'too-large',
-    });
+    stubFetch(() => lines(jsonl([big])));
+    expect(await sendVote({ onMessage: () => undefined })).toEqual({ ok: false, problem: 'too-large' });
   });
 });

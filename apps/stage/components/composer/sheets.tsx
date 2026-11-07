@@ -9,16 +9,16 @@ import { LabelChip } from '../LabelChip';
 import { usePalette } from '../../lib/theme';
 import type { PostHooks } from './types';
 import type { ComposerState } from './state';
+import { sendPoll, sendSignatureRequest, sendTxRequest, type PostCtx } from './builders';
 import {
-  sendPoll,
-  sendSignatureRequest,
-  sendTxRequest,
-  type PostCtx,
+  SIGNATURE_KINDS,
+  checkPaymentDraft,
+  checkPollDraft,
+  checkSignatureDraft,
+  type PaymentDraft,
   type PollDraft,
   type SignatureDraft,
-  type PaymentDraft,
-} from './builders';
-import { SIGNATURE_KINDS, canSendPayment, canSendPoll, canSendSignature } from './sheets.model';
+} from './sheets.model';
 import { IconCrossMedium } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCrossMedium';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { CheckBox } from '@stage-labs/kit/react-native/check-box';
@@ -107,7 +107,7 @@ function PollSheet(props: SheetProps): React.ReactElement {
         void sendPoll(d, post);
       }}
       submitLabel="Send poll"
-      canSend={canSendPoll(d)}
+      canSend={checkPollDraft(d).filled}
     >
       <FormField
         label="Question"
@@ -212,7 +212,7 @@ function SignatureSheet(props: SheetProps): React.ReactElement {
         void sendSignatureRequest(d, post);
       }}
       submitLabel="Send request"
-      canSend={canSendSignature(d)}
+      canSend={checkSignatureDraft(d).filled}
     >
       <SignatureKindPicker
         kind={d.kind}
@@ -272,7 +272,7 @@ function PaymentSheet({ initialTo, ...props }: SheetProps & { initialTo?: string
         void sendTxRequest(d, post);
       }}
       submitLabel="Send request"
-      canSend={canSendPayment(d)}
+      canSend={checkPaymentDraft(d).filled}
     >
       <FormField
         label="Recipient"

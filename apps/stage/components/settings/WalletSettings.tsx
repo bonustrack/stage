@@ -3,10 +3,11 @@ import { Badge } from '@stage-labs/kit/react-native/badge';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
-import { KERNEL_VERSION_STRING, ENTRY_POINT_VERSION, SCW_CHAIN_ID } from '@stage-labs/client/zerodev/config';
+import { KERNEL_VERSION, ENTRY_POINT_VERSION } from '@stage-labs/client/zerodev/account';
+import { WALLET_CHAIN_ID } from '@stage-labs/client/wallet/chains';
 import { walletAccountRows, walletDeployLabel, type WalletDeployState } from './WalletSettings.model';
-import type { AccountRecord } from '../../lib/accounts';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { useActiveAccount } from '../../lib/messaging/account';
 import { makePublicClient } from '../../lib/zerodev/client';
 import { usePalette } from '../../lib/theme';
 import { capabilities } from '../../lib/capabilities';
@@ -14,29 +15,6 @@ import { AppIcon } from '../widgets';
 import { SettingsGroup, SettingsPage } from './SettingsPage';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { Column, Row } from '../layout';
-
-interface WalletModel {
-  rec: AccountRecord;
-  isSmart: boolean;
-  address: string;
-  label: string;
-  hdIndex: number | null;
-  activeSigner: 'Recovery key';
-  ownerAddress: string | null;
-}
-
-function modelFromRecord(rec: AccountRecord): WalletModel {
-  const isSmart = rec.type === 'smart';
-  return {
-    rec,
-    isSmart,
-    address: rec.address,
-    label: rec.label ?? 'Account',
-    hdIndex: rec.hdIndex ?? null,
-    activeSigner: 'Recovery key',
-    ownerAddress: rec.ownerAddress ?? null,
-  };
-}
 
 async function fetchDeployState(rec: AccountRecord): Promise<WalletDeployState> {
   if (rec.type !== 'smart') return 'unknown';
@@ -48,15 +26,15 @@ async function fetchDeployState(rec: AccountRecord): Promise<WalletDeployState> 
   }
 }
 
-function useWalletModel(): { model: WalletModel | null; deploy: WalletDeployState } {
-  const rec = useActiveAccountRecord();
+function useWalletRecord(): { rec: AccountRecord | null; loaded: boolean; deploy: WalletDeployState } {
+  const { record: rec, loaded } = useActiveAccount();
   const { data: deploy } = useQuery({
     queryKey: ['walletDeployState', rec?.id ?? '', rec?.address ?? ''],
     queryFn: () => (rec ? fetchDeployState(rec) : Promise.resolve<WalletDeployState>('unknown')),
     enabled: !!rec,
     staleTime: 60_000,
   });
-  return { model: rec ? modelFromRecord(rec) : null, deploy: deploy ?? 'loading' };
+  return { rec, loaded, deploy: deploy ?? 'loading' };
 }
 
 function WalletInfoRow({ label, value }: { label: string; value: string }): React.ReactElement {
@@ -99,8 +77,8 @@ function WalletValidatorRow(): React.ReactElement {
   );
 }
 
-function SmartAccountSections({ model }: { model: WalletModel }): React.ReactElement {
-  const owner = model.ownerAddress;
+function SmartAccountSections({ rec }: { rec: AccountRecord }): React.ReactElement {
+  const owner = rec.ownerAddress;
   return (
     <>
       <SettingsGroup title="Validators">
@@ -110,9 +88,9 @@ function SmartAccountSections({ model }: { model: WalletModel }): React.ReactEle
       <SettingsGroup title="Identity">
         <WalletCopyRow
           label="XMTP identity"
-          value={model.address}
+          value={rec.address}
           onCopy={() => {
-            capabilities.copy('XMTP identity', model.address);
+            capabilities.copy('XMTP identity', rec.address);
           }}
         />
         {owner ? (
@@ -127,8 +105,8 @@ function SmartAccountSections({ model }: { model: WalletModel }): React.ReactEle
       </SettingsGroup>
 
       <SettingsGroup title="Network">
-        <WalletInfoRow label="Chain" value={`Base (${SCW_CHAIN_ID})`} />
-        <WalletInfoRow label="Kernel" value={`v${KERNEL_VERSION_STRING}`} />
+        <WalletInfoRow label="Chain" value={`Base (${WALLET_CHAIN_ID})`} />
+        <WalletInfoRow label="Kernel" value={`v${KERNEL_VERSION}`} />
         <WalletInfoRow label="EntryPoint" value={`v${ENTRY_POINT_VERSION}`} />
       </SettingsGroup>
     </>
@@ -137,34 +115,37 @@ function SmartAccountSections({ model }: { model: WalletModel }): React.ReactEle
 
 export function WalletSettings(): React.ReactElement {
   const { text: fg } = usePalette();
-  const { model, deploy } = useWalletModel();
+  const { rec, loaded, deploy } = useWalletRecord();
+  const smart = rec?.type === 'smart';
 
   return (
-    <SettingsPage title="Wallet">
-      {!model ? (
-        <Text size="xs" color={fg} style={{ padding: 24 }}>
-          No active account.
-        </Text>
+    <SettingsPage section="wallet">
+      {!rec ? (
+        loaded ? (
+          <Text size="xs" color={fg} style={{ padding: 24 }}>
+            No active account.
+          </Text>
+        ) : null
       ) : (
         <>
-          <SettingsGroup title="Address" footnote={model.isSmart ? 'Your smart account on Base. Tap to copy.' : 'Tap to copy.'}>
+          <SettingsGroup title="Address" footnote={smart ? 'Your smart account on Base. Tap to copy.' : 'Tap to copy.'}>
             <WalletCopyRow
-              label={model.isSmart ? 'Smart account' : 'Address'}
-              value={model.address}
+              label={smart ? 'Smart account' : 'Address'}
+              value={rec.address}
               onCopy={() => {
-                capabilities.copy('Address', model.address);
+                capabilities.copy('Address', rec.address);
               }}
             />
           </SettingsGroup>
 
           <SettingsGroup title="Account">
-            {walletAccountRows(model).map((row) => (
+            {walletAccountRows(rec).map((row) => (
               <WalletInfoRow key={row.label} label={row.label} value={row.value} />
             ))}
-            {model.isSmart ? <WalletInfoRow label="Status" value={walletDeployLabel(deploy)} /> : null}
+            {smart ? <WalletInfoRow label="Status" value={walletDeployLabel(deploy)} /> : null}
           </SettingsGroup>
 
-          {model.isSmart ? <SmartAccountSections model={model} /> : null}
+          {smart ? <SmartAccountSections rec={rec} /> : null}
         </>
       )}
     </SettingsPage>

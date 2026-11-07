@@ -1,6 +1,14 @@
-import { NODE_CODE_MAX_BYTES, hostedNodeUrl, nodeIdOf, nodeScriptName } from '@stage-labs/client/nodes/hosting';
+import {
+  NODE_PUBLISH_STATUS,
+  NODE_SIGNATURE_HEADERS,
+  NODE_SIGNATURE_MAX_SKEW_SECONDS,
+  hostedNodeUrl,
+  nodeIdOf,
+  nodeScriptName,
+} from '@stage-labs/client/nodes/hosting';
 import { base64urlBytes, isStrongNodeKey, nodeSigningText } from '@stage-labs/client/nodes/signing';
-import { corsHeaders, corsResponse, declaredLength, jsonResponse } from './respond.ts';
+import { declaredLength } from '@stage-labs/client/net/cappedBody';
+import { corsHeaders, repliesWith } from './respond.ts';
 
 export const NODES_NAMESPACE = 'stage-nodes';
 export const MAX_NODES = 1000;
@@ -10,13 +18,15 @@ const COMPATIBILITY_FLAGS = ['global_fetch_strictly_public', 'disable_ctx_export
 const IMPORT = /\bimport\b/;
 const CLOUDFLARE_API = 'https://api.cloudflare.com/client/v4';
 const API_TIMEOUT_MS = 15_000;
-const MAX_SKEW_SECONDS = 300;
 const DETAIL_MAX_CHARS = 300;
 const SIGNATURE_BYTES = 64;
 const ACCOUNT_ID = /^[0-9a-f]{32}$/;
 const TIMESTAMP = /^\d{1,12}$/;
 const LONG_HEX = /[0-9a-f]{32,}/gi;
-const CORS = corsHeaders('PUT, DELETE, OPTIONS', 'content-type, stage-key, stage-timestamp, stage-signature');
+export const NODES_CORS = corsHeaders(
+  'PUT, DELETE, OPTIONS',
+  ['content-type', ...Object.values(NODE_SIGNATURE_HEADERS)].join(', ').toLowerCase(),
+);
 
 interface ApiReply {
   status: number;
@@ -32,8 +42,7 @@ interface NodesDeps {
   now?: () => number;
 }
 
-const reply = (body: unknown, status = 200): Response => jsonResponse(body, status, CORS);
-const fail = (status: number, error: string): Response => reply({ error }, status);
+const { json: reply, fail } = repliesWith(NODES_CORS);
 
 function firstError(json: unknown): string | null {
   const errors = (json as { errors?: unknown } | null)?.errors;
@@ -68,12 +77,10 @@ export function cloudflareApi(token: string | undefined, accountId: string | und
 }
 
 async function readCode(request: Request): Promise<Uint8Array | Response> {
-  const length = declaredLength(request);
+  const length = declaredLength(request.headers);
   if (length === null) return fail(411, 'content length required');
-  if (length > NODE_CODE_MAX_BYTES) return fail(413, 'code too large');
-  if (length === 0) return fail(400, 'code required');
-  const code = new Uint8Array(await request.arrayBuffer());
-  return code.byteLength > NODE_CODE_MAX_BYTES ? fail(413, 'code too large') : code;
+  if (length === 0) return fail(NODE_PUBLISH_STATUS.refused, 'code required');
+  return new Uint8Array(await request.arrayBuffer());
 }
 
 async function verified(publicKey: Uint8Array, signature: Uint8Array, text: string): Promise<boolean> {
@@ -93,14 +100,14 @@ interface SignedParts {
 }
 
 function fresh(timestamp: string, nowMs: number): boolean {
-  return TIMESTAMP.test(timestamp) && Math.abs(Number(timestamp) - nowMs / 1000) <= MAX_SKEW_SECONDS;
+  return TIMESTAMP.test(timestamp) && Math.abs(Number(timestamp) - nowMs / 1000) <= NODE_SIGNATURE_MAX_SKEW_SECONDS;
 }
 
 function signedParts(request: Request, nowMs: number): SignedParts | null {
-  const keyId = request.headers.get('stage-key') ?? '';
-  const timestamp = request.headers.get('stage-timestamp') ?? '';
+  const keyId = request.headers.get(NODE_SIGNATURE_HEADERS.key) ?? '';
+  const timestamp = request.headers.get(NODE_SIGNATURE_HEADERS.timestamp) ?? '';
   const publicKey = base64urlBytes(keyId);
-  const signature = base64urlBytes(request.headers.get('stage-signature') ?? '');
+  const signature = base64urlBytes(request.headers.get(NODE_SIGNATURE_HEADERS.signature) ?? '');
   if (publicKey === null || signature?.length !== SIGNATURE_BYTES || !fresh(timestamp, nowMs) || !isStrongNodeKey(publicKey)) return null;
   return { keyId, publicKey, signature, timestamp };
 }
@@ -118,7 +125,7 @@ function refusal(message: string | null): string {
 }
 
 function apiFailure(answer: ApiReply): Response {
-  return answer.status === 429 ? fail(429, 'busy, try again in a minute') : fail(502, 'node hosting failed');
+  return answer.status === 429 ? fail(NODE_PUBLISH_STATUS.busy, 'busy, try again in a minute') : fail(502, 'node hosting failed');
 }
 
 function scriptCount(answer: ApiReply): number {
@@ -128,12 +135,12 @@ function scriptCount(answer: ApiReply): number {
 
 async function roomFor(api: NodesApi, script: string): Promise<Response | null> {
   const namespace = await api('GET', '');
-  if (namespace.status === 404) return fail(503, 'nodes are not set up');
+  if (namespace.status === 404) return fail(NODE_PUBLISH_STATUS['not-ready'], 'nodes are not set up');
   if (namespace.status !== 200) return apiFailure(namespace);
   if (scriptCount(namespace) < MAX_NODES) return null;
   const existing = await api('GET', `/scripts/${script}`);
   if (existing.status === 200) return null;
-  return existing.status === 404 ? fail(507, 'Stage hosts no more nodes for now') : apiFailure(existing);
+  return existing.status === 404 ? fail(NODE_PUBLISH_STATUS.full, 'Stage hosts no more nodes for now') : apiFailure(existing);
 }
 
 function uploadForm(code: Uint8Array): FormData {
@@ -155,7 +162,7 @@ async function publish(api: NodesApi, id: string, code: Uint8Array): Promise<Res
   if (full !== null) return full;
   const uploaded = await api('PUT', `/scripts/${script}`, uploadForm(code));
   if (uploaded.status === 200) return reply({ id, url: hostedNodeUrl(id) });
-  return uploaded.status === 400 ? fail(400, refusal(uploaded.message)) : apiFailure(uploaded);
+  return uploaded.status === 400 ? fail(NODE_PUBLISH_STATUS.refused, refusal(uploaded.message)) : apiFailure(uploaded);
 }
 
 async function unpublish(api: NodesApi, id: string): Promise<Response> {
@@ -167,7 +174,7 @@ async function unpublish(api: NodesApi, id: string): Promise<Response> {
 async function putNode(request: Request, api: NodesApi, nowMs: number): Promise<Response> {
   const code = await readCode(request);
   if (code instanceof Response) return code;
-  if (IMPORT.test(new TextDecoder().decode(code))) return fail(400, 'nodes can not use import');
+  if (IMPORT.test(new TextDecoder().decode(code))) return fail(NODE_PUBLISH_STATUS.refused, 'nodes can not use import');
   const id = await signerNodeId(request, code, nowMs);
   return id === null ? fail(401, 'invalid signature') : publish(api, id, code);
 }
@@ -178,11 +185,10 @@ async function deleteNode(request: Request, api: NodesApi, nowMs: number): Promi
 }
 
 export async function handleNodes(request: Request, deps: NodesDeps): Promise<Response> {
-  if (request.method === 'OPTIONS') return corsResponse(CORS, null, 204);
   if (request.method !== 'PUT' && request.method !== 'DELETE') return fail(405, 'method not allowed');
   const { api } = deps;
-  if (api === null) return fail(503, 'nodes are not set up');
-  if (await deps.limited()) return fail(429, 'rate limited');
+  if (api === null) return fail(NODE_PUBLISH_STATUS['not-ready'], 'nodes are not set up');
+  if (await deps.limited()) return fail(NODE_PUBLISH_STATUS.busy, 'rate limited');
   const nowMs = (deps.now ?? Date.now)();
   return request.method === 'PUT' ? putNode(request, api, nowMs) : deleteNode(request, api, nowMs);
 }

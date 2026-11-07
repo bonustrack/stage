@@ -3,23 +3,25 @@ import { useWindowDimensions } from 'react-native';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { RailTooltip } from '../tabs/RailTooltip';
 import { pageTopPadding } from '../chrome/PageIntro.model';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { usePalette, useEffectiveColorScheme } from '../../lib/theme';
 import { SetupStep } from './Onboarding.setup';
 import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
 import { ProfileRecoveryStep } from './Onboarding.recovery';
-import { useOnboardingFlow } from './useOnboardingFlow';
-import { safeNextRoute, IMPORT_ROUTE } from './nextRoute.model';
+import { useOnboardingFlow, type OnboardingMode } from './useOnboardingFlow';
+import { safeNextRoute } from './nextRoute.model';
+import { ROUTES } from '../tabs/pages';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconArrowRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRight';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { OnboardingCard, SkipLink } from './OnboardingCard';
-import { UsernameField, useUsernameInput } from '../UsernameField';
-import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
+import { IntroCard, SkipLink } from '../chrome/IntroCard';
+import { UsernameField, useUsernameInput } from '../profile/UsernameField';
+import { USERNAME_COPY, usernameReady } from '../profile/username.model';
 import { Column } from '../layout';
 
-export interface OnboardingProps {
+interface OnboardingProps {
+  mode: OnboardingMode;
   onDone: () => void;
 }
 
@@ -52,7 +54,7 @@ function UsernameStep({
     />
   );
   return (
-    <OnboardingCard
+    <IntroCard
       title={USERNAME_COPY.title}
       about={USERNAME_COPY.about}
       footer={footer}
@@ -61,13 +63,13 @@ function UsernameStep({
           label="Or import"
           disabled={busy}
           onPress={() => {
-            router.navigate(IMPORT_ROUTE);
+            router.navigate(ROUTES.import);
           }}
         />
       }
     >
       <UsernameField input={input} busy={busy} />
-    </OnboardingCard>
+    </IntroCard>
   );
 }
 
@@ -116,10 +118,7 @@ function stepBack(f: Flow): (() => void) | null {
 }
 
 function stepSkip(f: Flow): (() => void) | null {
-  if (f.step === 'username')
-    return () => {
-      f.onUsernameContinue('');
-    };
+  if (f.step === 'username') return f.onUsernameSkip;
   if (f.step === 'profile') return f.onProfileSkip;
   return null;
 }
@@ -150,12 +149,12 @@ function KeptStep({ f, own, children }: { f: Flow; own: 'username' | 'profile'; 
   );
 }
 
-export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
+export function Onboarding({ mode, onDone }: OnboardingProps): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const pal = usePalette();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
-  const f = useOnboardingFlow(onDone);
+  const f = useOnboardingFlow(mode, onDone);
 
   return (
     <Column
@@ -193,10 +192,11 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
   );
 }
 
-export function OnboardingPage(): React.ReactElement {
+export function OnboardingPage({ mode }: { mode: OnboardingMode }): React.ReactElement {
   const { next } = useLocalSearchParams<{ next?: string }>();
   return (
     <Onboarding
+      mode={mode}
       onDone={() => {
         router.replace(safeNextRoute(next));
       }}

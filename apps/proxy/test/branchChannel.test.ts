@@ -1,33 +1,5 @@
 import { expect, test } from 'bun:test';
-import { branchFromPath, branchPath, channelKey } from '../src/branchChannel.ts';
-
-test('channelKey keeps plain branch names unchanged', () => {
-  expect(channelKey('main')).toBe('main');
-  expect(channelKey('served-main')).toBe('served-main');
-  expect(channelKey('release-0.1.4')).toBe('release-0.1.4');
-});
-
-test('channelKey escapes every other byte as _ and two hex digits', () => {
-  expect(channelKey('feat/native-calls')).toBe('feat_2fnative-calls');
-  expect(channelKey('fix_menu')).toBe('fix_5fmenu');
-  expect(channelKey('fix/café')).toBe('fix_2fcaf_c3_a9');
-  expect(channelKey('a b+c@{d}~e')).toMatch(/^[A-Za-z0-9._-]+$/);
-});
-
-test('channelKey never maps two branch names to one channel', () => {
-  const branches = [
-    'feat/foo',
-    'feat-foo',
-    'feat_foo',
-    'feat_2ffoo',
-    'feat/foo/bar',
-    'feat-foo/bar',
-    'feat/foo-bar',
-    'Feat/foo',
-    'feat/fóo',
-  ];
-  expect(new Set(branches.map(channelKey)).size).toBe(branches.length);
-});
+import { branchFromPath, branchPath } from '../src/branchChannel.ts';
 
 test('branchFromPath decodes percent escapes once', () => {
   expect(branchFromPath('/main')).toBe('main');

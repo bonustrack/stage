@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { boardCardShowsPreview } from '../components/board/BoardCard.model';
+import { boardCardShowsPreview } from '../components/home/board/BoardCard.model';
 
 describe('Board card message preview', () => {
   test('omits empty-message previews on confirmed cards', () => {

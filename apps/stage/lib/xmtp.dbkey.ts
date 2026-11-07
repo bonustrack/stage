@@ -40,11 +40,7 @@ export async function loadOrCreateDbKey(accountId: string): Promise<Uint8Array> 
 }
 
 export async function deleteDbKey(accountId: string): Promise<void> {
-  await secureStorage.delete(dbKeyId(accountId)).catch(ignored(undefined, 'cleanup'));
-}
-
-async function deleteLegacyDbKey(): Promise<void> {
-  await secureStorage.delete(LEGACY_DB_ENCRYPTION_KEY).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(dbKeyId(accountId)).catch(recover('xmtp.deleteDbKey', undefined));
 }
 
 export async function wipeXmtpStore(accountId: string, dbDirName: string): Promise<void> {
@@ -53,8 +49,6 @@ export async function wipeXmtpStore(accountId: string, dbDirName: string): Promi
   const legacyKey = await secureStorage.get(LEGACY_DB_ENCRYPTION_KEY, STORE_OPTS).catch(recover('xmtp.wipeStore', null));
   await deleteDbKey(accountId);
   if (legacyKey && (accountKey === legacyKey || accountKey === null)) {
-    await deleteLegacyDbKey();
+    await secureStorage.delete(LEGACY_DB_ENCRYPTION_KEY).catch(recover('xmtp.deleteLegacyDbKey', undefined));
   }
 }
-
-export { deleteDbFiles, ensureDbDir } from './xmtp.dbkeyFs';

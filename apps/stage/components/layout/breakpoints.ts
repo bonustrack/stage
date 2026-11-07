@@ -1,0 +1,3 @@
+export const ANCHORED_MENU_MIN_WIDTH = 900;
+
+export const WEB_SIDEBAR_MIN_WIDTH = 1100;

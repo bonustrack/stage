@@ -1,10 +1,15 @@
 export type { Scheme } from './tokens';
 import { kitPalette, type KitPalette, type Scheme } from './tokens';
-import { hexToHsl, hslToHex } from './color-math';
+import { formatHex, hexToHsl, hslToHex, parseHex } from './color-math';
 
-export type AccentLevel = 0 | 1 | 2 | 3;
-export type GrayscaleTint = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-export type GrayscaleShade = -4 | -3 | -2 | -1 | 0 | 1 | 2 | 3 | 4;
+export { parseHex };
+
+export const ACCENT_LEVELS = [0, 1, 2, 3] as const;
+export type AccentLevel = (typeof ACCENT_LEVELS)[number];
+export const GRAYSCALE_TINTS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+export type GrayscaleTint = (typeof GRAYSCALE_TINTS)[number];
+export const GRAYSCALE_SHADES = [-4, -3, -2, -1, 0, 1, 2, 3, 4] as const;
+export type GrayscaleShade = (typeof GRAYSCALE_SHADES)[number];
 
 export interface AccentColor {
   primary: string;
@@ -40,31 +45,15 @@ const TINT_STEP = 0.01;
 const SHADE_STEP = 0.03;
 const ACCENT_MUTE_STEP = 0.18;
 
-function clamp255(n: number): number {
-  return n < 0 ? 0 : n > 255 ? 255 : Math.round(n);
-}
-
 function clampRange(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(n))) || 0;
-}
-
-export function parseHex(hex: string): [number, number, number] | null {
-  const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim());
-  const h = m?.[1];
-  if (h === undefined) return null;
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-}
-
-function toHex([r, g, b]: [number, number, number]): string {
-  const h = (n: number): string => clamp255(n).toString(16).padStart(2, '0');
-  return `#${h(r)}${h(g)}${h(b)}`;
 }
 
 export function mix(a: string, b: string, t: number): string {
   const ca = parseHex(a);
   const cb = parseHex(b);
   if (!ca || !cb) return a;
-  return toHex([ca[0] + (cb[0] - ca[0]) * t, ca[1] + (cb[1] - ca[1]) * t, ca[2] + (cb[2] - ca[2]) * t]);
+  return formatHex([ca[0] + (cb[0] - ca[0]) * t, ca[1] + (cb[1] - ca[1]) * t, ca[2] + (cb[2] - ca[2]) * t]);
 }
 
 export function grayscaleHex(g: GrayscaleOptions, scheme: Scheme): string {
@@ -119,8 +108,10 @@ function seedEquals(a: ThemeSeed, b: ThemeSeed): boolean {
 }
 
 export function derivePalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {
-  if (seedEquals(seed, DEFAULT_SEED[scheme])) return { ...LEGACY[scheme] };
+  return seedEquals(seed, DEFAULT_SEED[scheme]) ? { ...LEGACY[scheme] } : formulaPalette(seed, scheme);
+}
 
+export function formulaPalette(seed: ThemeSeed, scheme: Scheme): DerivedPalette {
   const bg = seed.surface.background;
   const text = seed.surface.foreground;
   const gray = grayscaleHex(seed.grayscale, scheme);

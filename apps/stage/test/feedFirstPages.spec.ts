@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { afterFirstPages, trackFirstPageLoad } from '../lib/feedLines';
-
-const tick = (ms: number): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+import { afterFirstPages, trackFirstPageLoad } from '../lib/feed/firstPages';
 
 describe('startup lists wait for the opened channel', () => {
   test('nothing to wait for when no first page is loading', async () => {
@@ -14,27 +9,23 @@ describe('startup lists wait for the opened channel', () => {
   });
 
   test('waits until the loading first page settles, failures included', async () => {
-    let finish: () => void = () => undefined;
-    void trackFirstPageLoad(
-      new Promise<void>((resolve) => {
-        finish = resolve;
-      }),
-    );
+    const page = Promise.withResolvers<undefined>();
+    void trackFirstPageLoad(page.promise);
     const failed = trackFirstPageLoad(Promise.reject(new Error('offline')));
     await failed.catch(() => undefined);
     let released = false;
     const waiting = afterFirstPages(1000).then(() => {
       released = true;
     });
-    await tick(20);
+    await Bun.sleep(20);
     expect(released).toBe(false);
-    finish();
+    page.resolve(undefined);
     await waiting;
     expect(released).toBe(true);
   });
 
   test('gives up after the cap', async () => {
-    void trackFirstPageLoad(tick(200));
+    void trackFirstPageLoad(Bun.sleep(200));
     const started = Date.now();
     await afterFirstPages(30);
     const waited = Date.now() - started;

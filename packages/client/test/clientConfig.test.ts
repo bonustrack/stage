@@ -4,31 +4,24 @@ import {
   canReuseSavedClient,
   offlineOpenOptions,
   installationCreatedAtMs,
-  nativeInstallationCreatedAtMs,
   openPersistedClient,
-  OPEN_ATTEMPTS,
 } from '../src/xmtp/clientConfig';
-import { dbDirFor } from '../src/accounts/registry';
 
 describe('webXmtpDbPath', () => {
-  test('matches inline derivation', () => {
-    expect(webXmtpDbPath('acct1', 'production')).toBe(`${dbDirFor('acct1')}-production.db3`);
-    expect(webXmtpDbPath('acct1', 'dev')).toBe(`${dbDirFor('acct1')}-dev.db3`);
+  test('keeps the database file name existing installs already use', () => {
+    expect(webXmtpDbPath('acct1', 'production')).toBe('xmtp-acct1-production.db3');
+    expect(webXmtpDbPath('acct1', 'dev')).toBe('xmtp-acct1-dev.db3');
   });
 });
 
 describe('canReuseSavedClient', () => {
-  test('true when address case-insensitively equal and env equal', () => {
-    expect(canReuseSavedClient('0xABC', 'production', '0xabc', 'production')).toBe(true);
-  });
-  test('false on env mismatch', () => {
-    expect(canReuseSavedClient('0xabc', 'dev', '0xabc', 'production')).toBe(false);
-  });
-  test('false on address mismatch', () => {
-    expect(canReuseSavedClient('0xdef', 'production', '0xabc', 'production')).toBe(false);
-  });
-  test('false when nothing saved', () => {
-    expect(canReuseSavedClient(null, null, '0xabc', 'production')).toBe(false);
+  test.each<[string, string | null, string | null, boolean]>([
+    ['true when address case-insensitively equal and env equal', '0xABC', 'production', true],
+    ['false on env mismatch', '0xabc', 'dev', false],
+    ['false on address mismatch', '0xdef', 'production', false],
+    ['false when nothing saved', null, null, false],
+  ])('%s', (_name, savedAddress, savedEnv, reusable) => {
+    expect(canReuseSavedClient(savedAddress, savedEnv, '0xabc', 'production')).toBe(reusable);
   });
 });
 
@@ -52,34 +45,6 @@ describe('installationCreatedAtMs', () => {
   test('null/undefined passthrough', () => {
     expect(installationCreatedAtMs(null)).toBeNull();
     expect(installationCreatedAtMs(undefined)).toBeNull();
-  });
-});
-
-describe('nativeInstallationCreatedAtMs', () => {
-  const MS = Date.UTC(2026, 8, 24, 10, 30);
-  test('Android hands over nanoseconds labelled as milliseconds', () => {
-    expect(nativeInstallationCreatedAtMs(MS * 1_000_000)).toBe(MS);
-  });
-  test('iOS hands over seconds since the epoch', () => {
-    expect(nativeInstallationCreatedAtMs(MS / 1_000)).toBe(MS);
-    expect(nativeInstallationCreatedAtMs(MS / 1_000 + 0.25)).toBe(MS + 250);
-  });
-  test('milliseconds and microseconds pass through as milliseconds', () => {
-    expect(nativeInstallationCreatedAtMs(MS)).toBe(MS);
-    expect(nativeInstallationCreatedAtMs(MS * 1_000)).toBe(MS);
-  });
-  test('every result is a valid date', () => {
-    for (const value of [MS * 1_000_000, MS * 1_000, MS, MS / 1_000]) {
-      expect(Number.isNaN(new Date(nativeInstallationCreatedAtMs(value) ?? Number.NaN).getTime())).toBe(false);
-    }
-  });
-  test('missing or nonsense values are unknown', () => {
-    expect(nativeInstallationCreatedAtMs(undefined)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(null)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(0)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(-5)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs(Number.NaN)).toBeUndefined();
-    expect(nativeInstallationCreatedAtMs('1700000000')).toBeUndefined();
   });
 });
 
@@ -280,7 +245,9 @@ describe('openPersistedClient', () => {
     expect(calls).toEqual(['open', 'close:inst-a']);
   });
 
-  test('defaults to five attempts', () => {
-    expect(OPEN_ATTEMPTS).toBe(5);
+  test('without an attempt count a failing open is still retried, then gives up', async () => {
+    const { d, calls } = deps({ open: () => Promise.reject(new Error('locked')) });
+    await expect(openPersistedClient(d)).rejects.toThrow('locked');
+    expect(calls.filter((c) => c === 'event:open-failed').length).toBeGreaterThan(1);
   });
 });

@@ -3,8 +3,7 @@ export type AvatarSize = 'sm' | 'md' | 'lg';
 export const AVATAR_SIZES: Record<AvatarSize, number> = { sm: 24, md: 32, lg: 64 };
 
 export function stampAvatarUrl(address: string, displayPx: number, cacheBust?: string | number): string {
-  const fetchPx = displayPx * 2;
-  const base = `https://cdn.stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${fetchPx}`;
+  const base = `https://cdn.stamp.fyi/avatar/eth:${address.toLowerCase()}?s=${displayPx * 2}`;
   return cacheBust === undefined ? base : `${base}&cb=${cacheBust}`;
 }
 
@@ -25,8 +24,7 @@ export function channelAvatarUrl(channelId: string, imageUrl: string | null | un
 }
 
 export function stampTokenUrl(chainId: number, contract: string, displayPx: number): string {
-  const fetchPx = displayPx * 2;
-  return `https://cdn.stamp.fyi/token/eip155:${chainId}:${contract.toLowerCase()}?s=${fetchPx}`;
+  return `https://cdn.stamp.fyi/token/eip155:${chainId}:${contract.toLowerCase()}?s=${displayPx * 2}`;
 }
 
 export function withStampDisplayPx(url: string, displayPx: number): string {
@@ -34,4 +32,4 @@ export function withStampDisplayPx(url: string, displayPx: number): string {
   return url.replace(/([?&]s=)\d+/, `$1${displayPx * 2}`);
 }
 
-export const NATIVE_TOKEN_SENTINEL = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+export { NATIVE_TOKEN_SENTINEL } from './legacy';

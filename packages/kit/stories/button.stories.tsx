@@ -1,5 +1,5 @@
 import type { Story } from '../gallery/story';
-import { BUTTON_COLORS as COLORS, BUTTON_FILLS as VARIANTS } from '../src/button.styles';
+import { BUTTON_COLORS as COLORS, BUTTON_FILLS as VARIANTS, BUTTON_HINTS as HINTS, BUTTON_SIZES as SIZES } from '../src/button.styles';
 import { Button, type ButtonProps } from '../src/react-native/button';
 import { Icon } from '../src/react-native/icon';
 import { Column } from '../src/react-native/column';
@@ -8,9 +8,6 @@ import { Text } from '../src/react-native/text';
 import { bool, color, number, select, text, useDark } from './_controls';
 
 export default { title: 'Button' };
-
-const HINTS = ['default', 'primary', 'borderless'] as const;
-const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const;
 
 export const Controls: Story<ButtonProps & { withIconStart: boolean; withIconEnd: boolean }> = ({
   withIconStart,

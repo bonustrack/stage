@@ -1,19 +1,9 @@
 name: Publish @stage-labs/config
 
 # Manually-triggered publish of packages/config to npm under the `beta`
-# dist-tag. A real publish then points `latest` at the same version, since
-# every release is a beta and `latest` would otherwise stay on an old one.
-#
-# Bun builds the tarball (`bun pm pack` turns `workspace:*` ranges into real
-# versions) and npm publishes it, because `bun publish` can't do npm trusted
-# publishing. npm logs in with this workflow's GitHub OIDC token through the
-# package's trusted publisher on npmjs.com (repository bonustrack/stage,
-# workflow publish-config.yml, environment npm, allowed to publish and to manage
-# dist-tags); the package allows no publish tokens. The npm environment only
-# deploys from main, so a run from any other branch can't get an npm login. A trusted
-# publish gets an npm provenance attestation on its own: passing --provenance
-# as well makes npm sign twice, and the second transparency log entry fails
-# with a 409.
+# dist-tag, set up exactly like publish-kit.yml (see its header for the npm
+# trusted publishing and provenance details). The package's trusted publisher
+# on npmjs.com names this workflow, publish-config.yml.
 #
 # The published version is whatever is in packages/config/package.json on the
 # selected branch, so bump it there before running. npm refuses to republish

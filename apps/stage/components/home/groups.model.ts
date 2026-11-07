@@ -1,9 +1,11 @@
-import type { GroupKey } from '@stage-labs/client/xmtp/readState';
+import type { GroupKey } from '@stage-labs/client/xmtp/sync/homeView';
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
 import { compareNames } from '../../lib/format';
 import { categorySectionOrderWith } from '../../lib/channelGroups.model';
-import { NO_GROUP_TITLES, bucketRows, type Bucket, type NameOf } from './groupBy.model';
-import { unreadRowCount, type Row } from './model';
+import { DM_SECTION, NO_SECTION, groupHeaderId, sectionKeyOf } from '../../lib/grouping.model';
+import { noGroupTitle, bucketRows, type Bucket, type NameOf } from './groupBy.model';
+import type { CachedRow } from '../../lib/cachedRows.model';
+import { unreadRowCount } from './listing.model';
 
 export interface ChannelGroupHeader {
   key: string;
@@ -18,11 +20,9 @@ interface GroupHeaderItem {
   header: ChannelGroupHeader;
 }
 
-export type HomeListItem = (Row & { listKey?: string }) | GroupHeaderItem;
+export type HomeListItem = (CachedRow & { listKey?: string }) | GroupHeaderItem;
 
-const DM_GROUP = { key: 'dm', title: 'Direct messages' };
-export const NO_GROUP_KEY = 'none';
-const HEADER_ID_PREFIX = 'group:';
+const DM_GROUP = { key: DM_SECTION, title: 'Direct messages' };
 
 interface GroupRow {
   convId: string;
@@ -36,13 +36,11 @@ export function isGroupHeader(item: HomeListItem): item is GroupHeaderItem {
   return (item as GroupHeaderItem).header !== undefined;
 }
 
-export function rowsOf(items: readonly HomeListItem[]): Row[] {
-  return items.filter((item): item is Row => !isGroupHeader(item));
+export function rowsOf(items: readonly HomeListItem[]): CachedRow[] {
+  return items.filter((item): item is CachedRow => !isGroupHeader(item));
 }
 
 export const listKeyOf = (item: HomeListItem): string => (isGroupHeader(item) ? item.convId : (item.listKey ?? item.convId));
-
-const sectionKeyOf = (by: GroupKey, value: string): string => `${by}:${value.toLowerCase()}`;
 
 export function groupKeysOf(items: readonly HomeListItem[]): ReadonlyMap<string, string> {
   const keys = new Map<string, string>();
@@ -56,30 +54,20 @@ export function groupKeysOf(items: readonly HomeListItem[]): ReadonlyMap<string,
 
 function orderedBuckets<R extends GroupRow>(rows: readonly R[], by: GroupKey, nameOf: NameOf, order: readonly string[]): Bucket<R>[] {
   const dm = rows.filter((row) => row.peerAddress !== null);
-  const { buckets, none } = bucketRows(
-    rows.filter((row) => row.peerAddress === null),
-    by,
-    nameOf,
-    (value) => sectionKeyOf(by, value),
-  );
+  const channels = rows.filter((row) => row.peerAddress === null);
+  const { buckets, none } = bucketRows(channels, by, nameOf, (value) => sectionKeyOf(by, value));
   const sections = [
     ...(dm.length === 0 ? [] : [{ ...DM_GROUP, rows: dm }]),
     ...buckets.sort((a, b) => compareNames(a.title, b.title)),
-    ...(none.length === 0 ? [] : [{ key: NO_GROUP_KEY, title: NO_GROUP_TITLES[by], rows: none }]),
+    ...(none.length === 0 ? [] : [{ key: NO_SECTION, title: noGroupTitle(by), rows: none }]),
   ];
-  return by === 'category'
-    ? savedFirst(
-        sections,
-        categorySectionOrderWith(
-          order,
-          buckets.map((b) => b.key),
-        ).map((key) => key.toLowerCase()),
-        (b) => b.key,
-      )
-    : sections;
+  if (by !== 'category') return sections;
+  const keys = buckets.map((b) => b.key);
+  const saved = categorySectionOrderWith(order, keys).map((key) => key.toLowerCase());
+  return savedFirst(sections, saved, (b) => b.key);
 }
 
-function uniqueListItems(bucket: Bucket<Row>, seen: Set<string>): HomeListItem[] {
+function uniqueListItems(bucket: Bucket<CachedRow>, seen: Set<string>): HomeListItem[] {
   return bucket.rows.map((row) => {
     if (!seen.has(row.convId)) {
       seen.add(row.convId);
@@ -90,7 +78,7 @@ function uniqueListItems(bucket: Bucket<Row>, seen: Set<string>): HomeListItem[]
 }
 
 export function groupRows(
-  rows: readonly Row[],
+  rows: readonly CachedRow[],
   by: GroupKey,
   collapsed: ReadonlySet<string>,
   expandAll: boolean,
@@ -107,6 +95,6 @@ export function groupRows(
       unread: unreadRowCount(bucket.rows),
       collapsed: folded,
     };
-    return [{ convId: HEADER_ID_PREFIX + bucket.key, header }, ...(folded ? [] : uniqueListItems(bucket, seen))];
+    return [{ convId: groupHeaderId(bucket.key), header }, ...(folded ? [] : uniqueListItems(bucket, seen))];
   });
 }

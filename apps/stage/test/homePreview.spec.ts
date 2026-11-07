@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { NO_MESSAGES_PREVIEW, rowPreviewText } from '../components/home/model';
+import { NO_MESSAGES_PREVIEW, rowPreviewText } from '../components/chatRow/chatRow.model';
 
 describe('rowPreviewText', () => {
   test('a DM shows the peer message without their name', () => {

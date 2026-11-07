@@ -3,9 +3,10 @@ import type { MentionCandidate } from '@stage-labs/client/xmtp/mentions';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
 import { usePeerProfiles } from '../../lib/peerProfiles';
 import { useContactList } from '../../lib/useContacts';
-import { getActiveAccountIdSync, getCachedRows } from '../../lib/channelsCache';
+import { getCachedRows } from '../../lib/channelsCache';
+import { knownSelfAddress } from '../../lib/accountSelection';
 import { mentionAddresses } from '@stage-labs/client/xmtp/messageBody';
-import { mentionLabelOf as labelOf } from '../conversation/convTitle';
+import { mentionLabelOf as labelOf } from '../../lib/convIdentity';
 import {
   activeSuggestIndex,
   applyDisplayEdit,
@@ -22,7 +23,7 @@ import {
 import { channelCandidatesOf, channelQuery, matchChannels, type ChannelCandidate } from './channels.model';
 import type { ComposerState } from './state';
 
-export interface SuggestAvatar {
+interface SuggestAvatar {
   address: string | null;
   imageUri?: string | null;
   square?: boolean;
@@ -85,11 +86,7 @@ function useSuggest<T>(s: ComposerState, config: SuggestConfig<T>): Suggest<T> &
   };
 }
 
-export type MentionEditor = Suggest<MentionCandidate> & {
-  display: string;
-  setDisplay: (next: string) => void;
-  restore: (wire: string) => void;
-};
+type MentionEditor = Suggest<MentionCandidate> & { display: string; setDisplay: (next: string) => void; restore: (wire: string) => void };
 
 function useCandidatePool(
   pieces: Piece[],
@@ -98,9 +95,9 @@ function useCandidatePool(
   suggestContacts: boolean,
 ): MentionCandidate[] | undefined {
   const typing = suggestContacts && mentionQuery(pieces, cursor, candidates).range !== null;
-  const contacts = useContactList(typing);
+  const { contacts } = useContactList(typing);
   if (!suggestContacts) return candidates;
-  return withContactCandidates(candidates ?? [], contacts, getActiveAccountIdSync());
+  return withContactCandidates(candidates ?? [], contacts, knownSelfAddress() ?? '');
 }
 
 const mentionIdOf = (candidate: MentionCandidate): string => candidate.address;

@@ -1,7 +1,8 @@
 import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
-import type { FrameOut } from '../components/frame/frame.model';
+import type { FrameOut } from '../lib/frames/frame.model';
+import { KIT_CATALOG_ID as KIT_CATALOG } from '@stage-labs/kit/a2ui/kit-catalog';
 
-export const KIT_CATALOG = 'https://kit.stage.box/a2ui/v1_0/catalog.json';
+export { KIT_CATALOG };
 
 export function titleMessages(text: string, surfaceId = 'main'): FrameMessage[] {
   return [

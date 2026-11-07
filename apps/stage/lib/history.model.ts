@@ -1,4 +1,5 @@
 import { errorMessage } from '@stage-labs/client/errors';
+import { rejectAfter } from '@stage-labs/client/timing';
 
 export type HistorySyncPhase = 'idle' | 'requesting' | 'waiting' | 'done' | 'timeout' | 'error';
 
@@ -35,14 +36,12 @@ export function historyProblemMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
-const WAITING_LABEL = 'Waiting for your other device. Open Stage there on this account and keep it in the foreground.';
-
 export function historySyncPhaseLabel(phase: HistorySyncPhase, problem?: string | null): string | null {
   switch (phase) {
     case 'requesting':
       return 'Asking your other device for history…';
     case 'waiting':
-      return WAITING_LABEL;
+      return 'Waiting for your other device. Open Stage there on this account and keep it in the foreground.';
     case 'done':
       return 'History synced from your other device.';
     case 'timeout':
@@ -58,34 +57,11 @@ export function historySyncIsActive(phase: HistorySyncPhase): boolean {
   return phase === 'requesting' || phase === 'waiting';
 }
 
-export function settleBy<T>(work: Promise<T>, deadline: number, fallback: T, tickMs = 1_000): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const expired = new Promise<T>((resolve) => {
-    const check = (): void => {
-      const left = deadline - Date.now();
-      if (left <= 0) {
-        resolve(fallback);
-        return;
-      }
-      timer = setTimeout(check, Math.min(tickMs, left));
-    };
-    check();
-  });
-  return Promise.race([work, expired]).finally(() => {
-    if (timer !== undefined) clearTimeout(timer);
-  });
-}
-
 export function timeLeftLabel(msLeft: number): string {
   const seconds = Math.max(0, Math.ceil(msLeft / 1_000));
-  const minutes = Math.floor(seconds / 60);
-  return `${minutes}:${String(seconds % 60).padStart(2, '0')} left`;
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} left`;
 }
 
-const TIMED_OUT = Symbol('timed out');
-
-export async function within<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
-  const result = await settleBy<T | typeof TIMED_OUT>(work, Date.now() + ms, TIMED_OUT);
-  if (result === TIMED_OUT) throw new HistoryProblem(message);
-  return result;
+export function within<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
+  return rejectAfter(work, ms, () => new HistoryProblem(message));
 }

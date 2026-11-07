@@ -6,36 +6,12 @@ import {
   keptColumnOrder,
   orderedColumns,
   renamedColumnOrder,
-} from '../components/board/BoardScreen.model';
+} from '../components/home/board/BoardScreen.model';
 import { groupRows, isGroupHeader } from '../components/home/groups.model';
 import { homeDragModel } from '../components/home/listDrag.model';
-import type { Row } from '../components/home/model';
 import { categoryOrderWith, categorySectionKeysOf, categorySectionOrderWith, movedCategoryOrder } from '../lib/channelGroups.model';
-
-function row(convId: string, extra: Partial<Row> = {}): Row {
-  return {
-    convId,
-    title: convId,
-    lastTs: 1,
-    lastBubbleTs: 1,
-    lastPreview: '',
-    avatarAddress: null,
-    avatarUri: null,
-    peerAddress: null,
-    lastSenderAddress: null,
-    lastFromSelf: false,
-    inboxToAddr: {},
-    unreadCount: 0,
-    lastReadNs: 0,
-    markedUnread: false,
-    selfInboxId: 'me',
-    labels: [],
-    category: null,
-    assigned: [],
-    consent: null,
-    ...extra,
-  };
-}
+import { groupHeaderId } from '../lib/grouping.model';
+import { row } from './rowFixture';
 
 const direct = row('direct', { peerAddress: '0xabc' });
 const alpha = row('alpha', { category: 'Alpha', labels: ['Todo'] });
@@ -59,7 +35,7 @@ describe('category section ordering', () => {
       expect(sections([])).toEqual(['dm', 'category:alpha', 'category:work', 'none']);
       expect(categoryOrderWith(legacy, visible)).toEqual(['category:work', 'category:hidden', 'category:alpha']);
       expect(sections(legacy)).toEqual(['dm', 'category:work', 'category:alpha', 'none']);
-      expect(sections(reordered)).toEqual(reordered);
+      expect(sections(reordered)).toEqual([...reordered]);
       expect(sections(reordered, [work, alpha])).toEqual(['category:work', 'category:alpha']);
       expect(movedCategoryOrder(reordered, ['none', ...visible, 'dm'], 'dm', 'none')).toEqual([
         'dm',
@@ -137,8 +113,8 @@ describe('category section ordering', () => {
     const items = groupRows(rows, 'category', new Set(['dm', 'none']), false, (value) => value);
     const model = homeDragModel(items, true);
     expect([...model.sectionKeys.values()]).toEqual(['dm', 'category:alpha', 'category:work', 'none']);
-    expect(model.sections).toContain('group:none');
-    expect(model.sectionOf.get('alpha')).toBe('group:category:alpha');
+    expect(model.sections).toContain(groupHeaderId('none'));
+    expect(model.sectionOf.get('alpha')).toBe(groupHeaderId('category:alpha'));
     expect(model.sectionOf.has('loose')).toBe(false);
   });
 });

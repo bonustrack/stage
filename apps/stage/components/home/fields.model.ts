@@ -1,70 +1,20 @@
 import type { AppIconName } from '../appIcons';
+import type { ChannelField, ChannelFields } from '../../lib/channelFields.model';
+import { GROUPING_FIELDS } from '../../lib/grouping.model';
 
-export type ChannelField = 'members' | 'assignees' | 'category' | 'status' | 'labels' | 'priority' | 'avatar' | 'lastMessage';
-export type ChannelFields = Record<ChannelField, boolean>;
-export type ChannelFieldView = 'chats' | 'board';
-export type ChannelFieldPreferences = Record<ChannelFieldView, ChannelFields>;
+const { category, status, priority } = GROUPING_FIELDS;
 
 export const CHANNEL_FIELDS: readonly { id: ChannelField; label: string; icon?: AppIconName }[] = [
   { id: 'members', label: 'Members', icon: 'IconPeople' },
   { id: 'assignees', label: 'Assignees', icon: 'IconPeopleCircle' },
-  { id: 'category', label: 'Project', icon: 'IconFolder1' },
-  { id: 'status', label: 'Status', icon: 'IconCircleDashed' },
+  { id: 'category', label: category.label, icon: category.icon },
+  { id: 'status', label: status.label, icon: status.icon },
   { id: 'labels', label: 'Labels', icon: 'IconTag' },
-  { id: 'priority', label: 'Priority', icon: 'IconFlag1' },
+  { id: 'priority', label: priority.label, icon: priority.icon },
   { id: 'avatar', label: 'Avatar', icon: 'IconPeopleCircle' },
   { id: 'lastMessage', label: 'Last message', icon: 'IconBubble3' },
 ];
 
-const defaultFields: ChannelFields = {
-  members: false,
-  assignees: false,
-  category: false,
-  status: false,
-  labels: false,
-  priority: false,
-  avatar: false,
-  lastMessage: true,
-};
-
-export const DEFAULT_CHANNEL_FIELDS: ChannelFieldPreferences = {
-  chats: { ...defaultFields, labels: true, avatar: true },
-  board: defaultFields,
-};
-
 export function visibleChannelFieldCount(fields: ChannelFields): number {
   return CHANNEL_FIELDS.filter(({ id }) => fields[id]).length;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function parseFields(value: unknown, defaults: ChannelFields): ChannelFields {
-  const fields = { ...defaults };
-  if (!isRecord(value)) return fields;
-  for (const { id } of CHANNEL_FIELDS) {
-    const visible = value[id];
-    if (typeof visible === 'boolean') fields[id] = visible;
-  }
-  return fields;
-}
-
-export function parseChannelFields(raw: string, chatsAvatarDefault = true): ChannelFieldPreferences {
-  const defaults = { ...DEFAULT_CHANNEL_FIELDS, chats: { ...DEFAULT_CHANNEL_FIELDS.chats, avatar: chatsAvatarDefault } };
-  try {
-    const value: unknown = JSON.parse(raw);
-    if (!isRecord(value)) return defaults;
-    return { chats: parseFields(value.chats, defaults.chats), board: parseFields(value.board, defaults.board) };
-  } catch {
-    return defaults;
-  }
-}
-
-export function toggleChannelFieldIn(
-  current: ChannelFieldPreferences,
-  view: ChannelFieldView,
-  field: ChannelField,
-): ChannelFieldPreferences {
-  return { ...current, [view]: { ...current[view], [field]: !current[view][field] } };
 }

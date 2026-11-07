@@ -7,9 +7,9 @@ import {
   isAdminDelete,
   replyQuoteOf,
 } from '../components/conversation/messageDeletion.model';
-import { bubbleMenuItems } from '../components/conversation/bubbleMenu.model';
-import { mergeFeedEntries } from '../lib/feedOrder.model';
-import { entry } from './helpers';
+import { actionOf, titleMessages } from './frameFixtures';
+import { entry, messageEntry } from './helpers';
+import { mintLocalId } from '../components/composer/outbound';
 
 const ME = 'xmtp:me';
 const PEER = 'xmtp:peer';
@@ -35,7 +35,7 @@ describe('canDeleteMessage', () => {
   });
 
   test('never a message still sending or a channel update, even for a super admin', () => {
-    expect(canDeleteMessage(entry('tmp_1', { from: ME, text: 'sending' }), member)).toBe(false);
+    expect(canDeleteMessage(entry(mintLocalId(), { from: ME, text: 'sending' }), member)).toBe(false);
     const update = entry('g1', { from: PEER, text: 'renamed the channel', payload: { contentType: 'group_updated', system: true } });
     expect(canDeleteMessage(update, superAdmin)).toBe(false);
     expect(canDeleteMessage({ ...update, from: ME }, member)).toBe(false);
@@ -56,14 +56,6 @@ describe('delete confirm', () => {
   });
 });
 
-describe('Delete in the message menu', () => {
-  test('comes last, in red, only when allowed', () => {
-    const items = bubbleMenuItems(true, { selectText: false, canDelete: true });
-    expect(items.at(-1)).toEqual({ id: 'delete', icon: 'IconTrashCan', label: 'Delete', danger: true });
-    expect(bubbleMenuItems(true, { selectText: false }).map((i) => i.id)).not.toContain('delete');
-  });
-});
-
 describe('reply quote', () => {
   const answer = entry('m3', { from: PEER, text: 'sure', replyTo: 'm1' });
   const lookup = (id: string): HistoryEntry | undefined => [mine, theirs, answer].find((e) => e.id === id);
@@ -79,20 +71,8 @@ describe('reply quote', () => {
   });
 
   test('a frame tap quotes its frame, or just Frame while the frame is not loaded', () => {
-    const frame = entry('f1', { from: PEER, text: 'Frame: Deploy?', payload: { contentType: 'frame' } });
-    const tap = entry('t1', {
-      from: ME,
-      text: 'Tapped "Ship it"',
-      replyTo: 'f1',
-      payload: {
-        contentType: 'frameAction',
-        frameAction: {
-          frameId: 'f1',
-          action: { name: 'ship', surfaceId: 'main', sourceComponentId: 'ship', timestamp: '2026-10-26T00:00:00.000Z', context: {} },
-          label: 'Ship it',
-        },
-      },
-    });
+    const frame = messageEntry('f1', 'frame', { title: 'Deploy?', messages: titleMessages('Deploy?') }, { from: PEER });
+    const tap = messageEntry('t1', 'frameAction', { frameId: 'f1', action: actionOf('ship'), label: 'Ship it' }, { from: ME });
     expect(replyQuoteOf(tap, none, (id) => (id === 'f1' ? frame : undefined))).toBe('Frame: Deploy?');
     expect(replyQuoteOf(tap, none, () => undefined)).toBe('Frame');
     expect(replyQuoteOf(tap, new Map([['f1', 'sender']]), () => undefined)).toBe('Message deleted');
@@ -107,14 +87,5 @@ describe('deleted row', () => {
     expect(first.text).toBeUndefined();
     expect(first.payload).toEqual({ contentType: 'deletedMessage', deletedBy: 'sender' });
     expect(view(theirs, 'admin').payload).toEqual({ contentType: 'deletedMessage', deletedBy: 'admin' });
-  });
-
-  test('an SDK placeholder replaces the cached original in place', () => {
-    const placeholder = entry('m1', { from: ME, payload: { contentType: 'deletedMessage', deletedBy: 'sender' } });
-    const merged = mergeFeedEntries([theirs, mine], [placeholder]);
-    expect(merged.replaced).toBe(1);
-    expect(merged.added).toBe(0);
-    expect(merged.entries.map((e) => e.payload)).toEqual([theirs.payload, placeholder.payload]);
-    expect(mergeFeedEntries(merged.entries, [mine]).entries[1]).toBe(placeholder);
   });
 });

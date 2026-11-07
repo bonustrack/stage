@@ -11,26 +11,28 @@ import {
   type MessageId,
 } from '@xmtp/react-native-sdk';
 import { buildReply } from '@stage-labs/client/xmtp/builders';
-import { mapDecodedToEnvelope } from '@stage-labs/client/xmtp/envelope';
+import { envelopeOf } from '@stage-labs/client/xmtp/envelope';
 import { convIdFromTopic, isMissingMlsState, pickNativeErrors } from '@stage-labs/client/xmtp/clientErrors';
-import { UNKNOWN_GROUP_POLICY, groupMetaPolicyOfSet, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
+import { UNKNOWN_GROUP_POLICY, type GroupMetaPolicy } from '@stage-labs/client/xmtp/groups';
+import type { AppDataGroup } from '@stage-labs/client/xmtp/channelMeta';
+import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
+import { nativeGroupMetaPolicy, nativeMessageOf } from './xmtp.sdk.native.shapes';
 import { xmtpClient } from './xmtp.client';
+import { clientSdk } from './xmtp.clientSdk';
 import { getCachedXmtpClient } from './xmtp.state';
+import { XMTP_ENV } from './xmtp.types';
 import {
   NO_GROUP_ADMINS,
   NO_GROUP_INFO,
   VISIBLE_CONSENT,
-  convFinder,
   notAGroup,
-  sendableFinder,
   type MessageDeletion,
   type MessageQuery,
   type MessageTarget,
   type XmtpSdk,
 } from './xmtp.sdk.core';
 import { reported, recover, attempt, ignored } from './errorPolicy';
-import { prepareSenderFilters } from './pushRegister';
-import { groupTopicOf } from '@stage-labs/client/xmtp/pushServer';
+import { sleep } from '@stage-labs/client/timing';
 
 type NativeClient = Awaited<ReturnType<typeof xmtpClient>>;
 type NativeMessage = Awaited<ReturnType<Conversation['messages']>>[number];
@@ -91,14 +93,6 @@ function nativeQuery(q: MessageQuery): NativeMessagesOptions {
   };
 }
 
-function contentOf(m: NativeMessage): unknown {
-  try {
-    return m.content();
-  } catch {
-    return undefined;
-  }
-}
-
 function conversationIdField(m: NativeMessage): string | undefined {
   return 'conversationId' in m && typeof m.conversationId === 'string' ? m.conversationId : undefined;
 }
@@ -132,7 +126,17 @@ async function groupAdminsOf(conv: Conversation): Promise<{ admins: string[]; su
 async function groupMetaPolicyOf(conv: Conversation): Promise<GroupMetaPolicy> {
   if (!(conv instanceof Group)) return UNKNOWN_GROUP_POLICY;
   const set = await conv.permissionPolicySet().catch(recover('xmtp.groupMetaPolicy', null));
-  return set ? groupMetaPolicyOfSet(set) : UNKNOWN_GROUP_POLICY;
+  return set ? nativeGroupMetaPolicy(set) : UNKNOWN_GROUP_POLICY;
+}
+
+function appDataGroupOf(conv: Conversation): AppDataGroup | null {
+  if (!(conv instanceof Group)) return null;
+  return {
+    id: conv.id,
+    sync: () => conv.sync(),
+    appData: async () => (await conv.appData()) || '',
+    updateAppData: (appData) => conv.updateAppData(appData),
+  };
 }
 
 async function streamAllMessages(
@@ -176,7 +180,7 @@ function streamConsent(client: NativeClient, onChange: (convIds: string[]) => vo
   let live = true;
   void client.preferences
     .streamConsent((consent) => {
-      if (live) onChange([consent.value]);
+      if (live && consent.entryType === 'conversation_id') onChange([consent.value]);
       return Promise.resolve();
     })
     .catch(reported('xmtp.consentStream'));
@@ -228,11 +232,11 @@ async function messageTarget(client: NativeClient, messageId: string): Promise<M
   const message = await client.conversations.findMessage(asMessageId(messageId));
   const convId = message ? (convIdFromTopic(message.topic) ?? conversationIdField(message)) : undefined;
   const conv = convId ? await client.conversations.findConversation(asConversationId(convId)) : undefined;
-  return message && conv ? { conv, contentTypeId: message.contentTypeId } : null;
+  return message && conv ? { conv, contentTypeId: shortTypeId(message.contentTypeId) } : null;
 }
 
 async function keyPackageErrors(_client: NativeClient, installationIds: string[]): Promise<(string | null | undefined)[]> {
-  const { statuses } = await staticKeyPackageStatuses('production', installationIds as InstallationIds);
+  const { statuses } = await staticKeyPackageStatuses(XMTP_ENV, installationIds as InstallationIds);
   return [...statuses.values()].map((s) => s.validationError);
 }
 
@@ -246,7 +250,7 @@ async function nativeErrorLog(work: () => Promise<unknown>): Promise<string> {
   Client.activatePersistentLibXMTPLogWriter(LOG_LEVEL_ERROR, LOG_ROTATION_HOURLY, 1);
   try {
     await work().catch(ignored(undefined, 'probe'));
-    await new Promise((resolve) => setTimeout(resolve, LOG_FLUSH_MS));
+    await sleep(LOG_FLUSH_MS);
   } finally {
     Client.deactivatePersistentLibXMTPLogWriter();
   }
@@ -265,6 +269,9 @@ async function readNativeLogs(): Promise<string> {
 export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   client: xmtpClient,
   cachedClient: getCachedXmtpClient,
+  inboxIdOf: (client) => clientSdk.inboxIdOf(client),
+  installationIdOf: (client) => clientSdk.installationIdOf(client),
+  syncPreferences: (client) => clientSdk.syncPreferences(client),
   findConv: (client, convId) => client.conversations.findConversation(asConversationId(convId)),
   listConvs: (client, consent) => client.conversations.list(LIST_OPTIONS, undefined, consent),
   syncConvList: (client) => client.conversations.sync(),
@@ -313,8 +320,11 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     processSyncArchive: (client) => client.processSyncArchive(),
   },
   nativeErrorLog,
+  storeChangesInBackground: true,
   isGroup: (conv) => conv instanceof Group,
   isActive: (conv) => conv.isActive(),
+  syncConv: (conv) => conv.sync(),
+  memberInboxIds: async (conv) => (await conv.members()).map((m) => m.inboxId),
   syncState: async (conv) => {
     const [info, paused] = await Promise.all([conv.getDebugInformation(), conv.pausedForVersion()]);
     return {
@@ -330,6 +340,7 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   groupAdmins: groupAdminsOf,
   groupMetaPolicy: groupMetaPolicyOf,
   groupOps: (conv) => (conv instanceof Group ? conv : null),
+  appDataGroup: appDataGroupOf,
   addMembers: (conv, addresses) => asGroup(conv).addMembersByIdentity(identitiesOf(addresses)),
   removeMembers: (conv, addresses) => asGroup(conv).removeMembersByIdentity(identitiesOf(addresses)),
   leaveOp: (conv) => {
@@ -341,8 +352,8 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
   consentOf: (conv) => conv.consentState(),
   setConsent: (conv, state) => conv.updateConsent(state),
   messages: (conv, query) => conv.messages(nativeQuery(query)),
-  rowOf: (m) => ({ id: m.id, content: contentOf(m), contentTypeId: m.contentTypeId, senderInboxId: m.senderInboxId, sentNs: m.sentNs }),
-  envelopeOf: (m, line) => mapDecodedToEnvelope(m, line),
+  rowOf: nativeMessageOf,
+  envelopeOf: (m, line) => envelopeOf(nativeMessageOf(m), line),
   sentNsOf: (m) => m.sentNs,
   convIdOf: (m) => convIdFromTopic(m.topic) ?? conversationIdField(m),
   deleteMessage: (conv, messageId) => conv.deleteMessage(asMessageId(messageId)),
@@ -353,9 +364,3 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     json: (conv, codec, content) => conv.send(content, { contentType: codec.contentType }),
   },
 };
-
-export const convOfLine = convFinder(sdk);
-
-export const sendableConvOfLine = sendableFinder(sdk, (client, conv, timing) =>
-  prepareSenderFilters(client, groupTopicOf(conv.id), timing),
-);

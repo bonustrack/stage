@@ -1,23 +1,18 @@
 import { describe, expect, test } from 'bun:test';
 import { newNodeKey, type NodeResult } from '@stage-labs/client/nodes/protocol';
 import { ownNodeUrl } from '@stage-labs/client/nodes/publish';
+import { livePreviewOf, liveStatusText, ownsHostedNode, publishProblemText } from '../components/dashboard/liveWidget.model';
+import { liveConfirmOf } from '../lib/frames/dashboard.model';
 import {
   EMPTY_LIVE,
-  LIVE_REFRESH_MS,
-  NODE_URL_HINTS,
-  liveConfirmOf,
-  livePreviewOf,
   liveProblemText,
   liveRefetchInterval,
   liveRefreshDelay,
   liveSnapshotJson,
   liveSnapshotOf,
   liveStateAfter,
-  liveStatusText,
-  ownsHostedNode,
-  publishProblemText,
   type LiveState,
-} from '../components/dashboard/liveWidget.model';
+} from '../lib/frames/live.model';
 import type { FrameMessage } from '@stage-labs/client/xmtp/frame';
 import { REFUSED_MESSAGES, titleMessages } from './frameFixtures';
 
@@ -31,13 +26,7 @@ describe('live widget state', () => {
   test('a node frame replaces the shown frame and clears any problem', () => {
     expect(liveStateAfter(EMPTY_LIVE, frameReply(CARD), 1_000)).toEqual(shown);
     const failing = { ...shown, problem: 'timeout' as const, failures: 3 };
-    expect(liveStateAfter(failing, frameReply(NEXT), 2_000)).toEqual({
-      frame: { messages: NEXT },
-      at: 2_000,
-      problem: null,
-      status: null,
-      failures: 0,
-    });
+    expect(liveStateAfter(failing, frameReply(NEXT), 2_000)).toEqual({ ...shown, frame: { messages: NEXT }, at: 2_000 });
   });
 
   test('a failure keeps the last good frame and its time, and counts the failures', () => {
@@ -72,7 +61,7 @@ describe('live widget state', () => {
       version: 'v1.0',
       updateComponents: { surfaceId: 'main', components: [{ id: 'root', component: 'Title', text: '$105' }] },
     };
-    const reply = { ok: true, reply: { kind: 'messages', messages: [update] } } as const;
+    const reply: NodeResult = { ok: true, reply: { kind: 'messages', messages: [update] } };
     const next = { messages: titleMessages('$105') };
     expect(liveStateAfter(shown, reply, 3_000, { kind: 'frame', frame: next })).toEqual({ ...shown, frame: next, at: 3_000 });
     expect(liveStateAfter({ ...shown, failures: 2 }, reply, 3_000, { kind: 'unchanged' })).toEqual({ ...shown, at: 3_000 });
@@ -83,7 +72,6 @@ describe('live widget state', () => {
 
 describe('live widget refresh', () => {
   test('refreshes every minute while active, backs off after failures up to 5 minutes, and never while hidden', () => {
-    expect(LIVE_REFRESH_MS).toBe(60_000);
     expect(liveRefreshDelay(undefined)).toBe(60_000);
     expect([0, 1, 2, 3, 9].map((failures) => liveRefreshDelay({ ...shown, failures }))).toEqual([
       60_000, 120_000, 240_000, 300_000, 300_000,
@@ -111,10 +99,6 @@ describe('live widget status', () => {
       message: 'It loads from btc.example.com every minute while your Dashboard is open. That site sees your IP address, not your account.',
       confirmLabel: 'Add',
     });
-  });
-
-  test('every blocked link gets a hint', () => {
-    expect(Object.keys(NODE_URL_HINTS).sort()).toEqual(['credentials', 'insecure', 'invalid', 'local']);
   });
 });
 

@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { getAddress } from 'viem';
-import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
+import { internalLinkPath, routeForUrl, type ParsedRoute } from '@stage-labs/client/routing/deepLinks';
 import { contactQrValue, contactScanResult, parseContactQr } from '../components/contacts/ContactQr.model';
-import { internalLinkPath } from '../lib/safeOpenLink';
 import { redirectSystemPath } from '../app/+native-intent';
 
 const ALICE = getAddress('0x42e167e6bff0a3a701d8fa14f96a0f840eb939df');
@@ -58,7 +57,7 @@ describe('Stage contact QR codes', () => {
   });
 
   test('web and native deep links reach the same existing contact profile', () => {
-    const target = { pathname: '/profile/[id]', params: { id: ALICE } };
+    const target: ParsedRoute = { pathname: '/profile/[id]', params: { id: ALICE } };
     expect(routeForUrl(LINK)).toEqual(target);
     expect(internalLinkPath(LINK)).toBe(`/profile/${ALICE}`);
     expect(routeForUrl(redirectSystemPath({ path: LINK, initial: true }))).toEqual(target);
@@ -66,8 +65,8 @@ describe('Stage contact QR codes', () => {
   });
 
   test('scanning never returns wallet, authentication or message actions', () => {
-    expect(contactScanResult(LINK, BOB, 4, 4)).toEqual({ path: `/profile/${ALICE}` });
-    expect(contactScanResult(ALICE, BOB, 4, 4)).toEqual({ path: `/profile/${ALICE}` });
+    expect(contactScanResult(LINK, BOB, 4, 4)).toEqual({ address: ALICE });
+    expect(contactScanResult(ALICE, BOB, 4, 4)).toEqual({ address: ALICE });
     expect(contactScanResult('invalid', BOB, 4, 4)).toEqual({ error: 'Use a Stage contact QR code or a public address.' });
     expect(contactScanResult(ALICE.toLowerCase(), ALICE, 4, 4)?.error).toContain('your own address');
   });
@@ -77,6 +76,6 @@ describe('Stage contact QR codes', () => {
     expect(contactScanResult(LINK, BOB, 4, 6)).toBeNull();
     expect(contactScanResult('invalid', BOB, 4, 5)).toBeNull();
     expect(contactQrValue(BOB)).not.toBe(contactQrValue(ALICE));
-    expect(contactScanResult(BOB, ALICE, 5, 5)).toEqual({ path: `/profile/${BOB}` });
+    expect(contactScanResult(BOB, ALICE, 5, 5)).toEqual({ address: BOB });
   });
 });

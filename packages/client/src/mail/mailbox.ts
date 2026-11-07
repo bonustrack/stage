@@ -6,7 +6,7 @@ import { stageNameOf, validateStageLabel } from '../identity/stageNames';
 import { parseOrThrow } from '../validate';
 import { deriveHpkeKeyPair, hpkeOpen, hpkeSeal, type HpkeKeyPair } from './hpke';
 
-export const MAIL_DOMAIN = 'st.box';
+const MAIL_DOMAIN = 'st.box';
 export const MAIL_MAX_BYTES = 25 * 1024 * 1024;
 const MAIL_INFO = utf8ToBytes('st.box mail v1');
 const MAIL_ID = /^\d{13}-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -33,16 +33,6 @@ export type MailPart = 'index' | 'body';
 
 export type MailKeyPair = HpkeKeyPair;
 
-export interface MailIndex {
-  envelopeFrom: string;
-  from: string;
-  to: string;
-  subject: string;
-  date: string;
-  messageId: string;
-  size: number;
-}
-
 const MAIL_INDEX_SCHEMA = z.object({
   envelopeFrom: z.string(),
   from: z.string(),
@@ -52,6 +42,8 @@ const MAIL_INDEX_SCHEMA = z.object({
   messageId: z.string(),
   size: z.number().int().nonnegative(),
 });
+
+export type MailIndex = z.infer<typeof MAIL_INDEX_SCHEMA>;
 
 export function isMailboxLabel(label: string): boolean {
   return validateStageLabel(label) === null && !ROLE_LABELS.has(label);

@@ -1,4 +1,5 @@
-import { ASSETS, NATIVE_TOKEN_SENTINEL } from './assets';
+import { NATIVE_TOKEN_SENTINEL } from './assets';
+import { assetFor } from './tokens';
 import { shortAddress } from '../identity/format';
 import { decodeAbiParameters, getAddress, zeroAddress, type Hex } from 'viem';
 import { broviderRpc } from './client';
@@ -24,22 +25,18 @@ export interface SimCall {
   error?: { message?: string; data?: string };
 }
 
-export function humanizeRevert(raw: string): string {
+function humanizeRevert(raw: string): string {
   const s = raw.trim();
   const lc = s.toLowerCase();
   if (lc.includes('insufficient funds')) return 'insufficient ETH for value + gas';
-  if (lc.includes('insufficient balance') || lc.includes('transfer amount exceeds balance')) {
-    return 'insufficient token balance';
-  }
-  if (lc.includes('insufficient allowance') || lc.includes('exceeds allowance')) {
-    return 'insufficient token allowance (approve first)';
-  }
+  if (lc.includes('insufficient balance') || lc.includes('transfer amount exceeds balance')) return 'insufficient token balance';
+  if (lc.includes('insufficient allowance') || lc.includes('exceeds allowance')) return 'insufficient token allowance (approve first)';
   if (lc.includes('intrinsic gas') || lc.includes('out of gas')) return 'out of gas';
   if (lc === 'execution reverted' || lc === 'reverted') return 'transaction would revert';
   return s;
 }
 
-export function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
+function decodeRevert(returnData?: string, errMsg?: string): string | undefined {
   const d = returnData && returnData !== '0x' ? returnData : undefined;
   if (d?.startsWith('0x08c379a0')) {
     try {
@@ -52,19 +49,12 @@ export function decodeRevert(returnData?: string, errMsg?: string): string | und
   return undefined;
 }
 
-function tokenMeta(addr: string, chainId: number): { symbol: string; decimals: number } {
-  const lc = addr.toLowerCase();
-  const hit = ASSETS.find((a) => a.chainId === chainId && a.address?.toLowerCase() === lc);
-  if (hit) return { symbol: hit.symbol, decimals: hit.decimals };
-  return { symbol: shortAddress(addr), decimals: 18 };
+function tokenMeta(key: string, chainId: number): { symbol: string; decimals: number } {
+  const hit = assetFor(chainId, key);
+  return { symbol: hit?.symbol ?? (key === '' ? 'ETH' : shortAddress(key)), decimals: hit?.decimals ?? 18 };
 }
 
-function nativeMeta(chainId: number): { symbol: string; decimals: number } {
-  const hit = ASSETS.find((a) => a.chainId === chainId && a.address === null);
-  return { symbol: hit?.symbol ?? 'ETH', decimals: hit?.decimals ?? 18 };
-}
-
-export function formatAmount(raw: bigint, decimals: number): string {
+function formatAmount(raw: bigint, decimals: number): string {
   if (raw < 0n) raw = -raw;
   const base = 10n ** BigInt(decimals);
   const whole = raw / base;
@@ -75,8 +65,8 @@ export function formatAmount(raw: bigint, decimals: number): string {
   return `${whole.toString()}.${fs}`;
 }
 
-export function insufficientEthReason(balanceWei: bigint, valueWei: bigint, chainId: number): string {
-  const { symbol, decimals } = nativeMeta(chainId);
+function insufficientEthReason(balanceWei: bigint, valueWei: bigint, chainId: number): string {
+  const { symbol, decimals } = tokenMeta('', chainId);
   return `insufficient ${symbol} (have ${formatAmount(balanceWei, decimals)}, need ${formatAmount(valueWei, decimals)})`;
 }
 
@@ -98,12 +88,8 @@ interface ParsedTransfer {
 }
 
 function transferTopics(log: SimLog): [string, string] | null {
-  const topics = log.topics;
-  if (!topics?.length || topics[0]?.toLowerCase() !== TRANSFER_TOPIC || topics.length < 3) return null;
-  const topic1 = topics[1];
-  const topic2 = topics[2];
-  if (topic1 === undefined || topic2 === undefined) return null;
-  return [topic1, topic2];
+  const [head, from, to] = log.topics ?? [];
+  return head?.toLowerCase() === TRANSFER_TOPIC && from !== undefined && to !== undefined ? [from, to] : null;
 }
 
 function parseTransferLog(log: SimLog): ParsedTransfer | null {
@@ -136,7 +122,7 @@ function netTransfers(calls: SimCall[], me: string): Map<string, bigint> {
 }
 
 function buildMove(key: string, delta: bigint, chainId: number): AssetMove {
-  const meta = key === '' ? nativeMeta(chainId) : tokenMeta(key, chainId);
+  const meta = tokenMeta(key, chainId);
   return {
     token: key === '' ? NATIVE_TOKEN_SENTINEL : key,
     symbol: meta.symbol,
@@ -145,22 +131,15 @@ function buildMove(key: string, delta: bigint, chainId: number): AssetMove {
   };
 }
 
-export function parseAssetChanges(
-  calls: SimCall[],
-  from: string,
-  chainId: number,
-  topValue?: string,
-): { in: AssetMove[]; out: AssetMove[] } {
+function parseAssetChanges(calls: SimCall[], from: string, chainId: number, topValue?: string): { in: AssetMove[]; out: AssetMove[] } {
   const me = from.toLowerCase();
   const net = netTransfers(calls, me);
-
   if (topValue) {
     try {
       const v = BigInt(topValue);
       if (v > 0n && (net.get('') ?? 0n) === 0n) net.set('', -v);
     } catch {}
   }
-
   const out: AssetMove[] = [];
   const incoming: AssetMove[] = [];
   for (const [key, delta] of net) {
@@ -252,11 +231,9 @@ async function runSimulateV1(call: SimCallInput, chainId: number): Promise<SimV1
 }
 
 function interpretSimResult(json: SimV1Response, from: string, call: SimCallInput, chainId: number): SimulateResult {
-  const empty = { in: [], out: [] };
   const allCalls = (json.result ?? []).flatMap((b) => b.calls ?? []);
   const c = allCalls[0];
-  if (!c) return { success: 'unknown', assetChanges: empty, error: 'Empty simulation result' };
-
+  if (!c) return { success: 'unknown', assetChanges: { in: [], out: [] }, error: 'Empty simulation result' };
   const assetChanges = parseAssetChanges(allCalls, from, chainId, call.value);
   if (c.status !== '0x1') {
     return { success: false, revertReason: decodeRevert(c.returnData, c.error?.message) ?? 'Transaction would revert', assetChanges };
@@ -284,14 +261,12 @@ export async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
   } catch {
     return { success: 'unknown', assetChanges: empty, error: 'Invalid address' };
   }
-
   const valueHex = normaliseValue(p.value);
   const hasData = !!p.data && p.data !== '0x';
   if (!hasData) {
     const pre = await checkNativeBalance(from, valueHex, p.chainId);
     if (pre) return pre;
   }
-
   const call: SimCallInput = { from, to, value: valueHex, ...(hasData ? { data: p.data } : {}) };
   let json: SimV1Response;
   try {
@@ -299,7 +274,6 @@ export async function simulateTx(p: SimulateParams): Promise<SimulateResult> {
   } catch (e) {
     return { success: 'unknown', assetChanges: empty, error: e instanceof Error ? e.message : 'Network error' };
   }
-
   if (json.error || !json.result) return handleSimError(json, call, p.chainId);
   return interpretSimResult(json, from, call, p.chainId);
 }

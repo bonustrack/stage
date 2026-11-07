@@ -1,14 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { channelRefToken } from '../src/xmtp/channelRefs';
-import {
-  bodySegments,
-  bodyView,
-  mentionAddresses,
-  mentionLabel,
-  namedPlainText,
-  withMentionLabels,
-  type LinkFinder,
-} from '../src/xmtp/messageBody';
+import { bodySegments, bodyView, mentionAddresses, mentionLabel, namedPlainText, type LinkFinder } from '../src/xmtp/messageBody';
 
 const A = '0x59445094f08d01213bd6ba7215a6ab7a4bc29a4a';
 const B = '0x6f53196a053da13a1cced1115d104ae5e4c4bc06';
@@ -33,8 +25,14 @@ describe('mention labels', () => {
 
   test('replaces every mention with its label and keeps the text around it', () => {
     const names: Record<string, string> = { [A]: '@chen', [B]: '@tony' };
-    expect(withMentionLabels(`added @${A} and @${B}`, (a) => names[a] ?? a)).toBe('added @chen and @tony');
-    expect(withMentionLabels('hello', (a) => a)).toBe('hello');
+    const plain = (body: string): string =>
+      namedPlainText(
+        bodySegments(body, findLinks, true),
+        (a) => names[a] ?? a,
+        () => '#?',
+      );
+    expect(plain(`added @${A} and @${B}`)).toBe('added @chen and @tony');
+    expect(plain('hello')).toBe('hello');
   });
 
   test('shows names in plain views of a body that mentions someone', () => {
@@ -68,7 +66,10 @@ describe('mention labels', () => {
   });
 
   test('shows a channel ref as its hash label in plain views', () => {
-    expect(withMentionLabels(`join ${OPS} with @${A}`, () => '@chen')).toBe('join #Ops with @chen');
+    const channelLabel = (seg: { label?: string }): string => `#${seg.label ?? ''}`;
+    expect(namedPlainText(bodySegments(`join ${OPS} with @${A}`, findLinks, true), () => '@chen', channelLabel)).toBe(
+      'join #Ops with @chen',
+    );
   });
 
   test('renders a body with a channel ref as links, not markdown', () => {
@@ -143,21 +144,16 @@ describe('mention labels', () => {
   });
 
   test('plain views retain ordinary Markdown URLs and resolve mentions within their labels', () => {
-    const source = `read [ping @${A}](https://example.com) today stage://channel/c0ffee02`;
-    const result = namedPlainText(
-      bodySegments(source, findLinks, true),
-      () => '@Chen',
-      () => '#Ops',
-    );
-    expect(result).toBe('read [ping @Chen](https://example.com) today #Ops');
-    expect(bodyView(`[ping @${A}](https://example.com)`, true, findLinks)).toBe('namedPlain');
-    expect(
+    const plain = (body: string): string =>
       namedPlainText(
-        bodySegments(`code \`@${A}\` and @${B}`, findLinks, true),
+        bodySegments(body, findLinks, true),
         () => '@Chen',
         () => '#Ops',
-      ),
-    ).toBe(`code \`@${A}\` and @Chen`);
+      );
+    const source = `read [ping @${A}](https://example.com) today stage://channel/c0ffee02`;
+    expect(plain(source)).toBe('read [ping @Chen](https://example.com) today #Ops');
+    expect(bodyView(`[ping @${A}](https://example.com)`, true, findLinks)).toBe('namedPlain');
+    expect(plain(`code \`@${A}\` and @${B}`)).toBe(`code \`@${A}\` and @Chen`);
   });
 
   test('channel fallbacks work in formatted Markdown links with titles', () => {

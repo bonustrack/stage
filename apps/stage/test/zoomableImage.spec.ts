@@ -14,7 +14,7 @@ import {
   type ZoomGeometry,
   type ZoomPoint,
   type ZoomState,
-} from '../components/ZoomableImage.model';
+} from '../components/media/ZoomableImage.model';
 
 const square: ZoomGeometry = { view: { width: 400, height: 800 }, natural: { width: 1000, height: 1000 }, frame: { x: 0, y: 0 } };
 

@@ -1,51 +1,21 @@
+import { errorMessage } from '@stage-labs/client/errors';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { fetchGroupRoles, messagingKeys, refreshConv, useConvDetails, useConvRow } from '../../modules/messaging/queries';
-import { memberAddressesOf } from '../../modules/messaging/convRow.model';
-import { groupEditRights, leaveGroupConv, removeGroupMembers } from '../../lib/xmtp.groups';
-import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';
+import { refreshConv, useChannelEditRights, useChannelRoles, useConvDetails, useConvRow } from '../../lib/messaging/queries';
+import { memberAddressesOf } from '../../lib/messaging/convRow.model';
+import { removeGroupMembers } from '../../lib/xmtp.groups';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
-import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
+import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '../../lib/peerProfiles';
 import { capabilities } from '../../lib/capabilities';
-import { LEAVE_CHANNEL_CONFIRM } from '../ChannelMenu.model';
-import { homeRoute } from '../tabs/boardHome';
-
-function convIdOf(line: string): string {
-  const convId = convIdOfLine(line);
-  if (!convId) throw new Error('Conversation not found');
-  return convId;
-}
+import { leaveChannel as leaveChannelFlow } from './channelActions';
 
 type Roles = Record<string, 'owner' | 'admin' | 'member'>;
 type Names = Record<string, string | null>;
 
-const NO_ROLES: Roles = {};
 const NO_MAP: Record<string, string> = {};
 
-const NO_EDIT_RIGHTS: GroupEditRights = {
-  name: false,
-  description: false,
-  image: false,
-  appData: false,
-  addMembers: false,
-  removeMembers: false,
-};
-
-export function useChannelRoles(convId: string | undefined, inboxToAddr: Record<string, string>): Roles {
-  const inboxIds = Object.keys(inboxToAddr);
-  const { data = NO_ROLES } = useQuery({
-    queryKey: messagingKeys.groupRoles(convId, inboxIds),
-    queryFn: () => fetchGroupRoles(convId ?? '', inboxToAddr),
-    enabled: !!convId && inboxIds.length > 0,
-  });
-  return data;
-}
-
 function useMemberDirectory(
-  convId: string | undefined,
+  convId: string,
   row: ReturnType<typeof useConvRow>,
 ): { members: string[]; memberNames: Names; memberRoles: Roles } {
   const [memberNames, setMemberNames] = useState<Names>({});
@@ -67,26 +37,6 @@ function useMemberDirectory(
   return { members, memberNames, memberRoles };
 }
 
-async function runTask(mark: (on: boolean) => void, failTitle: string, task: () => Promise<void>): Promise<void> {
-  mark(true);
-  try {
-    await task();
-  } catch (e) {
-    Alert.alert(failTitle, (e as Error).message ?? 'Unknown error');
-  } finally {
-    mark(false);
-  }
-}
-
-export function useChannelEditRights(convId: string | undefined, enabled = true): GroupEditRights {
-  const { data = NO_EDIT_RIGHTS } = useQuery({
-    queryKey: messagingKeys.groupEditRights(convId),
-    queryFn: () => groupEditRights(convId ?? ''),
-    enabled: enabled && !!convId,
-  });
-  return data;
-}
-
 export function confirmMemberRemoval(names: string[]): Promise<boolean> {
   const who = names.length === 1 ? (names[0] ?? '') : `${names.length} members`;
   return capabilities.confirm({
@@ -97,9 +47,8 @@ export function confirmMemberRemoval(names: string[]): Promise<boolean> {
   });
 }
 
-export function useChannelDetail(convId: string | undefined) {
+export function useChannelDetail(convId: string) {
   const router = useRouter();
-  const line = lineOfConv(convId ?? '');
   const row = useConvRow(convId);
   const { description } = useConvDetails(convId, row);
   const directory = useMemberDirectory(convId, row);
@@ -109,26 +58,18 @@ export function useChannelDetail(convId: string | undefined) {
 
   const removeMember = async (addr: string): Promise<void> => {
     if (!(await confirmMemberRemoval([shortAddress(addr)]))) return;
-    await runTask(
-      (on) => {
-        setRemoving(on ? addr.toLowerCase() : null);
-      },
-      'Remove member failed',
-      async () => {
-        await removeGroupMembers(convIdOf(line), [addr]);
-        refreshConv(convIdOf(line));
-      },
-    );
+    setRemoving(addr.toLowerCase());
+    try {
+      await removeGroupMembers(convId, [addr]);
+      refreshConv(convId);
+    } catch (e) {
+      capabilities.alert('Remove member failed', errorMessage(e));
+    } finally {
+      setRemoving(null);
+    }
   };
 
-  const leaveChannel = async (): Promise<void> => {
-    if (!(await capabilities.confirm(LEAVE_CHANNEL_CONFIRM))) return;
-    await runTask(setLeaving, 'Couldn’t leave', async () => {
-      const result = await leaveGroupConv(line);
-      capabilities.toast(result === 'left' ? 'Left channel' : 'Channel hidden');
-      router.replace(homeRoute());
-    });
-  };
+  const leaveChannel = (): Promise<void> => leaveChannelFlow(convId, 'chat', router, setLeaving);
 
   return {
     ...directory,

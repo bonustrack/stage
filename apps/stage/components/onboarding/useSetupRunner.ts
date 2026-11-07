@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
 import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import { holdOnboarding } from '../../lib/accountGate';
-import { AccountSetupError, type EditableProfile } from '../../lib/onboarding.core';
+import { AccountSetupError, XmtpSetupError, type EditableProfile } from '../../lib/onboarding.core';
 import { clearPendingSetup, readPendingSetup } from '../../lib/onboardingPending';
 import { syncHistoryToEnd } from '../../lib/history';
+import { capabilities } from '../../lib/capabilities';
 import {
   createWallet,
   resumeCreatedWallet,
@@ -14,10 +14,9 @@ import {
   restoreWallet,
   importKeyAccount,
   bringMessagingOnline,
-  XmtpSetupError,
   type SetupWarning,
   type Stage,
-} from './flow';
+} from '../../lib/onboarding';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import type { ProfileSetup } from './Onboarding.profile.model';
 
@@ -27,7 +26,7 @@ export type Choice =
   | { kind: 'restore'; phrase: string }
   | { kind: 'importKey'; pk: Hex };
 
-export interface SetupRunner {
+interface SetupRunner {
   busy: boolean;
   stage: Stage;
   setupErr: SetupErr | null;
@@ -55,13 +54,14 @@ function errorFrom(e: unknown): SetupErr {
   return { message: describe(e), retry: 'restart' };
 }
 async function runChoice(choice: Choice, onStage: (s: Stage) => void): Promise<SetupWarning> {
-  if (choice.kind === 'create') return createWallet(onStage, choice.profile);
-  if (choice.kind === 'editProfile') {
-    await editCreatedProfile(choice.profile);
-    return resumeCreatedWallet(onStage);
-  }
   if (choice.kind === 'restore') return restoreWallet(choice.phrase, onStage);
-  return importKeyAccount(choice.pk, onStage);
+  if (choice.kind === 'create') await createWallet(onStage, choice.profile);
+  else if (choice.kind === 'importKey') await importKeyAccount(choice.pk, onStage);
+  else {
+    await editCreatedProfile(choice.profile);
+    await resumeCreatedWallet(onStage);
+  }
+  return null;
 }
 function useLatch(): [boolean, (next: boolean) => void, () => boolean] {
   const [value, setValueState] = useState(false);
@@ -124,7 +124,7 @@ function useCompletion(onDone: () => void): (warning: SetupWarning) => void {
   return (warning) => {
     if (!mounted.current) return;
     onDone();
-    if (warning !== null) Alert.alert(warning.title, warning.message);
+    if (warning !== null) capabilities.alert(warning.title, warning.message);
   };
 }
 
@@ -208,8 +208,8 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
   const resume = (accountId?: string): void => {
     execute(
       async () => {
-        if (accountId === undefined) return resumeCreatedWallet(setStage);
-        await bringMessagingOnline(accountId, setStage);
+        if (accountId === undefined) await resumeCreatedWallet(setStage);
+        else await bringMessagingOnline(accountId, setStage);
         return null;
       },
       plan.history === true,

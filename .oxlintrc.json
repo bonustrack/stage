@@ -9,12 +9,11 @@
   ],
   "categories": { "correctness": "off" },
   "options": { "typeAware": true },
-  "rules": { "import/no-cycle": "error" },
+  "rules": { "import/no-cycle": "error", "comments/no-comments": "error", "text/no-em-dash": "error" },
   "ignorePatterns": [
     "**/.vite/**",
     "packages/kit/src/heroicons.data.ts",
     "packages/kit/src/heroicons.solid.data.ts",
-    "packages/kit/src/central-icons.data.ts",
     "packages/kit/src/central-icons.named.data.ts",
     "packages/kit/src/central-icons.names.data.ts"
   ],
@@ -155,9 +154,7 @@
         ],
         "max-lines": ["error", { "max": 400, "skipBlankLines": false, "skipComments": false }],
         "max-lines-per-function": ["error", { "max": 100, "skipBlankLines": true, "skipComments": true, "IIFEs": true }],
-        "complexity": ["error", 10],
-        "comments/no-comments": "error",
-        "text/no-em-dash": "error"
+        "complexity": ["error", 10]
       }
     },
     {
@@ -167,10 +164,37 @@
     {
       "files": ["apps/stage/{app,components,lib,modules,platform}/**/*.{ts,tsx}"],
       "rules": {
-        "stage/prefer-role-variant": "warn",
+        "stage/prefer-role-variant": "error",
         "stage/no-keyring-bypass": "error",
         "stage/native-only-in-seams": "error",
         "stage/no-silent-catch": "error",
+        "stage/no-column-flex-style": ["error", { "nested": true }],
+        "stage/kit-layout-style": [
+          "error",
+          {
+            "nested": true,
+            "keys": [
+              "alignItems",
+              "justifyContent",
+              "gap",
+              "padding",
+              "paddingHorizontal",
+              "paddingVertical",
+              "paddingTop",
+              "paddingRight",
+              "paddingBottom",
+              "paddingLeft",
+              "margin",
+              "marginHorizontal",
+              "marginVertical",
+              "marginTop",
+              "marginRight",
+              "marginBottom",
+              "marginLeft",
+              "backgroundColor"
+            ]
+          }
+        ],
         "core/no-restricted-syntax": [
           "error",
           {
@@ -184,18 +208,6 @@
           {
             "selector": "JSXElement[openingElement.name.name=/^(Text|Title)$/] JSXAttribute[name.name=/^(style|textStyle)$/] Property[key.name='color']",
             "message": "Kit Text/Title must take their colour via the `color` prop (color={pal.text}), not a color in style. Remove color from the style and pass color= instead."
-          },
-          {
-            "selector": "JSXOpeningElement[name.name='Column'] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
-            "message": "Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex."
-          },
-          {
-            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft)$/]",
-            "message": "Row/Column: use the layout prop instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, padding*->padding (scalar or {x,y,top,right,bottom,left}), margin*->margin (same Spacing shape) (see kit/src/layout.ts)."
-          },
-          {
-            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer ObjectExpression > Property[key.name='backgroundColor']",
-            "message": "Row/Column: use the `surface` variant (surface/raised/sunken/toolbar) or the `background` override prop, not a backgroundColor in style."
           }
         ],
         "no-restricted-imports": [
@@ -205,7 +217,7 @@
               {
                 "name": "react-native-safe-area-context",
                 "importNames": ["useSafeAreaInsets"],
-                "message": "Use useSafeAreaInsets from '@/lib/safeArea' so the desktop title bar counts as a top inset."
+                "message": "Use useSafeAreaInsets from '@/components/layout/safeArea' so the desktop title bar counts as a top inset."
               },
               {
                 "name": "react-native",
@@ -253,7 +265,7 @@
         "apps/stage/components/layout/**",
         "apps/stage/app/_layout.tsx",
         "apps/stage/components/HoverTooltip.web.tsx",
-        "apps/stage/components/accounts/QrScanner.web.tsx",
+        "apps/stage/components/qr/QrScanner.web.tsx",
         "apps/stage/components/bubble/ReactionTooltip.tsx",
         "apps/stage/components/bubble/gestures.ts",
         "apps/stage/components/call/CallButtons.tsx",
@@ -265,11 +277,11 @@
       "rules": { "no-restricted-imports": "off" }
     },
     {
-      "files": ["apps/stage/components/landing/**", "apps/stage/components/smallText.ts"],
-      "rules": { "core/no-restricted-syntax": "off" }
+      "files": ["apps/stage/components/landing/**"],
+      "rules": { "core/no-restricted-syntax": "off", "stage/no-column-flex-style": "off", "stage/kit-layout-style": "off" }
     },
     {
-      "files": ["apps/stage/lib/safeArea.ts"],
+      "files": ["apps/stage/components/layout/safeArea.ts"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -316,16 +328,16 @@
     { "files": ["apps/stage/**/*.js"], "rules": { "typescript/no-require-imports": "off" } },
     {
       "files": [
-        "apps/stage/components/bubble/AudioCard.tsx",
-        "apps/stage/components/bubble/ChatGallery.tsx",
-        "apps/stage/components/bubble/ImageAttachment.tsx",
-        "apps/stage/components/bubble/attachments.tsx",
+        "apps/stage/components/media/AudioCard.tsx",
+        "apps/stage/components/media/ChatGallery.tsx",
+        "apps/stage/components/media/ImageAttachment.tsx",
+        "apps/stage/components/media/attachments.tsx",
         "apps/stage/components/bubble/content.parts.tsx",
         "apps/stage/components/bubble/poll.tsx",
-        "apps/stage/components/bubble/question.tsx",
         "apps/stage/components/bubble/reactions.tsx",
         "apps/stage/components/home/labelbar.tsx",
-        "apps/stage/components/home/topnavRight.tsx"
+        "apps/stage/components/home/topnavRight.tsx",
+        "apps/stage/components/home/viewMenu.tsx"
       ],
       "rules": {
         "react/rules-of-hooks": "error",
@@ -344,65 +356,14 @@
         "react/unsupported-syntax": "warn"
       }
     },
+    { "files": ["packages/kit/src/**/*.{ts,tsx}"], "rules": { "stage/no-column-flex-style": "error", "stage/kit-layout-style": "error" } },
     {
-      "files": ["packages/kit/src/**/*.{ts,tsx}"],
-      "rules": {
-        "core/no-restricted-syntax": [
-          "error",
-          {
-            "selector": "JSXOpeningElement[name.name='Column'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
-            "message": "Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex."
-          },
-          {
-            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
-            "message": "Row/Column: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
-          }
-        ]
-      }
-    },
-    {
-      "files": ["packages/kit/src/button.styles.ts", "packages/kit/src/control.styles.ts", "packages/kit/src/react-native/select.tsx"],
-      "rules": {
-        "core/no-restricted-syntax": [
-          "error",
-          {
-            "selector": "JSXOpeningElement[name.name='Column'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
-            "message": "Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex."
-          },
-          {
-            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
-            "message": "Row/Column: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
-          },
-          {
-            "selector": "Property[key.name='fontSize'] > Literal[value=type(number)]",
-            "message": "Use a named Kit size token (FONT_SIZE.md / fontSize('md') from './tokens') instead of a raw fontSize number."
-          }
-        ]
-      }
+      "files": ["packages/kit/src/button.styles.ts", "packages/kit/src/control.styles.ts"],
+      "rules": { "stage/kit-font-size-token": "error" }
     },
     {
       "files": ["packages/kit/src/react-native/card.tsx", "packages/kit/src/react-native/list-view.tsx"],
-      "rules": {
-        "core/no-restricted-syntax": [
-          "error",
-          {
-            "selector": "JSXOpeningElement[name.name='Column'] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(flex|flexDirection)$/]",
-            "message": "Column must not set flex/flexDirection in style. Use Row for a row, and pass flex-grow via the A2UI `weight` prop (<Column weight={1}>) instead of a style flex."
-          },
-          {
-            "selector": "JSXOpeningElement[name.name=/^(Row|Column)$/] > JSXAttribute[name.name='style'] > JSXExpressionContainer > ObjectExpression > Property[key.name=/^(alignItems|justifyContent|gap|flex|padding|paddingHorizontal|paddingVertical|paddingTop|paddingRight|paddingBottom|paddingLeft|margin|marginHorizontal|marginVertical|marginTop|marginRight|marginBottom|marginLeft|backgroundColor|borderRadius|width|height|minWidth|minHeight|maxWidth|maxHeight|aspectRatio)$/]",
-            "message": "Row/Column: use the Kit layout param instead of a style entry - alignItems->align, justifyContent->justify, gap->gap, flex->flex, padding*->padding, margin*->margin (Spacing), backgroundColor->background, borderRadius->radius (token), width/height/min*/max*/aspectRatio->the same-named sizing param (see ./layout.ts). Props with no Kit param (borderWidth/borderColor/position/overflow/opacity/shadow/zIndex/transform) stay in style."
-          },
-          {
-            "selector": "Property[key.name='fontSize'] > Literal[value=type(number)]",
-            "message": "Use a named Kit size token (FONT_SIZE.md / fontSize('md') from './tokens') instead of a raw fontSize number."
-          },
-          {
-            "selector": "Literal[value=/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/]",
-            "message": "Use a token from './tokens' (schemePalette()/colors/resolveColorToken) instead of a raw hex colour."
-          }
-        ]
-      }
+      "rules": { "stage/kit-font-size-token": "error", "stage/kit-color-token": "error" }
     },
     {
       "files": ["packages/kit/src/a2ui/**", "packages/kit/src/*.ts"],
@@ -431,11 +392,6 @@
         ]
       }
     },
-    { "files": ["packages/kit/src/control.styles.ts", "packages/kit/src/glyph.ts"], "rules": { "no-restricted-imports": "off" } },
-    { "files": ["**/*.{js,jsx,cjs,mjs}"], "rules": { "comments/no-comments": "error", "text/no-em-dash": "error" } },
-    {
-      "files": ["**/test/**", "**/*.{test,spec}.{ts,tsx}", "**/*.test.*"],
-      "rules": { "comments/no-comments": "error", "text/no-em-dash": "error" }
-    }
+    { "files": ["packages/kit/src/control.styles.ts", "packages/kit/src/glyph.ts"], "rules": { "no-restricted-imports": "off" } }
   ]
 }

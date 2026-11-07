@@ -1,21 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  avatarCacheKey,
-  baseCoinType,
-  baseReverseNode,
-  resolveBasenameProfile,
-  resolveOnchainProfile,
-  usableAvatarUri,
-} from '../src/identity/onchainProfile';
+import { avatarCacheKey, baseReverseNode, resolveBasenameProfile, resolveOnchainProfile } from '../src/identity/onchainProfile';
 import type { PublicClient } from 'viem';
 
 const ALICE = '0x00000000000000000000000000000000000000A1';
 
 describe('basename reverse nodes', () => {
-  test('encodes the Base chain id as ENSIP-11 coin type', () => {
-    expect(baseCoinType(8453)).toBe('80002105');
-  });
-
   test('matches the reverse node OnchainKit derives for a known address', () => {
     expect(baseReverseNode('0x8c8F1a1e1bFdb15E7ed562efc84e5A588E68aD73')).toBe(
       '0xcd18b9f82b690bdf732816fe0b9796635191f97e59bcebbef4eba6e05a39da05',
@@ -29,19 +18,15 @@ describe('basename reverse nodes', () => {
   });
 });
 
-describe('avatar and name helpers', () => {
-  test('keeps only fetchable avatar URIs', () => {
-    expect(usableAvatarUri(' https://x/y.png ')).toBe('https://x/y.png');
-    expect(usableAvatarUri('ipfs://bafy')).toBe('ipfs://bafy');
-    expect(usableAvatarUri('eip155:1/erc721:0xabc/1')).toBeUndefined();
-    expect(usableAvatarUri(null)).toBeUndefined();
-  });
-});
+type FailingRead = (functionName: string, key: unknown) => boolean;
 
-function fakeClient(answers: { name: string; addr: string; text?: Record<string, string> }, fail = false): PublicClient {
+function fakeClient(
+  answers: { name: string; addr: string; text?: Record<string, string> },
+  fails: FailingRead = () => false,
+): PublicClient {
   return {
     readContract: async ({ functionName, args }: { functionName: string; args?: unknown[] }) => {
-      if (fail) throw new Error('rpc down');
+      if (fails(functionName, args?.[1])) throw new Error('rpc down');
       if (functionName === 'resolver') return '0x00000000000000000000000000000000000000C0';
       if (functionName === 'name') return answers.name;
       if (functionName === 'addr') return answers.addr;
@@ -66,6 +51,15 @@ describe('resolveBasenameProfile', () => {
     });
   });
 
+  test('keeps only fetchable avatar URIs', async () => {
+    const avatarOf = async (avatar: string): Promise<string | undefined> =>
+      (await resolveBasenameProfile(fakeClient({ name: 'tony.base.eth', addr: ALICE, text: { avatar } }), ALICE))?.avatar;
+    expect(await avatarOf(' https://x/y.png ')).toBe('https://x/y.png');
+    expect(await avatarOf('ipfs://bafy')).toBe('ipfs://bafy');
+    expect(await avatarOf('eip155:1/erc721:0xabc/1')).toBeUndefined();
+    expect(await avatarOf('')).toBeUndefined();
+  });
+
   test('avatar cache keys change with the record and are absent without one', () => {
     expect(avatarCacheKey('ipfs://a')).not.toBe(avatarCacheKey('ipfs://b'));
     expect(avatarCacheKey('ipfs://a')).toHaveLength(8);
@@ -77,7 +71,7 @@ describe('resolveBasenameProfile', () => {
     expect(await resolveBasenameProfile(client, ALICE)).toBeNull();
   });
 
-  test('resolves through the Base client and swallows RPC failures', async () => {
+  test('resolves through the Base client', async () => {
     const clients = fakeClient({ name: 'tony.base.eth', addr: ALICE });
     expect(await resolveOnchainProfile(clients, ALICE)).toEqual({
       name: 'tony.base.eth',
@@ -86,7 +80,12 @@ describe('resolveBasenameProfile', () => {
       avatar: undefined,
       source: 'basename',
     });
-    expect(await resolveOnchainProfile(fakeClient({ name: '', addr: '' }, true), ALICE)).toBeNull();
+  });
+
+  test('a failed read fails the lookup instead of reading as an empty record', async () => {
+    const answers = { name: 'tony.base.eth', addr: ALICE, text: { avatar: 'ipfs://pic' } };
+    const failures: FailingRead[] = [() => true, (fn, key) => fn === 'text' && key === 'avatar', (fn) => fn === 'resolver'];
+    for (const fails of failures) await expect(resolveOnchainProfile(fakeClient(answers, fails), ALICE)).rejects.toThrow('rpc down');
   });
 });
 
@@ -102,6 +101,11 @@ describe('resolveOnchainProfile issued-name fallback', () => {
   test('stays null without a lookup or when the issuer knows no name', async () => {
     expect(await resolveOnchainProfile(clients, ALICE)).toBeNull();
     expect(await resolveOnchainProfile(clients, ALICE, async () => null)).toBeNull();
+  });
+
+  test('a failed reverse lookup does not fall back to the issuer name', async () => {
+    const reverseDown = fakeClient({ name: '', addr: ALICE }, (fn) => fn === 'name');
+    await expect(resolveOnchainProfile(reverseDown, ALICE, async () => 'alice456.stage.base.eth')).rejects.toThrow('rpc down');
   });
 
   test('rejects an issuer name whose forward record points elsewhere', async () => {

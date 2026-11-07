@@ -1,11 +1,11 @@
 import { pathToFileURL } from 'node:url';
 import { net, protocol } from 'electron';
-import { APP_SCHEME, ISOLATION_HEADERS, mimeFor, webFilePath } from './assets';
+import { BUNDLE_SCHEME, ISOLATION_HEADERS, mimeFor, webFilePath } from './assets';
 
 export function registerAppScheme(): void {
   protocol.registerSchemesAsPrivileged([
     {
-      scheme: APP_SCHEME,
+      scheme: BUNDLE_SCHEME,
       privileges: {
         standard: true,
         secure: true,
@@ -24,7 +24,7 @@ function notFound(): Response {
 }
 
 export function serveWebApp(root: string): void {
-  protocol.handle(APP_SCHEME, async (request) => {
+  protocol.handle(BUNDLE_SCHEME, async (request) => {
     const file = webFilePath(root, new URL(request.url).pathname);
     if (file === null) return notFound();
     const upstream = await net.fetch(pathToFileURL(file).toString());

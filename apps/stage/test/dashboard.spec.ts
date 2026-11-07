@@ -1,55 +1,42 @@
-import { describe, expect, mock, test } from 'bun:test';
+import { describe, expect, test } from 'bun:test';
 import {
   DASHBOARD_MAX_WIDGETS,
   dashboardSchema,
-  EMPTY_DASHBOARD,
   liveSourceOf,
   type DashboardContent,
   type DashboardHeight,
   type DashboardWidget,
   type DashboardWidth,
-} from '@stage-labs/client/xmtp/readState';
+} from '@stage-labs/client/xmtp/sync/dashboard';
 import {
-  FRAME_ADD_TOASTS,
   HEIGHT_OPTIONS,
   WIDTH_OPTIONS,
+  cellRects,
+  dropTarget,
+  gridColumns,
+  packWidgets,
+  widgetSpan,
+} from '../components/dashboard/grid.model';
+import {
   addFrameWidget,
   addLiveWidget,
   canAddWidget,
-  cellRects,
-  dropTarget,
   frameWidgetAdd,
-  gridColumns,
   liveWidgetAdd,
   moveWidget,
-  packWidgets,
   removedLiveIds,
   removeWidget,
   resizeWidget,
-  widgetSpan,
-} from '../components/dashboard/dashboard.model';
+} from '../lib/frames/dashboard.model';
 import { editDashboard, receiveDashboard } from '../lib/syncedSettings.model';
+import { selectAccount } from './activeAccount';
+import { settle } from './helpers';
+import { mockAppStorage } from './memoryStorage';
 
-const values = new Map<string, string>();
-const activeId = 'alice';
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => values.get(key) ?? null,
-    set: async (key: string, value: string): Promise<void> => {
-      values.set(key, value);
-    },
-    delete: async (key: string): Promise<void> => {
-      values.delete(key);
-    },
-  },
-}));
-mock.module('../lib/accounts', () => ({
-  getActiveAccount: async () => ({ id: activeId }),
-  getActiveAccountStrict: async () => ({ id: activeId }),
-}));
-const { addFrameToDashboard, addLiveToDashboard, applyRemoteDashboard, changeDashboard, loadDashboard, onDashboardChanged } =
-  await import('../lib/dashboard');
+selectAccount('alice');
+const { values } = mockAppStorage();
+const { addFrameToDashboard, addLiveToDashboard, dashboardSync, changeDashboard } = await import('../lib/frames/dashboard');
+const { bumpAccountEpoch } = await import('../lib/accountEpoch');
 
 const widget = (id: string, w: DashboardWidth = 'half', h: DashboardHeight = 1): DashboardWidget => ({
   id,
@@ -58,21 +45,23 @@ const widget = (id: string, w: DashboardWidth = 'half', h: DashboardHeight = 1):
   kind: 'frame',
   source: { conversationId: 'conv0', messageId: id },
 });
+const FULL = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
 const ids = (widgets: readonly DashboardWidget[]): string[] => widgets.map((item) => item.id);
 const stored = (account: string): unknown => JSON.parse(values.get(`dashboard.v1.${account}`) ?? 'null');
-const settle = (): Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
 const synced = (raw: unknown): DashboardContent => dashboardSchema.parse(JSON.parse(JSON.stringify(raw)));
+const signInAs = async (account: string): Promise<string> => {
+  selectAccount(account);
+  bumpAccountEpoch();
+  await settle();
+  return account;
+};
 const source = { conversationId: 'conv1', messageId: 'msg1' };
 const frameWidget = (id: string, from = source): DashboardWidget => ({ id, w: 'half', h: 3, kind: 'frame', source: from });
 
 describe('dashboard widgets', () => {
   test('a dashboard takes at most 48 widgets', () => {
-    const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
-    expect(canAddWidget(full)).toBe(false);
-    expect(canAddWidget(full.slice(1))).toBe(true);
+    expect(canAddWidget(FULL)).toBe(false);
+    expect(canAddWidget(FULL.slice(1))).toBe(true);
   });
 
   test('removing drops only that widget and an unknown id changes nothing', () => {
@@ -119,14 +108,8 @@ describe('frame widgets', () => {
     expect(addFrameWidget(list, 'f', { ...source, messageId: 'msg2' }, 'half')).toBe(list);
     expect(frameWidgetAdd(list, { ...source, messageId: 'msg2' })).toBe('added');
     expect(frameWidgetAdd(list, { ...source, conversationId: 'conv2' })).toBe('added');
-    const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
-    expect(frameWidgetAdd(full, source)).toBe('full');
-    expect(addFrameWidget(full, 'f', source, 'half')).toBe(full);
-    expect(FRAME_ADD_TOASTS).toEqual({
-      added: 'Added to your dashboard',
-      exists: 'Already on your dashboard',
-      full: 'Your dashboard is full',
-    });
+    expect(frameWidgetAdd(FULL, source)).toBe('full');
+    expect(addFrameWidget(FULL, 'f', source, 'half')).toBe(FULL);
   });
 
   test('only frame and live widgets are kept: no kind, another kind or a broken reference drops the widget', () => {
@@ -183,9 +166,8 @@ describe('live widgets', () => {
     expect(liveWidgetAdd(list, live.url)).toBe('exists');
     expect(addLiveWidget(list, 'm', { ...live, key: 'cd'.repeat(32) }, 'half')).toBe(list);
     expect(liveWidgetAdd(list, 'https://eth.example.com/')).toBe('added');
-    const full = Array.from({ length: DASHBOARD_MAX_WIDGETS }, (_, i) => widget(`w${i}`));
-    expect(liveWidgetAdd(full, live.url)).toBe('full');
-    expect(addLiveWidget(full, 'l', live, 'half')).toBe(full);
+    expect(liveWidgetAdd(FULL, live.url)).toBe('full');
+    expect(addLiveWidget(FULL, 'l', live, 'half')).toBe(FULL);
   });
 
   test('a live widget without a valid url, key or origin is dropped', () => {
@@ -318,53 +300,59 @@ describe('dashboard sync state', () => {
 
 describe('dashboard store', () => {
   test('edits are saved per account under a versioned key and announced for sync', async () => {
+    const alice = await signInAs('alice');
     const sent: DashboardContent[] = [];
-    const stop = onDashboardChanged((change) => {
+    const stop = dashboardSync.onLocalChange((change) => {
       sent.push(change.state);
     });
-    expect(await loadDashboard('alice')).toBeNull();
+    expect(await dashboardSync.load(alice)).toBeNull();
     changeDashboard((list) => [...list, widget('a')]);
     changeDashboard((list) => resizeWidget(list, 'a', { w: 'full', h: 2 }));
     changeDashboard((list) => removeWidget(list, 'missing'));
     await settle();
-    expect(stored('alice')).toMatchObject({ widgets: [widget('a', 'full', 2)] });
+    expect(stored(alice)).toMatchObject({ widgets: [widget('a', 'full', 2)] });
     expect(sent.map((state) => state.widgets)).toEqual([[widget('a')], [widget('a', 'full', 2)]]);
-    expect(await loadDashboard('alice')).toMatchObject({ widgets: [widget('a', 'full', 2)] });
-    expect(await loadDashboard('bob')).toBeNull();
+    expect(await dashboardSync.load(alice)).toMatchObject({ widgets: [widget('a', 'full', 2)] });
+    expect(await dashboardSync.load('bob')).toBeNull();
     stop();
   });
 
   test('a remote layout applies only when newer, for the account it belongs to', async () => {
-    const before = await loadDashboard('alice');
+    const frank = await signInAs('frank');
+    changeDashboard((list) => [...list, widget('a')]);
+    await settle();
+    const before = await dashboardSync.load(frank);
     if (before === null) throw new Error('Missing local dashboard');
-    await applyRemoteDashboard('alice', { widgets: [widget('old')], at: before.at - 1 });
-    expect(stored('alice')).toEqual(before);
-    await applyRemoteDashboard('alice', { widgets: [widget('new', 'quarter', 3)], at: before.at + 1 });
-    expect(stored('alice')).toEqual({ widgets: [widget('new', 'quarter', 3)], at: before.at + 1 });
-    await applyRemoteDashboard('carol', { widgets: [widget('c')], at: 7 });
+    await dashboardSync.applyRemote(frank, { widgets: [widget('old')], at: before.at - 1 });
+    expect(stored(frank)).toEqual(before);
+    await dashboardSync.applyRemote(frank, { widgets: [widget('new', 'quarter', 3)], at: before.at + 1 });
+    expect(stored(frank)).toEqual({ widgets: [widget('new', 'quarter', 3)], at: before.at + 1 });
+    await dashboardSync.applyRemote('carol', { widgets: [widget('c')], at: 7 });
     expect(stored('carol')).toEqual({ widgets: [widget('c')], at: 7 });
   });
 
   test('adding a frame saves a frame widget once and announces it for sync', async () => {
+    const gina = await signInAs('gina');
     const sent: DashboardContent[] = [];
-    const stop = onDashboardChanged((change) => {
+    const stop = dashboardSync.onLocalChange((change) => {
       sent.push(change.state);
     });
     expect(await addFrameToDashboard(source, 'full')).toBe('added');
     expect(await addFrameToDashboard(source, 'half')).toBe('exists');
     await settle();
-    const saved = await loadDashboard('alice');
+    const saved = await dashboardSync.load(gina);
     const added = saved?.widgets.at(-1);
     expect(added).toMatchObject({ w: 'full', h: 3, kind: 'frame', source });
     expect(added?.id).toMatch(/^[0-9a-f]{16}$/);
-    expect(stored('alice')).toEqual(saved);
+    expect(stored(gina)).toEqual(saved);
     expect(sent).toHaveLength(1);
     stop();
   });
 
   test('adding a live widget saves it once with its key and announces it for sync', async () => {
+    const hank = await signInAs('hank');
     const sent: DashboardContent[] = [];
-    const stop = onDashboardChanged((change) => {
+    const stop = dashboardSync.onLocalChange((change) => {
       sent.push(change.state);
     });
     const live = { url: 'https://btc.example.com/', key: 'ef'.repeat(32) };
@@ -372,32 +360,32 @@ describe('dashboard store', () => {
     expect(first.outcome).toBe('added');
     expect((await addLiveToDashboard({ ...live, key: '01'.repeat(32) }, 'full')).outcome).toBe('exists');
     await settle();
-    const added = (await loadDashboard('alice'))?.widgets.find((item) => item.id === first.id);
+    const added = (await dashboardSync.load(hank))?.widgets.find((item) => item.id === first.id);
     expect(added).toEqual({ id: first.id, w: 'half', h: 3, kind: 'live', source: { url: live.url }, key: live.key });
     expect(sent).toHaveLength(1);
     stop();
   });
 
   test('removing a live widget here or on another device drops its saved frame', async () => {
+    const ivy = await signInAs('ivy');
     const one = await addLiveToDashboard({ url: 'https://one.example.com/', key: 'aa'.repeat(32) }, 'half');
     const two = await addLiveToDashboard({ url: 'https://two.example.com/', key: 'bb'.repeat(32) }, 'half');
-    values.set(`liveFrame.v1.alice.${one.id}`, '{}');
-    values.set(`liveFrame.v1.alice.${two.id}`, '{}');
+    values.set(`liveFrame.v1.ivy.${one.id}`, '{}');
+    values.set(`liveFrame.v1.ivy.${two.id}`, '{}');
     changeDashboard((widgets) => removeWidget(widgets, one.id));
     await settle();
-    expect(values.has(`liveFrame.v1.alice.${one.id}`)).toBe(false);
-    expect(values.has(`liveFrame.v1.alice.${two.id}`)).toBe(true);
-    const current = (await loadDashboard('alice'))?.widgets ?? [];
-    await applyRemoteDashboard('alice', { widgets: current.filter((item) => item.id !== two.id), at: Date.now() + 60_000 });
+    expect(values.has(`liveFrame.v1.ivy.${one.id}`)).toBe(false);
+    expect(values.has(`liveFrame.v1.ivy.${two.id}`)).toBe(true);
+    const current = (await dashboardSync.load(ivy))?.widgets ?? [];
+    await dashboardSync.applyRemote(ivy, { widgets: current.filter((item) => item.id !== two.id), at: Date.now() + 60_000 });
     await settle();
-    expect(values.has(`liveFrame.v1.alice.${two.id}`)).toBe(false);
+    expect(values.has(`liveFrame.v1.ivy.${two.id}`)).toBe(false);
   });
 
   test('missing or broken saved data loads as an empty dashboard', async () => {
     values.set('dashboard.v1.dave', '{not json');
     values.set('dashboard.v1.erin', JSON.stringify({ widgets: [{ id: '', w: 'half', h: 1 }, { w: 'half', h: 1 }, 7], at: 3 }));
-    expect(await loadDashboard('dave')).toBeNull();
-    expect(await loadDashboard('erin')).toEqual({ widgets: [], at: 3 });
-    expect(EMPTY_DASHBOARD).toEqual({ widgets: [], at: 0 });
+    expect(await dashboardSync.load('dave')).toBeNull();
+    expect(await dashboardSync.load('erin')).toEqual({ widgets: [], at: 3 });
   });
 });

@@ -1,8 +1,12 @@
 import { Pressable, Text as RNText, View } from 'react-native';
-import { FONT_SIZE, fontName } from '../tokens';
+import { FONT_SIZE, RADIUS_FULL, fontName, kitPalette, type KitPalette } from '../tokens';
 import { ControlSheet } from './control-trigger';
 import { buildCells, MONTHS, toISODate, wrapClock, type DateTimeMode } from './date-time-input.model';
-import { Icon } from './icon';
+import { Glyph } from './glyph';
+import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
+import { IconChevronLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronLeft';
+import { IconChevronRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronRight';
+import { IconChevronTop } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronTop';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -13,13 +17,8 @@ export interface SheetColors {
   accent: string;
 }
 
-export function sheetColorsFor(dark: boolean): SheetColors {
-  return {
-    head: dark ? '#ffffff' : '#000000',
-    sub: dark ? '#7a7a7e' : '#8a929d',
-    sheetBg: dark ? '#1b1c1e' : '#ffffff',
-    accent: dark ? '#4f9cf9' : '#2f6fed',
-  };
+export function sheetColorsFor(dark: boolean, palette: KitPalette = kitPalette(dark ? 'dark' : 'light')): SheetColors {
+  return { head: palette.link, sub: palette.sub, sheetBg: dark ? '#1b1c1e' : '#ffffff', accent: dark ? '#4f9cf9' : '#2f6fed' };
 }
 
 function DayCell(props: {
@@ -73,7 +72,7 @@ function MonthHeader(props: { month: number; year: number; head: string; onShift
         }}
         hitSlop={8}
       >
-        <Icon name="chevronLeft" size={20} color={head} />
+        <Glyph icon={IconChevronLeft} size={20} color={head} />
       </Pressable>
       <RNText style={{ flex: 1, textAlign: 'center', color: head, fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>
         {MONTHS[month]} {year}
@@ -86,7 +85,7 @@ function MonthHeader(props: { month: number; year: number; head: string; onShift
         }}
         hitSlop={8}
       >
-        <Icon name="chevronRight" size={20} color={head} />
+        <Glyph icon={IconChevronRight} size={20} color={head} />
       </Pressable>
     </View>
   );
@@ -139,7 +138,7 @@ function Stepper(props: {
           onChange(wrapClock(value, 1, size));
         }}
       >
-        <Icon name="chevronUp" size={20} color={colors.head} />
+        <Glyph icon={IconChevronTop} size={20} color={colors.head} />
       </Pressable>
       <RNText
         accessibilityLabel={label}
@@ -155,7 +154,7 @@ function Stepper(props: {
           onChange(wrapClock(value, -1, size));
         }}
       >
-        <Icon name="chevronDown" size={20} color={colors.head} />
+        <Glyph icon={IconChevronBottom} size={20} color={colors.head} />
       </Pressable>
     </View>
   );
@@ -198,7 +197,7 @@ function TimeRow(props: {
         accessibilityRole="button"
         onPress={onDone}
         hitSlop={8}
-        style={{ marginLeft: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.accent }}
+        style={{ marginLeft: 12, paddingHorizontal: 14, paddingVertical: 8, borderRadius: RADIUS_FULL, backgroundColor: colors.accent }}
       >
         <RNText style={{ color: '#ffffff', fontSize: FONT_SIZE.xs, fontFamily: fontName.head }}>Done</RNText>
       </Pressable>

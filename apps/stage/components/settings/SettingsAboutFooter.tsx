@@ -2,14 +2,14 @@ import { useRef, useState } from 'react';
 import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import { errorMessage } from '@stage-labs/client/errors';
+import { BUNDLER_ORIGIN } from '@stage-labs/client/endpoints';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { GithubLogo } from '../bubble/linkCards';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
-import { bubbleLinkProps } from '../bubble/linkProps';
+import { GithubLogo } from '../logos/GithubLogo';
+import { bubbleLinkProps } from '../links/linkProps';
 import { usePalette } from '../../lib/theme';
 import { timeAgo } from '../../lib/format';
-import { capabilities } from '../../lib/capabilities';
+import { capabilities, openInBubbleLink } from '../../lib/capabilities';
 import { checkMainUpdate, devClientInfo, loadMainUpdate } from '../../lib/devClientUpdates';
 import { report } from '../../lib/errorPolicy';
 import { mainUpdateMessage } from './DevClientUpdate.model';
@@ -21,18 +21,12 @@ function commitUrl(gitHash: string): string | undefined {
   return gitHash === 'dev' || gitHash.length === 0 ? undefined : `${STAGE_GITHUB_URL}/commit/${gitHash}`;
 }
 
-interface BuildMeta {
-  gitHash: string;
-  commitTime: string;
-  buildProfile: string;
-}
-
 function extraString(extra: Record<string, unknown>, key: string, fallback: string): string {
   const v = extra[key];
   return typeof v === 'string' && v.length > 0 ? v : fallback;
 }
 
-function buildMeta(): BuildMeta {
+function buildMeta(): { gitHash: string; commitTime: string; buildProfile: string } {
   const extra = (Constants.expoConfig?.extra ?? {}) as Record<string, unknown>;
   return {
     gitHash: extraString(extra, 'gitHash', 'dev'),
@@ -152,7 +146,7 @@ function DevClientUpdate(): React.ReactElement | null {
         </Text>
       ) : null}
       {!info.runtime ? <Text {...FOOTER_TEXT}>This dev client has no known native runtime.</Text> : null}
-      <Pressable accessibilityRole="link" {...bubbleLinkProps('https://bundler.stage.box/', openInBubbleLink)} pressedOpacity={0.6}>
+      <Pressable accessibilityRole="link" {...bubbleLinkProps(`${BUNDLER_ORIGIN}/`, openInBubbleLink)} pressedOpacity={0.6}>
         <Text {...FOOTER_TEXT} color="link" style={{ textDecorationLine: 'underline' }}>
           Dev-client downloads
         </Text>

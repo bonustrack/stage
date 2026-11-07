@@ -1,34 +1,35 @@
 import { describe, expect, test } from 'bun:test';
-import { attachmentEmojiPreview, attachmentsPreview, previewOfXmtpContent } from '../src/xmtp/humanize';
+import { attachmentEmojiPreview, attachmentsPreview } from '../src/xmtp/humanize';
+import { previewOf } from './helpers';
 
 const remote = (filename: string) => ({ url: 'https://example.com/blob', contentDigest: 'x', filename });
 
 describe('previewOfXmtpContent for attachments', () => {
   test('names a single image for every attachment content type', () => {
-    expect(previewOfXmtpContent({ filename: 'a.bin', mimeType: 'image/png', data: '' }, 'xmtp.org/attachment:1.0')).toBe('Sent an image');
-    expect(previewOfXmtpContent(remote('a.jpg'), 'xmtp.org/remoteStaticAttachment:1.0')).toBe('Sent an image');
-    expect(previewOfXmtpContent({ attachments: [remote('a.png')] }, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent an image');
-    expect(previewOfXmtpContent({ attachments: [remote('a.webp')] }, 'multiRemoteAttachment')).toBe('Sent an image');
+    expect(previewOf({ filename: 'a.bin', mimeType: 'image/png', data: '' }, 'xmtp.org/attachment:1.0')).toBe('Sent an image');
+    expect(previewOf(remote('a.jpg'), 'xmtp.org/remoteStaticAttachment:1.0')).toBe('Sent an image');
+    expect(previewOf({ attachments: [remote('a.png')] }, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent an image');
+    expect(previewOf({ attachments: [remote('a.webp')] }, 'multiRemoteAttachment')).toBe('Sent an image');
   });
 
   test('counts several images in one message', () => {
     const three = { attachments: [remote('a.jpg'), remote('b.PNG'), remote('c.heic')] };
-    expect(previewOfXmtpContent(three, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent 3 images');
+    expect(previewOf(three, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent 3 images');
   });
 
   test('falls back to attachments when the kinds are mixed', () => {
     const mixed = { attachments: [remote('a.jpg'), remote('b.mp4')] };
-    expect(previewOfXmtpContent(mixed, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent 2 attachments');
+    expect(previewOf(mixed, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent 2 attachments');
     const mostlyImages = { attachments: [remote('a.jpg'), remote('b.jpg'), remote('c.mp4')] };
-    expect(previewOfXmtpContent(mostlyImages, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent 3 attachments');
+    expect(previewOf(mostlyImages, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent 3 attachments');
   });
 
   test('reads as an attachment when the content could not be decoded', () => {
     for (const typeId of ['attachment', 'remoteStaticAttachment', 'multiRemoteStaticAttachment', 'multiRemoteAttachment']) {
-      expect(previewOfXmtpContent(undefined, `xmtp.org/${typeId}:1.0`)).toBe('Sent an attachment');
-      expect(previewOfXmtpContent(null, `xmtp.org/${typeId}:1.0`)).toBe('Sent an attachment');
+      expect(previewOf(undefined, `xmtp.org/${typeId}:1.0`)).toBe('Sent an attachment');
+      expect(previewOf(null, `xmtp.org/${typeId}:1.0`)).toBe('Sent an attachment');
     }
-    expect(previewOfXmtpContent({ attachments: [] }, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent an attachment');
+    expect(previewOf({ attachments: [] }, 'xmtp.org/multiRemoteStaticAttachment:1.0')).toBe('Sent an attachment');
   });
 });
 

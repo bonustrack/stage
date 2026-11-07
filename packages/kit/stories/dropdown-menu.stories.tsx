@@ -87,3 +87,44 @@ export const Sheet: Story<Pick<DropdownMenuSheetProps, 'side' | 'background' | '
 };
 Sheet.args = { side: 'bottom' };
 Sheet.argTypes = { side: select(['bottom', 'center']), background: color, avoidKeyboard: bool };
+
+interface HostRowArgs {
+  gap: number;
+  minHeight: number;
+  disabled: boolean;
+  selected: boolean;
+}
+
+export const HostRows: Story<HostRowArgs> = ({ gap, minHeight, disabled, selected }) => {
+  const dark = useDark();
+  const menuText = useDropdownMenuText();
+  return (
+    <DropdownMenu dark={dark}>
+      <DropdownMenuItem
+        dark={dark}
+        label="Alice alice.base.eth"
+        gap={gap}
+        minHeight={minHeight}
+        leading={<Badge label="A" color="info" />}
+        trailing={selected ? <Badge label="Active" color="success" variant="soft" /> : null}
+        onPress={() => undefined}
+      >
+        <Text {...menuText} fontWeight="semibold" truncate text="Alice" />
+        <Text size="3xs" color="secondary" truncate text="alice.base.eth" />
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        dark={dark}
+        label="Archived"
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: selected, disabled }}
+        disabled={disabled}
+        selected={selected}
+        gap={gap}
+        minHeight={minHeight}
+        onPress={() => undefined}
+      />
+    </DropdownMenu>
+  );
+};
+HostRows.args = { gap: DROPDOWN_MENU.itemGap, minHeight: 40, disabled: false, selected: true };
+HostRows.argTypes = { gap: number, minHeight: number, disabled: bool, selected: bool };

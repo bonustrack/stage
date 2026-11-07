@@ -1,0 +1,261 @@
+import { useState } from 'react';
+import { Pressable } from '@stage-labs/kit/react-native/pressable';
+import { Eyebrow } from '../Eyebrow';
+import { Text } from '@stage-labs/kit/react-native/text';
+import { Button } from '@stage-labs/kit/react-native/button';
+import {
+  usePalette,
+  useEffectiveColorScheme,
+  useThemeSeeds,
+  seedColorHex,
+  setSeedColor,
+  setSeedDensity,
+  setSeedRadius,
+  setSeedBaseSize,
+  resetOverrides,
+  isHex,
+  setAccentLevel,
+  setGrayscaleTint,
+  setGrayscaleShade,
+  type SeedColorKey,
+} from '../../lib/theme';
+import { AppModal } from '../AppModal';
+import { ColorPicker } from '@stage-labs/kit/react-native/color-picker';
+import { ACCENT_LEVELS, GRAYSCALE_SHADES, GRAYSCALE_TINTS } from '@stage-labs/kit/theme-derive';
+import { BASE_SIZES, DENSITIES, RADIUS_NAMES, fontName, fontSize } from '@stage-labs/kit/tokens';
+import { TextField } from '@stage-labs/kit/react-native/text-field';
+import { Column, Row } from '../layout';
+
+const SEED_ROWS: readonly (readonly [label: string, key: SeedColorKey])[] = [
+  ['surface-background', 'background'],
+  ['surface-foreground', 'foreground'],
+  ['accent-primary', 'accent'],
+  ['grayscale', 'grayscale'],
+];
+
+function SeedSwatch({
+  name,
+  seedKey,
+  value,
+  scheme,
+  p,
+}: {
+  name: string;
+  seedKey: SeedColorKey;
+  value: string;
+  scheme: 'light' | 'dark';
+  p: GalleryPalette;
+}): React.ReactElement {
+  const [draft, setDraft] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [pending, setPending] = useState<string | null>(null);
+  const shown = draft ?? value;
+  const invalid = draft != null && !isHex(draft);
+  const closePicker = (): void => {
+    setPicking(false);
+    setPending(null);
+  };
+  return (
+    <Row margin={{ top: 12 }} gap={14} align="center">
+      <Pressable
+        onPress={() => {
+          setPending(value);
+          setPicking(true);
+        }}
+        accessibilityLabel={`Pick ${name} color`}
+        style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: value, borderWidth: 1, borderColor: p.border }}
+      />
+      <Column minWidth={0} weight={1}>
+        <Text fontWeight="semibold" size="xs" color={p.head}>
+          {name}
+        </Text>
+        <TextField
+          value={shown}
+          onChangeText={(t) => {
+            setDraft(t);
+            if (isHex(t)) setSeedColor(scheme, seedKey, t);
+          }}
+          dark={p.dark}
+          inputProps={{
+            onBlur: () => {
+              setDraft(null);
+            },
+            autoCapitalize: 'none',
+            autoCorrect: false,
+          }}
+          placeholder="#rrggbb"
+          placeholderTextColor={p.sub}
+          style={{
+            marginTop: 2,
+            paddingVertical: 2,
+            paddingHorizontal: 0,
+            minHeight: 0,
+            backgroundColor: 'transparent',
+            borderWidth: 0,
+            color: invalid ? '#eb4c5b' : p.sub,
+            fontSize: fontSize('3xs'),
+            fontFamily: fontName.sans,
+          }}
+        />
+      </Column>
+      <AppModal visible={picking} onClose={closePicker} title={`Pick ${name} color`}>
+        <ColorPicker
+          value={pending ?? value}
+          mode="hsv"
+          headColor={p.head}
+          subColor={p.sub}
+          borderColor={p.border}
+          rowBg={p.rowBg}
+          dark={p.dark}
+          onChange={setPending}
+        />
+        <Row margin={{ top: 20 }} gap={12} align="center">
+          <Button color="secondary" variant="solid" dark={p.dark} onPress={closePicker} label="Cancel" style={{ flex: 1 }} />
+          <Button
+            variant="primary"
+            dark={p.dark}
+            onPress={() => {
+              if (pending != null && isHex(pending)) setSeedColor(scheme, seedKey, pending);
+              closePicker();
+            }}
+            label="Apply"
+            style={{ flex: 1 }}
+          />
+        </Row>
+      </AppModal>
+    </Row>
+  );
+}
+
+function SeedChoice<T extends string | number>({
+  name,
+  options,
+  value,
+  onSelect,
+  p,
+}: {
+  name: string;
+  options: readonly T[];
+  value: T;
+  onSelect: (v: T) => void;
+  p: GalleryPalette;
+}): React.ReactElement {
+  return (
+    <Column margin={{ top: 16 }}>
+      <Text fontWeight="semibold" size="xs" color={p.head}>
+        {name}
+      </Text>
+      <Row margin={{ top: 6 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
+        {options.map((opt) => (
+          <Button
+            key={String(opt)}
+            color={opt === value ? 'primary' : 'secondary'}
+            variant="solid"
+            size="sm"
+            dark={p.dark}
+            onPress={() => {
+              onSelect(opt);
+            }}
+            label={String(opt)}
+            accessibilityLabel={`Set ${name} to ${String(opt)}`}
+          />
+        ))}
+      </Row>
+    </Column>
+  );
+}
+
+const DERIVED_KEYS = ['bg', 'border', 'text', 'sub', 'link', 'inputBg'] as const;
+
+interface GalleryPalette {
+  dark: boolean;
+  head: string;
+  sub: string;
+  border: string;
+  rowBg: string;
+}
+
+export function ColorTokens(): React.ReactElement {
+  const palette = usePalette();
+  const scheme = useEffectiveColorScheme();
+  const p: GalleryPalette = {
+    dark: scheme === 'dark',
+    head: palette.link,
+    sub: palette.text,
+    border: palette.border,
+    rowBg: palette.border,
+  };
+  const seeds = useThemeSeeds();
+  const seed = seeds[scheme];
+  return (
+    <Column>
+      <Row margin={{ top: 16 }} align="center" justify="spaceBetween">
+        <Text color={p.sub} variant="caption" fontWeight="medium">
+          {`seed theme - derives the palette - ${scheme}`}
+        </Text>
+        <Button
+          color="secondary"
+          variant="solid"
+          size="sm"
+          dark={p.dark}
+          onPress={() => {
+            resetOverrides();
+          }}
+          label="Reset"
+          accessibilityLabel="Reset theme seed to defaults"
+        />
+      </Row>
+      <Column margin={{ top: 2 }}>
+        {SEED_ROWS.map(([label, key]) => (
+          <SeedSwatch key={label} name={label} seedKey={key} value={seedColorHex(seeds, scheme, key)} scheme={scheme} p={p} />
+        ))}
+      </Column>
+
+      <SeedChoice
+        name="accent-level"
+        options={ACCENT_LEVELS}
+        value={seed.accent.level}
+        onSelect={(v) => {
+          setAccentLevel(scheme, v);
+        }}
+        p={p}
+      />
+      <SeedChoice
+        name="grayscale-tint"
+        options={GRAYSCALE_TINTS}
+        value={seed.grayscale.tint}
+        onSelect={(v) => {
+          setGrayscaleTint(scheme, v);
+        }}
+        p={p}
+      />
+      <SeedChoice
+        name="grayscale-shade"
+        options={GRAYSCALE_SHADES}
+        value={seed.grayscale.shade ?? 0}
+        onSelect={(v) => {
+          setGrayscaleShade(scheme, v);
+        }}
+        p={p}
+      />
+
+      <Column margin={{ top: 20 }}>
+        <Eyebrow color={p.sub}>DERIVED</Eyebrow>
+        <Row margin={{ top: 8 }} gap={8} align="center" style={{ flexWrap: 'wrap' }}>
+          {DERIVED_KEYS.map((k) => (
+            <Column key={k} align="center" gap={2}>
+              <Column width={32} height={32} background={palette[k]} style={{ borderRadius: 8, borderWidth: 1, borderColor: p.border }} />
+              <Text color={p.sub} size="3xs">
+                {k}
+              </Text>
+            </Column>
+          ))}
+        </Row>
+      </Column>
+
+      <SeedChoice name="density" options={DENSITIES} value={seeds.density} onSelect={setSeedDensity} p={p} />
+      <SeedChoice name="radius" options={RADIUS_NAMES} value={seeds.radius} onSelect={setSeedRadius} p={p} />
+      <SeedChoice name="text-size" options={BASE_SIZES} value={seeds.baseSize} onSelect={setSeedBaseSize} p={p} />
+    </Column>
+  );
+}

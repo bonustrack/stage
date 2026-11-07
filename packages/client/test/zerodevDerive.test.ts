@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test';
 import { deriveOwner, ownerDerivationPath, isValidMnemonic, normalizeMnemonic } from '../src/zerodev/derive';
-import { nextHdIndex } from '../src/accounts/hdIndex';
+import { nextHdIndex } from '../src/accounts/registry';
 
 const TEST_MNEMONIC = 'test test test test test test test test test test test junk';
 
+const FIRST_OWNER = '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266';
 const EXPECTED_OWNERS: Record<number, string> = {
-  0: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
+  0: FIRST_OWNER,
   1: '0x70997970c51812dc3a010c7d01b50e0d17dc79c8',
   2: '0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc',
 };
@@ -36,7 +37,7 @@ describe('zerodev/derive', () => {
   test('mnemonic normalization is case- and whitespace-insensitive', () => {
     const messy = '  TEST   test test test test test test test test test test JUNK  ';
     expect(normalizeMnemonic(messy)).toBe(TEST_MNEMONIC);
-    expect(deriveOwner(messy, 0).address.toLowerCase()).toBe(EXPECTED_OWNERS[0]);
+    expect(deriveOwner(messy, 0).address.toLowerCase()).toBe(FIRST_OWNER);
   });
 
   test('isValidMnemonic gates on BIP-39 checksum + word count', () => {

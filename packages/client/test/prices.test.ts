@@ -1,15 +1,17 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { fetchUsdPrice, fmtUsdValue } from '../src/wallet/prices';
+import { fetchUsdPrice } from '../src/wallet/prices';
+import { fmtUsdValue } from '../src/wallet/format';
+import { fakeFetch } from './helpers';
 
 const realFetch = globalThis.fetch;
 let requests: string[] = [];
 
 function respond(id: string, price: number | null, status = 200): void {
-  globalThis.fetch = (input) => {
+  globalThis.fetch = fakeFetch((input) => {
     requests.push(decodeURIComponent(String(input)));
     const coins = price === null ? {} : { [id]: { price, timestamp: Math.floor(Date.now() / 1000), confidence: 0.99 } };
     return Promise.resolve(Response.json({ coins }, { status }));
-  };
+  });
 }
 
 afterEach(() => {

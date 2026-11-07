@@ -1,8 +1,10 @@
 import { Directory, File, Paths } from 'expo-file-system';
 import type { XmtpEnv } from './xmtp.types';
+import { z } from 'zod';
 import { report, attempt } from './errorPolicy';
+import { jsonWith } from './storeCore';
 
-export interface PushAccount {
+interface PushAccount {
   id: string;
   address: string;
   inboxId: string;
@@ -24,32 +26,22 @@ const SHARED = firstAppGroup();
 
 export const XMTP_APP_GROUP: string | null = SHARED ? SHARED[0] : null;
 
-function sharedStoreRoot(): Directory | null {
-  return SHARED ? SHARED[1] : null;
-}
+const SHARED_ROOT: Directory | null = SHARED ? SHARED[1] : null;
 
 function isPushAccount(value: unknown): value is PushAccount {
-  if (!value || typeof value !== 'object') return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v.id === 'string' &&
-    typeof v.address === 'string' &&
-    typeof v.inboxId === 'string' &&
-    typeof v.dbDir === 'string' &&
-    typeof v.env === 'string'
-  );
+  const { id, address, inboxId, dbDir, env } = (value ?? {}) as Partial<Record<keyof PushAccount, unknown>>;
+  return [id, address, inboxId, dbDir, env].every((field) => typeof field === 'string');
 }
 
+const manifestJson = jsonWith(z.array(z.unknown()).transform((items) => items.filter(isPushAccount)));
+
 function manifestFile(): File | null {
-  const root = sharedStoreRoot();
-  return root ? new File(root, MANIFEST_NAME) : null;
+  return SHARED_ROOT ? new File(SHARED_ROOT, MANIFEST_NAME) : null;
 }
 
 function readManifest(file: File): PushAccount[] {
   try {
-    if (!file.exists) return [];
-    const parsed: unknown = JSON.parse(file.textSync());
-    return Array.isArray(parsed) ? parsed.filter(isPushAccount) : [];
+    return file.exists ? (manifestJson(file.textSync()) ?? []) : [];
   } catch {
     return [];
   }
@@ -73,10 +65,8 @@ export function recordPushAccount(account: PushAccount): void {
 export function forgetPushAccount(accountId: string): void {
   const file = manifestFile();
   if (!file) return;
-  writeManifest(
-    file,
-    readManifest(file).filter((a) => a.id !== accountId),
-  );
+  const others = readManifest(file).filter((a) => a.id !== accountId);
+  writeManifest(file, others);
 }
 
 function removeDir(dir: Directory): void {
@@ -108,7 +98,7 @@ export function deleteDbFiles(dbDirName: string): Promise<void> {
 }
 
 function dbDirObj(name: string): Directory {
-  return new Directory(sharedStoreRoot() ?? Paths.document, name);
+  return new Directory(SHARED_ROOT ?? Paths.document, name);
 }
 
 export function ensureDbDir(name: string): Promise<string> {

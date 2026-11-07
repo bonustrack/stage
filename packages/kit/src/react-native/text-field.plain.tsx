@@ -2,11 +2,9 @@ import { forwardRef, useCallback, useEffect, useRef, useState, type Ref, type Re
 import { Platform, TextInput, type DimensionValue, type TextStyle } from 'react-native';
 import { controlColors, textFieldStyle } from '../control.styles';
 import { accessibilityProps, weightStyle } from './a2ui-props';
-import { useKitScheme } from './theme-context';
+import { growToContent } from './dom';
+import { useKitColors } from './theme-context';
 import type { TextFieldProps } from './text-field.types';
-import { loadKitFonts } from './fonts.load';
-
-loadKitFonts();
 
 function useNonce(nonce: number | undefined, run: () => void): void {
   useEffect(() => {
@@ -18,9 +16,7 @@ function useNonce(nonce: number | undefined, run: () => void): void {
 function sizeStyle(multiline: boolean, props: TextFieldProps, height: number | undefined): TextStyle {
   const maxH = props.maxHeight as DimensionValue | undefined;
   const minH = props.minHeight as DimensionValue | undefined;
-  if (multiline) {
-    return { minHeight: minH ?? (props.autoGrow === true ? 44 : 88), maxHeight: maxH, height, textAlignVertical: 'top' };
-  }
+  if (multiline) return { minHeight: minH ?? (props.autoGrow === true ? 44 : 88), maxHeight: maxH, height, textAlignVertical: 'top' };
   return { maxHeight: maxH, ...(minH === undefined ? null : { minHeight: minH }) };
 }
 
@@ -37,14 +33,11 @@ function useWebAutoGrow(ref: RefObject<TextInput | null>, props: TextFieldProps,
   const enabled = Platform.OS === 'web' && multiline && props.autoGrow === true;
   const [height, setHeight] = useState<number | undefined>(undefined);
   const measure = useCallback((): void => {
-    const node = ref.current as unknown as { style: { height: string }; scrollHeight: number } | null;
-    if (!enabled || node === null) return;
+    if (!enabled) return;
     const min = typeof minHeight === 'number' ? minHeight : 44;
     const max = typeof maxHeight === 'number' ? maxHeight : Number.POSITIVE_INFINITY;
-    node.style.height = 'auto';
-    const next = Math.min(max, Math.max(min, node.scrollHeight));
-    node.style.height = `${next}px`;
-    setHeight(next);
+    const next = growToContent(ref.current, min, max);
+    if (next !== undefined) setHeight(next);
   }, [ref, enabled, minHeight, maxHeight]);
   useEffect(() => {
     measure();
@@ -66,12 +59,12 @@ function assignRef<T>(ref: Ref<T> | undefined, node: T | null): void {
 
 export const PlainField = forwardRef<TextInput, TextFieldProps>(function PlainField(props, ref) {
   const inner = useRef<TextInput | null>(null);
-  const scheme = useKitScheme();
+  const { dark, roles } = useKitColors(props.dark, 'static');
   useNonce(props.focusNonce, () => inner.current?.focus());
   useNonce(props.blurNonce, () => inner.current?.blur());
   const multiline = props.variant === 'longText';
   const grow = useWebAutoGrow(inner, props, multiline);
-  const styled = textFieldStyle({ ...props, baseColors: controlColors('soft', props.dark ?? scheme === 'dark') });
+  const styled = textFieldStyle({ ...props, baseColors: controlColors('soft', dark, roles) });
   const { onSelectionChange, onSubmit } = props;
   return (
     <TextInput

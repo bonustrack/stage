@@ -1,5 +1,8 @@
 export type SortDirection = 'vertical' | 'horizontal';
 
+export const DRAG_HOLD_MS = 250;
+export const DRAG_MOVE_SLOP = 6;
+
 export interface SortRect {
   x: number;
   y: number;
@@ -79,10 +82,6 @@ export function unionRect(rects: readonly (SortRect | null)[]): SortRect | null 
   return { x, y, width: Math.max(...known.map((r) => r.x + r.width)) - x, height: Math.max(...known.map((r) => r.y + r.height)) - y };
 }
 
-function others(list: SortListLayout, itemId: string): readonly SortItemLayout[] {
-  return list.items.filter((item) => item.id !== itemId);
-}
-
 function otherIds(list: SortListLayout, itemId: string): readonly string[] {
   return list.ids.filter((id) => id !== itemId);
 }
@@ -94,7 +93,7 @@ function middleOf(list: SortListLayout, rect: SortRect): number {
 export function insertionIndex(list: SortListLayout, itemId: string, x: number, y: number): number {
   const point = list.direction === 'vertical' ? y : x;
   const ids = otherIds(list, itemId);
-  const measured = others(list, itemId).filter((item) => ids.includes(item.id));
+  const measured = list.items.filter((item) => ids.includes(item.id));
   const before = measured.filter((item) => middleOf(list, item.rect) < point).pop();
   if (before !== undefined) return ids.indexOf(before.id) + 1;
   const after = measured[0];

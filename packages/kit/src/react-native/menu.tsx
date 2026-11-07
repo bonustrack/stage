@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, View, type ViewStyle } from 'react-native';
-import { withAlpha } from '../badge';
+import { Pressable, ScrollView, View, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { withAlpha } from '../color-math';
 import { OVERLAY_SHADOW } from '../overlay.styles';
 import { Glyph, type CentralIcon } from './glyph';
 import { Text, type TextProps } from './text';
-import { useKitPaletteFor } from './theme-context';
+import { useKitColors } from './theme-context';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { Dialog } from './dialog';
 import { MODAL } from './modal';
@@ -43,7 +43,7 @@ export interface DropdownMenuProps {
 }
 
 export function DropdownMenu({ children, dark, background, maxHeight, style }: DropdownMenuProps): React.ReactElement {
-  const pal = useKitPaletteFor(dark);
+  const pal = useKitColors(dark, 'provider').palette;
   const list = <View style={{ paddingVertical: DROPDOWN_MENU.padY }}>{children}</View>;
   return (
     <View
@@ -69,61 +69,125 @@ export function DropdownMenu({ children, dark, background, maxHeight, style }: D
   );
 }
 
-export interface DropdownMenuItemProps {
+export interface DropdownMenuItemProps extends Omit<PressableProps, 'children' | 'style' | 'onPress' | 'onHoverIn' | 'onHoverOut'> {
   label: string;
   children?: ReactNode;
   onPress: () => void;
   iconName?: CentralIcon;
   icon?: ReactNode;
+  leading?: ReactNode;
+  trailing?: ReactNode;
   danger?: boolean;
   dark?: boolean;
   color?: string;
   pressedBackground?: string;
+  hoverBackground?: string;
   selected?: boolean;
   highlighted?: boolean;
+  gap?: number;
+  minHeight?: number;
+  style?: StyleProp<ViewStyle>;
+}
+
+interface ItemBox {
+  sheet: boolean;
+  gap: number | undefined;
+  minHeight: number | undefined;
+  disabled: boolean;
+  background: string;
+}
+
+function itemBoxStyle({ sheet, gap, minHeight, disabled, background }: ItemBox): ViewStyle {
+  const box: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: gap ?? DROPDOWN_MENU.itemGap,
+    paddingHorizontal: DROPDOWN_MENU.itemPadX,
+    paddingVertical: sheet ? DROPDOWN_MENU.sheetItemPadY : DROPDOWN_MENU.itemPadY,
+    backgroundColor: background,
+  };
+  if (minHeight !== undefined) box.minHeight = minHeight;
+  if (disabled) box.opacity = DISABLED_OPACITY;
+  return box;
+}
+
+const DISABLED_OPACITY = 0.5;
+
+function itemLeading(leading: ReactNode, iconName: CentralIcon | undefined, color: string): ReactNode {
+  return leading ?? (iconName === undefined ? null : <Glyph icon={iconName} size={DROPDOWN_MENU.icon} color={color} />);
+}
+
+function itemTrailing(trailing: ReactNode, selected: boolean | undefined, color: string): ReactNode {
+  if (trailing !== undefined) return trailing;
+  return selected === true ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={color} /> : null;
+}
+
+type ItemColorProps = Pick<DropdownMenuItemProps, 'dark' | 'color' | 'danger' | 'pressedBackground' | 'hoverBackground'>;
+
+function useItemColors({ dark, color, danger, pressedBackground, hoverBackground }: ItemColorProps) {
+  const pal = useKitColors(dark, 'provider').palette;
+  return {
+    color: color ?? (danger === true ? pal.danger : pal.link),
+    pressed: pressedBackground ?? withAlpha(pal.link, DROPDOWN_MENU.pressedAlpha),
+    hover: hoverBackground ?? withAlpha(pal.link, DROPDOWN_MENU.hoverAlpha),
+  };
 }
 
 export function DropdownMenuItem(props: DropdownMenuItemProps): React.ReactElement {
-  const pal = useKitPaletteFor(props.dark);
+  const {
+    label,
+    children,
+    onPress,
+    iconName,
+    icon,
+    leading,
+    trailing,
+    danger,
+    dark,
+    color,
+    pressedBackground,
+    hoverBackground,
+    selected,
+    highlighted,
+    gap,
+    minHeight,
+    style,
+    disabled,
+    ...pressable
+  } = props;
   const sheet = useContext(SheetMenuContext);
   const menuText = useDropdownMenuText();
   const [hovered, setHovered] = useState(false);
-  const pressedBg = props.pressedBackground ?? withAlpha(pal.link, DROPDOWN_MENU.pressedAlpha);
-  const hoverBg = withAlpha(pal.link, DROPDOWN_MENU.hoverAlpha);
-  const color = props.color ?? (props.danger === true ? pal.danger : pal.link);
-  const icon =
-    props.icon ?? (props.iconName === undefined ? null : <Glyph icon={props.iconName} size={DROPDOWN_MENU.icon} color={color} />);
+  const colors = useItemColors({ dark, color, danger, pressedBackground, hoverBackground });
+  const off = disabled === true;
   return (
     <Pressable
-      onPress={props.onPress}
       accessibilityRole="menuitem"
-      accessibilityLabel={props.label}
+      accessibilityLabel={label}
+      {...pressable}
+      disabled={disabled}
+      onPress={onPress}
       onHoverIn={() => {
         setHovered(true);
       }}
       onHoverOut={() => {
         setHovered(false);
       }}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: DROPDOWN_MENU.itemGap,
-        paddingHorizontal: DROPDOWN_MENU.itemPadX,
-        paddingVertical: sheet ? DROPDOWN_MENU.sheetItemPadY : DROPDOWN_MENU.itemPadY,
-        backgroundColor: pressed ? pressedBg : hovered || props.highlighted === true ? hoverBg : 'transparent',
-      })}
+      style={({ pressed }) => {
+        const tinted = pressed ? colors.pressed : hovered || highlighted === true ? colors.hover : 'transparent';
+        const box = itemBoxStyle({ sheet, gap, minHeight, disabled: off, background: off ? 'transparent' : tinted });
+        return style === undefined ? box : [box, style];
+      }}
     >
-      {icon}
-      <View style={{ flexGrow: 1, flexShrink: 1 }}>
-        {props.children ?? <Text {...menuText} text={props.label} color={color} truncate />}
-      </View>
-      {props.selected === true ? <Glyph icon={IconCheckmark1} size={DROPDOWN_MENU.icon} color={color} /> : null}
+      {itemLeading(leading ?? icon, iconName, colors.color)}
+      <View style={{ flexGrow: 1, flexShrink: 1 }}>{children ?? <Text {...menuText} text={label} color={colors.color} truncate />}</View>
+      {itemTrailing(trailing, selected, colors.color)}
     </Pressable>
   );
 }
 
 export function DropdownMenuSeparator({ dark }: { dark?: boolean }): React.ReactElement {
-  const pal = useKitPaletteFor(dark);
+  const pal = useKitColors(dark, 'provider').palette;
   const space = useContext(SheetMenuContext) ? DROPDOWN_MENU.sheetPadY : DROPDOWN_MENU.padY;
   return (
     <View
@@ -153,7 +217,7 @@ export function DropdownMenuSheet({
   maxWidth = MODAL.maxWidth,
   avoidKeyboard,
 }: DropdownMenuSheetProps): React.ReactElement {
-  const pal = useKitPaletteFor(dark);
+  const pal = useKitColors(dark, 'provider').palette;
   const centered = side === 'center';
   return (
     <Dialog

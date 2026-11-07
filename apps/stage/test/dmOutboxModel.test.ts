@@ -1,12 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import {
-  addressesWithQueued,
-  deserializeOutbox,
-  itemsForAddress,
-  pendingBanner,
-  withoutItem,
-  type OutboxItem,
-} from '../lib/dmOutbox.model';
+import { addressesWithQueued, itemsForAddress, outboxSchema, pendingBanner, withoutItem, type OutboxItem } from '../lib/dmOutbox.model';
+import { jsonWith } from '../lib/storeCore';
+
+const deserializeOutbox = jsonWith(outboxSchema);
 
 const item = (over: Partial<OutboxItem> & { id: string }): OutboxItem => ({ address: '0xabc', text: 'hey', createdAt: 1, ...over });
 
@@ -57,11 +53,6 @@ describe('pendingBanner: truthful copy per reason', () => {
       { id: 'legacy', address: '0xabc', text: 'old', createdAt: 3 },
     ];
     expect(itemsForAddress(mixed, '0xabc', 'acct-a').map((i) => i.id)).toEqual(['mine', 'legacy']);
-    expect(
-      addressesWithQueued(
-        mixed.filter((i) => i.id === 'theirs'),
-        'acct-a',
-      ),
-    ).toEqual([]);
+    expect(addressesWithQueued(mixed.slice(1, 2), 'acct-a')).toEqual([]);
   });
 });

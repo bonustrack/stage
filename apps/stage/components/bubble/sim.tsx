@@ -1,8 +1,9 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { usePalette, withAlpha } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
+import { withAlpha } from '@stage-labs/kit/color-math';
 import type { SimulateResult, AssetMove } from '@stage-labs/client/wallet/txSimulate';
-import { NATIVE_TOKEN_SENTINEL } from '@stage-labs/client/wallet/assets';
+import { isNativeToken } from '@stage-labs/client/wallet/tokens';
 import { useUsdValue } from '../../lib/txDisplay';
 import { IconCircleCheck } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleCheck';
 import { IconShieldBreak } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldBreak';
@@ -89,7 +90,7 @@ function AssetMoveRow({
   label: string;
   chainId: number;
 }): React.ReactElement {
-  const token = move.token.toLowerCase() === NATIVE_TOKEN_SENTINEL.toLowerCase() ? null : move.token;
+  const token = isNativeToken(move.token) ? null : move.token;
   const usd = useUsdValue(chainId, token, move.amount);
   return (
     <Row align="center" justify="spaceBetween" gap={8}>

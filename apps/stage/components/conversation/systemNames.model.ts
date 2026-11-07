@@ -1,28 +1,12 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { isSystemEntry } from '@stage-labs/client/xmtp/envelope';
-import {
-  groupUpdateInboxIds,
-  humanizeGroupUpdated,
-  onlyMembersLeft,
-  type GroupUpdatedContent,
-  type InboxNamer,
-} from '@stage-labs/client/xmtp/humanize';
-import { XMTP_USER_PREFIX } from '@stage-labs/client/xmtp/line';
+import { groupUpdateOf, isSystemEntry } from '@stage-labs/client/xmtp/entryPayload';
+import { groupUpdateInboxIds, humanizeGroupUpdated, type InboxNamer } from '@stage-labs/client/xmtp/humanize';
+import { inboxIdOfUri } from '@stage-labs/client/xmtp/line';
 import { mentionToken } from '@stage-labs/client/xmtp/mentions';
-
-function groupUpdateOf(entry: HistoryEntry): GroupUpdatedContent | null {
-  const payload = entry.payload as { system?: boolean; groupUpdate?: GroupUpdatedContent } | undefined;
-  return payload?.system === true && payload.groupUpdate ? payload.groupUpdate : null;
-}
-
-export function isLeftOnlyUpdate(entry: HistoryEntry): boolean {
-  const update = groupUpdateOf(entry);
-  return update !== null && onlyMembersLeft(update);
-}
 
 function systemLineInboxIds(entry: HistoryEntry): string[] {
   if (!isSystemEntry(entry)) return [];
-  const author = entry.from.startsWith(XMTP_USER_PREFIX) ? [entry.from.slice(XMTP_USER_PREFIX.length)] : [];
+  const author = [inboxIdOfUri(entry.from)];
   const update = groupUpdateOf(entry);
   return update ? [...author, ...groupUpdateInboxIds(update)] : author;
 }

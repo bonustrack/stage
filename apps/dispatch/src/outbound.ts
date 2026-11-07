@@ -1,6 +1,7 @@
-const BLOCKED_NAMES = new Set(['stage.box', 'localhost']);
-const BLOCKED_SUFFIXES = ['.stage.box', '.localhost', '.local', '.localdomain', '.internal', '.lan', '.home.arpa'];
-const IPV4 = /^[\d.]+$/;
+import { isPublicHost, type HostPolicy } from '@stage-labs/client/net/publicHost';
+import { STAGE_HOST } from '@stage-labs/client/endpoints';
+
+const NODE_HOST_POLICY: HostPolicy = { ipLiterals: false, blockedDomains: [STAGE_HOST] };
 
 function parsedUrl(raw: string): URL | null {
   try {
@@ -13,9 +14,7 @@ function parsedUrl(raw: string): URL | null {
 export function allowedTarget(raw: string): boolean {
   const url = parsedUrl(raw);
   if (url === null || url.protocol !== 'https:' || url.port !== '' || url.username !== '' || url.password !== '') return false;
-  const host = url.hostname.toLowerCase().replace(/\.+$/, '');
-  if (host.startsWith('[') || IPV4.test(host) || !host.includes('.')) return false;
-  return !BLOCKED_NAMES.has(host) && !BLOCKED_SUFFIXES.some((suffix) => host.endsWith(suffix));
+  return isPublicHost(url.hostname, NODE_HOST_POLICY);
 }
 
 export function outbound(request: Request): Promise<Response> {

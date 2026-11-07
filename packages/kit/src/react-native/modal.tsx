@@ -10,7 +10,7 @@ import { Dialog, type DialogSide } from './dialog';
 import { Glyph } from './glyph';
 import { Text } from './text';
 import { Tooltip } from './tooltip';
-import { useKitPaletteFor, useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 import { TriggerContext } from './trigger-context';
 
 export const MODAL = {
@@ -185,16 +185,12 @@ function panelLayout(side: DialogSide, topInset: number): PanelLayout {
   };
 }
 
-function useModalSide(side: DialogSide): DialogSide {
-  const { width } = useWindowDimensions();
-  return side === 'end' && width < MODAL.sideMinWindow ? 'bottom' : side;
-}
-
 function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
   const { children, title, footer, bottomInset, dark, background, borderColor, dismissable = true } = props;
-  const pal = useKitPaletteFor(dark);
-  const scheme = useKitScheme();
-  const side = useModalSide(props.side ?? 'center');
+  const { palette: pal, dark: isDark } = useKitColors(dark, 'provider');
+  const { width } = useWindowDimensions();
+  const requested = props.side ?? 'center';
+  const side = requested === 'end' && width < MODAL.sideMinWindow ? 'bottom' : requested;
   const layout = panelLayout(side, useSafeAreaInsets().top);
   return (
     <Dialog
@@ -202,16 +198,7 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
       onClose={close}
       side={side}
       dismissable={dismissable}
-      header={
-        <ModalHeader
-          title={title}
-          onClose={close}
-          pal={pal}
-          dark={dark ?? scheme === 'dark'}
-          dismissable={dismissable}
-          inset={layout.inset}
-        />
-      }
+      header={<ModalHeader title={title} onClose={close} pal={pal} dark={isDark} dismissable={dismissable} inset={layout.inset} />}
       footer={footer}
       bottomInset={bottomInset}
       animationType="none"
@@ -235,19 +222,29 @@ function StagePanel({ props, open, close }: PanelProps): React.ReactElement {
   );
 }
 
-function FullBleedPanel({ props, open, close }: PanelProps): React.ReactElement {
+function ModalScope({ close, children }: { close: () => void; children: ReactNode }): React.ReactElement {
   return (
-    <Dialog
-      open={open}
-      onClose={close}
-      animationType={props.animationType}
-      backdrop={props.backdrop}
-      backdropColor={props.backdropColor}
-      dismissable={props.dismissable}
-      gestureRoot={props.gestureRoot}
-      fullBleedPanel
-    >
-      {props.children}
+    <TriggerContext.Provider value={null}>
+      <ModalCloseContext.Provider value={close}>{children}</ModalCloseContext.Provider>
+    </TriggerContext.Provider>
+  );
+}
+
+export interface OverlayProps {
+  open: boolean;
+  onClose: () => void;
+  children: ReactNode;
+  animationType?: 'slide' | 'fade' | 'none';
+  backdrop?: boolean;
+  backdropColor?: Color;
+  dismissable?: boolean;
+  gestureRoot?: boolean;
+}
+
+export function Overlay({ open, onClose, children, ...dialog }: OverlayProps): React.ReactElement {
+  return (
+    <Dialog open={open} onClose={onClose} {...dialog} fullBleedPanel>
+      <ModalScope close={onClose}>{children}</ModalScope>
     </Dialog>
   );
 }
@@ -260,23 +257,25 @@ export function Modal(props: ModalProps): React.ReactElement {
     if (controlled === undefined) setInternal(false);
     onClose?.();
   };
-  const content = {
-    ...props,
-    children: (
-      <TriggerContext.Provider value={null}>
-        <ModalCloseContext.Provider value={close}>{props.children}</ModalCloseContext.Provider>
-      </TriggerContext.Provider>
-    ),
-  };
   const show = (): void => {
     if (controlled === undefined) setInternal(true);
     onOpen?.();
   };
   const panel =
     fullBleedPanel === true ? (
-      <FullBleedPanel props={content} open={open} close={close} />
+      <Overlay
+        open={open}
+        onClose={close}
+        animationType={props.animationType}
+        backdrop={props.backdrop}
+        backdropColor={props.backdropColor}
+        dismissable={props.dismissable}
+        gestureRoot={props.gestureRoot}
+      >
+        {props.children}
+      </Overlay>
     ) : (
-      <StagePanel props={content} open={open} close={close} />
+      <StagePanel props={{ ...props, children: <ModalScope close={close}>{props.children}</ModalScope> }} open={open} close={close} />
     );
   if (trigger === undefined) return panel;
   return (

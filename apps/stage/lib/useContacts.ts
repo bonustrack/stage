@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { convMembers, primeConversationMembers } from './xmtp.identity';
 import { sdk } from './xmtp.sdk';
-import { afterFirstPages } from './feedLines';
-import { getActiveAccountIdSync, getCachedRows, subscribeCachedRows, type CachedRow } from './channelsCache';
+import { afterFirstPages } from './feed/firstPages';
+import { getCachedRows } from './channelsCache';
+import { useHomeRows } from './messaging/homeRows';
+import type { CachedRow } from './cachedRows.model';
+import { knownSelfAddress, useKnownActiveAccountId } from './accountSelection';
+import { accountQueryKeyAt, useAccountGeneration } from './queryClient';
 import { usePeerProfiles, peerLabel } from './peerProfiles';
 
 export interface Contact {
@@ -13,12 +17,9 @@ export interface Contact {
 
 const NO_ADDRESSES: string[] = [];
 
-function peerAddressesOf(rows: ReturnType<typeof getCachedRows>): string[] {
+function peerAddressesOf(rows: readonly CachedRow[] | null): string[] {
   const out = new Set<string>();
-  for (const r of rows ?? []) {
-    const peer = typeof r.peerAddress === 'string' ? r.peerAddress : null;
-    if (peer) out.add(peer.toLowerCase());
-  }
+  for (const r of rows ?? []) if (r.peerAddress) out.add(r.peerAddress.toLowerCase());
   return [...out];
 }
 
@@ -29,7 +30,7 @@ function toSortedContacts(addresses: string[]): Contact[] {
 async function collectAddresses(): Promise<string[]> {
   const client = await sdk.client();
   await afterFirstPages();
-  const self = (getActiveAccountIdSync() ?? '').toLowerCase();
+  const self = knownSelfAddress() ?? '';
   const convs = await sdk.listConvs(client, ['allowed']);
   await primeConversationMembers(client, convs);
   const set = new Set<string>();
@@ -46,28 +47,30 @@ async function collectAddresses(): Promise<string[]> {
   return [...set];
 }
 
-export function useContactList(enabled: boolean): Contact[] {
-  const { data: addresses = NO_ADDRESSES } = useQuery({
-    queryKey: ['allContacts', getActiveAccountIdSync()],
+export function useContactList(enabled: boolean): { contacts: Contact[]; collected: boolean } {
+  const selection = useAccountGeneration('selection');
+  const accountId = useKnownActiveAccountId();
+  const { data: addresses = NO_ADDRESSES, isFetched } = useQuery({
+    queryKey: accountQueryKeyAt('selection', selection, 'allContacts', accountId),
     queryFn: collectAddresses,
     enabled,
     placeholderData: () => peerAddressesOf(getCachedRows()),
   });
   const version = usePeerProfiles(addresses);
-  return useMemo(() => toSortedContacts(addresses), [addresses, version]);
+  const contacts = useMemo(() => toSortedContacts(addresses), [addresses, version]);
+  return { contacts, collected: isFetched };
 }
 
 export function useContacts(exclude: string[], query: string): Contact[] {
-  const [rows, setRows] = useState<CachedRow[] | null>(() => getCachedRows());
-  useEffect(() => subscribeCachedRows(setRows), []);
+  const rows = useHomeRows();
 
   const peers = useMemo(() => peerAddressesOf(rows), [rows]);
   const version = usePeerProfiles(peers);
 
   const excludeSet = useMemo(() => {
     const set = new Set(exclude.map((a) => a.toLowerCase()));
-    const self = getActiveAccountIdSync();
-    if (self) set.add(self.toLowerCase());
+    const self = knownSelfAddress();
+    if (self) set.add(self);
     return set;
   }, [exclude]);
 

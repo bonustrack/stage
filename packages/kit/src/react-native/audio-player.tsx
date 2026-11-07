@@ -5,12 +5,9 @@ import { createAudioPlayer, type AudioPlayer as ExpoAudioPlayer, type AudioStatu
 import { Glyph } from './glyph';
 import { IconPause } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPause';
 import { IconPlay } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlay';
-import { loadKitFonts } from './fonts.load';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { Text } from './text';
-import { useKitScheme } from './theme-context';
-
-loadKitFonts();
+import { useKitColors } from './theme-context';
 
 const DEFAULT_BAR_COUNT = 34;
 
@@ -179,12 +176,7 @@ function BasicPlayer({
   duration,
   onPlay,
   dark,
-}: {
-  url: string;
-  duration?: number;
-  onPlay?: () => void;
-  dark: boolean;
-}): React.ReactElement {
+}: Pick<AudioPlayerProps, 'url' | 'duration' | 'onPlay'> & { dark: boolean }): React.ReactElement {
   const { playing, position, duration: liveDuration, toggle } = useAudioPlayback(url, { onPlay });
   const lengthMs = liveDuration > 0 ? liveDuration : (duration ?? 0) * 1000;
   const progress = lengthMs > 0 ? Math.min(position / lengthMs, 1) : 0;
@@ -217,8 +209,8 @@ function BasicPlayer({
 }
 
 export function AudioPlayer(props: AudioPlayerProps): React.ReactElement {
-  const scheme = useKitScheme();
-  const { description, weight, accessibility, dark = scheme === 'dark' } = props;
+  const { dark } = useKitColors(props.dark, 'static');
+  const { description, weight, accessibility } = props;
   const body = props.waveform ? (
     <WaveformPlayer {...props} />
   ) : (

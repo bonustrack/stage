@@ -1,13 +1,14 @@
+import type { TITLE_LEVELS, TITLE_SIZES } from '../kit-vocabulary';
 import { Text as RNText, type TextProps as RNTextProps, type TextStyle } from 'react-native';
-import { fontName, resolveColorToken, type ColorToken } from '../tokens';
+import { fontName, resolvePaletteColor, type ColorToken } from '../tokens';
 import { HERO_TITLE_STYLE } from '../title.styles';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
-import { useKitPalette, useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
 export { BALANCE_TITLE_STYLE } from '../title.styles';
 
-export type TitleLevel = 1 | 2 | 3;
-export type TitleSizeToken = 'sm' | 'md' | 'lg';
+export type TitleLevel = (typeof TITLE_LEVELS)[number];
+export type TitleSizeToken = (typeof TITLE_SIZES)[number];
 export type TitleHeroSize = keyof typeof HERO_TITLE_STYLE;
 
 export interface TitleProps extends Omit<RNTextProps, 'style'>, A2uiCommonProps {
@@ -25,11 +26,11 @@ const TOKEN_LEVEL: Record<TitleSizeToken, TitleLevel> = { lg: 1, md: 2, sm: 3 };
 export function Title(props: TitleProps): React.ReactElement {
   const { text, level, size, hero, color, style, children, weight, accessibility, ...rest } = props;
   const lvl: TitleLevel = level ?? (size ? TOKEN_LEVEL[size] : 2);
-  const palette = useKitPalette();
-  const scheme = useKitScheme();
+  const live = useKitColors(undefined, 'provider').palette;
+  const fixed = useKitColors(undefined, 'static').palette;
 
   const base: TextStyle = {
-    color: color != null ? resolveColorToken(color, scheme) : palette.link,
+    color: color != null ? resolvePaletteColor(color, fixed) : live.link,
     ...(hero === undefined ? { fontSize: LEVEL_SIZE[lvl], fontFamily: fontName.head } : HERO_TITLE_STYLE[hero]),
     ...weightStyle(weight),
   };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { boardArrowMove } from '../components/board/boardKeys.model';
+import { boardArrowMove } from '../components/home/board/boardKeys.model';
 
 const column = (key: string, ...convIds: string[]): { key: string; rows: { convId: string }[] } => ({
   key,

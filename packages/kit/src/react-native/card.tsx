@@ -1,12 +1,13 @@
+import type { CARD_SIZES } from '../kit-vocabulary';
 import type { ReactNode } from 'react';
 import { Pressable, View, type ViewStyle } from 'react-native';
 import { Button } from './button';
 import { Text, type TextSizeToken } from './text';
-import { BLOCK_RADIUS_DEFAULT, schemePalette } from '../tokens';
+import { BLOCK_RADIUS_DEFAULT } from '../tokens';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
-export type CardSize = 'sm' | 'md' | 'lg';
+export type CardSize = (typeof CARD_SIZES)[number];
 
 export interface CardStatus {
   text: string;
@@ -62,9 +63,8 @@ function CardBody(props: CardProps & { sub: string; dark: boolean }): React.Reac
 }
 
 export function Card(props: CardProps): React.ReactElement {
-  const scheme = useKitScheme();
-  const { size = 'md', padding, background, onPress, dark = scheme === 'dark', style, weight, accessibility } = props;
-  const c = schemePalette(dark);
+  const { dark, roles: c } = useKitColors(props.dark, 'static');
+  const { size = 'md', padding, background, onPress, style, weight, accessibility } = props;
   const body = <CardBody {...props} dark={dark} sub={c.sub} />;
   const base: ViewStyle = {
     backgroundColor: background ?? c.surface,

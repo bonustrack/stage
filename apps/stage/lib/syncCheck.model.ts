@@ -1,7 +1,7 @@
 import { isMissingMlsState } from '@stage-labs/client/xmtp/clientErrors';
 import type { SyncState } from './xmtp.sdk.core';
 import { describeError } from './errorPolicy';
-import { within } from './history.model';
+import { rejectAfter } from '@stage-labs/client/timing';
 
 export interface SyncCheckInput {
   found: boolean;
@@ -148,7 +148,7 @@ export async function runSyncCheck<C>(ops: SyncCheckOps<C>, timeoutMs = 15_000):
     const left = deadline - Date.now();
     if (left <= 0) throw new Error('The check timed out.');
     phase = label;
-    return within(work(), left, 'The check timed out.');
+    return rejectAfter(work(), left, () => new Error('The check timed out.'));
   };
   try {
     const conv = await step('Local channel lookup', ops.find);

@@ -5,7 +5,7 @@ import { HoverTooltip } from '../HoverTooltip';
 import { useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
 import { toggleMemberList, useMemberListOpen } from '../../lib/memberList';
-import { useWebTabRail } from '../../lib/webLayout';
+import { useWebTabRail } from '../layout/webLayout';
 
 const LABEL = 'Toggle panel';
 

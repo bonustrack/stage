@@ -1,12 +1,32 @@
 import { describe, expect, test } from 'bun:test';
-import { settingsSection } from '../components/settings/settingsCatalog.model';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { SETTINGS_SECTIONS, hubRows, settingsBreadcrumb } from '../components/settings/settingsCatalog.model';
+
+const SETTINGS_ROUTE_FILES = readdirSync(join(import.meta.dir, '..', 'app', 'settings')).map(
+  (file) => `/settings/${file.replace(/\.tsx$/, '')}`,
+);
 
 describe('settingsCatalog', () => {
-  test('finds a section by id, each under /settings', () => {
-    expect(settingsSection('wallet')).toEqual({ href: '/settings/wallet', icon: 'IconWallet4' });
-    expect(settingsSection('appearance').href).toBe('/settings/display');
-    for (const id of ['profile', 'security', 'devices', 'advanced'] as const) {
-      expect(settingsSection(id).href).toBe(`/settings/${id}`);
-    }
+  test('every settings page has a route under /settings and every route there is in the catalog', () => {
+    expect(
+      Object.values(SETTINGS_SECTIONS)
+        .map((section) => section.href)
+        .sort(),
+    ).toEqual([...SETTINGS_ROUTE_FILES].sort());
+  });
+
+  test('the hub lists Appearance among the preferences and the other pages under More', () => {
+    expect(hubRows('preferences').map((row) => [row.href, row.label])).toEqual([['/settings/display', 'Appearance']]);
+    expect(hubRows('more').map((row) => [row.href, row.label])).toEqual([
+      ['/settings/security', 'Recovery phrase and private key'],
+      ['/settings/devices', 'Devices and history'],
+      ['/settings/wallet', 'Wallet'],
+      ['/settings/advanced', 'Advanced'],
+    ]);
+  });
+
+  test('copy that points to a settings page uses the label the hub shows', () => {
+    expect(settingsBreadcrumb('devices')).toBe('Settings > Devices and history');
   });
 });

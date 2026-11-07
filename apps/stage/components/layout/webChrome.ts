@@ -1,69 +1,97 @@
-import { Platform, type ViewStyle } from 'react-native';
+import type { View, ViewStyle } from 'react-native';
+import type { ChromeClass, DocumentTheme, DomHost, PaneScope } from './webChrome.core';
 
-const WEB = Platform.OS === 'web';
-const PANE_LEFT = 'var(--stage-pane-left, 0px)';
-const RIGHT_PANE = 'var(--stage-right-pane, 0px)';
+export { GUTTER_SCROLLBAR, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from './webChrome.core';
 
-type WebStyle = Record<string, string | number | undefined>;
+export type RenderedNode = View;
 
-function css(style: WebStyle): ViewStyle {
-  return style;
+export const PANE_LEFT_PAD: ViewStyle = {};
+
+export const RIGHT_PANE_PAD: ViewStyle = {};
+
+export const RIGHT_PANE_INSET: ViewStyle = {};
+
+export const STICKY_TOP: ViewStyle = {};
+
+export const SELF_SCROLL: ViewStyle = {};
+
+export const STICKY_UNDER_CHROME: ViewStyle = {};
+
+export function underTopChrome(offset: number): string {
+  return `${offset}px`;
 }
-
-export const PANE_LEFT_PAD: ViewStyle = WEB ? css({ paddingLeft: PANE_LEFT }) : {};
-
-export const RIGHT_PANE_PAD: ViewStyle = WEB ? css({ paddingRight: RIGHT_PANE }) : {};
-
-export const RIGHT_PANE_INSET: ViewStyle = WEB ? css({ right: RIGHT_PANE }) : {};
-
-export const STICKY_TOP: ViewStyle = WEB ? css({ position: 'sticky', top: 0, zIndex: 2 }) : {};
-
-export const SELF_SCROLL: ViewStyle = WEB ? css({ overflowY: 'auto' }) : {};
-
-export const SELF_SCROLLBAR = { dataSet: { stagescrollbar: '1' } };
-
-export const GUTTER_SCROLLBAR = { dataSet: { stagescrollbar: '1', stagegutter: '1' } };
-
-let reservedGutter: number | undefined;
 
 export function gutterScrollbarWidth(): number {
-  if (!WEB || typeof document === 'undefined') return 0;
-  if (reservedGutter === undefined) {
-    const probe = document.createElement('div');
-    Object.assign(probe.dataset, GUTTER_SCROLLBAR.dataSet);
-    probe.style.cssText = 'position: absolute; visibility: hidden; width: 100px; overflow-y: auto';
-    document.body.append(probe);
-    reservedGutter = probe.offsetWidth - probe.clientWidth;
-    probe.remove();
-  }
-  return reservedGutter;
+  return 0;
 }
-
-export const SCROLLBAR_ON_HOVER = { dataSet: { stagescrollbarhover: '1' } };
 
 export function stickyAt(top: string, zIndex: number): ViewStyle | null {
-  return WEB ? css({ position: 'sticky', top, zIndex }) : null;
+  void top;
+  void zIndex;
+  return null;
 }
 
-export const STICKY_UNDER_CHROME: ViewStyle = WEB ? css({ position: 'sticky', top: 'var(--stage-top-inset, 0px)', zIndex: 2 }) : {};
-
 export function pinnedTop(zIndex: number): ViewStyle {
-  return WEB
-    ? css({ position: 'fixed', top: 0, left: PANE_LEFT, right: 0, zIndex })
-    : { position: 'absolute', top: 0, left: 0, right: 0, zIndex };
+  return { position: 'absolute', top: 0, left: 0, right: 0, zIndex };
 }
 
 export function pinnedBottom(zIndex: number): ViewStyle {
-  return WEB
-    ? css({ position: 'fixed', bottom: 0, left: PANE_LEFT, right: 0, zIndex })
-    : { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex };
+  return { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex };
 }
 
 export function viewportFill(zIndex?: number): ViewStyle {
-  const edges = { top: 0, bottom: 0, left: 0, right: 0, zIndex };
-  return WEB ? css({ position: 'fixed', ...edges }) : { position: 'absolute', ...edges };
+  return { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex };
 }
 
 export function pinnedEdges(edges: { top?: number; bottom?: number; left?: number; right?: number }, zIndex: number): ViewStyle {
-  return WEB ? css({ position: 'fixed', ...edges, zIndex }) : { position: 'absolute', ...edges, zIndex };
+  return { position: 'absolute', ...edges, zIndex };
+}
+
+export function isRendered(node: unknown): boolean {
+  void node;
+  return false;
+}
+
+const NO_DOM_HOST: DomHost = { host: null, hostRef: () => undefined };
+
+export function useDomHost(): DomHost {
+  return NO_DOM_HOST;
+}
+
+export function setTopInset(px: number): void {
+  void px;
+}
+
+export function setPaneScope(scope: PaneScope | null): void {
+  void scope;
+}
+
+export function setChromeClass(name: ChromeClass, on: boolean): void {
+  void name;
+  void on;
+}
+
+export function useDocumentTheme(ready: boolean, theme: DocumentTheme): void {
+  void ready;
+  void theme;
+}
+
+export function applyWebGlobalStyles(): void {
+  return undefined;
+}
+
+export function writeChromeRule(id: string, rule: string): void {
+  void id;
+  void rule;
+}
+
+export function paneLeftRule(railWidth: number, paneWidth: number): string {
+  void railWidth;
+  void paneWidth;
+  return '';
+}
+
+export function rightPaneRule(width: number): string {
+  void width;
+  return '';
 }

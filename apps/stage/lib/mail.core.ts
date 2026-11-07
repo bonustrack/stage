@@ -18,7 +18,7 @@ import {
   type MailKeyPair,
 } from '@stage-labs/client/mail/mailbox';
 import { parseMail, type ParsedMail } from '@stage-labs/client/mail/mime';
-import type { InboxEntry } from '../components/settings/Inbox.model';
+import { AccountChangedError } from './accountSelection';
 import { report, reported } from './errorPolicy';
 import { memoized } from './storeCore';
 
@@ -28,6 +28,14 @@ export interface Mailbox {
   label: string;
   mailAddress: string;
   selection: number;
+}
+
+export interface InboxEntry {
+  label: string;
+  id: string;
+  ts: number;
+  size: number;
+  index: MailIndex | null;
 }
 
 export interface InboxState {
@@ -44,6 +52,16 @@ interface MailDeps {
 }
 
 const SESSION_MARGIN_MS = 30_000;
+const MAX_READ_KEYS = 2000;
+
+export function mailReadKey(label: string, id: string): string {
+  return `${label}/${id}`;
+}
+
+export function withReadKey(keys: readonly string[], key: string): readonly string[] {
+  if (keys.includes(key)) return keys;
+  return [...keys, key].slice(-MAX_READ_KEYS);
+}
 
 export function mailboxKey(box: Mailbox): string {
   return `${box.accountId}/${box.address.toLowerCase()}/${box.label}`;
@@ -64,7 +82,7 @@ function mailCredentials(deps: MailDeps) {
   const sessions = new Map<string, Promise<MailSession>>();
   const activated = new Set<string>();
   function check(selection: number): void {
-    if (selection !== deps.selection()) throw new Error('The active account changed.');
+    if (selection !== deps.selection()) throw new AccountChangedError('The active account changed.');
   }
   async function current<T>(selection: number, run: () => Promise<T>): Promise<T> {
     check(selection);
@@ -129,13 +147,21 @@ function mailCredentials(deps: MailDeps) {
 export function makeMailAccess(deps: MailDeps) {
   const credentials = mailCredentials(deps);
   const { current, keyFor, withSession } = credentials;
+  const ownKeysChecked = new Set<string>();
   async function listBox(box: Mailbox): Promise<InboxEntry[]> {
     void credentials.activate(box).catch(reported('mail.activate'));
     const [keys, items] = await current(box.selection, () => Promise.all([keyFor(box), withSession(box, listMail)]));
     return items.map((item) => ({ label: box.label, id: item.id, ts: item.ts, size: item.size, index: openIndex(keys, box, item) }));
   }
+  async function ensureOwnKey(rec: AccountRecord, signer: () => Promise<SignMessage>): Promise<void> {
+    if (ownKeysChecked.has(rec.address)) return;
+    const label = await deps.ownedLabel(rec.address);
+    if (label !== null && isMailboxLabel(label)) await ensureMailKey(deps.baseUrl(), label, rec.address, await signer());
+    ownKeysChecked.add(rec.address);
+  }
   return {
     clear: credentials.clear,
+    ensureOwnKey,
     mailboxes: (selection: number): Promise<Mailbox[]> =>
       current(selection, async () => {
         const rec = await current(selection, deps.activeAccount);

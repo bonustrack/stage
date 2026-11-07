@@ -5,10 +5,10 @@ import { IconCall } from '@central-icons-react-native/round-outlined-radius-1-st
 import { IconCallCancel } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCallCancel';
 import type { CallInfo, CallSession } from '@stage-labs/client/xmtp/callMachine';
 import { Avatar } from '../Avatar';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { declineCall, joinCall } from '../../lib/calls';
-import { ignore } from '../../lib/errorPolicy';
+import { reported } from '../../lib/errorPolicy';
 import { callPerson, callTitle } from './callPeople';
 import { Column, Row, pinnedEdges } from '../layout';
 
@@ -70,7 +70,7 @@ export function IncomingCall({
             style={{ flex: 1 }}
             iconStart={<Glyph icon={IconCall} size={18} color={bg} />}
             onPress={() => {
-              ignore(joinCall(session.convId, session.dm), 'ui');
+              void joinCall(session.convId, session.dm).catch(reported('call.join'));
             }}
           />
         </Row>

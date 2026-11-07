@@ -1,14 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { shortAddress } from '@stage-labs/client/identity/format';
 import { ownReactionsByMessage, reactionsByMessage } from '@stage-labs/client/xmtp/reactions';
-import {
-  reactorNamer,
-  reactorNames,
-  reactorNamesByMessage,
-  reactorsLabel,
-  type ReactorNamer,
-} from '../components/conversation/reactors.model';
+import { reactorNamer, reactorNames, reactorNamesByMessage, reactorsLabel, type ReactorNamer } from '../components/bubble/reactors.model';
 import { ownsReaction, reactionPills } from '../components/bubble/reactions.model';
+import { messageEntry } from './helpers';
 
 const ME = 'stage://xmtp/user/me';
 const EMMA = 'stage://xmtp/user/emma';
@@ -17,15 +13,13 @@ const BOB = 'stage://xmtp/user/bob';
 const NO_POLLS = new Map<string, number>();
 const nameOf: ReactorNamer = (uri) => uri.slice(uri.lastIndexOf('/') + 1);
 
-const react = (ms: number, from: string, emoji: string, removed = false): HistoryEntry => ({
-  id: `${from}-${ms}`,
-  ts: new Date(ms).toISOString(),
-  station: 'xmtp',
-  line: 'l',
-  from,
-  to: 'b',
-  payload: { reactTo: 'm1', emoji, removed },
-});
+const react = (ms: number, from: string, emoji: string, removed = false): HistoryEntry =>
+  messageEntry(
+    `${from}-${ms}`,
+    'reaction',
+    { reference: 'm1', content: emoji, removed, custom: false },
+    { ts: new Date(ms).toISOString(), from },
+  );
 
 function pillsOf(events: HistoryEntry[], adds: string[] = [], removals: string[] = []) {
   const named = reactorNamesByMessage(reactionsByMessage(events, NO_POLLS), ME, nameOf).get('m1');
@@ -97,7 +91,7 @@ const addresses: Record<string, string> = {
 };
 const tooltipNameOf = reactorNamer(
   (uri) => addresses[uri] ?? null,
-  (address) => (address === addresses[ALICE] ? 'Alice' : undefined),
+  (address) => (address === addresses[ALICE] ? 'Alice' : shortAddress(address)),
 );
 
 describe('reaction tooltip', () => {

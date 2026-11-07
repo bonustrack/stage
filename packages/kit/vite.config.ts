@@ -1,7 +1,7 @@
 import { defineConfig, transformWithEsbuild, type Plugin } from 'vite';
-import { KIT_CATALOG } from './src/a2ui/kit-catalog';
+import { KIT_CATALOG, KIT_CATALOG_ID } from './src/a2ui/kit-catalog';
 
-const KIT_CATALOG_FILE = 'a2ui/v1_0/catalog.json';
+const KIT_CATALOG_FILE = new URL(KIT_CATALOG_ID).pathname.slice(1);
 
 function publishKitCatalog(): Plugin {
   const source = `${JSON.stringify(KIT_CATALOG, null, 2)}\n`;

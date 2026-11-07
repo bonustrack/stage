@@ -12,6 +12,7 @@ import {
 } from './pushServer';
 
 import { abortable } from '../abortable';
+import { linkedDeadline } from '../timing';
 
 const REGISTER_TTL_MS = 6 * 60 * 60 * 1000;
 
@@ -113,22 +114,17 @@ async function registerTopics(input: PushRegistrationInput, deps: RegistrationDe
 }
 
 async function boundedRegistration(input: PushRegistrationInput, deps: RegistrationDeps): Promise<boolean> {
-  const controller = new AbortController();
-  const abort = (): void => {
-    controller.abort(new Error('Push registration cancelled'));
-  };
   if (input.signal?.aborted) return false;
-  input.signal?.addEventListener('abort', abort, { once: true });
-  const timer = setTimeout(() => {
-    controller.abort(new Error('Push registration timed out'));
-  }, deps.timeoutMs ?? 30_000);
-  const guarded = { ...input, current: () => !controller.signal.aborted && input.current() };
-  const cancellable = { ...deps, post: (url: string, body: unknown) => deps.post(url, body, controller.signal) };
+  const { signal, release } = linkedDeadline(deps.timeoutMs ?? 30_000, input.signal, {
+    cancelled: () => new Error('Push registration cancelled'),
+    timedOut: () => new Error('Push registration timed out'),
+  });
+  const guarded = { ...input, current: () => !signal.aborted && input.current() };
+  const cancellable = { ...deps, post: (url: string, body: unknown) => deps.post(url, body, signal) };
   try {
-    return await abortable(register(guarded, cancellable), controller.signal);
+    return await abortable(register(guarded, cancellable), signal);
   } finally {
-    clearTimeout(timer);
-    input.signal?.removeEventListener('abort', abort);
+    release();
   }
 }
 

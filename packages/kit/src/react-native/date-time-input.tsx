@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Text as RNText, View, type ViewStyle } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import { controlBoxStyle, controlColors, type ControlSize, type ControlVariant } from '../control.styles';
-import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName } from '../tokens';
+import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, RADIUS_FULL, fontName } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { ControlTrigger, WithChecks } from './control-trigger';
 import {
@@ -15,8 +15,9 @@ import {
   type WallClock,
 } from './date-time-input.model';
 import { DateTimeSheet, sheetColorsFor, type TimeDraft } from './date-time-input.sheet';
-import { useKitScheme } from './theme-context';
-import { centralIcon } from '../central-icons';
+import { useKitColors } from './theme-context';
+import { IconCalendar1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCalendar1';
+import { IconClock } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconClock';
 
 export interface DateTimeInputProps extends A2uiCommonProps {
   value?: string;
@@ -138,15 +139,14 @@ export function DateTimeInput(props: DateTimeInputProps): React.ReactElement {
     weight,
     accessibility,
   } = props;
-  const scheme = useKitScheme();
-  const dark = props.dark ?? scheme === 'dark';
+  const { dark, palette, roles } = useKitColors(props.dark, 'static');
   const mode = dateTimeMode(props.enableDate, props.enableTime);
   const [selected, commit] = useValue(props);
   const clock = parseWallClock(selected);
   const sheet = useDraft(mode, clock, commit);
-  const ctrl = controlColors(appearance, dark);
-  const box = controlBoxStyle(size, appearance, ctrl, radius ?? (pill === true ? 999 : CONTROL_RADIUS_DEFAULT));
-  const colors = sheetColorsFor(dark);
+  const ctrl = controlColors(appearance, dark, roles);
+  const box = controlBoxStyle(size, appearance, ctrl, radius ?? (pill === true ? RADIUS_FULL : CONTROL_RADIUS_DEFAULT));
+  const colors = sheetColorsFor(dark, palette);
   const shown = wallClockLabel(mode, clock);
   return (
     <WithChecks checks={checks} weight={weight}>
@@ -159,7 +159,7 @@ export function DateTimeInput(props: DateTimeInputProps): React.ReactElement {
             open={sheet.draft.open}
             hasValue={shown !== undefined}
             label={shown ?? props.placeholder ?? PLACEHOLDER[mode]}
-            icon={centralIcon(mode === 'time' ? 'clock' : 'calendar')}
+            icon={mode === 'time' ? IconClock : IconCalendar1}
             box={box}
             rootStyle={rootStyle}
             headColor={colors.head}

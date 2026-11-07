@@ -1,10 +1,12 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Modal as NativeModal, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { KIT_PROPS } from '../a2ui/kit-catalog';
+import { coerceProps } from '../a2ui/kit-catalog.props';
 import type { JsonValue } from '../a2ui/protocol';
-import type { SortRect } from '../sortable';
-import { asBoolean, asEnum, asOptionalString, asString, colorOf, commonProps, iconNameOf, type RenderContext } from './a2ui-context';
+import type { ScreenRect } from './dom';
+import { asBoolean, asOptionalString, asString, colorOf, commonProps, iconNameOf, type RenderContext } from './a2ui-context';
 import { accessibilityProps, weightStyle } from './a2ui-props';
-import { useA2uiAction } from './a2ui-renderers.inputs';
+import { useA2uiAction } from './a2ui-action';
 import { Icon } from './icon';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from './menu';
 import { contextMenuProps } from './context-menu';
@@ -19,13 +21,13 @@ const SWATCH_SIZE = 12;
 const SWATCH_BOX = { width: DROPDOWN_MENU.icon, height: DROPDOWN_MENU.icon };
 const SWATCH = { width: SWATCH_SIZE, height: SWATCH_SIZE, borderRadius: SWATCH_SIZE / 2 };
 
-function measure(node: View | null, done: (rect: SortRect) => void): void {
+function measure(node: View | null, done: (rect: ScreenRect) => void): void {
   node?.measureInWindow((x, y, width, height) => {
     done({ x, y, width, height });
   });
 }
 
-function TipAt({ rect, label, dark }: { rect: SortRect; label: string; dark: boolean }): React.ReactElement {
+function TipAt({ rect, label, dark }: { rect: ScreenRect; label: string; dark: boolean }): React.ReactElement {
   const below = rect.y < TIP_WIDTH / 4;
   return (
     <BodyLayer
@@ -45,7 +47,7 @@ function TipAt({ rect, label, dark }: { rect: SortRect; label: string; dark: boo
 
 function HoverLabel({ label, dark, children }: { label: string; dark: boolean; children: ReactNode }): React.ReactElement {
   const node = useRef<View>(null);
-  const [rect, setRect] = useState<SortRect | null>(null);
+  const [rect, setRect] = useState<ScreenRect | null>(null);
   return (
     <View
       ref={node}
@@ -90,7 +92,7 @@ function A2uiModal({ ctx }: { ctx: RenderContext }): React.ReactElement {
     <Modal
       {...commonProps(ctx)}
       {...control}
-      side={asEnum(ctx.props.side, ['center', 'bottom', 'end'])}
+      side={coerceProps(KIT_PROPS.Modal, ctx.props).side}
       trigger={ctx.child(ctx.props.trigger)}
       title={asOptionalString(ctx.props.title)}
     >
@@ -141,29 +143,27 @@ function MenuRows({ ctx, onClose }: { ctx: RenderContext; onClose: () => void })
   const act = useA2uiAction(ctx);
   return (
     <DropdownMenu dark={ctx.dark}>
-      {menuRows(ctx).map((row, index) => {
-        return (
-          <DropdownMenuItem
-            key={index}
-            label={row.label}
-            danger={row.danger}
-            selected={row.selected}
-            dark={ctx.dark}
-            icon={rowLeading(ctx, row)}
-            onPress={() => {
-              onClose();
-              act(row.action);
-            }}
-          />
-        );
-      })}
+      {menuRows(ctx).map((row, index) => (
+        <DropdownMenuItem
+          key={index}
+          label={row.label}
+          danger={row.danger}
+          selected={row.selected}
+          dark={ctx.dark}
+          icon={rowLeading(ctx, row)}
+          onPress={() => {
+            onClose();
+            act(row.action);
+          }}
+        />
+      ))}
     </DropdownMenu>
   );
 }
 
-function MenuPanel({ ctx, anchor, onClose }: { ctx: RenderContext; anchor: SortRect | null; onClose: () => void }): React.ReactElement {
+function MenuPanel({ ctx, anchor, onClose }: { ctx: RenderContext; anchor: ScreenRect | null; onClose: () => void }): React.ReactElement {
   const window = useWindowDimensions();
-  const end = asEnum(ctx.props.align, ['start', 'end']) === 'end';
+  const end = coerceProps(KIT_PROPS.DropdownMenu, ctx.props).align === 'end';
   const place =
     anchor === null
       ? null
@@ -183,7 +183,7 @@ function MenuPanel({ ctx, anchor, onClose }: { ctx: RenderContext; anchor: SortR
   );
 }
 
-function ContextTrigger({ ctx, onOpen }: { ctx: RenderContext; onOpen: (rect: SortRect) => void }): React.ReactElement {
+function ContextTrigger({ ctx, onOpen }: { ctx: RenderContext; onOpen: (rect: ScreenRect) => void }): React.ReactElement {
   const at = (x: number, y: number): void => {
     onOpen({ x, y, width: 0, height: 0 });
   };
@@ -210,11 +210,11 @@ function ContextTrigger({ ctx, onOpen }: { ctx: RenderContext; onOpen: (rect: So
 
 function A2uiDropdownMenu({ ctx }: { ctx: RenderContext }): React.ReactElement {
   const trigger = useRef<View>(null);
-  const [anchor, setAnchor] = useState<SortRect | null>(null);
+  const [anchor, setAnchor] = useState<ScreenRect | null>(null);
   const open = (): void => {
     measure(trigger.current, setAnchor);
   };
-  const contextMenu = asEnum(ctx.props.openOn, ['press', 'contextMenu']) === 'contextMenu';
+  const contextMenu = coerceProps(KIT_PROPS.DropdownMenu, ctx.props).openOn === 'contextMenu';
   return (
     <View style={weightStyle(ctx.weight)}>
       {contextMenu ? (

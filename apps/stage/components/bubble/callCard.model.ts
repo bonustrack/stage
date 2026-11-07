@@ -1,7 +1,8 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { parseCallInvite, parseCallSignal, type CallInvite, type CallSignal } from '@stage-labs/client/xmtp/call';
+import type { CallSignal } from '@stage-labs/client/xmtp/call';
+import { callInviteOf, callSignalOf } from '@stage-labs/client/xmtp/entryPayload';
 import { joinableCall, type CallsState } from '@stage-labs/client/xmtp/callMachine';
-import { clockLabel } from './audioCard.model';
+import { clockLabel } from '../../lib/format';
 
 export interface CallRecord {
   callId: string;
@@ -26,14 +27,6 @@ export interface CallCardModel {
   status: string;
   tone: 'live' | 'ended' | 'missed';
   action: CallCardAction;
-}
-
-function callInviteOf(entry: HistoryEntry): CallInvite | null {
-  return parseCallInvite((entry.payload as { callInvite?: unknown } | undefined)?.callInvite);
-}
-
-function callSignalOf(entry: HistoryEntry): CallSignal | null {
-  return parseCallSignal((entry.payload as { callSignal?: unknown } | undefined)?.callSignal);
 }
 
 interface InviteSeen {

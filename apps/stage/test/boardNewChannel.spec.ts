@@ -7,7 +7,7 @@ import {
   boardChannelRows,
   type BoardChannelCreations,
   type BoardPendingChannel,
-} from '../components/board/BoardNewChannel.model';
+} from '../components/home/board/BoardNewChannel.model';
 
 const self = `0x${'1'.repeat(40)}`;
 const assignee = `0x${'ab'.repeat(20)}`;

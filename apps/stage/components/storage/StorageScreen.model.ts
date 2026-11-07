@@ -1,5 +1,5 @@
 import { fileKey, type StoredFile } from '../../lib/storageIndex.model';
-import { fileSizeLabel } from '../bubble/fileCard.model';
+import { fileSizeLabel } from '../media/fileCard.model';
 
 export type StorageKind = 'image' | 'document' | 'audio' | 'video' | 'other';
 
@@ -15,37 +15,10 @@ export const STORAGE_FILTERS: readonly { value: StorageFilter; label: string }[]
 ];
 
 const KIND_EXTENSIONS: readonly (readonly [StorageKind, readonly string[]])[] = [
-  ['image', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'avif', 'bmp', 'tif', 'tiff', 'svg', 'ico']],
-  ['video', ['mp4', 'mov', 'm4v', 'webm', 'mkv', 'avi', 'wmv', '3gp', 'mpg', 'mpeg']],
-  ['audio', ['m4a', 'mp3', 'wav', 'aac', 'ogg', 'oga', 'opus', 'flac', 'weba', 'amr', 'caf', 'aif', 'aiff', 'mid', 'midi']],
-  [
-    'document',
-    [
-      'pdf',
-      'doc',
-      'docx',
-      'txt',
-      'md',
-      'rtf',
-      'odt',
-      'ods',
-      'odp',
-      'xls',
-      'xlsx',
-      'csv',
-      'tsv',
-      'ppt',
-      'pptx',
-      'key',
-      'pages',
-      'numbers',
-      'json',
-      'xml',
-      'html',
-      'htm',
-      'epub',
-    ],
-  ],
+  ['image', 'jpg jpeg png gif webp heic heif avif bmp tif tiff svg ico'.split(' ')],
+  ['video', 'mp4 mov m4v webm mkv avi wmv 3gp mpg mpeg'.split(' ')],
+  ['audio', 'm4a mp3 wav aac ogg oga opus flac weba amr caf aif aiff mid midi'.split(' ')],
+  ['document', 'pdf doc docx txt md rtf odt ods odp xls xlsx csv tsv ppt pptx key pages numbers json xml html htm epub'.split(' ')],
 ];
 
 export interface StorageRow {
@@ -123,15 +96,4 @@ export function storageStatusLabel(status: StorageStatus, hidden: ReadonlySet<st
   const summary = storageSummary(status.files, hidden);
   if (!status.failed || status.scanning) return summary;
   return [summary, 'Some chats could not be read'].filter(Boolean).join(' · ');
-}
-
-export function chatLabelOf(
-  chat: { peerAddress: string | null; groupName: string } | null | undefined,
-  peerName: string | undefined,
-  shortAddress: (address: string) => string,
-): string {
-  if (chat === null || chat === undefined) return '';
-  if (chat.peerAddress !== null) return peerName ?? shortAddress(chat.peerAddress);
-  const name = chat.groupName.trim();
-  return name === '' ? 'Unnamed channel' : name;
 }

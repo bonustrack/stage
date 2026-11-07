@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Animated, Platform } from 'react-native';
+import { Animated } from 'react-native';
 import {
+  DRAG_MOVE_SLOP,
   insertionIndex,
   listAt,
   nearestList,
@@ -22,6 +23,7 @@ import {
   entry,
   finish,
   group,
+  nextFrame,
   set,
   viewOf,
   type Core,
@@ -32,25 +34,34 @@ import {
 } from './sortable.core';
 import { NO_RECT, blockOf, layoutLater, layoutNow } from './sortable.measure';
 import {
-  autoScroll,
-  ghostInViewport,
+  DRAG_PLATFORM,
   liftFeedback,
-  measureLater,
-  measureNow,
-  measuresSynchronously,
-  nextFrame,
+  measureElement,
+  measureElementLater,
   raiseWithin,
-  setPageDragging,
-  suppressNextClick,
-} from './sortable.platform';
+  scrollAt,
+  setDocumentDragging,
+  swallowNextClick,
+} from './dom';
 
 export type { SortDrag, SortHidden, SortIndicator, SortListEntry, SortSource, SortState } from './sortable.core';
 export type { SortItemEntry } from './sortable.measure';
 
-const MOVE_SLOP = 6;
 const SHIFT_MS = 120;
 const NEAR_LIST = 48;
-const NATIVE_DRIVER = Platform.OS !== 'web';
+const SCROLL_EDGE = 48;
+const MAX_SCROLL_STEP = 18;
+const { measuresSynchronously, ghostInViewport, nativeDriver } = DRAG_PLATFORM;
+
+function scrollStep(distance: number): number {
+  return Math.ceil(((SCROLL_EDGE - distance) / SCROLL_EDGE) * MAX_SCROLL_STEP);
+}
+
+function edgeScroll(low: number, high: number, point: number): number {
+  if (point - low < SCROLL_EDGE) return -scrollStep(Math.max(0, point - low));
+  if (high - point < SCROLL_EDGE) return scrollStep(Math.max(0, high - point));
+  return 0;
+}
 
 function axisOf(direction: SortDirection, point: Point): number {
   return direction === 'vertical' ? point.y : point.x;
@@ -59,7 +70,7 @@ function axisOf(direction: SortDirection, point: Point): number {
 function animateTo(core: Core, offset: Animated.Value, value: number): void {
   if (core.shifts.get(offset) === value) return;
   core.shifts.set(offset, value);
-  Animated.timing(offset, { toValue: value, duration: SHIFT_MS, useNativeDriver: NATIVE_DRIVER }).start();
+  Animated.timing(offset, { toValue: value, duration: SHIFT_MS, useNativeDriver: nativeDriver }).start();
 }
 
 function slideOthers(core: Core, drag: SortDrag, toIndex: number): void {
@@ -120,7 +131,7 @@ function retarget(core: Core, drag: SortDrag): void {
 function refresh(core: Core, drag: SortDrag): void {
   if (!measuresSynchronously || (drag.inPlace && core.layouts.length > 0)) return;
   core.layouts = group(core, drag.group).map(layoutNow);
-  core.scopeRect = measureNow(core.scope()) ?? NO_RECT;
+  core.scopeRect = measureElement(core.scope()) ?? NO_RECT;
 }
 
 function place(core: Core, drag: SortDrag): void {
@@ -136,7 +147,7 @@ function scrollLoop(core: Core): void {
   core.stopScroll();
   core.stopScroll = nextFrame(() => {
     const drag = core.state.drag;
-    if (drag === null || drag.inPlace || !autoScroll(core.pointer.x, core.pointer.y)) return;
+    if (drag === null || drag.inPlace || !scrollAt(core.pointer.x, core.pointer.y, edgeScroll)) return;
     refresh(core, drag);
     place(core, drag);
     retarget(core, drag);
@@ -147,8 +158,8 @@ function scrollLoop(core: Core): void {
 async function measureNative(core: Core, drag: SortDrag, list: SortListEntry): Promise<void> {
   const [all, rect, item] = await Promise.all([
     Promise.all(group(core, drag.group).map(layoutLater)),
-    measureLater(core.scope()),
-    measureLater(list.items.get(drag.itemId)?.node()),
+    measureElementLater(core.scope()),
+    measureElementLater(list.items.get(drag.itemId)?.node()),
   ]);
   if (core.state.drag !== drag) return;
   core.layouts = all;
@@ -169,14 +180,14 @@ function begin(core: Core, listId: string, itemId: string, preview: ReactNode): 
   core.pointer = at;
   core.start = at;
   core.moved = false;
-  const rect = measureNow(list.items.get(itemId)?.node()) ?? NO_RECT;
+  const rect = measureElement(list.items.get(itemId)?.node()) ?? NO_RECT;
   const drag = {
     ...dragOf(list, itemId, false, preview),
     size: { width: rect.width, height: rect.height },
     grab: { x: at.x - rect.x, y: at.y - rect.y },
   };
   liftFeedback();
-  setPageDragging(true);
+  setDocumentDragging(true);
   core.layouts = [];
   refresh(core, drag);
   measureBlock(core, drag);
@@ -190,7 +201,7 @@ function move(core: Core, at: Point): void {
   const drag = core.state.drag;
   if (drag === null || drag.keyboard) return;
   core.pointer = at;
-  core.moved = core.moved || Math.hypot(at.x - core.start.x, at.y - core.start.y) >= MOVE_SLOP;
+  core.moved = core.moved || Math.hypot(at.x - core.start.x, at.y - core.start.y) >= DRAG_MOVE_SLOP;
   refresh(core, drag);
   place(core, drag);
   retarget(core, drag);
@@ -200,7 +211,7 @@ function move(core: Core, at: Point): void {
 function drop(core: Core): boolean {
   const drag = core.state.drag;
   const done = drag !== null && core.moved && commit(core, drag, core.state.target);
-  if (core.moved) suppressNextClick();
+  if (core.moved) swallowNextClick();
   finish(core, done);
   return done;
 }

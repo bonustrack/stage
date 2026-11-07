@@ -1,15 +1,16 @@
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import {
   pollQuestionBlocks,
+  type Poll,
   type PollOpenAnswers,
   type PollOptionRow,
   type PollOwnVotes,
   type PollQuestionBlock,
   type PollVotes,
 } from './poll.model';
-import type { Poll } from './helpers';
-import { usePalette, withAlpha } from '../../lib/theme';
-import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
+import { usePalette } from '../../lib/theme';
+import { withAlpha } from '@stage-labs/kit/color-math';
+import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import { useState } from 'react';
 import { FormField } from '../FormField';
 import { Button } from '@stage-labs/kit/react-native/button';
@@ -161,7 +162,7 @@ export function PollView({
   };
   const blocks = pollQuestionBlocks(poll.questions, votes, ownVotes);
   return (
-    <Column margin={{ top: 8 }} gap={12} maxWidth={ATTACHMENT_MAX_WIDTH} style={{ alignSelf: 'stretch' }}>
+    <Column margin={{ top: 8 }} gap={12} maxWidth={FEED_CONTENT_WIDTH} style={{ alignSelf: 'stretch' }}>
       <Column gap={12}>
         {blocks.map((block, qi) => (
           <PollQuestionView key={`q-${qi}`} block={block} qi={qi} colors={colors} onVote={onVote} />

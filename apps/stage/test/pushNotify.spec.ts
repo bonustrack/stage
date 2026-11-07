@@ -13,7 +13,7 @@ describe('the Android card id matches Kotlin String.hashCode', () => {
   });
 
   test('builds the expo identifier of the card StageFcmService posts', () => {
-    expect(nativeCardIdentifier(CONV.toUpperCase())).toBe(`expo-notifications://foreign_notifications?id=${javaStringHash(CONV)}`);
+    expect(nativeCardIdentifier(CONV.toUpperCase())).toBe('expo-notifications://foreign_notifications?id=-1783317168');
   });
 });
 

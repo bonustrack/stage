@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { isTransferRequest, humanizeAction, txActionLabel } from '../src/wallet/txWording';
+import { isTransferRequest, txActionLabel } from '../src/wallet/txWording';
 import type { DecodedCall } from '../src/wallet/txDecode';
 
 const call = (functionName: string, args: DecodedCall['args'] = []): DecodedCall => ({
@@ -26,21 +26,6 @@ describe('isTransferRequest', () => {
   });
 });
 
-describe('humanizeAction', () => {
-  test('post -> Post message', () => {
-    expect(humanizeAction(call('post'))).toBe('Post message');
-  });
-  test('approve -> Approve', () => {
-    expect(humanizeAction(call('approve'))).toBe('Approve');
-  });
-  test('camelCase split + sentence-case', () => {
-    expect(humanizeAction(call('swapExactTokensForETH'))).toBe('Swap exact tokens for eth');
-  });
-  test('no decoded name -> Confirm', () => {
-    expect(humanizeAction(null)).toBe('Confirm');
-  });
-});
-
 describe('txActionLabel', () => {
   test('transfer -> Pay', () => {
     expect(txActionLabel(call('transfer'), false)).toBe('Pay');
@@ -54,6 +39,14 @@ describe('txActionLabel', () => {
       { name: 'tag', type: 'string', value: 'stage' },
     ]);
     expect(txActionLabel(c, false)).toBe('Post message');
+  });
+  test('known contract actions read in plain words', () => {
+    expect(txActionLabel(call('approve'), false)).toBe('Approve');
+    expect(txActionLabel(call('setApprovalForAll'), false)).toBe('Approve collection');
+  });
+  test('other function names are split into a sentence', () => {
+    expect(txActionLabel(call('swapExactTokensForETH'), false)).toBe('Swap exact tokens for eth');
+    expect(txActionLabel(call('add_liquidity'), false)).toBe('Add liquidity');
   });
   test('unknown contract call -> Confirm', () => {
     expect(txActionLabel({ decoded: true, verified: false, source: '4byte', args: [] }, false)).toBe('Confirm');

@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'bun:test';
-import { isGroupRow, listedConvRow, memberAddressesOf, rowCreatedTs, sameConvRow } from '../modules/messaging/convRow.model';
+import { cachedRowsOf } from '../lib/cachedRows.model';
+import { isGroupRow, listedConvRow as listedOf, memberAddressesOf, rowCreatedTs, sameConvRow } from '../lib/messaging/convRow.model';
+
+const listedConvRow = (stored: unknown[] | null, convId: string) => listedOf(stored === null ? null : cachedRowsOf(stored), convId);
 
 describe('listedConvRow', () => {
   test('a listed direct chat gives the peer and its address map', () => {
@@ -30,7 +33,8 @@ describe('listedConvRow', () => {
   });
 
   test('a channel row without a name or image never borrows the list title', () => {
-    expect(listedConvRow([{ convId: 'g', peerAddress: null, title: '3 members', avatarUri: null }], 'g')).toEqual({
+    const cached = { convId: 'g', peerAddress: null, title: '3 members', avatarUri: null };
+    expect(listedConvRow([cached], 'g')).toEqual({
       peerAddress: null,
       groupName: undefined,
       avatarUri: null,

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
-import { makeClientFinalizer, openFinalizedClient, type FinalizeDeps } from '../lib/xmtp.finalize.core';
+import { makeClientFinalizer, openFinalizedClient, type FinalizeDeps } from '../lib/xmtp.recover.core';
+import { AccountChangedError } from '../lib/accountSelection';
 
 const account = (id: string): AccountRecord => ({ id, address: `0x${id}`, type: 'generated', dbDir: id, createdAt: 0 });
 
@@ -13,13 +14,7 @@ function harness(overrides: Partial<FinalizeDeps<string>> = {}) {
       log.push(`registered:${id}`);
       return Promise.resolve(undefined);
     },
-    saveEnv: () => {
-      log.push('env');
-      return Promise.resolve(undefined);
-    },
-    discard: (client) => {
-      log.push(`discard:${client}`);
-    },
+    discard: (client) => log.push(`discard:${client}`),
     ...overrides,
   };
   return {
@@ -33,15 +28,12 @@ function harness(overrides: Partial<FinalizeDeps<string>> = {}) {
 }
 
 describe('client finalization', () => {
-  for (const boundary of ['markRegistered', 'saveEnv'] as const) {
-    test(`a failed ${boundary} does not publish readiness and discards only its own client`, async () => {
-      const failure = new Error(boundary);
-      const { finalize, log } = harness({ [boundary]: () => Promise.reject(failure) });
-      await expect(finalize('client-a', account('a'), 'production', { markRegistered: true })).rejects.toBe(failure);
-      expect(log.filter((e) => e.startsWith('cache:') || e.startsWith('push:'))).toEqual([]);
-      expect(log.filter((e) => e.startsWith('discard:'))).toEqual(['discard:client-a']);
-    });
-  }
+  test('a failed markRegistered does not publish readiness and discards only its own client', async () => {
+    const failure = new Error('markRegistered');
+    const { finalize, log } = harness({ markRegistered: () => Promise.reject(failure) });
+    await expect(finalize('client-a', account('a'), { markRegistered: true })).rejects.toBe(failure);
+    expect(log).toEqual(['discard:client-a']);
+  });
 
   test('a selection change during registration cannot restore the old account or publish its client', async () => {
     const entered = Promise.withResolvers<undefined>();
@@ -52,12 +44,12 @@ describe('client finalization', () => {
         return persistence.promise;
       },
     });
-    const opening = h.finalize('client-a', account('a'), 'production', { markRegistered: true });
+    const opening = h.finalize('client-a', account('a'), { markRegistered: true });
     const result = opening.catch((e: unknown) => e);
     await entered.promise;
     h.select('b');
     persistence.resolve(undefined);
-    expect(await result).toBeInstanceOf(Error);
+    expect(await result).toBeInstanceOf(AccountChangedError);
     await expect(opening).rejects.toThrow('account changed');
     expect(h.selected()).toBe('b');
     expect(h.log).toEqual(['discard:client-a']);
@@ -66,11 +58,11 @@ describe('client finalization', () => {
   test('failed selected-account reads are not treated as authorization to initialize', async () => {
     const failure = new Error('account storage failed');
     const { finalize, log } = harness({ active: () => Promise.reject(failure) });
-    await expect(finalize('client-a', account('a'), 'production', { markRegistered: true })).rejects.toBe(failure);
+    await expect(finalize('client-a', account('a'), { markRegistered: true })).rejects.toBe(failure);
     expect(log).toEqual(['discard:client-a']);
   });
 
-  for (const boundary of ['active', 'markRegistered', 'saveEnv'] as const) {
+  for (const boundary of ['active', 'markRegistered'] as const) {
     test(`offline finalization ${boundary} failure never deletes saved metadata or reopens online`, async () => {
       const failure = new Error(`${boundary} unavailable`);
       const h = harness({ [boundary]: () => Promise.reject(failure) });
@@ -81,7 +73,7 @@ describe('client finalization', () => {
           h.log.push('delete-inbox', 'online-open');
           return Promise.resolve('online-client');
         },
-        finalize: (client) => h.finalize(client, account('a'), 'production', { markRegistered: true }),
+        finalize: (client) => h.finalize(client, account('a'), { markRegistered: true }),
       });
       await expect(opening).rejects.toBe(failure);
       expect(h.log).not.toContain('delete-inbox');
@@ -114,7 +106,7 @@ describe('client finalization', () => {
 
   test('successful finalization never reselects an account', async () => {
     const { finalize, log } = harness();
-    expect(await finalize('client-a', account('a'), 'production', { markRegistered: true })).toBe('client-a');
-    expect(log).toEqual(['registered:a', 'env']);
+    expect(await finalize('client-a', account('a'), { markRegistered: true })).toBe('client-a');
+    expect(log).toEqual(['registered:a']);
   });
 });

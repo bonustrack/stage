@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, PanResponder } from 'react-native';
+import { RADIUS_FULL } from '../tokens';
 import { Column } from './column';
 import { Row } from './row';
 import { Button } from './button';
@@ -92,7 +93,7 @@ function CancelBtn({ onPress, fg, chipBg }: { onPress: () => void; fg: string; c
       style={({ pressed }) => ({
         width: 38,
         height: 38,
-        borderRadius: 999,
+        borderRadius: RADIUS_FULL,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: pressed ? chipBg : 'transparent',
@@ -210,7 +211,7 @@ function MicView({
       style={{
         width: 38,
         height: 38,
-        borderRadius: 999,
+        borderRadius: RADIUS_FULL,
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: recording ? '#e2622f' : 'transparent',

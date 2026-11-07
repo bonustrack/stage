@@ -4,6 +4,7 @@ import { Column } from '../src/react-native/column';
 import { Row } from '../src/react-native/row';
 import { Text } from '../src/react-native/text';
 import { color, number, select, useDark } from './_controls';
+import { DIVIDER_AXES } from '../src/kit-vocabulary';
 
 export default { title: 'Divider' };
 
@@ -27,4 +28,4 @@ export const Controls: Story<DividerProps> = (args) => {
   );
 };
 Controls.args = { axis: 'horizontal', spacing: 12, size: 1 };
-Controls.argTypes = { axis: select(['horizontal', 'vertical']), spacing: number, size: number, color, flush: number };
+Controls.argTypes = { axis: select(DIVIDER_AXES), spacing: number, size: number, color, flush: number };

@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { assignedAddresses, clearAppDataWrites, groupAssignedOf, writeAssigned, writeLabels } from '../src/xmtp/labels';
+import { assignedAddresses } from '../src/xmtp/labels';
+import { createAppDataWriter, groupAssignedOf } from '../src/xmtp/channelMeta';
 import { currentMemberAddresses } from '../src/xmtp/groups';
 import { appDataGroup } from './helpers';
+
+const { writeAssigned, writeLabels } = createAppDataWriter();
 
 const A = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const B = '0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
@@ -14,14 +17,13 @@ describe('channel assignees', () => {
     expect(assignedAddresses({ assigned: [A] })).toEqual([]);
   });
 
-  test('reads both SDK appData shapes and defaults old channels to no assignees', async () => {
-    const stringGroup = { appData: JSON.stringify({ assigned: [A, B] }), updateAppData: () => Promise.resolve() };
-    expect(await groupAssignedOf(stringGroup)).toEqual([A, B]);
+  test('reads the app data and defaults old channels to no assignees', async () => {
+    expect(await groupAssignedOf(appDataGroup(JSON.stringify({ assigned: [A, B] })).group)).toEqual([A, B]);
     expect(await groupAssignedOf(appDataGroup(JSON.stringify({ assigned: [A] })).group)).toEqual([A]);
     for (const raw of ['', '{', '[]', 'null', '{"labels":["Todo"]}']) {
       expect(await groupAssignedOf(appDataGroup(raw).group)).toEqual([]);
     }
-    expect(await groupAssignedOf({})).toEqual([]);
+    expect(await groupAssignedOf(null)).toEqual([]);
   });
 
   test('syncs before merging and preserves labels, links and unknown fields', async () => {
@@ -100,13 +102,14 @@ describe('channel assignees', () => {
     const old = appDataGroup();
     old.group.id = 'reset-channel';
     old.group.sync = () => stalled.promise;
-    const pending = writeAssigned(old.group, [A], members);
-    const queued = writeLabels(old.group, () => ['Stage']);
+    const dead = createAppDataWriter();
+    const pending = dead.writeAssigned(old.group, [A], members);
+    const queued = dead.writeLabels(old.group, () => ['Stage']);
     const results = Promise.allSettled([pending, queued]);
-    clearAppDataWrites();
+    dead.close();
     const fresh = appDataGroup();
     fresh.group.id = 'reset-channel';
-    await writeAssigned(fresh.group, [B], members);
+    await createAppDataWriter().writeAssigned(fresh.group, [B], members);
     expect(await groupAssignedOf(fresh.group)).toEqual([B]);
     stalled.resolve(undefined);
     expect((await results).map((result) => result.status)).toEqual(['rejected', 'rejected']);

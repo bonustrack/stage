@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
-import {
-  ensurePeerProfiles,
-  getPeerName,
-  isPeerResolved,
-  peerProfileEntries,
-  seedPeerProfiles,
-  subscribePeerProfiles,
-} from '../src/identity/peerProfiles';
+import type { PublicClient } from 'viem';
+import { resolveOnchainProfile } from '../src/identity/onchainProfile';
+import { createPeerProfiles } from '../src/identity/peerProfiles';
+import { fakeFetch } from './helpers';
+
+const profiles = createPeerProfiles();
 
 const TONY = '0x0000000000000000000000000000000000000001';
 const NAMELESS = '0x0000000000000000000000000000000000000002';
@@ -21,11 +19,11 @@ const realFetch = globalThis.fetch;
 
 beforeEach(() => {
   lookups = [];
-  globalThis.fetch = (async (_url: unknown, init?: { body?: string }) => {
-    const parsed = JSON.parse(init?.body ?? '{}') as { params?: string[] };
+  globalThis.fetch = fakeFetch(async (_url, init) => {
+    const parsed = JSON.parse(String(init?.body ?? '{}')) as { params?: string[] };
     lookups.push(parsed.params ?? []);
     return new Response(JSON.stringify({ result: answer }));
-  }) as unknown as typeof fetch;
+  });
 });
 
 afterEach(() => {
@@ -33,81 +31,98 @@ afterEach(() => {
 });
 
 async function settled(): Promise<void> {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 0);
+  for (let tick = 0; tick < 2; tick += 1) {
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  }
+}
+
+async function ensureCountingNotices(store: ReturnType<typeof createPeerProfiles>, address: string): Promise<number> {
+  let notified = 0;
+  const unsubscribe = store.subscribe(() => {
+    notified += 1;
   });
-  await new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
+  store.ensure([address]);
+  await settled();
+  unsubscribe();
+  return notified;
 }
 
 describe('seeded profiles are usable before the network answers', () => {
   test('a seeded name resolves and renders at once', () => {
-    seedPeerProfiles({ [TONY]: 'Tony', [NAMELESS]: null });
-    expect(isPeerResolved(TONY)).toBe(true);
-    expect(getPeerName(TONY)).toBe('Tony');
-    expect(isPeerResolved(NAMELESS)).toBe(true);
-    expect(getPeerName(NAMELESS)).toBeUndefined();
+    profiles.seed({ [TONY]: 'Tony', [NAMELESS]: null });
+    expect(profiles.isResolved(TONY)).toBe(true);
+    expect(profiles.name(TONY)).toBe('Tony');
+    expect(profiles.isResolved(NAMELESS)).toBe(true);
+    expect(profiles.name(NAMELESS)).toBeUndefined();
   });
 
   test('a stage name shows as @username unless a display name is set', () => {
-    seedPeerProfiles({ [ALICE]: { name: 'alice321.stage.base.eth' } });
-    expect(getPeerName(ALICE)).toBe('@alice321');
-    seedPeerProfiles({ [NAMED_ALICE]: { name: 'alice321.stage.base.eth', displayName: 'Alice from Stage' } });
-    expect(getPeerName(NAMED_ALICE)).toBe('Alice from Stage');
+    profiles.seed({ [ALICE]: { name: 'alice321.stage.base.eth' } });
+    expect(profiles.name(ALICE)).toBe('@alice321');
+    profiles.seed({ [NAMED_ALICE]: { name: 'alice321.stage.base.eth', displayName: 'Alice from Stage' } });
+    expect(profiles.name(NAMED_ALICE)).toBe('Alice from Stage');
   });
 
   test('seeding never overwrites a name the session already fetched', async () => {
     answer = { [FRESH]: 'Fresh' };
-    ensurePeerProfiles([FRESH]);
+    profiles.ensure([FRESH]);
     await settled();
-    seedPeerProfiles({ [FRESH]: 'Old' });
-    expect(getPeerName(FRESH)).toBe('Fresh');
+    profiles.seed({ [FRESH]: 'Old' });
+    expect(profiles.name(FRESH)).toBe('Fresh');
   });
 });
 
 describe('a seeded profile is still refreshed from the network', () => {
   test('ensure looks a seeded address up again, and stays quiet when nothing changed', async () => {
-    seedPeerProfiles({ [TONY]: 'Tony' });
+    profiles.seed({ [TONY]: 'Tony' });
     answer = { [TONY]: 'Tony' };
-    let notified = 0;
-    const unsubscribe = subscribePeerProfiles(() => {
-      notified += 1;
-    });
-    ensurePeerProfiles([TONY]);
-    await settled();
-    unsubscribe();
+    const notified = await ensureCountingNotices(profiles, TONY);
     expect(lookups.flat()).toContain(TONY);
     expect(notified).toBe(0);
-    expect(getPeerName(TONY)).toBe('Tony');
+    expect(profiles.name(TONY)).toBe('Tony');
   });
 
   test('a refreshed address is not looked up twice', async () => {
-    ensurePeerProfiles([TONY]);
+    profiles.ensure([TONY]);
     await settled();
     expect(lookups.flat().filter((a) => a === TONY)).toHaveLength(0);
   });
 
   test('a changed name notifies subscribers', async () => {
-    seedPeerProfiles({ [RENAMED]: 'Before' });
+    profiles.seed({ [RENAMED]: 'Before' });
     answer = { [RENAMED]: 'After' };
-    let notified = 0;
-    const unsubscribe = subscribePeerProfiles(() => {
-      notified += 1;
-    });
-    ensurePeerProfiles([RENAMED]);
-    await settled();
-    unsubscribe();
-    expect(notified).toBe(1);
-    expect(getPeerName(RENAMED)).toBe('After');
+    expect(await ensureCountingNotices(profiles, RENAMED)).toBe(1);
+    expect(profiles.name(RENAMED)).toBe('After');
   });
 });
 
 describe('the store can be mirrored to disk', () => {
   test('entries carry every known address, nameless ones as null', () => {
-    const entries = peerProfileEntries();
+    const entries = profiles.entries();
     expect(entries[TONY]).toBe('Tony');
     expect(entries[NAMELESS]).toBeNull();
     expect(entries[RENAMED]).toBe('After');
+  });
+});
+
+describe('a flaky RPC never wipes a cached profile', () => {
+  const avatarReadFails = {
+    readContract: async ({ functionName, args }: { functionName: string; args?: unknown[] }) => {
+      if (functionName === 'text' && args?.[1] === 'avatar') throw new Error('rpc down');
+      if (functionName === 'resolver') return '0x00000000000000000000000000000000000000C0';
+      if (functionName === 'name') return 'tony.base.eth';
+      return functionName === 'addr' ? TONY : '';
+    },
+  } as unknown as PublicClient;
+
+  test('a failed avatar read keeps the cached avatar and changes nothing', async () => {
+    const flaky = createPeerProfiles({ resolveOnchain: (address) => resolveOnchainProfile(avatarReadFails, address) });
+    flaky.seed({ [TONY]: { name: 'tony.base.eth', avatar: 'ipfs://cached', source: 'basename' } });
+    answer = { [TONY]: 'tony.base.eth' };
+    const notified = await ensureCountingNotices(flaky, TONY);
+    expect(flaky.avatar(TONY)).toBe('ipfs://cached');
+    expect(notified).toBe(0);
   });
 });

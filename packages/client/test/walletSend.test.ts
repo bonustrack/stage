@@ -1,47 +1,48 @@
 import { describe, expect, it } from 'bun:test';
-import { parseUnits } from 'viem';
-import { buildPublicTransfer, parseSendAmount } from '../src/wallet/send';
+import { buildPublicTransfer } from '../src/wallet/send';
 
 const ETH = { address: null, decimals: 18 } as const;
 const USDC = { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', decimals: 6 } as const;
 const RCPT = '0x1111111111111111111111111111111111111111';
 
-describe('parseSendAmount', () => {
+const ethValue = (amount: string): bigint => buildPublicTransfer({ recipient: RCPT, amount, asset: ETH }).value;
+const usdcUnits = (amount: string): bigint =>
+  BigInt(`0x${(buildPublicTransfer({ recipient: RCPT, amount, asset: USDC }).data ?? '').slice(-64)}`);
+const ONE_ETH = 10n ** 18n;
+
+describe('transfer amounts', () => {
   it('parses plain decimal strings to base units', () => {
-    expect(parseSendAmount('1', 18)).toBe(parseUnits('1', 18));
-    expect(parseSendAmount('0.05', 18)).toBe(parseUnits('0.05', 18));
-    expect(parseSendAmount('1.5', 6)).toBe(parseUnits('1.5', 6));
+    expect(ethValue('1')).toBe(ONE_ETH);
+    expect(ethValue('0.05')).toBe(5n * 10n ** 16n);
+    expect(usdcUnits('1.5')).toBe(1_500_000n);
   });
 
   it('handles high-precision / tiny values exactly (no float rounding)', () => {
-    expect(parseSendAmount('0.000000000000000001', 18)).toBe(1n);
-    expect(parseSendAmount('123456789.123456789', 18)).toBe(parseUnits('123456789.123456789', 18));
+    expect(ethValue('0.000000000000000001')).toBe(1n);
+    expect(ethValue('123456789.123456789')).toBe(123_456_789_123_456_789_000_000_000n);
   });
 
   it('trims surrounding whitespace', () => {
-    expect(parseSendAmount('  1.0  ', 18)).toBe(parseUnits('1.0', 18));
+    expect(ethValue('  1.0  ')).toBe(ONE_ETH);
   });
 
-  it('rejects scientific notation that Number() would accept', () => {
-    expect(() => parseSendAmount('1e3', 18)).toThrow('Invalid amount');
-    expect(() => parseSendAmount('1E-3', 18)).toThrow('Invalid amount');
+  it('rejects scientific notation, non-positive amounts and junk', () => {
+    for (const amount of ['1e3', '1E-3', '0', '0.0', '-1', '', 'abc', '1.2.3', '0x1'])
+      expect(() => ethValue(amount)).toThrow('Invalid amount');
   });
 
-  it('rejects non-positive amounts', () => {
-    expect(() => parseSendAmount('0', 18)).toThrow('Invalid amount');
-    expect(() => parseSendAmount('0.0', 18)).toThrow('Invalid amount');
-    expect(() => parseSendAmount('-1', 18)).toThrow('Invalid amount');
+  it('rounds fraction digits past the token decimals, as the smart account send always did', () => {
+    expect(usdcUnits('1.1234567')).toBe(1_123_457n);
+    expect(ethValue('0.0033333333333333335')).toBe(3_333_333_333_333_334n);
   });
 
-  it('rejects junk / NaN / empty', () => {
-    expect(() => parseSendAmount('', 18)).toThrow('Invalid amount');
-    expect(() => parseSendAmount('abc', 18)).toThrow('Invalid amount');
-    expect(() => parseSendAmount('1.2.3', 18)).toThrow('Invalid amount');
-    expect(() => parseSendAmount('0x1', 18)).toThrow('Invalid amount');
+  it('accepts a bare leading or trailing decimal point', () => {
+    expect(ethValue('.5')).toBe(5n * 10n ** 17n);
+    expect(ethValue('1.')).toBe(ONE_ETH);
   });
 
-  it('rejects more fraction digits than token decimals', () => {
-    expect(() => parseSendAmount('1.1234567', 6)).toThrow('Invalid amount');
+  it('rejects an amount that rounds to zero', () => {
+    expect(() => usdcUnits('0.0000001')).toThrow('Invalid amount');
   });
 });
 
@@ -49,7 +50,7 @@ describe('buildPublicTransfer', () => {
   it('builds a native transfer', () => {
     const call = buildPublicTransfer({ recipient: RCPT, amount: '1', asset: ETH });
     expect(call.to.toLowerCase()).toBe(RCPT);
-    expect(call.value).toBe(parseUnits('1', 18));
+    expect(call.value).toBe(ONE_ETH);
     expect(call.data).toBeUndefined();
   });
   it('builds an erc20 transfer to the token with zero value', () => {

@@ -1,5 +1,5 @@
 import type { DimensionValue, ViewStyle, TextStyle } from 'react-native';
-import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette } from './tokens';
+import { CONTROL_RADIUS_DEFAULT, FONT_SIZE, fontName, schemePalette, type SchemePalette } from './tokens';
 
 export function fieldIds(name: string | undefined): { nativeID?: string; accessibilityLabelledBy?: string } {
   if (!name) return {};
@@ -44,8 +44,7 @@ export interface ControlColors {
   border: string;
 }
 
-export function controlColors(variant: ControlVariant, dark: boolean): ControlColors {
-  const p = schemePalette(dark);
+export function controlColors(variant: ControlVariant, dark: boolean, p: SchemePalette = schemePalette(dark)): ControlColors {
   return {
     bg: variant === 'soft' ? (dark ? '#1b1c1e' : '#f4f4f5') : 'transparent',
     text: p.head,

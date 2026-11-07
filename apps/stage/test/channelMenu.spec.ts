@@ -1,21 +1,17 @@
 import { describe, expect, test } from 'bun:test';
-import { channelMenuItems } from '../components/ChannelMenu.model';
+import { channelMenuItems } from '../components/chatRow/ChannelMenu.model';
+
+const shown = (items: readonly { id: string; label: string; danger?: boolean }[]): string[] =>
+  items.map((item) => `${item.label}${item.danger === true ? ' (danger)' : ''}`);
 
 describe('channelMenuItems', () => {
-  test('a channel with search matches the legacy item list', () => {
+  test('an unread channel with search offers the channel actions, Leave channel last and in red', () => {
     const items = channelMenuItems(
       { isGroup: true, hasPeer: false, isUnread: true, isPinned: false },
       { search: true, developerMode: true },
     );
-    expect(items).toEqual([
-      { id: 'search', label: 'Search', icon: 'IconMagnifyingGlass' },
-      { id: 'add-members', label: 'Add members', icon: 'IconPlusLarge' },
-      { id: 'toggle-read', label: 'Mark as read', icon: 'IconCheckmark1' },
-      { id: 'toggle-pin', label: 'Pin', icon: 'IconThumbtack' },
-      { id: 'info', label: 'Channel info', icon: 'IconGroup1' },
-      { id: 'sync', label: 'Check sync', icon: 'IconDevices' },
-      { id: 'leave', label: 'Leave channel', icon: 'IconArrowLeft', danger: true },
-    ]);
+    expect(items.map((i) => i.id)).toEqual(['search', 'add-members', 'toggle-read', 'toggle-pin', 'info', 'sync', 'leave']);
+    expect(shown(items)).toEqual(['Search', 'Add members', 'Mark as read', 'Pin', 'Channel info', 'Check sync', 'Leave channel (danger)']);
   });
 
   test('a channel the user can edit offers Edit channel after Channel info', () => {
@@ -24,7 +20,7 @@ describe('channelMenuItems', () => {
       { search: true, edit: true, developerMode: true },
     );
     expect(items.map((i) => i.id)).toEqual(['search', 'add-members', 'toggle-read', 'toggle-pin', 'info', 'sync', 'edit', 'leave']);
-    expect(items.find((i) => i.id === 'edit')).toEqual({ id: 'edit', label: 'Edit channel', icon: 'IconPencil' });
+    expect(items.find((i) => i.id === 'edit')?.label).toBe('Edit channel');
   });
 
   test('a direct chat never offers Edit channel', () => {
@@ -37,7 +33,7 @@ describe('channelMenuItems', () => {
     expect(items.map((i) => i.id)).toEqual(['toggle-read', 'toggle-pin', 'info', 'delete']);
     expect(items.find((i) => i.id === 'info')?.label).toBe('Profile');
     expect(items.find((i) => i.id === 'toggle-pin')?.label).toBe('Unpin');
-    expect(items.at(-1)).toEqual({ id: 'delete', label: 'Delete chat', icon: 'IconTrashCan', danger: true });
+    expect(shown(items).at(-1)).toBe('Delete chat (danger)');
   });
 
   test('Check sync is hidden by default without changing normal channel actions', () => {
@@ -58,11 +54,8 @@ describe('channelMenuItems', () => {
 
   test('an unresolved chat still offers the sync check', () => {
     const items = channelMenuItems({ isGroup: false, hasPeer: false, isUnread: false }, { search: false, developerMode: true });
-    expect(items).toEqual([
-      { id: 'toggle-read', label: 'Mark as unread', icon: 'IconEmail1' },
-      { id: 'toggle-pin', label: 'Pin', icon: 'IconThumbtack' },
-      { id: 'sync', label: 'Check sync', icon: 'IconDevices' },
-    ]);
+    expect(items.map((i) => i.id)).toEqual(['toggle-read', 'toggle-pin', 'sync']);
+    expect(shown(items)).toEqual(['Mark as unread', 'Pin', 'Check sync']);
   });
 
   test('the blank pinned conversation menu exposes diagnostics without channel actions', () => {

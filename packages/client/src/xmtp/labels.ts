@@ -1,3 +1,4 @@
+import { includesKey, uniqueKeys } from '../collections';
 import { validMemberAddresses } from './groups';
 
 export const MAX_LABELS = 16;
@@ -8,28 +9,6 @@ export class LabelPermissionError extends Error {
     super(`You don't have permission to edit ${what} in this channel.`);
     this.name = 'LabelPermissionError';
   }
-}
-
-interface GroupLike {
-  id?: string;
-  sync?: () => Promise<unknown>;
-  appData?: (() => Promise<string>) | string;
-  updateAppData?: (appData: string) => Promise<void>;
-}
-
-export interface Group extends GroupLike {
-  updateAppData: (appData: string) => Promise<void>;
-}
-
-export function asGroup(conv: unknown): Group | null {
-  const g = conv as GroupLike;
-  const readableAppData = typeof g?.appData === 'function' || typeof g?.appData === 'string' || g?.appData === undefined;
-  return g && typeof g.updateAppData === 'function' && readableAppData ? (g as Group) : null;
-}
-
-async function readAppData(group: Group): Promise<string> {
-  if (typeof group.appData === 'function') return (await group.appData()) ?? '';
-  return group.appData ?? '';
 }
 
 export function cleanLabel(raw: string): string {
@@ -51,25 +30,8 @@ export function stringList(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 }
 
-function parseBlob(appData: string): Record<string, unknown> {
-  return parseObject(appData) ?? {};
-}
-
-function readLabels(blob: Record<string, unknown>): string[] {
-  const raw = blob.labels;
-  if (!Array.isArray(raw)) return [];
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const item of raw) {
-    if (typeof item !== 'string') continue;
-    const label = cleanLabel(item);
-    const key = label.toLowerCase();
-    if (!label || seen.has(key)) continue;
-    seen.add(key);
-    out.push(label);
-    if (out.length >= MAX_LABELS) break;
-  }
-  return out;
+export function labelsOf(raw: unknown): string[] {
+  return uniqueKeys(stringList(raw).map(cleanLabel).filter(Boolean)).slice(0, MAX_LABELS);
 }
 
 export function categoryOf(value: unknown): string | null {
@@ -78,54 +40,15 @@ export function categoryOf(value: unknown): string | null {
 
 export const CHANNEL_PRIORITIES = ['Urgent', 'High', 'Medium', 'Low'] as const;
 export type ChannelPriority = (typeof CHANNEL_PRIORITIES)[number];
-export type ChannelField = 'category' | 'status' | 'priority';
-export const CHANNEL_FIELD_NOUNS: Record<ChannelField, string> = { category: 'project', status: 'status', priority: 'priority' };
 
 export function priorityOf(value: unknown): ChannelPriority | null {
   return CHANNEL_PRIORITIES.find((priority) => priority === categoryOf(value)) ?? null;
 }
 
-export function channelFieldOf(field: ChannelField, value: unknown): string | null {
-  return field === 'priority' ? priorityOf(value) : categoryOf(value);
-}
-
-export interface GroupTags {
-  labels: string[];
-  category: string | null;
-  status: string | null;
-  priority: ChannelPriority | null;
-  assigned: string[];
-}
-
-export const NO_TAGS: GroupTags = { labels: [], category: null, status: null, priority: null, assigned: [] };
-
-export async function groupTagsOf(conv: unknown): Promise<GroupTags> {
-  const group = asGroup(conv);
-  if (!group) return NO_TAGS;
-  try {
-    const blob = parseBlob(await readAppData(group));
-    return {
-      labels: readLabels(blob),
-      category: categoryOf(blob.category),
-      status: categoryOf(blob.status),
-      priority: priorityOf(blob.priority),
-      assigned: assignedAddresses(blob.assigned),
-    };
-  } catch {
-    return NO_TAGS;
-  }
-}
-
-function isLabelPermissionDenied(e: unknown): boolean {
-  const msg = e instanceof Error ? e.message.toLowerCase() : '';
-  return msg.includes('permission') || msg.includes('not authorized') || msg.includes('unauthorized');
-}
-
 export function addLabel(labels: string[], label: string): string[] {
   const clean = cleanLabel(label);
   if (!clean) return labels;
-  if (labels.some((l) => l.toLowerCase() === clean.toLowerCase())) return labels;
-  if (labels.length >= MAX_LABELS) return labels;
+  if (includesKey(labels, clean) || labels.length >= MAX_LABELS) return labels;
   return [...labels, clean];
 }
 
@@ -150,93 +73,6 @@ export function renameLabels(labels: string[], from: string, to: string): string
   });
 }
 
-const appDataWrites = new Map<string | Group, Promise<void>>();
-let appDataEpoch = 0;
-
-export function clearAppDataWrites(): void {
-  appDataEpoch += 1;
-  appDataWrites.clear();
-}
-
-async function writeBlob(group: Group, patch: (blob: Record<string, unknown>) => Promise<Record<string, unknown>>): Promise<void> {
-  const key = group.id ?? group;
-  const previous = appDataWrites.get(key);
-  const epoch = appDataEpoch;
-  const task = async (): Promise<void> => {
-    if (epoch !== appDataEpoch) throw new Error('Channel edit canceled.');
-    await group.sync?.();
-    const existing = parseBlob(await readAppData(group));
-    const changed = await patch(existing);
-    const latest = parseBlob(await readAppData(group));
-    if (epoch !== appDataEpoch) throw new Error('Channel edit canceled.');
-    await group.updateAppData(JSON.stringify({ ...latest, v: 1, ...changed }));
-  };
-  const pending = previous ? previous.then(task, task) : task();
-  appDataWrites.set(key, pending);
-  try {
-    await pending;
-  } finally {
-    if (appDataWrites.get(key) === pending) appDataWrites.delete(key);
-  }
-}
-
-async function writeTags(group: Group, what: string, patch: (blob: Record<string, unknown>) => Record<string, unknown>): Promise<void> {
-  try {
-    await writeBlob(group, (existing) => Promise.resolve(patch(existing)));
-  } catch (e) {
-    if (isLabelPermissionDenied(e)) throw new LabelPermissionError(what);
-    throw e;
-  }
-}
-
-export async function writeLabels(group: Group, fn: (labels: string[]) => string[]): Promise<string[]> {
-  let next: string[] = [];
-  await writeTags(group, 'labels', (existing) => {
-    next = readLabels({ labels: fn(readLabels(existing)) });
-    return { labels: next };
-  });
-  return next;
-}
-
-export async function writeChannelField(
-  group: Group,
-  field: ChannelField,
-  value: string | null,
-  expected?: string | null,
-): Promise<string | null> {
-  const next = channelFieldOf(field, value);
-  if (field === 'priority' && value !== null && value.trim() !== '' && next === null) throw new Error('Choose a valid priority.');
-  const noun = CHANNEL_FIELD_NOUNS[field];
-  await writeTags(group, `the ${noun}`, (existing) => {
-    if (
-      expected !== undefined &&
-      channelFieldOf(field, existing[field])?.toLowerCase() !== channelFieldOf(field, expected)?.toLowerCase()
-    ) {
-      throw new Error(`The ${noun} changed. Try again.`);
-    }
-    return { [field]: next ?? undefined };
-  });
-  return next;
-}
-
 export function assignedAddresses(value: unknown): string[] {
   return [...new Set(validMemberAddresses(stringList(value)).map((address) => address.toLowerCase()))];
-}
-
-export async function groupAssignedOf(conv: unknown): Promise<string[]> {
-  const group = asGroup(conv);
-  return group ? assignedAddresses(parseBlob(await readAppData(group)).assigned) : [];
-}
-
-export async function writeAssigned(group: Group, assigned: string[], members: () => Promise<string[]>): Promise<string[]> {
-  const next = assignedAddresses(assigned);
-  if (next.length !== new Set(assigned.map((address) => address.trim().toLowerCase())).size) {
-    throw new Error('Choose valid channel members.');
-  }
-  await writeBlob(group, async () => {
-    const current = new Set(assignedAddresses(await members()));
-    if (next.some((address) => !current.has(address))) throw new Error('Assignees must be current channel members.');
-    return { assigned: next };
-  });
-  return next;
 }

@@ -1,9 +1,9 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { ChannelRow } from '../ChannelRow';
-import { MessengerComposer } from '../composer/MessengerComposer';
+import { ChannelRow } from '../chatRow/ChannelRow';
+import { DraftComposer } from '../composer/DraftComposer';
 import type { ComposerState } from '../composer/state';
-import type { ShareDestination } from './share.model';
+import type { ShareDestination } from '../../lib/shareDestination.model';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { Column, Row } from '../layout';
 
@@ -48,15 +48,7 @@ export function ShareReview({
           onPress={onChoose}
         />
       </Row>
-      <MessengerComposer
-        dark={dark}
-        state={state}
-        busy={busy}
-        quickAttach={false}
-        rounded
-        placeholder="Add a message"
-        onSubmit={onSubmit}
-      />
+      <DraftComposer state={state} busy={busy} quickAttach={false} rounded placeholder="Add a message" onSubmit={onSubmit} />
     </Column>
   );
 }

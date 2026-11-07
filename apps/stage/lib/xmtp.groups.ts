@@ -10,33 +10,25 @@ import {
   type GroupEditRights,
   type GroupMetaPatch,
 } from '@stage-labs/client/xmtp/groups';
-import { applyGroupMeta } from '@stage-labs/client/xmtp/channelsCache';
-import {
-  addLabel,
-  asGroup,
-  assignedAddresses,
-  channelFieldOf,
-  moveLabel,
-  removeLabel,
-  renameLabels,
-  stringList,
-  writeAssigned,
-  writeChannelField,
-  writeLabels,
-  type ChannelField,
-  type Group,
-} from '@stage-labs/client/xmtp/labels';
+import { applyGroupMeta, patchRow } from '@stage-labs/client/xmtp/channelsCache';
+import { addLabel, assignedAddresses, moveLabel, removeLabel, renameLabels, stringList } from '@stage-labs/client/xmtp/labels';
+import { channelFieldOf, type AppDataGroup, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { convIdOfLine, lineOfConv } from '@stage-labs/client/xmtp/line';
 import { uniqueBy } from '@stage-labs/client/collections';
-import { getCachedRows, setCachedRows, type CachedRow } from './channelsCache';
-import { convOfLine, sdk } from './xmtp.sdk';
+import { getCachedRows, setCachedRows } from './channelsCache';
+import { homeRowOf } from './messaging/homeRows';
+import type { CachedRow } from './cachedRows.model';
+import { sdk } from './xmtp.sdk';
+import { convOfLine } from './xmtp.find';
 import { notAGroup } from './xmtp.sdk.core';
-import { groupRowMeta } from '../modules/messaging/conversation';
+import { groupRowMeta } from './messaging/conversation';
 import { report, reported } from './errorPolicy';
 import { accountClient } from './xmtp.account';
-import { setChannelHidden } from './hiddenChannels';
-import { forgetChannelAccess, reconcileHiddenConsent, rememberChannelMember } from './channelVisibility';
-import { markFreshFeed } from './feedLines';
+import { setChannelHidden } from './sync/hiddenChannels';
+import { forgetChannelAccess } from './channelAccess';
+import { reconcileHiddenConsent, rememberOwnGroup } from './channelVisibility';
+import { markFreshFeed } from './feed/lines';
+import { channelMetaWriter } from './xmtp.state.core';
 
 type GroupConv = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -54,7 +46,8 @@ const latestRefresh = new Map<string, number>();
 let refreshSeq = 0;
 
 function hasGroupRow(convId: string): boolean {
-  return getCachedRows()?.some((r) => r.convId === convId && r.peerAddress == null) ?? false;
+  const row = homeRowOf(convId);
+  return row !== undefined && row.peerAddress == null;
 }
 
 async function loadGroupRow(convId: string, seq: number): Promise<void> {
@@ -83,7 +76,7 @@ export async function createGroup(addresses: string[], appData?: string, name?: 
     (address) => sdk.inboxIdOfAddress(client, address),
   );
   markFreshFeed(created.line);
-  rememberChannelMember(context, created.id);
+  rememberOwnGroup(context, created.id);
   return created;
 }
 
@@ -118,14 +111,11 @@ export async function updateGroupMeta(convId: string, patch: GroupMetaPatch): Pr
 export async function updateGroupAssigned(convId: string, assigned: string[]): Promise<string[]> {
   try {
     const conv = await requireGroup(lineOfConv(convId));
-    const group = asGroup(conv) ?? notAGroup();
-    return await writeAssigned(group, assigned, async () => {
+    const group = sdk.appDataGroup(conv) ?? notAGroup();
+    return await channelMetaWriter().writeAssigned(group, assigned, async () => {
       const client = await sdk.client();
-      const members = await conv.members();
-      return currentMemberAddresses(
-        assignedAddresses(assigned),
-        members.map((member) => member.inboxId),
-        (address) => sdk.inboxIdOfAddress(client, address),
+      return currentMemberAddresses(assignedAddresses(assigned), await sdk.memberInboxIds(conv), (address) =>
+        sdk.inboxIdOfAddress(client, address),
       );
     });
   } finally {
@@ -136,7 +126,7 @@ export async function updateGroupAssigned(convId: string, assigned: string[]): P
 export async function groupEditRights(convId: string): Promise<GroupEditRights> {
   const group = await requireGroup(lineOfConv(convId));
   const [client, policy, staff] = await Promise.all([sdk.client(), sdk.groupMetaPolicy(group), sdk.groupAdmins(group)]);
-  return groupEditRightsOf(policy, groupRoleOf(client.inboxId ?? '', staff));
+  return groupEditRightsOf(policy, groupRoleOf(sdk.inboxIdOf(client), staff));
 }
 
 export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
@@ -164,15 +154,14 @@ export async function leaveGroupConv(line: string): Promise<'left' | 'hidden'> {
   return result;
 }
 
-function patchRow(convId: string | null, patch: (row: CachedRow) => Partial<CachedRow>): void {
+function patchCachedRow(convId: string | null, patch: (row: CachedRow) => Partial<CachedRow>): void {
   const rows = getCachedRows();
-  const cur = rows?.find((r) => r.convId === convId);
-  if (!rows || !cur) return;
-  setCachedRows(rows.map((r) => (r === cur ? { ...r, ...patch(r) } : r)));
+  const next = rows && convId !== null ? patchRow(rows, convId, (row) => ({ ...row, ...patch(row) })) : null;
+  if (next) setCachedRows(next);
 }
 
 function patchRowLabels(convId: string | null, next: (labels: string[]) => string[]): void {
-  patchRow(convId, (r) => ({ labels: next(stringList(r.labels)) }));
+  patchCachedRow(convId, (r) => ({ labels: next(stringList(r.labels)) }));
 }
 
 interface LabelWrites {
@@ -186,7 +175,7 @@ function startLabelWrite(convId: string | null): LabelWrites | null {
   if (convId === null) return null;
   let writes = labelWrites.get(convId);
   if (!writes) {
-    const row = getCachedRows()?.find((r) => r.convId === convId);
+    const row = homeRowOf(convId);
     if (!row) return null;
     writes = { base: stringList(row.labels), pending: 0, failed: false };
     labelWrites.set(convId, writes);
@@ -203,8 +192,9 @@ function settleLabelWrite(convId: string | null, writes: LabelWrites | null): vo
   if (writes.failed) patchRowLabels(convId, () => writes.base);
 }
 
-async function groupOfLine(line: string): Promise<Group> {
-  const group = asGroup(await convOfLine(line));
+async function groupOfLine(line: string): Promise<AppDataGroup> {
+  const conv = await convOfLine(line);
+  const group = conv ? sdk.appDataGroup(conv) : null;
   if (!group) throw new Error('Not a channel');
   return group;
 }
@@ -214,7 +204,7 @@ async function writeRowLabels(line: string, next: (labels: string[]) => string[]
   const writes = startLabelWrite(convId);
   patchRowLabels(convId, next);
   try {
-    const written = await writeLabels(await groupOfLine(line), next);
+    const written = await channelMetaWriter().writeLabels(await groupOfLine(line), next);
     if (writes) writes.base = written;
     return written;
   } catch (err) {
@@ -226,21 +216,16 @@ async function writeRowLabels(line: string, next: (labels: string[]) => string[]
   }
 }
 
-export async function addGroupLabel(line: string, label: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => addLabel(labels, label));
-}
+export const addGroupLabel = (line: string, label: string): Promise<string[]> => writeRowLabels(line, (labels) => addLabel(labels, label));
 
-export async function moveGroupLabel(line: string, from: string | null, to: string | null): Promise<string[]> {
-  return writeRowLabels(line, (labels) => moveLabel(labels, from, to));
-}
+export const moveGroupLabel = (line: string, from: string | null, to: string | null): Promise<string[]> =>
+  writeRowLabels(line, (labels) => moveLabel(labels, from, to));
 
-export async function removeGroupLabel(line: string, label: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => removeLabel(labels, label));
-}
+export const removeGroupLabel = (line: string, label: string): Promise<string[]> =>
+  writeRowLabels(line, (labels) => removeLabel(labels, label));
 
-export async function renameGroupLabel(line: string, from: string, to: string): Promise<string[]> {
-  return writeRowLabels(line, (labels) => renameLabels(labels, from, to));
-}
+export const renameGroupLabel = (line: string, from: string, to: string): Promise<string[]> =>
+  writeRowLabels(line, (labels) => renameLabels(labels, from, to));
 
 export async function setGroupField(
   line: string,
@@ -249,16 +234,12 @@ export async function setGroupField(
   expected?: string | null,
 ): Promise<string | null> {
   const convId = convIdOfLine(line);
-  if (expected === undefined) patchRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
+  if (expected === undefined) patchCachedRow(convId, () => ({ [field]: channelFieldOf(field, value) }));
   try {
-    return await writeChannelField(await groupOfLine(line), field, value, expected);
+    return await channelMetaWriter().writeChannelField(await groupOfLine(line), field, value, expected);
   } finally {
     refreshGroupRow(convId);
   }
-}
-
-export function setGroupCategory(line: string, category: string | null): Promise<string | null> {
-  return setGroupField(line, 'category', category);
 }
 
 function knownLabels(): string[] {

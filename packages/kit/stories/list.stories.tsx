@@ -2,6 +2,7 @@ import type { Story } from '../gallery/story';
 import { List, type ListProps } from '../src/react-native/list';
 import { Badge } from '../src/react-native/badge';
 import { number, select, useDark } from './_controls';
+import { FLEX_ALIGNS, LIST_DIRECTIONS } from '../src/kit-vocabulary';
 
 export default { title: 'List' };
 
@@ -18,10 +19,4 @@ export const Controls: Story<ListProps> = (args) => {
   );
 };
 Controls.args = { direction: 'horizontal', align: 'start', gap: 8, padding: 4 };
-Controls.argTypes = {
-  direction: select(['vertical', 'horizontal']),
-  align: select(['start', 'center', 'end', 'stretch']),
-  gap: number,
-  padding: number,
-  weight: number,
-};
+Controls.argTypes = { direction: select(LIST_DIRECTIONS), align: select(FLEX_ALIGNS), gap: number, padding: number, weight: number };

@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react';
-import type { Shortcut } from './shortcuts.model';
+import type { ReactNode, Ref } from 'react';
+import type { RenderedNode } from './layout/webChrome';
+import type { Shortcut } from './keys/keys.model';
 
 export function HoverTooltip({
   children,
@@ -8,7 +9,7 @@ export function HoverTooltip({
   children: ReactNode;
   placement?: 'beside' | 'above' | 'below';
   shortcut?: Shortcut;
-  onShortcut?: () => void;
+  nodeRef?: Ref<RenderedNode>;
 }): React.ReactElement {
   return <>{children}</>;
 }

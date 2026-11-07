@@ -1,15 +1,13 @@
 import type { ReactNode } from 'react';
-import { Platform } from 'react-native';
-import type { SimultaneousRefs } from '../SwipeTabs.types';
 import { Card } from '@stage-labs/kit/react-native/card';
 import { ListView, ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { BLOCK_RADIUS_DEFAULT } from '@stage-labs/kit/tokens';
-import { useSafeAreaInsets } from '../../lib/safeArea';
-import { SETTINGS_ROUTE } from '../../lib/routes';
-import { useEffectiveColorScheme, usePalette, type ThemePreference } from '../../lib/theme';
+import { PAGES } from '../tabs/pages';
+import { usePalette, type ThemePreference } from '../../lib/theme';
 import type { FontPreviewScope } from '../../lib/fontChoice';
-import { StackHeader } from '../chrome/StackHeader';
+import { StackPage } from '../chrome/StackPage';
+import { SETTINGS_SECTIONS, type SettingsSectionId } from './settingsCatalog.model';
 import { Eyebrow } from '../Eyebrow';
 import { AppIcon, type AppIconRef } from '../widgets';
 import type { AppIconName } from '../appIcons';
@@ -18,7 +16,8 @@ import { IconChevronRight } from '@central-icons-react-native/round-outlined-rad
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CheckBox } from '@stage-labs/kit/react-native/check-box';
-import { Column, Row, ScreenScroll, PAGE_GUTTER } from '../layout';
+import { PlaceholderBar, PlaceholderBlock } from '../Placeholder';
+import { Column, PAGE_GUTTER } from '../layout';
 
 const ROW_PADDING = { paddingTop: 14, paddingBottom: 14, paddingLeft: 16, paddingRight: 14 };
 
@@ -97,6 +96,28 @@ export function SettingsValueRow(props: { label: string; value: string; onPress?
   );
 }
 
+export function SettingsValuePlaceholderRow({ label }: { label: string }): React.ReactElement {
+  return (
+    <SettingsItem>
+      <Column weight={1}>
+        <Text text={label} size="xs" color="link" />
+      </Column>
+      <PlaceholderBar width={96} height={12} onCard />
+    </SettingsItem>
+  );
+}
+
+export function SettingsButtonPlaceholderRow(): React.ReactElement {
+  return (
+    <SettingsItem>
+      <PlaceholderBlock width={24} height={24} onCard />
+      <Column weight={1}>
+        <PlaceholderBar width="40%" height={12} onCard />
+      </Column>
+    </SettingsItem>
+  );
+}
+
 export function SettingsButtonRow(props: {
   label: string;
   description?: string;
@@ -141,48 +162,18 @@ export function SettingsThemeRow(props: {
 }
 
 export function SettingsPage({
-  title,
-  root = false,
-  backTo = SETTINGS_ROUTE,
-  back,
-  panRef,
+  section,
   keyboardShouldPersistTaps,
-  trailing,
   children,
 }: {
-  title: string;
-  root?: boolean;
-  backTo?: string;
-  back?: boolean;
-  panRef?: SimultaneousRefs;
+  section: SettingsSectionId;
   keyboardShouldPersistTaps?: 'handled';
-  trailing?: ReactNode;
   children: ReactNode;
 }): React.ReactElement {
-  const insets = useSafeAreaInsets();
-  const actions =
-    trailing === undefined ? undefined : (
-      <Row weight={1} justify="end">
-        {trailing}
-      </Row>
-    );
   return (
-    <Column surface="surface" weight={1}>
-      {root ? (
-        Platform.OS === 'web' ? (
-          <StackHeader title={title} />
-        ) : null
-      ) : (
-        <StackHeader title={title} backTo={backTo} back={back} trailing={actions} />
-      )}
-      <ScreenScroll
-        simultaneousHandlers={panRef}
-        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
-        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
-      >
-        {children}
-      </ScreenScroll>
-    </Column>
+    <StackPage title={SETTINGS_SECTIONS[section].title} backTo={PAGES.settings.href} keyboardShouldPersistTaps={keyboardShouldPersistTaps}>
+      {children}
+    </StackPage>
   );
 }
 
@@ -204,15 +195,14 @@ export function SettingsGroup({
   footnote?: string;
   children: ReactNode;
 }): React.ReactElement {
-  const dark = useEffectiveColorScheme() === 'dark';
-  const listDark = useKitScheme() === 'dark';
+  const dark = useKitScheme() === 'dark';
   const { border } = usePalette();
   return (
     <Column>
       {title === undefined ? <Column height={24} /> : <SettingsSectionLabel>{title}</SettingsSectionLabel>}
       <Column margin={{ x: PAGE_GUTTER }} radius={BLOCK_RADIUS_DEFAULT} style={{ overflow: 'hidden' }}>
         <Card dark={dark} background={border} padding={0}>
-          <ListView dark={listDark}>{children}</ListView>
+          <ListView dark={dark}>{children}</ListView>
         </Card>
       </Column>
       {footnote === undefined ? null : (

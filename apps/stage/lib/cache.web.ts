@@ -1,4 +1,6 @@
 import { attempt, recover } from './errorPolicy';
+import { makeRecordStore, type RecordStore } from './recordStore';
+
 const DB_NAME = 'stage-cache';
 const DB_VERSION = 1;
 const STORE = 'kv';
@@ -6,8 +8,7 @@ const STORE = 'kv';
 let dbPromise: Promise<IDBDatabase | null> | null = null;
 
 function openDb(): Promise<IDBDatabase | null> {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise<IDBDatabase | null>((resolve) => {
+  dbPromise ??= new Promise<IDBDatabase | null>((resolve) => {
     try {
       const scope = globalThis as { indexedDB?: IDBFactory };
       if (!scope.indexedDB) {
@@ -37,18 +38,14 @@ function openDb(): Promise<IDBDatabase | null> {
 async function idbRead<T>(key: string): Promise<T | null> {
   const db = await openDb();
   if (!db) return null;
-  return new Promise<T | null>((resolve) => {
-    try {
-      const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key);
-      req.onsuccess = () => {
-        resolve((req.result as T | undefined) ?? null);
-      };
-      req.onerror = () => {
-        resolve(null);
-      };
-    } catch {
-      resolve(null);
-    }
+  return new Promise<T | null>((resolve, reject) => {
+    const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key);
+    req.onsuccess = () => {
+      resolve((req.result as T | undefined) ?? null);
+    };
+    req.onerror = () => {
+      reject(req.error ?? new Error(`Could not read ${key}`));
+    };
   });
 }
 
@@ -62,14 +59,16 @@ async function idbWrite(key: string, value: unknown): Promise<void> {
   }, 'cache');
 }
 
+function onFlushSignal(flushAll: () => void): void {
+  if (typeof window !== 'undefined') window.addEventListener('pagehide', flushAll);
+}
+
 export const persistenceBackend = {
-  read: idbRead,
+  read: (name: string): Promise<unknown> => idbRead<unknown>(name),
   write(name: string, value: unknown): void {
     void idbWrite(name, value);
   },
-  onFlushSignal(flushAll: () => void): void {
-    if (typeof window !== 'undefined') window.addEventListener('pagehide', flushAll);
-  },
+  onFlushSignal,
 };
 
 const SEAL_KEY_NAME = 'sealed.key';
@@ -141,4 +140,6 @@ async function sealedWrite(name: string, text: string | null): Promise<void> {
   await idbWrite(name, { iv, data } satisfies Sealed);
 }
 
-export const sealedCache = { read: sealedRead, write: sealedWrite };
+export function createRecordStore(writeErrorTag: string): RecordStore {
+  return makeRecordStore({ read: sealedRead, write: sealedWrite, onFlushSignal }, { delayMs: 1_000, restart: false }, writeErrorTag);
+}

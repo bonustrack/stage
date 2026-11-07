@@ -1,17 +1,15 @@
+import type { CHECK_BOX_DISPLAY_STYLES } from '../kit-vocabulary';
 import { useState } from 'react';
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import { styleList } from '../control.styles';
-import { FONT_SIZE, fontName } from '../tokens';
+import { FONT_SIZE, fontName, kitPalette, type KitPalette } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { WithChecks } from './control-trigger';
 import { Icon } from './icon';
-import { useKitScheme } from './theme-context';
-import { loadKitFonts } from './fonts.load';
+import { useKitColors } from './theme-context';
 
-loadKitFonts();
-
-export type CheckBoxDisplayStyle = 'checkbox' | 'switch';
+export type CheckBoxDisplayStyle = (typeof CHECK_BOX_DISPLAY_STYLES)[number];
 
 export interface CheckBoxProps extends A2uiCommonProps {
   label?: string;
@@ -33,8 +31,8 @@ interface CheckColors {
   border: string;
 }
 
-export function checkboxColors(dark: boolean): CheckColors {
-  return { head: dark ? '#ffffff' : '#000000', bg: dark ? '#0e0f10' : '#ffffff', border: dark ? '#282a2d' : '#e4e4e5' };
+export function checkboxColors(dark: boolean, palette: KitPalette = kitPalette(dark ? 'dark' : 'light')): CheckColors {
+  return { head: palette.link, bg: palette.bg, border: palette.border };
 }
 
 export function CheckboxBox({ size, checked, colors }: { size: number; checked: boolean; colors: CheckColors }): React.ReactElement {
@@ -51,8 +49,8 @@ export function CheckboxBox({ size, checked, colors }: { size: number; checked: 
   return <View style={box}>{checked ? <Icon name="check" size={size - 4} color={colors.bg} /> : null}</View>;
 }
 
-function SwitchTrack({ checked, dark }: { checked: boolean; dark: boolean }): React.ReactElement {
-  const track = checked ? (dark ? '#ffffff' : '#000000') : dark ? '#3a3c40' : '#d8d8da';
+function SwitchTrack({ checked, dark, head }: { checked: boolean; dark: boolean; head: string }): React.ReactElement {
+  const track = checked ? head : dark ? '#3a3c40' : '#d8d8da';
   return (
     <View style={{ width: 44, height: 26, borderRadius: 13, backgroundColor: track, padding: 3, justifyContent: 'center' }}>
       <View
@@ -94,11 +92,10 @@ export function CheckBox(props: CheckBoxProps): React.ReactElement {
     weight,
     accessibility,
   } = props;
-  const scheme = useKitScheme();
-  const dark = props.dark ?? scheme === 'dark';
+  const { dark, palette } = useKitColors(props.dark, 'static');
   const [checked, setChecked] = useChecked(value, defaultValue);
   const isSwitch = displayStyle === 'switch';
-  const colors = checkboxColors(dark);
+  const colors = checkboxColors(dark, palette);
   const toggle = (): void => {
     if (disabled) return;
     setChecked(!checked);
@@ -120,7 +117,11 @@ export function CheckBox(props: CheckBoxProps): React.ReactElement {
             ...styleList(rootStyle),
           ]}
         >
-          {isSwitch ? <SwitchTrack checked={checked} dark={dark} /> : <CheckboxBox size={size} checked={checked} colors={colors} />}
+          {isSwitch ? (
+            <SwitchTrack checked={checked} dark={dark} head={colors.head} />
+          ) : (
+            <CheckboxBox size={size} checked={checked} colors={colors} />
+          )}
           {label ? <RNText style={{ color: colors.head, fontSize: FONT_SIZE.xs, fontFamily: fontName.sans }}>{label}</RNText> : null}
         </Pressable>
       )}

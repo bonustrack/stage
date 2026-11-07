@@ -2,6 +2,7 @@ import type { Story } from '../gallery/story';
 import { Tabs, type TabItem, type TabsProps } from '../src/react-native/tabs';
 import { Text } from '../src/react-native/text';
 import { bool, number, select, useDark } from './_controls';
+import { TABS_VARIANTS } from '../src/kit-vocabulary';
 
 export default { title: 'Tabs' };
 
@@ -15,4 +16,4 @@ export const Controls: Story<Omit<TabsProps, 'tabs'> & { icons: boolean }> = ({ 
   <Tabs {...args} dark={useDark()} tabs={icons ? TABS : TABS.map(({ title, child }) => ({ title, child }))} />
 );
 Controls.args = { defaultIndex: 0, variant: 'segmented', icons: true };
-Controls.argTypes = { defaultIndex: number, variant: select(['segmented', 'underline']), icons: bool };
+Controls.argTypes = { defaultIndex: number, variant: select(TABS_VARIANTS), icons: bool };

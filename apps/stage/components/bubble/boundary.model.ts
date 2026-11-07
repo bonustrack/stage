@@ -1,21 +1,18 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { payloadTypeOf } from '@stage-labs/client/xmtp/entryPayload';
 
 type FallbackEntry = Pick<HistoryEntry, 'text' | 'payload'>;
 
 function contentTypeOf(entry: FallbackEntry): string | undefined {
-  const ct = (entry.payload as { contentType?: unknown } | undefined)?.contentType;
-  return typeof ct === 'string' && ct.trim() ? ct.trim() : undefined;
+  const ct = payloadTypeOf(entry)?.trim();
+  return ct === '' ? undefined : ct;
 }
 
 export function bubbleFallbackText(entry: FallbackEntry): string {
-  try {
-    const text = typeof entry.text === 'string' ? entry.text.trim() : '';
-    if (text) return text;
-    const ct = contentTypeOf(entry);
-    return ct ? `Unsupported message (${ct})` : 'Unsupported message';
-  } catch {
-    return 'Unsupported message';
-  }
+  const text = typeof entry.text === 'string' ? entry.text.trim() : '';
+  if (text) return text;
+  const ct = contentTypeOf(entry);
+  return ct ? `Unsupported message (${ct})` : 'Unsupported message';
 }
 
 export function bubbleFallbackShape(entry: FallbackEntry): { contentType: string | undefined; hasText: boolean; textLength: number } {

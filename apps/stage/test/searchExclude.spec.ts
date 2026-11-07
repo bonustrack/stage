@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { parseSearchFilter, searchFilterToken, searchFilterValues, searchRowMatcher } from '../components/searchFilter.model';
-import { ALICE, BOB, NAMES, group } from './searchFixtures';
+import { parseSearchFilter, searchFilterToken, searchFilterValues, searchRowMatcher } from '../components/home/search/searchFilter.model';
+import { ALICE, BOB, NONE, group, namesOf } from './searchFixtures';
 
 const rows = [
   group('build', ['🚧 In progress'], [ALICE]),
@@ -11,19 +11,9 @@ const rows = [
 ];
 
 const drafts: Record<string, string> = { plan: 'later' };
-
+const draftOf = (id: string): string => drafts[id] ?? '';
 const matching = (query: string): string[] =>
-  rows
-    .filter(
-      searchRowMatcher(
-        parseSearchFilter(query),
-        (address) => NAMES[address] ?? [],
-        (id) => drafts[id] ?? '',
-      ),
-    )
-    .map((row) => row.convId);
-
-const NONE = { labels: [], members: [], categories: [], statuses: [], priorities: [], has: [] };
+  rows.filter(searchRowMatcher(parseSearchFilter(query), namesOf, draftOf)).map((row) => row.convId);
 
 describe('parsing exclude filters', () => {
   test('a minus before a field excludes its values, next to included ones and free text', () => {

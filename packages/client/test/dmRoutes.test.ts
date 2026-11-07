@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { NO_ROUTES, dmIdsByPeer, dmRowId, isImportReplay, routeOf, uniqueByConvId, withRoute } from '../src/xmtp/dmRoutes';
+import { NO_ROUTES, dmIdsByPeer, dmRowId, routeOf, withRoute } from '../src/xmtp/dmRoutes';
 
 describe('routeOf / withRoute', () => {
   test('an unrouted conversation keeps its own id', () => {
@@ -48,32 +48,5 @@ describe('dmRowId', () => {
     expect(dmRowId(NO_ROUTES, 'group', null, known)).toEqual({ rowId: 'group', route: null });
     expect(dmRowId(NO_ROUTES, 'bob-dm', '0xbob', known)).toEqual({ rowId: 'bob-dm', route: null });
     expect(dmRowId(NO_ROUTES, 'imported', '0xalice', known)).toEqual({ rowId: 'imported', route: null });
-  });
-});
-
-describe('uniqueByConvId', () => {
-  test('keeps the first row for each id', () => {
-    const rows = [
-      { convId: 'a', n: 1 },
-      { convId: 'b', n: 2 },
-      { convId: 'a', n: 3 },
-    ];
-    expect(uniqueByConvId(rows)).toEqual([
-      { convId: 'a', n: 1 },
-      { convId: 'b', n: 2 },
-    ]);
-  });
-});
-
-describe('isImportReplay', () => {
-  test('messages at or before the import are replays, later ones are live', () => {
-    expect(isImportReplay(100, 200)).toBe(true);
-    expect(isImportReplay(200, 200)).toBe(true);
-    expect(isImportReplay(201, 200)).toBe(false);
-  });
-
-  test('without an import nothing is a replay', () => {
-    expect(isImportReplay(100, 0)).toBe(false);
-    expect(isImportReplay(0, 200)).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { fileOpenAction, inertBlobType, nativeFileName, normalizedMime } from '../lib/fileOpen.model';
+import { nativeFileName, normalizedMime } from '@stage-labs/client/files';
+import { fileOpenAction, inertBlobType } from '../lib/fileOpen.model';
 
 const b64 = (text: string): string => Buffer.from(text, 'utf8').toString('base64');
 
@@ -8,20 +9,15 @@ function inline(text: string, mime: string): { url: string; mime: string; name: 
 }
 
 describe('fileOpenAction', () => {
-  test('opens an inline PDF from its bytes instead of a data link', () => {
-    const action = fileOpenAction(inline('%PDF-1.4 test', 'application/pdf'));
+  test.each([
+    ['opens an inline PDF from its bytes instead of a data link', '%PDF-1.4 test', 'application/pdf', 'application/pdf'],
+    ['gives inline text a utf-8 charset so accents show', 'Grüezi und Ciao', 'text/plain', 'text/plain;charset=utf-8'],
+  ])('%s', (_name, text, mime, opened) => {
+    const action = fileOpenAction(inline(text, mime));
     expect(action.kind).toBe('openInline');
     if (action.kind !== 'openInline') return;
-    expect(action.mime).toBe('application/pdf');
-    expect(new TextDecoder().decode(action.bytes)).toBe('%PDF-1.4 test');
-  });
-
-  test('gives inline text a utf-8 charset so accents show', () => {
-    const action = fileOpenAction(inline('Grüezi und Ciao', 'text/plain'));
-    expect(action.kind).toBe('openInline');
-    if (action.kind !== 'openInline') return;
-    expect(action.mime).toBe('text/plain;charset=utf-8');
-    expect(new TextDecoder().decode(action.bytes)).toBe('Grüezi und Ciao');
+    expect(action.mime).toBe(opened);
+    expect(new TextDecoder().decode(action.bytes)).toBe(text);
   });
 
   test('keeps a charset the file already declares', () => {
@@ -71,9 +67,7 @@ describe('fileOpenAction', () => {
 
 describe('inertBlobType', () => {
   test('keeps media types that a browser shows without running code', () => {
-    expect(inertBlobType('image/png')).toBe('image/png');
-    expect(inertBlobType('image/jpg')).toBe('image/jpg');
-    expect(inertBlobType('video/mp4')).toBe('video/mp4');
+    for (const mime of ['image/png', 'image/jpg', 'video/mp4']) expect(inertBlobType(mime)).toBe(mime);
     expect(inertBlobType('audio/mp4; codecs=mp4a.40.2')).toBe('audio/mp4');
     expect(inertBlobType('application/pdf')).toBe('application/pdf');
   });

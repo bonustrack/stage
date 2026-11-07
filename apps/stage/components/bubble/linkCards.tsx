@@ -1,40 +1,30 @@
 import { router } from 'expo-router';
-import { ChannelRow } from '../ChannelRow';
-import { useConvRow } from '../../modules/messaging/queries';
-import { isGroupRow, memberAddressesOf, type ConvRow } from '../../modules/messaging/convRow.model';
-import { shortAddress } from '@stage-labs/client/identity/format';
-import { usePeerProfiles, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
-import { channelStampSeed } from '@stage-labs/kit/avatar';
+import { channelLinkOf } from '@stage-labs/client/routing/deepLinks';
+import { dmLinkOf } from '../../lib/links';
+import { ChannelRow } from '../chatRow/ChannelRow';
+import { useConvRow } from '../../lib/messaging/queries';
+import { isGroupRow, memberAddressesOf, type ConvRow } from '../../lib/messaging/convRow.model';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import { usePalette, DANGER, SUCCESS } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT, schemePalette } from '@stage-labs/kit/tokens';
-import { bubbleLinkProps } from './linkProps';
-import { openInBubbleLink } from '../../lib/safeOpenLink';
-import { channelTitle, type ConvTitle } from '../conversation/convTitle';
+import { bubbleLinkProps } from '../links/linkProps';
+import { openInBubbleLink } from '../../lib/capabilities';
+import { channelAvatar, channelTitle, peerTitle, resolvedPeerAddress, type ConvAvatar, type ConvTitle } from '../../lib/convIdentity';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { previewLinkOf } from '@stage-labs/client/embed/cardLinks';
-import { githubLinkOf } from '@stage-labs/client/api/github';
-import { useGithubMeta, type GithubMeta } from '../../lib/useGithubMeta';
+import { githubLinkOf, type GithubMeta } from '@stage-labs/client/api/github';
+import { useGithubMeta } from '../../lib/useGithubMeta';
 import type { SpacingValue } from '@stage-labs/kit/layout';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { domainOf } from '../../lib/format';
-import { useLinkPreview, isX402, type LinkPreviewResult } from '../../lib/useLinkPreview';
-import { X402Card } from '../PaymentCard';
-import Svg, { Path } from 'react-native-svg';
+import { useLinkPreview } from '../../lib/useLinkPreview';
+import { isX402, type LinkPreviewResult } from '@stage-labs/client/api/linkPreview';
+import { X402Card } from './PaymentCard';
+import { GithubLogo } from '../logos/GithubLogo';
 import { Column, Row } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
-
-const GITHUB_PATH =
-  'M512 0C229.12 0 0 229.12 0 512c0 226.56 146.56 417.92 350.08 485.76 25.6 4.48 35.2-10.88 35.2-24.32 0-12.16-0.64-52.48-0.64-95.36-128.64 23.68-161.92-31.36-172.16-60.16-5.76-14.72-30.72-60.16-52.48-72.32-17.92-9.6-43.52-33.28-0.64-33.92 40.32-0.64 69.12 37.12 78.72 52.48 46.08 77.44 119.68 55.68 149.12 42.24 4.48-33.28 17.92-55.68 32.64-68.48-113.92-12.8-232.96-56.96-232.96-252.8 0-55.68 19.84-101.76 52.48-137.6-5.12-12.8-23.04-65.28 5.12-135.68 0 0 42.88-13.44 140.8 52.48 40.96-11.52 84.48-17.28 128-17.28 43.52 0 87.04 5.76 128 17.28 97.92-66.56 140.8-52.48 140.8-52.48 28.16 70.4 10.24 122.88 5.12 135.68 32.64 35.84 52.48 81.28 52.48 137.6 0 196.48-119.68 240-233.6 252.8 18.56 16 34.56 46.72 34.56 94.72 0 68.48-0.64 123.52-0.64 140.8 0 13.44 9.6 29.44 35.2 24.32A512.832 512.832 0 0 0 1024 512c0-282.88-229.12-512-512-512z';
-
-export function GithubLogo({ size, color }: { size: number; color: string }): React.ReactElement {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 1024 1024">
-      <Path d={GITHUB_PATH} fill={color} />
-    </Svg>
-  );
-}
 
 function LinkPreviewBody({
   meta,
@@ -243,16 +233,12 @@ export function ChannelCard({
   url: string;
 }): React.ReactElement | null {
   if (peerAddress) return <DmPeerCard address={peerAddress} url={url} />;
-  if (!convId) return null;
-  return <ConvIdCard convId={convId} url={url} />;
+  return convId ? <ConvIdCard convId={convId} url={url} /> : null;
 }
 
 function cardTitle(row: ConvRow | null, convId: string): ConvTitle {
   if (isGroupRow(row)) return channelTitle(row?.groupName ?? null, 'Channel');
-  const peerAddress = row?.peerAddress ?? null;
-  const peerName = getPeerName(peerAddress);
-  if (peerName != null && peerName !== '') return { text: peerName, placeholder: false };
-  if (peerAddress) return { text: shortAddress(peerAddress), placeholder: false };
+  if (row?.peerAddress) return peerTitle(row.peerAddress);
   return { text: `Channel ${convId.slice(0, 6)}…`, placeholder: true };
 }
 
@@ -262,13 +248,9 @@ function convSubtitle(row: ConvRow | null): string {
   return row?.peerAddress ? 'Direct message' : 'Open channel';
 }
 
-function convAvatar(row: ConvRow | null, convId: string): { avatarUri: string | null; avatarAddress: string | null } {
-  if (row === null || row.peerAddress !== null) {
-    const peer = row?.peerAddress ?? null;
-    return { avatarUri: null, avatarAddress: peer !== null && isPeerResolved(peer) ? peer : null };
-  }
-  const image = row.avatarUri?.trim() ?? '';
-  return image ? { avatarUri: image, avatarAddress: null } : { avatarUri: null, avatarAddress: channelStampSeed(convId) };
+function convAvatar(row: ConvRow | null, convId: string): ConvAvatar {
+  if (row === null || row.peerAddress !== null) return { avatarUri: null, avatarAddress: resolvedPeerAddress(row?.peerAddress) };
+  return channelAvatar(convId, row.avatarUri);
 }
 
 function ConvIdCard({ convId, url }: { convId: string; url: string }): React.ReactElement {
@@ -289,7 +271,7 @@ function ConvIdCard({ convId, url }: { convId: string; url: string }): React.Rea
         avatarAddress={avatarAddress}
         square={isGroupRow(row)}
         onPress={() => {
-          router.push({ pathname: '/channel/[convId]', params: { convId } });
+          router.push(channelLinkOf(convId));
         }}
         linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />
@@ -300,17 +282,14 @@ function ConvIdCard({ convId, url }: { convId: string; url: string }): React.Rea
 function DmPeerCard({ address, url }: { address: string; url: string }): React.ReactElement {
   usePeerProfiles([address]);
 
-  const peerName = getPeerName(address);
-  const title = peerName == null || peerName === '' ? shortAddress(address) : peerName;
-
   return (
     <CardFrame>
       <ChannelRow
-        title={title}
+        title={peerTitle(address).text}
         subtitle="Direct message"
-        avatarAddress={isPeerResolved(address) ? address : null}
+        avatarAddress={resolvedPeerAddress(address)}
         onPress={() => {
-          router.push({ pathname: '/[convId]', params: { convId: address } });
+          router.push(dmLinkOf(address));
         }}
         linkProps={url ? bubbleLinkProps(url, openInBubbleLink) : undefined}
       />

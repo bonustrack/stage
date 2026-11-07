@@ -1,8 +1,9 @@
+import { errorLine } from '@stage-labs/client/errors';
 import { useCallback, useMemo, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { resolveHandleToAddress } from '../../lib/resolveHandle';
-import { RECIPIENT_HELP, RECIPIENT_PLACEHOLDER, recipientHint, settleRecipient, startRecipient } from '../wallet/recipient.model';
+import { lookupPerson } from '../../lib/resolveHandle';
+import { BASE_NAMES_ONLY, HANDLE_HELP, HANDLE_PLACEHOLDER, lookupHint } from '@stage-labs/client/identity/personLookup';
 import { capabilities } from '../../lib/capabilities';
 import { FormField, useFocusOnOpen } from '../FormField';
 import { useContacts, type Contact } from '../../lib/useContacts';
@@ -27,9 +28,8 @@ interface MemberPickerState {
 }
 
 export async function lookupMember(raw: string): Promise<Member | string> {
-  const start = startRecipient(raw);
-  const found = start.kind === 'resolving' ? settleRecipient(start, await resolveHandleToAddress(start.query.handle)) : start;
-  if (found.kind !== 'resolved') return recipientHint(found)?.text ?? RECIPIENT_HELP;
+  const found = await lookupPerson(raw, BASE_NAMES_ONLY);
+  if (found.kind !== 'resolved') return lookupHint(found)?.text ?? HANDLE_HELP;
   return { address: found.address, label: found.label ?? shortAddress(found.address) };
 }
 
@@ -57,7 +57,7 @@ export function useMemberPicker(): MemberPickerState {
       setMembers((prev) => togglePick(prev, member));
       setEntry('');
     } catch (err) {
-      capabilities.toast((err as Error)?.message ?? 'Failed to add member');
+      capabilities.toast(errorLine(err, 'Failed to add member'));
     } finally {
       setAdding(false);
     }
@@ -104,7 +104,7 @@ export function MemberPicker({
     <Column gap={12}>
       <FormField
         label="Search"
-        placeholder={RECIPIENT_PLACEHOLDER}
+        placeholder={HANDLE_PLACEHOLDER}
         value={entry}
         onChangeText={setEntry}
         onSubmit={() => {

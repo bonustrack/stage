@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { group, searched } from './searchFixtures';
 import {
   addedColumnOrder,
   boardColumns,
@@ -11,21 +12,11 @@ import {
   orderedColumns,
   renamedColumnOrder,
   renameTarget,
-  searchedColumns,
-} from '../components/board/BoardScreen.model';
+} from '../components/home/board/BoardScreen.model';
 import { configuredFieldOptions } from '../components/channel/channelFieldOptions.model';
-import { searchFilterSources } from '../components/searchFilter.model';
+import { searchFilterSources } from '../components/home/search/searchFilter.model';
 
-const row = (convId: string, category?: string) => ({
-  convId,
-  category,
-  title: convId,
-  lastTs: 1,
-  lastPreview: '',
-  unreadCount: 0,
-  labels: ['Legacy'],
-  status: 'Todo',
-});
+const row = (convId: string, category?: string) => ({ ...group(convId, ['Legacy']), category, status: 'Todo' });
 const rows = [row('a', 'Stage'), row('b', 'stage'), row('c', 'Metro')];
 const order = ['category:metro', 'category:fde', 'category:stage', 'category:FDE', 'category:', 'status:Done'];
 const columns = orderedColumns(boardColumns(rows, [], order, 'category'), order);
@@ -50,7 +41,7 @@ describe('configured category board columns', () => {
       ['fde', 0],
       ['stage', 0],
     ]);
-    expect(searchedColumns(columns, 'category:fde').map((column) => [column.label, column.rows.length])).toEqual([
+    expect(searched(columns, 'category:fde').map((column) => [column.label, column.rows.length])).toEqual([
       ['Metro', 0],
       ['fde', 0],
       ['Stage', 0],

@@ -1,17 +1,18 @@
 import { describe, expect, test } from 'bun:test';
-import { hasTabsPager, homePageName, homeTabIndex, swipedTabIndex, TAB_HREF, TAB_ORDER } from '../components/SwipeTabs.model';
+import { PAGER_ORDER, PAGES, homeTabIndex, pagerShownAt, shownPagerPage } from '../components/tabs/pages';
+import { swipedTabIndex } from '../components/tabs/TabsPager.model';
 
 describe('mobile tab swipes', () => {
   const destination = (pathname: string, translation: number, velocity = 0): string => {
-    const target = TAB_ORDER[swipedTabIndex(homeTabIndex(pathname), 400, translation, velocity)];
+    const target = PAGER_ORDER[swipedTabIndex(homeTabIndex(pathname), 400, translation, velocity)];
     if (target === undefined) throw new Error('Missing swipe destination');
-    return TAB_HREF[target];
+    return PAGES[target].href;
   };
 
   test('a right-to-left swipe from Chats opens Contacts, never Board', () => {
     expect(destination('/', -160)).toBe('/contacts');
     expect(destination('/', -20, -600)).toBe('/contacts');
-    expect(TAB_ORDER).toEqual(['index', 'contacts', 'wallet', 'settings']);
+    expect(PAGER_ORDER).toEqual(['chats', 'contacts', 'wallet', 'settings']);
   });
 
   test('the remaining destinations follow the visible tab order in both directions', () => {
@@ -31,20 +32,20 @@ describe('mobile tab swipes', () => {
   });
 
   test('Contacts keeps the native pager mounted while standalone web menu pages retain their own screens', () => {
-    for (const path of ['/', '/board', '/contacts', '/wallet', '/settings']) expect(hasTabsPager(path, false)).toBe(true);
-    expect(hasTabsPager('/contacts', true)).toBe(false);
-    expect(hasTabsPager('/settings', true)).toBe(false);
-    expect(hasTabsPager('/dashboard', false)).toBe(false);
-    expect(hasTabsPager('/dashboard', true)).toBe(false);
-    expect(hasTabsPager('/board', true)).toBe(true);
+    for (const path of ['/', '/board', '/contacts', '/wallet', '/settings']) expect(pagerShownAt(path, false)).toBe(true);
+    expect(pagerShownAt('/contacts', true)).toBe(false);
+    expect(pagerShownAt('/settings', true)).toBe(false);
+    expect(pagerShownAt('/dashboard', false)).toBe(false);
+    expect(pagerShownAt('/dashboard', true)).toBe(false);
+    expect(pagerShownAt('/board', true)).toBe(true);
   });
 
   test('Board is the home view, not an additional swipe destination', () => {
     expect(homeTabIndex('/board')).toBe(0);
-    expect(homePageName('/board', true)).toBe('board');
-    expect(homePageName('/', false)).toBe('index');
-    expect(homePageName('/contacts', true)).toBe('contacts');
-    expect(homePageName('/wallet', true)).toBe('wallet');
-    expect(homePageName('/settings', true)).toBe('settings');
+    expect(shownPagerPage('/board', true)).toBe('board');
+    expect(shownPagerPage('/', false)).toBe('chats');
+    expect(shownPagerPage('/contacts', true)).toBe('contacts');
+    expect(shownPagerPage('/wallet', true)).toBe('wallet');
+    expect(shownPagerPage('/settings', true)).toBe('settings');
   });
 });

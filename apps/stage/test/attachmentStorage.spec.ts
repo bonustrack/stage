@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { assertUploadSize, attachmentDownloadUrl, MAX_UPLOAD_BYTES, resolveUploadResponse } from '../lib/attachmentStorage';
+import { UPLOAD_MAX_BYTES } from '@stage-labs/client/uploads';
+import { assertUploadSize, attachmentDownloadUrl, resolveUploadResponse } from '../lib/attachmentStorage';
 
 const STORED_ID = 'Zm9vYmFyYmF6cXV4cXV1eGNvcmdlZ3Jh';
 const STORED_URL = `https://proxy.stage.box/attachments/${STORED_ID}`;
@@ -32,8 +33,8 @@ describe('resolveUploadResponse', () => {
 
 describe('assertUploadSize', () => {
   test('refuses a file over 100 MB before any upload, with the size message', () => {
-    expect(() => assertUploadSize(MAX_UPLOAD_BYTES, 'a.mov')).not.toThrow();
-    expect(() => assertUploadSize(MAX_UPLOAD_BYTES + 1, 'a.mov')).toThrow(
+    expect(() => assertUploadSize(UPLOAD_MAX_BYTES, 'a.mov')).not.toThrow();
+    expect(() => assertUploadSize(UPLOAD_MAX_BYTES + 1, 'a.mov')).toThrow(
       'Couldn\'t send "a.mov": the file is too large (over 100 MB). Try a smaller file.',
     );
   });

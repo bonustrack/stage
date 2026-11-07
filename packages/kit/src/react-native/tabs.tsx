@@ -1,12 +1,13 @@
+import type { TABS_VARIANTS } from '../kit-vocabulary';
 import { useState, type ReactNode } from 'react';
 import { Pressable, Text as RNText, View, type TextStyle, type ViewStyle } from 'react-native';
 import { surfaceColor } from '../layout';
-import { FONT_SIZE, RADIUS_SCALE, fontName, kitPalette, type Scheme } from '../tokens';
+import { FONT_SIZE, RADIUS_SCALE, fontName } from '../tokens';
 import { accessibilityProps, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { Icon, type IconName } from './icon';
-import { useKitPalette, useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 
-export type TabsVariant = 'segmented' | 'underline';
+export type TabsVariant = (typeof TABS_VARIANTS)[number];
 
 export interface TabItem {
   title: string;
@@ -31,10 +32,7 @@ interface TabsColors {
 }
 
 function useTabsColors(dark: boolean | undefined): TabsColors {
-  const context = useKitPalette();
-  const contextScheme = useKitScheme();
-  const scheme: Scheme = dark === undefined ? contextScheme : dark ? 'dark' : 'light';
-  const palette = scheme === contextScheme ? context : kitPalette(scheme);
+  const { palette } = useKitColors(dark, 'matching');
   return { track: surfaceColor('raised', palette), thumb: surfaceColor('surface', palette), text: palette.sub, activeText: palette.link };
 }
 
@@ -45,9 +43,7 @@ function trackStyle(underline: boolean, c: TabsColors): ViewStyle {
 
 function segmentStyle(underline: boolean, selected: boolean, c: TabsColors): ViewStyle {
   const base: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: 6 };
-  if (underline) {
-    return { ...base, paddingVertical: 8, borderBottomWidth: 2, borderBottomColor: selected ? c.activeText : 'transparent' };
-  }
+  if (underline) return { ...base, paddingVertical: 8, borderBottomWidth: 2, borderBottomColor: selected ? c.activeText : 'transparent' };
   return {
     ...base,
     flex: 1,

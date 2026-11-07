@@ -11,7 +11,7 @@ import {
   selectedSearchFilters,
   setSearchQueryText,
   toggleSearchFilter,
-} from '../components/searchFilter.model';
+} from '../components/home/search/searchFilter.model';
 
 describe('separate query and filter controls', () => {
   test('keeps saved positive and excluded filters out of the query input', () => {

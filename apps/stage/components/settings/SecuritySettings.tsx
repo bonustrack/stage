@@ -1,19 +1,22 @@
 import { useState } from 'react';
-import { Alert } from 'react-native';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { capabilities } from '../../lib/capabilities';
-import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../lib/accounts';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
+import { canExportPrivateKey } from '@stage-labs/client/accounts/registry';
+import { revealPrivateKey } from '../../lib/zerodev/keyring';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { useActiveAccountRecord } from '../../lib/messaging/account';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
-import { RecoveryPhraseRow, useWalletBackedUp } from './RecoveryPhraseRow';
+import { RecoveryPhraseRow } from './RecoveryPhraseRow';
+import { useWalletBackedUp } from '../../lib/walletBackup';
 import { securityRows } from './SecuritySettings.model';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 import { Column } from '../layout';
+import { reported } from '../../lib/errorPolicy';
 
 interface RevealedKey {
   id: string;
@@ -30,13 +33,14 @@ function confirmExport(rec: AccountRecord, setRevealed: (key: RevealedKey) => vo
     })
     .then(async (ok) => {
       if (!ok) return;
-      const pk = await getPrivateKey(rec.id);
+      const pk = await revealPrivateKey(rec.id);
       if (!pk) {
-        Alert.alert('No key', 'This account has no exportable private key.');
+        capabilities.alert('No key', 'This account has no exportable private key.');
         return;
       }
       setRevealed({ id: rec.id, pk });
-    });
+    })
+    .catch(reported('settings.exportKey'));
 }
 
 function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string }): React.ReactElement {
@@ -101,5 +105,5 @@ const SECURITY_FOOTNOTE = 'Your recovery phrase or private key controls your acc
 
 export function SecuritySettings(): React.ReactElement {
   const rec = useActiveAccountRecord();
-  return <SettingsPage title="Security">{rec ? <KeyRows rec={rec} /> : null}</SettingsPage>;
+  return <SettingsPage section="security">{rec ? <KeyRows rec={rec} /> : null}</SettingsPage>;
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { xmtpReact } from '../../lib/xmtp.messages';
-import { useStableCallback } from '../../lib/useStableCallback';
+import { useStableCallback } from '../useStableCallback';
 import { ownsReaction } from '../bubble/reactions.model';
 
 type Pending = Map<string, string[]>;

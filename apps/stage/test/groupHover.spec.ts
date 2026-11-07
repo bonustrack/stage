@@ -1,36 +1,16 @@
 import { describe, expect, test } from 'bun:test';
-import { groupKeysOf, groupRows } from '../components/home/groups.model';
-import type { Row } from '../components/home/model';
-
-function row(convId: string, extra: Partial<Row> = {}): Row {
-  return {
-    convId,
-    title: convId,
-    lastTs: 1,
-    lastBubbleTs: 1,
-    lastPreview: '',
-    avatarAddress: null,
-    avatarUri: null,
-    peerAddress: null,
-    lastSenderAddress: null,
-    lastFromSelf: false,
-    inboxToAddr: {},
-    unreadCount: 0,
-    lastReadNs: 0,
-    markedUnread: false,
-    selfInboxId: 'me',
-    labels: [],
-    category: null,
-    assigned: [],
-    consent: null,
-    ...extra,
-  };
-}
+import { groupKeysOf, groupRows, isGroupHeader, listKeyOf, type HomeListItem } from '../components/home/groups.model';
+import { row } from './rowFixture';
 
 const dm = row('dm', { peerAddress: '0xabc' });
 const work = row('work', { labels: ['Done', 'Todo'] });
 const loose = row('loose');
 const nameOf = (address: string): string => address;
+
+function sectionOfEach(items: readonly HomeListItem[]): [string, string | undefined][] {
+  const sections = groupKeysOf(items);
+  return items.map((item) => [isGroupHeader(item) ? `# ${item.header.key}` : item.convId, sections.get(listKeyOf(item))]);
+}
 
 describe('group hover sections', () => {
   test('ungrouped rows have no section', () => {
@@ -39,20 +19,24 @@ describe('group hover sections', () => {
 
   test('every header and visible row belongs to its full section, including folded sections', () => {
     const items = groupRows([dm, work, loose], 'label', new Set(['label:done']), false, nameOf);
-    expect([...groupKeysOf(items)]).toEqual([
-      ['group:dm', 'dm'],
+    expect(sectionOfEach(items)).toEqual([
+      ['# dm', 'dm'],
       ['dm', 'dm'],
-      ['group:label:done', 'label:done'],
-      ['group:label:todo', 'label:todo'],
+      ['# label:done', 'label:done'],
+      ['# label:todo', 'label:todo'],
       ['work', 'label:todo'],
-      ['group:none', 'none'],
+      ['# none', 'none'],
       ['loose', 'none'],
     ]);
   });
 
-  test('a chat in multiple sections uses its own displayed list key for each section', () => {
+  test('a chat in multiple sections belongs to each section it shows in', () => {
     const items = groupRows([work], 'label', new Set(), false, nameOf);
-    expect(groupKeysOf(items).get('work')).toBe('label:done');
-    expect(groupKeysOf(items).get('label:todo/work')).toBe('label:todo');
+    expect(sectionOfEach(items)).toEqual([
+      ['# label:done', 'label:done'],
+      ['work', 'label:done'],
+      ['# label:todo', 'label:todo'],
+      ['work', 'label:todo'],
+    ]);
   });
 });

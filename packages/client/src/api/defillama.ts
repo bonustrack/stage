@@ -1,5 +1,8 @@
 import { z } from 'zod';
 import { parseOrThrow } from '../validate';
+import { fetchWithin } from '../timing';
+
+const PRICE_TIMEOUT_MS = 15_000;
 
 const API = 'https://coins.llama.fi';
 const envelope = z.object({ coins: z.record(z.unknown()) });
@@ -16,17 +19,10 @@ export interface UsdQuote {
 
 async function fetchCoins(path: string, ids: readonly string[]): Promise<Record<string, unknown>> {
   const coins = [...new Set(ids)].map(encodeURIComponent).join(',');
-  const controller = new AbortController();
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, 15_000);
-  try {
-    const response = await fetch(`${API}/${path}/${coins}`, { signal: controller.signal });
+  return fetchWithin(`${API}/${path}/${coins}`, {}, { timeoutMs: PRICE_TIMEOUT_MS }, async (response) => {
     if (!response.ok) throw new Error(`defillama ${response.status}`);
     return parseOrThrow('defillama', envelope, await response.json()).coins;
-  } finally {
-    clearTimeout(timer);
-  }
+  });
 }
 
 export async function getCurrentPrices(ids: readonly string[]): Promise<Record<string, UsdQuote>> {

@@ -1,6 +1,7 @@
 import type { OnchainProfileSource } from '@stage-labs/client/identity/onchainProfile';
+import { isStageName } from '@stage-labs/client/identity/stageNames';
 
-export interface ProfileState {
+interface ProfileState {
   address: string | null;
   name?: string;
   source?: OnchainProfileSource;
@@ -18,10 +19,9 @@ export function profileView(state: ProfileState): ProfileView {
     return { title: '', explanation: 'No active account.', canChangePicture: false, claimVisible: false };
   }
   if (state.source === 'basename' && state.name) {
-    const stageName = state.name.toLowerCase().endsWith('.stage.base.eth');
     return {
       title: state.name,
-      explanation: stageName
+      explanation: isStageName(state.name)
         ? 'Your Stage username. Anyone who messages you sees it and your picture, in Stage and in other Base apps.'
         : 'Your name and picture come from your Basename on Base. Anyone who messages you sees them, in Stage and in other apps.',
       canChangePicture: true,

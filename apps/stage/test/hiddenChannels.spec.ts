@@ -1,11 +1,11 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { collectSyncReplay } from '@stage-labs/client/xmtp/readState';
+import { collectSyncReplay, syncCodecOf } from '@stage-labs/client/xmtp/sync/registry';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import type { XmtpConsent } from '../lib/xmtp.types';
 import type { RowMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { SYNC_CODECS } from '@stage-labs/client/xmtp/jsonCodecs';
+import { mockAppStorage } from './memoryStorage';
+import { settle } from './helpers';
 
-const values = new Map<string, string>();
 let activeId = 'web';
 interface FakeConv {
   id: string;
@@ -16,49 +16,28 @@ interface FakeConv {
   memberIds?: string[];
 }
 const convs: FakeConv[] = [];
+const consentOf = (conv: FakeConv): XmtpConsent => conv.consent;
 let beforePreferences: (() => void) | undefined;
 let beforeConsent: (() => Promise<void>) | undefined;
 let beforeInstallations: (() => Promise<void>) | undefined;
 const presentDevices = new Map<string, string[]>();
 const messages: RowMessage[] = [];
 const sentTo: string[] = [];
-const client = {
-  inboxId: 'owner',
-  preferences: {
-    sync: async () => {
-      beforePreferences?.();
-    },
-  },
-};
+const client = { inboxId: 'owner' };
 const synced: string[] = [];
+let scans = 0;
 let storageFails = false;
 let beforeFind: (() => Promise<void>) | undefined;
 let beforeMembers: (() => Promise<void>) | undefined;
 let beforeActive: (() => Promise<void>) | undefined;
 let connectedClient = client;
-function withMethods(conv: FakeConv) {
-  return Object.assign(conv, {
-    members: async () => {
-      await beforeMembers?.();
-      return (conv.memberIds ?? ['owner']).map((inboxId) => ({ inboxId }));
-    },
-    sync: async () => {
-      synced.push(conv.id);
-    },
-  });
-}
 let leaveFails = false;
 let leaves = 0;
-mock.module('../platform/storage', () => ({
-  secureStorage: {},
-  appStorage: {
-    get: async (key: string): Promise<string | null> => values.get(key) ?? null,
-    set: async (key: string, value: string): Promise<void> => {
-      if (storageFails) throw new Error('disk full');
-      values.set(key, value);
-    },
+const { values } = mockAppStorage({
+  write: () => {
+    if (storageFails) throw new Error('disk full');
   },
-}));
+});
 mock.module('../lib/accounts', () => ({
   getActiveAccount: async () => ({ id: activeId, address: activeId }),
   getActiveAccountStrict: async () => ({ id: activeId, address: activeId }),
@@ -67,21 +46,33 @@ mock.module('../lib/xmtp.client', () => ({ cachedSelfEthAddress: () => activeId 
 mock.module('../lib/channelsCache', () => ({
   getCachedRows: () => null,
   setCachedRows: () => undefined,
+  subscribeCachedRows: () => () => undefined,
   patchRowConsent: () => undefined,
 }));
-mock.module('../modules/messaging/conversation', () => ({ groupRowMeta: async () => null }));
-mock.module('../lib/xmtp.sdk', () => ({
+mock.module('../lib/messaging/conversation', () => ({ groupRowMeta: async () => null }));
+mock.module('../lib/xmtp.find', () => ({
   convOfLine: async (line: string) => {
-    const conv = convs.find((c) => line === lineOfConv(c.id));
-    return conv ? withMethods(conv) : null;
+    return convs.find((c) => line === lineOfConv(c.id)) ?? null;
   },
+}));
+mock.module('../lib/xmtp.sdk', () => ({
   sdk: {
     client: async () => connectedClient,
     cachedClient: () => connectedClient,
+    inboxIdOf: (c: typeof client) => c.inboxId,
+    syncPreferences: async () => {
+      beforePreferences?.();
+    },
     findConv: async (_client: unknown, id: string) => {
       await beforeFind?.();
-      const conv = convs.find((c) => c.id === id.toLowerCase());
-      return conv ? withMethods(conv) : null;
+      return convs.find((c) => c.id === id.toLowerCase()) ?? null;
+    },
+    memberInboxIds: async (conv: FakeConv) => {
+      await beforeMembers?.();
+      return conv.memberIds ?? ['owner'];
+    },
+    syncConv: async (conv: FakeConv) => {
+      synced.push(conv.id);
     },
     isGroup: (conv: FakeConv) => conv.group,
     isActive: async (conv: FakeConv) => {
@@ -111,31 +102,35 @@ mock.module('../lib/xmtp.sdk', () => ({
       leaves += 1;
       if (leaveFails) throw new Error('super-admin cannot leave');
     },
-    listConvs: async (_client: unknown, consent: XmtpConsent[]) => convs.filter((c) => consent.includes(c.consent)).map(withMethods),
+    listConvs: async (_client: unknown, consent: XmtpConsent[]) => {
+      scans += 1;
+      return convs.filter((c) => consent.includes(c.consent));
+    },
     syncVisible: async () => {
       synced.push(...convs.filter((c) => c.consent !== 'denied').map((c) => c.id));
     },
   },
 }));
 const { bumpAccountEpoch } = await import('../lib/accountEpoch');
-const { isChannelHidden, loadHiddenChannels, applyRemoteHiddenChannels, onHiddenChannelsChanged } = await import('../lib/hiddenChannels');
-const { applyRemoteChatVisibility, backfillHiddenChannels, loadChatVisibility } = await import('../lib/chatVisibility');
+const { rememberActiveAccountId } = await import('../lib/accountSelection');
+rememberActiveAccountId(activeId);
+const { isChannelHidden, loadHiddenChannels, applyRemoteHiddenChannels, onHiddenChannelsChanged, visibleCachedRows } =
+  await import('../lib/sync/hiddenChannels');
+const { applyChatVisibility, loadChatVisibility } = await import('../lib/sync/chatVisibility');
 const { leaveGroupConv } = await import('../lib/xmtp.groups');
 const { listVisibleConversations, acceptRequestConv, getConvConsentState, groupAccessOf } = await import('../lib/xmtp.conv');
-const { syncVisibleChannels, reconcileHiddenConsent, cachedChannelAccess, subscribeChannelAccess } =
-  await import('../lib/channelVisibility');
-const { visibleCachedRows } = await import('../lib/hiddenChannelsStorage');
+const { syncVisibleChannels, reconcileHiddenConsent, backfillHiddenChannels } = await import('../lib/channelVisibility');
+const { cachedChannelAccess, subscribeChannelAccess } = await import('../lib/channelAccess');
 const { accountClient } = await import('../lib/xmtp.account');
-const { replaySyncGroups } = await import('../lib/readSyncReplay');
-const { syncTarget, sendSyncState } = await import('../lib/syncTarget');
+const { replaySyncHistory, SHARED_CURSOR } = await import('../lib/sync/replay');
+const { syncTarget, sendSyncState } = await import('../lib/sync/group');
 const { addOwnInstallationsToChats } = await import('../lib/ownInstallations');
 
 async function switchAccount(id: string): Promise<void> {
   activeId = id;
+  rememberActiveAccountId(id);
   bumpAccountEpoch();
-  await new Promise((resolve) => {
-    setTimeout(resolve, 0);
-  });
+  await settle();
 }
 const visible = async (): Promise<string[]> => (await listVisibleConversations()).map((c) => c.id);
 
@@ -179,13 +174,13 @@ describe('departed channels across devices', () => {
       0,
       { inboxId: client.inboxId, nowMs: Date.now() },
     );
-    await applyRemoteChatVisibility('phone', replay);
+    await applyChatVisibility('phone', replay.clear);
     expect(await visible()).toEqual(['legitimate-archive']);
     expect(await getConvConsentState(group.id)).toBe('denied');
     group.active = false;
     group.consent = 'unknown';
     expect(await visible()).toEqual(['legitimate-archive']);
-    expect(values.has('channels.hidden.phone')).toBe(true);
+    expect((await loadHiddenChannels('phone'))[group.id]?.hidden).toBe(true);
   });
 
   test('a refused leave hides the creator group without removing any membership', async () => {
@@ -225,7 +220,7 @@ describe('departed channels across devices', () => {
     await backfillHiddenChannels('phone');
     expect(await visible()).toContain(group.id);
     expect(await getConvConsentState(group.id)).toBe('allowed');
-    expect(group.consent).toBe('allowed');
+    expect(consentOf(group)).toBe('allowed');
     expect(synced).toContain(group.id);
   });
 
@@ -247,7 +242,7 @@ describe('departed channels across devices', () => {
     expect(isChannelHidden('unwritten')).toBe(false);
     storageFails = false;
     await applyRemoteHiddenChannels('phone', state);
-    expect(JSON.parse(values.get('channels.hidden.phone') ?? '{}').unwritten).toEqual(state.unwritten);
+    expect((await loadHiddenChannels('phone')).unwritten).toEqual(state.unwritten);
   });
 
   test('concurrent delayed writes preserve both changes on an inactive account', async () => {
@@ -373,14 +368,11 @@ describe('departed channels across devices', () => {
     creator.consent = 'allowed';
     synced.length = 0;
     await syncVisibleChannels();
-    expect(creator.consent).toBe('denied');
+    expect(consentOf(creator)).toBe('denied');
     expect(synced).not.toContain('creator');
     expect(synced).toContain('departed');
-    const rows = [
-      { convId: 'creator', peerAddress: null },
-      { convId: 'departed', peerAddress: null },
-    ];
-    expect(await visibleCachedRows('phone', rows)).toEqual([rows[1]]);
+    const departed = { convId: 'departed', peerAddress: null };
+    expect(await visibleCachedRows('phone', [{ convId: 'creator', peerAddress: null }, departed])).toEqual([departed]);
   });
 
   test('backfill reads legacy denials delivered by preference sync', async () => {
@@ -425,43 +417,42 @@ describe('departed channels across devices', () => {
     synced.length = 0;
     await addOwnInstallationsToChats('phone');
     expect(synced).not.toContain(group.id);
-    expect(values.has('ownInstallations.done.phone')).toBe(false);
+    const before = scans;
     await addOwnInstallationsToChats('phone');
-    const hiddenSignature = values.get('ownInstallations.done.phone');
-    expect(hiddenSignature).toBeDefined();
+    expect(scans).toBe(before + 1);
+    await addOwnInstallationsToChats('phone');
+    expect(scans).toBe(before + 1);
     await applyRemoteHiddenChannels('phone', { [group.id]: { hidden: false, at: 80 } });
     await addOwnInstallationsToChats('phone');
     expect(synced).toContain(group.id);
-    expect(values.get('ownInstallations.done.phone')).not.toBe(hiddenSignature);
     presentDevices.delete(group.id);
   });
 
   test('failed repair queries do not mark missing installations as repaired', async () => {
-    values.delete('ownInstallations.done.phone');
+    await applyRemoteHiddenChannels('phone', { 'repair-retry': { hidden: true, at: 1 } });
     beforeInstallations = async () => {
       beforeInstallations = undefined;
       throw new Error('offline');
     };
     await expect(addOwnInstallationsToChats('phone')).rejects.toThrow('offline');
-    expect(values.has('ownInstallations.done.phone')).toBe(false);
     presentDevices.set('departed', ['first']);
     beforeActive = async () => {
       beforeActive = undefined;
       throw new Error('activity unavailable');
     };
     await expect(addOwnInstallationsToChats('phone')).rejects.toThrow('activity unavailable');
-    expect(values.has('ownInstallations.done.phone')).toBe(false);
     expect(cachedChannelAccess('departed')).toBe('checking');
     synced.length = 0;
     await addOwnInstallationsToChats('phone');
-    expect(values.has('ownInstallations.done.phone')).toBe(true);
     expect(synced).toContain('departed');
+    const repaired = scans;
+    await addOwnInstallationsToChats('phone');
+    expect(scans).toBe(repaired);
     presentDevices.delete('departed');
   });
 
-  test('an old cursor does not skip hidden snapshots and a failed write does not acknowledge replay', async () => {
+  test('a failed write does not acknowledge the replayed hidden snapshot', async () => {
     convs.push({ id: 'replay-group', consent: 'allowed', group: true, active: true });
-    values.set('readSync.cursor.v3.phone.replay-group', '1000');
     messages.push({
       contentTypeId: 'stage.box/clearState:1.0',
       senderInboxId: 'owner',
@@ -470,14 +461,8 @@ describe('departed channels across devices', () => {
     });
     const context = await accountClient();
     const groups = [{ id: 'replay-group', active: true, createdAtNs: 1 }];
-    const replay = (): Promise<void> =>
-      replaySyncGroups(
-        context,
-        'replay-group',
-        groups,
-        (state) => applyRemoteChatVisibility('phone', state),
-        () => undefined,
-      );
+    const replay = (): Promise<string[]> =>
+      replaySyncHistory(context, groups, SHARED_CURSOR, (state) => applyChatVisibility('phone', state.clear));
     storageFails = true;
     await expect(replay()).rejects.toThrow('disk full');
     expect(values.has('readSync.cursor.v4.phone.replay-group')).toBe(false);
@@ -488,22 +473,15 @@ describe('departed channels across devices', () => {
     messages.length = 0;
   });
 
-  test('a dashboard saved while this device did not know dashboards is replayed past the old cursor', async () => {
+  test('a dashboard layout in the sync history is replayed and its message acknowledged', async () => {
     convs.push({ id: 'dash-group', consent: 'allowed', group: true, active: true });
-    values.set('readSync.cursor.v3.phone.dash-group', '1000');
     const layout = { widgets: [{ id: 'w1', w: 'half', h: 2, kind: 'frame', source: { conversationId: 'c1', messageId: 'm1' } }], at: 90 };
     messages.push({ contentTypeId: 'stage.box/dashboardLayout:1.0', senderInboxId: 'owner', sentNs: 200, content: layout });
     const context = await accountClient();
     let replayed: unknown = null;
-    await replaySyncGroups(
-      context,
-      'dash-group',
-      [{ id: 'dash-group', active: true, createdAtNs: 1 }],
-      async (state) => {
-        replayed = state.latest.dashboard;
-      },
-      () => undefined,
-    );
+    await replaySyncHistory(context, [{ id: 'dash-group', active: true, createdAtNs: 1 }], SHARED_CURSOR, async (state) => {
+      replayed = state.dashboard;
+    });
     expect(replayed).toEqual(layout);
     expect(values.get('readSync.cursor.v4.phone.dash-group')).toBe('200');
     messages.length = 0;
@@ -512,10 +490,10 @@ describe('departed channels across devices', () => {
   test('a captured sync target cannot publish through another account after an await', async () => {
     const context = await accountClient();
     const target = await syncTarget(context, 'replay-group');
-    await sendSyncState(target, SYNC_CODECS.clear, { cleared: {} });
+    await sendSyncState(target, syncCodecOf('clear'), { cleared: {} });
     expect(sentTo).toEqual(['replay-group']);
     await switchAccount('other-account');
-    expect(() => sendSyncState(target, SYNC_CODECS.clear, { cleared: {} })).toThrow('Messaging account changed');
+    expect(() => sendSyncState(target, syncCodecOf('clear'), { cleared: {} })).toThrow('Messaging account changed');
     expect(sentTo).toEqual(['replay-group']);
   });
 });

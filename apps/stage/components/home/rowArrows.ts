@@ -1,13 +1,13 @@
 import { conversationLinkOf, isActiveConversationPath } from '../../lib/links';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { prefetchFeed } from '../../modules/messaging/feedQuery';
-import { revealMarked, useArrowKeys } from '../arrowKeys';
-import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../arrowKeys.model';
+import { prefetchFeed } from '../../lib/feed/load';
+import { revealMarked, useArrowKeys } from '../keys/keys';
+import { stepRow, VERTICAL_ARROWS, type MarkedNode } from '../keys/keys.model';
 import type { VirtualListHandle } from '../layout';
 import type { HomeListItem } from './groups.model';
-import type { Row } from './model';
+import type { CachedRow } from '../../lib/cachedRows.model';
 
-interface RowRouter {
+export interface RowRouter {
   push: (to: { pathname: string; params: { convId: string } }) => void;
 }
 
@@ -19,17 +19,15 @@ export function useRowArrows({
   activePath,
   router,
   listRef,
-  paused,
 }: {
-  rows: readonly Row[];
+  rows: readonly CachedRow[];
   items: readonly HomeListItem[];
   activePath: string;
   router: RowRouter;
   listRef: React.RefObject<VirtualListHandle | null>;
-  paused: boolean;
 }): void {
   const open = rows.find((row) => isActiveConversationPath(activePath, row.convId, row.peerAddress)) ?? null;
-  useArrowKeys(open !== null && !paused, VERTICAL_ARROWS, (arrow) => {
+  useArrowKeys(open !== null, VERTICAL_ARROWS, (arrow) => {
     const next = stepRow(rows, open?.convId ?? null, arrow);
     if (next === null) return;
     prefetchFeed(lineOfConv(next.convId));

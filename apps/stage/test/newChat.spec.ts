@@ -1,24 +1,29 @@
 import { describe, expect, test } from 'bun:test';
 import { channelRefToken } from '@stage-labs/client/xmtp/channelRefs';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/readState';
+import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import {
   MAX_SHOWN_RECIPIENTS,
-  NO_MEMBER_HISTORY,
   askPlaceholder,
   firstMessageChannelName,
   membersDraftKey,
   newChatDraftKey,
   newChatNav,
-  parseMemberHistory,
   pickedRecipients,
-  rankedCandidates,
   recentDmPeers,
   recipientCandidates,
-  rememberedMembers,
   savedPicks,
   shownRecipients,
+} from '../components/newChat/newChat.model';
+import {
+  NO_MEMBER_HISTORY,
+  memberHistorySchema,
+  rankedCandidates,
+  rememberedMembers,
   startedChatWith,
-} from '../components/home/newChat.model';
+} from '../lib/messaging/newChatMembers.model';
+import { jsonWith } from '../lib/storeCore';
+
+const readMemberHistory = (raw: string) => jsonWith(memberHistorySchema)(raw) ?? NO_MEMBER_HISTORY;
 
 const ALICE = '0xA11CE00000000000000000000000000000000001';
 const SELF = '0x5e1f000000000000000000000000000000000002';
@@ -28,6 +33,7 @@ const CAROL = '0xCA10000000000000000000000000000000000004';
 const bob = BOB.toLowerCase();
 const carol = CAROL.toLowerCase();
 const alice = ALICE.toLowerCase();
+const GRAPHEMES = ['é', '👍🏿', '🇨🇭', '👩‍💻', '👨‍👩‍👧‍👦', '✈️', 'क्ष', '한'];
 
 function dm(peer: string, lastTs: number): { convId: string; peerAddress: string; lastTs: number } {
   return { convId: `c-${peer}-${lastTs}`, peerAddress: peer, lastTs };
@@ -48,17 +54,17 @@ describe('new chat recipients', () => {
 
   test('a new account gets Alice, and she is the one picked by default', () => {
     const list = candidates([]);
-    expect(list).toEqual([ALICE.toLowerCase()]);
-    expect(pickedRecipients(null, list)).toEqual([ALICE.toLowerCase()]);
+    expect(list).toEqual([alice]);
+    expect(pickedRecipients(null, list)).toEqual([alice]);
   });
 
   test('Alice follows the recent people and is not repeated when already a contact', () => {
-    expect(candidates([dm('0xb0b', 1)])).toEqual(['0xb0b', ALICE.toLowerCase()]);
-    expect(candidates([dm('0xb0b', 1), dm(ALICE, 2)])).toEqual([ALICE.toLowerCase(), '0xb0b']);
+    expect(candidates([dm('0xb0b', 1)])).toEqual(['0xb0b', alice]);
+    expect(candidates([dm('0xb0b', 1), dm(ALICE, 2)])).toEqual([alice, '0xb0b']);
   });
 
   test('people who only sent a request are never offered', () => {
-    expect(candidates([dm('0xb0b', 2), dm('0xc4e', 1)], new Set(['0xb0b']))).toEqual(['0xc4e', ALICE.toLowerCase()]);
+    expect(candidates([dm('0xb0b', 2), dm('0xc4e', 1)], new Set(['0xb0b']))).toEqual(['0xc4e', alice]);
   });
 
   test('at most five people show, most recent first, and picked people always show', () => {
@@ -136,10 +142,10 @@ describe('new chat member memory', () => {
 
   test('saved member history comes back as stored, anything else starts empty', () => {
     const history = startedChatWith(NO_MEMBER_HISTORY, [BOB], 5);
-    expect(parseMemberHistory(JSON.stringify(history))).toEqual(history);
-    expect(parseMemberHistory('nope')).toEqual(NO_MEMBER_HISTORY);
-    expect(parseMemberHistory(JSON.stringify({ last: 'x', stats: {} }))).toEqual(NO_MEMBER_HISTORY);
-    expect(parseMemberHistory(JSON.stringify({ last: [], stats: { [bob]: { count: 'x' } } }))).toEqual({ last: [], stats: {} });
+    expect(readMemberHistory(JSON.stringify(history))).toEqual(history);
+    expect(readMemberHistory('nope')).toEqual(NO_MEMBER_HISTORY);
+    expect(readMemberHistory(JSON.stringify({ last: 'x', stats: {} }))).toEqual(NO_MEMBER_HISTORY);
+    expect(readMemberHistory(JSON.stringify({ last: [], stats: { [bob]: { count: 'x' } } }))).toEqual({ last: [], stats: {} });
   });
 });
 
@@ -185,18 +191,16 @@ describe('firstMessageChannelName', () => {
   });
 
   test('does not split graphemes when reserving space for the truncation marker', () => {
-    const encoder = new TextEncoder();
-    for (const grapheme of ['é', '👍🏿', '🇨🇭', '👩‍💻', '👨‍👩‍👧‍👦', '✈️', 'क्ष', '한']) {
-      const prefix = 'a'.repeat(99 - encoder.encode(grapheme).length);
+    for (const grapheme of GRAPHEMES) {
+      const prefix = 'a'.repeat(99 - new TextEncoder().encode(grapheme).length);
       expect(firstMessageChannelName(prefix + grapheme + 'xx')).toBe(prefix + '…');
       expect(firstMessageChannelName(prefix + grapheme + 'x')).toBe(prefix + grapheme + 'x');
     }
   });
 
   test('keeps complete graphemes that fit beside the truncation marker', () => {
-    const encoder = new TextEncoder();
-    for (const grapheme of ['é', '👍🏿', '🇨🇭', '👩‍💻', '👨‍👩‍👧‍👦', '✈️', 'क्ष', '한']) {
-      const prefix = 'a'.repeat(97 - encoder.encode(grapheme).length);
+    for (const grapheme of GRAPHEMES) {
+      const prefix = 'a'.repeat(97 - new TextEncoder().encode(grapheme).length);
       expect(firstMessageChannelName(prefix + grapheme + 'abcd')).toBe(prefix + grapheme + '…');
     }
     expect(firstMessageChannelName('e' + '́'.repeat(100))).toBe('…');

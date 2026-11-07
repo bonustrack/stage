@@ -1,5 +1,5 @@
 import { app, Menu, shell, type MenuItemConstructorOptions } from 'electron';
-import { WEBSITE } from './links';
+import { STAGE_ORIGIN } from '@stage-labs/client/endpoints';
 import { checkForUpdatesNow } from './updates';
 
 export function installMenu(): void {
@@ -29,7 +29,7 @@ export function installMenu(): void {
         {
           label: 'Open stage.box in the browser',
           click: () => {
-            void shell.openExternal(WEBSITE);
+            void shell.openExternal(STAGE_ORIGIN);
           },
         },
         { type: 'separator' },

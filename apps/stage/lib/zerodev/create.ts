@@ -1,22 +1,19 @@
 import '../cryptoShim';
 import type { PublicClient } from 'viem';
-import { addSmartAccount, loadAccounts, loadAccountsForWrite, nextSmartHdIndex, setActiveAccountId, type AccountRecord } from '../accounts';
-import { isXmtpRegistered } from '../xmtp.client';
+import { addSmartAccount, loadAccounts, loadAccountsForWrite, nextSmartHdIndex, setActiveAccountId } from '../accounts';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
+import { clientSdk } from '../xmtp.clientSdk';
 import { ensurePrimaryPhrase, smartOwnerSigner } from './keyring';
 import { reserveSmartHdIndex } from './hdIndexStore';
 import { createEcdsaKernel } from '@stage-labs/client/zerodev/account';
 import { makePublicClient, zerodevConfigured } from './client';
 import { samePreparedAccount } from '@stage-labs/client/profile/setup';
-
-export interface RestoredSmartAccount {
-  record: AccountRecord;
-  alreadyImported: boolean;
-}
+import { dbDirFor } from '@stage-labs/client/accounts/registry';
 
 const FRESH_SEARCH_LIMIT = 32;
 
 async function identityInUse(publicClient: PublicClient, address: `0x${string}`): Promise<boolean> {
-  const [code, registered] = await Promise.all([publicClient.getCode({ address }), isXmtpRegistered(address)]);
+  const [code, registered] = await Promise.all([publicClient.getCode({ address }), clientSdk.isRegistered(address)]);
   return (code !== undefined && code !== '0x') || registered;
 }
 
@@ -55,7 +52,7 @@ async function storeSmartAccount(
     id: address.toLowerCase(),
     address,
     type: 'smart',
-    dbDir: `xmtp-${address.toLowerCase()}`,
+    dbDir: dbDirFor(address.toLowerCase()),
     registered: false,
     createdAt: Date.now(),
     hdIndex,
@@ -78,7 +75,7 @@ function matchesCandidate(rec: AccountRecord, candidate: Candidate): boolean {
     candidate.address.toLowerCase() === rec.id &&
     candidate.address.toLowerCase() === rec.address.toLowerCase() &&
     candidate.owner.address.toLowerCase() === rec.ownerAddress?.toLowerCase() &&
-    rec.dbDir === `xmtp-${rec.id}`
+    rec.dbDir === dbDirFor(rec.id)
   );
 }
 
@@ -87,9 +84,7 @@ export async function resumeSmartAccount(rec: AccountRecord): Promise<AccountRec
   if (rec.type !== 'smart' || rec.phraseId === undefined || rec.hdIndex === undefined)
     throw new Error('The prepared wallet is incomplete.');
   const candidate = await candidateAt(makePublicClient(), rec.phraseId, rec.hdIndex);
-  if (!matchesCandidate(rec, candidate)) {
-    throw new Error('The prepared wallet does not match its recovery phrase. Nothing was changed.');
-  }
+  if (!matchesCandidate(rec, candidate)) throw new Error('The prepared wallet does not match its recovery phrase. Nothing was changed.');
   const existing = (await loadAccountsForWrite()).find((account) => account.id === rec.id);
   if (existing !== undefined && !samePreparedAccount(existing, rec)) {
     throw new Error('The saved wallet does not match the prepared account. Nothing was changed.');
@@ -114,20 +109,17 @@ async function findRestorable(publicClient: PublicClient, phraseId: string): Pro
       alreadyHere ??= existing;
       continue;
     }
-    if (await identityInUse(publicClient, candidate.address)) return { kind: 'candidate', candidate };
-    if (alreadyHere) break;
+    if (!(await identityInUse(publicClient, candidate.address)) && alreadyHere) break;
     return { kind: 'candidate', candidate };
   }
   if (!alreadyHere) throw new Error('Could not find a wallet for this recovery phrase.');
   return { kind: 'local', record: alreadyHere };
 }
 
-export async function restoreSmartAccount(phraseId: string): Promise<RestoredSmartAccount> {
+export async function restoreSmartAccount(phraseId: string): Promise<{ record: AccountRecord; alreadyImported: boolean }> {
   requireConfigured();
   const found = await findRestorable(makePublicClient(), phraseId);
-  if (found.kind === 'candidate') {
-    return { record: await storeSmartAccount(phraseId, found.candidate), alreadyImported: false };
-  }
+  if (found.kind === 'candidate') return { record: await storeSmartAccount(phraseId, found.candidate), alreadyImported: false };
   await setActiveAccountId(found.record.id);
   return { record: found.record, alreadyImported: true };
 }

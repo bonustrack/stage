@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { Platform } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
@@ -13,13 +12,13 @@ import { capabilities } from '../../lib/capabilities';
 import { reported } from '../../lib/errorPolicy';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HIGHLIGHT_BG } from '../../lib/uiColors';
-import { useCopiedFlag } from '../../lib/useCopiedFlag';
-import { MONO_FONT } from './helpers';
+import { useCopiedFlag } from '../useCopiedFlag';
+import { textSelectable } from './interaction';
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, Row } from '../layout';
 
 const CODE_PAD = 12;
-const CODE_TEXT = { fontFamily: MONO_FONT, lineHeight: 20, flexShrink: 0 } as const;
+const CODE_TEXT = { lineHeight: 20, flexShrink: 0 } as const;
 
 function CopyCodeButton({ code }: { code: string }): React.ReactElement {
   const pal = usePalette();
@@ -49,7 +48,7 @@ function CodeText({ code, fg, highlight }: { code: string; fg: string; highlight
   const scheme = useEffectiveColorScheme();
   const query = highlight?.trim() ?? '';
   return (
-    <Text fontFamily="mono" size="2xs" color={fg} selectable={Platform.OS === 'web'} style={CODE_TEXT}>
+    <Text fontFamily="mono" size="2xs" color={fg} selectable={textSelectable} style={CODE_TEXT}>
       {query === ''
         ? code
         : highlightSegments(code, query).map((segment, index) =>

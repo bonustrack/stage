@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
-import { parseHandle } from '@stage-labs/client/routing/handles';
+import { isPeerHandleSegment, parseHandle } from '@stage-labs/client/routing/handles';
 import { displayHandle } from '@stage-labs/client/identity/stageNames';
-import { useSafeAreaInsets } from '../../lib/safeArea';
+import { useSafeAreaInsets } from '../layout/safeArea';
 import { usePalette } from '../../lib/theme';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { profileLinkOf } from '../../lib/links';
@@ -15,11 +15,7 @@ export function PeerTopnav({ peer }: { peer?: string }): React.ReactElement {
   const parsed = parseHandle(peer);
   const address = parsed.kind === 'address' ? parsed.value : null;
   usePeerProfiles([address]);
-  const title = address
-    ? peerLabel(address)
-    : parsed.kind === 'stage' || parsed.kind === 'basename' || parsed.kind === 'ens'
-      ? displayHandle(parsed.value)
-      : 'Conversation';
+  const title = address ? peerLabel(address) : isPeerHandleSegment(peer) ? displayHandle(parsed.value) : 'Conversation';
   return (
     <ConvTopnavShell
       fg={fg}

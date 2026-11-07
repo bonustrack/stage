@@ -13,13 +13,14 @@ The keyring is the only module that:
   device sentinel is a separate export guard, not a decryption key;
 - reads or writes the per-account raw secp256k1 private keys (generated /
   imported EOAs), under the `wallet.pk.<id>` secure-store keys;
+- names the secret secure-store keys: `PK_PREFIX` (`wallet.pk.`),
+  `LEGACY_PK_KEY` (`wallet.privateKey`) and the `wallet.mnemonic` phrase keys
+  are private constants of the keyring, exported by no module;
 - imports the secret-bearing primitives:
   - `deriveOwner` / `generateWalletMnemonic` from
     `@stage-labs/client/zerodev/derive`,
-  - the `PK_PREFIX` / `LEGACY_PK_KEY` storage-key constants from
-    `@stage-labs/client/accounts/keys`,
-  - `privateKeyToAccount` / `generatePrivateKey` / `mnemonicToAccount` from
-    `viem/accounts`.
+  - `privateKeyToAccount` / `generatePrivateKey` / `mnemonicToAccount` /
+    `hdKeyToAccount` from `viem/accounts`.
 
 No other file in the app may touch any of the above.
 
@@ -62,12 +63,15 @@ Two independent mechanisms make a leak fail before it can ship:
 
 1. **Lint (build-failing).** A custom lint rule `stage/no-keyring-bypass`
    (see [`oxlint-plugin.mjs`](./oxlint-plugin.mjs)) errors if any file other than
-   `lib/zerodev/keyring.ts` imports the banned primitives / storage-key
-   constants. The rule runs over `lib/`, `app/`, `components/`, and `modules/`,
-   so a bypass cannot even compile through `bun run lint`.
-2. **Test invariant.** [`test/keyring.guard.test.ts`](./test/keyring.guard.test.ts)
-   scans the same source trees and asserts the keyring is the sole importer,
-   failing CI on any bypass — defense in depth alongside the lint rule.
+   `lib/zerodev/keyring.ts` imports the banned primitives, imports anything
+   named `PK_PREFIX` or `LEGACY_PK_KEY` from any module, or writes a string
+   that starts with a secret storage key name (`wallet.pk.`,
+   `wallet.privateKey`, `wallet.mnemonic`). The rule runs over `app/`,
+   `components/`, `lib/`, `modules/` and `platform/`, so a bypass cannot pass
+   `bun run lint`.
+2. **No exported key names.** The storage key names live only inside the
+   keyring module, so there is nothing to import: `@stage-labs/client` holds no
+   secret storage key names.
 
-To audit: read `lib/zerodev/keyring.ts` (the whole secret surface) and the two
-guards above. Nothing else in the app can reach the key material.
+To audit: read `lib/zerodev/keyring.ts` (the whole secret surface) and the lint
+rule above. Nothing else in the app can reach the key material.

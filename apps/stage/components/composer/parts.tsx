@@ -4,14 +4,14 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { mapCoordsOf } from '@stage-labs/client/embed/detect';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Image } from '@stage-labs/kit/react-native/image';
-import { CallAwareVideo } from '../CallAwareVideo';
+import { CallAwareVideo } from '../media/CallAwareVideo';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { DROPDOWN_MENU, DropdownMenu, DropdownMenuItem } from '@stage-labs/kit/react-native/menu';
 import { Avatar } from '../Avatar';
-import { ImageViewer } from '../ImageViewer';
+import { ImageViewer } from '../media/ImageViewer';
 import { HoverTooltip } from '../HoverTooltip';
-import { LocationTile } from '../MediaEmbeds';
+import { LocationTile } from '../media/MediaEmbeds';
 import { MENU_WIDTH } from '../AnchoredMenu';
 import { peerLabel } from '../../lib/peerProfiles';
 import { type Attachment } from './types';
@@ -65,7 +65,7 @@ export function ReplyBanner({
   );
 }
 
-export const keepInputFocus =
+const keepInputFocus =
   Platform.OS === 'web'
     ? {
         onMouseDown: (event: { preventDefault: () => void }) => {
@@ -99,14 +99,6 @@ export function SuggestMenu<T extends { name: string }>({ suggest }: { suggest: 
 }
 
 const TRAY_TILE = 72;
-
-function TileName({ name, fg }: { name: string; fg: string }): React.ReactElement {
-  return (
-    <Text color={fg} size="3xs" style={{ width: TRAY_TILE, textAlign: 'center' }} numberOfLines={1}>
-      {name}
-    </Text>
-  );
-}
 
 function RemoveBadge({ label, onRemove }: { label: string; onRemove: () => void }): React.ReactElement {
   return (
@@ -149,7 +141,9 @@ function TrayTile({
         </Column>
         <RemoveBadge label={removeLabel} onRemove={onRemove} />
       </Column>
-      <TileName name={at.name ?? at.id} fg={fg} />
+      <Text color={fg} size="3xs" style={{ width: TRAY_TILE, textAlign: 'center' }} numberOfLines={1}>
+        {at.name ?? at.id}
+      </Text>
     </Column>
   );
 }

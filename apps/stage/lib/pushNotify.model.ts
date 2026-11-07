@@ -1,4 +1,4 @@
-export interface PresentedNotification {
+interface PresentedNotification {
   identifier: string;
   data: unknown;
 }
@@ -23,4 +23,12 @@ export function notificationIdsForConv(presented: readonly PresentedNotification
   const ids = presented.filter((n) => convIdOfNotificationData(n.data) === convId).map((n) => n.identifier);
   if (withNativeCard) ids.push(nativeCardIdentifier(convId));
   return [...new Set(ids)];
+}
+
+export type PushPermission = 'granted' | 'denied' | 'undetermined';
+
+export function toPermission(status: string): PushPermission {
+  if (status === 'granted') return 'granted';
+  if (status === 'denied') return 'denied';
+  return 'undetermined';
 }

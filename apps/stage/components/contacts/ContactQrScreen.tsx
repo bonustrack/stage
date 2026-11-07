@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { QrCode } from '@stage-labs/kit/react-native/qr-code';
+import { QrPanel } from '../qr/QrPanel';
 import { Tabs } from '@stage-labs/kit/react-native/tabs';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { StackHeader } from '../chrome/StackHeader';
 import { FormField } from '../FormField';
-import { QrScanner } from '../accounts/QrScanner';
+import { QrScanner } from '../qr/QrScanner';
 import { getSelectedAccount } from '../../lib/accounts';
 import { getAccountSelection, useAccountSelection } from '../../lib/accountSelection';
 import { capabilities } from '../../lib/capabilities';
+import { accountQueryKeyAt } from '../../lib/queryClient';
+import { profileLinkOf } from '../../lib/links';
 import { useEffectiveColorScheme } from '../../lib/theme';
 import { contactQrValue, contactScanResult } from './ContactQr.model';
 import { Column, ScreenScroll, PAGE_GUTTER } from '../layout';
@@ -29,9 +31,7 @@ function MyQr({ address }: { address: string }): React.ReactElement {
       </Text>
       {value === null ? null : (
         <>
-          <Column padding={16} background="#ffffff" radius="lg" accessibilityLabel="Your Stage contact QR code">
-            <QrCode value={value} size={224} color="#000000" background="#ffffff" />
-          </Column>
+          <QrPanel value={value} size={224} padding={16} radius="lg" accessibilityLabel="Your Stage contact QR code" />
           <Text size="xs" textAlign="center" selectable style={{ alignSelf: 'stretch' }}>
             {address}
           </Text>
@@ -85,7 +85,7 @@ function useContactScan(address: string, selection: number) {
     if (result === null) return;
     stop();
     if (result.error !== undefined) setError(result.error);
-    else capabilities.navigate(result.path);
+    else router.push(profileLinkOf(result.address));
   };
   return {
     scanning,
@@ -166,17 +166,17 @@ function ContactQr({ address, selection }: { address: string; selection: number 
 export function ContactQrScreen(): React.ReactElement {
   const dark = useEffectiveColorScheme() === 'dark';
   const selection = useAccountSelection();
-  const {
-    data: address,
-    isPending,
-    refetch,
-  } = useQuery({ queryKey: ['contactQr', selection], queryFn: async () => (await getSelectedAccount())?.address ?? null });
+  const account = useQuery({
+    queryKey: accountQueryKeyAt('selection', selection, 'contactQr'),
+    queryFn: async () => (await getSelectedAccount())?.address ?? null,
+  });
+  const address = account.data;
   const valid = contactQrValue(address) !== null;
   return (
     <Column surface="surface" weight={1}>
       <StackHeader title="Connect on Stage" backTo="/" />
       <ScreenScroll keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: PAGE_GUTTER }}>
-        {isPending ? (
+        {account.isPending ? (
           <Spinner />
         ) : valid && address ? (
           <ContactQr key={selection} address={address} selection={selection} />
@@ -189,7 +189,7 @@ export function ContactQrScreen(): React.ReactElement {
               variant="soft"
               color="secondary"
               onPress={() => {
-                void refetch();
+                void account.refetch();
               }}
             />
           </Column>

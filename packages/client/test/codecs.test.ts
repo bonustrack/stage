@@ -21,11 +21,6 @@ describe('encode/decode JSON content round-trip', () => {
 });
 
 describe('decode with zod schema boundary', () => {
-  test('valid body validates + returns typed content', () => {
-    const enc = encodeJsonContent(POLL_CONTENT_TYPE, poll);
-    expect(decodeJsonContent(enc.content, pollContentSchema)).toEqual(poll);
-  });
-
   test('drifted body THROWS (not silently cast)', () => {
     const bad = encodeJsonContent(POLL_CONTENT_TYPE, { pollId: 'x', question: 'q' });
     expect(() => decodeJsonContent(bad.content, pollContentSchema)).toThrow(/boundary:xmtp.codec/);
@@ -67,8 +62,8 @@ describe('open (free-text) question type', () => {
   test('normalizeQuestions keeps an open question with no options + carries the flag', () => {
     const qs = normalizeQuestions({ pollId: 'p', questions: [{ question: 'Why?', open: true, options: [] }] });
     expect(qs).toHaveLength(1);
-    expect(qs[0].open).toBe(true);
-    expect(qs[0].options).toEqual([]);
+    expect(qs[0]?.open).toBe(true);
+    expect(qs[0]?.options).toEqual([]);
   });
 
   test('open vote key round-trips text containing colons + unicode', () => {

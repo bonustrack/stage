@@ -1,12 +1,14 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import type { AccessibilityActionEvent } from 'react-native';
 import { Gesture, type PanGesture } from 'react-native-gesture-handler';
-import type { SortDirection, SortStep } from '../sortable';
+import { DRAG_HOLD_MS, DRAG_MOVE_SLOP, type SortDirection, type SortStep } from '../sortable';
 import type { ListContextValue } from './sortable.context';
-import { isTouchPointer, listenKeys, suppressNextClick } from './sortable.platform';
+import { isCoarsePointer, listenKeys, swallowNextClick } from './dom';
 
-const HOLD_MS = 250;
-const MOVE_SLOP = 6;
+export function activateDrag(pan: PanGesture, touch: boolean): PanGesture {
+  return touch ? pan.activateAfterLongPress(DRAG_HOLD_MS) : pan.minDistance(DRAG_MOVE_SLOP);
+}
+
 const SORT_STEPS: readonly SortStep[] = ['backward', 'forward', 'previousList', 'nextList'];
 
 const KEY_STEPS: Record<SortDirection, Record<string, SortStep>> = {
@@ -41,10 +43,10 @@ export function useKeyboard(list: ListContextValue, itemId: string, node: () => 
 }
 
 function accessibilityActions(list: ListContextValue): { name: SortStep; label: string }[] {
-  const along = list.direction === 'vertical' ? ['Move up', 'Move down'] : ['Move left', 'Move right'];
+  const vertical = list.direction === 'vertical';
   const base: { name: SortStep; label: string }[] = [
-    { name: 'backward', label: along[0] ?? '' },
-    { name: 'forward', label: along[1] ?? '' },
+    { name: 'backward', label: vertical ? 'Move up' : 'Move left' },
+    { name: 'forward', label: vertical ? 'Move down' : 'Move right' },
   ];
   if (list.coordinator.groupSize(list.group) < 2) return base;
   return [...base, { name: 'previousList', label: 'Move to previous list' }, { name: 'nextList', label: 'Move to next list' }];
@@ -68,7 +70,7 @@ export function usePan(
   onHold: ((point: { x: number; y: number }) => void) | undefined,
   enabled: boolean,
 ): PanGesture {
-  const touch = isTouchPointer();
+  const touch = isCoarsePointer();
   return useMemo(() => {
     const { coordinator, listId } = list;
     const pan = Gesture.Pan()
@@ -92,15 +94,14 @@ export function usePan(
         }
         coordinator.drop();
         if (moved || !touch || onHold === undefined) return;
-        suppressNextClick();
+        swallowNextClick();
         onHold({ x: e.absoluteX, y: e.absoluteY });
       })
       .onFinalize(() => {
         const drag = coordinator.state().drag;
         if (drag?.itemId === itemId && !drag.keyboard) coordinator.cancel();
       });
-    if (touch) pan.activateAfterLongPress(HOLD_MS);
-    else pan.minDistance(MOVE_SLOP);
+    activateDrag(pan, touch);
     pan.config.touchAction = list.touchAction;
     return pan;
   }, [list, itemId, preview, onHold, enabled, touch]);

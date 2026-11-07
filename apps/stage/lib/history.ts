@@ -3,19 +3,19 @@ import { makeValue } from './storeCore';
 import { bumpAccountEpoch } from './accountEpoch';
 import { waitForXmtpReady } from './xmtp.state';
 import { sdk } from './xmtp.sdk';
-import { historyServer } from './historyServer';
+import { historyServerUrl } from './historyServer';
 import { markHistoryImported } from './dmRoutes';
 import {
   historyProblemMessage,
   historySyncIsActive,
   isMissingArchive,
-  settleBy,
   within,
   HISTORY_COPY,
   HistoryProblem,
   type HistorySyncPhase,
 } from './history.model';
 import { report } from './errorPolicy';
+import { settleBy, sleep } from '@stage-labs/client/timing';
 
 const TIMEOUT_MS = 120_000;
 const POLL_MS = 4_000;
@@ -39,13 +39,11 @@ export function historySyncProblem(): string | null {
 export const useHistorySyncPhase = phase.use;
 
 async function requestHistorySync(): Promise<void> {
-  const client = await sdk.client();
-  await sdk.history.sendSyncRequest(client, await historyServer());
+  await sdk.history.sendSyncRequest(await sdk.client(), historyServerUrl());
 }
 
 async function syncHistoryGroups(): Promise<void> {
-  const client = await sdk.client();
-  await sdk.history.syncDeviceGroups(client);
+  await sdk.history.syncDeviceGroups(await sdk.client());
 }
 
 async function processHistoryArchive(): Promise<void> {
@@ -53,12 +51,6 @@ async function processHistoryArchive(): Promise<void> {
   const startedAt = Date.now();
   await sdk.history.processSyncArchive(client);
   await markHistoryImported(startedAt);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
 }
 
 async function messagingReady(): Promise<void> {

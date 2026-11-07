@@ -1,84 +1,61 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { CHANNELS_SCROLL_KEY, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
-import { MessagingSetupBanner } from '../system/HistorySync';
+import { useLayoutEffect, useMemo, useRef } from 'react';
+import { MessagingSetupBanner } from './MessagingSetupBanner';
 import { LabelFilterBar } from './labelbar';
-import { FilterSearch } from '../FilterSearch';
-import { parseSearchFilter, setSearchQueryText, type FilterScope } from '../searchFilter.model';
+import { parseSearchFilter } from './search/searchFilter.model';
 import { HomeContactResults } from './contacts';
-import { HomeTopnavRight, type HomeMenuState } from './topnavRight';
-import { TOPNAV_FADE, TOPNAV_HEIGHT, Topnav, TopnavFade } from '../Topnav';
-import { usePublishTopnavSlot, type TopnavSlot } from '../tabs/topnavSlots';
-import { useBoardHome } from '../tabs/boardHome';
-import { SuggestedContacts } from '../SuggestedContacts';
+import { HomeSearch } from './HomeSearch';
+import { HomeTopnav } from './HomeTopnav';
+import { TOPNAV_FADE, TopnavFade, UNDER_TOPNAV } from '../Topnav';
+import { SuggestedContacts } from '../contacts/SuggestedContacts';
 import { usePalette } from '../../lib/theme';
-import { homeRows, type ScrollRefs } from './state';
 import { listKeyOf, type HomeListItem } from './groups.model';
-import type { Row } from './model';
-import { attempt } from '../../lib/errorPolicy';
-import { useWebTabRail } from '../../lib/webLayout';
+import type { CachedRow } from '../../lib/cachedRows.model';
+import { useWebTabRail } from '../layout/webLayout';
 import { HoverIconButton } from '../hover';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { capabilities } from '../../lib/capabilities';
+import { ROUTES } from '../tabs/pages';
 import { useLastActivity } from '../../lib/lastActivity';
-import { Column, VirtualList } from '../layout';
+import { clearSearchFilters, toggleSearchLabel, toggleSearchUnread } from '../../lib/searchState';
+import { Column, VirtualList, type PersistedScroll } from '../layout';
 
-const UNDER_TOPNAV = `calc(var(--stage-top-inset, 0px) + ${TOPNAV_HEIGHT}px)`;
 const LIST_CONTENT = { paddingTop: TOPNAV_FADE, paddingBottom: 24 };
 const WIDE_LIST_CONTENT = { paddingBottom: 24 };
 const HEADER_LAYER = { zIndex: 1 };
 
 interface ChannelsListProps {
-  panRef?: import('../SwipeTabs.types').SimultaneousRefs;
+  panRef?: import('../layout/simultaneousRefs').SimultaneousRefs;
   items: HomeListItem[];
+  rows: readonly CachedRow[] | null;
   barLabels: string[];
   placeholder?: React.ReactElement | null;
   enabledLabels: Set<string>;
-  onToggleLabel: (label: string) => void;
   unreadOnly: boolean;
-  onToggleUnread: () => void;
-  onClearAll: () => void;
   query: string;
-  setQuery: (v: string) => void;
-  onFilterMenu: (open: boolean) => void;
   listExtraData: readonly unknown[];
-  scroll: ScrollRefs;
+  scroll: PersistedScroll;
   renderRow: ({ item }: { item: HomeListItem }) => React.ReactElement;
-  wrapList?: (list: React.ReactElement) => React.ReactElement;
+  wrapList: (list: React.ReactElement) => React.ReactElement;
   pane: boolean;
-  menu: HomeMenuState;
 }
 
-const same = (node: React.ReactElement): React.ReactElement => node;
-
-function knownPeerAddresses(rows: readonly Row[] | null): string[] {
-  return (rows ?? []).flatMap((r) => (r.peerAddress === null ? [] : [r.peerAddress]));
-}
-
-function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: SearchOpen }): React.ReactElement {
+function ChannelsListHeader({ p }: { p: ChannelsListProps }): React.ReactElement {
   const wide = useWebTabRail();
-  const { text: sub, link: head, border } = usePalette();
+  const { text } = usePalette();
   return (
     <>
       {wide ? null : (
-        <FilterSearch
-          key={search.key}
-          autoFocus={search.key > 0}
-          query={p.query}
-          setQuery={p.setQuery}
-          onClose={search.close}
-          onOpen={search.open}
-          head={head}
-          sub={sub}
-          border={border}
+        <HomeSearch
+          view="chats"
           fieldAction={
             <HoverIconButton
               icon={IconQrCode}
               size={20}
-              color={sub}
+              color={text}
               role="button"
               label="Scan contact QR code"
               onPress={() => {
-                capabilities.navigate('/scan');
+                capabilities.navigate(ROUTES.scan);
               }}
             />
           }
@@ -89,9 +66,9 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
         labels={p.barLabels}
         enabled={p.enabledLabels}
         unreadOnly={p.unreadOnly}
-        onToggle={p.onToggleLabel}
-        onToggleUnread={p.onToggleUnread}
-        onClearAll={p.onClearAll}
+        onToggle={toggleSearchLabel}
+        onToggleUnread={toggleSearchUnread}
+        onClearAll={clearSearchFilters}
       />
     </>
   );
@@ -100,75 +77,17 @@ function ChannelsListHeader({ p, search }: { p: ChannelsListProps; search: Searc
 function ListFooter({
   query,
   noChannels,
+  rows,
   knownPeers,
 }: {
   query: string;
   noChannels: boolean;
+  rows: readonly CachedRow[] | null;
   knownPeers: string[];
 }): React.ReactElement | null {
   const text = parseSearchFilter(query).text;
-  if (text !== '') return <HomeContactResults query={text} noChannels={noChannels} />;
+  if (text !== '') return <HomeContactResults query={text} noChannels={noChannels} rows={rows} />;
   return query.trim() === '' ? <SuggestedContacts known={knownPeers} /> : null;
-}
-
-export interface SearchOpen {
-  key: number;
-  open: () => void;
-  close: () => void;
-}
-
-export function useSearchOpen(query: string, setQuery: (query: string) => void): SearchOpen {
-  const [key, setKey] = useState(0);
-  const open = useCallback(() => {
-    setKey((k) => k + 1);
-  }, []);
-  return {
-    key,
-    open,
-    close: () => {
-      setKey(0);
-      setQuery(setSearchQueryText(query, ''));
-    },
-  };
-}
-
-interface HomeTopnavProps {
-  scope: FilterScope;
-  pane: boolean;
-  query: string;
-  setQuery: (query: string) => void;
-  onFilterMenu: (open: boolean) => void;
-  menu: HomeMenuState;
-}
-
-export function useHomeTopnav(p: HomeTopnavProps, search: SearchOpen, wide: boolean): TopnavSlot {
-  const { scope, query, setQuery, onFilterMenu, pane, menu } = p;
-  const { text: sub, link: head, border } = usePalette();
-  const onPage = (scope === 'board') === useBoardHome();
-  const right = useMemo(
-    () => <HomeTopnavRight head={sub} menu={menu} scope={scope} query={query} setQuery={setQuery} onFilterMenu={onFilterMenu} />,
-    [sub, menu, scope, query, setQuery, onFilterMenu],
-  );
-  const smallNav = useMemo(() => <Topnav inline={pane} right={right} bordered={false} />, [pane, right]);
-  const override = !wide ? (
-    smallNav
-  ) : (
-    <FilterSearch
-      key={search.key}
-      autoFocus={search.key > 0}
-      query={query}
-      setQuery={setQuery}
-      onClose={search.close}
-      onOpen={search.open}
-      head={head}
-      sub={sub}
-      border={border}
-      inline={pane}
-      trailing={right}
-    />
-  );
-  usePublishTopnavSlot({ right, override }, !pane && onPage);
-  return { right, override };
 }
 
 function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsListProps): void {
@@ -182,59 +101,35 @@ function useScrollTopOnFilter({ enabledLabels, unreadOnly, scroll }: ChannelsLis
     )
       return;
     applied.current = { enabledLabels, unreadOnly, activity };
-    scroll.savedOffsetRef.current = 0;
-    scroll.didRestoreRef.current = true;
-    if ((peekScrollOffset(CHANNELS_SCROLL_KEY) ?? 0) <= 0) return;
-    scroll.listRef.current?.scrollToOffset({ offset: 0, animated: false });
-  }, [enabledLabels, unreadOnly, activity, scroll.listRef, scroll.savedOffsetRef, scroll.didRestoreRef]);
+    scroll.resetToTop();
+  }, [enabledLabels, unreadOnly, activity, scroll]);
 }
 
 export function ChannelsList(props: ChannelsListProps): React.ReactElement {
-  const { panRef, items, query, setQuery, pane, listExtraData, renderRow } = props;
-  const { listRef, savedOffsetRef, didRestoreRef } = props.scroll;
+  const { panRef, items, query, pane, listExtraData, renderRow, scroll } = props;
   const wide = useWebTabRail();
-  const search = useSearchOpen(query, setQuery);
-  const slot = useHomeTopnav({ ...props, scope: 'chats' }, search, wide);
-  const knownPeers = useMemo(() => knownPeerAddresses(homeRows()), [items]);
+  const knownPeers = useMemo(() => (props.rows ?? []).flatMap((r) => (r.peerAddress === null ? [] : [r.peerAddress])), [props.rows]);
   useScrollTopOnFilter(props);
 
   return (
     <>
-      {pane ? (slot.override ?? <Topnav inline right={slot.right} />) : null}
+      {pane ? <HomeTopnav view="chats" pane /> : null}
       <Column weight={1}>
         {wide ? null : <TopnavFade stickyTop={pane ? undefined : UNDER_TOPNAV} />}
         {props.placeholder ? (
           <>
-            <ChannelsListHeader p={props} search={search} />
+            <ChannelsListHeader p={props} />
             {props.placeholder}
           </>
         ) : (
-          (props.wrapList ?? same)(
+          props.wrapList(
             <VirtualList
-              ref={listRef}
+              ref={scroll.listRef}
+              persist={scroll}
               scroll={pane ? 'self' : 'window'}
               simultaneousHandlers={panRef}
               data={items}
-              onScroll={(ev) => {
-                saveScrollOffset(CHANNELS_SCROLL_KEY, ev.nativeEvent.contentOffset.y);
-              }}
               scrollEventThrottle={16}
-              onContentSizeChange={(_w, h) => {
-                if (didRestoreRef.current) return;
-                const want = savedOffsetRef.current;
-                if (want == null || want <= 0) {
-                  didRestoreRef.current = true;
-                  return;
-                }
-                if (h <= 0) return;
-                didRestoreRef.current = true;
-                const offset = Math.min(want, h);
-                requestAnimationFrame(() => {
-                  attempt(() => {
-                    listRef.current?.scrollToOffset({ offset, animated: false });
-                  }, 'ui');
-                });
-              }}
               extraData={listExtraData}
               keyExtractor={listKeyOf}
               windowSize={11}
@@ -244,8 +139,8 @@ export function ChannelsList(props: ChannelsListProps): React.ReactElement {
               contentContainerStyle={wide ? WIDE_LIST_CONTENT : LIST_CONTENT}
               keyboardShouldPersistTaps="handled"
               ListHeaderComponentStyle={wide ? undefined : HEADER_LAYER}
-              ListHeaderComponent={<ChannelsListHeader p={props} search={search} />}
-              ListFooterComponent={<ListFooter query={query} noChannels={items.length === 0} knownPeers={knownPeers} />}
+              ListHeaderComponent={<ChannelsListHeader p={props} />}
+              ListFooterComponent={<ListFooter query={query} noChannels={items.length === 0} rows={props.rows} knownPeers={knownPeers} />}
               renderItem={renderRow}
             />,
           )

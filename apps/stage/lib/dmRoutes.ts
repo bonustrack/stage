@@ -1,16 +1,10 @@
-import { NO_ROUTES, dmRowId, isImportReplay, routeOf, withRoute, type ConvRoutes } from '@stage-labs/client/xmtp/dmRoutes';
+import { NO_ROUTES, dmRowId, routeOf, withRoute, type ConvRoutes } from '@stage-labs/client/xmtp/dmRoutes';
+import { isImportReplay } from '@stage-labs/client/xmtp/historyImport';
 import { createValueStore } from './persistedStore';
 import { reported } from './errorPolicy';
+import { storedRecordOf } from './storeCore';
 
-function parseRoutes(raw: string): ConvRoutes {
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (parsed === null || typeof parsed !== 'object') return NO_ROUTES;
-    return Object.fromEntries(Object.entries(parsed).filter((e): e is [string, string] => typeof e[1] === 'string'));
-  } catch {
-    return NO_ROUTES;
-  }
-}
+const isRoute = (value: unknown): value is string => typeof value === 'string';
 
 function parseNs(raw: string): number {
   const n = Number(raw);
@@ -20,8 +14,7 @@ function parseNs(raw: string): number {
 const routes = createValueStore<ConvRoutes>({
   key: 'xmtp.dmRoutes.',
   default: NO_ROUTES,
-  deserialize: parseRoutes,
-  serialize: (v) => JSON.stringify(v),
+  schema: storedRecordOf(isRoute),
   perAccount: true,
 });
 const importedUntil = createValueStore<number>({ key: 'xmtp.importedUntilNs.', default: 0, deserialize: parseNs, perAccount: true });
@@ -45,8 +38,7 @@ export function dmRowIdOf(convId: string, peerAddress: string | null, knownByPee
 }
 
 export function markHistoryImported(nowMs: number): Promise<void> {
-  const ns = nowMs * 1_000_000;
-  return importedUntil.update((current) => Math.max(current, ns));
+  return importedUntil.update((current) => Math.max(current, nowMs * 1_000_000));
 }
 
 export function isImportedReplay(sentNs: number): boolean {

@@ -16,7 +16,7 @@ function row(p: Partial<AssetRow> & { symbol: string; balance: string }): AssetR
     balance: p.balance,
     priceUsd: p.priceUsd ?? null,
     change24h: p.change24h ?? null,
-    logoUrl: p.logoUrl ?? '',
+    logoAddress: p.logoAddress ?? '',
   };
 }
 

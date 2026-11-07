@@ -3,16 +3,18 @@ import { Button } from '@stage-labs/kit/react-native/button';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { RENDERER_CAPABILITIES } from '../../lib/frameSession';
-import { loadNode, newNodeKey, nodeUrlOf } from '@stage-labs/client/nodes/protocol';
+import { newNodeKey, nodeUrlOf } from '@stage-labs/client/nodes/protocol';
 import { IconPlusLarge } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPlusLarge';
 import { AppModal } from '../AppModal';
 import { FormField } from '../FormField';
 import { FrameSurface } from '../frame/FramePreview';
 import { LabelChip } from '../LabelChip';
-import { addLivePreview } from '../../lib/liveWidget';
+import { addLivePreview } from '../../lib/frames/addToDashboard';
+import { frameKeysOf } from '../../lib/frames/frameKeys';
+import type { LivePreview } from '../../lib/frames/live.model';
+import { frameNodes } from '../../lib/frames/nodeTransport';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
-import { NODE_URL_HINTS, livePreviewOf, type LivePreview } from './liveWidget.model';
+import { NODE_URL_HINTS, livePreviewOf } from './liveWidget.model';
 import { NodeCodeForm } from './NodeCodeForm';
 import { Column, Row } from '../layout';
 
@@ -68,7 +70,7 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
     }
     setBusy(true);
     setPreview(null);
-    const loaded = livePreviewOf(node, await loadNode(node.url, key, { capabilities: RENDERER_CAPABILITIES }), Date.now());
+    const loaded = livePreviewOf(node, await frameNodes.load({ url: node.url, key }), Date.now());
     setBusy(false);
     if (typeof loaded === 'string') setHint(loaded);
     else setPreview(loaded);
@@ -76,8 +78,8 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
 
   const add = async (picked: LivePreview): Promise<void> => {
     setBusy(true);
-    if (await addLivePreview(picked, key, 'dashboard.addLive')) onDone();
-    else setBusy(false);
+    if ((await addLivePreview(picked, key)) === null) setBusy(false);
+    else onDone();
   };
 
   const submit = (): void => {
@@ -106,7 +108,7 @@ function AddLiveForm({ onDone }: { onDone: () => void }): React.ReactElement {
       {ready ? (
         <Column gap={6}>
           <Text text={`From ${preview.host}`} size="xs" color="secondary" truncate />
-          <FrameSurface frame={preview.frame} stackId={`preview:${key}`} />
+          <FrameSurface frame={preview.frame} keys={frameKeysOf({ kind: 'linkPreview', nodeKey: key })} />
         </Column>
       ) : null}
       <Text text={NOTE} size="xs" color="secondary" />

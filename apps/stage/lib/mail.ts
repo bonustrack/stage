@@ -1,17 +1,17 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { ParsedMail } from '@stage-labs/client/mail/mime';
-import { mailReadKey, parseReadKeys, withReadKey } from '../components/settings/Inbox.model';
-import { getSelectedAccount } from './accounts';
+import { getActiveAccount, getSelectedAccount } from './accounts';
 import { useAccountEpoch } from './accountEpoch';
 import { getAccountSelection, subscribeAccountSelection, useAccountSelection } from './accountSelection';
 import { linkProxyBase } from './linkProxy';
 import { ownedStageLabel } from './mailKey';
-import { mailboxKey, makeMailAccess, type InboxState, type Mailbox } from './mail.core';
+import { mailReadKey, mailboxKey, makeMailAccess, withReadKey, type InboxState, type Mailbox } from './mail.core';
 import { createValueStore } from './persistedStore';
-import { getQueryClient } from './queryClient';
+import { accountQueryKeyAt, getQueryClient } from './queryClient';
 import { reported } from './errorPolicy';
-import { signingKeyForRecord } from './xmtp.signing.core';
+import { storedStrings } from './storeCore';
+import { lazySigningKeyForRecord, signingKeyForRecord } from './accountSigning';
 
 export type { InboxState, Mailbox } from './mail.core';
 
@@ -24,28 +24,24 @@ const access = makeMailAccess({
   baseUrl: linkProxyBase,
 });
 
-subscribeAccountSelection(() => {
-  access.clear();
-  getQueryClient().removeQueries({ queryKey: ['mail'] });
-});
+subscribeAccountSelection(access.clear);
 
-const readStore = createValueStore<readonly string[]>({
-  key: 'mail.read',
-  default: NO_KEYS,
-  deserialize: parseReadKeys,
-  serialize: (keys) => JSON.stringify(keys),
-});
+const readStore = createValueStore<readonly string[]>({ key: 'mail.read', default: NO_KEYS, schema: storedStrings });
 
 export function useMailboxes(): UseQueryResult<Mailbox[]> {
   const epoch = useAccountEpoch();
   const selection = useAccountSelection();
-  return useQuery({ queryKey: ['mail', selection, 'boxes', epoch], queryFn: () => access.mailboxes(selection), staleTime: 5 * 60_000 });
+  return useQuery({
+    queryKey: accountQueryKeyAt('selection', selection, 'mail', 'boxes', epoch),
+    queryFn: () => access.mailboxes(selection),
+    staleTime: 5 * 60_000,
+  });
 }
 
 const INBOX_STALE_MS = 30_000;
 
 function inboxKey(boxes: readonly Mailbox[], selection: number): readonly unknown[] {
-  return ['mail', selection, 'inbox', ...boxes.map(mailboxKey)];
+  return accountQueryKeyAt('selection', selection, 'mail', 'inbox', ...boxes.map(mailboxKey));
 }
 
 export function useInbox(boxes: readonly Mailbox[] | undefined): UseQueryResult<InboxState> {
@@ -72,7 +68,7 @@ export function useMail(box: Mailbox | undefined, id: string): UseQueryResult<Pa
   const selection = useAccountSelection();
   const activeBox = box?.selection === selection ? box : undefined;
   return useQuery({
-    queryKey: ['mail', selection, 'body', activeBox === undefined ? '' : mailboxKey(activeBox), id],
+    queryKey: accountQueryKeyAt('selection', selection, 'mail', 'body', activeBox === undefined ? '' : mailboxKey(activeBox), id),
     queryFn: () => (activeBox === undefined ? Promise.reject(new Error('No mailbox')) : access.mail(activeBox, id)),
     enabled: activeBox !== undefined,
     staleTime: Infinity,
@@ -88,4 +84,17 @@ export function useReadMail(): ReadonlySet<string> {
 
 export function markMailRead(label: string, id: string): void {
   void readStore.update((keys) => withReadKey(keys, mailReadKey(label, id))).catch(reported('mail.read'));
+}
+
+async function syncOwnMailKey(): Promise<void> {
+  const rec = await getActiveAccount();
+  if (rec === null) return;
+  await access.ensureOwnKey(rec, async () => (await lazySigningKeyForRecord(rec)).signMessage);
+}
+
+export function useOwnMailKey(enabled: boolean): void {
+  const epoch = useAccountEpoch();
+  useEffect(() => {
+    if (enabled) void syncOwnMailKey().catch(reported('mail.key'));
+  }, [enabled, epoch]);
 }

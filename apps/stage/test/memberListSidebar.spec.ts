@@ -5,40 +5,29 @@ import {
   memberChanges,
   memberEditsText,
   memberListEntries,
-} from '../components/conversation/MemberListSidebar.model';
+} from '../components/channel/MemberListSidebar.model';
 
-const names: Record<string, string> = {
-  '0xbbbb000000000000000000000000000000000002': 'zoe.base.eth',
-  '0xcccc000000000000000000000000000000000003': 'Alice',
-};
+const A = '0xaaaa000000000000000000000000000000000001';
+const A_CAPS = '0xAAAA000000000000000000000000000000000001';
+const B = '0xbbbb000000000000000000000000000000000002';
+const C = '0xcccc000000000000000000000000000000000003';
+const D = '0xdddd000000000000000000000000000000000004';
+const names: Record<string, string> = { [B]: 'zoe.base.eth', [C]: 'Alice' };
 
 const nameOf = (address: string): string | undefined => names[address.toLowerCase()];
 const shortOf = (address: string): string => `${address.slice(0, 6)}…${address.slice(-4)}`;
 
 describe('memberListEntries', () => {
   test('named members come first by name, then the rest by address', () => {
-    const entries = memberListEntries(
-      [
-        '0xdddd000000000000000000000000000000000004',
-        '0xbbbb000000000000000000000000000000000002',
-        '0xaaaa000000000000000000000000000000000001',
-        '0xcccc000000000000000000000000000000000003',
-      ],
-      nameOf,
-      shortOf,
-    );
+    const entries = memberListEntries([D, B, A, C], nameOf, shortOf);
     expect(entries.map((e) => e.name)).toEqual(['Alice', 'zoe.base.eth', '0xaaaa…0001', '0xdddd…0004']);
     expect(entries.map((e) => e.named)).toEqual([true, true, false, false]);
   });
 
   test('an address listed twice in different case shows once', () => {
-    const entries = memberListEntries(
-      ['0xAAAA000000000000000000000000000000000001', '0xaaaa000000000000000000000000000000000001'],
-      nameOf,
-      shortOf,
-    );
+    const entries = memberListEntries([A_CAPS, A], nameOf, shortOf);
     expect(entries).toHaveLength(1);
-    expect(entries[0]?.address).toBe('0xAAAA000000000000000000000000000000000001');
+    expect(entries[0]?.address).toBe(A_CAPS);
   });
 
   test('an empty name falls back to the short address', () => {
@@ -47,20 +36,8 @@ describe('memberListEntries', () => {
   });
 
   test('admins and super admins get a mark, matched in any address case', () => {
-    const entries = memberListEntries(
-      [
-        '0xAAAA000000000000000000000000000000000001',
-        '0xbbbb000000000000000000000000000000000002',
-        '0xcccc000000000000000000000000000000000003',
-      ],
-      nameOf,
-      shortOf,
-      {
-        '0xaaaa000000000000000000000000000000000001': 'owner',
-        '0xBBBB000000000000000000000000000000000002': 'admin',
-        '0xcccc000000000000000000000000000000000003': 'member',
-      },
-    );
+    const roles = { [A]: 'owner', '0xBBBB000000000000000000000000000000000002': 'admin', [C]: 'member' } as const;
+    const entries = memberListEntries([A_CAPS, B, C], nameOf, shortOf, roles);
     expect(entries.map((e) => [e.name, e.admin?.label])).toEqual([
       ['Alice', undefined],
       ['zoe.base.eth', 'Admin'],
@@ -71,12 +48,10 @@ describe('memberListEntries', () => {
 
 describe('assignedEntries', () => {
   test('zero or multiple current members, case insensitive and without duplicates', () => {
-    const entries = memberListEntries(Object.keys(names), nameOf, shortOf);
+    const entries = memberListEntries([B, C], nameOf, shortOf);
     expect(assignedEntries(entries, [])).toEqual([]);
-    expect(assignedEntries(entries, [Object.keys(names)[0]?.toUpperCase() ?? '', Object.keys(names)[0] ?? '', '0xgone'])).toEqual([
-      entries[1],
-    ]);
-    expect(assignedEntries(entries, Object.keys(names))).toEqual(entries);
+    expect(assignedEntries(entries, [B.toUpperCase(), B, '0xgone'])).toEqual(entries.slice(1, 2));
+    expect(assignedEntries(entries, [B, C])).toEqual(entries);
   });
 });
 

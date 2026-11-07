@@ -1,36 +1,25 @@
 import type { ChannelListRow } from '@stage-labs/client/xmtp/channelsFilter';
 import { CHANNEL_PRIORITIES, categoryOf, priorityOf } from '@stage-labs/client/xmtp/labels';
 import { savedFirst } from '@stage-labs/client/xmtp/pinOrder';
-import { homeSortSchema, type HomeSort, type HomeViewContent, type HomeViewEdit } from '@stage-labs/client/xmtp/readState';
+import type { HomeSort, HomeViewContent } from '@stage-labs/client/xmtp/sync/homeView';
 import { compareNames } from '../../lib/format';
+import type { HomeView } from '../../lib/homeView';
+import { GROUPING_FIELDS, groupValueOf } from '../../lib/grouping.model';
 
-const DEFAULT_SORT: Record<HomeViewContent['view'], HomeSort> = {
+const DEFAULT_SORT: Record<HomeView, HomeSort> = {
   chats: { by: 'updated', direction: 'desc' },
   board: { by: 'priority', direction: 'desc' },
 };
 
 export const SORT_LABELS: Record<HomeSort['by'], string> = {
-  status: 'Status',
+  status: GROUPING_FIELDS.status.label,
   created: 'Created',
   updated: 'Updated',
-  priority: 'Priority',
+  priority: GROUPING_FIELDS.priority.label,
 };
 
 export function homeSortOf(view: HomeViewContent): HomeSort {
   return (view.view === 'board' ? view.boardSort : view.chatsSort) ?? DEFAULT_SORT[view.view];
-}
-
-export function homeSortEdit(view: HomeViewContent, id: string): HomeViewEdit | null {
-  const current = homeSortOf(view);
-  const by = homeSortSchema.shape.by.safeParse(id.slice('sort:'.length));
-  const direction = homeSortSchema.shape.direction.safeParse(id.slice('direction:'.length));
-  const sort =
-    id.startsWith('sort:') && by.success
-      ? { ...current, by: by.data }
-      : id.startsWith('direction:') && direction.success
-        ? { ...current, direction: direction.data }
-        : null;
-  return sort === null ? null : { [view.view === 'board' ? 'boardSort' : 'chatsSort']: sort };
 }
 
 interface SortableRow extends ChannelListRow {
@@ -47,15 +36,8 @@ export function updatedTimestamp(row: { lastTs?: number | null; createdTs?: numb
 }
 
 function statusRanks(rows: readonly SortableRow[], order: readonly string[]): Map<string, number> {
-  const statuses = [
-    ...new Set(
-      rows.flatMap((row) => {
-        const status = categoryOf(row.status);
-        return status === null ? [] : [status.toLowerCase()];
-      }),
-    ),
-  ];
-  const saved = order.filter((key) => key.startsWith('status:')).map((key) => key.slice('status:'.length).toLowerCase());
+  const statuses = [...new Set(rows.flatMap((row) => categoryOf(row.status)?.toLowerCase() ?? []))];
+  const saved = order.flatMap((key) => groupValueOf('status', key)?.toLowerCase() ?? []);
   const compare = (a: string, b: string): number => compareNames(a, b) || (a < b ? -1 : a > b ? 1 : 0);
   return new Map(savedFirst(statuses, saved, (value) => value, compare).map((status, index) => [status, index]));
 }

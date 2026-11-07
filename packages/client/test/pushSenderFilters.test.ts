@@ -86,6 +86,6 @@ describe('authenticated account-wide sender filters', () => {
       async (text) => ed25519ph.sign(new TextEncoder().encode(text), seed, { context }),
     );
     const fixture: unknown = await Bun.file(new URL('../../../apps/push/stagepush/testdata/sender-filter.json', import.meta.url)).json();
-    expect(body).toEqual(fixture);
+    expect<unknown>(body).toEqual(fixture);
   });
 });

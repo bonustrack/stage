@@ -3,37 +3,33 @@ import { appStorage } from '../platform/storage';
 import { sdk } from './xmtp.sdk';
 import { VISIBLE_CONSENT } from './xmtp.sdk.core';
 import { ignored } from './errorPolicy';
-import { loadHiddenChannels } from './hiddenChannels';
+import { loadHiddenChannels } from './sync/hiddenChannels';
+import { isHiddenChannel } from '@stage-labs/client/xmtp/sync/clear';
 import { accountClient, type AccountClient } from './xmtp.account';
-import { channelAccess } from './channelVisibility';
+import { channelAccess } from './channelAccess';
+import { sleep } from '@stage-labs/client/timing';
 
 type Conv = NonNullable<Awaited<ReturnType<typeof sdk.findConv>>>;
 const DONE_PREFIX = 'ownInstallations.done.';
 const SPACING_MS = 1500;
 
-function pause(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 async function repairConversation(context: AccountClient, conv: Conv, devices: string[]): Promise<void> {
   const installationsIn = sdk.memberInstallationIds;
   if (!installationsIn) return;
-  const present = await installationsIn(conv, context.client.inboxId ?? '');
+  const present = await installationsIn(conv, sdk.inboxIdOf(context.client));
   if (missingInstallationIds(devices, present).length === 0) return;
   if ((await channelAccess(context, conv)) !== 'member') return;
   const hidden = await loadHiddenChannels(context.account.id);
   context.assertCurrent();
-  if (hidden[conv.id]?.hidden) return;
-  await conv.sync();
-  await pause(SPACING_MS);
+  if (isHiddenChannel(hidden, conv.id)) return;
+  await sdk.syncConv(conv);
+  await sleep(SPACING_MS);
 }
 
 export async function addOwnInstallationsToChats(accountId: string): Promise<void> {
   if (sdk.memberInstallationIds === null) return;
   const context = await accountClient(accountId);
-  const inboxId = context.client.inboxId ?? '';
+  const inboxId = sdk.inboxIdOf(context.client);
   if (inboxId === '') return;
   const devices = (await sdk.installationIdsOf(context.client, inboxId)).map((id) => id.toLowerCase()).sort();
   const hidden = await loadHiddenChannels(accountId);

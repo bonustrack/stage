@@ -1,78 +1,48 @@
 import { useCallback, useState } from 'react';
+import { isAddress } from 'viem';
 import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../lib/xmtp.messages';
 import { type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber } from '@stage-labs/client/xmtp/tx';
-import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
+import { viemChainName, VIEM_CHAINS } from '@stage-labs/client/wallet/chains';
 import {
   type SignatureRequestContent,
   buildSignatureReference,
   personalMessageForRequest,
   typedDataForRequest,
 } from '@stage-labs/client/xmtp/sign';
-import { sendCall } from '../../lib/tx';
+import { sendCallsFrom, signFrom, type SignRequest, type TxCall } from '../../lib/tx';
 import { deriveConfirmSummary, confirmMessage, deriveSignSummary, signConfirmMessage } from '@stage-labs/client/wallet/txConfirm';
 import { capabilities } from '../../lib/capabilities';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
-import type { TypedDataDefinition } from 'viem';
-import { base } from 'viem/chains';
-import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
-import { kernelClientForRecord } from '../../lib/zerodev/client';
+import { getActiveAccount } from '../../lib/accounts';
 import { paymentBlocker } from './pay.model';
+import { reported } from '../../lib/errorPolicy';
 
-function typedDataOf(req: SignatureRequestContent): TypedDataDefinition {
-  return typedDataForRequest(req) as unknown as TypedDataDefinition;
-}
+const NO_SEND_KEY = 'No in-app wallet to send from';
+const NO_SIGN_KEY = 'No active wallet to sign with';
 
-interface RequestSigner {
-  address: string;
-  signTypedData: (typedData: TypedDataDefinition) => Promise<string>;
-  signMessage: (args: { message: string }) => Promise<string>;
-}
-
-async function requestSigner(): Promise<RequestSigner> {
-  const active = await getActiveAccount();
-  if (active?.type === 'smart') {
-    const kernel = await kernelClientForRecord(active);
-    return {
-      address: active.address,
-      signTypedData: (typedData) => kernel.signTypedData(typedData as Parameters<typeof kernel.signTypedData>[0]),
-      signMessage: (args) => kernel.signMessage(args as Parameters<typeof kernel.signMessage>[0]),
-    };
-  }
-  const local = await getActiveViemAccount();
-  if (!local) throw new Error('No active wallet to sign with');
-  return local;
+function signRequestOf(req: SignatureRequestContent): SignRequest {
+  return req.kind === 'eip712' ? { typedData: typedDataForRequest(req) } : { message: personalMessageForRequest(req) };
 }
 
 async function produceAndPostSignature(activeLine: string, requestId: string, req: SignatureRequestContent): Promise<void> {
-  const signer = await requestSigner();
-  const signature =
-    req.kind === 'eip712'
-      ? await signer.signTypedData(typedDataOf(req))
-      : await signer.signMessage({ message: personalMessageForRequest(req) });
-  await xmtpSendSignatureReference(activeLine, buildSignatureReference(requestId, signature, signer.address));
+  const { signature, address } = await signFrom(await getActiveAccount(), signRequestOf(req), { missingKey: NO_SIGN_KEY });
+  await xmtpSendSignatureReference(activeLine, buildSignatureReference(requestId, signature, address));
 }
 
-type TxCall = NonNullable<WalletSendCallsContent['calls']>[number];
+type RequestCall = WalletSendCallsContent['calls'][number];
 
-async function broadcastCall(to: string, call: TxCall, chainId: number): Promise<{ txHash: `0x${string}`; settledChainId: number }> {
-  const active = await getActiveAccount();
-  if (active?.type === 'smart') {
-    if (chainId !== base.id) throw new Error('Your Stage wallet pays on Base only.');
-    const kernel = await kernelClientForRecord(active);
-    const txHash = await kernel.sendTransaction({
-      to: to as `0x${string}`,
-      value: BigInt(call.value ?? '0x0'),
-      ...(call.data ? { data: call.data as `0x${string}` } : {}),
-    } as Parameters<typeof kernel.sendTransaction>[0]);
-    return { txHash, settledChainId: base.id };
-  }
-  const txHash = await sendCall({ to, data: call.data, value: call.value, chainId });
-  return { txHash, settledChainId: chainId };
+function txCallOf(to: string, call: RequestCall): TxCall {
+  if (!isAddress(to)) throw new Error('Invalid recipient address');
+  return { to, value: BigInt(call.value ?? '0x0'), ...(call.data ? { data: call.data as `0x${string}` } : {}) };
+}
+
+async function broadcastCall(to: string, call: RequestCall, chainId: number): Promise<{ txHash: `0x${string}`; settledChainId: number }> {
+  const sent = await sendCallsFrom(await getActiveAccount(), [txCallOf(to, call)], { chainId, missingKey: NO_SEND_KEY });
+  return { txHash: sent.hash, settledChainId: sent.chainId };
 }
 
 function chainMeta(chainId: number): { chainName: string; nativeSymbol: string } {
-  const chain = VIEM_CHAINS[chainId];
-  return { chainName: chain?.name ?? `chain ${chainId}`, nativeSymbol: chain?.nativeCurrency?.symbol ?? 'ETH' };
+  return { chainName: viemChainName(chainId) ?? `chain ${chainId}`, nativeSymbol: VIEM_CHAINS[chainId]?.nativeCurrency.symbol ?? 'ETH' };
 }
 
 function paymentReceipt(
@@ -115,8 +85,6 @@ function useBusyIds(): { ids: Set<string>; run: (id: string, failMsg: string, ta
 export function useTxSignLayer(activeLine: string) {
   const signing = useBusyIds();
   const paying = useBusyIds();
-  const runSign = signing.run,
-    runPay = paying.run;
 
   const onSign = useCallback(
     (requestId: string, req: SignatureRequestContent) => {
@@ -129,15 +97,15 @@ export function useTxSignLayer(activeLine: string) {
           destructive: summary.highRisk,
         })
         .then((ok) => {
-          if (ok) runSign(requestId, 'Signing failed', () => produceAndPostSignature(activeLine, requestId, req));
+          if (ok) signing.run(requestId, 'Signing failed', () => produceAndPostSignature(activeLine, requestId, req));
         });
     },
-    [activeLine, runSign],
+    [activeLine, signing.run],
   );
 
   const onPay = useCallback(
     (requestId: string, wsc: WalletSendCallsContent) => {
-      const call = wsc.calls?.[0];
+      const call = wsc.calls[0];
       if (!call?.to) {
         capabilities.toast('Malformed payment request');
         return;
@@ -151,7 +119,7 @@ export function useTxSignLayer(activeLine: string) {
         await xmtpSendTxReference(activeLine, paymentReceipt(txHash, settledChainId, summary, nativeSymbol));
       };
       void getActiveAccount().then(async (active) => {
-        const blocker = paymentBlocker({ callCount: wsc.calls?.length ?? 0, chainId, chainName, smartAccount: active?.type === 'smart' });
+        const blocker = paymentBlocker({ callCount: wsc.calls.length, chainId, chainName, smartAccount: active?.type === 'smart' });
         if (blocker !== null) {
           capabilities.toast(blocker);
           return;
@@ -162,10 +130,10 @@ export function useTxSignLayer(activeLine: string) {
           confirmLabel: summary.verified ? 'Pay' : 'Continue anyway',
           destructive: !summary.verified,
         });
-        if (ok) runPay(requestId, 'Payment failed', broadcast);
-      });
+        if (ok) paying.run(requestId, 'Payment failed', broadcast);
+      }, reported('chat.pay'));
     },
-    [activeLine, runPay],
+    [activeLine, paying.run],
   );
 
   return { signingIds: signing.ids, onSign, payingIds: paying.ids, onPay };

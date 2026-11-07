@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { walletTotalUsd, sendTokenFor } from '../components/wallet/screen/model';
+import { walletTotalUsd } from '../components/wallet/screen/model';
+import { sendTokenFor } from '../components/wallet/send/send.model';
 import {
   balanceCurrency,
   nextBalanceCurrency,
@@ -173,17 +174,17 @@ describe('wallet loading and refresh display', () => {
 
 describe('sendTokenFor', () => {
   test('defaults to ETH on Base', () => {
-    expect(sendTokenFor()).toEqual({ symbol: 'ETH', chainId: 8453 });
+    expect(sendTokenFor()).toBe('ETH');
   });
 
   test('keeps USDC on Base when the link asks for it', () => {
-    expect(sendTokenFor('USDC')).toEqual({ symbol: 'USDC', chainId: 8453 });
-    expect(sendTokenFor('USDC', '8453')).toEqual({ symbol: 'USDC', chainId: 8453 });
+    expect(sendTokenFor('USDC')).toBe('USDC');
+    expect(sendTokenFor('USDC', '8453')).toBe('USDC');
   });
 
   test('falls back to ETH on Base for a token or chain the wallet does not hold', () => {
-    expect(sendTokenFor('USDC', '1')).toEqual({ symbol: 'ETH', chainId: 8453 });
-    expect(sendTokenFor('STAGE', '11155111')).toEqual({ symbol: 'ETH', chainId: 8453 });
-    expect(sendTokenFor('DAI')).toEqual({ symbol: 'ETH', chainId: 8453 });
+    expect(sendTokenFor('USDC', '1')).toBe('ETH');
+    expect(sendTokenFor('STAGE', '11155111')).toBe('ETH');
+    expect(sendTokenFor('DAI')).toBe('ETH');
   });
 });

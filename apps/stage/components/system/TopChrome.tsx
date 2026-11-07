@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
 import { isRailRoute } from '../tabs/splitRoutes';
-import { isOnboardingRoute } from '../onboarding/nextRoute.model';
+import { isOnboardingRoute } from '../tabs/pages';
 import { usePalette } from '../../lib/theme';
-import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
+import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../layout/webLayout';
 import { Column, pinnedEdges } from '../layout';
+import { setTopInset } from '../layout/webChrome';
 
 const DRAG_REGION = { dataSet: { stagedrag: '1' } };
 const CHROME_LAYER = 50;
@@ -17,8 +18,7 @@ export function TopChrome({ decorated }: { decorated: boolean }): React.ReactEle
   const railed = wide && isRailRoute(pathname);
   const { border } = usePalette();
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    document.documentElement.style.setProperty('--stage-top-inset', `${inset}px`);
+    setTopInset(inset);
   }, [inset]);
   if (inset === 0) return null;
   const edge = { width: 1, color: border };

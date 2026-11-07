@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react';
 import { useQuery, type Query } from '@tanstack/react-query';
 import { resolveEnsName } from '@stage-labs/client/api/ens';
 import { baseProfileClient, resolveBasenameAddress } from '@stage-labs/client/identity/onchainProfile';
-import { fetchIssuedAddress } from '@stage-labs/client/identity/stageNames';
-import { parseHandle, stageLabelOf, type ParsedHandle } from '@stage-labs/client/routing/handles';
+import { stageLabelOf } from '@stage-labs/client/identity/stageNames';
+import { fetchIssuedAddress } from '@stage-labs/client/identity/namesApi';
+import { lookupFor, settleLookup, startLookup, type LookupPolicy, type PersonLookup } from '@stage-labs/client/identity/personLookup';
+import { parseHandle, type ParsedHandle } from '@stage-labs/client/routing/handles';
 import { linkProxyBase } from './linkProxy';
 import { getQueryClient } from './queryClient';
 import { recover } from './errorPolicy';
@@ -25,7 +28,7 @@ function resolveParsed(parsed: ParsedHandle): Promise<string | null> {
     case 'stage':
       return resolveStageName(parsed.value);
     case 'basename':
-      return stageLabelOf(parsed.value) === null ? basenameAddress(parsed.value) : resolveStageName(parsed.value);
+      return basenameAddress(parsed.value);
     case 'ens':
       return resolveEnsName(parsed.value).then((a) => a?.toLowerCase() ?? null);
     default:
@@ -61,4 +64,31 @@ export function useResolvedHandle(raw: string | null | undefined): ResolvedHandl
   if (parsed.kind === 'address') return { address: parsed.value, resolving: false, kind: parsed.kind };
   const address = lookup ? (q.data ?? null) : null;
   return { address, resolving: lookup && address === null && q.isFetching, kind: parsed.kind };
+}
+
+const LOOKUP_DEBOUNCE_MS = 300;
+
+export async function lookupPerson(input: string, policy: LookupPolicy): Promise<PersonLookup> {
+  const start = startLookup(input, policy);
+  return start.kind === 'resolving' ? settleLookup(start, await resolveHandleToAddress(start.name)) : start;
+}
+
+export function usePersonLookup(input: string, policy: LookupPolicy, enabled = true): PersonLookup {
+  const [stored, setStored] = useState<PersonLookup>(() => startLookup(input, policy));
+  useEffect(() => {
+    const start = startLookup(input, policy);
+    setStored(start);
+    if (!enabled || start.kind !== 'resolving') return;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void resolveHandleToAddress(start.name).then((address) => {
+        if (!cancelled) setStored(settleLookup(start, address));
+      });
+    }, LOOKUP_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [input, enabled, policy.mainnetEns]);
+  return lookupFor(stored, input, policy);
 }

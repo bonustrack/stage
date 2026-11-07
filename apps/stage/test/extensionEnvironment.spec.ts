@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from 'bun:test';
-import { isBrowserExtension } from '../lib/extension.web';
+import { isBrowserExtension } from '../lib/extension';
 
 const original = Object.getOwnPropertyDescriptor(globalThis, 'location');
 

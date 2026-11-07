@@ -1,14 +1,14 @@
 import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
-import { isXmtpDeletableType } from '@stage-labs/client/xmtp/deleteMessage';
+import { isXmtpDeletableType } from '@stage-labs/client/xmtp/contentTypes';
 import { buildReaction, buildVote, buildOpenAnswer, type ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import { openVoteKey, type PollContent } from '@stage-labs/client/xmtp/poll';
 import type { SignatureRequestContent, SignatureReferenceContent } from '@stage-labs/client/xmtp/sign';
 import type { WalletSendCallsContent, TransactionReferenceContent } from '@stage-labs/client/xmtp/tx';
 import type { FrameActionContent } from '@stage-labs/client/xmtp/frame';
-import { convOfLine, sdk, sendableConvOfLine } from './xmtp.sdk';
-import { withReadableSendError } from './xmtp.sdk.core';
-import { sendPreparedMessage } from './xmtp.messageSend.core';
+import { sdk } from './xmtp.sdk';
+import { convOfLine, sendableConvOfLine } from './xmtp.find';
+import { sendPreparedMessage, withReadableSendError } from './xmtp.messageSend.core';
 import { beginSendTiming } from './sendTiming';
 import { timeSendPhase } from '@stage-labs/client/xmtp/sendTiming';
 import {
@@ -19,8 +19,8 @@ import {
   WALLET_SEND_CALLS_CODEC,
   TRANSACTION_REFERENCE_CODEC,
   FRAME_ACTION_CODEC,
-  type JsonCodec,
 } from '@stage-labs/client/xmtp/jsonCodecs';
+import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
 
 export type ConvHandle = NonNullable<Awaited<ReturnType<typeof convOfLine>>>;
 
@@ -61,11 +61,11 @@ function sendOn(
   const timing = shouldPush ? beginSendTiming() : undefined;
   return withReadableSendError(async () => {
     try {
-      return await sendPreparedMessage(
-        () => sendableConvOfLine(line, shouldPush, timing),
-        (conv) => timeSendPhase(timing, 'sdk.send', () => send(conv)),
+      return await sendPreparedMessage({
+        find: () => sendableConvOfLine(line, shouldPush, timing),
         beforeSend,
-      );
+        send: (conv) => timeSendPhase(timing, 'sdk.send', () => send(conv)),
+      });
     } finally {
       timing?.finish();
     }

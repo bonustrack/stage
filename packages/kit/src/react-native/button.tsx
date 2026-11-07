@@ -11,23 +11,19 @@ import {
   type SizeSpec,
 } from '../button.styles';
 import type { ValidationResult } from '../a2ui/protocol';
+import { getDefaultButtonRadius } from '../legacy';
+import { RADIUS_FULL, type SchemePalette } from '../tokens';
 import { accessibilityProps, failingChecks, weightStyle, type A2uiCommonProps } from './a2ui-props';
 import { ContentColorProvider } from './content-color';
 import { Spinner } from './spinner';
-import { useKitScheme } from './theme-context';
+import { useKitColors } from './theme-context';
 import { useTriggerPress } from './trigger-context';
 
 export type { ButtonColor, ButtonControlVariant, ButtonHint, ButtonSize, ButtonVariant } from '../button.styles';
 
 const SPINNER_SIZE: Record<SizeSpec['spinner'], number> = { small: 20, large: 36 };
 
-let defaultButtonRadius = 999;
-export function setDefaultButtonRadius(r: number): void {
-  if (Number.isFinite(r) && r >= 0) defaultButtonRadius = r;
-}
-export function getDefaultButtonRadius(): number {
-  return defaultButtonRadius;
-}
+export { getDefaultButtonRadius, setDefaultButtonRadius } from '../legacy';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style' | 'disabled'>, A2uiCommonProps {
   color?: ButtonColor;
@@ -90,7 +86,7 @@ function containerStyle(args: ContainerStyleArgs, pressed: boolean): (ViewStyle 
     height: spec.height,
     width: square ? spec.height : stretch ? '100%' : undefined,
     paddingHorizontal: square ? 0 : spec.paddingHorizontal,
-    borderRadius: radius ?? defaultButtonRadius,
+    borderRadius: radius ?? getDefaultButtonRadius(),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -126,12 +122,12 @@ function renderLabel(
   );
 }
 
-type TintArgs = Pick<ButtonProps, 'color' | 'variant' | 'tintBg' | 'tintFg' | 'tintPressedBg'> & { dark: boolean };
+type TintArgs = Pick<ButtonProps, 'color' | 'variant' | 'tintBg' | 'tintFg' | 'tintPressedBg'> & { dark: boolean; roles: SchemePalette };
 
 function useResolvedColors(t: TintArgs): ResolvedColors {
   return useMemo(() => {
     const resolved = resolveButtonVariant(t.variant, t.color);
-    const base = resolveColors(resolved.color, resolved.fill, t.dark);
+    const base = resolveColors(resolved.color, resolved.fill, t.dark, t.roles);
     return {
       ...base,
       bg: t.tintBg ?? base.bg,
@@ -139,7 +135,7 @@ function useResolvedColors(t: TintArgs): ResolvedColors {
       pressedBg: t.tintPressedBg ?? base.pressedBg,
       ghostPressedBg: t.tintPressedBg ?? base.ghostPressedBg,
     };
-  }, [t.color, t.variant, t.dark, t.tintBg, t.tintFg, t.tintPressedBg]);
+  }, [t.color, t.variant, t.dark, t.roles, t.tintBg, t.tintFg, t.tintPressedBg]);
 }
 
 type ContainerInput = Pick<ContainerStyleArgs, 'spec' | 'c' | 'isDisabled'> &
@@ -152,15 +148,18 @@ function containerArgs(input: ContainerInput): ContainerStyleArgs {
     spec,
     square: uniform === true,
     stretch: block === true || fullWidth === true,
-    radius: pill === true ? 999 : radius,
+    radius: pill === true ? RADIUS_FULL : radius,
     c,
     isDisabled,
     style: weight === undefined ? style : { ...weightStyle(weight), ...style },
   };
 }
 
+export function buttonHeight(size: ButtonSize): number {
+  return SIZES[size].height;
+}
+
 export function Button(props: ButtonProps): React.ReactElement {
-  const scheme = useKitScheme();
   const {
     color,
     variant,
@@ -171,7 +170,7 @@ export function Button(props: ButtonProps): React.ReactElement {
     fullWidth,
     pill,
     uniform,
-    dark = scheme === 'dark',
+    dark: darkProp,
     tintBg,
     tintFg,
     tintPressedBg,
@@ -190,11 +189,12 @@ export function Button(props: ButtonProps): React.ReactElement {
     ...rest
   } = props;
 
+  const { dark, roles } = useKitColors(darkProp, 'static');
   const onPress = useTriggerPress(rest.onPress);
   const startIcon = iconStart ?? icon;
   const endIcon = iconEnd ?? iconRight;
   const spec = SIZES[size];
-  const c = useResolvedColors({ color, variant, dark, tintBg, tintFg, tintPressedBg });
+  const c = useResolvedColors({ color, variant, dark, roles, tintBg, tintFg, tintPressedBg });
   const isDisabled = disabled || loading || failingChecks(checks);
   const labelNode = renderLabel(children, label, spec, c.text, textStyle);
   const styleArgs = containerArgs({ spec, c, isDisabled, variant, block, fullWidth, uniform, pill, radius, weight, style });

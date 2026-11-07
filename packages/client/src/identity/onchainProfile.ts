@@ -25,7 +25,7 @@ export const REGISTRY_ABI = [
   },
 ] as const;
 
-export const L2_RESOLVER_ABI = [
+const L2_RESOLVER_ABI = [
   {
     name: 'name',
     type: 'function',
@@ -71,7 +71,7 @@ function nonEmpty(value: string): string | undefined {
   return trimmed === '' ? undefined : trimmed;
 }
 
-export function baseCoinType(chainId: number): string {
+function baseCoinType(chainId: number): string {
   return ((0x80000000 | chainId) >>> 0).toString(16).toUpperCase();
 }
 
@@ -81,7 +81,7 @@ export function baseReverseNode(address: string): Hex {
   return keccak256(encodePacked(['bytes32', 'bytes32'], [chainReverseNode, addressNode]));
 }
 
-export function usableAvatarUri(value: string | null | undefined): string | undefined {
+function usableAvatarUri(value: string | null | undefined): string | undefined {
   const trimmed = value?.trim() ?? '';
   if (/^(https?:\/\/|ipfs:\/\/|data:image\/)/i.test(trimmed)) return trimmed;
   return undefined;
@@ -99,9 +99,7 @@ export function baseProfileClient(): PublicClient {
 }
 
 async function registryRecord(client: PublicClient, functionName: 'owner' | 'resolver', node: Hex): Promise<Hex | null> {
-  const value: Hex = await client
-    .readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName, args: [node] })
-    .catch(() => zeroAddress);
+  const value: Hex = await client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName, args: [node] });
   return value === zeroAddress ? null : value;
 }
 
@@ -132,8 +130,7 @@ async function profileForName(client: PublicClient, name: string, address: strin
   const node = namehash(normalize(name));
   const resolverAddress = (await registryRecord(client, 'resolver', node)) ?? BASENAME_L2_RESOLVER;
   const resolver = { address: resolverAddress, abi: L2_RESOLVER_ABI } as const;
-  const text = (key: string): Promise<string> =>
-    client.readContract({ ...resolver, functionName: 'text', args: [node, key] }).catch(() => '');
+  const text = (key: string): Promise<string> => client.readContract({ ...resolver, functionName: 'text', args: [node, key] });
   const [forward, avatar, displayName, description] = await Promise.all([
     client.readContract({ ...resolver, functionName: 'addr', args: [node] }),
     text(PROFILE_TEXT_KEYS.avatar),
@@ -163,45 +160,23 @@ export async function inspectNameSetup(
 ): Promise<{ owned: boolean; ready: boolean }> {
   const blockNumber = await client.getBlockNumber({ cacheTime: 0 });
   const node = namehash(normalize(name));
-  const owner = await client.readContract({
-    address: BASENAME_REGISTRY,
-    abi: REGISTRY_ABI,
-    functionName: 'owner',
-    args: [node],
-    blockNumber,
-  });
-  if (owner.toLowerCase() !== address.toLowerCase()) return { owned: false, ready: false };
-  const resolver = await client.readContract({
-    address: BASENAME_REGISTRY,
-    abi: REGISTRY_ABI,
-    functionName: 'resolver',
-    args: [node],
-    blockNumber,
-  });
+  const registry = (functionName: 'owner' | 'resolver', target: Hex): Promise<Hex> =>
+    client.readContract({ address: BASENAME_REGISTRY, abi: REGISTRY_ABI, functionName, args: [target], blockNumber });
+  const l2 = { abi: L2_RESOLVER_ABI, blockNumber } as const;
+  if ((await registry('owner', node)).toLowerCase() !== address.toLowerCase()) return { owned: false, ready: false };
+  const resolver = await registry('resolver', node);
   if (resolver === zeroAddress) return { owned: true, ready: false };
   const reverseNode = baseReverseNode(address);
-  const reverseResolver = await client.readContract({
-    address: BASENAME_REGISTRY,
-    abi: REGISTRY_ABI,
-    functionName: 'resolver',
-    args: [reverseNode],
-    blockNumber,
-  });
+  const reverseResolver = await registry('resolver', reverseNode);
   if (reverseResolver === zeroAddress) return { owned: true, ready: false };
   const [forward, primary, text] = await Promise.all([
-    client.readContract({ address: resolver, abi: L2_RESOLVER_ABI, functionName: 'addr', args: [node], blockNumber }),
-    client.readContract({ address: reverseResolver, abi: L2_RESOLVER_ABI, functionName: 'name', args: [reverseNode], blockNumber }),
+    client.readContract({ ...l2, address: resolver, functionName: 'addr', args: [node] }),
+    client.readContract({ ...l2, address: reverseResolver, functionName: 'name', args: [reverseNode] }),
     Promise.all(
-      Object.entries(records).map(async ([key, value]) => {
-        const stored = await client.readContract({
-          address: resolver,
-          abi: L2_RESOLVER_ABI,
-          functionName: 'text',
-          args: [node, key],
-          blockNumber,
-        });
-        return stored === value;
-      }),
+      Object.entries(records).map(
+        async ([key, value]) =>
+          (await client.readContract({ ...l2, address: resolver, functionName: 'text', args: [node, key] })) === value,
+      ),
     ),
   ]);
   return { owned: true, ready: forward.toLowerCase() === address.toLowerCase() && primary === name && text.every(Boolean) };
@@ -214,9 +189,8 @@ export async function resolveOnchainProfile(
   address: string,
   issuedName?: IssuedNameLookup,
 ): Promise<OnchainProfile | null> {
-  const primary = await resolveBasenameProfile(client, address).catch(() => null);
+  const primary = await resolveBasenameProfile(client, address);
   if (primary !== null || issuedName === undefined) return primary;
-  const name = await issuedName(address).catch(() => null);
-  if (name === null) return null;
-  return profileForName(client, name, address).catch(() => null);
+  const name = await issuedName(address);
+  return name === null ? null : profileForName(client, name, address);
 }

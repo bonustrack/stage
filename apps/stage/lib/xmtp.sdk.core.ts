@@ -2,16 +2,10 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import type { StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { GroupMetaPolicy, GroupMetaWriters } from '@stage-labs/client/xmtp/groups';
-import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodecs';
-import { INACTIVE_SEND_MESSAGE, readableSendError } from '@stage-labs/client/xmtp/clientErrors';
-import { convIdOfLine } from '@stage-labs/client/xmtp/line';
+import type { AppDataGroup } from '@stage-labs/client/xmtp/channelMeta';
+import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
+import { objectOf } from '@stage-labs/client/xmtp/message';
 import type { XmtpConsent } from './xmtp.types';
-import { registerDmRoute } from './dmRoutes';
-import { recover } from './errorPolicy';
-import { getAccountEpoch } from './accountEpoch';
-import { AccountChangedError } from './xmtp.client.core';
-import { prepareNotifyingSend } from '@stage-labs/client/xmtp/pushSenderFilter';
-import { timeSendPhase, type SendTiming } from '@stage-labs/client/xmtp/sendTiming';
 
 export interface GroupMeta {
   name?: string;
@@ -38,6 +32,14 @@ export const VISIBLE_CONSENT: XmtpConsent[] = ['allowed', 'unknown'];
 
 export function notAGroup(): never {
   throw new Error('Not a channel');
+}
+
+export type CanonicalReaders = Readonly<Record<string, (raw: Record<string, unknown>) => unknown>>;
+
+export function canonicalContent(readers: CanonicalReaders, typeId: string, raw: unknown): unknown {
+  const record = objectOf(raw);
+  const read = Object.hasOwn(readers, typeId) ? readers[typeId] : undefined;
+  return record !== undefined && read !== undefined ? read(record) : raw;
 }
 
 export interface ConvLike {
@@ -92,6 +94,9 @@ export interface HistoryOps<Cl> {
 interface ClientPrimitives<Cl, C, M> {
   client: () => Promise<Cl>;
   cachedClient: () => Cl | null;
+  inboxIdOf: (client: Cl) => string;
+  installationIdOf: (client: Cl) => string | undefined;
+  syncPreferences: (client: Cl) => Promise<unknown>;
   findConv: (client: Cl, convId: string) => Promise<C | null | undefined>;
   listConvs: (client: Cl, consent?: XmtpConsent[]) => Promise<C[]>;
   syncConvList: (client: Cl) => Promise<unknown>;
@@ -116,11 +121,14 @@ interface ClientPrimitives<Cl, C, M> {
   messageById: (client: Cl, messageId: string) => Promise<M | null | undefined>;
   history: HistoryOps<Cl>;
   nativeErrorLog?: (work: () => Promise<unknown>) => Promise<string>;
+  storeChangesInBackground: boolean;
 }
 
 interface ConvPrimitives<C, M> {
   isGroup: (conv: C) => boolean;
   isActive: (conv: C) => Promise<boolean>;
+  syncConv: (conv: C) => Promise<unknown>;
+  memberInboxIds: (conv: C) => Promise<string[]>;
   syncState: (conv: C) => Promise<SyncState>;
   dmPeerInboxId: (conv: C) => (() => Promise<string>) | null;
   groupName: (conv: C) => Promise<string | undefined>;
@@ -128,6 +136,7 @@ interface ConvPrimitives<C, M> {
   groupAdmins: (conv: C) => Promise<GroupAdmins>;
   groupMetaPolicy: (conv: C) => Promise<GroupMetaPolicy>;
   groupOps: (conv: C) => GroupMetaWriters | null;
+  appDataGroup: (conv: C) => AppDataGroup | null;
   addMembers: (conv: C, addresses: string[]) => Promise<unknown>;
   removeMembers: (conv: C, addresses: string[]) => Promise<unknown>;
   leaveOp: (conv: C) => (() => Promise<unknown>) | null;
@@ -145,51 +154,3 @@ interface ConvPrimitives<C, M> {
 }
 
 export type XmtpSdk<Cl, C extends ConvLike, M> = ClientPrimitives<Cl, C, M> & ConvPrimitives<C, M>;
-
-export function convFinder<Cl, C extends ConvLike, M>(sdk: XmtpSdk<Cl, C, M>): (line: string) => Promise<C | null> {
-  return async (line) => {
-    const convId = convIdOfLine(line);
-    if (!convId) return null;
-    return (await sdk.findConv(await sdk.client(), convId).catch(recover('xmtp.findConv', null))) ?? null;
-  };
-}
-
-export function sendableFinder<Cl, C extends ConvLike, M>(
-  sdk: XmtpSdk<Cl, C, M>,
-  prepare: (client: Cl, conv: C, timing?: SendTiming) => Promise<void>,
-): (line: string, shouldPush?: boolean, timing?: SendTiming) => Promise<C> {
-  const find = convFinder(sdk);
-  return async (line, shouldPush = true, timing) => {
-    const epoch = getAccountEpoch();
-    const client = await timeSendPhase(timing, 'client.ready', () => sdk.client());
-    const assertCurrent = (): void => {
-      if (getAccountEpoch() !== epoch || sdk.cachedClient() !== client) throw new AccountChangedError();
-    };
-    const conv = await timeSendPhase(timing, 'conversation.find', () => find(line));
-    assertCurrent();
-    if (!conv) throw new Error(`XMTP conversation not found: ${line}`);
-    const active = await timeSendPhase(timing, 'conversation.active', () => activeForSend(sdk, client, conv, line));
-    assertCurrent();
-    await timeSendPhase(timing, 'filter.prepare', () =>
-      prepareNotifyingSend(shouldPush, () => prepare(client, active, timing), assertCurrent),
-    );
-    return active;
-  };
-}
-
-async function activeForSend<Cl, C extends ConvLike, M>(sdk: XmtpSdk<Cl, C, M>, client: Cl, conv: C, line: string): Promise<C> {
-  if (await sdk.isActive(conv).catch(recover('xmtp.isActive', true))) return conv;
-  const peerInboxId = sdk.dmPeerInboxId(conv);
-  if (!peerInboxId) throw new Error(INACTIVE_SEND_MESSAGE);
-  const active = await sdk.activeDm(client, await peerInboxId());
-  registerDmRoute(active.id, convIdOfLine(line) ?? conv.id);
-  return active;
-}
-
-export async function withReadableSendError<T>(send: () => Promise<T>): Promise<T> {
-  try {
-    return await send();
-  } catch (err) {
-    throw readableSendError(err);
-  }
-}

@@ -1,5 +1,6 @@
 import type { Hex } from 'viem';
 import { z } from 'zod';
+import { mailPath, type MailOp } from '../endpoints';
 import { base64ToBytes } from '../text/base64';
 import { parseOrThrow } from '../validate';
 import { deriveMailKey, mailPublicKeyHex, mailRegisterMessage, mailSessionMessage, type MailKeyPair } from './mailbox';
@@ -25,15 +26,14 @@ const CHALLENGE_SCHEMA = z.object({ nonce: z.string(), expiresAt: z.number() });
 const SESSION_SCHEMA = z.object({ token: z.string(), expiresAt: z.number() });
 const LIST_SCHEMA = z.object({ mails: z.array(z.object({ id: z.string(), ts: z.number(), size: z.number(), index: z.string() })) });
 
-async function mailCall(proxyBase: string, path: string, init: RequestInit): Promise<Response> {
-  const res = await fetch(`${proxyBase}/mail/${path}`, init);
+async function mailCall(proxyBase: string, op: MailOp, query: string, init: RequestInit): Promise<Response> {
+  const res = await fetch(`${proxyBase}${mailPath(op)}${query}`, init);
   if (res.ok) return res;
-  const detail = await res.text();
-  throw new Error(`st.box mail ${path.split('?')[0] ?? path} failed (${res.status}): ${detail}`);
+  throw new Error(`st.box mail ${op} failed (${res.status}): ${await res.text()}`);
 }
 
-async function postJson(proxyBase: string, path: string, body: unknown): Promise<unknown> {
-  const res = await mailCall(proxyBase, path, {
+async function postJson(proxyBase: string, op: MailOp, body: unknown): Promise<unknown> {
+  const res = await mailCall(proxyBase, op, '', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
@@ -41,9 +41,9 @@ async function postJson(proxyBase: string, path: string, body: unknown): Promise
   return res.json();
 }
 
-function sessionCall(session: MailSession, method: string, path: string, id?: string): Promise<Response> {
-  const query = `label=${encodeURIComponent(session.label)}${id === undefined ? '' : `&id=${encodeURIComponent(id)}`}`;
-  return mailCall(session.proxyBase, `${path}?${query}`, { method, headers: { authorization: `Bearer ${session.token}` } });
+function sessionCall(session: MailSession, method: string, op: MailOp, id?: string): Promise<Response> {
+  const query = `?label=${encodeURIComponent(session.label)}${id === undefined ? '' : `&id=${encodeURIComponent(id)}`}`;
+  return mailCall(session.proxyBase, op, query, { method, headers: { authorization: `Bearer ${session.token}` } });
 }
 
 export async function registerMailKey(
@@ -59,7 +59,7 @@ export async function registerMailKey(
 }
 
 export async function ensureMailKey(proxyBase: string, label: string, address: string, signMessage: SignMessage): Promise<boolean> {
-  const res = await mailCall(proxyBase, `key?label=${encodeURIComponent(label)}`, { method: 'GET' });
+  const res = await mailCall(proxyBase, 'key', `?label=${encodeURIComponent(label)}`, { method: 'GET' });
   const status = parseOrThrow('mail key status', KEY_STATUS_SCHEMA, await res.json());
   if (status.owner !== address.toLowerCase() || status.publicKey !== null) return false;
   await registerMailKey(proxyBase, label, await deriveMailKey(label, signMessage), signMessage);
@@ -88,8 +88,4 @@ export async function fetchMail(session: MailSession, id: string): Promise<Uint8
 
 export async function deleteMail(session: MailSession, id: string): Promise<void> {
   await sessionCall(session, 'DELETE', 'message', id);
-}
-
-export async function closeMailbox(session: MailSession): Promise<void> {
-  await sessionCall(session, 'DELETE', 'box');
 }

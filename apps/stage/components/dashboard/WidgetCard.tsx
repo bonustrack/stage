@@ -1,15 +1,16 @@
 import { deleteNode } from '@stage-labs/client/nodes/publish';
-import { DASHBOARD_LIVE_KIND, liveSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/readState';
+import { DASHBOARD_LIVE_KIND, liveSourceOf, type DashboardWidget } from '@stage-labs/client/xmtp/sync/dashboard';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { AnchoredMenu } from '../AnchoredMenu';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import { MenuHeading, MenuRow } from '../MenuRows';
 import { FrameMenuRows } from '../frame/FrameMenu';
 import { capabilities } from '../../lib/capabilities';
-import { changeDashboard } from '../../lib/dashboard';
+import { changeDashboard } from '../../lib/frames/dashboard';
+import { removeWidget, resizeWidget } from '../../lib/frames/dashboard.model';
 import { linkProxyBase } from '../../lib/linkProxy';
-import { refreshLiveWidget } from '../../lib/liveWidget';
-import { HEIGHT_OPTIONS, WIDTH_OPTIONS, removeWidget, resizeWidget } from './dashboard.model';
+import { refreshLiveWidget } from '../../lib/frames/liveWidget';
+import { HEIGHT_OPTIONS, WIDTH_OPTIONS } from './grid.model';
 import { FrameWidget } from './FrameWidget';
 import { LiveWidget } from './LiveWidget';
 import { NODE_DELETE_FAILED, ownsHostedNode } from './liveWidget.model';
@@ -37,12 +38,9 @@ export function WidgetMenu({
   const live = widget.kind === DASHBOARD_LIVE_KIND ? liveSourceOf(widget) : null;
   const nodeKey = live !== null && ownsHostedNode(live) ? live.key : null;
   const remove = (): void => {
-    if (nodeKey === null) {
-      pick((widgets) => removeWidget(widgets, widget.id));
-      return;
-    }
     onClose();
-    void removeWithNode(widget.id, nodeKey);
+    if (nodeKey === null) changeDashboard((widgets) => removeWidget(widgets, widget.id));
+    else void removeWithNode(widget.id, nodeKey);
   };
   return (
     <AnchoredMenu visible={anchor !== null} onClose={onClose} anchor={anchor}>

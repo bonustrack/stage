@@ -1,30 +1,25 @@
 import { useEffect } from 'react';
 import { usePathname } from 'expo-router';
 import { usePalette } from '../../lib/theme';
-import { useVisibleUnreadCount } from '../home/unreadCount';
-import { unreadBadgeLabel } from '../../lib/format';
 import { HomeScreen } from '../home/HomeScreen';
 import { WebTabRail } from './WebTabRail';
-import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../../lib/webLayout';
-import { channelsPaneWidth } from './paneWidth';
-import { PaneResizeHandle } from './PaneResizeHandle';
+import { useTopChromeInset, useWebTabRail, WEB_TAB_RAIL_WIDTH } from '../layout/webLayout';
+import { channelsPaneWidth } from '../layout/paneWidth';
+import { PaneResizeHandle } from '../layout/PaneResizeHandle';
 import { isRailOnlyRoute, isSplitRoute, isTabRoute } from './splitRoutes';
 import { useBoardHome } from './boardHome';
 import { Column, pinnedEdges, SCROLLBAR_ON_HOVER } from '../layout';
+import { setPaneScope } from '../layout/webChrome';
+import type { PaneScope } from '../layout/webChrome.core';
 
-function usePaneScope(scope: string | null): void {
+function usePaneScope(scope: PaneScope | null): void {
   useEffect(() => {
-    if (typeof document === 'undefined' || scope === null) return;
-    document.documentElement.dataset.stagepane = scope;
+    if (scope === null) return;
+    setPaneScope(scope);
     return () => {
-      delete document.documentElement.dataset.stagepane;
+      setPaneScope(null);
     };
   }, [scope]);
-}
-
-function paneScopeOf(active: boolean, railOnly: boolean): string | null {
-  if (active) return '1';
-  return railOnly ? 'rail' : null;
 }
 
 function SidePane({ full, children }: { full: boolean; children: React.ReactNode }): React.ReactElement {
@@ -53,12 +48,11 @@ export function SplitSidebar({ visible }: { visible: boolean }): React.ReactElem
   const boardHome = useBoardHome();
   const active = visible && rail && isSplitRoute(pathname);
   const railOnly = visible && rail && isRailOnlyRoute(pathname);
-  usePaneScope(paneScopeOf(active, railOnly));
-  const unreadBadge = unreadBadgeLabel(useVisibleUnreadCount());
+  usePaneScope(active ? '1' : railOnly ? 'rail' : null);
   if (!active && !railOnly) return null;
   return (
     <>
-      {isTabRoute(pathname) ? null : <WebTabRail pathname={pathname} unreadBadge={unreadBadge} />}
+      {isTabRoute(pathname) ? null : <WebTabRail pathname={pathname} />}
       <SidePane full={railOnly}>
         <HomeScreen pane board={boardHome} />
       </SidePane>

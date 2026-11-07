@@ -5,14 +5,14 @@ import { AppModal } from '../AppModal';
 import { useComposerState, type ComposerState } from '../composer/state';
 import { fileInputs } from '../composer/send.model';
 import { prepareAttachments, forgetAttachments } from '../../lib/xmtp.attachments';
-import { useAccountEpoch } from '../../lib/accountEpoch';
-import { knownActiveAccountId, subscribeCachedRows } from '../../lib/channelsCache';
-import { useActiveAccountRecord } from '../../modules/messaging/account';
-import { useClearedChats } from '../../lib/clearedChats';
-import { useStoreValue } from '../../lib/storeCore';
-import { checkShareDestination } from '../../lib/shareDestination';
+import { useAccountScope } from '../../lib/accountSelection';
+import { useActiveAccountRecord } from '../../lib/messaging/account';
+import { useClearedChats } from '../../lib/sync/clearedChats';
+import { report } from '../../lib/errorPolicy';
+import { checkShareDestination, isShareScope } from '../../lib/shareDestination';
 import type { IncomingShare } from '../../lib/incomingShare.types';
-import { sharedAttachments, shareDestinations, type ShareDestination } from './share.model';
+import { sharedAttachments, shareDestinations } from './share.model';
+import type { ShareDestination } from '../../lib/shareDestination.model';
 import { SharePicker } from './SharePicker';
 import { ShareReview } from './ShareReview';
 import { useShareRows } from './useShareRows';
@@ -96,30 +96,30 @@ export function ShareSession({
   onDismiss: (keepFiles: boolean) => Promise<void>;
 }): React.ReactElement {
   const state = useSharedComposer(share);
-  const epoch = useAccountEpoch();
-  const accountId = useStoreValue(subscribeCachedRows, knownActiveAccountId);
+  const scope = useAccountScope();
   const account = useActiveAccountRecord();
-  const accountReady = account?.id === accountId ? accountId : null;
-  const list = useShareRows(accountReady, epoch);
+  const ready = account !== null && isShareScope(scope) && scope.accountId === account.id ? scope : null;
+  const list = useShareRows(ready);
   const cleared = useClearedChats();
   const [selected, setSelected] = useState<ShareSelection | null>(null);
   const [checking, setChecking] = useState(false);
-  const selection = selected?.accountId === accountReady && selected.epoch === epoch ? selected : null;
+  const selection = selected !== null && selected.scope === ready ? selected : null;
   const send = useShareSender({ state, selection, active, onDismiss });
   const choose = async (destination: ShareDestination): Promise<void> => {
-    if (accountReady === null || checking || send.sender.isBusy()) return;
+    if (ready === null || checking || send.sender.isBusy()) return;
     setChecking(true);
     send.setError(null);
     try {
-      await checkShareDestination(accountReady, epoch, destination);
-      setSelected({ destination, accountId: accountReady, epoch });
-    } catch {
+      await checkShareDestination(ready, destination);
+      setSelected({ destination, scope: ready });
+    } catch (err) {
+      report('share.choose', err);
       send.setError('This channel is not ready to receive shares. Choose another channel or refresh.');
     } finally {
       setChecking(false);
     }
   };
-  const accountLabel = account?.id === accountReady ? (account.label ?? account.address) : 'Opening account…';
+  const accountLabel = ready !== null && account !== null ? (account.label ?? account.address) : 'Opening account…';
   return (
     <AppModal visible={active} title={sessionTitle(send.sent, selection !== null)} onClose={send.close} dismissable={!send.busy}>
       <ShareSessionBody
@@ -132,8 +132,8 @@ export function ShareSession({
         }}
         picker={
           <SharePicker
-            rows={shareDestinations(list.rows, cleared, '')}
-            loading={list.loading || accountReady === null}
+            rows={shareDestinations(list.rows, cleared)}
+            loading={list.loading || ready === null}
             checking={checking}
             error={list.error}
             account={accountLabel}

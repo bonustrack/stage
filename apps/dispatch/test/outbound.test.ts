@@ -3,6 +3,9 @@ import worker, { allowedTarget, outbound } from '../src/outbound.ts';
 
 const realFetch = globalThis.fetch;
 
+const requestOf = (input: RequestInfo | URL, init?: RequestInit): Request =>
+  input instanceof Request ? new Request(input, init) : new Request(String(input), init);
+
 interface Forwarded {
   input: RequestInfo | URL;
   init?: RequestInit;
@@ -13,7 +16,7 @@ function stubFetch(): Forwarded[] {
   const seen: Forwarded[] = [];
   globalThis.fetch = Object.assign(
     async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      seen.push({ input, init, request: new Request(input, init) });
+      seen.push({ input, init, request: requestOf(input, init) });
       return new Response('ok');
     },
     { preconnect: realFetch.preconnect },
@@ -62,6 +65,11 @@ describe('node outbound filter', () => {
       'https://stage.box.../',
       'https://localhost../',
       'https://printer.local../',
+      'https://nas.lan/',
+      'https://box.home.arpa/',
+      'https://localhost.localdomain/',
+      'https://[::ffff:7f00:1]/',
+      'https://example.123/',
     ];
     for (const url of blocked) expect([url, allowedTarget(url)]).toEqual([url, false]);
   });

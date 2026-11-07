@@ -14,6 +14,7 @@ import {
   pushRpcPath,
   registerInstallationBody,
   subscribeWithMetadataBody,
+  withoutSyncGroups,
 } from '../src/xmtp/pushServer';
 
 const OWNER = privateKeyToAccount('0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d');
@@ -55,6 +56,19 @@ describe('topics', () => {
     expect(groupIdOfTopic('/xmtp/mls/1/w-installation/proto')).toBeNull();
     expect(isWelcomeTopic('/xmtp/mls/1/w-installation/proto')).toBe(true);
     expect(isWelcomeTopic('/xmtp/mls/1/g-abc/proto')).toBe(false);
+  });
+
+  test('push topics skip only the private sync groups', () => {
+    const welcome = '/xmtp/mls/1/w-installation/proto';
+    const channel = '/xmtp/mls/1/g-aa01/proto';
+    const sync = '/xmtp/mls/1/g-BB02/proto';
+    const dm = '/xmtp/mls/1/g-cc03/proto';
+    const groups = [
+      { id: 'aa01', name: 'Design' },
+      { id: 'bb02', name: 'stage.sync:0xabc' },
+    ];
+    expect(withoutSyncGroups([welcome, channel, sync, dm], groups)).toEqual([welcome, channel, dm]);
+    expect(withoutSyncGroups([sync], [{ id: 'BB02', name: 'stage.sync:0xabc' }])).toEqual([]);
   });
 });
 

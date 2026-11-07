@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'bun:test';
+import { searched } from './searchFixtures';
 import {
   BOARD_COLUMN_WIDTH,
   BOARD_GAP,
@@ -23,30 +24,17 @@ import {
   renameProblem,
   renameTarget,
   renamedColumnOrder,
-  searchedColumns,
-} from '../components/board/BoardScreen.model';
+} from '../components/home/board/BoardScreen.model';
 
-interface TestRow {
-  convId: string;
-  title: string;
-  lastPreview: string;
-  lastTs: number | null;
-  unreadCount: number;
-  labels?: string[];
-  category?: string | null;
-  assigned?: string[];
-  peerAddress?: string | null;
-}
-
-function row(convId: string, lastTs: number, labels?: string[]): TestRow {
+function row(convId: string, lastTs: number, labels?: string[]) {
   return { convId, title: convId, lastPreview: '', lastTs, unreadCount: 0, labels };
 }
 
-function dm(convId: string, lastTs: number, labels?: string[]): TestRow {
+function dm(convId: string, lastTs: number, labels?: string[]) {
   return { ...row(convId, lastTs, labels), peerAddress: '0xpeer' };
 }
 
-function shape(rows: TestRow[], pinned: string[] = [], order: string[] = []): [string, string[]][] {
+function shape(rows: ReturnType<typeof row>[], pinned: string[] = [], order: string[] = []): [string, string[]][] {
   return boardColumns(rows, pinned, order, 'label').map((c) => [c.label, c.rows.map((r) => r.convId)]);
 }
 
@@ -143,18 +131,18 @@ describe('boardColumns by category and assignee', () => {
 
 describe('searching the board', () => {
   const rows = [row('alpha', 3, ['Todo']), row('beta', 2, ['Todo']), row('gamma', 1, ['Done'])];
-  const searched = (query: string): [string, string[]][] =>
-    searchedColumns(boardColumns(rows, [], [], 'label'), query).map((c) => [c.label, c.rows.map((r) => r.convId)]);
+  const shownFor = (query: string): [string, string[]][] =>
+    searched(boardColumns(rows, [], [], 'label'), query).map((c) => [c.label, c.rows.map((r) => r.convId)]);
 
   test('keeps every column and only the cards that match, whatever the case', () => {
-    expect(searched('  BET ')).toEqual([
+    expect(shownFor('  BET ')).toEqual([
       ['Done', []],
       ['Todo', ['beta']],
     ]);
   });
 
   test('an empty search shows every card', () => {
-    expect(searched('')).toEqual(shape(rows));
+    expect(shownFor('')).toEqual(shape(rows));
   });
 });
 

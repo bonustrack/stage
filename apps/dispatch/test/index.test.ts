@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import worker, { NODE_LIMITS, REQUEST_MAX_BYTES, dispatchNode, type DispatchDeps } from '../src/index.ts';
+import { NODE_LIMITS, NODE_REQUEST_MAX_BYTES } from '@stage-labs/client/nodes/hosting';
+import worker, { dispatchNode, type DispatchDeps } from '../src/index.ts';
 
 const ID = '0123456789abcdef0123456789abcdef';
 const NODE_URL = `https://nodes.stage.box/${ID}`;
@@ -40,7 +41,6 @@ describe('routing', () => {
     expect(seen).toHaveLength(1);
     expect(seen[0]?.name).toBe(`node-${ID}`);
     expect(seen[0]?.options).toEqual({ limits: NODE_LIMITS });
-    expect(NODE_LIMITS).toEqual({ cpuMs: 50, subRequests: 5 });
     expect(seen[0]?.request.url).toBe(`${NODE_URL}/sub?x=1`);
   });
 
@@ -122,7 +122,7 @@ describe('abuse limits', () => {
 
   test('caps request bodies and needs their length', async () => {
     const { nodes, seen } = namespace(() => new Response(CARD));
-    const big = 'x'.repeat(REQUEST_MAX_BYTES + 1);
+    const big = 'x'.repeat(NODE_REQUEST_MAX_BYTES + 1);
     expect(
       (await call(new Request(NODE_URL, { method: 'POST', body: big, headers: { 'content-length': String(big.length) } }), { nodes }))
         .status,
@@ -198,16 +198,7 @@ describe('replies', () => {
     const declared = namespace(() => new Response('{}', { headers: { 'content-length': String(limit + 1) } }));
     expect((await call(NODE_URL, { nodes: declared.nodes })).status).toBe(502);
     const chunk = new Uint8Array(64 * 1024);
-    const streamed = namespace(
-      () =>
-        new Response(
-          new ReadableStream({
-            pull: (controller) => {
-              controller.enqueue(chunk);
-            },
-          }),
-        ),
-    );
+    const streamed = namespace(() => new Response(new ReadableStream({ pull: (controller) => controller.enqueue(chunk) })));
     expect((await call(NODE_URL, { nodes: streamed.nodes })).status).toBe(502);
   });
 

@@ -1,10 +1,9 @@
 import { encodeAccountTransfer, type AccountTransfer } from '@stage-labs/client/accounts/transfer';
-import { canExportPrivateKey, type AccountRecord } from './accounts';
+import { canExportPrivateKey } from '@stage-labs/client/accounts/registry';
+import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { revealPrivateKey, revealRecoveryPhrase } from './zerodev/keyring';
 
-type TransferKind = AccountTransfer['kind'];
-
-export function transferKindFor(rec: AccountRecord): TransferKind | null {
+export function transferKindFor(rec: AccountRecord): AccountTransfer['kind'] | null {
   if (canExportPrivateKey(rec)) return 'pk';
   if (rec.type === 'smart') return 'phrase';
   return null;

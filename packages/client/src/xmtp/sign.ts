@@ -1,4 +1,4 @@
-import { mintId } from '../mintId';
+import { randomUuid } from '../ids';
 import type { Eip712TypedData, SignatureRequestContent, SignatureReferenceContent } from './sign.schema';
 
 export type { Eip712TypedData, SignatureRequestContent, SignatureReferenceContent } from './sign.schema';
@@ -7,7 +7,7 @@ export function buildPersonalSignatureRequest(message: string, description?: str
   const msg = message.trim();
   if (!msg) throw new Error('Enter a message to sign');
   const desc = description?.trim();
-  return { id: mintId('sig'), kind: 'personal', message: msg, ...(desc ? { description: desc } : {}) };
+  return { id: randomUuid(), kind: 'personal', message: msg, ...(desc ? { description: desc } : {}) };
 }
 
 export function buildEip712SignatureRequest(json: string, description?: string): SignatureRequestContent {
@@ -23,7 +23,7 @@ export function buildEip712SignatureRequest(json: string, description?: string):
   }
   const desc = description?.trim();
   return {
-    id: mintId('sig'),
+    id: randomUuid(),
     kind: 'eip712',
     eip712: {
       domain: (td.domain ?? {}) as Record<string, unknown>,

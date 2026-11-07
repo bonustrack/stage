@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { boardColumns, searchedColumns } from '../components/board/BoardScreen.model';
+import { boardColumns } from '../components/home/board/BoardScreen.model';
 import {
-  FILTER_FIELDS,
   PRIORITY_OPTIONS,
   parseSearchFilter,
   searchFilterSources,
@@ -9,8 +8,8 @@ import {
   searchFilterValues,
   searchRowMatcher,
   type FilterRow,
-} from '../components/searchFilter.model';
-import { ALICE, BOB, NAMES, group } from './searchFixtures';
+} from '../components/home/search/searchFilter.model';
+import { ALICE, BOB, group, namesOf, searched } from './searchFixtures';
 
 const rows: FilterRow[] = [
   { ...group('build', ['Bug'], [ALICE]), category: 'Stage', status: 'Backlog', priority: 'High' },
@@ -20,7 +19,6 @@ const rows: FilterRow[] = [
   group('missing', ['Todo']),
   { ...group('empty', []), category: '  ', status: '', priority: null },
 ];
-const namesOf = (address: string): string[] => NAMES[address] ?? [];
 const draftOf = (convId: string): string => (convId === 'ship' ? 'release' : '');
 const matching = (query: string): string[] =>
   rows.filter(searchRowMatcher(parseSearchFilter(query), namesOf, draftOf)).map((row) => row.convId);
@@ -102,7 +100,7 @@ describe('channel metadata search filters', () => {
   test('board columns use the same combined filter in each supported metadata grouping', () => {
     for (const by of ['status', 'category', 'label'] as const) {
       const columns = boardColumns(rows, [], [], by);
-      const shown = searchedColumns(columns, 'category:Stage status:Backlog priority:High label:Bug member:alice123', namesOf);
+      const shown = searched(columns, 'category:Stage status:Backlog priority:High label:Bug member:alice123', namesOf);
       expect(shown.map((column) => column.key)).toEqual(columns.map((column) => column.key));
       expect(shown.flatMap((column) => column.rows.map((row) => row.convId))).toEqual(['build']);
     }
@@ -110,22 +108,13 @@ describe('channel metadata search filters', () => {
 });
 
 describe('metadata filter suggestions', () => {
-  test('lists fields in right-panel order with Has last', () => {
-    expect(FILTER_FIELDS).toEqual(['member', 'category', 'status', 'priority', 'label', 'has']);
-  });
-
   test('collects real categories and freeform statuses, including unlabelled board cards', () => {
     const duplicate: FilterRow = { ...group('duplicate', []), category: 'stage', status: 'backlog' };
     const dm: FilterRow = { ...group('dm', []), peerAddress: BOB, category: 'Private', status: 'DM only' };
     const board = searchFilterSources([...rows, duplicate, dm], 'board');
     expect(board.categories).toEqual(['Client work', 'Snapshot', 'Stage']);
     expect(board.statuses).toEqual(['🚧 In progress', 'Backlog', 'Ready, next', 'Todo']);
-    expect(
-      searchFilterSources(
-        rows.filter((row) => row.convId === 'missing' || row.convId === 'empty'),
-        'board',
-      ),
-    ).toMatchObject({ categories: [], statuses: [] });
+    expect(searchFilterSources(rows.slice(4), 'board')).toMatchObject({ categories: [], statuses: [] });
     expect(searchFilterSources([dm], 'chats')).toMatchObject({ categories: ['Private'], statuses: ['DM only'] });
   });
 

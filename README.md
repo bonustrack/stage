@@ -15,8 +15,8 @@ apps/
   stage/      # stage — the universal Expo + React Native app (android · ios · web · desktop)
               #   app/         expo-router file routes (routes only — helpers live in components/)
               #   components/  kit-JSX screens + colocated *.model.ts pure models, one folder per family
-              #   lib/         state + SDK orchestration (incl. the xmtp.*.web adapters and *.core.ts)
-              #   modules/     messaging/ (rows, queries, feed, consent; no barrel) + the stage-pill native module
+              #   lib/         state + SDK orchestration (incl. messaging/, the xmtp.*.web adapters and *.core.ts)
+              #   modules/     Expo native modules: stage-pill, stage-calls, stage-share, stage-speech
               #   platform/    storage seams (.ts native / .web.ts overrides)
               #   test/        pure-model tests (bun test)
               #   desktop/     Electron shell that bundles the web export (nested workspace)
@@ -57,7 +57,7 @@ Run from the repo root:
 bun run build       # bun run --workspaces --if-present build (only the desktop shell has one)
 bun run test        # bun test --parallel: every test file in the repo, one run
 bun run test:changed  # only the test files affected by changes since origin/main
-bun check           # stage check (bun check per workspace)
+bun check           # stage check (bun check per workspace, and on its tests when it has test/tsconfig.json)
 bun run lint        # stage lint (oxlint with type-aware rules over the whole repo)
 bun run lint:fix    # stage lint --fix
 bun run lint:changed  # lint only the files changed since the upstream branch
@@ -66,30 +66,10 @@ bun fmt --check     # fail when a file needs formatting (the first CI gate)
 bun run knip        # unused files / deps / exports
 ```
 
-`stage lint` runs `oxlint --type-aware` with the root `.oxlintrc.json`: the
-type-aware rules run through `oxlint-tsgolint`, and the rules oxlint does not
-have natively (no comments, no em dash, `stage/*`, `no-restricted-syntax`)
-run as JS plugins; quotes are left to `bun fmt`. `import/no-cycle` fails on circular imports. It skips git-ignored files. `stage lint <paths>`
-lints only those paths. CI always runs the full lint, because a type change in
-one file can create findings in another.
-
-`stage/no-custom-font-size` requires named Kit font sizes in Stage's `app`,
-`components`, `lib`, `modules` and `platform` JS/TS source. It checks object and
-StyleSheet properties, assignments, JSX font-size props and CSS font declarations
-in strings. Native inputs and Markdown body sizing can use `FONT_SIZE` or
-`fontSize()` imported from Kit. Imported Kit `Text` (including aliases) must use
-`size`, not a style override, even when that override contains a token. The check
-follows local const aliases and destructuring, static computed keys, arrays,
-spreads, branches and `StyleSheet.create` / `flatten`. Direct arithmetic writes
-are rejected; destructuring reads are not declarations. CSS-like strings are
-checked at declaration boundaries, not by matching ordinary prose. This is not
-cross-module or runtime data-flow analysis of arbitrary wrappers, functions,
-mutations, dynamic property keys or generated CSS. Kit's semantic Title, wallet
-and computed Markdown styles, test fixtures and standalone HTML support pages
-are outside this app rule. Existing Kit-specific lint rules still apply there.
-The CLI/config regression suite lives in `apps/stage/scripts/test`, separate
-from the app's pure-model `test` directory. Run it with
-`bun test apps/stage/scripts/test/typographyLint.test.mjs`; `bun run test` includes it.
+`packages/config/README.md` describes what each `stage` command runs. The app's
+own lint rules (`stage/*`) live in `apps/stage/oxlint-plugin.mjs`; the fixtures in
+`apps/stage/scripts/test/typographyLint.test.mjs` show what
+`stage/no-custom-font-size` accepts and rejects.
 
 Bun runs the workspace tasks itself (no Turbo): `bun run --workspaces` for scripts
 and one `bun test --parallel` for every test file.
@@ -128,33 +108,24 @@ as `attachments/<random id>` and serves it back from
 links (`/bzz/<ref>/`), which the app reads from the public Swarm gateway
 (`download.gateway.ethswarm.org`).
 
-Composer text over **4,096 UTF-8 bytes** sends as `message.txt` through this same
-encrypted attachment pipeline, in existing and new chats. This is a readability
-cutoff, kept well below XMTP's message-size ceiling, not a transport maximum.
-The file keeps the original Unicode, whitespace and newlines without trimming
-or adding a BOM. Short messages keep their existing behavior. Picked attachments
-and locations still follow the text, and a reply reference stays on the text file.
-A failed file send restores the original draft; text that already sent is not
-restored if a later attachment fails.
-
 ## Releases
 
-- **Web:** Netlify builds `bun run build:web` from `apps/stage` on every push to `main`.
+- **Web:** Netlify builds `apps/stage` on every push to `main` with the command in `apps/stage/netlify.toml` (source checks, then `bun run build:web`).
 - **Mobile:** bumping `version` in `apps/stage/app.config.js` triggers
   `release-mobile.yml` (EAS Build + Submit to Play and TestFlight); every push
   publishes a JS-OTA dev-client preview. See `docs/mobile-release.md`.
 - **Desktop:** the same version bump runs `release-desktop.yml`, which builds the
   macOS / Windows / Linux installers and publishes them to the GitHub Release
   that the landing page links to. See `docs/desktop-release.md`.
-- **Chrome extension:** `bun scripts/build-extension.mjs` builds an unpacked beta. PR builds attach it as an Actions artifact, without publishing to the Chrome Web Store. See `docs/chrome-extension.md`.
+- **Chrome extension:** `bun apps/stage/extension/build.mjs` builds an unpacked beta. PR builds attach it as an Actions artifact, without publishing to the Chrome Web Store. See `docs/chrome-extension.md`.
 - **Proxy / dispatch / push:** the proxy Worker deploys through Cloudflare Workers Builds on push to `main` (`bun check` and tests run first); `deploy-nodes.yml` deploys the dispatch and nodes-outbound Workers from GitHub Actions; `deploy-push-server.yml` deploys the push server.
 
 ## CI / quality gates
 
-CI runs on every push to `main` and on pull requests (`.github/workflows/ci.yml`).
-The gates, in
-order, are: **format → lint → check → knip → build → test**, all on Bun
-`1.4.4` with a frozen lockfile.
+CI runs on every push to any branch, on pull requests and on demand
+(`.github/workflows/ci.yml`). The gates, in order, are: **format → lint → check → knip → build → test**, all on Bun
+`1.4.4` with a frozen lockfile. The order lives in `scripts/check-source.sh`, which CI runs and the Netlify build
+runs before the web export.
 
 ## License
 

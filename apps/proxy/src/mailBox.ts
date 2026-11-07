@@ -1,6 +1,7 @@
-import { bytesToHex, sha256, stringToBytes } from 'viem';
+import { sha256, stringToBytes } from 'viem';
 import { isMailId } from '@stage-labs/client/mail/mailbox';
-import { putChunks, readChunks, storedChunkKeys, type ArchiveNamespace, type ArchiveStub } from './historyStore.ts';
+import { randomHex } from '@stage-labs/client/ids';
+import { putChunks, readChunks, storedChunkKeys, type ObjectStub } from './durableChunks.ts';
 
 const MAILBOX_URL = 'https://mailbox/';
 const MAILBOX_MAX_BYTES = 512 * 1024 * 1024;
@@ -38,13 +39,12 @@ type Fields = Record<string, unknown>;
 type Op = (storage: MailStorage, body: Fields, now: number) => Promise<Response>;
 
 const isFields = (value: unknown): value is Fields => typeof value === 'object' && value !== null;
-const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+export const stringOf = (value: unknown): string => (typeof value === 'string' ? value : '');
 const done = (status: number): Response => new Response(null, { status });
 const mailKey = (id: string): string => `mail:${id}`;
 const bodyPrefix = (id: string): string => `body:${id}:`;
 const nonceKey = (nonce: string): string => `nonce:${nonce}`;
 const sessionKey = (token: string): string => `session:${sha256(stringToBytes(token)).slice(2)}`;
-const randomHex = (bytes: number): string => bytesToHex(crypto.getRandomValues(new Uint8Array(bytes))).slice(2);
 
 function keyRecord(value: unknown): MailKeyRecord | null {
   if (!isFields(value) || typeof value.issuedAt !== 'number') return null;
@@ -65,10 +65,10 @@ async function getOne(storage: MailStorage, key: string): Promise<unknown> {
 }
 
 async function ownedMail(storage: MailStorage, body: Fields): Promise<MailRecord | null> {
-  const id = text(body.id);
+  const id = stringOf(body.id);
   if (!isMailId(id)) return null;
   const record = mailRecord(await getOne(storage, mailKey(id)));
-  return record !== null && record.owner === text(body.owner) ? record : null;
+  return record !== null && record.owner === stringOf(body.owner) ? record : null;
 }
 
 function expiryOf(value: unknown): number {
@@ -110,7 +110,7 @@ const challenge: Op = async (storage, _body, now) => {
 };
 
 const consume: Op = async (storage, body, now) => {
-  const nonce = text(body.nonce);
+  const nonce = stringOf(body.nonce);
   if (!NONCE.test(nonce)) return done(401);
   const expiresAt = await getOne(storage, nonceKey(nonce));
   if (typeof expiresAt !== 'number') return done(401);
@@ -119,7 +119,7 @@ const consume: Op = async (storage, body, now) => {
 };
 
 const openSession: Op = async (storage, body, now) => {
-  const owner = text(body.owner);
+  const owner = stringOf(body.owner);
   if (owner === '') return done(400);
   await prune(storage, 'session:', now, MAX_OPEN - 1);
   const token = randomHex(32);
@@ -136,13 +136,13 @@ async function sessionOwner(storage: MailStorage, token: string, now: number): P
 }
 
 const authorize: Op = async (storage, body, now) => {
-  const owner = await sessionOwner(storage, text(body.token), now);
+  const owner = await sessionOwner(storage, stringOf(body.token), now);
   return owner === null ? done(401) : Response.json({ owner });
 };
 
 function signedIn(op: Op): Op {
   return async (storage, body, now) => {
-    const owner = await sessionOwner(storage, text(body.token), now);
+    const owner = await sessionOwner(storage, stringOf(body.token), now);
     if (owner === null) return done(401);
     const res = await op(storage, { ...body, owner }, now);
     const headers = new Headers(res.headers);
@@ -152,7 +152,7 @@ function signedIn(op: Op): Op {
 }
 
 const list: Op = async (storage, body) => {
-  const owner = text(body.owner);
+  const owner = stringOf(body.owner);
   const mails = [...(await storage.list({ prefix: 'mail:' })).values()]
     .map(mailRecord)
     .filter((mail): mail is MailRecord => mail !== null && mail.owner === owner)
@@ -225,11 +225,7 @@ export async function mailboxFetch(request: Request, storage: MailStorage, now =
   return handler(storage, isFields(body) ? body : {}, now);
 }
 
-export function mailboxStub<Id>(ns: ArchiveNamespace<Id>, label: string): ArchiveStub {
-  return ns.get(ns.idFromName(label));
-}
-
-export function mailboxCall(stub: ArchiveStub, op: string, body: Fields = {}): Promise<Response> {
+export function mailboxCall(stub: ObjectStub, op: string, body: Fields = {}): Promise<Response> {
   return stub.fetch(`${MAILBOX_URL}${op}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
 }
 
@@ -240,16 +236,16 @@ interface SealedMail {
   index: string;
 }
 
-export async function storeMail(stub: ArchiveStub, mail: SealedMail, sealed: Uint8Array): Promise<number> {
+export async function storeMail(stub: ObjectStub, mail: SealedMail, sealed: Uint8Array): Promise<number> {
   const headers = { 'x-mail-owner': mail.owner, 'x-mail-key': mail.publicKey, 'x-mail-id': mail.id, 'x-mail-index': mail.index };
   return (await stub.fetch(`${MAILBOX_URL}store`, { method: 'POST', headers, body: sealed })).status;
 }
 
-export async function saveMailKey(stub: ArchiveStub, key: MailKeyRecord): Promise<number> {
+export async function saveMailKey(stub: ObjectStub, key: MailKeyRecord): Promise<number> {
   return (await mailboxCall(stub, 'register', { ...key })).status;
 }
 
-export async function readMailKey(stub: ArchiveStub): Promise<MailKeyRecord | null> {
+export async function readMailKey(stub: ObjectStub): Promise<MailKeyRecord | null> {
   const res = await mailboxCall(stub, 'key');
   return res.ok ? keyRecord(await res.json()) : null;
 }

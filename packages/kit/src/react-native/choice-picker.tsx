@@ -1,16 +1,14 @@
+import type { CHOICE_PICKER_DISPLAY_STYLES, CHOICE_PICKER_VARIANTS } from '../kit-vocabulary';
 import { useState } from 'react';
 import { Pressable, Text as RNText, View, type ViewStyle } from 'react-native';
 import type { ValidationResult } from '../a2ui/protocol';
 import { styleList } from '../control.styles';
-import { FONT_SIZE, fontName } from '../tokens';
+import { FONT_SIZE, RADIUS_FULL, fontName } from '../tokens';
 import { accessibilityProps, type A2uiCommonProps } from './a2ui-props';
 import { CheckboxBox, checkboxColors } from './check-box';
 import { WithChecks } from './control-trigger';
 import { TextField } from './text-field';
-import { useKitScheme } from './theme-context';
-import { loadKitFonts } from './fonts.load';
-
-loadKitFonts();
+import { useKitColors } from './theme-context';
 
 export interface ChoiceOption {
   label: string;
@@ -18,9 +16,9 @@ export interface ChoiceOption {
   disabled?: boolean;
 }
 
-export type ChoicePickerVariant = 'mutuallyExclusive' | 'multipleSelection';
+export type ChoicePickerVariant = (typeof CHOICE_PICKER_VARIANTS)[number];
 
-export type ChoicePickerDisplayStyle = 'checkbox' | 'chips';
+export type ChoicePickerDisplayStyle = (typeof CHOICE_PICKER_DISPLAY_STYLES)[number];
 
 export interface ChoicePickerProps extends A2uiCommonProps {
   options: readonly ChoiceOption[];
@@ -100,7 +98,7 @@ function Chip({ option, selected, disabled, palette, onPick }: OptionViewProps):
       style={{
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 999,
+        borderRadius: RADIUS_FULL,
         borderWidth: 1,
         borderColor: selected ? palette.head : palette.border,
         backgroundColor: selected ? palette.head : 'transparent',
@@ -155,9 +153,8 @@ export function ChoicePicker(props: ChoicePickerProps): React.ReactElement {
     weight,
     accessibility,
   } = props;
-  const scheme = useKitScheme();
-  const dark = props.dark ?? scheme === 'dark';
-  const palette = checkboxColors(dark);
+  const { dark, palette: kitColors } = useKitColors(props.dark, 'static');
+  const palette = checkboxColors(dark, kitColors);
   const [query, setQuery] = useState('');
   const [selected, pick] = useSelection(props);
   const chips = displayStyle === 'chips';

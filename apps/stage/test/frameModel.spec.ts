@@ -1,39 +1,15 @@
 import { describe, expect, test } from 'bun:test';
 import type { HistoryEntry } from '@stage-labs/client/types';
-import { DELETE_MESSAGE_TYPE_ID } from '@stage-labs/client/xmtp/deleteMessage';
 import type { FrameContent, FrameMessage } from '@stage-labs/client/xmtp/frame';
-import {
-  frameActionContent,
-  frameCardModel,
-  frameIsDeleted,
-  frameLinkOf,
-  frameLocked,
-  frameMoreBelow,
-  frameNodeOf,
-  frameOf,
-  frameMediaUrl,
-  framePreviewCap,
-  frameRenders,
-  frameScreenTitle,
-  frameStackOf,
-  isFrameActionEntry,
-  navigateFrame,
-  nodeRequestOf,
-  withFrameNav,
-  type FrameStacks,
-} from '../components/frame/frame.model';
+import { frameCardModel, frameMoreBelow, frameMediaUrl, framePreviewCap, frameScreenTitle } from '../components/frame/frame.model';
+import { frameActionContent, frameLocked, frameNodeOf, frameOf, frameRenders, nodeRequestOf } from '../lib/frames/frame.model';
+import { isFrameActionEntry } from '@stage-labs/client/xmtp/entryPayload';
+import { frameKeysOf } from '../lib/frames/frameKeys';
+import { frameLinkOf } from '@stage-labs/client/routing/deepLinks';
+import { frameStackOf, makeFrameStacks, navigateFrame, withFrameNav, type FrameStacks } from '../lib/frames/frameStacks';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf } from './frameFixtures';
-
-const base: HistoryEntry = {
-  id: 'msg-frame-1',
-  ts: '2026-10-01T04:00:00.000Z',
-  station: 'xmtp',
-  line: 'stage://xmtp/a/conv1',
-  from: 'stage://xmtp/a/user/agent',
-  to: 'stage://xmtp/a/conv1',
-  messageId: 'msg-frame-1',
-};
+import { entry, messageEntry } from './helpers';
 
 function surface(surfaceId: string, components: Record<string, unknown>[]): FrameMessage {
   return { version: 'v1.0', createSurface: { surfaceId, catalogId: KIT_CATALOG, components } };
@@ -47,31 +23,33 @@ const REPORT = surface('home', [
 
 const report: FrameContent = { messages: [REPORT] };
 
+const frameEntry = (content: unknown): HistoryEntry => messageEntry('msg-frame-1', 'frame', content);
+
 describe('frameOf', () => {
   test('reads a valid frame from the entry payload', () => {
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: report } })).toEqual(report);
+    expect(frameOf(frameEntry(report))).toEqual(report);
   });
 
   test('parses each payload once and returns the same frame', () => {
-    const entry = { ...base, payload: { contentType: 'frame', frame: { messages: [REPORT] } } };
-    expect(frameOf(entry)).toBe(frameOf(entry));
+    const shown = frameEntry({ messages: [REPORT] });
+    expect(frameOf(shown)).toBe(frameOf(shown));
   });
 
   test('ignores entries without a frame, with a broken one or with a ChatKit widget', () => {
-    expect(frameOf(base)).toBeNull();
+    expect(frameOf(entry('plain'))).toBeNull();
     expect(frameOf(undefined)).toBeNull();
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { messages: 'Card' } } })).toBeNull();
-    expect(frameOf({ ...base, payload: { contentType: 'frame', frame: { widget: { type: 'Card' } } } })).toBeNull();
+    expect(frameOf(frameEntry({ messages: 'Card' }))).toBeNull();
+    expect(frameOf(frameEntry({ widget: { type: 'Card' } }))).toBeNull();
   });
 });
 
 describe('isFrameActionEntry', () => {
   test('only an entry carrying a decoded frame action is a frame tap', () => {
     const frameAction = { frameId: 'msg-frame-1', action: actionOf('approve'), label: 'Approve' };
-    expect(isFrameActionEntry({ ...base, payload: { contentType: 'frameAction', frameAction } })).toBe(true);
-    expect(isFrameActionEntry({ ...base, text: 'Frame action: approve', payload: { contentType: 'frameAction' } })).toBe(false);
-    expect(isFrameActionEntry({ ...base, payload: { contentType: 'frame', frame: report } })).toBe(false);
-    expect(isFrameActionEntry(base)).toBe(false);
+    expect(isFrameActionEntry(messageEntry('tap', 'frameAction', frameAction))).toBe(true);
+    expect(isFrameActionEntry(messageEntry('tap', 'frameAction', 'Frame action: approve'))).toBe(false);
+    expect(isFrameActionEntry(frameEntry(report))).toBe(false);
+    expect(isFrameActionEntry(entry('plain'))).toBe(false);
   });
 });
 
@@ -129,9 +107,8 @@ describe('frames with a node source', () => {
       host: 'nodes.stage.box',
     });
     expect(frameNodeOf(report)).toBeNull();
-    expect(frameNodeOf({ ...report, source: { url: 'http://btc.example.com/' } })).toBeNull();
-    expect(frameNodeOf({ ...report, source: { url: 'https://localhost/' } })).toBeNull();
-    expect(frameNodeOf({ ...report, source: { url: 'https://user:pw@btc.example.com/' } })).toBeNull();
+    for (const url of ['http://btc.example.com/', 'https://localhost/', 'https://user:pw@btc.example.com/'])
+      expect(frameNodeOf({ ...report, source: { url } })).toBeNull();
   });
 
   test('a frame with a node stays read only until the chat is known to be accepted', () => {
@@ -139,29 +116,6 @@ describe('frames with a node source', () => {
     expect([true, false, undefined].map((allowed) => frameLocked(sourced, allowed))).toEqual([false, true, true]);
     expect([true, false, undefined].map((allowed) => frameLocked(report, allowed))).toEqual([false, true, false]);
     expect(frameLocked({ ...report, source: { url: 'http://btc.example.com/' } }, undefined)).toBe(false);
-  });
-});
-
-describe('frames deleted after they were sent', () => {
-  const frameEntry: HistoryEntry = { ...base, payload: { contentType: 'frame', frame: report } };
-  const request = (id: string, from: string, deletes: string): HistoryEntry => ({
-    ...base,
-    id,
-    messageId: id,
-    from,
-    payload: { contentType: DELETE_MESSAGE_TYPE_ID, deletes },
-  });
-  const none: ReadonlySet<string> = new Set();
-
-  test('a delete from the frame sender, or one made on this device, removes the frame', () => {
-    expect(frameIsDeleted(frameEntry, [request('d1', base.from, 'msg-frame-1')], none)).toBe(true);
-    expect(frameIsDeleted(frameEntry, [], new Set(['msg-frame-1']))).toBe(true);
-  });
-
-  test('a delete from someone else or for another message leaves the frame', () => {
-    expect(frameIsDeleted(frameEntry, [request('d1', 'stage://xmtp/a/user/other', 'msg-frame-1')], none)).toBe(false);
-    expect(frameIsDeleted(frameEntry, [request('d1', base.from, 'msg-other')], none)).toBe(false);
-    expect(frameIsDeleted(frameEntry, [], none)).toBe(false);
   });
 });
 
@@ -249,5 +203,31 @@ describe('the screen stack of each frame', () => {
       ['home'],
     );
     expect(deep).toHaveLength(20);
+  });
+
+  test('a stack store tells its views about each step, and clearing sends every frame back to its start', () => {
+    const stacks = makeFrameStacks();
+    let changes = 0;
+    stacks.subscribe(() => {
+      changes += 1;
+    });
+    stacks.navigate('msg-1', 'home', { kind: 'open', surfaceId: 's1' });
+    stacks.navigate('msg-1', 'home', { kind: 'open', surfaceId: 's1' });
+    expect([stacks.stackOf('msg-1'), changes]).toEqual([['home', 's1'], 1]);
+    stacks.clear();
+    stacks.clear();
+    expect([stacks.stackOf('msg-1'), changes]).toEqual([undefined, 2]);
+  });
+});
+
+describe('the keys of a shown frame', () => {
+  test('a chat frame keeps one session per account and one screen stack per message', () => {
+    expect(frameKeysOf({ kind: 'chat', epoch: 3, messageId: 'msg-1' })).toEqual({ session: '3:msg-1', stack: 'msg-1' });
+  });
+
+  test('widgets and add previews use one key for their session and their screens', () => {
+    expect(frameKeysOf({ kind: 'widget', widgetId: 'w1' })).toEqual({ session: 'live:w1', stack: 'live:w1' });
+    expect(frameKeysOf({ kind: 'linkPreview', nodeKey: 'k1' })).toEqual({ session: 'preview:k1', stack: 'preview:k1' });
+    expect(frameKeysOf({ kind: 'codePreview', nodeKey: 'k1' })).toEqual({ session: 'node:k1', stack: 'node:k1' });
   });
 });

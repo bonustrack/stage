@@ -1,23 +1,10 @@
 import { describe, expect, test } from 'bun:test';
-import { AccountChangedError, NoAccountError } from '../lib/xmtp.client.core';
+import { AccountChangedError, NoAccountError } from '../lib/accountSelection';
 import { makeGlobalStream } from '../lib/xmtp.stream.core';
+import { createClientSlot } from '../lib/xmtp.state.core';
 
 interface Context {
   id: string;
-}
-
-function deferred<T>() {
-  let resolve: (value: T) => void = () => {
-    throw new Error('Not initialized');
-  };
-  let reject: (error: unknown) => void = () => {
-    throw new Error('Not initialized');
-  };
-  const promise = new Promise<T>((yes, no) => {
-    resolve = yes;
-    reject = no;
-  });
-  return { promise, resolve, reject };
 }
 
 async function settle(): Promise<void> {
@@ -25,7 +12,7 @@ async function settle(): Promise<void> {
 }
 
 function harness() {
-  const state = { account: 'a' as string | null, wanted: true, live: 0, closed: 0, stopped: 0 };
+  const state = { account: 'a' as string | null, wanted: true, live: 0, closed: 0 };
   const errors: unknown[] = [];
   const messages: string[] = [];
   const timers = new Map<symbol, { run: () => void; delay: number }>();
@@ -63,18 +50,12 @@ function harness() {
     closed: () => {
       state.closed += 1;
     },
-    stopped: () => {
-      state.stopped += 1;
-    },
-    report: (error) => {
-      errors.push(error);
-    },
+    stopped: () => undefined,
+    report: (error) => errors.push(error),
     schedule: (run, delay) => {
       const id = Symbol();
       timers.set(id, { run, delay });
-      return () => {
-        timers.delete(id);
-      };
+      return () => timers.delete(id);
     },
   });
   const fire = async (): Promise<number> => {
@@ -110,7 +91,7 @@ describe('global message stream lifecycle', () => {
 
   test('cancellation during preparation restarts promptly without failure backoff', async () => {
     const h = harness();
-    const pending = deferred<Context>();
+    const pending = Promise.withResolvers<Context>();
     h.hooks.prepare = async (assertCurrent) => {
       const context = await pending.promise;
       assertCurrent();
@@ -130,7 +111,7 @@ describe('global message stream lifecycle', () => {
 
   test('teardown while opening cancels the obsolete handle only once', async () => {
     const h = harness();
-    const pending = deferred<undefined>();
+    const pending = Promise.withResolvers<undefined>();
     h.hooks.wait = () => pending.promise;
     const first = h.stream.ensure();
     await settle();
@@ -195,9 +176,22 @@ describe('global message stream lifecycle', () => {
     expect([...h.timers.values()].map((timer) => timer.delay)).toEqual([5_000]);
   });
 
+  test('an account switch while the client opens rearms at once instead of backing off', async () => {
+    const h = harness();
+    const slot = createClientSlot<Context>(() => undefined);
+    const opening = Promise.withResolvers<Context>();
+    h.hooks.prepare = () => slot.getOrCreate(() => opening.promise);
+    const first = h.stream.ensure();
+    slot.reset();
+    opening.resolve({ id: 'a' });
+    await first;
+    expect(h.errors).toEqual([]);
+    expect([...h.timers.values()].map((timer) => timer.delay)).toEqual([500]);
+  });
+
   test('a genuine stale failure is reported without penalizing the new account', async () => {
     const h = harness();
-    const pending = deferred<Context>();
+    const pending = Promise.withResolvers<Context>();
     const error = new Error('Storage read failed');
     h.hooks.prepare = () => pending.promise;
     const first = h.stream.ensure();
@@ -221,7 +215,7 @@ describe('global message stream lifecycle', () => {
 
   test('last-demand removal cancels retries and never resurrects an obsolete start', async () => {
     const h = harness();
-    const pending = deferred<Context>();
+    const pending = Promise.withResolvers<Context>();
     h.hooks.prepare = async (assertCurrent) => {
       const context = await pending.promise;
       assertCurrent();

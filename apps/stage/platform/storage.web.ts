@@ -33,16 +33,22 @@ function deleteKey(key: string): void {
   if (store) removeNamespaced(store, key);
 }
 
+function settled<T>(run: () => T): Promise<T> {
+  return new Promise((resolve) => {
+    resolve(run());
+  });
+}
+
 export const secureStorage: SecureStorage = {
-  get: (key) => Promise.resolve(readKey(SECURE_PREFIX + key)),
-  set: (key, value) => {
-    writeKey(SECURE_PREFIX + key, value);
-    return Promise.resolve();
-  },
-  delete: (key) => {
-    deleteKey(SECURE_PREFIX + key);
-    return Promise.resolve();
-  },
+  get: (key) => settled(() => readKey(SECURE_PREFIX + key)),
+  set: (key, value) =>
+    settled(() => {
+      writeKey(SECURE_PREFIX + key, value);
+    }),
+  delete: (key) =>
+    settled(() => {
+      deleteKey(SECURE_PREFIX + key);
+    }),
   subscribe: (keys, listener) => {
     const watched = new Set(keys.map((key) => namespacedKey(SECURE_PREFIX + key)));
     const changed = (event: StorageEvent): void => {
@@ -56,13 +62,14 @@ export const secureStorage: SecureStorage = {
 };
 
 export const appStorage: AppStorage = {
-  get: (key) => Promise.resolve(readKey(key)),
-  set: (key, value) => {
-    writeKey(key, value);
-    return Promise.resolve();
-  },
-  delete: (key) => {
-    deleteKey(key);
-    return Promise.resolve();
-  },
+  get: (key) => settled(() => readKey(key)),
+  getSync: readKey,
+  set: (key, value) =>
+    settled(() => {
+      writeKey(key, value);
+    }),
+  delete: (key) =>
+    settled(() => {
+      deleteKey(key);
+    }),
 };

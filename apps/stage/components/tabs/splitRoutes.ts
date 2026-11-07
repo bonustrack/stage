@@ -1,30 +1,8 @@
-import { isPeerHandleSegment } from '@stage-labs/client/routing/handles';
-import type { HomeViewContent } from '@stage-labs/client/xmtp/readState';
-import { isOnboardingRoute } from '../onboarding/nextRoute.model';
-import { MENU_PAGES } from './menuPages';
+import { channelPath } from '@stage-labs/client/routing/routes';
+import type { HomeView } from '../../lib/homeView';
+import { PAGES, PAGE_LIST, splitAt, tabPageAt } from './pages';
 
-export const BOARD_ROUTE = '/board';
-
-const TAB_ROUTES = new Set(['/', BOARD_ROUTE, '/contacts', '/wallet', '/settings']);
-
-const CHANNEL_PREFIX = '/channel/';
-
-const SPLIT_PREFIXES = [
-  CHANNEL_PREFIX,
-  '/profile/',
-  '/settings',
-  '/wallet',
-  '/add-members',
-  '/frame',
-  ...MENU_PAGES.map((page) => page.href),
-];
-
-type HomeView = HomeViewContent['view'];
-
-function isDmRoute(pathname: string): boolean {
-  const segments = pathname.split('/').filter(Boolean);
-  return segments.length === 1 && isPeerHandleSegment(segments[0]);
-}
+const CHANNEL_PREFIX = channelPath('');
 
 export function channelRouteConvId(pathname: string): string | null {
   if (!pathname.startsWith(CHANNEL_PREFIX)) return null;
@@ -33,18 +11,15 @@ export function channelRouteConvId(pathname: string): string | null {
 }
 
 export function isTabRoute(pathname: string): boolean {
-  return TAB_ROUTES.has(pathname);
+  return tabPageAt(pathname) !== undefined;
 }
 
 export function isSplitRoute(pathname: string): boolean {
-  if (isOnboardingRoute(pathname)) return false;
-  if (pathname === '/' || pathname === '/new') return true;
-  if (isDmRoute(pathname)) return true;
-  return SPLIT_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return splitAt(pathname) === 'pane';
 }
 
 export function isRailOnlyRoute(pathname: string): boolean {
-  return pathname === BOARD_ROUTE;
+  return splitAt(pathname) === 'rail';
 }
 
 export function isRailRoute(pathname: string): boolean {
@@ -52,8 +27,7 @@ export function isRailRoute(pathname: string): boolean {
 }
 
 export function homeViewAt(pathname: string): HomeView | null {
-  if (pathname === BOARD_ROUTE) return 'board';
-  return pathname === '/' ? 'chats' : null;
+  return PAGE_LIST.find((page) => page.home !== undefined && page.href === pathname)?.home ?? null;
 }
 
 export function isBoardHome(pathname: string, lastView: HomeView): boolean {
@@ -61,5 +35,5 @@ export function isBoardHome(pathname: string, lastView: HomeView): boolean {
 }
 
 export function homeRouteOf(view: HomeView): string {
-  return view === 'board' ? BOARD_ROUTE : '/';
+  return view === 'board' ? PAGES.board.href : PAGES.chats.href;
 }

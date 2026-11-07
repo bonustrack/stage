@@ -1,20 +1,21 @@
 import {
   DEFAULT_CHANNEL_FIELDS,
+  channelFieldsSchema,
   parseChannelFields,
   toggleChannelFieldIn,
   type ChannelField,
+  type ChannelFieldPreferences,
   type ChannelFields,
-  type ChannelFieldView,
-} from '../components/home/fields.model';
+} from './channelFields.model';
 import { appStorage } from '../platform/storage';
 import { reported } from './errorPolicy';
-import { createValueStore } from './persistedStore';
+import { createValueStore, type StoreSource } from './persistedStore';
+import type { HomeView } from './homeView';
 
 const prefs = createValueStore({
   key: 'home.fields.',
   default: DEFAULT_CHANNEL_FIELDS,
-  deserialize: parseChannelFields,
-  serialize: JSON.stringify,
+  schema: channelFieldsSchema(DEFAULT_CHANNEL_FIELDS),
   perAccount: true,
   storage: {
     get: async (key) => {
@@ -26,10 +27,12 @@ const prefs = createValueStore({
   },
 });
 
-export function useChannelFields(view: ChannelFieldView): ChannelFields {
+export const channelFieldsSource: StoreSource<ChannelFieldPreferences> = prefs;
+
+export function useChannelFields(view: HomeView): ChannelFields {
   return prefs.use()[view];
 }
 
-export function toggleChannelField(view: ChannelFieldView, field: ChannelField): void {
+export function toggleChannelField(view: HomeView, field: ChannelField): void {
   void prefs.update((current) => toggleChannelFieldIn(current, view, field)).catch(reported('channelFields.save'));
 }

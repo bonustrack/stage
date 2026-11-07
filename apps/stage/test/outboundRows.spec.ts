@@ -3,7 +3,6 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import {
   matchConfirmed,
   mergeConfirmed,
-  optimisticRowPreview,
   outboundView,
   pendingFromMe,
   recordSent,
@@ -11,20 +10,14 @@ import {
   type OutboundState,
   type OutboundView,
 } from '../components/conversation/outboundRows.model';
+import { isLocalId, mintLocalId, optimisticEntryOf, optimisticRowPreview } from '../components/composer/outbound';
+import { entry as historyEntry } from './helpers';
 
 const ME = 'metro://xmtp/me';
 const T0 = Date.parse('2026-09-25T10:00:00.000Z');
 
-const entry = (id: string, ms: number, text: string, extra: Partial<HistoryEntry> = {}): HistoryEntry => ({
-  id,
-  ts: new Date(T0 + ms).toISOString(),
-  station: 'xmtp',
-  line: 'l',
-  from: ME,
-  to: 'l',
-  text,
-  ...extra,
-});
+const entry = (id: string, ms: number, text: string, extra: Partial<HistoryEntry> = {}): HistoryEntry =>
+  historyEntry(id, { ts: new Date(T0 + ms).toISOString(), from: ME, text, ...extra });
 
 const pendingState = (...optimistic: HistoryEntry[]): OutboundState => ({ optimistic, confirmedIds: new Map() });
 const keyOf = (view: OutboundView, id: string) => view.localIdOf.get(id) ?? id;
@@ -94,7 +87,7 @@ describe('matching pending messages to the live feed', () => {
   });
 
   test('an attachment without a registered upload is only confirmed by its sent id', () => {
-    const photo = entry('tmp_1', 0, '', { payload: { attachments: [{ mime: 'image/png' }] } });
+    const photo = entry('tmp_1', 0, '', { payload: { attachments: [{ kind: 'image', mime: 'image/png' }] } });
     const live = [entry('real_1', 400, '')];
     expect(matchConfirmed([photo], live, ME, new Map()).size).toBe(0);
     expect(matchConfirmed([photo], live, ME, new Map([['tmp_1', 'real_1']])).get('tmp_1')).toBe('real_1');
@@ -129,6 +122,41 @@ describe('optimisticRowPreview', () => {
     expect(optimisticRowPreview('', [{ mime: 'image/png' }])).toBe('Sent an image');
     expect(optimisticRowPreview(' ', [{ mime: 'image/png' }, { name: 'b.jpg' }, { mime: 'image/heic' }])).toBe('Sent 3 images');
     expect(optimisticRowPreview('', [{ name: 'a.jpg' }, { mime: 'application/pdf' }])).toBe('Sent 2 attachments');
+  });
+});
+
+describe('local ids', () => {
+  test('a minted id is local and unique, a delivered id is not local', () => {
+    const a = mintLocalId();
+    const b = mintLocalId();
+    expect(a).not.toBe(b);
+    expect([isLocalId(a), isLocalId(b), isLocalId('real_1')]).toEqual([true, true, false]);
+  });
+});
+
+describe('optimisticEntryOf', () => {
+  const at = new Date(Date.UTC(2026, 9, 5, 10));
+  const photo = { id: 'p1', url: 'file:///photo.jpg', kind: 'image', mime: 'image/jpeg', size: 10, name: 'photo.jpg' };
+
+  test('a text reply becomes my message on the line, with no payload', () => {
+    expect(optimisticEntryOf({ localId: 'tmp_1', text: 'hi', attachments: [], replyTo: 'm1' }, 'line', ME, at)).toEqual({
+      id: 'tmp_1',
+      ts: at.toISOString(),
+      station: 'xmtp',
+      line: 'line',
+      from: ME,
+      to: 'line',
+      text: 'hi',
+      replyTo: 'm1',
+    });
+  });
+
+  test('files ride in an attachments payload unless the send brings its own payload', () => {
+    const files = optimisticEntryOf({ localId: 'tmp_2', text: '', attachments: [photo] }, 'line', ME, at);
+    expect(files.text).toBeUndefined();
+    expect(files.payload).toEqual({ attachments: [photo] });
+    const own = { contentType: 'signatureRequest' };
+    expect(optimisticEntryOf({ localId: 'tmp_3', text: 'q', attachments: [photo], payload: own }, 'line', ME, at).payload).toBe(own);
   });
 });
 

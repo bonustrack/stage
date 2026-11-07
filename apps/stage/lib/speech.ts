@@ -18,6 +18,8 @@ declare class SpeechModule extends NativeModule<SpeechEvents> {
 
 const native = requireOptionalNativeModule<SpeechModule>('StageSpeech');
 
+export const dictationOffered = true;
+
 export const speech: SpeechBridge = native
   ? {
       availability: () => native.availability(),

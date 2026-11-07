@@ -3,7 +3,7 @@ import type { HDAccount } from 'viem/accounts';
 import { getEntryPoint, KERNEL_V3_1 } from '@zerodev/sdk/constants';
 import { createKernelAccount, type CreateKernelAccountReturnType } from '@zerodev/sdk';
 import { signerToEcdsaValidator } from '@zerodev/ecdsa-validator';
-import { ENTRY_POINT_VERSION } from './config';
+export const ENTRY_POINT_VERSION = '0.7' as const;
 
 export const ENTRY_POINT = getEntryPoint(ENTRY_POINT_VERSION);
 

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { BUTTON_COLORS, BUTTON_FILLS, SIZES, resolveButtonVariant, resolveColors } from '../src/button.styles';
+import { BUTTON_COLORS, BUTTON_FILLS, resolveButtonVariant, resolveColors } from '../src/button.styles';
+import { schemePalette } from '../src/tokens';
 
 describe('resolveColors', () => {
   test('full matrix snapshot (color x variant x dark)', () => {
@@ -15,14 +16,8 @@ describe('resolveColors', () => {
   });
 
   test('secondary solid gets a border, other solids do not', () => {
-    expect(resolveColors('secondary', 'solid', false).borderColor).toBe('#e4e4e5');
+    for (const dark of [false, true]) expect(resolveColors('secondary', 'solid', dark).borderColor).toBe(schemePalette(dark).border);
     expect(resolveColors('info', 'solid', false).borderColor).toBeUndefined();
-  });
-});
-
-describe('SIZES', () => {
-  test('snapshot', () => {
-    expect(SIZES).toMatchSnapshot();
   });
 });
 

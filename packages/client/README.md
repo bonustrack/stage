@@ -8,7 +8,7 @@
 
 The rule for what lives here: logic that needs no React, React Native, Expo or XMTP SDK value import, no env read and no storage. Hooks, SDK calls, env and storage stay in the app, which imports the logic from here.
 
-It covers the XMTP orchestration cores (content codecs and the JSON codecs table, humanisation, message builders, channel filtering/caching, consent, groups, envelopes), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev ECDSA accounts, recovery), wallet formatting/balances/tx decoding, simulation and confirm summaries, message body, link card and code block parsing, read-only API clients (ENS, DefiLlama prices, GitHub link detection), x402 challenges and payments, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
+It covers the XMTP orchestration cores (the content type table with one descriptor per content type, the canonical message shape and its envelope, what each context shows, humanisation, message builders, channel filtering/caching, groups), onchain identity (Basenames and `*.stage.base.eth` names, peer profiles, avatar URLs), the smart-account layer (accounts, keys, ZeroDev ECDSA accounts, recovery), wallet formatting/balances/tx decoding, simulation and confirm summaries, message body, link card and code block parsing, read-only API clients (ENS, DefiLlama prices, GitHub link detection), x402 challenges and payments, and the shared types that tie it all together. Boundary data is validated with zod (`validate.ts`); XMTP content is always decoded through a schema.
 
 ## Install
 
@@ -23,42 +23,26 @@ bun install            # from the repo root
 "dependencies": { "@stage-labs/client": "workspace:*" }
 ```
 
-The exports point at `.ts` source, so consumers bundle the TypeScript directly (Metro/Expo for every platform). There is no build step.
+The exports point at `.ts` source, so consumers bundle the TypeScript directly (Metro for the app, wrangler for the Workers, esbuild for the desktop main process). There is no build step.
 
 ## Usage
 
 Import from the granular subpath exports so bundlers tree-shake what you do not use:
 
 ```ts
-import { previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
 import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
-import { detectEmbed } from '@stage-labs/client/embed/detect';
+import { youtubeIdOf } from '@stage-labs/client/embed/detect';
 import type { HistoryEntry } from '@stage-labs/client/types';
 ```
 
 There is no root barrel: every module is imported through its own subpath export.
 
+`@stage-labs/client/xmtp/sendFetch` has one runtime importer that neither the TypeScript graph nor knip sees: the `@xmtp/browser-sdk` patch (`patches/@xmtp%2Fbrowser-sdk@7.0.0.patch`) imports it into the SDK bundle. Renaming or moving that subpath breaks web messaging, so change the patch with it.
+
 ## Project structure
 
-```
-src/
-  xmtp/        # codecs, JSON codecs table, humanize, builders, line routing, channelsFilter/channelsCache, summarizeRow,
-               # consent, groups, envelope, clientErrors, polls, signatures, tx requests, read state, push server,
-               # message body segments (mentions, channels, links), channel link labels
-  identity/    # Basenames + stage names (read/write), onchain profiles, peer profile lookups, formatting
-  profile/     # avatar URL helper (stamp + IPFS gateway) and picture upload parsing
-  accounts/    # account records, key storage constants, HD index, device transfer
-  zerodev/     # Kernel smart accounts: configuration, ECDSA owner validator, HD derivation
-  wallet/      # formatting, assets, balances, prices, send, tx decode/simulate/error/confirm/wording
-  api/         # read-only clients: ens, defillama, github link detection
-  routing/     # deep links and handle parsing
-  embed/       # link/embed detection, link cards
-  image/       # EXIF/metadata stripping before upload
-  text/        # markdown helpers, code blocks
-  x402/        # x402 payment challenge parsing, amounts and payment authorization
-  validate.ts  # parseOrThrow zod boundary helper
-  types.ts     # shared domain types
-```
+The public API is the `exports` map in [`package.json`](./package.json): one subpath per module, grouped under `src/` by domain (`xmtp/`, `identity/`, `wallet/`, `mail/`, `nodes/`, `net/`, ...).
 
 ## Kernel key model
 
@@ -79,5 +63,5 @@ Linting is centralised at the repo root (`bun run lint`).
 
 ## Links
 
-- Consumed by [`apps/stage`](../../apps/stage)
+- Consumed by [`apps/stage`](../../apps/stage), the desktop shell [`apps/stage/desktop`](../../apps/stage/desktop), the Workers [`apps/proxy`](../../apps/proxy) and [`apps/dispatch`](../../apps/dispatch), and the `@xmtp/browser-sdk` patch (see Usage)
 - Design system: [`@stage-labs/kit`](../kit)
