@@ -6,6 +6,7 @@ import { HoverTooltip } from './HoverTooltip';
 import type { Shortcut } from './keys/keys.model';
 import { useShortcut } from './keys/keys';
 import { usePalette } from '../lib/theme';
+import { isCoarsePointer } from './layout/webLayout';
 import { Column } from './layout';
 
 interface HoverHandlers {
@@ -27,6 +28,10 @@ export function useHover(): { hovered: boolean; hoverProps: HoverHandlers } {
     [],
   );
   return { hovered, hoverProps };
+}
+
+export function hoverRevealed(hovered: boolean): boolean {
+  return hovered || isCoarsePointer();
 }
 
 export function HoverTint({ children, style }: { children: (hovered: boolean) => ReactNode; style?: ViewStyle }): React.ReactElement {

@@ -6,9 +6,8 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { CountTag } from '../CountTag';
 import { Eyebrow } from '../Eyebrow';
 import { AnchoredMenu, anchorRect, useAnchoredMenus } from '../AnchoredMenu';
-import { useHover } from '../hover';
+import { hoverRevealed, useHover } from '../hover';
 import { usePalette } from '../../lib/theme';
-import { isCoarsePointer } from '../layout/webLayout';
 import { hasListEdits, listEdits, pickerAnchorOf, pickerWidth, type ListEdits, type PickerAnchor } from './SidebarSection.model';
 import { toggleKey } from '@stage-labs/client/collections';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
@@ -168,7 +167,7 @@ export function SidebarSection({
     if (single === true) finish(toggleKey(draft, key, true));
     else setDraft((list) => toggleKey(list, key));
   };
-  const penShown = open || hovered || focused || isCoarsePointer();
+  const penShown = open || focused || hoverRevealed(hovered);
   return (
     <Column
       onPointerEnter={() => {

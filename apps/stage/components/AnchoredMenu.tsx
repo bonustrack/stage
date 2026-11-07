@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Platform, StyleSheet, useWindowDimensions, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { StyleSheet, useWindowDimensions, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { DropdownMenu, DropdownMenuSheet } from '@stage-labs/kit/react-native/menu';
 import { anchoredMenuStyle, type MenuPoint } from './AnchoredMenu.model';
@@ -16,7 +16,7 @@ export const PICKER_WIDTH = 300;
 
 export function useAnchoredMenus(): boolean {
   const { width } = useWindowDimensions();
-  return Platform.OS === 'web' && width >= ANCHORED_MENU_MIN_WIDTH && !isCoarsePointer();
+  return width >= ANCHORED_MENU_MIN_WIDTH && !isCoarsePointer();
 }
 
 export function menuPointOf(event: GestureResponderEvent): MenuPoint {

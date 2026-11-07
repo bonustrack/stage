@@ -9,11 +9,10 @@ import { convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconFullScreen } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFullScreen';
 import { GradientFade } from '../GradientFade';
-import { HoverIconButton } from '../hover';
+import { HoverIconButton, hoverRevealed } from '../hover';
 import { frameLocked, type FrameMessageHandler } from '../../lib/frames/frame.model';
 import type { FrameKeys } from '../../lib/frames/frameKeys';
 import { usePalette } from '../../lib/theme';
-import { isCoarsePointer } from '../layout/webLayout';
 import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import {
   FRAME_PREVIEW_BAR,
@@ -176,7 +175,7 @@ export function FrameSurface({
           <GradientFade color={pal.bg} height={FRAME_PREVIEW_FADE} solid="bottom" />
         </Column>
       ) : null}
-      {onFullScreen !== undefined && (depth > 0 || hovered || isCoarsePointer()) ? <FullScreenButton onPress={onFullScreen} /> : null}
+      {onFullScreen !== undefined && (depth > 0 || hoverRevealed(hovered)) ? <FullScreenButton onPress={onFullScreen} /> : null}
     </Column>
   );
 }

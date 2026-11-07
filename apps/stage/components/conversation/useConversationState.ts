@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { inboxIdOfUri, lineOfConv, userUriOf } from '@stage-labs/client/xmtp/line';
@@ -168,7 +167,7 @@ function useMentionCandidates(isGroup: boolean, memberAddrs: string[], peerAddr:
 
 function useConvFeed(convId: string | undefined, focus: string | undefined) {
   const activeLine = lineOfConv(convId ?? '');
-  const autoFocusNonce = useMemo(() => (focus || (Platform.OS === 'web' && !isCoarsePointer()) ? Date.now() : undefined), [focus, convId]);
+  const autoFocusNonce = useMemo(() => (focus || !isCoarsePointer() ? Date.now() : undefined), [focus, convId]);
 
   const xmtpFeed = useXmtpFeed(activeLine, !!convId);
   const fields = useConvFields(convId);
