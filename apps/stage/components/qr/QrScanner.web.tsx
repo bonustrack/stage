@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { View } from 'react-native';
-import { ignored, recover } from '../../lib/errorPolicy';
+import { ignored, recover, report } from '../../lib/errorPolicy';
 import { Column } from '../layout';
 import { useDomHost } from '../layout/webChrome';
 import { SCANNER_HEIGHT, type QrScannerProps } from './QrScanner.types';
@@ -117,7 +117,8 @@ function useCameraScan(host: HTMLElement | null, onScan: (text: string) => void)
           if (text === null || done) return;
           stop();
           onScanRef.current(text);
-        } catch {
+        } catch (err) {
+          report('qrScanner.read', err);
           fail(CAMERA_ERROR);
         } finally {
           reading = false;
@@ -145,7 +146,8 @@ function useCameraScan(host: HTMLElement | null, onScan: (text: string) => void)
         }
         start(read);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        report('qrScanner.camera', err);
         fail(CAMERA_ERROR);
       });
     return stop;

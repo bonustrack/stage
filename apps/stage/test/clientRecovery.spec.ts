@@ -61,7 +61,9 @@ describe('openWithRecovery', () => {
 
   test('without a way to free an installation the limit is reported at once', async () => {
     const { log, recovery: store } = recovery(null);
-    await expect(openWithRecovery(store, opener([LIMIT], log))).rejects.toBeInstanceOf(XmtpInstallationLimitError);
+    const failure = await openWithRecovery(store, opener([LIMIT], log)).catch((err: unknown) => err);
+    expect(failure).toBeInstanceOf(XmtpInstallationLimitError);
+    expect(failure instanceof Error ? failure.cause : null).toEqual(new Error(LIMIT));
     expect(log).toEqual(['open']);
   });
 

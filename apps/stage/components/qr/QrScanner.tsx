@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column } from '../layout';
+import { report } from '../../lib/errorPolicy';
 import { SCANNER_HEIGHT, type QrScannerProps } from './QrScanner.types';
 
 type CameraModule = typeof import('expo-camera');
@@ -22,7 +23,8 @@ function useCameraModule(): CameraLoad {
       .then((mod) => {
         if (alive) setState({ mod, failed: false });
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        report('qrScanner.load', err);
         if (alive) setState({ mod: null, failed: true });
       });
     return () => {
@@ -62,7 +64,8 @@ function LiveScanner({ mod, onScan, dark }: QrScannerProps & { mod: CameraModule
   useEffect(() => {
     const listener = AppState.addEventListener('change', (state) => {
       if (state === 'active')
-        void getPermission().catch(() => {
+        void getPermission().catch((err: unknown) => {
+          report('qrScanner.permission', err);
           setFailed(true);
         });
     });
@@ -80,7 +83,8 @@ function LiveScanner({ mod, onScan, dark }: QrScannerProps & { mod: CameraModule
       <PermissionPrompt
         dark={dark}
         onAllow={() => {
-          void requestPermission().catch(() => {
+          void requestPermission().catch((err: unknown) => {
+            report('qrScanner.permission', err);
             setFailed(true);
           });
         }}

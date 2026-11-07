@@ -3,6 +3,7 @@ import { isPeerHandleSegment, parseHandle } from '@stage-labs/client/routing/han
 import { resolveDmConvId, type DmResolveError } from '../dmResolve';
 import { getCachedRows } from '../channelsCache';
 import { resolveHandleToAddress } from '../resolveHandle';
+import { report } from '../errorPolicy';
 
 export type ResolveConvError = false | DmResolveError;
 
@@ -65,7 +66,8 @@ export function useResolvedConvId(param: string | undefined, peerRoute = true): 
       .then((next) => {
         if (!cancelled) setState((prev) => (prev.convId === next.convId && !prev.resolving ? prev : next));
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        report('conversation.resolve', err);
         if (!cancelled) setState(FAILED);
       });
     return () => {

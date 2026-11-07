@@ -12,7 +12,7 @@ import { openWithRecovery, withStoreRecovery, type FinalizeClient, type StoreRec
 import type { ClientSdk, GroupName } from './xmtp.client.core';
 import { nativeInstallationCreatedAtMs } from './xmtp.sdk.native.shapes';
 import { forgetStorageIndex } from './storageIndexStore';
-import { recover } from './errorPolicy';
+import { recover, report } from './errorPolicy';
 
 export type XmtpClient = Client;
 
@@ -58,7 +58,8 @@ async function freeOldestInstallation(rec: AccountRecord): Promise<boolean> {
     const signer = await signerForRecord(rec);
     await Client.revokeInstallations(XMTP_ENV, signer, inboxId, [oldest.id as Parameters<typeof Client.revokeInstallations>[3][number]]);
     return true;
-  } catch {
+  } catch (err) {
+    report('xmtp.freeInstallation', err);
     return false;
   }
 }

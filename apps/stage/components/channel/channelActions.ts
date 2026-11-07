@@ -3,6 +3,7 @@ import { LabelPermissionError } from '@stage-labs/client/xmtp/labels';
 import { CHANNEL_FIELD_NOUNS, type ChannelField } from '@stage-labs/client/xmtp/channelMeta';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { capabilities } from '../../lib/capabilities';
+import { reported } from '../../lib/errorPolicy';
 import { leaveGroupConv, setGroupCategory, setGroupField } from '../../lib/xmtp.groups';
 import { blockRequestConv, checkConvSync, unacceptConv } from '../../lib/xmtp.conv';
 import { markConvRead } from '../../lib/channelsCache';
@@ -62,7 +63,7 @@ export function deleteChat(convId: string, peerAddress: string, from: ChannelAct
     void (async (): Promise<void> => {
       try {
         await markChatCleared(peerAddress, Date.now());
-        void markConvRead(convId);
+        void markConvRead(convId).catch(reported('chat.markRead'));
         if (from === 'chat') router.replace(homeRoute());
         await (block ? blockRequestConv(convId) : unacceptConv(convId));
       } catch (e) {

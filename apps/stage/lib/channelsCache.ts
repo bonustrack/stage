@@ -2,7 +2,7 @@ import { secureStorage } from '../platform/storage';
 import { PersistentStore, getSecure, setSecure } from './cache.shared';
 import { makeListeners } from './storeCore';
 import { applyRead, applyUnread, applySentPatch, normalizeChannelRowTitle } from '@stage-labs/client/xmtp/channelsCache';
-import { attempt, ignored } from './errorPolicy';
+import { attempt, ignored, reported } from './errorPolicy';
 import type { XmtpConsent } from './xmtp.types';
 import { visibleCachedRows } from './sync/hiddenChannels';
 import { knownActiveAccountId, subscribeActiveAccountId } from './accountSelection';
@@ -142,7 +142,7 @@ export async function markConvUnread(convId: string): Promise<void> {
 export function patchRowSent(convId: string, preview: string): void {
   const rows = getCachedRows();
   if (!rows) return;
-  if (rows.some((r) => r.convId === convId && r.markedUnread)) void markConvRead(convId);
+  if (rows.some((r) => r.convId === convId && r.markedUnread)) void markConvRead(convId).catch(reported('home.markRead'));
   const next = applySentPatch(rows, convId, preview, Date.now());
   if (next !== null) setCachedRows(next);
 }

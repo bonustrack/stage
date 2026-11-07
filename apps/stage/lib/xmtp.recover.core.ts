@@ -4,8 +4,8 @@ import { attempt } from './errorPolicy';
 import { AccountChangedError } from './accountSelection';
 
 export class XmtpInstallationLimitError extends Error {
-  constructor() {
-    super(INSTALLATION_LIMIT_MESSAGE);
+  constructor(cause?: unknown) {
+    super(INSTALLATION_LIMIT_MESSAGE, { cause });
     this.name = 'XmtpInstallationLimitError';
   }
 }
@@ -37,7 +37,7 @@ export function openWithRecovery<C>(recovery: OpenRecovery, open: (wiped: boolea
     } catch (e) {
       if (!isInstallationLimit(e)) throw e;
       const free = recovery.freeInstallationSlot;
-      if (slotFreed || free === null || !(await free())) throw new XmtpInstallationLimitError();
+      if (slotFreed || free === null || !(await free())) throw new XmtpInstallationLimitError(e);
       slotFreed = true;
       return openFreeingSlot(wiped);
     }

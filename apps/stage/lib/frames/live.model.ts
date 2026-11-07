@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { backoffDelay } from '@stage-labs/client/timing';
 import type { NodeProblem, NodeResult } from '@stage-labs/client/nodes/protocol';
 import { frameContentSchema, type FrameContent } from '@stage-labs/client/xmtp/frame.schema';
 import { frameRenders } from './frame.model';
@@ -60,7 +61,7 @@ export function liveStateAfter(prev: LiveState, result: NodeResult, now: number,
 }
 
 export function liveRefreshDelay(state: LiveState | undefined): number {
-  return Math.min(LIVE_REFRESH_MS * 2 ** (state?.failures ?? 0), LIVE_MAX_BACKOFF_MS);
+  return backoffDelay((state?.failures ?? 0) + 1, { baseMs: LIVE_REFRESH_MS, maxMs: LIVE_MAX_BACKOFF_MS });
 }
 
 export function liveRefetchInterval(active: boolean, state: LiveState | undefined): number | false {

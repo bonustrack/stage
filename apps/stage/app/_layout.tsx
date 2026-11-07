@@ -27,6 +27,7 @@ import { applyWebGlobalStyles, useDocumentTheme } from '../components/layout/web
 import { bootWebMessaging } from '../components/system/webBoot';
 import { ContentFrame } from '../components/layout/ContentFrame';
 import { installPlainTextCopy } from '../lib/plainCopy';
+import { reportUnhandledRejections } from '../lib/rejectionReporter';
 import { AlertHost } from '../components/system/AlertHost';
 import { ToastHost } from '../components/system/ToastHost';
 import { TooltipHost } from '../components/system/TooltipHost';
@@ -44,6 +45,7 @@ const queryClient = getQueryClient();
 
 applyWebGlobalStyles();
 installPlainTextCopy();
+reportUnhandledRejections();
 bootKitFonts();
 bootWebMessaging();
 
