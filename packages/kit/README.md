@@ -232,7 +232,7 @@ These exports stay for existing consumers but nothing in Kit uses them; they liv
 - `Overlay` (`react-native/modal`): the full-bleed overlay, which `Modal` `fullBleedPanel` now renders.
 - `DropdownMenuItem` takes the `Pressable` props (role, state, `disabled`, `onLayout`, key handlers), `leading`, `trailing`, `gap`, `minHeight`, `hoverBackground` and a `style` applied last, so hosts can draw their own rows with it; a disabled row dims and shows no tint.
 - `setKitFontFaces`, `fontFaceCss` and `KIT_FONT_FACES` in `react-native/fonts`; `loadKitFonts` runs once, from `theme-context`.
-- `@stage-labs/kit/color-math`: `parseHex` (with `short` and `bare`), `formatHex`, `formatRgba`, `withAlpha`, `luminance` (`LUMA_REC601`, `LUMA_REC709`) and `isHexColor`.
+- `@stage-labs/kit/color-math`: `parseHex` (with `short` and `bare`), `formatHex`, `formatRgba`, `withAlpha` (a `#rrggbb` or `rgb()`/`rgba()` colour), `luminance` (`LUMA_REC601`, `LUMA_REC709`) and `isHexColor`.
 - `formulaPalette` (`theme-derive`), `useKitColors` (`react-native/theme-context`), `schemeRolesOf` and `RADIUS_FULL` (`tokens`), `catalogDocument` and `KIT_PROPS` (`a2ui/kit-catalog`) and `inheritKitFunctions` (`a2ui/kit-catalog-extend`).
 - A2UI: TextField `appearance` takes `filled`, the look every labelled field already has, for fields without a label.
 - Fix: a `Row`/`Column` `radius` that is neither a radius token, a number nor a length (a theme `RadiusName` such as `soft`) no longer becomes an invalid `borderRadius`.

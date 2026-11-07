@@ -8,7 +8,8 @@ import {
   type PollVotes,
 } from './poll.model';
 import type { Poll } from './poll.model';
-import { usePalette, withAlpha } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
+import { withAlpha } from '@stage-labs/kit/color-math';
 import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
 import { useState } from 'react';
 import { FormField } from '../FormField';

@@ -1,6 +1,7 @@
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { usePalette, withAlpha } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
+import { withAlpha } from '@stage-labs/kit/color-math';
 import type { SimulateResult, AssetMove } from '@stage-labs/client/wallet/txSimulate';
 import { isNativeToken } from '@stage-labs/client/wallet/tokens';
 import { useUsdValue } from '../../lib/txDisplay';

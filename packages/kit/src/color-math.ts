@@ -10,6 +10,7 @@ export const LUMA_REC709: Readonly<Rgb> = [0.2126, 0.7152, 0.0722];
 
 const HEX_RRGGBB = /^#([0-9a-fA-F]{6})$/;
 const HEX_RGB_OR_RRGGBB = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const RGB_FUNCTION = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/;
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
@@ -38,9 +39,14 @@ export function formatRgba([r, g, b]: Readonly<Rgb>, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-export function withAlpha(hex: string, alpha: number): string {
-  const rgb = parseHex(hex);
-  return rgb === null ? hex : formatRgba(rgb, alpha);
+function parseRgbFunction(color: string): Rgb | null {
+  const match = RGB_FUNCTION.exec(color.trim());
+  return match === null ? null : [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+export function withAlpha(color: string, alpha: number): string {
+  const rgb = parseHex(color) ?? parseRgbFunction(color);
+  return rgb === null ? color : formatRgba(rgb, alpha);
 }
 
 export function luminance([r, g, b]: Readonly<Rgb>, [wr, wg, wb]: Readonly<Rgb> = LUMA_REC601): number {

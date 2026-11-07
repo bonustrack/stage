@@ -12,7 +12,7 @@ import {
   type BaseSize,
 } from '@stage-labs/kit/tokens';
 import { derivePalette, type ThemeSeed, type AccentLevel, type GrayscaleShade, type GrayscaleTint } from '@stage-labs/kit/theme-derive';
-import { formatRgba, parseHex } from '@stage-labs/kit/color-math';
+import type { KitThemeValue } from '@stage-labs/kit/react-native/theme-context';
 import { createValueStore } from './persistedStore';
 import { cloneSeed, defaultSeeds, migrateSeeds, withSeedColor, type SeedColorKey, type ThemeSeeds } from './colorOverrides.model';
 
@@ -36,33 +36,22 @@ export async function setThemePreference(p: ThemePreference): Promise<void> {
 
 export const useThemePreference = (): ThemePreference => preference.use();
 
-export function useEffectiveColorScheme(): 'light' | 'dark' {
-  const pref = useThemePreference();
-  const sys = useColorScheme();
-  if (pref !== 'system') return pref;
-  return sys === 'dark' ? 'dark' : 'light';
-}
-
 export type Palette = KitPalette;
 
-export function withAlpha(color: string, alpha: number): string {
-  const a = Math.max(0, Math.min(1, alpha));
-  const hex = parseHex(color, { short: true });
-  if (hex) return formatRgba(hex, a);
-  const rgb = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/.exec(color.trim());
-  if (rgb) return `rgba(${rgb[1]}, ${rgb[2]}, ${rgb[3]}, ${a})`;
-  return color;
+export function useThemeFromSettings(): KitThemeValue {
+  const pref = useThemePreference();
+  const sys = useColorScheme();
+  const scheme = pref !== 'system' ? pref : sys === 'dark' ? 'dark' : 'light';
+  const isCustom = useCustomTheme();
+  const themeSeeds = useThemeSeeds();
+  const palette = useMemo(
+    () => (isCustom ? { ...derivePalette(themeSeeds[scheme], scheme) } : kitPalette(scheme)),
+    [scheme, isCustom, themeSeeds],
+  );
+  return { palette, scheme };
 }
 
-export function usePalette(): Palette {
-  const scheme = useEffectiveColorScheme();
-  const custom = useCustomTheme();
-  const seeds = useThemeSeeds();
-  return useMemo(() => {
-    if (custom) return { ...derivePalette(seeds[scheme], scheme) };
-    return kitPalette(scheme);
-  }, [scheme, custom, seeds]);
-}
+export { useKitPalette as usePalette, useKitScheme as useEffectiveColorScheme } from '@stage-labs/kit/react-native/theme-context';
 
 function parseSeeds(raw: string): ThemeSeeds | undefined {
   try {

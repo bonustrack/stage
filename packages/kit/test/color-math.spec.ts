@@ -32,8 +32,10 @@ describe('formatHex', () => {
 });
 
 describe('withAlpha', () => {
-  test('writes rgba for #rrggbb and leaves anything else as it is', () => {
+  test('writes rgba for #rrggbb and rgb() colours and leaves anything else as it is', () => {
     expect(withAlpha('#ff0000', 0.5)).toBe('rgba(255, 0, 0, 0.5)');
+    expect(withAlpha('rgb(12, 34, 56)', 0.5)).toBe('rgba(12, 34, 56, 0.5)');
+    expect(withAlpha('rgba(12,34,56,0.9)', 0.25)).toBe('rgba(12, 34, 56, 0.25)');
     expect(withAlpha('red', 0.5)).toBe('red');
     expect(withAlpha('#f00', 0.5)).toBe('#f00');
   });

@@ -12,7 +12,7 @@ import { RootStack, currentRoute, rootStackScreenOptions, TABS_SCREEN_OPTIONS, u
 import { isBrowserExtension } from '../lib/extension';
 import { usePathname } from 'expo-router';
 import { isOnboardingRoute, isRestorableRoute } from '../components/tabs/pages';
-import { useEffectiveColorScheme, usePalette } from '../lib/theme';
+import { useEffectiveColorScheme, usePalette, useThemeFromSettings } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { bootKitFonts, useKitFontsLoaded } from '../lib/kitFonts';
 import { LUMA_REC709, luminance, parseHex } from '@stage-labs/kit/color-math';
@@ -72,8 +72,7 @@ function useDocumentTheme(ready: boolean, dark: boolean, background: string, scr
 }
 
 export default function RootLayout(): React.ReactElement {
-  const scheme = useEffectiveColorScheme();
-  const palette = usePalette();
+  const { scheme, palette } = useThemeFromSettings();
   const tab = useTabRole();
   useDocumentTheme(tab !== 'pending', scheme === 'dark', palette.bg, palette.sub);
   return (

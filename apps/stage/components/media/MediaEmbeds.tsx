@@ -4,7 +4,8 @@ import { Text } from '@stage-labs/kit/react-native/text';
 import { colors } from '@stage-labs/kit/tokens';
 import { MediaCard } from './MediaCard';
 import { googleMapsUrl, osmTileGrid, type MapView } from '@stage-labs/client/embed/detect';
-import { usePalette, withAlpha } from '../../lib/theme';
+import { usePalette } from '../../lib/theme';
+import { withAlpha } from '@stage-labs/kit/color-math';
 import { Column, Row } from '../layout';
 
 const LETTERBOX_CROP = 4 / 3;
