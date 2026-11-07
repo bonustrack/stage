@@ -7,6 +7,7 @@ import {
   type RemoteAttachment,
 } from '@xmtp/browser-sdk';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
+import type { AttachmentKey, RemoteAttachmentRef } from '@stage-labs/client/xmtp/entryPayload';
 import { withMainThreadWasm } from './xmtp.wasm.web';
 import type { LocalAttachmentInput } from './xmtp.types';
 import { attachmentDownloadUrl, uploadEncryptedAttachment } from './attachmentStorage';
@@ -66,11 +67,32 @@ export async function sendFileReply(conv: Conversation, replyTo: string, info: R
   return conv.sendReply({ reference: replyTo, content: await withMainThreadWasm(() => encodeRemoteAttachment(info)) });
 }
 
-export async function resolveRemoteAttachment(info: RemoteAttachment): Promise<{ fileUri: string; mimeType?: string; filename?: string }> {
-  const res = await fetch(attachmentDownloadUrl(info.url));
+function webKey(key: AttachmentKey): Uint8Array {
+  if (key instanceof Uint8Array) return key;
+  throw new Error('This attachment key is not in the browser SDK format.');
+}
+
+function webRemoteAttachment(info: RemoteAttachmentRef): RemoteAttachment {
+  return {
+    url: info.url,
+    contentDigest: info.contentDigest,
+    secret: webKey(info.secret),
+    salt: webKey(info.salt),
+    nonce: webKey(info.nonce),
+    scheme: info.scheme ?? 'https://',
+    contentLength: info.contentLength === undefined ? undefined : Number(info.contentLength),
+    filename: info.filename,
+  };
+}
+
+export async function resolveRemoteAttachment(
+  info: RemoteAttachmentRef,
+): Promise<{ fileUri: string; mimeType?: string; filename?: string }> {
+  const remote = webRemoteAttachment(info);
+  const res = await fetch(attachmentDownloadUrl(remote.url));
   if (!res.ok) throw new Error(`Attachment download failed (${res.status})`);
   const encrypted = new Uint8Array(await res.arrayBuffer());
-  const decrypted = await withMainThreadWasm(() => decryptAttachment(encrypted, info));
+  const decrypted = await withMainThreadWasm(() => decryptAttachment(encrypted, remote));
   const blob = new Blob([decrypted.content.slice().buffer], { type: inertBlobType(decrypted.mimeType) });
   return { fileUri: URL.createObjectURL(blob), mimeType: decrypted.mimeType, filename: decrypted.filename };
 }

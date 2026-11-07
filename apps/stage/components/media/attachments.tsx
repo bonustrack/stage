@@ -11,7 +11,7 @@ import { useVideoAspectRatio } from './mediaAspect';
 import { usePalette } from '../../lib/theme';
 import { fileCardModel } from './fileCard.model';
 import { entryAttachmentKind } from '@stage-labs/client/xmtp/humanize';
-import type { ChatAttachment as Attachment } from './attachment';
+import type { EntryAttachment as Attachment } from '@stage-labs/client/xmtp/entryPayload';
 import { useAttachmentUri } from './attachmentUri';
 import { IconFileBend } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconFileBend';
 import { openFile } from '../../lib/fileOpen';

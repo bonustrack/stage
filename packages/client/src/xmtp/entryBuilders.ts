@@ -2,8 +2,10 @@ import type { HistoryEntry } from '../types';
 import { attachmentKindOf, humanizeGroupUpdated, LEFT_CHANNEL_TEXT, type GroupUpdatedContent } from './humanize';
 import { type FrameActionContent, frameActionText } from './frame';
 import { DELETE_MESSAGE_TYPE_ID, deleteTargetOfContent, deletedByOfContent } from './deleteMessage';
-import { objectOf, type CanonicalAttachment, type CanonicalReaction, type CanonicalReply } from './message';
-import { structuredPayload, type StructuredType } from './entryPayload';
+import { objectOf, stringOf, type CanonicalAttachment, type CanonicalReaction, type CanonicalReply } from './message';
+import { z } from 'zod';
+import type { OutputSchema } from '../validate';
+import { structuredPayload, type EntryAttachment, type RemoteAttachmentRef, type StructuredType } from './entryPayload';
 
 export type EntryBuilder = (base: HistoryEntry, typeId: string, decoded: unknown, fallback?: string) => HistoryEntry;
 
@@ -32,23 +34,36 @@ export const reactionEntry: EntryBuilder = (base, typeId, decoded) => {
   };
 };
 
-export function validRemoteAttachment(value: unknown): Record<string, unknown> | undefined {
-  const remote = objectOf(value);
-  if (remote === undefined || typeof remote.url !== 'string' || typeof remote.contentDigest !== 'string') return undefined;
-  return ['secret', 'salt', 'nonce'].every((key) => typeof remote[key] === 'string' || remote[key] instanceof Uint8Array)
-    ? remote
-    : undefined;
-}
+const attachmentKey = z.union([z.string(), z.instanceof(Uint8Array)]);
 
-interface MultiRemoteAttachmentView {
-  attachments?: ({ filename?: string } & Record<string, unknown>)[];
+const remoteAttachmentSchema: OutputSchema<RemoteAttachmentRef> = z
+  .object({
+    url: z.string(),
+    contentDigest: z.string(),
+    secret: attachmentKey,
+    salt: attachmentKey,
+    nonce: attachmentKey,
+    scheme: z.string().nullish(),
+    contentLength: z.union([z.number(), z.string(), z.bigint()]).nullish(),
+    filename: z.string().nullish(),
+  })
+  .transform(({ scheme, contentLength, filename, ...keys }) => ({
+    ...keys,
+    scheme: scheme ?? undefined,
+    contentLength: typeof contentLength === 'bigint' ? Number(contentLength) : (contentLength ?? undefined),
+    filename: filename ?? undefined,
+  }));
+
+export function validRemoteAttachment(value: unknown): RemoteAttachmentRef | undefined {
+  const parsed = remoteAttachmentSchema.safeParse(value);
+  return parsed.success ? parsed.data : undefined;
 }
 
 export const multiRemoteEntry: EntryBuilder = (base, typeId, decoded) => {
-  const m = decoded as MultiRemoteAttachmentView;
-  const attachments = (m.attachments ?? []).map((info, i) => {
-    const name = info.filename ?? `attachment-${i + 1}`;
-    return { kind: attachmentKindOf({ filename: name }), name, remote: info };
+  const items = objectOf(decoded)?.attachments;
+  const attachments = (Array.isArray(items) ? (items as unknown[]) : []).map((item, i): EntryAttachment => {
+    const name = stringOf(objectOf(item)?.filename) ?? `attachment-${i + 1}`;
+    return { kind: attachmentKindOf({ filename: name }), name, remote: validRemoteAttachment(item) };
   });
   const first = attachments[0];
   const summary =

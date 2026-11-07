@@ -2,7 +2,8 @@ import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { resolveRemoteAttachment } from '../../lib/xmtp.attachmentSdk';
 import { useLocalAttachment } from '../../lib/localAttachmentCache';
-import { attachmentSource, type AttachmentSource, type ChatAttachment as Attachment } from './attachment';
+import type { EntryAttachment as Attachment } from '@stage-labs/client/xmtp/entryPayload';
+import { attachmentSource, type AttachmentSource } from './attachment';
 
 const WEB_PLAYABLE_MIME: Readonly<Record<string, string>> = { 'audio/m4a': 'audio/mp4' };
 

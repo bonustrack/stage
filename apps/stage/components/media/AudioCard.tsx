@@ -20,7 +20,7 @@ import { AudioSeekBar } from './AudioSeekBar';
 import { IconTileRow } from './MediaCard';
 import { audioCardModel } from './audioCard.model';
 import { FEED_CONTENT_WIDTH } from '../layout/feedContent';
-import type { ChatAttachment as Attachment } from './attachment';
+import type { EntryAttachment as Attachment } from '@stage-labs/client/xmtp/entryPayload';
 import { Column, Row } from '../layout';
 
 function useDownload(uri: string, name: string, mime?: string): () => void {

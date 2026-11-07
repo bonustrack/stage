@@ -50,6 +50,7 @@ import {
   type PreviewOf,
 } from './previews';
 import { objectOf, stringOf } from './message';
+import type { RemoteAttachmentRef } from './entryPayload';
 import { shortTypeId } from './typeId';
 
 export type RowRole = 'bubble' | 'system' | 'silent' | 'hidden';
@@ -61,7 +62,7 @@ export interface AttachedFile {
   size?: unknown;
   mime?: string;
   dataB64?: string;
-  remote?: Record<string, unknown>;
+  remote?: RemoteAttachmentRef;
 }
 
 export interface StageCodec {
@@ -88,8 +89,8 @@ function base64ByteLength(data: string): number {
   return Math.max(0, Math.floor((data.length * 3) / 4) - padding);
 }
 
-function remoteFile(remote: Record<string, unknown>): AttachedFile {
-  return { name: stringOf(remote.filename), size: remote.contentLength, remote };
+function remoteFile(item: Record<string, unknown>): AttachedFile {
+  return { name: stringOf(item.filename), size: item.contentLength, remote: validRemoteAttachment(item) };
 }
 
 const inlineFiles = (content: Record<string, unknown>): AttachedFile[] => {
@@ -108,8 +109,8 @@ const multiRemoteFiles = (content: Record<string, unknown>): AttachedFile[] =>
   (Array.isArray(content.attachments) ? (content.attachments as unknown[]) : []).map((item) => remoteFile(objectOf(item) ?? {}));
 
 const replyFiles = (content: Record<string, unknown>): AttachedFile[] => {
-  const remote = validRemoteAttachment(content.remote);
-  return remote === undefined ? [] : [remoteFile(remote)];
+  const file = remoteFile(objectOf(content.remote) ?? {});
+  return file.remote === undefined ? [] : [file];
 };
 
 const deletionPreview = fixedPreview(DELETED_MESSAGE_TEXT);

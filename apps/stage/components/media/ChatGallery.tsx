@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from 'react';
 import type { HistoryEntry } from '@stage-labs/client/types';
 import { ImageViewer } from './ImageViewer';
 import { useStableCallback } from '../useStableCallback';
-import { attachmentsOf, type ChatAttachment as Attachment } from './attachment';
+import { attachmentsOf, type EntryAttachment as Attachment } from '@stage-labs/client/xmtp/entryPayload';
 import { useAttachmentUri } from './attachmentUri';
 import { galleryItemsOf, galleryStep, type GalleryItem } from './imageGallery.model';
 import { useGalleryKeys } from './galleryKeys';

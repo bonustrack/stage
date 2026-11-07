@@ -1,6 +1,6 @@
-import type { RemoteAttachmentInfo } from '@xmtp/react-native-sdk';
 import { isDeletedPlaceholderType } from '@stage-labs/client/xmtp/deleteMessage';
 import { attachedFilesOf } from '@stage-labs/client/xmtp/contentTypes';
+import type { RemoteAttachmentRef } from '@stage-labs/client/xmtp/entryPayload';
 import { sdk } from '../../lib/xmtp.sdk';
 import { resolveRemoteAttachment } from '../../lib/xmtp.attachmentSdk';
 import { openFile } from '../../lib/fileOpen';
@@ -13,7 +13,7 @@ export class FileUnavailableError extends Error {
   }
 }
 
-async function openRemote(remote: RemoteAttachmentInfo, file: StoredFile): Promise<void> {
+async function openRemote(remote: RemoteAttachmentRef, file: StoredFile): Promise<void> {
   const resolved = await resolveRemoteAttachment(remote);
   openFile({ url: resolved.fileUri, mime: resolved.mimeType, name: resolved.filename ?? file.name });
 }
@@ -26,7 +26,7 @@ export async function openStoredFile(file: StoredFile): Promise<void> {
   if (isDeletedPlaceholderType(row.contentTypeId)) throw new FileUnavailableError();
   const att = attachedFilesOf(row.contentTypeId, row.content)[file.index];
   if (att?.remote) {
-    await openRemote(att.remote as RemoteAttachmentInfo, file);
+    await openRemote(att.remote, file);
     return;
   }
   if (att?.dataB64 === undefined) throw new FileUnavailableError();

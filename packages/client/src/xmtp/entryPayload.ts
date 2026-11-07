@@ -7,12 +7,25 @@ import { parseCallInvite, parseCallSignal, type CallInvite, type CallSignal } fr
 import { DELETED_MESSAGE_TYPE_ID, DELETE_MESSAGE_TYPE_ID, type DeletedBy } from './deleteMessage';
 import { objectOf } from './message';
 
+export type AttachmentKey = string | Uint8Array;
+
+export interface RemoteAttachmentRef {
+  url: string;
+  contentDigest: string;
+  secret: AttachmentKey;
+  salt: AttachmentKey;
+  nonce: AttachmentKey;
+  scheme?: string;
+  contentLength?: number | string;
+  filename?: string;
+}
+
 export interface EntryAttachment {
   kind: string;
   name?: string;
   mime?: string;
   dataB64?: string;
-  remote?: Record<string, unknown>;
+  remote?: RemoteAttachmentRef;
   id?: string;
   url?: string;
   size?: number;

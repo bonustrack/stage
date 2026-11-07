@@ -6,8 +6,8 @@ import type { UploadedAttachment } from '../lib/xmtp.types';
 import { outboundView, recordSent, settleOutbound, type OutboundState } from '../components/conversation/outboundRows.model';
 
 const ME = 'metro://xmtp/me';
-const REMOTE = { url: 'https://store.example/encrypted-1', contentDigest: 'digest-1' };
-const OTHER = { url: 'https://store.example/encrypted-2', contentDigest: 'digest-2' };
+const REMOTE = { url: 'https://store.example/encrypted-1', contentDigest: 'digest-1', secret: 's', salt: 's', nonce: 'n' };
+const OTHER = { ...REMOTE, url: 'https://store.example/encrypted-2', contentDigest: 'digest-2' };
 const URI = 'file:///photo.jpg';
 
 function entry(id: string, attachments: EntryAttachment[], extra: Partial<HistoryEntry> = {}): HistoryEntry {

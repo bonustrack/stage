@@ -9,7 +9,7 @@ import type { ComponentProps } from 'react';
 import type { ViewStyle } from 'react-native';
 import { BLOCK_GAP, MESSAGE_LINK_STYLE, findLinks } from './markdown';
 import type { LinkPress } from '../links/linkProps.types';
-import type { ChatAttachment } from '../media/attachment';
+import type { EntryAttachment } from '@stage-labs/client/xmtp/entryPayload';
 import { bubbleLinkProps } from '../links/linkProps';
 import { ResolvedAttachment } from '../media/attachments';
 import { galleryKeyOf } from '../media/imageGallery.model';
@@ -157,7 +157,7 @@ function BubbleAttachment({
   entryId,
   fg,
 }: {
-  att: ChatAttachment;
+  att: EntryAttachment;
   index: number;
   entryId: string;
   fg: string;
@@ -170,7 +170,7 @@ export function BubbleAttachments({
   entryId,
   fg,
 }: {
-  atts: ChatAttachment[];
+  atts: EntryAttachment[];
   entryId: string;
   fg: string;
 }): React.ReactElement | null {

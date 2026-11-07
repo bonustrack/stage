@@ -41,7 +41,7 @@ describe('content type table', () => {
     expect(attachedFilesOf('remoteStaticAttachment', remote)).toEqual([{ name: 'a.pdf', size: 9, remote }]);
     expect(attachedFilesOf('multiRemoteAttachment', { attachments: [remote, {}] })).toEqual([
       { name: 'a.pdf', size: 9, remote },
-      { name: undefined, size: undefined, remote: {} },
+      { name: undefined, size: undefined, remote: undefined },
     ]);
     expect(attachedFilesOf('reply', { reference: 'r', remote })).toEqual([{ name: 'a.pdf', size: 9, remote }]);
     expect(attachedFilesOf('reply', { reference: 'r', text: 'hi' })).toEqual([]);

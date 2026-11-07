@@ -125,12 +125,18 @@ describe('envelopeOf per content type', () => {
   });
 
   test('multi remote attachments name unnamed files by position', () => {
-    const e = at('multiRemoteStaticAttachment', { attachments: [{ url: 'a' }, { url: 'b', filename: 'b.mp4' }] });
+    const unnamed = { ...remote, filename: undefined };
+    const e = at('multiRemoteStaticAttachment', { attachments: [unnamed, { ...remote, filename: 'b.mp4' }] });
     expect(e.text).toBe('[2 attachments]');
     expect(attachmentsOf(e)).toEqual([
-      { kind: 'file', name: 'attachment-1', remote: { url: 'a' } },
-      { kind: 'video', name: 'b.mp4', remote: { url: 'b', filename: 'b.mp4' } },
+      { kind: 'file', name: 'attachment-1', remote: unnamed },
+      { kind: 'video', name: 'b.mp4', remote: { ...remote, filename: 'b.mp4' } },
     ]);
+  });
+
+  test('a multi remote file without its download keys has no remote to fetch', () => {
+    const e = at('multiRemoteStaticAttachment', { attachments: [{ url: 'a' }] });
+    expect(attachmentsOf(e)).toEqual([{ kind: 'file', name: 'attachment-1', remote: undefined }]);
   });
 
   test('null content degrades to fallback, does not throw', () => {

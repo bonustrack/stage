@@ -17,7 +17,7 @@ import {
 } from '@stage-labs/client/xmtp/entryPayload';
 import { mdParser, markdownStyles } from './markdown';
 import { pollOf } from './poll.model';
-import { attachmentsOf } from '../media/attachment';
+import { attachmentsOf } from '@stage-labs/client/xmtp/entryPayload';
 import { PollView } from './poll';
 import { TxRequestCard, TxReceiptCard } from './cards';
 import { SigRequestCard, SigReferenceCard } from './cards.sig';

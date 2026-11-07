@@ -1,6 +1,7 @@
 import { asFileUri } from './localAttachmentCache';
 import { base64ToBytes } from '@stage-labs/client/text/base64';
 import { randomHex } from '@stage-labs/client/ids';
+import type { AttachmentKey, RemoteAttachmentRef } from '@stage-labs/client/xmtp/entryPayload';
 import { File, Paths } from 'expo-file-system';
 import { stripMetadataBytes, isStrippableImage } from '@stage-labs/client/image/stripMetadata';
 import {
@@ -111,13 +112,28 @@ export function sendFileReply(conv: Conversation, replyTo: string, info: RemoteA
   return conv.send({ reply: { reference: replyTo, content: { remoteAttachment: info } } });
 }
 
+function nativeKey(key: AttachmentKey): string {
+  if (typeof key === 'string') return key;
+  throw new Error('This attachment key is not in the native SDK format.');
+}
+
+function nativeMetadata(info: RemoteAttachmentRef): RemoteAttachmentMetadata {
+  return {
+    secret: nativeKey(info.secret),
+    salt: nativeKey(info.salt),
+    nonce: nativeKey(info.nonce),
+    contentDigest: info.contentDigest,
+    contentLength: info.contentLength === undefined ? undefined : String(info.contentLength),
+    filename: info.filename,
+  };
+}
+
 export async function resolveRemoteAttachment(
-  info: RemoteAttachmentInfo,
+  info: RemoteAttachmentRef,
 ): Promise<{ fileUri: string; mimeType?: string; filename?: string }> {
   const client = await xmtpClient();
   const dest = freshCacheFile('xmtp-att', 'bin');
-  const { secret, salt, nonce, contentDigest, contentLength, filename } = info;
-  const metadata: RemoteAttachmentMetadata = { secret, salt, nonce, contentDigest, contentLength, filename };
+  const metadata = nativeMetadata(info);
   const encrypted: EncryptedLocalAttachment = { encryptedLocalFileUri: asFileUri(dest.uri), metadata };
   await File.downloadFileAsync(attachmentDownloadUrl(info.url), dest, { idempotent: true });
   const decrypted = await client.decryptAttachment(encrypted);
