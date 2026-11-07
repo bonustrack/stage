@@ -245,8 +245,7 @@ export function schedulePushTopicRefresh(delayMs = TOPIC_REFRESH_DEBOUNCE_MS): v
   topicRefreshDueAt = Math.max(topicRefreshDueAt, Date.now() + delayMs);
   pushTimers.schedule(TOPIC_REFRESH, topicRefreshDueAt - Date.now(), () => {
     topicRefreshDueAt = 0;
-    const client = getCachedXmtpClient();
-    if (client) void registerPushWithServer(client);
+    void registerCachedClientPush();
   });
 }
 

@@ -14,8 +14,7 @@ export function setActiveConvId(convId: string | null): void {
 }
 
 export function isActiveConv(convId: string | null | undefined): boolean {
-  if (!convId || !activeConvId) return false;
-  return convId.toLowerCase() === activeConvId;
+  return !!convId && convId.toLowerCase() === activeConvId;
 }
 
 const bootstrap = makeValue<'idle' | 'registering'>('idle');

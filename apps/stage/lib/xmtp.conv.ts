@@ -111,11 +111,8 @@ export async function listVisibleConversations(): Promise<Conv[]> {
   const context = await accountClient();
   await reconcileHiddenConsent(context);
   const isHidden = await hiddenChannelFilter(context.account.id);
-  const visible = await sdk.listConvs(context.client, VISIBLE_CONSENT);
-  return withoutDepartedGroups(
-    context,
-    visible.filter((c) => !isHidden(c)),
-  );
+  const visible = (await sdk.listConvs(context.client, VISIBLE_CONSENT)).filter((c) => !isHidden(c));
+  return withoutDepartedGroups(context, visible);
 }
 
 export async function syncConversationsFromNetwork(): Promise<void> {
@@ -172,17 +169,11 @@ async function setConvConsent(convId: string, state: XmtpConsent): Promise<void>
   patchRowConsent(convId, state);
 }
 
-export function acceptRequestConv(convId: string): Promise<void> {
-  return setConvConsent(convId, 'allowed');
-}
+export const acceptRequestConv = (convId: string): Promise<void> => setConvConsent(convId, 'allowed');
 
-export function blockRequestConv(convId: string): Promise<void> {
-  return setConvConsent(convId, 'denied');
-}
+export const blockRequestConv = (convId: string): Promise<void> => setConvConsent(convId, 'denied');
 
-export function unacceptConv(convId: string): Promise<void> {
-  return setConvConsent(convId, 'unknown');
-}
+export const unacceptConv = (convId: string): Promise<void> => setConvConsent(convId, 'unknown');
 
 const sharedConversations = makeSharedSource<ConvClient, Conv>(sdk.streamConversations);
 
@@ -191,11 +182,7 @@ export function streamNewConversations(cb: (conv: Conv) => void): () => void {
   return client ? sharedConversations(client, cb) : () => undefined;
 }
 
-const sharedConsent = makeSharedSource<ConvClient, string[]>((client, emit) =>
-  sdk.streamConsent(client, (convIds) => {
-    emit(convIds);
-  }),
-);
+const sharedConsent = makeSharedSource<ConvClient, string[]>(sdk.streamConsent);
 
 export function streamConvConsent(cb: (convIds: string[]) => void): () => void {
   const client = sdk.cachedClient();

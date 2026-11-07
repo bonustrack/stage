@@ -23,34 +23,27 @@ interface AccountStreams {
   signal: AbortSignal;
 }
 
+function stopLate(stop: () => void): void {
+  stop();
+}
+
 export async function openAccountStreams(deps: AccountStreams): Promise<() => void> {
-  const stop = await abortable(deps.messages(), deps.signal, (late) => {
-    late();
-  });
-  if (!deps.current()) return stop;
-  let stopPreferences: (() => void) | undefined;
+  const stops = [await abortable(deps.messages(), deps.signal, stopLate)];
+  const stopAll = (): void => {
+    for (const stop of stops) stop();
+  };
+  if (!deps.current()) return stopAll;
   try {
     const refreshPush = (): void => {
       if (deps.current()) deps.refreshPush();
     };
-    stopPreferences = await abortable(deps.preferences(refreshPush), deps.signal, (late) => {
-      late();
-    });
-    if (!deps.current())
-      return () => {
-        stop();
-        stopPreferences?.();
-      };
+    stops.push(await abortable(deps.preferences(refreshPush), deps.signal, stopLate));
+    if (!deps.current()) return stopAll;
     refreshPush();
-    const stopDeletions = deps.deletions();
-    return () => {
-      stop();
-      stopPreferences?.();
-      stopDeletions();
-    };
+    stops.push(deps.deletions());
+    return stopAll;
   } catch (error) {
-    stop();
-    stopPreferences?.();
+    stopAll();
     throw error;
   }
 }
@@ -110,9 +103,7 @@ export function makeGlobalStream<C>(deps: StreamDeps<C>) {
         deps.closed();
         rearm();
       };
-      const stop = await abortable(deps.open(context, current, onClose, controller.signal), controller.signal, (late) => {
-        late();
-      });
+      const stop = await abortable(deps.open(context, current, onClose, controller.signal), controller.signal, stopLate);
       if (!current()) {
         stop();
         rearm();

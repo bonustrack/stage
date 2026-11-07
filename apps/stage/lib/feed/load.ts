@@ -61,8 +61,7 @@ async function loadFirstPage(line: string, generation: FeedGeneration): Promise<
 async function showCachedFeed(line: string, generation: FeedGeneration): Promise<boolean> {
   if (feedCache.get(line) !== undefined) return false;
   const cached = await cachedFeed(line).catch(recover('feed.cached', null));
-  if (!generation.current()) return false;
-  if (!cached?.length || isFeedLoaded(line) || feedCache.get(line) !== undefined) return false;
+  if (!generation.current() || !cached?.length || isFeedLoaded(line) || feedCache.get(line) !== undefined) return false;
   feedCache.showCached(line, cached);
   markFeedLoaded(line);
   perfLog('feed.cachedPage', { entries: cached.length });
@@ -87,6 +86,5 @@ export function prefetchFeed(line: string): void {
 }
 
 export async function loadFeedOlderPage(line: string, oldest: HistoryEntry): Promise<void> {
-  const beforeTsMs = new Date(oldest.ts).getTime();
-  mergePageIntoFeed(line, await olderConvMessages(line, beforeTsMs, PAGE_SIZE), true);
+  mergePageIntoFeed(line, await olderConvMessages(line, Date.parse(oldest.ts), PAGE_SIZE), true);
 }

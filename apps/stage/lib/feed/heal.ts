@@ -8,19 +8,12 @@ import { refreshLatestPage } from './resync';
 import { report } from '../errorPolicy';
 
 export function feedLatest(line: string): HistoryEntry | undefined {
-  const slice = feedCache.get(line);
-  if (!slice) return undefined;
-  return slice.find(isShownInFeed);
-}
-
-function entryNs(e: HistoryEntry): number {
-  const ms = new Date(e.ts).getTime();
-  return Number.isFinite(ms) ? ms * 1_000_000 : 0;
+  return feedCache.get(line)?.find(isShownInFeed);
 }
 
 export function feedLatestNs(line: string): number {
-  const e = feedLatest(line);
-  return e ? entryNs(e) : 0;
+  const ms = Date.parse(feedLatest(line)?.ts ?? '');
+  return Number.isFinite(ms) ? ms * 1_000_000 : 0;
 }
 
 function logReconcileHeal(
@@ -28,7 +21,7 @@ function logReconcileHeal(
   line: string,
   healedBy: string,
   before: HistoryEntry | undefined,
-  after: { id: string | null; ts: string | null },
+  after: HistoryEntry | undefined,
 ): void {
   console.log(
     label,
@@ -36,8 +29,8 @@ function logReconcileHeal(
       line,
       feedLatestId: before?.id ?? null,
       feedLatestTs: before?.ts ?? null,
-      storeLatestId: after.id,
-      storeLatestTs: after.ts,
+      storeLatestId: after?.id ?? null,
+      storeLatestTs: after?.ts ?? null,
       healedBy,
     }),
   );
@@ -49,8 +42,7 @@ export async function reconcileOnOpen(line: string): Promise<void> {
     const conv = await convOfLine(line);
     if (!conv) return;
     const [storeLatest] = await latestConvMessages(conv, line, 1);
-    if (!storeLatest) return;
-    if (!isShownInFeed(storeLatest)) return;
+    if (!storeLatest || !isShownInFeed(storeLatest)) return;
     const feed = feedLatest(line);
     if (feed?.id === storeLatest.id) return;
     const page = await latestConvMessages(conv, line, PAGE_SIZE);
@@ -69,12 +61,7 @@ export async function healArrivalGap(line: string): Promise<void> {
     const before = feedLatest(line);
     mergePageIntoFeed(line, page);
     const after = feedLatest(line);
-    if (before?.id !== after?.id) {
-      logReconcileHeal('[feed-reconcile] arrival-gap heal', line, 'reconcileOnArrival', before, {
-        id: after?.id ?? null,
-        ts: after?.ts ?? null,
-      });
-    }
+    if (before?.id !== after?.id) logReconcileHeal('[feed-reconcile] arrival-gap heal', line, 'reconcileOnArrival', before, after);
   } catch (err) {
     report('feed.reconcileOnArrival', err);
   }

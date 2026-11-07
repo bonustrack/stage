@@ -59,27 +59,18 @@ function fanOutToSubscribers(convId: string | null | undefined, msg: NonNullable
   }
 }
 
-function routeMessageToFeed(convId: string, msg: NonNullable<StreamMessage>): void {
-  const line = lineOfConv(convId);
-  onArrival(line, sdk.envelopeOf(msg, line), sdk.sentNsOf(msg));
-}
-
-function routedConvId(msg: NonNullable<StreamMessage>): string | null | undefined {
-  const convId = sdk.convIdOf(msg);
-  return convId ? routeConvId(convId) : convId;
-}
-
 function handleStreamMessage(msg: StreamMessage): void {
   if (!msg) return;
   lastMessageAt = Date.now();
   if (isImportedReplay(sdk.sentNsOf(msg))) return;
-  const convId = routedConvId(msg);
+  const streamConvId = sdk.convIdOf(msg);
+  const convId = streamConvId ? routeConvId(streamConvId) : streamConvId;
   fanOutToSubscribers(convId, msg);
-  if (!convId) {
-    onUnknownArrival();
-    return;
+  if (!convId) onUnknownArrival();
+  else if (!isHiddenFromFeeds(convId)) {
+    const line = lineOfConv(convId);
+    onArrival(line, sdk.envelopeOf(msg, line), sdk.sentNsOf(msg));
   }
-  if (!isHiddenFromFeeds(convId)) routeMessageToFeed(convId, msg);
 }
 
 function onMessageDeleted(context: AccountClient, { convId, messageId }: MessageDeletion): void {

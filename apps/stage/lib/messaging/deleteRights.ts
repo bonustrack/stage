@@ -5,7 +5,7 @@ import { fetchSuperAdmins } from './groupDetails';
 
 const NO_SUPER_ADMINS: ReadonlySet<string> = new Set();
 
-export interface AdminLookup {
+interface AdminLookup {
   convId: string;
   inboxToAddr: Record<string, string>;
   where: string;

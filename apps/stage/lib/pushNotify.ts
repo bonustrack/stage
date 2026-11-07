@@ -34,37 +34,25 @@ export async function getPushPermission(): Promise<PushPermission> {
   }
 }
 
-function promptForPermission(): Promise<Notifications.NotificationPermissionsStatus> {
-  return Notifications.requestPermissionsAsync();
-}
-
 export async function requestPushPermission(): Promise<PushPermission> {
   try {
-    return toPermission((await promptForPermission()).status);
+    return toPermission((await Notifications.requestPermissionsAsync()).status);
   } catch {
     return 'undetermined';
   }
 }
 
-async function ensureChannel(): Promise<void> {
-  if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync('xmtp', {
-    name: 'XMTP messages',
-    importance: Notifications.AndroidImportance.HIGH,
-    sound: 'default',
-    showBadge: true,
-  });
-}
-
-async function ensurePermission(): Promise<boolean> {
-  const existing = await Notifications.getPermissionsAsync();
-  if (existing.granted) return true;
-  return (await promptForPermission()).granted;
-}
-
 async function ensureNotificationReady(): Promise<boolean> {
-  await ensureChannel();
-  return ensurePermission();
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('xmtp', {
+      name: 'XMTP messages',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      showBadge: true,
+    });
+  }
+  if ((await Notifications.getPermissionsAsync()).granted) return true;
+  return (await Notifications.requestPermissionsAsync()).granted;
 }
 
 export async function pushToken(): Promise<string | null> {

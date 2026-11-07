@@ -21,7 +21,7 @@ export interface GroupName {
   name: string;
 }
 
-export interface PushSdk<C> {
+interface PushSdk<C> {
   signWithInstallationKey: (client: C, text: string) => Promise<Uint8Array>;
   topics: (client: C) => Promise<string[]>;
   hmacKeys: (client: C, topic?: string) => Promise<HmacKeysByTopic>;
@@ -67,21 +67,17 @@ interface ClientPort<C> extends ClientReads<C> {
   dispose: () => void;
 }
 
-export interface LifecycleDeps<C> {
+interface LifecycleDeps<C> {
   accounts: AccountPort;
   store: StorePort;
   client: ClientPort<C>;
   bumpEpoch: () => void;
 }
 
-function accountSwitching<C>(deps: LifecycleDeps<C>): {
-  switchToAccount: (id: string) => Promise<C>;
-  deleteAccount: (id: string) => Promise<void>;
-  resetActiveXmtpStore: () => Promise<void>;
-} {
+function accountSwitching<C>(deps: LifecycleDeps<C>) {
   const { accounts, store, client } = deps;
   return {
-    async switchToAccount(id) {
+    switchToAccount: async (id: string): Promise<C> => {
       const rec = (await accounts.list()).find((a) => a.id === id);
       if (!rec) throw new Error('Account not found.');
       client.dispose();
@@ -96,7 +92,7 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
         throw e;
       }
     },
-    async deleteAccount(id) {
+    deleteAccount: async (id: string): Promise<void> => {
       const rec = (await accounts.list()).find((a) => a.id === id);
       await accounts.remove(id);
       if (rec) await store.deleteFiles(rec.dbDir);
@@ -105,7 +101,7 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
       client.dispose();
       deps.bumpEpoch();
     },
-    async resetActiveXmtpStore() {
+    resetActiveXmtpStore: async (): Promise<void> => {
       const rec = await accounts.active();
       if (!rec) return;
       client.dispose();
@@ -115,16 +111,7 @@ function accountSwitching<C>(deps: LifecycleDeps<C>): {
   };
 }
 
-export function makeClientLifecycle<C>(
-  deps: LifecycleDeps<C>,
-): ReturnType<typeof accountSwitching<C>> & {
-  xmtpClient: () => Promise<C>;
-  cachedSelfEthAddress: () => string | null;
-  selfEthAddress: () => Promise<string | null>;
-  syncPreferences: () => Promise<void>;
-  listXmtpInstallations: () => Promise<XmtpInstallation[]>;
-  revokeXmtpInstallation: (installationId: string) => Promise<void>;
-} {
+export function makeClientLifecycle<C>(deps: LifecycleDeps<C>) {
   const { accounts, client } = deps;
   const createForActive = async (): Promise<C> => {
     let created = false;
@@ -142,14 +129,14 @@ export function makeClientLifecycle<C>(
   return {
     ...accountSwitching(deps),
     xmtpClient,
-    cachedSelfEthAddress() {
+    cachedSelfEthAddress: (): string | null => {
       const cached = client.get();
       return cached ? client.selfAddressOf(cached) : null;
     },
-    async selfEthAddress() {
+    selfEthAddress: async (): Promise<string | null> => {
       return client.selfAddressOf(await xmtpClient());
     },
-    async syncPreferences() {
+    syncPreferences: async (): Promise<void> => {
       try {
         const cached = client.get();
         if (cached) await client.syncPreferences(cached);
@@ -157,11 +144,11 @@ export function makeClientLifecycle<C>(
         report('xmtp.syncPreferences', err);
       }
     },
-    async listXmtpInstallations() {
+    listXmtpInstallations: async (): Promise<XmtpInstallation[]> => {
       const c = await xmtpClient();
       return installationsOf(await client.installations(c), client.installationIdOf(c));
     },
-    async revokeXmtpInstallation(installationId) {
+    revokeXmtpInstallation: async (installationId: string): Promise<void> => {
       const c = await xmtpClient();
       const account = await accounts.active();
       if (!account) throw new NoAccountError();

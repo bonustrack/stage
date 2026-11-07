@@ -190,10 +190,7 @@ async function buildClient(rec: AccountRecord, finalize: FinalizeClient<XmtpClie
 async function forgetSavedClient(id: string): Promise<void> {
   await forgetFeeds(id);
   await forgetStorageIndex(id).catch(ignored(undefined, 'cleanup'));
-  const keys = savedKeysFor(id);
-  for (const key of [keys.address, keys.env, keys.installation, keys.inbox]) {
-    await secureStorage.delete(key).catch(ignored(undefined, 'cleanup'));
-  }
+  for (const key of Object.values(savedKeysFor(id))) await secureStorage.delete(key).catch(ignored(undefined, 'cleanup'));
 }
 
 async function revokeInstallation(client: XmtpClient, account: AccountRecord, installationId: string): Promise<void> {

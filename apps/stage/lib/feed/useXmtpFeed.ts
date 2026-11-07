@@ -49,8 +49,7 @@ export function useXmtpFeed(
 
   useEffect(() => {
     if (!enabled || !line) return;
-    const ln = line;
-    const release = openFeedLine(ln);
+    const release = openFeedLine(line);
     void ensureGlobalStream();
     let cancelled = false;
     const generation = feedGeneration();
@@ -77,9 +76,8 @@ export function useXmtpFeed(
     };
   }, [line, enabled, accountEpoch]);
 
-  const queryKey = feedQueryKey(accountEpoch, line ?? '');
   const query = useQuery<HistoryEntry[]>({
-    queryKey,
+    queryKey: feedQueryKey(accountEpoch, line ?? ''),
     enabled: enabled && !!line,
     queryFn: () => loadFeedFirstPage(line ?? ''),
     initialData: () => (line && isFeedLoaded(line) ? (feedCache.get(line) ?? EMPTY) : EMPTY),

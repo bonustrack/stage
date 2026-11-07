@@ -2,13 +2,11 @@ import { mergeClearedChats, type ClearedChats } from '@stage-labs/client/xmtp/sy
 import { createValueStore, type StoreSource } from '../persistedStore';
 import { keepUnlessChanged, makeListeners, storedRecordOf } from '../storeCore';
 
-const EMPTY: ClearedChats = {};
-
 const isClearedAt = (value: unknown): value is number => typeof value === 'number';
 
 const prefs = createValueStore<ClearedChats>({
   key: 'channels.cleared.',
-  default: EMPTY,
+  default: {},
   schema: storedRecordOf(isClearedAt),
   perAccount: true,
 });

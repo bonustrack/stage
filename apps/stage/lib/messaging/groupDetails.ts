@@ -20,9 +20,7 @@ export async function fetchGroupRoles(convId: string, inboxToAddr: Record<string
   const conv = await convOfLine(lineOfConv(convId));
   if (!conv) return {};
   const staff = await sdk.groupAdmins(conv);
-  const roles: Record<string, GroupRole> = {};
-  for (const [inboxId, addr] of Object.entries(inboxToAddr)) roles[addr] = groupRoleOf(inboxId, staff);
-  return roles;
+  return Object.fromEntries(Object.entries(inboxToAddr).map(([inboxId, addr]) => [addr, groupRoleOf(inboxId, staff)]));
 }
 
 export async function fetchSuperAdmins(convId: string, inboxToAddr: Record<string, string>): Promise<ReadonlySet<string>> {

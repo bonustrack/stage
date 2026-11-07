@@ -27,14 +27,6 @@ import { dmRoutesReady, dmRowIdOf } from '../dmRoutes';
 import { reported, recover } from '../errorPolicy';
 import { channelConsent } from '../channelVisibility';
 
-function isMembershipNoise(m: RowMessage, dm: boolean): boolean {
-  return dm && isSystemMessage(m);
-}
-
-function pickLastMessage(msgs: StreamedMessage[], dm: boolean): StreamedMessage | undefined {
-  return msgs.find((m) => isRowCandidate(m, dm)) ?? msgs[0];
-}
-
 const ROW_LOOKBACK = 20;
 
 async function recentRowMessages(conv: ConvHandle, dm: boolean): Promise<StreamedMessage[]> {
@@ -61,7 +53,7 @@ function rowDeleteRights(
 }
 
 function previewOfMessage(last: StreamedMessage | undefined, dm: boolean, msgs: StreamedMessage[], rights: DeleteRights): string {
-  if (!last || isMembershipNoise(last, dm)) return '';
+  if (!last || (dm && isSystemMessage(last))) return '';
   const deletedBy = deletedRowBy(last, msgs, rights);
   if (deletedBy) return deletedTextOf(deletedBy);
   return rowPreviewOf(last);
@@ -74,24 +66,15 @@ interface GroupRowData {
 }
 
 async function gatherGroupRowData(conv: ConvHandle, members: ConvMembers): Promise<GroupRowData> {
-  if (members.peerAddress) {
-    return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, tags: NO_TAGS };
-  }
+  if (members.peerAddress) return { memberAddresses: [], groupMeta: { name: '', imageUrl: '' }, tags: NO_TAGS };
   const [groupMeta, tags] = await Promise.all([sdk.groupInfo(conv), groupTagsOf(sdk.appDataGroup(conv))]);
   return { memberAddresses: members.otherAddresses, groupMeta, tags };
 }
 
-function rowAvatar(
-  conv: ConvHandle,
-  peerAddress: string | null,
-  groupImageUrl: string,
-): { avatarUri: string | null; avatarAddress: string | null } {
-  return peerAddress ? { avatarUri: null, avatarAddress: peerAddress } : channelAvatar(conv.id, groupImageUrl);
-}
-
 function rowMetaOf(conv: ConvHandle, peerAddress: string | null, data: GroupRowData): GroupRowMeta {
   const title = channelRowTitle({ peerAddress, groupName: data.groupMeta.name, memberCount: data.memberAddresses.length });
-  return { title, groupName: data.groupMeta.name, ...rowAvatar(conv, peerAddress, data.groupMeta.imageUrl), ...data.tags };
+  const avatar = peerAddress ? { avatarUri: null, avatarAddress: peerAddress } : channelAvatar(conv.id, data.groupMeta.imageUrl);
+  return { title, groupName: data.groupMeta.name, ...avatar, ...data.tags };
 }
 
 export async function groupRowMeta(conv: ConvHandle): Promise<GroupRowMeta> {
@@ -121,13 +104,11 @@ function createdTsOf(conv: ConvHandle, convId: string): Promise<number | null> {
   return rowCreatedTs(conv, convId, homeRowOf(convId)?.createdTs, (id) => convOfLine(lineOfConv(id)), sdk.createdAtNs);
 }
 
-const NO_KNOWN_DMS: ReadonlyMap<string, string> = new Map();
-
 export async function summarizeConversation(
   conv: ConvHandle,
   selfInboxId: string,
   alreadySynced: boolean,
-  knownDmIds = NO_KNOWN_DMS,
+  knownDmIds: ReadonlyMap<string, string>,
 ): Promise<CachedRow> {
   if (!alreadySynced) await sdk.syncConv(conv).catch(reported('conversation.sync'));
   const consent = sdk.consentOf(conv).catch(recover('conversation.consent', null));
@@ -137,7 +118,7 @@ export async function summarizeConversation(
   const convId = dmRowIdOf(conv.id, peerAddress, knownDmIds);
   const dm = peerAddress !== null;
   const msgs = await recentRowMessages(conv, dm);
-  const last = pickLastMessage(msgs, dm);
+  const last = msgs.find((m) => isRowCandidate(m, dm)) ?? msgs[0];
   const preview = previewOfMessage(last, dm, msgs, await rowDeleteRights(conv, dm, msgs, inboxToAddr, selfInboxId));
   const { title, groupName, avatarUri, avatarAddress, labels, category, status, priority, assigned } = rowMetaOf(
     conv,

@@ -9,8 +9,9 @@ import {
   type CanonicalReply,
   type XmtpMessage,
 } from '@stage-labs/client/xmtp/message';
+import { canonicalContent, type CanonicalReaders } from './xmtp.sdk.core';
 
-export interface WebMessageView {
+interface WebMessageView {
   id: string;
   senderInboxId: string;
   sentAtNs: bigint;
@@ -44,18 +45,7 @@ function deletedOf(raw: Record<string, unknown>): CanonicalDeletedMessage {
   return { deletedBy: raw.deletedBy === ADMIN_DELETED_BY ? 'admin' : 'sender' };
 }
 
-const CANONICAL: Readonly<Record<string, (raw: Record<string, unknown>) => unknown>> = {
-  reaction: reactionOf,
-  reply: replyOf,
-  attachment: attachmentOf,
-  deletedMessage: deletedOf,
-};
-
-function canonicalContent(typeId: string, raw: unknown): unknown {
-  const record = objectOf(raw);
-  const canonical = Object.hasOwn(CANONICAL, typeId) ? CANONICAL[typeId] : undefined;
-  return record !== undefined && canonical !== undefined ? canonical(record) : raw;
-}
+const CANONICAL: CanonicalReaders = { reaction: reactionOf, reply: replyOf, attachment: attachmentOf, deletedMessage: deletedOf };
 
 export function webMessageOf(m: WebMessageView): XmtpMessage {
   const contentTypeId = m.contentType.typeId;
@@ -65,7 +55,7 @@ export function webMessageOf(m: WebMessageView): XmtpMessage {
     sentNs: Number(m.sentAtNs),
     sentMs: m.sentAt.getTime(),
     contentTypeId,
-    content: canonicalContent(contentTypeId, m.content),
+    content: canonicalContent(CANONICAL, contentTypeId, m.content),
     ...(m.fallback === undefined ? {} : { fallback: m.fallback }),
   };
 }

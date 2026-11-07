@@ -36,6 +36,7 @@ import {
   NO_GROUP_ADMINS,
   NO_GROUP_INFO,
   notAGroup,
+  type DmLookup,
   type MessageDeletion,
   type MessageQuery,
   type MessageTarget,
@@ -209,10 +210,7 @@ async function messageTarget(client: WebClient, messageId: string): Promise<Mess
   return message && conv ? { conv, contentTypeId: message.contentType.typeId } : null;
 }
 
-async function dmLookup(
-  client: WebClient,
-  address: string,
-): Promise<{ find: () => Promise<Dm | undefined>; peerInboxId: () => Promise<string> } | null> {
+async function dmLookup(client: WebClient, address: string): Promise<DmLookup<Dm> | null> {
   const inboxId = await client.fetchInboxIdByIdentifier(identifierOf(address));
   if (inboxId === undefined || inboxId === '') return null;
   return { find: () => client.conversations.getDmByInboxId(inboxId), peerInboxId: () => Promise.resolve(inboxId) };

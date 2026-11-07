@@ -4,6 +4,7 @@ import type { ReactionPayload } from '@stage-labs/client/xmtp/builders';
 import type { GroupMetaPolicy, GroupMetaWriters } from '@stage-labs/client/xmtp/groups';
 import type { AppDataGroup } from '@stage-labs/client/xmtp/channelMeta';
 import type { JsonCodec } from '@stage-labs/client/xmtp/jsonCodec';
+import { objectOf } from '@stage-labs/client/xmtp/message';
 import type { XmtpConsent } from './xmtp.types';
 
 export interface GroupMeta {
@@ -31,6 +32,14 @@ export const VISIBLE_CONSENT: XmtpConsent[] = ['allowed', 'unknown'];
 
 export function notAGroup(): never {
   throw new Error('Not a channel');
+}
+
+export type CanonicalReaders = Readonly<Record<string, (raw: Record<string, unknown>) => unknown>>;
+
+export function canonicalContent(readers: CanonicalReaders, typeId: string, raw: unknown): unknown {
+  const record = objectOf(raw);
+  const read = Object.hasOwn(readers, typeId) ? readers[typeId] : undefined;
+  return record !== undefined && read !== undefined ? read(record) : raw;
 }
 
 export interface ConvLike {

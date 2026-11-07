@@ -4,7 +4,7 @@ import { storedRecordOf } from '../storeCore';
 
 const MEMBER_RE = /^0x[0-9a-f]{40}$/;
 
-export interface MemberStat {
+interface MemberStat {
   count: number;
   at: number;
 }
@@ -22,14 +22,8 @@ function validMembers(list: readonly string[], self: string | null): string[] {
 }
 
 function isMemberStat(value: unknown): value is MemberStat {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'count' in value &&
-    'at' in value &&
-    typeof value.count === 'number' &&
-    typeof value.at === 'number'
-  );
+  const { count, at } = (value ?? {}) as Partial<MemberStat>;
+  return typeof count === 'number' && typeof at === 'number';
 }
 
 export const memberHistorySchema = z.object({ last: z.array(z.string()), stats: storedRecordOf(isMemberStat) });

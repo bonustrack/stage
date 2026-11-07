@@ -43,36 +43,28 @@ function newestFirst(entries: readonly HistoryEntry[]): HistoryEntry[] {
     .map(({ entry }) => entry);
 }
 
-function withDeletedPlaceholders(
-  prev: readonly HistoryEntry[],
-  incoming: readonly HistoryEntry[],
-): { entries: readonly HistoryEntry[]; replaced: number } {
+function withDeletedPlaceholders(prev: readonly HistoryEntry[], incoming: readonly HistoryEntry[]) {
   const placeholders = new Map(incoming.filter(isDeletedPlaceholder).map((e) => [e.id, e]));
   let replaced = 0;
-  const entries =
-    placeholders.size === 0
-      ? prev
-      : prev.map((e) => {
-          const placeholder = placeholders.get(e.id);
-          if (placeholder === undefined || isDeletedPlaceholder(e)) return e;
-          replaced += 1;
-          return placeholder;
-        });
+  const entries = prev.map((e) => {
+    const placeholder = placeholders.get(e.id);
+    if (placeholder === undefined || isDeletedPlaceholder(e)) return e;
+    replaced += 1;
+    return placeholder;
+  });
   return { entries, replaced };
 }
 
 export function mergeFeedEntries(prev: readonly HistoryEntry[], incoming: readonly HistoryEntry[]): FeedMerge {
   const { entries: base, replaced } = withDeletedPlaceholders(prev, incoming);
   const fresh = uniqueBy(incoming, (e) => e.id, new Set(base.map((e) => e.id)));
-  if (fresh.length === 0) return { entries: [...base], added: 0, replaced, channelUpdated: false };
+  if (fresh.length === 0) return { entries: base, added: 0, replaced, channelUpdated: false };
   return { entries: newestFirst([...fresh, ...base]), added: fresh.length, replaced, channelUpdated: fresh.some(isSystemEntry) };
 }
 
 export function settleCachedFeed(slice: readonly HistoryEntry[], cachedIds: ReadonlySet<string>, page: readonly HistoryEntry[]): FeedMerge {
-  return mergeFeedEntries(
-    slice.filter((e) => !cachedIds.has(e.id)),
-    page,
-  );
+  const kept = slice.filter((e) => !cachedIds.has(e.id));
+  return mergeFeedEntries(kept, page);
 }
 
 export function withNestedReactions<M>(newestFirst: readonly M[], reactionsOf: (m: M) => readonly M[], sentNsOf: (m: M) => number): M[] {

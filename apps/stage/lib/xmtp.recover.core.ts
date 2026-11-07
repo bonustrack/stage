@@ -25,7 +25,7 @@ export async function withStoreRecovery<C>(store: StoreRecovery, open: () => Pro
   }
 }
 
-export interface OpenRecovery extends StoreRecovery {
+interface OpenRecovery extends StoreRecovery {
   freeInstallationSlot: (() => Promise<boolean>) | null;
 }
 
@@ -82,12 +82,9 @@ export async function openFinalizedClient<C>(deps: {
   canFallback: (error: unknown) => boolean;
   finalize: (client: C) => Promise<C>;
 }): Promise<C> {
-  let client: C;
-  try {
-    client = await deps.open();
-  } catch (e) {
+  const client = await deps.open().catch((e: unknown) => {
     if (!deps.canFallback(e)) throw e;
-    client = await deps.fallback();
-  }
+    return deps.fallback();
+  });
   return deps.finalize(client);
 }

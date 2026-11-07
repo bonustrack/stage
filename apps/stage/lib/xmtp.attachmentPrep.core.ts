@@ -3,7 +3,7 @@ import { memoized } from './storeCore';
 
 type Files = readonly LocalAttachmentInput[];
 
-export interface AttachmentPrep<R> {
+interface AttachmentPrep<R> {
   prepare: (files: Files) => void;
   upload: (files: Files) => void;
   uploaded: (files: Files) => Promise<R[]>;

@@ -22,8 +22,7 @@ function isQueueable(error: DmResolveError): boolean {
 
 function cachedDmConvId(address: string): string | null {
   const addr = address.toLowerCase();
-  const hit = getCachedRows()?.find((r) => typeof r.peerAddress === 'string' && r.peerAddress.toLowerCase() === addr);
-  return hit ? hit.convId : null;
+  return getCachedRows()?.find((r) => typeof r.peerAddress === 'string' && r.peerAddress.toLowerCase() === addr)?.convId ?? null;
 }
 
 type ConvState = Omit<ResolvedConv, 'retry'>;

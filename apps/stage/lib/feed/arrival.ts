@@ -6,21 +6,16 @@ import { mergeIntoFeed } from './merge';
 import { resyncActiveFeeds } from './resync';
 import { feedLatest, feedLatestNs, healArrivalGap } from './heal';
 
-async function reconcileOnArrival(line: string, prevLatestNs: number, arrivingNs: number, arrivingId: string): Promise<void> {
-  if (!isFeedLineActive(line)) return;
-  const latestNow = feedLatest(line);
-  if (latestNow?.id === arrivingId && arrivingNs >= prevLatestNs) return;
-  await healArrivalGap(line);
-}
-
 export function onArrival(line: string, entry: HistoryEntry, sentNs: number): void {
   if (!isShownInFeed(entry)) return;
-  const prevLatestNs = isFeedLineActive(line) ? feedLatestNs(line) : 0;
-  mergeIntoFeed(line, [entry]);
-  if (isFeedLineActive(line)) {
-    void reconcileOnArrival(line, prevLatestNs, sentNs, entry.id);
+  if (!isFeedLineActive(line)) {
+    mergeIntoFeed(line, [entry]);
+    if (hasOpenFeeds()) void resyncActiveFeeds();
+    return;
   }
-  if (hasOpenFeeds() && !isFeedLineActive(line)) void resyncActiveFeeds();
+  const prevLatestNs = feedLatestNs(line);
+  mergeIntoFeed(line, [entry]);
+  if (feedLatest(line)?.id !== entry.id || sentNs < prevLatestNs) void healArrivalGap(line);
 }
 
 export function onUnknownArrival(): void {

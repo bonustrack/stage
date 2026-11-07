@@ -52,11 +52,10 @@ async function freeOldestInstallation(rec: AccountRecord): Promise<boolean> {
     const inboxId = await Client.getOrCreateInboxId(identityOf(rec.address), XMTP_ENV);
     const states = await Client.inboxStatesForInboxIds(XMTP_ENV, [inboxId]);
     const installs = states[0]?.installations ?? [];
-    if (installs.length === 0) return false;
     const oldest = [...installs].sort((a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0))[0];
     if (!oldest?.id) return false;
     const signer = await signerForRecord(rec);
-    await Client.revokeInstallations(XMTP_ENV, signer, inboxId, [oldest.id as Parameters<typeof Client.revokeInstallations>[3][number]]);
+    await Client.revokeInstallations(XMTP_ENV, signer, inboxId, [oldest.id as InstallationId]);
     return true;
   } catch (err) {
     report('xmtp.freeInstallation', err);

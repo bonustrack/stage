@@ -19,7 +19,7 @@ export async function accountClient(onlyFor?: string) {
   assertCurrent();
   if ((await getActiveAccountStrict())?.id !== account.id) throw new AccountChangedError();
   assertCurrent();
-  return { account, accountId: account.id, epoch, client, current, assertCurrent };
+  return { account, client, current, assertCurrent };
 }
 
 export type AccountClient = Awaited<ReturnType<typeof accountClient>>;

@@ -24,19 +24,11 @@ async function materializeFileUri(src: string): Promise<string> {
   if (src.startsWith('file://')) return src;
   if (src.startsWith('/')) return `file://${src}`;
   const textPrefix = 'data:text/plain;base64,';
-  if (src.startsWith(textPrefix)) {
-    const dest = freshCacheFile('xmtp-send', 'txt');
-    dest.create();
-    dest.write(base64ToBytes(src.slice(textPrefix.length)));
-    return asFileUri(dest.uri);
-  }
+  if (src.startsWith(textPrefix)) return writeCacheFile(freshCacheFile('xmtp-send', 'txt'), base64ToBytes(src.slice(textPrefix.length)));
   const ext = src.split('?')[0]?.split('#')[0]?.split('.').pop()?.toLowerCase() ?? 'bin';
   const dest = freshCacheFile('xmtp-send', ext.length <= 5 ? ext : 'bin');
   const blob = await (await fetch(src)).blob();
-  const buf = new Uint8Array(await blob.arrayBuffer());
-  dest.create();
-  dest.write(buf);
-  return asFileUri(dest.uri);
+  return writeCacheFile(dest, new Uint8Array(await blob.arrayBuffer()));
 }
 
 function freshCacheFile(prefix: string, ext: string): File {
@@ -49,15 +41,19 @@ function freshCacheFile(prefix: string, ext: string): File {
   return dest;
 }
 
+function writeCacheFile(dest: File, bytes: Uint8Array): string {
+  dest.create();
+  dest.write(bytes);
+  return asFileUri(dest.uri);
+}
+
 export async function sanitizeFileUri(uri: string, mimeType: string | undefined, filename: string | undefined): Promise<SanitizedFileUri> {
   if (!isStrippableImage(mimeType, filename)) return uri as SanitizedFileUri;
   try {
     const blob = await (await fetch(uri)).blob();
     const input = new Uint8Array(await blob.arrayBuffer());
     const { bytes, stripped } = stripMetadataBytes(input);
-    if (!stripped || (bytes.length === input.length && bytes.every((v, k) => v === input[k]))) {
-      return uri as SanitizedFileUri;
-    }
+    if (!stripped || (bytes.length === input.length && bytes.every((v, k) => v === input[k]))) return uri as SanitizedFileUri;
     return writeCleanImage(bytes, filename, uri);
   } catch {
     return uri as SanitizedFileUri;
@@ -66,10 +62,7 @@ export async function sanitizeFileUri(uri: string, mimeType: string | undefined,
 
 function writeCleanImage(bytes: Uint8Array, filename: string | undefined, uri: string): SanitizedFileUri {
   const ext = (filename ?? uri).split('?')[0]?.split('.').pop()?.toLowerCase() ?? 'img';
-  const dest = freshCacheFile('xmtp-clean', ext.length <= 5 ? ext : 'img');
-  dest.create();
-  dest.write(bytes);
-  return asFileUri(dest.uri) as SanitizedFileUri;
+  return writeCacheFile(freshCacheFile('xmtp-clean', ext.length <= 5 ? ext : 'img'), bytes) as SanitizedFileUri;
 }
 
 async function uploadEncrypted(encryptedFileUri: string, filename: string): Promise<string> {

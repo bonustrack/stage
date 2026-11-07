@@ -11,8 +11,7 @@ import { cachedChannelAccess, subscribeChannelAccess, type GroupAccess } from '.
 import { knownConsentOf, rememberConsent } from '../channelVisibility';
 
 function listedConsent(convId: string | undefined): XmtpConsent | undefined {
-  const rows = getCachedRows();
-  return (convId ? rows?.find((r) => r.convId === convId)?.consent : null) ?? undefined;
+  return (convId ? getCachedRows()?.find((r) => r.convId === convId)?.consent : null) ?? undefined;
 }
 
 export function useConvConsentState(convId: string | undefined): XmtpConsent | null | undefined {

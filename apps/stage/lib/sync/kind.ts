@@ -40,14 +40,11 @@ export function defineAppSyncKind<K extends SyncKind>(spec: KindSpec<K>): AppSyn
   const codec = syncCodecOf(spec.kind);
   const publisher =
     (sink: SyncSink): Publish<SyncContents[K]> =>
-    (job) => {
+    ({ content: read, ...job }) => {
       sink.publish({
-        key: job.key,
-        ...(job.accountId === undefined ? {} : { accountId: job.accountId }),
-        ...(job.delayMs === undefined ? {} : { delayMs: job.delayMs }),
-        ...(job.durable === undefined ? {} : { durable: job.durable }),
+        ...job,
         send: async () => {
-          const content = await job.content();
+          const content = await read();
           if (content !== null) await sink.withGroup((target) => sendSyncState(target, codec, content), job.accountId);
         },
       });

@@ -41,31 +41,25 @@ async function readLocalSearchPage(conv: ConvHandle, beforeTsMs: number | undefi
   }
 }
 
-function collectPageHits(mapped: HistoryEntry[], needle: string, state: ScanState): boolean {
+function collectPageHits(mapped: HistoryEntry[], needle: string, state: ScanState): void {
   state.deleteRequests.push(...mapped.filter(isDeleteRequest));
   const deleted = deletedMessages([...state.deleteRequests, ...mapped], state.rights);
   for (const e of mapped) {
     if (state.seen.has(e.id)) continue;
     state.seen.add(e.id);
-    if (!deleted.has(e.id) && matches(e, needle)) {
-      state.hits.push(e);
-      if (state.hits.length >= SEARCH_MAX_RESULTS) {
-        state.truncated = true;
-        return true;
-      }
+    if (deleted.has(e.id) || !matches(e, needle)) continue;
+    state.hits.push(e);
+    if (state.hits.length >= SEARCH_MAX_RESULTS) {
+      state.truncated = true;
+      return;
     }
   }
-  return false;
 }
 
-function shouldStopScan(capped: boolean, state: ScanState, pageLen: number, page: number): boolean {
-  if (capped || state.truncated) return true;
-  if (pageLen < PAGE_SIZE) return true;
-  if (page === SEARCH_MAX_PAGES - 1) {
-    state.truncated = true;
-    return true;
-  }
-  return false;
+function shouldStopScan(state: ScanState, pageLen: number, page: number): boolean {
+  if (state.truncated || pageLen < PAGE_SIZE) return true;
+  state.truncated = page === SEARCH_MAX_PAGES - 1;
+  return state.truncated;
 }
 
 async function searchDeleteRights(conv: ConvHandle, line: string): Promise<DeleteRights> {
@@ -85,10 +79,8 @@ export async function searchLocalHistory(
   const needle = query.trim().toLowerCase();
   const empty: SearchScanResult = { hits: [], truncated: false };
   if (!needle) return empty;
-
   const conv = await convOfLine(line);
   if (!conv) return empty;
-
   const state: ScanState = {
     hits: [],
     seen: new Set<string>(),
@@ -102,18 +94,14 @@ export async function searchLocalHistory(
     if (shouldAbort()) break;
     const mapped = await readLocalSearchPage(conv, beforeTsMs, line);
     if (mapped === null || mapped.length === 0) break;
-
-    const capped = collectPageHits(mapped, needle, state);
+    collectPageHits(mapped, needle, state);
     const oldest = mapped[mapped.length - 1];
     if (oldest === undefined) break;
-    beforeTsMs = new Date(oldest.ts).getTime();
-
+    beforeTsMs = Date.parse(oldest.ts);
     onResults({ hits: [...state.hits], truncated: state.truncated });
-
-    if (shouldStopScan(capped, state, mapped.length, page)) break;
+    if (shouldStopScan(state, mapped.length, page)) break;
     await sleep(0);
   }
-
   const final: SearchScanResult = { hits: state.hits, truncated: state.truncated };
   onResults(final);
   return final;

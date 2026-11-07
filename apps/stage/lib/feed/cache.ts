@@ -33,22 +33,14 @@ export const feedCache = {
   settleCached(line: string): void {
     cachedFeedIds.delete(line);
   },
-  subscribeAll(cb: (line: string, slice: HistoryEntry[] | undefined) => void): () => void {
-    return feedChanges.subscribe(({ line, slice }) => {
-      cb(line, slice);
-    });
-  },
+  subscribeAll: feedChanges.subscribe,
 };
 
-function clearFeedCache(): void {
+export function resetFeed(): void {
+  resetFeedLines();
   generation += 1;
   const lines = [...feedSlices.keys()];
   feedSlices.clear();
   cachedFeedIds.clear();
   for (const line of lines) feedChanges.notify({ line, slice: undefined });
-}
-
-export function resetFeed(): void {
-  resetFeedLines();
-  clearFeedCache();
 }

@@ -9,8 +9,7 @@ const OUTBOX_FLUSH_INTERVAL_MS = 5 * 60 * 1000;
 
 function refreshChannel(line: string): void {
   const convId = convIdOfLine(line);
-  if (!convId) return;
-  refreshConv(convId);
+  if (convId) refreshConv(convId);
 }
 
 let started = false;

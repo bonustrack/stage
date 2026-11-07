@@ -9,8 +9,9 @@ import {
   type XmtpMessage,
 } from '@stage-labs/client/xmtp/message';
 import { shortTypeId } from '@stage-labs/client/xmtp/typeId';
+import { canonicalContent, type CanonicalReaders } from './xmtp.sdk.core';
 
-export interface NativeMessageView {
+interface NativeMessageView {
   id: string;
   senderInboxId: string;
   sentNs: number;
@@ -41,18 +42,7 @@ function deletedOf(raw: Record<string, unknown>): CanonicalDeletedMessage {
   return { deletedBy: raw.deletedBy === 'Admin' || raw.deletedBy === 'admin' ? 'admin' : 'sender' };
 }
 
-const CANONICAL: Readonly<Record<string, (raw: Record<string, unknown>) => unknown>> = {
-  reaction: reactionOf,
-  reply: replyOf,
-  attachment: attachmentOf,
-  deletedMessage: deletedOf,
-};
-
-function canonicalContent(typeId: string, raw: unknown): unknown {
-  const record = objectOf(raw);
-  const canonical = Object.hasOwn(CANONICAL, typeId) ? CANONICAL[typeId] : undefined;
-  return record !== undefined && canonical !== undefined ? canonical(record) : raw;
-}
+const CANONICAL: CanonicalReaders = { reaction: reactionOf, reply: replyOf, attachment: attachmentOf, deletedMessage: deletedOf };
 
 export function nativeMessageOf(m: NativeMessageView): XmtpMessage {
   const contentTypeId = shortTypeId(m.contentTypeId);
@@ -65,13 +55,13 @@ export function nativeMessageOf(m: NativeMessageView): XmtpMessage {
     ...(m.fallback === undefined ? {} : { fallback: m.fallback }),
   };
   try {
-    return { ...base, content: canonicalContent(contentTypeId, m.content()) };
+    return { ...base, content: canonicalContent(CANONICAL, contentTypeId, m.content()) };
   } catch {
     return { ...base, content: undefined, undecodable: true };
   }
 }
 
-export interface NativePolicySet {
+interface NativePolicySet {
   updateGroupNamePolicy: GroupPolicyOption;
   updateGroupDescriptionPolicy: GroupPolicyOption;
   updateGroupImagePolicy: GroupPolicyOption;

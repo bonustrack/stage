@@ -33,11 +33,6 @@ interface NotifyCtx {
   fromSelf: boolean;
 }
 
-interface MsgHandlerDeps {
-  isCancelled: () => boolean;
-  refresh: () => Promise<void>;
-}
-
 function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<void>) {
   let missTimer: ReturnType<typeof setTimeout> | null = null;
   let refreshInFlight = false;
@@ -68,7 +63,7 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
   };
 }
 
-export function makeMsgStreamHandler({ isCancelled, refresh }: MsgHandlerDeps) {
+export function makeMsgStreamHandler(isCancelled: () => boolean, refresh: () => Promise<void>) {
   const onMiss = makeMissRefresher(isCancelled, refresh);
   return ({ convId: streamConvId, msg }: { convId: string | null; msg: StreamedMessage | null }): void => {
     if (isCancelled() || !msg || isChannelHidden(streamConvId)) return;

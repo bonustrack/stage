@@ -84,8 +84,7 @@ function republishDurable(context: AccountClient): void {
 }
 
 async function bootReplay(token: number): Promise<void> {
-  if (!(await waitForXmtpReady())) return;
-  if (token !== bootToken) return;
+  if (!(await waitForXmtpReady()) || token !== bootToken) return;
   try {
     const context = await accountClient();
     const { id } = context.account;

@@ -1,4 +1,4 @@
-export interface PresentedNotification {
+interface PresentedNotification {
   identifier: string;
   data: unknown;
 }

@@ -1,7 +1,7 @@
 import { createValueStore, type ValueStore, type ValueStoreOptions } from '../persistedStore';
 import { makeListeners, useStoreValue } from '../storeCore';
 
-export interface SettingChange<T> {
+interface SettingChange<T> {
   accountId: string;
   state: T;
 }
@@ -13,8 +13,7 @@ export interface SyncedSetting<T> {
 }
 
 export function settingChanges<T>(): { notify: (change: SettingChange<T>) => void; subscribe: SyncedSetting<T>['onLocalChange'] } {
-  const changes = makeListeners<SettingChange<T>>();
-  return { notify: changes.notify, subscribe: changes.subscribe };
+  return makeListeners<SettingChange<T>>();
 }
 
 interface SettingPolicy<T> {

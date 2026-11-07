@@ -40,8 +40,8 @@ const INIT_TIMEOUT_MS = 30_000;
 
 type Conv = Awaited<ReturnType<typeof listVisibleConversations>>[number];
 
-async function summarize(conv: Conv, selfInboxId: string, alreadySynced = false): Promise<Row> {
-  return { ...(await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(getCachedRows() ?? []))) };
+async function summarize(conv: Conv, selfInboxId: string, alreadySynced: boolean): Promise<Row> {
+  return await summarizeConversation(conv, selfInboxId, alreadySynced, dmIdsByPeer(getCachedRows() ?? []));
 }
 
 const INIT_TIMEOUT_MESSAGE = 'XMTP failed to initialise (timed out). Tap Reset below to wipe the local identity and start fresh.';
@@ -53,11 +53,8 @@ export const useChannelsSyncError = syncError.use;
 interface SyncRun {
   cancelled: boolean;
   initTimer?: ReturnType<typeof setTimeout>;
-  cancelConvStream: (() => void) | null;
-  cancelMsgStream: (() => void) | null;
-  cancelConsentStream: (() => void) | null;
+  stops: (() => void)[];
   reconcileVisibility?: () => Promise<void>;
-  appStateSub: { remove: () => void } | null;
   stopPhaseWait?: () => void;
   refreshers: Promise<Refreshers>;
   ready: (refreshers: Refreshers) => void;
@@ -71,7 +68,7 @@ interface Refreshers {
   repaint: (network: boolean) => Promise<RepaintResult>;
 }
 
-export interface RepaintResult {
+interface RepaintResult {
   failed: boolean;
 }
 
@@ -85,24 +82,15 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
     await primeConversationMembers(client, convs);
     const previous = new Map((getCachedRows() ?? []).map((r) => [r.convId, r]));
     let failed = false;
-    const summarized = (
-      await Promise.all(
-        convs.map((c) =>
-          summarize(c, selfInboxId, true).catch((err: unknown) => {
-            failed = true;
-            return recover('home.summarize', previous.get(c.id) ?? null)(err);
-          }),
-        ),
-      )
-    ).filter((r): r is Row => r !== null);
+    const summarizeOne = (c: Conv): Promise<Row | null> =>
+      summarize(c, selfInboxId, true).catch((err: unknown) => {
+        failed = true;
+        return recover('home.summarize', previous.get(c.id) ?? null)(err);
+      });
+    const summarized = (await Promise.all(convs.map(summarizeOne))).filter((r): r is Row => r !== null);
     if (run.cancelled) return { failed };
-    updateHomeRows((prev) =>
-      mergePaintedRows(
-        beforeIds,
-        prev,
-        uniqueBy(summarized, (row) => row.convId),
-      ),
-    );
+    const painted = uniqueBy(summarized, (row) => row.convId);
+    updateHomeRows((prev) => mergePaintedRows(beforeIds, prev, painted));
     lastRefreshAt = Date.now();
     clearTimeout(run.initTimer);
     return { failed };
@@ -138,13 +126,10 @@ function makeRefreshers(client: Awaited<ReturnType<typeof xmtpClient>>, selfInbo
         visible.map((c) => c.id),
       );
       if (added.length === 0 && gone.length === 0) return;
-      const fresh = (
-        await Promise.all(
-          visible
-            .filter((c) => added.includes(c.id))
-            .map((c) => summarize(c, selfInboxId, createdBySelf(c, selfInboxId)).catch(recover<Row | null>('home.reconcile', null))),
-        )
-      ).filter((r): r is Row => r !== null);
+      const summarizeAdded = (c: Conv): Promise<Row | null> =>
+        summarize(c, selfInboxId, createdBySelf(c, selfInboxId)).catch(recover<Row | null>('home.reconcile', null));
+      const addedConvs = visible.filter((c) => added.includes(c.id));
+      const fresh = (await Promise.all(addedConvs.map(summarizeAdded))).filter((r): r is Row => r !== null);
       if (run.cancelled) return;
       updateHomeRows((prev) => uniqueBy([...fresh, ...(prev ?? []).filter((r) => !gone.includes(r.convId))], (row) => row.convId));
     } catch (err) {
@@ -167,9 +152,11 @@ async function onNewConversation(conv: Conv, selfInboxId: string, run: SyncRun):
 
 function subscribeConvStream(selfInboxId: string, run: SyncRun): void {
   try {
-    run.cancelConvStream = streamNewConversations((conv) => {
-      if (!run.cancelled) void onNewConversation(conv, selfInboxId, run);
-    });
+    run.stops.push(
+      streamNewConversations((conv) => {
+        if (!run.cancelled) void onNewConversation(conv, selfInboxId, run);
+      }),
+    );
   } catch (err) {
     report('home.convStream', err);
   }
@@ -184,21 +171,26 @@ async function reconcileUnlessOwnNew(convIds: string[], selfInboxId: string, rec
 function subscribeLiveStreams(run: SyncRun, r: Refreshers, selfInboxId: string): void {
   run.reconcileVisibility = r.reconcile;
   try {
-    run.cancelMsgStream = subscribeAllMessages(makeMsgStreamHandler({ isCancelled: () => run.cancelled, refresh: r.refresh }));
+    run.stops.push(subscribeAllMessages(makeMsgStreamHandler(() => run.cancelled, r.refresh)));
   } catch (err) {
     report('home.messageStream', err);
   }
   try {
-    run.cancelConsentStream = streamConvConsent((convIds) => {
-      void reconcileUnlessOwnNew(convIds, selfInboxId, r.reconcile);
-    });
+    run.stops.push(
+      streamConvConsent((convIds) => {
+        void reconcileUnlessOwnNew(convIds, selfInboxId, r.reconcile);
+      }),
+    );
   } catch (err) {
     report('home.consentStream', err);
   }
-  run.appStateSub = AppState.addEventListener('change', (state) => {
+  const appStateSub = AppState.addEventListener('change', (state) => {
     if (state !== 'active') return;
     void syncPreferences();
     void r.refreshThrottled();
+  });
+  run.stops.push(() => {
+    appStateSub.remove();
   });
 }
 
@@ -247,14 +239,7 @@ function stopRun(run: SyncRun): void {
   run.fail(new AccountChangedError());
   clearTimeout(run.initTimer);
   run.stopPhaseWait?.();
-  for (const stop of [run.cancelConvStream, run.cancelMsgStream, run.cancelConsentStream]) {
-    if (stop) attempt(stop, 'cleanup');
-  }
-  const appStateSub = run.appStateSub;
-  if (appStateSub)
-    attempt(() => {
-      appStateSub.remove();
-    }, 'cleanup');
+  for (const stop of run.stops) attempt(stop, 'cleanup');
 }
 
 function newRun(): SyncRun {
@@ -265,16 +250,7 @@ function newRun(): SyncRun {
     fail = reject;
   });
   refreshers.catch(ignored(undefined, 'optional'));
-  return {
-    cancelled: false,
-    cancelConvStream: null,
-    cancelMsgStream: null,
-    cancelConsentStream: null,
-    appStateSub: null,
-    refreshers,
-    ready,
-    fail,
-  };
+  return { cancelled: false, stops: [], refreshers, ready, fail };
 }
 
 let currentRun: SyncRun | null = null;
