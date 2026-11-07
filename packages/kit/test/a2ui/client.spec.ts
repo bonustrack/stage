@@ -240,6 +240,8 @@ describe('Kit catalog', () => {
       expect(basic({ id: 'i', component: 'Icon', name: 'wallet' }).length).toBeGreaterThan(0);
       expect(valid({ id: 'i', component: 'Icon', name: 'settingsGear1' })).toEqual([]);
       expect(valid({ id: 'i', component: 'Icon', name: 'chevronRightSmall' })).toEqual([]);
+      expect(valid({ id: 'i', component: 'Icon', name: 'pin' })).toEqual([]);
+      expect(valid({ id: 'i', component: 'Icon', name: 'brokenHeart' })).toEqual([]);
       expect(valid({ id: 'i', component: 'Icon', name: 'noSuchIcon' }).length).toBeGreaterThan(0);
     });
   });

@@ -1,9 +1,12 @@
 import { describe, expect, mock, test } from 'bun:test';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import * as ReactNativeWeb from 'react-native-web';
 import { createA2uiClient, type ClientDiagnostic } from '../../src/a2ui/client';
 import { KIT_CATALOG } from '../../src/a2ui/kit-catalog';
 import { isJsonObject, type JsonObject, type JsonValue } from '../../src/a2ui/protocol';
 import { BASIC_CATALOG } from '../../src/a2ui/schemas';
+import type { IconName } from '../../src/react-native/icon';
 import {
   CHOICE_PICKER_DISPLAY_STYLES,
   CHOICE_PICKER_VARIANTS,
@@ -34,6 +37,7 @@ mock.module('../../src/react-native/audio-player', () => ({ AudioPlayer: stub })
 
 const { KIT_RENDERERS } = await import('../../src/react-native/a2ui-renderers');
 const { MEDIA_RENDERERS } = await import('../../src/react-native/a2ui-media');
+const { Icon } = await import('../../src/react-native/icon');
 
 function objectAt(value: JsonValue | undefined): JsonObject {
   return isJsonObject(value) ? value : {};
@@ -50,6 +54,15 @@ function basicEnum(component: string, prop: string): JsonValue[] {
   };
   walk(objectAt(objectAt(BASIC_CATALOG.components)[component]));
   return found[0] ?? [];
+}
+
+function kitIconNames(): string[] {
+  const name = objectAt(objectAt(objectAt(objectAt(KIT_CATALOG.components).Icon).properties).name);
+  const options = Array.isArray(name.oneOf) ? name.oneOf : [];
+  return options.flatMap((option) => {
+    const names = objectAt(option).enum;
+    return Array.isArray(names) ? names.filter((value) => typeof value === 'string') : [];
+  });
 }
 
 describe('Kit catalog parity', () => {
@@ -75,6 +88,13 @@ describe('Kit catalog parity', () => {
       ['Column', 'align', FLEX_ALIGNS],
     ];
     for (const [component, prop, values] of cases) expect([...basicEnum(component, prop)].sort()).toEqual([...values].sort());
+  });
+
+  test('every icon name the Kit catalog takes renders an icon', () => {
+    const names = kitIconNames();
+    expect(names).toContain('pin');
+    const blank = names.filter((name) => !renderToStaticMarkup(createElement(Icon, { name: name as IconName })).includes('<svg'));
+    expect(blank).toEqual([]);
   });
 
   for (const [name, messages] of Object.entries(SAMPLES)) {

@@ -2,14 +2,7 @@ import { View } from 'react-native';
 import { Path, Svg } from 'react-native-svg';
 import { ICON_VIEW_BOX, iconStroke, type CentralIcon, type IconStyle } from '../glyph';
 import type { HeroIconName, HeroSolidIconName, IconName as KitIconName } from '../icons';
-import { IconBackward } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBackward';
-import { IconBellOff } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBellOff';
-import { IconBrokenHeart } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBrokenHeart';
-import { IconMute } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconMute';
-import { IconSkip } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSkip';
-import { IconStarLines } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconStarLines';
-import { IconVolumeDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconVolumeDown';
-import { A2UI_ICONS, isA2uiIconName, type A2uiExtraIcon, type A2uiIconName } from '../icons.a2ui';
+import { A2UI_ICONS, isA2uiIconName, type A2uiIconName } from '../icons.a2ui';
 import { brandIconPath, isBrandIconName, type BrandIconName } from '../brand-icons.data';
 import { centralIcon, isKitIconAliasName } from '../central-icons';
 import { CENTRAL_ICONS } from '../central-icons.named.data';
@@ -42,25 +35,18 @@ function PathIcon({ d, size, fill }: { d: string; size: number; fill: string }):
   );
 }
 
-const A2UI_EXTRA_ICONS: Record<A2uiExtraIcon, CentralIcon> = {
-  brokenHeart: IconBrokenHeart,
-  bellOff: IconBellOff,
-  skip: IconSkip,
-  backward: IconBackward,
-  starLines: IconStarLines,
-  volumeDown: IconVolumeDown,
-  mute: IconMute,
-};
+function rosterIcon(name: CentralIconName, style: IconStyle): CentralIcon {
+  const entry = CENTRAL_ICONS[name];
+  return style === 'solid' ? (entry.solid ?? entry.line) : entry.line;
+}
 
 function a2uiIcon(name: A2uiIconName, style: IconStyle): CentralIcon {
   const target = A2UI_ICONS[name];
-  return typeof target === 'string' ? centralIcon(target, style) : A2UI_EXTRA_ICONS[target.extra];
+  return typeof target === 'string' ? centralIcon(target, style) : rosterIcon(target.extra, style);
 }
 
 function namedCentralIcon(name: string, style: IconStyle): CentralIcon | undefined {
-  if (!Object.hasOwn(CENTRAL_ICONS, name)) return undefined;
-  const entry = CENTRAL_ICONS[name as CentralIconName];
-  return style === 'solid' ? (entry.solid ?? entry.line) : entry.line;
+  return Object.hasOwn(CENTRAL_ICONS, name) ? rosterIcon(name as CentralIconName, style) : undefined;
 }
 
 function resolveIcon(name: string, style: IconStyle): CentralIcon | undefined {

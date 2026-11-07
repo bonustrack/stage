@@ -1,8 +1,8 @@
 import { CENTRAL_ICON_NAMES } from '../central-icons.names.data';
 import { BRAND_ICON_NAMES } from '../brand-icons.data';
+import { KIT_ICON_ALIASES } from '../central-icons.aliases';
 import { BUTTON_COLORS, BUTTON_SIZES, BUTTON_VARIANTS } from '../button.styles';
 import { CHART_COLORS, CHART_CURVE_TYPES, CHART_LIMITS } from '../chart';
-import { HERO_ICON_DATA as HERO_ICON_PATHS } from '../heroicons.data';
 import { A2UI_ICON_NAMES } from '../icons.a2ui';
 import {
   A2UI_ICON_VARIANTS,
@@ -153,9 +153,9 @@ export const RADIUS = prop<RadiusValue | number>(
 export const FONT_SIZES = token(Object.keys(FONT_SIZE) as FontSizeName[], 'A Kit font size token.');
 export const ICON_NAME: JsonObject = {
   description:
-    'An icon: a basic catalog name, a Kit HeroIcon name, a Central icon name (its Central name without the Icon prefix, such as settingsGear1 or chevronRightSmall) or a brand icon name.',
+    'An icon: a basic catalog name, a Kit alias (a HeroIcon name or pin), a Central icon name (its Central name without the Icon prefix, such as settingsGear1 or chevronRightSmall) or a brand icon name.',
   oneOf: [
-    strings([...new Set([...A2UI_ICON_NAMES, ...Object.keys(HERO_ICON_PATHS), ...CENTRAL_ICON_NAMES, ...BRAND_ICON_NAMES])], 'Icon name.'),
+    strings([...new Set([...A2UI_ICON_NAMES, ...Object.keys(KIT_ICON_ALIASES), ...CENTRAL_ICON_NAMES, ...BRAND_ICON_NAMES])], 'Icon name.'),
     { type: 'object', properties: { svgPath: common('DynamicString') }, required: ['svgPath'], additionalProperties: false },
     common('DataBinding'),
   ],
