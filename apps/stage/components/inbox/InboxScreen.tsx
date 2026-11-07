@@ -4,7 +4,7 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import { capabilities } from '../../lib/capabilities';
-import { mailLinkOf } from '../../lib/links';
+import { mailLinkOf } from '@stage-labs/client/routing/deepLinks';
 import { channelTimestamp } from '../../lib/format';
 import { useInbox, useMailboxes, useReadMail, type InboxState, type Mailbox } from '../../lib/mail';
 import { usePalette } from '../../lib/theme';

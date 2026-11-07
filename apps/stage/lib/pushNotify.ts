@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { PUSH_ORIGIN } from '@stage-labs/client/endpoints';
 import { pushRpcPath, type PushPlatform, type PushRpc } from '@stage-labs/client/xmtp/pushServer';
 import { convIdOfNotificationData, notificationIdsForConv, toPermission, type PushPermission } from './pushNotify.model';
-import { channelLinkOf } from './links';
+import { channelLinkOf } from '@stage-labs/client/routing/deepLinks';
 import { markConvRead } from './channelsCache';
 import { envBaseUrl } from './env';
 import { attempt, report, reported } from './errorPolicy';

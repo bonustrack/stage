@@ -5,7 +5,7 @@ import { frameCardModel, frameMoreBelow, frameMediaUrl, framePreviewCap, frameSc
 import { frameActionContent, frameLocked, frameNodeOf, frameOf, frameRenders, nodeRequestOf } from '../lib/frames/frame.model';
 import { isFrameActionEntry } from '@stage-labs/client/xmtp/entryPayload';
 import { frameKeysOf } from '../lib/frames/frameKeys';
-import { frameLinkOf } from '../lib/links';
+import { frameLinkOf } from '@stage-labs/client/routing/deepLinks';
 import { frameStackOf, makeFrameStacks, navigateFrame, withFrameNav, type FrameStacks } from '../lib/frames/frameStacks';
 import { isSplitRoute } from '../components/tabs/splitRoutes';
 import { KIT_CATALOG, REFUSED_MESSAGES, actionOf, tapOf } from './frameFixtures';

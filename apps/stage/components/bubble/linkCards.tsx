@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { channelLinkOf, dmLinkOf } from '../../lib/links';
+import { channelLinkOf } from '@stage-labs/client/routing/deepLinks';
+import { dmLinkOf } from '../../lib/links';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { useConvRow } from '../../lib/messaging/queries';
 import { isGroupRow, memberAddressesOf, type ConvRow } from '../../lib/messaging/convRow.model';

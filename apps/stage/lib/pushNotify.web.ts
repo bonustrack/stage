@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { PROXY_ROUTES } from '@stage-labs/client/endpoints';
 import type { PushPlatform, PushRpc } from '@stage-labs/client/xmtp/pushServer';
 import { toPermission, type PushPermission } from './pushNotify.model';
-import { channelLinkOf } from './links';
+import { channelLinkOf } from '@stage-labs/client/routing/deepLinks';
 import { isAppInFront } from './appInFront.web';
 import { report } from './errorPolicy';
 import { isBrowserExtension } from './extension';

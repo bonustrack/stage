@@ -2,7 +2,7 @@ import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { useRouter } from 'expo-router';
-import { channelLinkOf } from '../../lib/links';
+import { channelLinkOf } from '@stage-labs/client/routing/deepLinks';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { useCommonChannels } from '../../lib/useCommonChannels';
 import { getDraft } from '../../lib/drafts';

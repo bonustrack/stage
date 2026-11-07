@@ -1,16 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { routeForUrl } from '@stage-labs/client/routing/deepLinks';
-import {
-  channelLinkOf,
-  channelProfileLinkOf,
-  conversationLinkOf,
-  dmLinkOf,
-  isActiveConversationPath,
-  mailLinkOf,
-  messageShareUrlOf,
-  profileKindOf,
-  profileLinkOf,
-} from '../lib/links';
+import { channelLinkOf, channelProfileLinkOf, mailLinkOf, routeForUrl } from '@stage-labs/client/routing/deepLinks';
+import { profileKindOf } from '@stage-labs/client/routing/handles';
+import { conversationLinkOf, dmLinkOf, isActiveConversationPath, messageShareUrlOf, profileLinkOf } from '../lib/links';
 
 const PEER = '0x1234567890AbcdEF1234567890aBcDeF12345678';
 const CHANNEL = '449ce5e585c1ed5db256b6fd7cbd60e7';

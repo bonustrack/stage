@@ -19,7 +19,7 @@ import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radiu
 import { useHover } from '../../hover';
 import { nextBalanceCurrency, walletBalanceDisplay, type BalanceDisplayInput } from './balance.model';
 import { cycleBalanceCurrency } from './currency';
-import { WALLET_LINKS, type WalletLink } from '../../../lib/links';
+import { WALLET_LINKS, type WalletLink } from '@stage-labs/client/routing/deepLinks';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, Row, PAGE_GUTTER } from '../../layout';
 

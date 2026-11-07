@@ -1,7 +1,10 @@
-import { isPeerHandleSegment } from './handles';
-import type { AppRouteSegment } from './routes';
+import { conversationPathFor, conversationSlugFor, isPeerHandleSegment, profileSlugFor } from './handles';
+import { channelPath, type AppRouteSegment } from './routes';
 import { STAGE_HOST } from '../endpoints';
-import { hashPath, hashRoute, isLaunchPath, toStageWebUrl } from './stageLinks';
+import { hashPath, hashRoute, isLaunchPath, shareUrlFor, toStageWebUrl } from './stageLinks';
+
+const MESSAGE_PARAM = 'm';
+const MAIL_PATH = '/inbox/mail';
 
 export type ParsedRoute =
   | { pathname: '/[convId]'; params: { convId: string; m?: string; focus?: string } }
@@ -10,8 +13,92 @@ export type ParsedRoute =
   | { pathname: '/(tabs)'; params?: undefined }
   | { pathname: '/(tabs)/settings'; params?: undefined }
   | { pathname: '/contacts' | '/dashboard' | '/storage' | '/inbox'; params?: undefined }
-  | { pathname: '/inbox/mail'; params: { label: string; id: string } }
+  | { pathname: typeof MAIL_PATH; params: { label: string; id: string } }
   | { pathname: '/board'; params?: undefined };
+
+export type DmLink = Extract<ParsedRoute, { pathname: '/[convId]' }>;
+export type ChannelLink = Extract<ParsedRoute, { pathname: '/channel/[convId]' }>;
+export type ConversationLink = DmLink | ChannelLink;
+export type ProfileLink = Extract<ParsedRoute, { pathname: '/profile/[id]' }>;
+
+export interface FrameLink {
+  pathname: '/frame';
+  params: { convId: string; id: string };
+}
+
+export const WALLET_LINKS = { send: '/wallet/send', receive: '/wallet/receive' } as const;
+
+export type WalletLink = (typeof WALLET_LINKS)[keyof typeof WALLET_LINKS];
+
+interface WalletSendLink {
+  pathname: typeof WALLET_LINKS.send;
+  params: { to: string };
+}
+
+export function channelLinkOf(convId: string): ChannelLink {
+  return { pathname: '/channel/[convId]', params: { convId } };
+}
+
+export function conversationSlugLinkOf(slug: string): DmLink {
+  return { pathname: '/[convId]', params: { convId: slug } };
+}
+
+export function dmLinkFor(peerAddress: string, handle: string | null | undefined): DmLink {
+  return conversationSlugLinkOf(conversationSlugFor(peerAddress, handle));
+}
+
+export function conversationLinkFor(
+  convId: string,
+  peerAddress: string | null | undefined,
+  handle: string | null | undefined,
+): ConversationLink {
+  return peerAddress ? dmLinkFor(peerAddress, handle) : channelLinkOf(convId);
+}
+
+export function profileLinkFor(address: string, handle: string | null | undefined): ProfileLink {
+  return { pathname: '/profile/[id]', params: { id: profileSlugFor(address, handle) } };
+}
+
+export function channelProfileLinkOf(convId: string): ProfileLink {
+  return { pathname: '/profile/[id]', params: { id: convId } };
+}
+
+export function conversationSharePathFor(
+  convId: string,
+  peerAddress: string | null | undefined,
+  handle: string | null | undefined,
+): string {
+  return peerAddress ? conversationPathFor(peerAddress, handle) : channelPath(convId);
+}
+
+export function messageShareUrlFor(sharePath: string, messageId: string): string {
+  return `${shareUrlFor(sharePath)}?${MESSAGE_PARAM}=${messageId}`;
+}
+
+export function isActiveConversationPathFor(
+  pathname: string,
+  convId: string,
+  peerAddress: string | null | undefined,
+  handle: string | null | undefined,
+): boolean {
+  if (!pathname) return false;
+  const path = pathname.toLowerCase();
+  if (path === channelPath(convId).toLowerCase()) return true;
+  if (!peerAddress) return false;
+  return path === `/${peerAddress}`.toLowerCase() || path === conversationPathFor(peerAddress, handle);
+}
+
+export function frameLinkOf(convId: string, messageId: string): FrameLink {
+  return { pathname: '/frame', params: { convId, id: messageId } };
+}
+
+export function mailLinkOf(label: string, id: string): string {
+  return `${MAIL_PATH}?label=${encodeURIComponent(label)}&id=${encodeURIComponent(id)}`;
+}
+
+export function walletSendLinkOf(to: string): WalletSendLink {
+  return { pathname: WALLET_LINKS.send, params: { to } };
+}
 
 function stripAuthority(work: string): string {
   const m = /^([a-z][a-z0-9+.-]*):\/\/(.*)$/i.exec(work);
@@ -47,7 +134,7 @@ function conversationRoute(
   query: URLSearchParams,
 ): ParsedRoute | null {
   if (!convId) return null;
-  const m = query.get('m') ?? undefined;
+  const m = query.get(MESSAGE_PARAM) ?? undefined;
   const focus = query.get('focus') ?? undefined;
   return { pathname, params: { convId, ...(m ? { m } : {}), ...(focus ? { focus } : {}) } };
 }
@@ -68,7 +155,7 @@ function entityRoute(head: string, second: string | undefined, query: URLSearchP
   if (head === 'inbox' && second === 'mail') {
     const label = query.get('label');
     const id = query.get('id');
-    return label && id ? { pathname: '/inbox/mail', params: { label, id } } : null;
+    return label && id ? { pathname: MAIL_PATH, params: { label, id } } : null;
   }
   if (head !== 'profile') return undefined;
   return second ? { pathname: '/profile/[id]', params: { id: second } } : null;

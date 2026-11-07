@@ -23,7 +23,7 @@ import {
   framePreviewCap,
   frameScreenTitle,
 } from './frame.model';
-import { frameLinkOf } from '../../lib/links';
+import { frameLinkOf } from '@stage-labs/client/routing/deepLinks';
 import { FrameHeader } from './FrameHeader';
 import { FrameView } from './FrameView';
 import { ChatFrameMenu } from './FrameMenu';

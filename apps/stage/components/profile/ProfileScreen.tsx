@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { dmLinkOf, walletSendLinkOf } from '../../lib/links';
+import { walletSendLinkOf } from '@stage-labs/client/routing/deepLinks';
+import { dmLinkOf } from '../../lib/links';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useEffectiveColorScheme, usePalette, type Palette } from '../../lib/theme';

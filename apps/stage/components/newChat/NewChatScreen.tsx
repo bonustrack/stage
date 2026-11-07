@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import { useGlobalSearchParams, useRouter } from 'expo-router';
-import { channelLinkOf } from '../../lib/links';
+import { channelLinkOf } from '@stage-labs/client/routing/deepLinks';
 import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { errorMessage } from '@stage-labs/client/errors';
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
