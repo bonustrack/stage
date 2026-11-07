@@ -320,7 +320,7 @@ function SelfList<T>({ props, handle }: { props: VirtualListProps<T>; handle: Fo
 }
 
 function VirtualListInner<T>(props: VirtualListProps<T>, ref: ForwardedRef<VirtualListHandle>): React.ReactElement {
-  const listProps = withPersistedScroll(props);
+  const listProps = withPersistedScroll(props, props.scroll !== 'self');
   return props.scroll === 'self' ? (
     <SelfList key="self" props={listProps} handle={ref} />
   ) : (

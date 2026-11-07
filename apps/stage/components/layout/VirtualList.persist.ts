@@ -3,6 +3,8 @@ import { flushScrollOffset, getScrollOffset, peekScrollOffset, saveScrollOffset 
 import { attempt, reported } from '../../lib/errorPolicy';
 import type { PersistedScroll, VirtualListHandle, VirtualListProps } from './VirtualList.types';
 
+const windowRestoredThisLoad = new Set<string>();
+
 export function usePersistedScroll(key: string): PersistedScroll {
   const listRef = useRef<VirtualListHandle>(null);
   const saved = useRef<number | undefined>(peekScrollOffset(key));
@@ -21,15 +23,19 @@ export function usePersistedScroll(key: string): PersistedScroll {
       save: (offset: number) => {
         saveScrollOffset(key, offset);
       },
-      restore: (contentHeight: number) => {
+      restore: (contentHeight: number, documentRestoresReturns = false) => {
         if (restored.current) return;
-        const want = saved.current;
-        if (want == null || want <= 0) {
+        const markRestored = (): void => {
           restored.current = true;
+          if (documentRestoresReturns) windowRestoredThisLoad.add(key);
+        };
+        const want = documentRestoresReturns && windowRestoredThisLoad.has(key) ? undefined : saved.current;
+        if (want == null || want <= 0) {
+          markRestored();
           return;
         }
         if (contentHeight <= 0) return;
-        restored.current = true;
+        markRestored();
         const offset = Math.min(want, contentHeight);
         requestAnimationFrame(() => {
           attempt(() => {
@@ -48,7 +54,7 @@ export function usePersistedScroll(key: string): PersistedScroll {
   );
 }
 
-export function withPersistedScroll<T>(props: VirtualListProps<T>): VirtualListProps<T> {
+export function withPersistedScroll<T>(props: VirtualListProps<T>, documentRestoresReturns = false): VirtualListProps<T> {
   const { persist } = props;
   if (persist === undefined) return props;
   return {
@@ -58,7 +64,7 @@ export function withPersistedScroll<T>(props: VirtualListProps<T>): VirtualListP
       props.onScroll?.(ev);
     },
     onContentSizeChange: (w, h) => {
-      persist.restore(h);
+      persist.restore(h, documentRestoresReturns);
       props.onContentSizeChange?.(w, h);
     },
   };

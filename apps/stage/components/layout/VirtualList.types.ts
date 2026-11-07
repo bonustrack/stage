@@ -41,7 +41,7 @@ export type ListScrollMode = 'window' | 'self';
 export interface PersistedScroll {
   listRef: RefObject<VirtualListHandle | null>;
   save(offset: number): void;
-  restore(contentHeight: number): void;
+  restore(contentHeight: number, documentRestoresReturns?: boolean): void;
   resetToTop(): void;
 }
 
