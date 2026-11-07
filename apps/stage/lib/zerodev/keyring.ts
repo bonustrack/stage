@@ -63,7 +63,7 @@ async function migrateLegacyPhrase(): Promise<void> {
     await secureStorage.set(PRIMARY_PHRASE_KEY, id, STORE_OPTS);
     await migrateLegacyHdIndex(id);
   }
-  await secureStorage.delete(LEGACY_MNEMONIC_KEY).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(LEGACY_MNEMONIC_KEY).catch(recover('keyring.deleteLegacyPhrase', undefined));
 }
 
 let migration: Promise<void> | null = null;
@@ -117,7 +117,7 @@ export async function deletePhrase(phraseId: string, nextPrimary: string | null)
   sessionPhrases.delete(phraseId);
   for (const key of [...ownerCache.keys()]) if (key.startsWith(`${phraseId}:`)) ownerCache.delete(key);
   await resetSmartHdIndex(phraseId);
-  await secureStorage.delete(phraseKey(phraseId)).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(phraseKey(phraseId)).catch(recover('keyring.deletePhrase', undefined));
   if ((await primaryPhraseId()) !== phraseId) return;
   if (nextPrimary) await secureStorage.set(PRIMARY_PHRASE_KEY, nextPrimary, STORE_OPTS);
   else await secureStorage.delete(PRIMARY_PHRASE_KEY).catch(ignored(undefined, 'cleanup'));
@@ -185,7 +185,7 @@ export async function adoptLegacyKey(): Promise<{ id: string; address: string } 
 }
 
 export async function deleteKey(id: string): Promise<void> {
-  await secureStorage.delete(PK_PREFIX + id).catch(ignored(undefined, 'cleanup'));
+  await secureStorage.delete(PK_PREFIX + id).catch(recover('keyring.deleteKey', undefined));
 }
 
 export async function revealActiveRecoveryPhrase(expectedAccountId: string): Promise<string | null> {
