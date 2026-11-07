@@ -114,7 +114,7 @@ export async function listVisibleConversations(): Promise<Conv[]> {
   const visible = await sdk.listConvs(context.client, VISIBLE_CONSENT);
   return withoutDepartedGroups(
     context,
-    visible.filter((c) => !sdk.isGroup(c) || !isHidden(c.id)),
+    visible.filter((c) => !isHidden(c)),
   );
 }
 

@@ -1,10 +1,9 @@
-import { hiddenConsent, isHiddenChannel, type HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
+import { hiddenConsent, type HiddenChannels } from '@stage-labs/client/xmtp/sync/clear';
 import { sdk } from './xmtp.sdk';
 import { accountClient, type AccountClient } from './xmtp.account';
-import { applyRemoteHiddenChannels, hiddenChannelsNow, isChannelHidden, loadHiddenChannels } from './sync/hiddenChannels';
+import { applyRemoteHiddenChannels, hiddenChannelsNow, isChannelHidden, isChatHidden, loadHiddenChannels } from './sync/hiddenChannels';
 import { channelAccess, rememberChannelMember } from './channelAccess';
-import { isKnownSyncConv } from './sync/group';
+import { isKnownSyncConv, isSyncConv } from './sync/group';
 import { report } from './errorPolicy';
 import { AccountChangedError } from './accountSelection';
 import type { XmtpConsent } from './xmtp.types';
@@ -25,9 +24,9 @@ export function isHiddenFromFeeds(convId: string | null | undefined): boolean {
   return isKnownSyncConv(convId) || isChannelHidden(convId);
 }
 
-export async function hiddenChannelFilter(accountId: string): Promise<(convId: string) => boolean> {
+export async function hiddenChannelFilter(accountId: string): Promise<(conv: Conv) => boolean> {
   const hidden = await loadHiddenChannels(accountId);
-  return (convId) => isHiddenChannel(hidden, convId);
+  return (conv) => isChatHidden(hidden, conv.id, sdk.isGroup(conv));
 }
 
 export function rememberConsent(convId: string, consent: XmtpConsent | null): void {
@@ -93,7 +92,7 @@ export async function syncVisibleChannels(): Promise<void> {
 async function deniedGroups(context: AccountClient): Promise<Conv[]> {
   const denied: Conv[] = [];
   for (const conv of await sdk.listConvs(context.client, ['denied'])) {
-    if (sdk.isGroup(conv) && !isSyncGroupName(await sdk.groupName(conv))) denied.push(conv);
+    if (sdk.isGroup(conv) && !(await isSyncConv(conv))) denied.push(conv);
   }
   return denied;
 }

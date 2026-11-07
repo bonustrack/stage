@@ -1,6 +1,6 @@
 import type { ConversationView } from './conversation';
 import { getCachedRows, setCachedRows, subscribeCachedRows } from '../channelsCache';
-import { isChannelHidden } from '../sync/hiddenChannels';
+import { isRowHidden } from '../sync/hiddenChannels';
 import { useStoreValue } from '../storeCore';
 
 export type HomeRow = ConversationView & Record<string, unknown>;
@@ -23,5 +23,5 @@ export function hasHomeRows(): boolean {
 
 export function updateHomeRows(fn: (prev: HomeRow[] | null) => HomeRow[] | null): void {
   const next = fn(homeRows());
-  setCachedRows(next?.filter((row) => row.peerAddress !== null || !isChannelHidden(row.convId)) ?? null);
+  setCachedRows(next?.filter((row) => !isRowHidden(row)) ?? null);
 }

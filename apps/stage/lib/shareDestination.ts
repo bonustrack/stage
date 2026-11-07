@@ -1,5 +1,4 @@
 import { isRowCleared } from '@stage-labs/client/xmtp/sync/clear';
-import { isSyncGroupName } from '@stage-labs/client/xmtp/sync/group';
 import { accountClient, type AccountClient } from './xmtp.account';
 import { getAccountEpoch } from './accountEpoch';
 import { channelAccess } from './channelAccess';
@@ -8,6 +7,7 @@ import { knownActiveAccountId } from './accountSelection';
 import { loadClearedChats, subscribeClearedChats } from './sync/clearedChats';
 import { acceptedShareConsent, type ShareDestination } from './shareDestination.model';
 import { sdk } from './xmtp.sdk';
+import { isSyncConv } from './sync/group';
 
 export function isShareAccountCurrent(accountId: string, epoch: number): boolean {
   return getAccountEpoch() === epoch && knownActiveAccountId() === accountId;
@@ -44,7 +44,7 @@ export async function checkShareDestination(accountId: string, epoch: number, de
   context.assertCurrent();
   assertShareAccount(accountId, epoch);
   if (!conv) throw new Error('This channel is no longer available. Choose another channel.');
-  const internal = sdk.isGroup(conv) && isSyncGroupName(await sdk.groupName(conv));
+  const internal = sdk.isGroup(conv) && (await isSyncConv(conv));
   const member = await channelAccess(context, conv);
   const { consent, cleared, hidden } = await shareConsent(accountId, conv);
   context.assertCurrent();

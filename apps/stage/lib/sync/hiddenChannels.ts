@@ -32,7 +32,15 @@ export function applyRemoteHiddenChannels(accountId: string, incoming: HiddenCha
   return prefs.updateFor(accountId, (current) => keepUnlessChanged(current, mergeHiddenChannels(current, incoming)));
 }
 
+export function isChatHidden(hidden: HiddenChannels, convId: string, isChannel: boolean): boolean {
+  return isChannel && isHiddenChannel(hidden, convId);
+}
+
+export function isRowHidden(row: { convId: string; peerAddress?: unknown }, hidden: HiddenChannels = prefs.get()): boolean {
+  return isChatHidden(hidden, row.convId, row.peerAddress == null);
+}
+
 export async function visibleCachedRows<T extends { convId: string; peerAddress?: unknown }>(accountId: string, rows: T[]): Promise<T[]> {
   const hidden = await loadHiddenChannels(accountId);
-  return rows.filter((row) => row.peerAddress != null || !isHiddenChannel(hidden, row.convId));
+  return rows.filter((row) => !isRowHidden(row, hidden));
 }

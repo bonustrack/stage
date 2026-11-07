@@ -19,18 +19,21 @@ const { getCachedRows, hydrateCachedRows, setCachedRows } = await import('../lib
 const { rememberActiveAccountId } = await import('../lib/accountSelection');
 const { filterChannelRows } = await import('@stage-labs/client/xmtp/channelsFilter');
 
-test('cache hydration never publishes a durable hidden channel', async () => {
+test('cache hydration never publishes a durable hidden channel, and a direct chat is never hidden', async () => {
   const shown = { convId: 'shown', peerAddress: null };
-  const rows = [{ convId: 'hidden', peerAddress: null }, shown];
+  const dm = { convId: 'dm', peerAddress: '0xpeer' };
+  const rows = [{ convId: 'hidden', peerAddress: null }, shown, dm];
   cached.set('rows', rows);
-  values.set('channels.hidden.a', JSON.stringify({ hidden: { hidden: true, at: 1 } }));
-  const store = new PersistentStore('rows', undefined, (stored: typeof rows) => visibleCachedRows('a', stored));
+  values.set('channels.hidden.a', JSON.stringify({ hidden: { hidden: true, at: 1 }, dm: { hidden: true, at: 1 } }));
+  const store = new PersistentStore<{ convId: string; peerAddress: string | null }[]>('rows', undefined, (stored) =>
+    visibleCachedRows('a', stored),
+  );
   const published: unknown[] = [];
   store.subscribe((value) => {
     published.push(value);
   });
-  expect(await store.hydrate()).toEqual([shown]);
-  expect(published).toEqual([[shown]]);
+  expect(await store.hydrate()).toEqual([shown, dm]);
+  expect(published).toEqual([[shown, dm]]);
 });
 
 test('actual channel-cache hydration and writes publish the same safe title used for search', async () => {
