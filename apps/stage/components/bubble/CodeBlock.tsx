@@ -13,13 +13,12 @@ import { reported } from '../../lib/errorPolicy';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { HIGHLIGHT_BG } from '../../lib/uiColors';
 import { useCopiedFlag } from '../useCopiedFlag';
-import { MONO_FONT } from '../../lib/uiFonts';
 import { textSelectable } from './interaction';
 import { List } from '@stage-labs/kit/react-native/list';
 import { Column, Row } from '../layout';
 
 const CODE_PAD = 12;
-const CODE_TEXT = { fontFamily: MONO_FONT, lineHeight: 20, flexShrink: 0 } as const;
+const CODE_TEXT = { lineHeight: 20, flexShrink: 0 } as const;
 
 function CopyCodeButton({ code }: { code: string }): React.ReactElement {
   const pal = usePalette();

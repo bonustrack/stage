@@ -29,7 +29,7 @@ describe('textFontFamily', () => {
   test('weights map to the Calibre faces and mono wins', () => {
     expect(textFontFamily(undefined, 'normal')).toBe('Calibre-Medium');
     expect(textFontFamily('sans', 'semibold')).toBe('Calibre-Semibold');
-    expect(textFontFamily('mono', 'bold')).toBe('Menlo');
+    expect(textFontFamily('mono', 'bold')).toBe('Menlo, ui-monospace, monospace');
   });
 });
 

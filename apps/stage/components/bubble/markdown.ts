@@ -4,7 +4,6 @@ import { MarkdownIt } from 'react-native-markdown-display';
 import { registerDeepLinkSchemas } from '@stage-labs/client/text/markdown';
 import type { LinkFinder } from '@stage-labs/client/xmtp/messageBody';
 import { MESSAGE_LINK_COLOR } from '../../lib/uiColors';
-import { MONO_FONT } from '../../lib/uiFonts';
 import { keepIndent, literalStars, taskLists } from './markdown.model';
 import { MESSAGE_BODY } from './MessageText';
 import { textSelectable } from './interaction';
@@ -31,8 +30,8 @@ export function markdownStyles(fg: string, dark: boolean, size: FontSizeName): R
     textgroup: { ...styles.textgroup, ...selection },
     bullet_list_icon: { ...styles.bullet_list_icon, ...selection },
     ordered_list_icon: { ...styles.ordered_list_icon, ...selection },
-    code_inline: { ...styles.code_inline, fontFamily: MONO_FONT, ...selection },
-    code_block: { ...styles.code_block, fontFamily: MONO_FONT, ...selection },
-    fence: { ...styles.fence, fontFamily: MONO_FONT, ...selection },
+    code_inline: { ...styles.code_inline, ...selection },
+    code_block: { ...styles.code_block, ...selection },
+    fence: { ...styles.fence, ...selection },
   };
 }

@@ -237,6 +237,7 @@ These exports stay for existing consumers but nothing in Kit uses them; they liv
 - A2UI: TextField `appearance` takes `filled`, the look every labelled field already has, for fields without a label.
 - Fix: a `Row`/`Column` `radius` that is neither a radius token, a number nor a length (a theme `RadiusName` such as `soft`) no longer becomes an invalid `borderRadius`.
 - `DateTimeInput` no longer loads the icon alias table.
+- Fix: `fontName.mono` is the platform's monospace family (`Menlo` on iOS, `monospace` on Android, `Menlo, ui-monospace, monospace` on web, from `mono-font(.ios|.android).ts`), so `fontFamily="mono"` Text, A2UI mono Text and markdown code are monospace on Android and on browsers without Menlo. It was `Menlo` everywhere.
 
 ### 0.1.0-beta.30
 

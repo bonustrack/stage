@@ -2,19 +2,19 @@ import type { TextStyle } from 'react-native';
 import { Divider } from '@stage-labs/kit/react-native/divider';
 import { Image } from '@stage-labs/kit/react-native/image';
 import { Text, type TextSizeToken } from '@stage-labs/kit/react-native/text';
+import { fontName } from '@stage-labs/kit/tokens';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
 import type { MailBlock, MailImageBlock, MailSpan, MailTextBlock } from '@stage-labs/client/mail/mailHtml';
 import { openInBubbleLink } from '../../lib/capabilities';
 import { usePalette } from '../../lib/theme';
 import { bubbleLinkProps } from '../links/linkProps';
-import { MONO_FONT } from '../../lib/uiFonts';
 import { useImageAspectRatio } from '../media/mediaAspect';
 import { Column, Row } from '../layout';
 
 const HEADING_SIZES: Readonly<Record<number, TextSizeToken>> = { 1: '3xl', 2: '2xl', 3: 'xl', 4: 'lg', 5: 'md', 6: 'md' };
 const QUOTE_INDENT = 12;
 const BODY_SIZE: TextSizeToken = 'md';
-const CODE_STYLE: TextStyle = { fontFamily: MONO_FONT };
+const CODE_STYLE: TextStyle = { fontFamily: fontName.mono };
 const UNDERLINE_STYLE: TextStyle = { textDecorationLine: 'underline' };
 
 function spanStyle(span: MailSpan): TextStyle | undefined {

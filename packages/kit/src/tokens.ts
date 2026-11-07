@@ -1,4 +1,5 @@
 import { luminance, parseHex } from './color-math';
+import { MONO_FONT } from './mono-font';
 
 export { BUTTON_RADIUS_DEFAULT, FONT_SIZE_SNAP, RADIUS_DEFAULT, RADIUS_MAX, RADIUS_MIN } from './legacy';
 
@@ -225,7 +226,7 @@ export const fontFamily = {
   mono: ['Menlo', 'ui-monospace', 'monospace'],
 } as const;
 
-export const fontName = { sans: fontFamily.sans[0], head: fontFamily.head[0], mono: fontFamily.mono[0] } as const;
+export const fontName = { sans: fontFamily.sans[0], head: fontFamily.head[0], mono: MONO_FONT } as const;
 
 export const RADIUS_NAMES = ['pill', 'round', 'soft', 'sharp'] as const;
 

@@ -36,7 +36,7 @@ export default defineConfig({
     'packages/client': { type: 'library', knip: { entry: [], includeEntryExports: true } },
     'packages/kit': {
       type: 'library',
-      knip: { entry: ['stories/*.stories.tsx', 'src/**/*.native.ts'], project: ['src/**', 'stories/**', 'gallery/**'] },
+      knip: { entry: ['stories/*.stories.tsx', 'src/**/*.{native,ios,android}.ts'], project: ['src/**', 'stories/**', 'gallery/**'] },
     },
     'packages/config': { type: 'library', knip: { entry: ['knip/*.js', 'oxlint/*.js', 'bin/*.js'], project: ['**/*.js'] } },
   },
