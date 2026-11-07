@@ -14,6 +14,7 @@ import {
   type FrameContent,
   type FrameMessage,
 } from '../xmtp/frame.schema';
+import { declaredLength } from '../net/cappedBody';
 import { isPublicHost } from '../net/publicHost';
 import { NODE_CAPABILITIES_HEADER, NODE_REPLY_MAX_BYTES, NODE_SIGNATURE_HEADERS, NODE_TIMEOUT_MS } from './hosting';
 import { base64url, nodeSigningText } from './signing';
@@ -230,7 +231,7 @@ async function pushWhole(response: Response, load: boolean, push: Push): Promise
 
 async function readMessages(response: Response, load: boolean, onMessage: (message: FrameMessage) => void): Promise<NodeResult> {
   if (!response.ok) return { ok: false, problem: 'status', status: response.status };
-  if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return { ok: false, problem: 'too-large' };
+  if ((declaredLength(response.headers) ?? 0) > NODE_REPLY_MAX_BYTES) return { ok: false, problem: 'too-large' };
   const push = gateOf(load ? frameMessageSchema : nodeReplyMessageSchema, onMessage);
   const end =
     response.body !== null && STREAM_TYPES.test(response.headers.get('content-type') ?? '')

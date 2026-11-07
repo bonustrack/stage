@@ -1,5 +1,6 @@
 import { PROXY_ROUTES, UPLOAD_MAX_BYTES } from '@stage-labs/client/endpoints';
-import { corsHeaders, corsResponse, declaredLength, guarded, repliesWith, type HeaderMap } from './respond.ts';
+import { declaredLength } from '@stage-labs/client/net/cappedBody';
+import { corsHeaders, corsResponse, guarded, repliesWith, type HeaderMap } from './respond.ts';
 
 const ATTACHMENTS_PATH = PROXY_ROUTES.attachments;
 const ID_BYTES = 24;
@@ -60,7 +61,7 @@ export function newAttachmentId(): string {
 }
 
 async function upload(request: Request, store: AttachmentStore): Promise<Response> {
-  const size = declaredLength(request);
+  const size = declaredLength(request.headers);
   if (size === null) return text('content length required', 411);
   if (size > UPLOAD_MAX_BYTES) return text('attachment too large', 413);
   if (size < 1 || request.body === null) return text('empty attachment', 400);

@@ -62,9 +62,3 @@ export async function guarded(work: () => Promise<Response>, failure: (error: un
     return failure(error);
   }
 }
-
-export function declaredLength(request: Request): number | null {
-  const raw = request.headers.get('content-length');
-  const size = raw === null ? Number.NaN : Number(raw);
-  return Number.isSafeInteger(size) && size >= 0 ? size : null;
-}

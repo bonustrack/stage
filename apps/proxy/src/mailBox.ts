@@ -1,5 +1,6 @@
-import { bytesToHex, sha256, stringToBytes } from 'viem';
+import { sha256, stringToBytes } from 'viem';
 import { isMailId } from '@stage-labs/client/mail/mailbox';
+import { randomHex } from '@stage-labs/client/ids';
 import { objectNamed, putChunks, readChunks, storedChunkKeys, type ObjectNamespace, type ObjectStub } from './durableChunks.ts';
 
 const MAILBOX_URL = 'https://mailbox/';
@@ -44,7 +45,6 @@ const mailKey = (id: string): string => `mail:${id}`;
 const bodyPrefix = (id: string): string => `body:${id}:`;
 const nonceKey = (nonce: string): string => `nonce:${nonce}`;
 const sessionKey = (token: string): string => `session:${sha256(stringToBytes(token)).slice(2)}`;
-const randomHex = (bytes: number): string => bytesToHex(crypto.getRandomValues(new Uint8Array(bytes))).slice(2);
 
 function keyRecord(value: unknown): MailKeyRecord | null {
   if (!isFields(value) || typeof value.issuedAt !== 'number') return null;

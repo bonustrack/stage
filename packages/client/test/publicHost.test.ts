@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { hostProblem, isPrivateIp, isPublicHost } from '../src/net/publicHost';
-import { readCappedBytes } from '../src/net/cappedBody';
+import { declaredLength, readCappedBytes, readCappedResponse } from '../src/net/cappedBody';
 import { clientIp } from '../src/net/clientIp';
 
 describe('private addresses', () => {
@@ -133,6 +133,19 @@ describe('capped body reads', () => {
   test('truncate mode stops reading once the cap is reached', async () => {
     const bytes = await readCappedBytes(streamOf('ab', 'cd', 'ef'), 3, 'truncate');
     expect(new TextDecoder().decode(bytes ?? undefined)).toBe('abcd');
+  });
+
+  test('a declared length counts only when it is a whole number of bytes', () => {
+    expect(declaredLength(new Headers({ 'content-length': '12' }))).toBe(12);
+    expect(declaredLength(new Headers({ 'content-length': '0' }))).toBe(0);
+    for (const raw of ['abc', '-1', '1.5']) expect([raw, declaredLength(new Headers({ 'content-length': raw }))]).toEqual([raw, null]);
+    expect(declaredLength(new Headers())).toBeNull();
+  });
+
+  test('a response is refused on its declared length, and on its real length when it declares none', async () => {
+    expect(await readCappedResponse(new Response(streamOf('ab'), { headers: { 'content-length': '5' } }), 4)).toBeNull();
+    expect(await readCappedResponse(new Response(streamOf('ab', 'cde')), 4)).toBeNull();
+    expect(new TextDecoder().decode((await readCappedResponse(new Response(streamOf('ab', 'cd')), 4)) ?? undefined)).toBe('abcd');
   });
 });
 

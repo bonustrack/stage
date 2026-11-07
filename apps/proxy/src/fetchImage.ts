@@ -1,4 +1,4 @@
-import { readCappedBytes } from '@stage-labs/client/net/cappedBody';
+import { readCappedResponse } from '@stage-labs/client/net/cappedBody';
 import { fetchPublic, SsrfError, UA } from './ssrf.ts';
 
 const TIMEOUT_MS = 5000;
@@ -28,9 +28,7 @@ function fetchFollowing(startUrl: string, cf?: RequestInit['cf']): Promise<{ res
 }
 
 async function readImageCapped(res: Response): Promise<ArrayBuffer | null> {
-  const declared = Number(res.headers.get('content-length') ?? '');
-  if (Number.isFinite(declared) && declared > MAX_IMG_BYTES) return null;
-  const bytes = await readCappedBytes(res.body, MAX_IMG_BYTES, 'reject');
+  const bytes = await readCappedResponse(res, MAX_IMG_BYTES);
   return bytes === null ? null : (bytes.buffer as ArrayBuffer);
 }
 

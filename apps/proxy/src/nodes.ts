@@ -8,7 +8,8 @@ import {
   nodeScriptName,
 } from '@stage-labs/client/nodes/hosting';
 import { base64urlBytes, isStrongNodeKey, nodeSigningText } from '@stage-labs/client/nodes/signing';
-import { corsHeaders, declaredLength, repliesWith } from './respond.ts';
+import { declaredLength } from '@stage-labs/client/net/cappedBody';
+import { corsHeaders, repliesWith } from './respond.ts';
 
 export const NODES_NAMESPACE = 'stage-nodes';
 export const MAX_NODES = 1000;
@@ -77,7 +78,7 @@ export function cloudflareApi(token: string | undefined, accountId: string | und
 }
 
 async function readCode(request: Request): Promise<Uint8Array | Response> {
-  const length = declaredLength(request);
+  const length = declaredLength(request.headers);
   if (length === null) return fail(411, 'content length required');
   if (length > NODE_CODE_MAX_BYTES) return fail(NODE_PUBLISH_STATUS['too-large'], 'code too large');
   if (length === 0) return fail(NODE_PUBLISH_STATUS.refused, 'code required');

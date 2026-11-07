@@ -2,6 +2,12 @@ import { concatBytes } from '@noble/hashes/utils';
 
 export type CapMode = 'truncate' | 'reject';
 
+export function declaredLength(headers: { get(name: string): string | null }): number | null {
+  const raw = headers.get('content-length');
+  const size = raw === null ? Number.NaN : Number(raw);
+  return Number.isSafeInteger(size) && size >= 0 ? size : null;
+}
+
 export async function readCappedBytes(
   body: ReadableStream<Uint8Array> | null,
   maxBytes: number,
@@ -24,4 +30,9 @@ export async function readCappedBytes(
     }
   }
   return concatBytes(...chunks);
+}
+
+export async function readCappedResponse(response: Response, maxBytes: number): Promise<Uint8Array | null> {
+  if ((declaredLength(response.headers) ?? 0) > maxBytes) return null;
+  return readCappedBytes(response.body, maxBytes, 'reject');
 }

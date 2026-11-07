@@ -8,8 +8,9 @@ import {
   isNodeId,
   nodeScriptName,
 } from '@stage-labs/client/nodes/hosting';
-import { readCappedBytes } from '@stage-labs/client/net/cappedBody';
+import { declaredLength, readCappedResponse } from '@stage-labs/client/net/cappedBody';
 import { clientIp, clientRateKey } from '@stage-labs/client/net/clientIp';
+import { settleWithin } from '@stage-labs/client/timing';
 
 const NULL_BODY = new Set([204, 205]);
 const CALLER_HEADERS = [
@@ -65,9 +66,8 @@ const fail = (status: number, error: string): Response => answer(JSON.stringify(
 
 function bodyTooLarge(request: Request): boolean {
   if (request.body === null) return false;
-  const raw = request.headers.get('content-length');
-  const size = raw === null ? Number.NaN : Number(raw);
-  return !(Number.isSafeInteger(size) && size >= 0 && size <= NODE_REQUEST_MAX_BYTES);
+  const size = declaredLength(request.headers);
+  return size === null || size > NODE_REQUEST_MAX_BYTES;
 }
 
 async function over(limiter: RateLimit | undefined, key: string): Promise<boolean> {
@@ -79,8 +79,7 @@ async function limited(request: Request, id: string, deps: DispatchDeps): Promis
 }
 
 async function cappedBody(response: Response): Promise<Blob | null> {
-  if (Number(response.headers.get('content-length') ?? 0) > NODE_REPLY_MAX_BYTES) return null;
-  const bytes = await readCappedBytes(response.body, NODE_REPLY_MAX_BYTES, 'reject');
+  const bytes = await readCappedResponse(response, NODE_REPLY_MAX_BYTES);
   return bytes === null ? null : new Blob([bytes]);
 }
 
@@ -107,18 +106,6 @@ async function runNode(nodes: DispatchNamespace, id: string, request: Request): 
   }
 }
 
-function withTimeout(work: Promise<Response>, ms: number): Promise<Response> {
-  return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      resolve(fail(504, 'node timed out'));
-    }, ms);
-    void work.then((response) => {
-      clearTimeout(timer);
-      resolve(response);
-    });
-  });
-}
-
 function refused(request: Request, id: string): Response | null {
   if (!isNodeId(id)) return fail(404, 'not found');
   if (request.method !== 'GET' && request.method !== 'POST') return fail(405, 'method not allowed');
@@ -134,7 +121,7 @@ export async function dispatchNode(request: Request, deps: DispatchDeps): Promis
   const { nodes } = deps;
   if (nodes === undefined) return fail(503, 'nodes are not set up');
   if (await limited(request, id, deps)) return fail(429, 'rate limited');
-  return withTimeout(runNode(nodes, id, request), deps.timeoutMs ?? NODE_TIMEOUT_MS);
+  return settleWithin(runNode(nodes, id, request), deps.timeoutMs ?? NODE_TIMEOUT_MS, fail(504, 'node timed out'));
 }
 
 export default {
