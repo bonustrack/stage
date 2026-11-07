@@ -138,8 +138,8 @@ Each node runs as its own Worker in a Cloudflare Workers for Platforms dispatch 
 - A node can not call itself: `ctx.exports` is off and the code can not `import` (so no `cloudflare:workers` or `cloudflare:sockets`), since a call to itself would skip these limits.
 - Per call: 50 ms of CPU, 5 subrequests and 10 seconds in all.
 - Requests arrive as Stage sent them, signature headers included, so a hosted node can check `Stage-Key` like any other. Cookies and the caller's IP address and location headers are removed first, so a hosted node never sees the user's IP. Images in its reply still load from the device, so the sites that serve them do see it.
-- `nodes.stage.box` answers CORS itself and allows only `GET` and `POST`, with bodies of at most 64 KB, 120 calls a minute per IP (an IPv6 address counts by its /64), 600 calls a minute per node, and no calls from other Workers.
-- The reply keeps the node's status and body, at most 128 KB, and always goes out as `application/json` with no cookies or other headers. A redirect answers `502`, as does a crash or a hit limit; an unknown node answers `404`.
+- `nodes.stage.box` answers CORS itself and allows only `GET` and `POST` (any other method answers `405`), with bodies of at most 64 KB, 120 calls a minute per IP (an IPv6 address counts by its /64), 600 calls a minute per node, and no calls from other Workers (`403`). A body must declare its length with `Content-Length`: one without it, such as a streamed body, answers `413` like a body over 64 KB, and a call over a rate limit answers `429`.
+- The reply keeps the node's status and body, at most 128 KB, and always goes out as `application/json` with no cookies or other headers. A redirect answers `502`, as does a crash or a hit limit; an unknown node answers `404`, and a call that runs past the 10 seconds answers `504`.
 
 Publishing is a signed request to the proxy, the same scheme as in Signing. The app does it for you:
 
