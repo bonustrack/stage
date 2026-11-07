@@ -2,6 +2,7 @@ import { forwardRef, useImperativeHandle, useRef, type ForwardedRef, type Ref } 
 import { FlatList } from 'react-native-gesture-handler';
 import type { VirtualListHandle, VirtualListProps } from './VirtualList.types';
 import { withPersistedScroll } from './VirtualList.persist';
+import { attempt } from '../../lib/errorPolicy';
 
 function nativeListProps<T>(
   props: VirtualListProps<T>,
@@ -21,13 +22,19 @@ function VirtualListInner<T>(props: VirtualListProps<T>, ref: ForwardedRef<Virtu
     ref,
     () => ({
       scrollToOffset: (params) => {
-        list.current?.scrollToOffset(params);
+        attempt(() => {
+          list.current?.scrollToOffset(params);
+        }, 'ui');
       },
       scrollToEnd: (params) => {
-        list.current?.scrollToEnd(params);
+        attempt(() => {
+          list.current?.scrollToEnd(params);
+        }, 'ui');
       },
       scrollToIndex: (params) => {
-        list.current?.scrollToIndex(params);
+        attempt(() => {
+          list.current?.scrollToIndex(params);
+        }, 'ui');
       },
       visibleAnchor: () => null,
       scrollToAnchor: () => false,

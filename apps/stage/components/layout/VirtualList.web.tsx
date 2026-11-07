@@ -27,6 +27,7 @@ import {
 import type { VirtualListHandle, VirtualListProps } from './VirtualList.types';
 import { withPersistedScroll } from './VirtualList.persist';
 import { SELF_SCROLL, SELF_SCROLLBAR } from './webChrome';
+import { attempt } from '../../lib/errorPolicy';
 
 const ESTIMATED_ITEM_SIZE = 72;
 const OVERSCAN = 6;
@@ -211,14 +212,20 @@ function useListHandle<T>(
     handle,
     () => ({
       scrollToOffset: ({ offset, animated }) => {
-        host.scrollTo(offset, animated === true);
+        attempt(() => {
+          host.scrollTo(offset, animated === true);
+        }, 'ui');
       },
       scrollToEnd: (params) => {
-        host.scrollTo(endOffset(host.metrics()), params?.animated === true);
+        attempt(() => {
+          host.scrollTo(endOffset(host.metrics()), params?.animated === true);
+        }, 'ui');
       },
       scrollToIndex: ({ index, animated, viewPosition }) => {
         const align = viewPosition === 1 ? 'end' : viewPosition === 0.5 ? 'center' : 'start';
-        virtualizer.scrollToIndex(index, { align, behavior: animated === true ? 'smooth' : 'auto' });
+        attempt(() => {
+          virtualizer.scrollToIndex(index, { align, behavior: animated === true ? 'smooth' : 'auto' });
+        }, 'ui');
       },
       visibleAnchor: () => visibleAnchor(latest.current, refs, virtualizer),
       scrollToAnchor: (anchor) => scrollToAnchor(latest.current, refs, host, virtualizer, anchor),

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { flushScrollOffset, getScrollOffset, peekScrollOffset, saveScrollOffset } from '../../lib/scrollPos';
-import { attempt, reported } from '../../lib/errorPolicy';
+import { reported } from '../../lib/errorPolicy';
 import type { PersistedScroll, VirtualListHandle, VirtualListProps } from './VirtualList.types';
 
 const windowRestoredThisLoad = new Set<string>();
@@ -38,9 +38,7 @@ export function usePersistedScroll(key: string): PersistedScroll {
         markRestored();
         const offset = Math.min(want, contentHeight);
         requestAnimationFrame(() => {
-          attempt(() => {
-            listRef.current?.scrollToOffset({ offset, animated: false });
-          }, 'ui');
+          listRef.current?.scrollToOffset({ offset, animated: false });
         });
       },
       resetToTop: () => {

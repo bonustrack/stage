@@ -12,7 +12,7 @@ import {
   saveFeedAnchor,
   saveScrollOffset,
 } from '../../lib/scrollPos';
-import { attempt, reported } from '../../lib/errorPolicy';
+import { reported } from '../../lib/errorPolicy';
 import { useStableCallback } from '../useStableCallback';
 import { feedOrientation } from './feedOrientation';
 import { FOLLOW_NEWEST_WITHIN_PX, type FeedScrollState } from './feedOrientation.core';
@@ -91,9 +91,7 @@ function useJumpToMessage(s: FeedScrollState, bubbles: readonly HistoryEntry[]) 
     }, JUMP_HIGHLIGHT_MS);
     if (idx < 0) return;
     const index = feedOrientation.rowIndexOf(idx, bubbles.length);
-    attempt(() => {
-      s.list.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 });
-    }, 'ui');
+    s.list.current?.scrollToIndex({ index, animated: false, viewPosition: 0.5 });
   });
   useEffect(
     () => () => {
@@ -164,9 +162,7 @@ export function useFeedScroll(convId: string | undefined, bubbles: readonly Hist
   const [showJump, setShowJump] = useState(false);
   const scrollToNewest = useStableCallback(() => {
     requestAnimationFrame(() => {
-      attempt(() => {
-        feedOrientation.scrollToNewest(s.list.current);
-      }, 'ui');
+      feedOrientation.scrollToNewest(s.list.current);
     });
   });
   const followNewest = useStableCallback(() => {

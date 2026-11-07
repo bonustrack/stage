@@ -1,5 +1,4 @@
 import type { RefObject } from 'react';
-import { attempt } from '../../lib/errorPolicy';
 import type { VirtualListHandle } from '../layout/VirtualList.types';
 import { FEED_MIN_BATCH, FOLLOW_NEWEST_WITHIN_PX, type FeedOrientation, type FeedScrollState } from './feedOrientation.core';
 
@@ -28,9 +27,7 @@ function planRestore(args: {
 
 function scrollTo(list: RefObject<VirtualListHandle | null>, offset: number): void {
   requestAnimationFrame(() => {
-    attempt(() => {
-      list.current?.scrollToOffset({ offset, animated: false });
-    }, 'ui');
+    list.current?.scrollToOffset({ offset, animated: false });
   });
 }
 
