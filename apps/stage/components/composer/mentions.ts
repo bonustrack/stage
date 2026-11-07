@@ -99,7 +99,7 @@ function useCandidatePool(
   suggestContacts: boolean,
 ): MentionCandidate[] | undefined {
   const typing = suggestContacts && mentionQuery(pieces, cursor, candidates).range !== null;
-  const contacts = useContactList(typing);
+  const { contacts } = useContactList(typing);
   if (!suggestContacts) return candidates;
   return withContactCandidates(candidates ?? [], contacts, knownSelfAddress() ?? '');
 }

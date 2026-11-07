@@ -17,6 +17,7 @@ import { IconThumbtack } from '@central-icons-react-native/round-filled-radius-1
 import { titleTone } from '../TitleText';
 import { UnreadBadge } from './UnreadBadge';
 import type { BubbleLinkProps } from '../links/linkProps.types';
+import { PlaceholderBar } from '../Placeholder';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 interface ChannelRowProps {
@@ -49,6 +50,8 @@ interface ChannelRowProps {
 }
 
 export const CHANNEL_ROW_HEIGHT = 67;
+const AVATAR_SIZE = 44;
+const ROW_PADDING_Y = 9;
 const TITLE_LINE_HEIGHT = 24;
 const WRAPPED_TITLE_LINE_HEIGHT = 22;
 const PREVIEW_LINE_HEIGHT = 18;
@@ -244,12 +247,12 @@ function ChannelRowBase({
       {...contextMenuProps(onContextMenu ?? onLongPress)}
       {...mark}
     >
-      <Row minHeight={rowMinHeight(params.showPreview)} padding={{ y: 9 }} align="center" gap={12}>
+      <Row minHeight={rowMinHeight(params.showPreview)} padding={{ y: ROW_PADDING_Y }} align="center" gap={12}>
         {hideAvatar === true ? null : (
           <Avatar
             imageUri={avatarUri}
             address={avatarUri ? null : (avatarAddress ?? null)}
-            size={44}
+            size={AVATAR_SIZE}
             square={square}
             style={{ backgroundColor: border }}
           />
@@ -270,3 +273,16 @@ function ChannelRowBase({
 }
 
 export const ChannelRow = memo(ChannelRowBase);
+
+export function ChannelRowPlaceholder(): React.ReactElement {
+  const { border } = usePalette();
+  return (
+    <Row minHeight={CHANNEL_ROW_HEIGHT} padding={{ x: PAGE_GUTTER, y: ROW_PADDING_Y }} align="center" gap={12}>
+      <Column width={AVATAR_SIZE} height={AVATAR_SIZE} radius="full" background={border} />
+      <Column minWidth={0} weight={1} gap={LINE_GAP}>
+        <PlaceholderBar width="40%" height={12} line={TITLE_LINE_HEIGHT} />
+        <PlaceholderBar width="60%" height={10} line={PREVIEW_LINE_HEIGHT} />
+      </Column>
+    </Row>
+  );
+}

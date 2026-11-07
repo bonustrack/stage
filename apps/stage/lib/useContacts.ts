@@ -49,17 +49,23 @@ async function collectAddresses(): Promise<string[]> {
   return [...set];
 }
 
-export function useContactList(enabled: boolean): Contact[] {
+export interface ContactList {
+  contacts: Contact[];
+  collected: boolean;
+}
+
+export function useContactList(enabled: boolean): ContactList {
   const selection = useAccountGeneration('selection');
   const accountId = useKnownActiveAccountId();
-  const { data: addresses = NO_ADDRESSES } = useQuery({
+  const { data: addresses = NO_ADDRESSES, isFetched } = useQuery({
     queryKey: accountQueryKeyAt('selection', selection, 'allContacts', accountId),
     queryFn: collectAddresses,
     enabled,
     placeholderData: () => peerAddressesOf(getCachedRows()),
   });
   const version = usePeerProfiles(addresses);
-  return useMemo(() => toSortedContacts(addresses), [addresses, version]);
+  const contacts = useMemo(() => toSortedContacts(addresses), [addresses, version]);
+  return { contacts, collected: isFetched };
 }
 
 export function useContacts(exclude: string[], query: string): Contact[] {

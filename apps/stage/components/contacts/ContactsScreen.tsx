@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { contactNameModel } from './ContactsScreen.model';
-import { ChannelRow } from '../chatRow/ChannelRow';
+import { ChannelRow, ChannelRowPlaceholder } from '../chatRow/ChannelRow';
 import { MenuPage } from '../tabs/MenuPage';
 import { usePalette } from '../../lib/theme';
 import { useListBottomInset } from '../layout/insets';
@@ -10,13 +10,25 @@ import { getPeerDescription, getPeerHandle, getPeerName } from '../../lib/peerPr
 import { dmLinkOf } from '../../lib/links';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { SuggestedContacts } from './SuggestedContacts';
-import { LIST_TOP_GAP, VirtualList } from '../layout';
+import { Column, LIST_TOP_GAP, VirtualList } from '../layout';
+
+const PLACEHOLDER_ROWS = Array.from({ length: 5 }, (_, i) => i);
+
+function ContactsPlaceholder(): React.ReactElement {
+  return (
+    <Column weight={1} surface="surface" padding={{ top: LIST_TOP_GAP }}>
+      {PLACEHOLDER_ROWS.map((i) => (
+        <ChannelRowPlaceholder key={i} />
+      ))}
+    </Column>
+  );
+}
 
 export function ContactsScreen(): React.ReactElement | null {
   const { bg } = usePalette();
   const router = useRouter();
   const bottomInset = useListBottomInset();
-  const contacts = useContactList(true);
+  const { contacts, collected } = useContactList(true);
   const known = useMemo(() => contacts.map((c) => c.address), [contacts]);
 
   const open = useCallback(
@@ -53,15 +65,19 @@ export function ContactsScreen(): React.ReactElement | null {
 
   return (
     <MenuPage id="contacts" list>
-      <VirtualList
-        data={contacts}
-        keyExtractor={(c) => c.address}
-        renderItem={renderItem}
-        extraData={contacts.length}
-        style={{ backgroundColor: bg }}
-        contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP, paddingBottom: bottomInset }}
-        ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
-      />
+      {collected ? (
+        <VirtualList
+          data={contacts}
+          keyExtractor={(c) => c.address}
+          renderItem={renderItem}
+          extraData={contacts.length}
+          style={{ backgroundColor: bg }}
+          contentContainerStyle={{ flexGrow: 1, paddingTop: LIST_TOP_GAP, paddingBottom: bottomInset }}
+          ListHeaderComponent={<SuggestedContacts known={known} headingTop={0} />}
+        />
+      ) : (
+        <ContactsPlaceholder />
+      )}
     </MenuPage>
   );
 }
