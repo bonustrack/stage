@@ -20,12 +20,12 @@ import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { MEMBER_OWNER_BG, MEMBER_OWNER_FG } from '../../lib/uiColors';
-import { stampAvatarUrl, channelStampSeed } from '@stage-labs/kit/avatar';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Eyebrow } from '../Eyebrow';
 import { TitleText } from '../TitleText';
-import { channelTitle } from '../TitleText.model';
+import { channelAvatarUrl, channelTitle } from '../convIdentity';
+import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { Column, VirtualList, Row, PAGE_GUTTER } from '../layout';
 import { Text } from '@stage-labs/kit/react-native/text';
 
@@ -43,7 +43,6 @@ function ChannelProfileHeader({
   children: ReactNode;
 }): React.ReactElement {
   const { bg, border: rowBg } = usePalette();
-  const fallbackUri = channelId ? stampAvatarUrl(channelStampSeed(channelId), PROFILE_AVATAR_SIZE) : '';
   return (
     <ProfileCover
       insetTop={insetTop}
@@ -51,7 +50,7 @@ function ChannelProfileHeader({
         <Pressable onPress={onView} disabled={!imageUrl} hitSlop={8}>
           <Image
             fit="cover"
-            url={imageUrl ? avatarRenderUrl(imageUrl) : fallbackUri}
+            url={channelAvatarUrl(channelId, imageUrl, PROFILE_AVATAR_SIZE)}
             style={{
               width: PROFILE_AVATAR_SIZE,
               height: PROFILE_AVATAR_SIZE,
@@ -75,7 +74,13 @@ function ChannelTitle({ name, description }: { name: string | null; description:
   return (
     <>
       <Column padding={{ x: PAGE_GUTTER, top: 14, bottom: 16 }}>
-        <TitleText title={channelTitle(name)} fontWeight="semibold" size="2xl" color={head} style={{ textAlign: 'left' }} />
+        <TitleText
+          title={channelTitle(name, 'Untitled channel')}
+          fontWeight="semibold"
+          size="2xl"
+          color={head}
+          style={{ textAlign: 'left' }}
+        />
       </Column>
       {about ? (
         <Column padding={{ x: PAGE_GUTTER, bottom: 16 }}>

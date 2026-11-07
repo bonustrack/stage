@@ -19,6 +19,8 @@ import { report } from '../../lib/errorPolicy';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { useOwnDeletes } from '../../lib/ownDeletes';
 import { useStoredChat } from '../../lib/storedChat';
+import { chatLabelOf } from '../convIdentity';
+import { peerLabel } from '../../lib/peerProfiles';
 import { MenuPage } from '../tabs/MenuPage';
 import { useSafeAreaInsets } from '../layout/safeArea';
 import {
@@ -57,7 +59,7 @@ const UNAVAILABLE = 'No longer available';
 const OPEN_FAILED = 'Could not open this file. It may no longer be available.';
 
 function useChatLabel(convId: string): string {
-  return useStoredChat(convId)?.label ?? '';
+  return chatLabelOf(useStoredChat(convId), peerLabel, 'Unnamed channel');
 }
 
 function useGoneCheck(messageId: string): void {

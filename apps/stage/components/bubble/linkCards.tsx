@@ -3,14 +3,12 @@ import { channelLinkOf, dmLinkOf } from '../../lib/links';
 import { ChannelRow } from '../chatRow/ChannelRow';
 import { useConvRow } from '../../lib/messaging/queries';
 import { isGroupRow, memberAddressesOf, type ConvRow } from '../../lib/messaging/convRow.model';
-import { shortAddress } from '@stage-labs/client/identity/format';
-import { usePeerProfiles, getPeerName, isPeerResolved } from '../../lib/peerProfiles';
-import { channelStampSeed } from '@stage-labs/kit/avatar';
+import { usePeerProfiles } from '../../lib/peerProfiles';
 import { usePalette, DANGER, SUCCESS } from '../../lib/theme';
 import { BLOCK_RADIUS_DEFAULT, schemePalette } from '@stage-labs/kit/tokens';
 import { bubbleLinkProps } from '../links/linkProps';
 import { openInBubbleLink } from '../../lib/capabilities';
-import { channelTitle, type ConvTitle } from '../TitleText.model';
+import { channelAvatar, channelTitle, peerTitle, resolvedPeerAddress, type ConvAvatar, type ConvTitle } from '../convIdentity';
 import { ListViewItem } from '@stage-labs/kit/react-native/list-view';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useKitScheme } from '@stage-labs/kit/react-native/theme-context';
@@ -240,10 +238,7 @@ export function ChannelCard({
 
 function cardTitle(row: ConvRow | null, convId: string): ConvTitle {
   if (isGroupRow(row)) return channelTitle(row?.groupName ?? null, 'Channel');
-  const peerAddress = row?.peerAddress ?? null;
-  const peerName = getPeerName(peerAddress);
-  if (peerName != null && peerName !== '') return { text: peerName, placeholder: false };
-  if (peerAddress) return { text: shortAddress(peerAddress), placeholder: false };
+  if (row?.peerAddress) return peerTitle(row.peerAddress);
   return { text: `Channel ${convId.slice(0, 6)}…`, placeholder: true };
 }
 
@@ -253,13 +248,9 @@ function convSubtitle(row: ConvRow | null): string {
   return row?.peerAddress ? 'Direct message' : 'Open channel';
 }
 
-function convAvatar(row: ConvRow | null, convId: string): { avatarUri: string | null; avatarAddress: string | null } {
-  if (row === null || row.peerAddress !== null) {
-    const peer = row?.peerAddress ?? null;
-    return { avatarUri: null, avatarAddress: peer !== null && isPeerResolved(peer) ? peer : null };
-  }
-  const image = row.avatarUri?.trim() ?? '';
-  return image ? { avatarUri: image, avatarAddress: null } : { avatarUri: null, avatarAddress: channelStampSeed(convId) };
+function convAvatar(row: ConvRow | null, convId: string): ConvAvatar {
+  if (row === null || row.peerAddress !== null) return { avatarUri: null, avatarAddress: resolvedPeerAddress(row?.peerAddress) };
+  return channelAvatar(convId, row.avatarUri);
 }
 
 function ConvIdCard({ convId, url }: { convId: string; url: string }): React.ReactElement {
@@ -291,15 +282,12 @@ function ConvIdCard({ convId, url }: { convId: string; url: string }): React.Rea
 function DmPeerCard({ address, url }: { address: string; url: string }): React.ReactElement {
   usePeerProfiles([address]);
 
-  const peerName = getPeerName(address);
-  const title = peerName == null || peerName === '' ? shortAddress(address) : peerName;
-
   return (
     <CardFrame>
       <ChannelRow
-        title={title}
+        title={peerTitle(address).text}
         subtitle="Direct message"
-        avatarAddress={isPeerResolved(address) ? address : null}
+        avatarAddress={resolvedPeerAddress(address)}
         onPress={() => {
           router.push(dmLinkOf(address));
         }}

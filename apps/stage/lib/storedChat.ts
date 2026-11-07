@@ -3,17 +3,16 @@ import { sdk } from './xmtp.sdk';
 import { getCachedRows } from './channelsCache';
 import { listedConvRow } from './messaging/convRow.model';
 import { useAccountEpoch } from './accountEpoch';
-import { peerLabel, usePeerProfiles } from './peerProfiles';
-import { chatLabelOf, type StoredChatRef } from './storedChat.model';
+import { usePeerProfiles } from './peerProfiles';
 
 const CHAT_STALE_MS = 5 * 60_000;
 
-interface StoredChat {
+export interface StoredChat {
   peerAddress: string | null;
-  label: string;
+  groupName: string;
 }
 
-async function storedChatOf(convId: string): Promise<StoredChatRef | null> {
+async function storedChatOf(convId: string): Promise<StoredChat | null> {
   const listed = listedConvRow(getCachedRows(), convId);
   if (listed !== undefined) return { peerAddress: listed.peerAddress, groupName: listed.groupName ?? '' };
   const client = await sdk.client();
@@ -34,8 +33,6 @@ export function useStoredChat(convId: string, recheckMs?: number): StoredChat | 
     retry: false,
     refetchInterval: recheckMs === undefined ? undefined : (query) => (query.state.data ? false : recheckMs),
   });
-  const peer = data?.peerAddress ?? null;
-  usePeerProfiles([peer]);
-  if (data === null || data === undefined) return null;
-  return { peerAddress: peer, label: chatLabelOf(data, peerLabel) };
+  usePeerProfiles([data?.peerAddress ?? null]);
+  return data ?? null;
 }

@@ -7,6 +7,8 @@ import type { MenuPoint } from '../AnchoredMenu.model';
 import { FrameHeader } from '../frame/FrameHeader';
 import { FrameTile } from '../frame/FramePreview';
 import { useStoredChat } from '../../lib/storedChat';
+import { peerLabel } from '../../lib/peerProfiles';
+import { chatLabelOf } from '../convIdentity';
 import { capabilities } from '../../lib/capabilities';
 import { frameLocked } from '../../lib/frames/frame.model';
 import { useFrameMessage } from '../../lib/frames/frameMessage';
@@ -29,6 +31,8 @@ interface WidgetChat {
 
 const NO_CHAT: WidgetChat = { title: FALLBACK_TITLE, isGroup: false };
 
+const UNNAMED_CHANNEL = 'Unnamed channel';
+
 function toastSent(): void {
   capabilities.toast('Sent');
 }
@@ -37,7 +41,8 @@ function useWidgetChat(convId: string): WidgetChat {
   const router = useRouter();
   const chat = useStoredChat(convId, CHAT_RECHECK_MS);
   if (chat === null) return NO_CHAT;
-  const { label, peerAddress: peer } = chat;
+  const label = chatLabelOf(chat, peerLabel, UNNAMED_CHANNEL);
+  const peer = chat.peerAddress;
   return {
     title: label === '' ? FALLBACK_TITLE : label,
     isGroup: peer === null,

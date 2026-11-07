@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { AvatarImage } from '../Avatar';
-import { channelStampSeed, stampAvatarUrl } from '@stage-labs/kit/avatar';
-import { avatarRenderUrl } from '@stage-labs/client/profile/avatar';
+import { channelAvatarUrl } from '../convIdentity';
 import { errorLine } from '@stage-labs/client/errors';
 import type { GroupEditRights, GroupMetaPatch } from '@stage-labs/client/xmtp/groups';
 import { AppModal } from '../AppModal';
@@ -25,8 +24,7 @@ const AVATAR_PX = 96;
 
 function channelAvatarSrc(convId: string, imageUrl: string, picture: PictureChoice): string {
   if (picture.kind === 'new') return picture.file.uri;
-  if (picture.kind === 'keep' && imageUrl.trim()) return avatarRenderUrl(imageUrl);
-  return stampAvatarUrl(channelStampSeed(convId), AVATAR_PX);
+  return channelAvatarUrl(convId, picture.kind === 'keep' ? imageUrl : '', AVATAR_PX);
 }
 
 async function saveChannel(convId: string, patch: GroupMetaPatch, picture: PictureChoice, edits: ListEdits): Promise<void> {

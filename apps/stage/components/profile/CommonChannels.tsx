@@ -10,6 +10,7 @@ import { isPinned } from '../../lib/sync/pins';
 import type { Palette } from '../../lib/theme';
 import { channelTimestamp } from '../../lib/format';
 import { peerLabel } from '../../lib/peerProfiles';
+import { rowAvatarAddress } from '../convIdentity';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 export function CommonChannels({ peerAddress, c }: { peerAddress: string; c: Palette }): React.ReactElement | null {
@@ -38,14 +39,13 @@ export function CommonChannels({ peerAddress, c }: { peerAddress: string; c: Pal
       {channels.map((ch) => {
         const preview =
           ch.lastPreview.length > 0 ? `${ch.lastSenderAddress ? `${peerLabel(ch.lastSenderAddress)}: ` : ''}${ch.lastPreview}` : null;
-        const showAddr = ch.avatarUri || !ch.avatarAddress ? null : ch.avatarAddress;
         return (
           <ChannelRow
             key={ch.convId}
             title={ch.title}
             placeholderTitle={ch.placeholderTitle}
             avatarUri={ch.avatarUri}
-            avatarAddress={showAddr}
+            avatarAddress={rowAvatarAddress(ch)}
             square
             lastPreview={preview}
             subtitle={`${ch.memberCount} member${ch.memberCount === 1 ? '' : 's'}`}

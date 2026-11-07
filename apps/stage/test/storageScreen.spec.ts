@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import type { StoredFile } from '../lib/storageIndex.model';
-import { chatLabelOf } from '../lib/storedChat.model';
+import { chatLabelOf } from '../components/convIdentity';
 import {
   extensionOf,
   scanProgressLabel,
@@ -63,10 +63,11 @@ describe('storage page model', () => {
 
   test('names the chat a file was sent in', () => {
     const short = (address: string): string => address.slice(0, 6);
-    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, () => 'Alice')).toBe('Alice');
-    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, short)).toBe('0xabcd');
-    expect(chatLabelOf({ peerAddress: null, groupName: ' Design ' }, short)).toBe('Design');
-    expect(chatLabelOf({ peerAddress: null, groupName: '' }, short)).toBe('Unnamed channel');
-    expect(chatLabelOf(null, short)).toBe('');
+    const unnamed = 'Unnamed channel';
+    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, () => 'Alice', unnamed)).toBe('Alice');
+    expect(chatLabelOf({ peerAddress: '0xabcdef12', groupName: '' }, short, unnamed)).toBe('0xabcd');
+    expect(chatLabelOf({ peerAddress: null, groupName: ' Design ' }, short, unnamed)).toBe('Design');
+    expect(chatLabelOf({ peerAddress: null, groupName: '' }, short, unnamed)).toBe(unnamed);
+    expect(chatLabelOf(null, short, unnamed)).toBe('');
   });
 });

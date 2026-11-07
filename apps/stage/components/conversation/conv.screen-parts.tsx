@@ -3,7 +3,7 @@ import { Share } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { convTitle } from '../TitleText.model';
+import { convTitle } from '../convIdentity';
 import { MessengerComposer } from '../composer/MessengerComposer';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { ChannelMenu } from '../chatRow/ChannelMenu';
@@ -105,7 +105,7 @@ export function ConversationTopnav({
         isGroup={isGroup}
         border={border}
         head={head}
-        title={convTitle(conv)}
+        title={convTitle(conv, 'Untitled channel')}
         onPress={() => {
           if (isGroup) router.push(channelProfileLinkOf(convId));
           else if (peerAddr) router.push(profileLinkOf(peerAddr));

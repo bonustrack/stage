@@ -1,7 +1,6 @@
 import { cachedSelfEthAddress } from '../../lib/xmtp.client';
 import { homeRowOf } from '../../lib/messaging/homeRows';
-import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
-import { type ConvTitle } from '../TitleText.model';
+import { rowTitle, type ConvTitle } from '../convIdentity';
 import { peerLabel } from '../../lib/peerProfiles';
 
 interface CallPerson {
@@ -22,7 +21,5 @@ export function callPerson(convId: string, inboxId: string, selfInboxId: string 
 
 export function callTitle(convId: string): ConvTitle {
   const row = homeRowOf(convId);
-  if (!row) return { text: 'Call', placeholder: false };
-  if (row.peerAddress) return { text: nameOf(row.peerAddress), placeholder: false };
-  return { text: row.title, placeholder: isUnnamedChannelRow(row) };
+  return row ? rowTitle(row) : { text: 'Call', placeholder: false };
 }

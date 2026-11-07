@@ -1,16 +1,17 @@
 import { Badge } from '@stage-labs/kit/react-native/badge';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { Avatar } from '../Avatar';
-import { convTitle } from '../TitleText.model';
+import { ConvAvatar } from '../ConvAvatar';
+import { convTitle } from '../convIdentity';
 import { TitleText } from '../TitleText';
-import { channelStampSeed } from '@stage-labs/kit/avatar';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useRouter } from 'expo-router';
 import { usePalette } from '../../lib/theme';
 import { profileLinkOf } from '../../lib/links';
 import type { ConvSummary } from './useConversationState';
 import { Column, Row, PAGE_GUTTER } from '../layout';
+
+const UNTITLED_CHANNEL = 'Untitled channel';
 
 function IntroLabelChips({ labels, fg, bg }: { labels: string[]; fg: string; bg: string }): React.ReactElement | null {
   if (labels.length === 0) return null;
@@ -31,15 +32,9 @@ export function ConversationIntro({ conv, convId }: { conv: ConvSummary; convId:
     const desc = groupDescription.trim();
     return (
       <Column padding={{ x: PAGE_GUTTER, y: 24 }} align="start">
-        <Avatar
-          imageUri={groupImage || undefined}
-          address={!groupImage && convId ? channelStampSeed(convId) : null}
-          size="lg"
-          square
-          style={{ backgroundColor: border }}
-        />
+        <ConvAvatar peerAddr={null} groupImage={groupImage} channelId={convId} isGroup border={border} size="lg" />
         <TitleText
-          title={convTitle({ isGroup, groupName, peerAddr })}
+          title={convTitle({ isGroup, groupName, peerAddr }, UNTITLED_CHANNEL)}
           fontWeight="medium"
           size="2xl"
           color={head}
@@ -63,9 +58,9 @@ export function ConversationIntro({ conv, convId }: { conv: ConvSummary; convId:
       }}
       style={{ alignItems: 'flex-start', paddingVertical: 24, paddingHorizontal: PAGE_GUTTER }}
     >
-      <Avatar address={peerAddr} size="lg" style={{ backgroundColor: border }} />
+      <ConvAvatar peerAddr={peerAddr} groupImage="" channelId={convId} isGroup={false} border={border} size="lg" />
       <TitleText
-        title={convTitle({ isGroup, groupName, peerAddr })}
+        title={convTitle({ isGroup, groupName, peerAddr }, UNTITLED_CHANNEL)}
         fontWeight="semibold"
         size="2xl"
         color={head}

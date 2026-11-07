@@ -1,22 +1,16 @@
 import { Vibration } from 'react-native';
 import { lineOfConv } from '@stage-labs/client/xmtp/line';
-import { isUnnamedChannelRow } from '@stage-labs/client/xmtp/summarizeRow';
 import type { CachedRow as HomeRow } from '../../lib/cachedRows.model';
 import type { ChannelFields } from '../../lib/channelFields.model';
-import { getPeerName, isPeerResolved, peerLabel } from '../../lib/peerProfiles';
+import { peerLabel } from '../../lib/peerProfiles';
 import { prefetchFeed } from '../../lib/feed/load';
 import { channelTimestamp } from '../../lib/format';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import type { ConvTitle } from '../TitleText.model';
+import { rowAvatarAddress, rowTitle } from '../convIdentity';
 import { ChannelMenu } from './ChannelMenu';
 import { ChannelRowFields } from './ChannelRowFields';
 import type { ChannelRow } from './ChannelRow';
 import { rowPreviewText } from './chatRow.model';
-
-export function chatTitle(row: HomeRow): ConvTitle {
-  if (row.peerAddress) return { text: getPeerName(row.peerAddress) ?? row.title, placeholder: false };
-  return { text: row.title, placeholder: isUnnamedChannelRow(row) };
-}
 
 export function chatPreview(row: HomeRow): string {
   const sender = row.lastSenderAddress;
@@ -26,11 +20,6 @@ export function chatPreview(row: HomeRow): string {
     fromSelf: row.lastFromSelf,
     senderLabel: sender ? peerLabel(sender) : null,
   });
-}
-
-export function chatAvatarAddress(row: HomeRow): string | null {
-  if (row.avatarUri || !row.avatarAddress) return null;
-  return !row.peerAddress || isPeerResolved(row.avatarAddress) ? row.avatarAddress : null;
 }
 
 type ChatRowProps = Pick<
@@ -53,12 +42,12 @@ type ChatRowProps = Pick<
 >;
 
 export function chatRowProps(row: HomeRow, shown: { pinned: boolean; fields: ChannelFields; draftText: string }): ChatRowProps {
-  const title = chatTitle(row);
+  const title = rowTitle(row);
   return {
     title: title.text,
     placeholderTitle: title.placeholder,
     avatarUri: row.avatarUri,
-    avatarAddress: chatAvatarAddress(row),
+    avatarAddress: rowAvatarAddress(row),
     square: !row.peerAddress,
     hideAvatar: !shown.fields.avatar,
     lastPreview: chatPreview(row),

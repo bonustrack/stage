@@ -4,8 +4,7 @@ import { DropdownMenu } from '@stage-labs/kit/react-native/menu';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { TOPNAV_HEIGHT, TopnavFade } from '../Topnav';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
-import { Avatar } from '../Avatar';
-import { channelStampSeed } from '@stage-labs/kit/avatar';
+import { ConvAvatar, type ConvAvatarProps } from '../ConvAvatar';
 import { REACT_PRESETS } from '../bubble/reactions.model';
 import { offersSelectMode } from '../bubble/interaction';
 import { usePalette } from '../../lib/theme';
@@ -21,30 +20,9 @@ import type { MenuAnchor } from '../bubble/model';
 import { useHover } from '../hover';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { TitleText } from '../TitleText';
-import type { ConvTitle } from '../TitleText.model';
+import type { ConvTitle } from '../convIdentity';
 import { MODAL, Overlay } from '@stage-labs/kit/react-native/modal';
 import { Column, Row, pinnedTop, PAGE_GUTTER } from '../layout';
-
-interface HeaderAvatarProps {
-  peerAddr: string | null;
-  groupImage: string;
-  channelId: string;
-  isGroup: boolean;
-  border: string;
-}
-
-export function HeaderAvatar({ peerAddr, groupImage, channelId, isGroup, border }: HeaderAvatarProps): React.ReactElement | null {
-  if (peerAddr) {
-    return <Avatar address={peerAddr} size="sm" style={{ backgroundColor: border }} />;
-  }
-  if (groupImage) {
-    return <Avatar imageUri={groupImage} size="sm" square style={{ backgroundColor: border }} />;
-  }
-  if (isGroup && channelId) {
-    return <Avatar address={channelStampSeed(channelId)} size="sm" square style={{ backgroundColor: border }} />;
-  }
-  return null;
-}
 
 export function ConvTopnavShell({
   fg,
@@ -94,14 +72,14 @@ export function ConvTopnavIdentity({
   title,
   onPress,
   ...avatar
-}: HeaderAvatarProps & { head: string; title: ConvTitle; onPress?: () => void }): React.ReactElement {
+}: ConvAvatarProps & { head: string; title: ConvTitle; onPress?: () => void }): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
       disabled={!onPress}
       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 14 }}
     >
-      <HeaderAvatar {...avatar} />
+      <ConvAvatar {...avatar} size="sm" />
       <TitleText
         title={title}
         fontWeight={avatar.isGroup ? 'medium' : 'semibold'}
