@@ -1,5 +1,5 @@
 import { Fragment, forwardRef } from 'react';
-import { fontSize } from '@stage-labs/kit/tokens';
+import { fontName, fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { TextField, type TextFieldProps } from '@stage-labs/kit/react-native/text-field';
@@ -111,7 +111,7 @@ export const TopnavSearch = forwardRef<React.ComponentRef<typeof TextField>, Top
             color: link,
             fontSize: fontSize('lg'),
             lineHeight: 23,
-            fontFamily: 'Calibre-Medium',
+            fontFamily: fontName.sans,
             padding: 0,
             backgroundColor: 'transparent',
             minHeight: 0,

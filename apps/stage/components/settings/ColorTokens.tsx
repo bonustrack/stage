@@ -22,7 +22,7 @@ import { AppModal } from '../AppModal';
 import { ColorPicker } from '@stage-labs/kit/react-native/color-picker';
 import { isHex } from '../../lib/theme';
 import { ACCENT_LEVELS, GRAYSCALE_SHADES, GRAYSCALE_TINTS } from '@stage-labs/kit/theme-derive';
-import { BASE_SIZES, DENSITIES, RADIUS_NAMES, fontSize } from '@stage-labs/kit/tokens';
+import { BASE_SIZES, DENSITIES, RADIUS_NAMES, fontName, fontSize } from '@stage-labs/kit/tokens';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { Column, Row } from '../layout';
 
@@ -94,7 +94,7 @@ function SeedSwatch({
             borderWidth: 0,
             color: invalid ? '#eb4c5b' : p.sub,
             fontSize: fontSize('3xs'),
-            fontFamily: 'Calibre-Medium',
+            fontFamily: fontName.sans,
           }}
         />
       </Column>

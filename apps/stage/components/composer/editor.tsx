@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Platform, type GestureResponderEvent, type NativeSyntheticEvent, type TextInputKeyPressEventData } from 'react-native';
-import { fontSize } from '@stage-labs/kit/tokens';
+import { fontName, fontSize } from '@stage-labs/kit/tokens';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { TextField } from '@stage-labs/kit/react-native/text-field';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
@@ -152,7 +152,7 @@ function ComposerInputSlot({ p }: { p: EditorProps }): React.ReactElement {
         variant="longText"
         autoGrow
         fontSize={fontSize(MESSAGE_BODY.size)}
-        fontFamily="Calibre-Medium"
+        fontFamily={fontName.sans}
         color={p.head}
         placeholderColor={p.sub}
         paddingX={8}
