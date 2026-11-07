@@ -1,6 +1,7 @@
 import type { Hex } from 'viem';
 import { baseProfileClient, resolveBasenameProfile } from '@stage-labs/client/identity/onchainProfile';
-import { fetchIssuedName, stageLabelOf } from '@stage-labs/client/identity/stageNames';
+import { stageLabelOf } from '@stage-labs/client/identity/stageNames';
+import { fetchIssuedName } from '@stage-labs/client/identity/namesApi';
 import { registerMailKey } from '@stage-labs/client/mail/api';
 import { deriveMailKey, isMailboxLabel, mailPublicKeyHex } from '@stage-labs/client/mail/mailbox';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';

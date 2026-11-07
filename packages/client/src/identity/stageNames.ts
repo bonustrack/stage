@@ -1,5 +1,3 @@
-import { namesPath, type NamesOp } from '../endpoints';
-
 export const STAGE_NAMES_PARENT = 'stage.base.eth';
 export const STAGE_NAME_MIN_LENGTH = 6;
 export const STAGE_NAME_MAX_LENGTH = 32;
@@ -59,24 +57,6 @@ export function claimMessage(claim: ClaimRequest): string {
 
 export function claimIsFresh(issuedAt: number, now: number): boolean {
   return Number.isFinite(issuedAt) && now - issuedAt >= -60_000 && now - issuedAt <= CLAIM_TTL_MS;
-}
-
-function nonEmptyString(value: unknown): string | null {
-  return typeof value === 'string' && value !== '' ? value : null;
-}
-
-async function namesGet(proxyBase: string, op: NamesOp, query: string): Promise<Record<string, unknown> | null> {
-  const res = await fetch(`${proxyBase}${namesPath(op)}?${query}`);
-  if (!res.ok) return null;
-  return (await res.json()) as Record<string, unknown> | null;
-}
-
-export async function fetchIssuedName(proxyBase: string, address: string): Promise<string | null> {
-  return nonEmptyString((await namesGet(proxyBase, 'status', `address=${encodeURIComponent(address)}`))?.name);
-}
-
-export async function fetchIssuedAddress(proxyBase: string, label: string): Promise<string | null> {
-  return nonEmptyString((await namesGet(proxyBase, 'resolve', `label=${encodeURIComponent(label)}`))?.address);
 }
 
 export interface UsernameWords {

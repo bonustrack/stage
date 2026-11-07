@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from 'react';
 import { createPeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import { avatarCacheKey, baseProfileClient, resolveOnchainProfile } from '@stage-labs/client/identity/onchainProfile';
-import { fetchIssuedName } from '@stage-labs/client/identity/stageNames';
+import { fetchIssuedName } from '@stage-labs/client/identity/namesApi';
 import { stampAvatarUrl } from '@stage-labs/kit/avatar';
 import { linkProxyBase } from './linkProxy';
 

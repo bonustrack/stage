@@ -3,7 +3,8 @@ import { claimIsFresh, claimMessage, describeLabelProblem, stageNameOf, validate
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { isMailPublicKey, isMailboxLabel } from '@stage-labs/client/mail/mailbox';
 import { mailboxStub, saveMailKey } from './mailBox.ts';
-import { NAME_TAKEN, makeNamesChain, NameTransactionRevertedError } from './namesChain.ts';
+import { NAME_TAKEN } from '@stage-labs/client/identity/namesApi';
+import { makeNamesChain, NameTransactionRevertedError } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
 import { CLIENT_CORS, guarded, repliesWith } from './respond.ts';

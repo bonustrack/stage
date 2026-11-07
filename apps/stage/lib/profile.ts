@@ -1,8 +1,5 @@
 import { Platform } from 'react-native';
 import {
-  parseNameCheck,
-  parseNameClaim,
-  type NameCheck,
   type ProfileImage,
   type ProfileProgress,
   type ProfileSetup,
@@ -11,7 +8,6 @@ import {
 } from '@stage-labs/client/profile/setup';
 import { namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
-import { STAGE_CLIENT_HEADERS, namesPath } from '@stage-labs/client/endpoints';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
 import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
 import {
@@ -21,7 +17,14 @@ import {
   baseProfileClient,
   inspectNameSetup,
 } from '@stage-labs/client/identity/onchainProfile';
-import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
+import { claimMessage, stageNameOf } from '@stage-labs/client/identity/stageNames';
+import {
+  fetchIssuedName,
+  fetchNameCheck,
+  postNameClaim,
+  type NameCheck,
+  type NameClaimOutcome,
+} from '@stage-labs/client/identity/namesApi';
 import { getSelectedAccount } from './accounts';
 import type { AccountRecord } from '@stage-labs/client/accounts/types';
 import { selectionScope } from './accountSelection';
@@ -134,9 +137,7 @@ export async function saveBasenameProfile(address: string, name: string, changes
   return hash;
 }
 
-export type { NameCheck } from '@stage-labs/client/profile/setup';
-
-const HEADERS = { 'content-type': 'application/json', ...STAGE_CLIENT_HEADERS };
+export type { NameCheck } from '@stage-labs/client/identity/namesApi';
 
 async function signForAccount(account: ProfileAccount, message: string): Promise<Hex> {
   const signed = await signFrom(
@@ -148,14 +149,24 @@ async function signForAccount(account: ProfileAccount, message: string): Promise
 }
 
 export function checkStageName(label: string): Promise<NameCheck> {
-  return profileRequest(`${linkProxyBase()}${namesPath('check')}?label=${encodeURIComponent(label)}`, { headers: HEADERS }, async (res) => {
-    if (!res.ok) throw new Error(`name service responded ${res.status}`);
-    return parseNameCheck(await res.json());
-  });
+  return fetchNameCheck(linkProxyBase(), label, profileRequest);
 }
 
 export function ownedStageName(address: string): Promise<string | null> {
   return fetchIssuedName(linkProxyBase(), address);
+}
+
+function claimedName(outcome: NameClaimOutcome): string {
+  switch (outcome.kind) {
+    case 'claimed':
+      return outcome.name;
+    case 'taken':
+      throw new ProfileNameTakenError();
+    case 'refused':
+      throw new Error(outcome.error ?? `claim failed (${outcome.status})`);
+    case 'unconfirmed':
+      throw new Error('The name service did not confirm your username.');
+  }
 }
 
 async function claimForAccount(account: ProfileAccount, label: string): Promise<string> {
@@ -166,18 +177,9 @@ async function claimForAccount(account: ProfileAccount, label: string): Promise<
   const issuedAt = Date.now();
   const signature = await signForAccount(account, claimMessage({ label, address, issuedAt, mailKey }));
   assertCurrent();
-  const name = await profileRequest(
-    `${linkProxyBase()}${namesPath('claim')}`,
-    { method: 'POST', headers: HEADERS, body: JSON.stringify({ label, address, issuedAt, signature, mailKey }) },
-    async (res) => {
-      const body = parseNameClaim(await res.json());
-      if (res.status === 409 && body.error === 'name already taken') throw new ProfileNameTakenError();
-      if (!res.ok) throw new Error(body.error ?? `claim failed (${res.status})`);
-      if (body.name !== stageNameOf(label)) throw new Error('The name service did not confirm your username.');
-      if (body.mailKey === 'failed') void registerOwnMailKey(record, label).catch(reported('mail.key'));
-      return body.name;
-    },
-  );
+  const outcome = await postNameClaim(linkProxyBase(), { label, address, issuedAt, signature, mailKey }, profileRequest);
+  const name = claimedName(outcome);
+  if (outcome.kind === 'claimed' && outcome.mailKeyFailed) void registerOwnMailKey(record, label).catch(reported('mail.key'));
   assertCurrent();
   return name;
 }

@@ -75,16 +75,6 @@ export type ProfileSetup = z.infer<typeof profile>;
 export type ProfileProgress = z.infer<typeof progress>;
 export type PendingSetup = z.infer<typeof pending>;
 
-const nameCheck = z.object({ valid: z.boolean(), available: z.boolean(), reason: z.string().optional() });
-const nameClaim = z.object({ name: z.string().optional(), error: z.string().optional(), mailKey: z.string().optional() });
-export type NameCheck = z.infer<typeof nameCheck>;
-export function parseNameCheck(raw: unknown): NameCheck {
-  return parseOrThrow('username availability', nameCheck, raw);
-}
-export function parseNameClaim(raw: unknown): z.infer<typeof nameClaim> {
-  return parseOrThrow('username registration', nameClaim, raw);
-}
-
 function preparedIdentity(value: AccountRecord): (string | number | undefined)[] {
   return [value.id, value.address.toLowerCase(), value.type, value.dbDir, value.phraseId, value.hdIndex, value.ownerAddress?.toLowerCase()];
 }

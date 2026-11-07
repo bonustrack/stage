@@ -3,9 +3,9 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { base } from 'viem/chains';
 import { BASENAME_REGISTRY, REGISTRY_ABI as BASENAME_REGISTRY_ABI } from '@stage-labs/client/identity/onchainProfile';
 import { STAGE_NAMES_PARENT, stageNameOf } from '@stage-labs/client/identity/stageNames';
+import { NAME_TAKEN } from '@stage-labs/client/identity/namesApi';
 import type { NamesChain } from './namesTypes.ts';
 
-export const NAME_TAKEN = 'name already taken';
 const ZERO = '0x0000000000000000000000000000000000000000';
 
 export class NameTransactionRevertedError extends Error {
