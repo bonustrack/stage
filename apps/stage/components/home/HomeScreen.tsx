@@ -13,6 +13,7 @@ import { HomeError, RowChannelMenu, useChannelRowRenderer } from './parts';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { ChannelsList } from './list';
 import { useChannelsSync } from './sync';
+import { channelsLoad } from './sync.model';
 import { deriveBarLabels } from '@stage-labs/client/xmtp/channelsFilter';
 import { useHomeFilters } from './labelbar';
 import { searchBarLabels, type Row } from './model';
@@ -137,13 +138,15 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
     items: list.items,
   });
 
-  const placeholder = st.error ? (
-    <HomeError error={st.error} dark={dark} fg={fg} />
-  ) : !rows ? (
-    <Column weight={1} align="center" justify="center">
-      <Spinner size={28} color={head} />
-    </Column>
-  ) : null;
+  const load = channelsLoad(rows, st.error);
+  const placeholder =
+    load.kind === 'failed' ? (
+      <HomeError error={load.error} dark={dark} fg={fg} />
+    ) : load.kind === 'loading' ? (
+      <Column weight={1} align="center" justify="center">
+        <Spinner size={28} color={head} />
+      </Column>
+    ) : null;
 
   return (
     <Column weight={1} surface="surface">

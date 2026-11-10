@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { xmtpSendTxReference, xmtpSendSignatureReference } from '../../lib/xmtp.messages';
 import { type WalletSendCallsContent, type TransactionReferenceContent, chainIdToNumber } from '@stage-labs/client/xmtp/tx';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
@@ -17,6 +17,9 @@ import { base } from 'viem/chains';
 import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
 import { kernelClientForRecord } from '../../lib/zerodev/client';
 import { paymentBlocker } from './pay.model';
+import { NO_REQUESTS, requestPhases, type RequestPhases } from './requests.model';
+import { useMachine } from '../../lib/useMachine';
+import { recover, report } from '../../lib/errorPolicy';
 
 function typedDataOf(req: SignatureRequestContent): TypedDataDefinition {
   return typedDataForRequest(req) as unknown as TypedDataDefinition;
@@ -93,50 +96,40 @@ function paymentReceipt(
   };
 }
 
-function useBusyIds(): { ids: Set<string>; run: (id: string, failMsg: string, task: () => Promise<void>) => void } {
-  const [ids, setIds] = useState<Set<string>>(new Set());
-  const run = useCallback((id: string, failMsg: string, task: () => Promise<void>): void => {
-    setIds((prev) => new Set(prev).add(id));
-    void task()
-      .catch((e: unknown) => {
-        capabilities.toast(txErrorMessage(e, failMsg));
-      })
-      .finally(() => {
-        setIds((prev) => {
-          const n = new Set(prev);
-          n.delete(id);
-          return n;
-        });
-      });
-  }, []);
-  return { ids, run };
-}
+const RECEIPT_NOT_POSTED = 'Payment sent, but its receipt could not be posted to this chat.';
 
-export function useTxSignLayer(activeLine: string) {
-  const signing = useBusyIds();
-  const paying = useBusyIds();
-  const runSign = signing.run,
-    runPay = paying.run;
-
+function useSignRequests(activeLine: string): { phases: RequestPhases; onSign: (requestId: string, req: SignatureRequestContent) => void } {
+  const [phases, dispatch] = useMachine(requestPhases, NO_REQUESTS);
   const onSign = useCallback(
-    (requestId: string, req: SignatureRequestContent) => {
+    (id: string, req: SignatureRequestContent) => {
       const summary = deriveSignSummary(req);
-      void capabilities
-        .confirm({
+      const run = async (): Promise<void> => {
+        const ok = await capabilities.confirm({
           title: summary.highRisk ? 'High-risk signature' : 'Confirm signature',
           message: signConfirmMessage(summary, req.description),
           confirmLabel: summary.highRisk ? 'Sign anyway' : 'Sign',
           destructive: summary.highRisk,
-        })
-        .then((ok) => {
-          if (ok) runSign(requestId, 'Signing failed', () => produceAndPostSignature(activeLine, requestId, req));
         });
+        if (!ok || !dispatch({ type: 'send', id })) return;
+        try {
+          await produceAndPostSignature(activeLine, id, req);
+          dispatch({ type: 'done', id });
+        } catch (e) {
+          capabilities.toast(txErrorMessage(e, 'Signing failed'));
+          dispatch({ type: 'fail', id });
+        }
+      };
+      void run().catch(recover('sign.confirm', undefined));
     },
-    [activeLine, runSign],
+    [activeLine, dispatch],
   );
+  return { phases, onSign };
+}
 
+function usePayRequests(activeLine: string): { phases: RequestPhases; onPay: (requestId: string, wsc: WalletSendCallsContent) => void } {
+  const [phases, dispatch] = useMachine(requestPhases, NO_REQUESTS);
   const onPay = useCallback(
-    (requestId: string, wsc: WalletSendCallsContent) => {
+    (id: string, wsc: WalletSendCallsContent) => {
       const call = wsc.calls?.[0];
       if (!call?.to) {
         capabilities.toast('Malformed payment request');
@@ -146,27 +139,51 @@ export function useTxSignLayer(activeLine: string) {
       const chainId = chainIdToNumber(wsc.chainId);
       const { chainName, nativeSymbol } = chainMeta(chainId);
       const summary = deriveConfirmSummary({ to: call.to, data: call.data, value: call.value }, nativeSymbol);
-      const broadcast = async (): Promise<void> => {
-        const { txHash, settledChainId } = await broadcastCall(callTo, call, chainId);
-        await xmtpSendTxReference(activeLine, paymentReceipt(txHash, settledChainId, summary, nativeSymbol));
-      };
-      void getActiveAccount().then(async (active) => {
+      const confirmed = async (): Promise<boolean> => {
+        const active = await getActiveAccount();
         const blocker = paymentBlocker({ callCount: wsc.calls?.length ?? 0, chainId, chainName, smartAccount: active?.type === 'smart' });
         if (blocker !== null) {
           capabilities.toast(blocker);
-          return;
+          return false;
         }
-        const ok = await capabilities.confirm({
+        return capabilities.confirm({
           title: summary.verified ? 'Confirm payment' : 'Unverified transaction',
           message: confirmMessage(summary, chainName),
           confirmLabel: summary.verified ? 'Pay' : 'Continue anyway',
           destructive: !summary.verified,
         });
-        if (ok) runPay(requestId, 'Payment failed', broadcast);
-      });
+      };
+      const broadcast = async (): Promise<Awaited<ReturnType<typeof broadcastCall>> | null> => {
+        try {
+          const sent = await broadcastCall(callTo, call, chainId);
+          dispatch({ type: 'done', id });
+          return sent;
+        } catch (e) {
+          capabilities.toast(txErrorMessage(e, 'Payment failed'));
+          dispatch({ type: 'fail', id });
+          return null;
+        }
+      };
+      const run = async (): Promise<void> => {
+        if (!(await confirmed()) || !dispatch({ type: 'send', id })) return;
+        const sent = await broadcast();
+        if (sent === null) return;
+        try {
+          await xmtpSendTxReference(activeLine, paymentReceipt(sent.txHash, sent.settledChainId, summary, nativeSymbol));
+        } catch (err) {
+          report('pay.receipt', err);
+          capabilities.toast(RECEIPT_NOT_POSTED);
+        }
+      };
+      void run().catch(recover('pay.confirm', undefined));
     },
-    [activeLine, runPay],
+    [activeLine, dispatch],
   );
+  return { phases, onPay };
+}
 
-  return { signingIds: signing.ids, onSign, payingIds: paying.ids, onPay };
+export function useTxSignLayer(activeLine: string) {
+  const sign = useSignRequests(activeLine);
+  const pay = usePayRequests(activeLine);
+  return { signPhases: sign.phases, onSign: sign.onSign, payPhases: pay.phases, onPay: pay.onPay };
 }

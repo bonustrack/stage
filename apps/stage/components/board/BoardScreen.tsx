@@ -10,6 +10,7 @@ import { useLastActivityCutoff } from '../../lib/lastActivity';
 import { HomeError, HomeSpinner } from '../home/parts';
 import { homeRows } from '../home/state';
 import { useChannelsSync } from '../home/sync';
+import { channelsLoad } from '../home/sync.model';
 import type { Row as ChannelRowData } from '../home/model';
 import { subscribeCachedRows } from '../../lib/channelsCache';
 import { useAccountEpoch } from '../../lib/accountEpoch';
@@ -66,7 +67,8 @@ function BoardBody({ query, filtering }: { query: string; filtering: boolean }):
     () => searchedColumns(columns, query, memberNamesOf, getDraft, activityCutoff),
     [columns, query, profiles, draftsVersion, activityCutoff],
   );
-  if (error) return <HomeError error={error} dark={dark} fg={fg} />;
+  const load = channelsLoad(rows, error);
+  if (load.kind === 'failed') return <HomeError error={load.error} dark={dark} fg={fg} />;
   if (!rows) return <HomeSpinner head={head} />;
   const actions: ColumnActions = {
     editable: columnsEditable(columnBy),

@@ -1,6 +1,6 @@
 {
   "name": "@stage-labs/config",
-  "version": "0.1.0-beta.7",
+  "version": "0.1.0-beta.8",
   "description": "Shared oxlint plugins, TypeScript and knip presets, and the stage CLI.",
   "license": "MIT",
   "repository": {
@@ -29,6 +29,7 @@
     "./knip": "./knip/index.js",
     "./oxlint/comments": "./oxlint/comments.js",
     "./oxlint/core": "./oxlint/core.js",
+    "./oxlint/state": "./oxlint/state.js",
     "./oxlint/text": "./oxlint/text.js",
     "./tsconfig/base.json": "./tsconfig/base.json",
     "./tsconfig/react-native.json": "./tsconfig/react-native.json"

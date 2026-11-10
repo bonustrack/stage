@@ -11,6 +11,7 @@ import { ATTACHMENT_MAX_WIDTH } from './imageBox.model';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
 import { IconPencil } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPencil';
 import { Column, Row } from '../layout';
+import type { RequestPhase } from '../conversation/requests.model';
 
 function stringifyPrimitive(v: unknown): string | undefined {
   if (typeof v === 'string') return v;
@@ -92,12 +93,12 @@ function MessageDetail({ message, fill, border }: { message: string; fill: strin
 function SigAction({
   gated,
   dark,
-  signing,
+  phase,
   onSign,
 }: {
   gated: boolean;
   dark: boolean;
-  signing?: boolean;
+  phase?: RequestPhase;
   onSign: () => void;
 }): React.ReactElement {
   const pal = usePalette();
@@ -114,9 +115,10 @@ function SigAction({
       size="lg"
       block
       dark={dark}
-      loading={signing}
+      loading={phase === 'sending'}
+      disabled={phase === 'done'}
       onPress={onSign}
-      label="Sign"
+      label={phase === 'done' ? 'Signed' : 'Sign'}
       iconStart={<Glyph icon={IconPencil} size={18} color={pal.bg} />}
       tintBg={pal.primary}
       tintFg={pal.bg}
@@ -128,13 +130,13 @@ function SigAction({
 export function SigRequestCard({
   req,
   dark,
-  signing,
+  phase,
   onSign,
   consentAllowed,
 }: {
   req: SignatureRequestContent;
   dark: boolean;
-  signing?: boolean;
+  phase?: RequestPhase;
   onSign?: () => void;
   consentAllowed?: boolean;
 }): React.ReactElement {
@@ -165,7 +167,7 @@ export function SigRequestCard({
       ) : req.message ? (
         <MessageDetail message={req.message} fill={fill} border={border} />
       ) : null}
-      {onSign ? <SigAction gated={gated} dark={dark} signing={signing} onSign={onSign} /> : null}
+      {onSign ? <SigAction gated={gated} dark={dark} phase={phase} onSign={onSign} /> : null}
     </Column>
   );
 }

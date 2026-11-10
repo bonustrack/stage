@@ -28,6 +28,7 @@ import { IconCodeBrackets } from '@central-icons-react-native/round-outlined-rad
 import { IconPaperPlane } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconPaperPlane';
 import { IconShieldBreak } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconShieldBreak';
 import { Column, Row } from '../layout';
+import type { RequestPhase } from '../conversation/requests.model';
 
 type TxCardModel = TxCallFields & {
   amountLabel?: string;
@@ -44,13 +45,13 @@ type TxCardModel = TxCallFields & {
 export function TxRequestCard({
   req,
   dark,
-  paying,
+  phase,
   onPay,
   consentAllowed,
 }: {
   req: WalletSendCallsContent;
   dark: boolean;
-  paying?: boolean;
+  phase?: RequestPhase;
   onPay?: () => void;
   consentAllowed?: boolean;
 }): React.ReactElement {
@@ -60,10 +61,11 @@ export function TxRequestCard({
   const action =
     onPay && !gated
       ? {
-          label: m.actionLabel,
+          label: phase === 'done' ? 'Paid' : m.actionLabel,
           onPress: onPay,
-          loading: paying,
-          icon: <Glyph icon={m.isTransfer ? IconPaperPlane : IconCheckmark1} size={18} color={pal.bg} />,
+          loading: phase === 'sending',
+          disabled: phase === 'done',
+          icon: <Glyph icon={m.isTransfer && phase !== 'done' ? IconPaperPlane : IconCheckmark1} size={18} color={pal.bg} />,
         }
       : undefined;
   return (
