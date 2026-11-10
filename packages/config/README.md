@@ -14,14 +14,22 @@ bun add -D @stage-labs/config oxlint oxlint-tsgolint eslint typescript
 
 ## `stage lint`
 
-`stage lint` runs `oxlint --type-aware` with the root `.oxlintrc.json` on the whole repo, on the given paths, or on the `--changed` files, and passes the other flags (`--fix`, `-f`, ...) to oxlint. It stops with an error when there is no `.oxlintrc.json`. Three JS plugins bring the rules oxlint does not have natively:
+`stage lint` runs `oxlint --type-aware` with the root `.oxlintrc.json` on the whole repo, on the given paths, or on the `--changed` files, and passes the other flags (`--fix`, `-f`, ...) to oxlint. It stops with an error when there is no `.oxlintrc.json`. Four JS plugins bring the rules oxlint does not have natively:
 
 - `@stage-labs/config/oxlint/comments`: `comments/no-comments`
 - `@stage-labs/config/oxlint/text`: `text/no-em-dash`
 - `@stage-labs/config/oxlint/core`: ESLint's own `no-restricted-syntax` and `quotes`, as `core/no-restricted-syntax` and `core/quotes`
+- `@stage-labs/config/oxlint/state`: `state/no-flag-lifecycle` (since 0.1.0-beta.8). It reports a React component or hook that keeps a progress `useState` (`busy`, `loading`, `saving`, `sending`, ...) beside an outcome `useState` (`error`, `status`, `sent`, `done`, ...): that pair is one lifecycle and belongs in a single state moved by a pure `(state, event) => state` function. It goes by the variable names, so it does not see module-level flags, refs or a `null` that means both loading and nothing.
 
 ```json
-{ "jsPlugins": ["@stage-labs/config/oxlint/comments", "@stage-labs/config/oxlint/text", "@stage-labs/config/oxlint/core"] }
+{
+  "jsPlugins": [
+    "@stage-labs/config/oxlint/comments",
+    "@stage-labs/config/oxlint/text",
+    "@stage-labs/config/oxlint/core",
+    "@stage-labs/config/oxlint/state"
+  ]
+}
 ```
 
 - `stage lint` / `stage lint --fix`: the whole repo.

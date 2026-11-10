@@ -5,6 +5,7 @@
     "@stage-labs/config/oxlint/comments",
     "@stage-labs/config/oxlint/text",
     "@stage-labs/config/oxlint/core",
+    "@stage-labs/config/oxlint/state",
     "./apps/stage/oxlint-plugin.mjs"
   ],
   "categories": { "correctness": "off" },
@@ -171,6 +172,7 @@
         "stage/no-keyring-bypass": "error",
         "stage/native-only-in-seams": "error",
         "stage/no-silent-catch": "error",
+        "state/no-flag-lifecycle": "error",
         "core/no-restricted-syntax": [
           "error",
           {
@@ -312,6 +314,20 @@
           }
         ]
       }
+    },
+    {
+      "files": [
+        "apps/stage/components/channel/EditChannelModal.tsx",
+        "apps/stage/components/composer/state.ts",
+        "apps/stage/components/dashboard/AddLiveWidget.tsx",
+        "apps/stage/components/dashboard/NodeCodeForm.tsx",
+        "apps/stage/components/settings/EditProfileModal.tsx",
+        "apps/stage/components/settings/ProfileSettings.claim.tsx",
+        "apps/stage/components/settings/SettingsAboutFooter.tsx",
+        "apps/stage/components/share/useShareRows.ts",
+        "apps/stage/components/share/useShareSender.ts"
+      ],
+      "rules": { "state/no-flag-lifecycle": "off" }
     },
     { "files": ["apps/stage/**/*.js"], "rules": { "typescript/no-require-imports": "off" } },
     {
