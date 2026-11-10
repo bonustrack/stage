@@ -10,6 +10,7 @@ import { SendReview, TxStatus, WalletFooter } from '../../components/wallet/send
 import { FormField } from '../../components/FormField';
 import { RecipientRow, ContactsModal, ContactsButton } from '../../components/wallet/send.recipient';
 import { usePublicSend } from '../../components/wallet/send.public';
+import { sendTxCanSubmit, sendTxError, sendTxSent, sendTxStatus, sendTxSubmitLabel } from '../../components/wallet/send.model';
 import { Spinner } from '@stage-labs/kit/react-native/spinner';
 import { RECIPIENT_PLACEHOLDER, recipientHint, type RecipientState } from '../../components/wallet/recipient.model';
 import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowDown';
@@ -107,13 +108,6 @@ function AmountField({
   );
 }
 
-function submitLabelFor(txState: string, reviewing: boolean): string {
-  if (txState === 'submitting') return 'Confirm in wallet…';
-  if (txState === 'pending') return 'Sending…';
-  if (txState === 'confirmed') return 'Sent ✓';
-  return reviewing ? 'Send' : 'Review';
-}
-
 function SendForm({
   token,
   initialTo,
@@ -141,7 +135,7 @@ function SendForm({
     else if (p.canSubmit) setReviewing(true);
   };
   const onBack = (): void => {
-    if (reviewable && !p.busy && p.txState !== 'confirmed') setReviewing(false);
+    if (reviewable && sendTxCanSubmit(p.tx)) setReviewing(false);
     else onCancel();
   };
 
@@ -167,7 +161,7 @@ function SendForm({
             }}
           />
         )}
-        <TxStatus txState={p.txState} txHash={p.txHash} txChainId={p.txChainId} txErr={p.txErr} />
+        <TxStatus status={sendTxStatus(p.tx)} error={sendTxError(p.tx)} />
         <ContactsModal
           visible={picking}
           onClose={() => {
@@ -183,9 +177,9 @@ function SendForm({
         dark={dark}
         onCancel={onBack}
         cancelLabel={reviewable ? 'Back' : 'Cancel'}
-        submitLabel={submitLabelFor(p.txState, reviewable)}
+        submitLabel={sendTxSubmitLabel(p.tx, reviewable)}
         onSubmit={onSubmit}
-        submitDisabled={!p.canSubmit || p.txState === 'confirmed'}
+        submitDisabled={!p.canSubmit || sendTxSent(p.tx)}
         submitLoading={p.busy}
       />
     </>

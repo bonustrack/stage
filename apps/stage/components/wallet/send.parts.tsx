@@ -1,4 +1,3 @@
-import type { Hex } from 'viem';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
@@ -11,7 +10,7 @@ import { openInBubbleLink } from '../../lib/safeOpenLink';
 import { bubbleLinkProps } from '../bubble/linkProps';
 import { RecipientRow } from './send.recipient';
 import { networkName, recipientSummary, type RecipientState } from './recipient.model';
-import type { SendTxState } from './send.public';
+import type { SendTxStatus } from './send.model';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 export function WalletFooter({
@@ -57,25 +56,24 @@ export function WalletFooter({
   );
 }
 
-export function TxStatus(props: { txState: SendTxState; txHash: Hex | null; txChainId: number; txErr: string | null }): React.ReactElement {
-  const { txState, txHash, txChainId, txErr } = props;
+export function TxStatus({ status, error }: { status: SendTxStatus | null; error: string | null }): React.ReactElement {
   return (
     <>
-      {txHash ? (
+      {status ? (
         <Column padding={{ x: 4 }} gap={4}>
           <Text size="3xs" color="secondary">
-            {txState === 'confirmed' ? 'Confirmed' : 'Pending'}
+            {status.label}
           </Text>
-          <Pressable {...bubbleLinkProps(explorerTxUrl(txChainId, txHash), openInBubbleLink)} hitSlop={6}>
+          <Pressable {...bubbleLinkProps(explorerTxUrl(status.chainId, status.hash), openInBubbleLink)} hitSlop={6}>
             <Text size="3xs" color="link">
-              {txHash.slice(0, 10)}…{txHash.slice(-8)}
+              {status.hash.slice(0, 10)}…{status.hash.slice(-8)}
             </Text>
           </Pressable>
         </Column>
       ) : null}
-      {txErr ? (
+      {error ? (
         <Text size="3xs" color={DANGER} style={{ paddingHorizontal: 4 }}>
-          {txErr}
+          {error}
         </Text>
       ) : null}
     </>

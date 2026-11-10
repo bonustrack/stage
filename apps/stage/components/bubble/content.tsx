@@ -71,9 +71,9 @@ type BubbleContentProps = Pick<
   | 'myUri'
   | 'call'
   | 'onPay'
-  | 'paying'
+  | 'payPhase'
   | 'onSign'
-  | 'signing'
+  | 'signPhase'
   | 'consentAllowed'
   | 'highlight'
 > & { fg: string; sub: string };
@@ -129,10 +129,10 @@ function BubbleCards({ d, p }: { d: Descriptors; p: BubbleContentProps }): React
         />
       ) : null}
       {d.sigReq ? (
-        <SigRequestCard req={d.sigReq} dark={p.dark} signing={p.signing} onSign={p.onSign} consentAllowed={p.consentAllowed} />
+        <SigRequestCard req={d.sigReq} dark={p.dark} phase={p.signPhase} onSign={p.onSign} consentAllowed={p.consentAllowed} />
       ) : null}
       {d.sigRef ? <SigReferenceCard ref={d.sigRef} ts={p.entry.ts} dark={p.dark} /> : null}
-      {d.txReq ? <TxRequestCard req={d.txReq} dark={p.dark} paying={p.paying} onPay={p.onPay} consentAllowed={p.consentAllowed} /> : null}
+      {d.txReq ? <TxRequestCard req={d.txReq} dark={p.dark} phase={p.payPhase} onPay={p.onPay} consentAllowed={p.consentAllowed} /> : null}
       {d.txReceipt ? <TxReceiptCard receipt={d.txReceipt} ts={p.entry.ts} dark={p.dark} /> : null}
       {d.frame ? <FramePreview frame={d.frame} line={p.entry.line} messageId={p.entry.id} consentAllowed={p.consentAllowed} /> : null}
     </>

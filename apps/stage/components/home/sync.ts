@@ -332,6 +332,7 @@ async function initSync(run: SyncRun, args: SyncArgs): Promise<void> {
     await afterFirstPages();
     await r.refresh();
     if (run.cancelled) return;
+    if (homeRows() !== null) args.setError('');
     subscribeConvStream(selfInboxId, run);
     subscribeLiveStreams(run, r, selfInboxId);
     await syncPreferences();

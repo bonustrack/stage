@@ -91,8 +91,8 @@ function useFeedExtraData(c: ConvState, l: Pick<FeedLocals, 'reactorNames' | 're
     groupDescription,
     groupLabels,
     consentAllowed,
-    signingIds,
-    payingIds,
+    signPhases,
+    payPhases,
     jumpHighlightId,
     deletedIds,
   } = c;
@@ -113,8 +113,8 @@ function useFeedExtraData(c: ConvState, l: Pick<FeedLocals, 'reactorNames' | 're
       groupDescription,
       groupLabels,
       consentAllowed,
-      signingIds,
-      payingIds,
+      signPhases,
+      payPhases,
       replyingToId,
       jumpHighlightId,
       menuForId,
@@ -135,8 +135,8 @@ function useFeedExtraData(c: ConvState, l: Pick<FeedLocals, 'reactorNames' | 're
       groupDescription,
       groupLabels,
       consentAllowed,
-      signingIds,
-      payingIds,
+      signPhases,
+      payPhases,
       replyingToId,
       jumpHighlightId,
       menuForId,
@@ -192,10 +192,10 @@ function renderFeedBubble(item: Bubble, c: ConvState, l: FeedLocals): React.Reac
           c.onOpenAnswer(item.id, qIdx, text);
         }}
         call={unlessDeleted(deleted, c.callRecords, item.id)}
-        signing={c.signingIds.has(item.id)}
+        signPhase={c.signPhases.get(item.id)}
         consentAllowed={c.consentAllowed}
         onSign={signHandlerOf(item, myUri, c.onSign)}
-        paying={c.payingIds.has(item.id)}
+        payPhase={c.payPhases.get(item.id)}
         onPay={payHandlerOf(item, myUri, c.onPay)}
         selectable={!deleted && c.selectedForCopy === item.id}
         onEndSelection={l.endSelection}
@@ -231,8 +231,8 @@ function useBubbleRenderer(c: ConvState, l: FeedLocals): RenderItem {
       c.displayOwnVotes,
       c.displayOpenAnswers,
       c.callRecords,
-      c.signingIds,
-      c.payingIds,
+      c.signPhases,
+      c.payPhases,
       c.consentAllowed,
       c.selectedForCopy,
       l.endSelection,

@@ -10,11 +10,11 @@ import { tokenAmountFromInput } from '@stage-labs/client/wallet/sendAmount';
 import { ASSETS, ETH_PRICE_ID, type Asset } from '@stage-labs/client/wallet/assets';
 import type { TokenChoice } from './screen/model';
 import { resolveHandleToAddress } from '../../lib/resolveHandle';
+import { SEND_TX_IDLE, sendTx, sendTxBusy, sendTxCanSubmit, type SendTx } from './send.model';
+import { useMachine } from '../../lib/useMachine';
 import { recipientAddress, recipientFor, settleRecipient, startRecipient, type RecipientState } from './recipient.model';
 
 const RESOLVE_DEBOUNCE_MS = 300;
-
-export type SendTxState = 'idle' | 'submitting' | 'pending' | 'confirmed';
 
 interface SendAsset {
   address: Hex | null;
@@ -61,36 +61,19 @@ interface PublicSend {
   secondaryLabel: string;
   canSubmit: boolean;
   busy: boolean;
-  txState: SendTxState;
-  txHash: Hex | null;
-  txChainId: number;
-  txErr: string | null;
+  tx: SendTx;
   onMax: () => void;
   onSubmit: () => void;
 }
 
-interface SendTx {
-  txState: SendTxState;
-  txHash: Hex | null;
-  txChainId: number;
-  txErr: string | null;
-  send: (asset: Asset, resolved: string, tokenAmountText: string) => Promise<void>;
-}
-
-function useSendTx(chainId: number): SendTx {
-  const [txState, setTxState] = useState<SendTxState>('idle');
-  const [txHash, setTxHash] = useState<Hex | null>(null);
-  const [txChainId, setTxChainId] = useState<number>(chainId);
-  const [txErr, setTxErr] = useState<string | null>(null);
+function useSendTx(chainId: number): { tx: SendTx; send: (asset: Asset, resolved: string, tokenAmountText: string) => Promise<void> } {
+  const [tx, dispatch] = useMachine(sendTx, SEND_TX_IDLE);
   const send = async (asset: Asset, resolved: string, tokenAmountText: string): Promise<void> => {
-    setTxErr(null);
-    setTxHash(null);
-    setTxState('submitting');
+    if (!dispatch({ type: 'submit' })) return;
     try {
       const active = await getActiveAccount();
       if (!active) {
-        setTxState('idle');
-        setTxErr('No active wallet');
+        dispatch({ type: 'failed', error: 'No active wallet' });
         return;
       }
 
@@ -99,18 +82,15 @@ function useSendTx(chainId: number): SendTx {
       const hash = isSmart
         ? await sendSmart(active, asset, resolved, tokenAmountText, chainId)
         : await sendNativeOrToken({ to: resolved, amount: tokenAmountText, asset, chainId });
-      setTxHash(hash);
-      setTxChainId(receiptChainId);
-      setTxState('pending');
+      dispatch({ type: 'broadcast', hash, chainId: receiptChainId });
       const pub = createPublicClient({ transport: broviderTransport(receiptChainId) });
       await pub.waitForTransactionReceipt({ hash });
-      setTxState('confirmed');
+      dispatch({ type: 'confirmed' });
     } catch (e) {
-      setTxState('idle');
-      setTxErr((e as Error).message ?? 'Transaction failed');
+      dispatch({ type: 'failed', error: (e as Error).message ?? 'Transaction failed' });
     }
   };
-  return { txState, txHash, txChainId, txErr, send };
+  return { tx, send };
 }
 
 export function usePublicSend(initialTo: string, token: TokenChoice, balance: string | null): PublicSend {
@@ -121,7 +101,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   const recipient = recipientFor(stored, to);
   const resolved = recipientAddress(recipient);
   const [ethPriceUsd, setEthPriceUsd] = useState<number | null>(null);
-  const { txState, txHash, txChainId, txErr, send } = useSendTx(token.chainId);
+  const { tx, send } = useSendTx(token.chainId);
 
   const asset = useMemo(() => ASSETS.find((a) => a.symbol === token.symbol && a.chainId === token.chainId), [token.symbol, token.chainId]);
 
@@ -164,7 +144,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   );
 
   const tokenAmountText = mode === 'eth' ? amount.trim() : String(tokenAmount);
-  const busy = txState === 'submitting' || txState === 'pending';
+  const busy = sendTxBusy(tx);
   const canSubmit = !!resolved && tokenAmount > 0 && !!asset;
 
   const onMax = (): void => {
@@ -174,7 +154,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
   };
 
   const onSubmit = (): void => {
-    if (!resolved || tokenAmount <= 0 || busy || !asset) return;
+    if (!resolved || tokenAmount <= 0 || !sendTxCanSubmit(tx) || !asset) return;
     void send(asset, resolved, tokenAmountText);
   };
 
@@ -193,10 +173,7 @@ export function usePublicSend(initialTo: string, token: TokenChoice, balance: st
     secondaryLabel,
     canSubmit,
     busy,
-    txState,
-    txHash,
-    txChainId,
-    txErr,
+    tx,
     onMax,
     onSubmit,
   };

@@ -2,6 +2,7 @@ import type { HistoryEntry } from '@stage-labs/client/types';
 import type { MenuPoint } from '../AnchoredMenu.model';
 import type { CallRecord } from './callCard.model';
 import type { PollOpenAnswers, PollOwnVotes, PollVotes } from './poll.model';
+import type { RequestPhase } from '../conversation/requests.model';
 
 export interface MenuAnchor {
   y: number;
@@ -40,9 +41,9 @@ export interface MessengerBubbleProps {
   onOpenAnswer?: (questionIndex: number, text: string) => void;
   call?: CallRecord;
   onPay?: () => void;
-  paying?: boolean;
+  payPhase?: RequestPhase;
   onSign?: () => void;
-  signing?: boolean;
+  signPhase?: RequestPhase;
   consentAllowed?: boolean;
   selectable?: boolean;
   onEndSelection?: () => void;
