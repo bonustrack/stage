@@ -1,8 +1,15 @@
 import { isAddress, type Hex } from 'viem';
-import { claimIsFresh, claimMessage, describeLabelProblem, stageNameOf, validateStageLabel } from '@stage-labs/client/identity/stageNames';
+import {
+  claimIsFresh,
+  claimMessage,
+  deletionMessage,
+  describeLabelProblem,
+  stageNameOf,
+  validateStageLabel,
+} from '@stage-labs/client/identity/stageNames';
 import { broviderRpc } from '@stage-labs/client/wallet/client';
 import { isMailPublicKey, isMailboxLabel } from '@stage-labs/client/mail/mailbox';
-import { mailboxStub, saveMailKey } from './mailBox.ts';
+import { mailboxCall, mailboxStub, saveMailKey } from './mailBox.ts';
 import { NAME_TAKEN, makeNamesChain, NameTransactionRevertedError } from './namesChain.ts';
 import type { NamesChain, NamesDeps, NamesStore } from './namesTypes.ts';
 import { CLAIMS_OBJECT_NAME, claimsStore, serialized } from './namesClaims.ts';
@@ -21,6 +28,7 @@ export interface NamesEnv {
 const addressKey = (address: string): string => `addr:${address.toLowerCase()}`;
 const labelKey = (label: string): string => `label:${label}`;
 const pendingKey = (label: string): string => `pending:${label}`;
+const retiredKey = (label: string): string => `retired:${label}`;
 
 function reply(body: unknown, status = 200): Response {
   return jsonResponse(body, status, CORS);
@@ -50,7 +58,10 @@ async function check(url: URL, deps: NamesDeps): Promise<Response> {
   const label = (url.searchParams.get('label') ?? '').toLowerCase();
   const problem = validateStageLabel(label);
   if (problem) return reply({ valid: false, available: false, reason: describeLabelProblem(problem) });
-  const taken = (await deps.chain.subnameOwner(label)) !== null || (await deps.store.get(labelKey(label))) !== null;
+  const taken =
+    (await deps.store.get(retiredKey(label))) !== null ||
+    (await deps.chain.subnameOwner(label)) !== null ||
+    (await deps.store.get(labelKey(label))) !== null;
   return reply({ valid: true, available: !taken });
 }
 
@@ -93,6 +104,7 @@ async function rejectClaim(claim: ClaimBody, deps: NamesDeps): Promise<Response 
 }
 
 async function unavailableReply(claim: ClaimBody, deps: NamesDeps): Promise<Response | null> {
+  if ((await deps.store.get(retiredKey(claim.label))) !== null) return reply({ error: NAME_TAKEN }, 409);
   const owner = await deps.chain.subnameOwner(claim.label);
   if (owner !== null && owner.toLowerCase() !== claim.address.toLowerCase()) return reply({ error: NAME_TAKEN }, 409);
   const reservedBy = (await deps.store.get(labelKey(claim.label))) ?? (await deps.store.get(pendingKey(claim.label)));
@@ -171,14 +183,62 @@ async function claim(request: Request, deps: NamesDeps): Promise<Response> {
   return reply({ name: stageNameOf(body.label), txHash, ...(await saveClaimedMailKey(body, deps)) });
 }
 
+interface DeleteBody {
+  address: Hex;
+  issuedAt: number;
+  signature: Hex;
+}
+
+function parseDelete(raw: unknown): DeleteBody | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const { address, issuedAt, signature } = raw as Record<string, unknown>;
+  if (typeof address !== 'string' || !isAddress(address, { strict: false }) || typeof issuedAt !== 'number') return null;
+  if (typeof signature !== 'string' || !/^0x[0-9a-fA-F]+$/.test(signature)) return null;
+  return { address, issuedAt, signature: signature as Hex };
+}
+
+async function eraseMailbox(label: string, owner: string, deps: NamesDeps): Promise<boolean> {
+  if (deps.mailbox === undefined || !isMailboxLabel(label)) return false;
+  return (await mailboxCall(deps.mailbox(label), 'erase', { owner })).status === 204;
+}
+
+async function retireName(label: string, address: Hex, deps: NamesDeps): Promise<Hex | null> {
+  const owner = await deps.chain.subnameOwner(label);
+  const txHash = owner?.toLowerCase() === address.toLowerCase() ? await deps.chain.release(label) : null;
+  await deps.store.put(retiredKey(label), address.toLowerCase());
+  await deps.store.put(labelKey(label), '');
+  await deps.store.put(pendingKey(label), '');
+  await deps.store.put(addressKey(address), '');
+  return txHash;
+}
+
+async function deleteAccount(request: Request, deps: NamesDeps): Promise<Response> {
+  const body = parseDelete(await request.json().catch(() => null));
+  if (!body) return reply({ error: 'address, issuedAt and signature required' }, 400);
+  if (!claimIsFresh(body.issuedAt, (deps.now ?? Date.now)())) return reply({ error: 'request expired, sign it again' }, 400);
+  if (!(await deps.chain.verifyClaim(body.address, deletionMessage(body), body.signature)))
+    return reply({ error: 'invalid signature' }, 401);
+  const label = await deps.store.get(addressKey(body.address));
+  if (label === null) return reply({ deleted: true, name: null });
+  const mail = await eraseMailbox(label, body.address.toLowerCase(), deps);
+  const txHash = await retireName(label, body.address, deps);
+  return reply({ deleted: true, name: stageNameOf(label), txHash, mail });
+}
+
+type NamesRoute = (request: Request, url: URL, deps: NamesDeps) => Promise<Response>;
+
+const ROUTES: Record<string, NamesRoute> = {
+  'GET status': (_request, url, deps) => status(url, deps),
+  'GET check': (_request, url, deps) => check(url, deps),
+  'GET resolve': (_request, url, deps) => resolve(url, deps),
+  'POST claim': (request, _url, deps) => claim(request, deps),
+  'POST delete': (request, _url, deps) => deleteAccount(request, deps),
+};
+
 async function route(request: Request, deps: NamesDeps): Promise<Response> {
   const url = new URL(request.url);
-  const path = url.pathname.slice(NAMES_PREFIX.length);
-  if (path === 'status' && request.method === 'GET') return status(url, deps);
-  if (path === 'check' && request.method === 'GET') return check(url, deps);
-  if (path === 'resolve' && request.method === 'GET') return resolve(url, deps);
-  if (path === 'claim' && request.method === 'POST') return claim(request, deps);
-  return reply({ error: 'not found' }, 404);
+  const handler = ROUTES[`${request.method} ${url.pathname.slice(NAMES_PREFIX.length)}`];
+  return handler === undefined ? reply({ error: 'not found' }, 404) : handler(request, url, deps);
 }
 
 export async function handleNames(request: Request, deps: NamesDeps): Promise<Response> {
@@ -214,8 +274,9 @@ const NOT_CONFIGURED = (): Response => reply({ error: 'name registration is not 
 export function handleNamesRequest(request: Request, env: NamesEnv): Promise<Response> {
   const namesChain = configuredChain(env);
   if (!namesChain || !env.NAMES_KV || !env.NAMES_CLAIMS) return Promise.resolve(NOT_CONFIGURED());
-  const isClaim = new URL(request.url).pathname === `${NAMES_PREFIX}claim` && request.method === 'POST';
-  if (isClaim) return env.NAMES_CLAIMS.get(env.NAMES_CLAIMS.idFromName(CLAIMS_OBJECT_NAME)).fetch(request);
+  const { pathname } = new URL(request.url);
+  const writes = request.method === 'POST' && (pathname === `${NAMES_PREFIX}claim` || pathname === `${NAMES_PREFIX}delete`);
+  if (writes) return env.NAMES_CLAIMS.get(env.NAMES_CLAIMS.idFromName(CLAIMS_OBJECT_NAME)).fetch(request);
   return handleNames(request, { chain: namesChain, store: kvStore(env.NAMES_KV) });
 }
 

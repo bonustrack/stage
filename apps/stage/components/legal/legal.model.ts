@@ -22,6 +22,8 @@ export const TERMS_ROUTE = '/terms';
 
 export const PRIVACY_ROUTE = '/privacy';
 
+export const DELETION_ROUTE = '/delete-account';
+
 export const TERMS_NOTICE = {
   lead: 'By continuing, you agree to the ',
   terms: 'Terms of Use',

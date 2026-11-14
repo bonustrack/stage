@@ -180,8 +180,16 @@ const close: Op = async (storage) => {
   return done(204);
 };
 
+const erase: Op = async (storage, body) => {
+  const current = keyRecord(await getOne(storage, KEY));
+  if (current !== null && current.owner !== text(body.owner)) return done(409);
+  await storage.deleteAll();
+  return done(204);
+};
+
 const OPS: Record<string, Op> = {
   register,
+  erase,
   key: readKey,
   challenge,
   consume,

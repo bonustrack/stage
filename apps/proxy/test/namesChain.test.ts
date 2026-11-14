@@ -110,4 +110,16 @@ describe('issuing a stage name on Base', () => {
     await expect(makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base').issue('fabien', USER)).rejects.toThrow('name already taken');
     expect(sent).toEqual([]);
   });
+
+  test('releasing a deleted name hands it back to the operator with no resolver, in one transaction', async () => {
+    owners.set(namehash('fabien.stage.base.eth'), USER);
+    await makeNamesChain(OPERATOR_KEY, 'https://rpc.test/base').release('fabien');
+    expect(sentCalls()).toEqual([
+      {
+        to: REGISTRY.toLowerCase() as Hex,
+        functionName: 'setSubnodeRecord',
+        args: [namehash('stage.base.eth'), keccak256(stringToBytes('fabien')), OPERATOR, ZERO, 0n],
+      },
+    ]);
+  });
 });

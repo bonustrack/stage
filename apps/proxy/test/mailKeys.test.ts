@@ -50,6 +50,10 @@ const chain: NamesChain = {
     owners.set(label, owner);
     return Promise.resolve('0x7478');
   },
+  release: (label) => {
+    owners.delete(label);
+    return Promise.resolve('0x7265');
+  },
 };
 
 function memoryNames(): NamesDeps['store'] {

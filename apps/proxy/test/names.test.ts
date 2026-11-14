@@ -28,6 +28,7 @@ function fakeChain(opts: { valid?: boolean; taken?: string[]; fail?: boolean; fa
     confirm: (hash) => Promise.resolve(hash),
     verifyClaim: async (_a, message, signature) => (opts.valid ?? true) && signature === '0x5169' && message.startsWith('Claim '),
     subnameOwner: async (label) => ((opts.taken ?? []).includes(label) ? '0x00000000000000000000000000000000000000B2' : null),
+    release: () => Promise.resolve('0x7265'),
     issue: async (label) => {
       if (opts.failWith) throw new Error(opts.failWith);
       if (opts.fail) throw new Error('rpc down\nURL: https://rpc.example/secret-key');

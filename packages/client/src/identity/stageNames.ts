@@ -49,6 +49,15 @@ export function claimMessage(claim: ClaimRequest): string {
   return claim.mailKey === undefined ? message : `${message} with st.box mail key ${claim.mailKey.toLowerCase()}`;
 }
 
+export interface DeletionRequest {
+  address: string;
+  issuedAt: number;
+}
+
+export function deletionMessage(request: DeletionRequest): string {
+  return `Delete the Stage account ${request.address.toLowerCase()} and its username and mail at ${request.issuedAt}`;
+}
+
 export function claimIsFresh(issuedAt: number, now: number): boolean {
   return Number.isFinite(issuedAt) && now - issuedAt >= -60_000 && now - issuedAt <= CLAIM_TTL_MS;
 }

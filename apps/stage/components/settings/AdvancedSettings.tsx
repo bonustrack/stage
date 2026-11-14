@@ -1,15 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { Alert } from 'react-native';
-import { errorMessage } from '@stage-labs/client/errors';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
-import { switchToAccount, deleteAccount, getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
+import { getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useAccountEpoch } from '../../lib/accountEpoch';
-import { getActiveAccount, type AccountRecord } from '../../lib/accounts';
 import { reloadApp } from '../../lib/reloadApp';
 import { capabilities } from '../../lib/capabilities';
-import { report } from '../../lib/errorPolicy';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
+import { confirmDelete, confirmRemove } from './accountRemoval';
+import { DANGER_FOOTNOTE } from './accountRemoval.model';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
@@ -26,36 +24,6 @@ function confirmReset(): void {
       if (!ok) return;
       await resetActiveXmtpStore();
       reloadApp();
-    });
-}
-
-async function removeAndMoveOn(id: string): Promise<void> {
-  try {
-    await deleteAccount(id);
-    const next = (await getActiveAccount())?.id;
-    if (next === undefined) {
-      reloadApp(true);
-      return;
-    }
-    await switchToAccount(next);
-    capabilities.navigate('/');
-  } catch (err) {
-    report('settings.removeAccount', err);
-    Alert.alert('Could not remove account', errorMessage(err));
-  }
-}
-
-function confirmRemove(rec: AccountRecord): void {
-  const name = rec.label ?? shortAddress(rec.address);
-  void capabilities
-    .confirm({
-      title: 'Remove account',
-      message: `Remove ${name}? Without a backup of the private key this account is unrecoverable. Its local XMTP database is deleted from this device.`,
-      confirmLabel: 'Remove',
-      destructive: true,
-    })
-    .then((ok) => {
-      if (ok) void removeAndMoveOn(rec.id);
     });
 }
 
@@ -101,20 +69,27 @@ function IdentityGroup(): React.ReactElement | null {
 function DangerGroup(): React.ReactElement {
   const rec = useActiveAccountRecord();
   return (
-    <SettingsGroup
-      title="Danger zone"
-      footnote="Reset clears the messages stored on this device. Remove deletes this account from this device."
-    >
+    <SettingsGroup title="Danger zone" footnote={DANGER_FOOTNOTE}>
       <SettingsButtonRow label="Reset XMTP database" iconStart={IconArrowRotateClockwise} danger onPress={confirmReset} />
       {rec ? (
-        <SettingsButtonRow
-          label="Remove account"
-          iconStart={IconTrashCan}
-          danger
-          onPress={() => {
-            confirmRemove(rec);
-          }}
-        />
+        <>
+          <SettingsButtonRow
+            label="Remove from this device"
+            iconStart={IconTrashCan}
+            danger
+            onPress={() => {
+              confirmRemove(rec);
+            }}
+          />
+          <SettingsButtonRow
+            label="Delete account"
+            iconStart={IconTrashCan}
+            danger
+            onPress={() => {
+              confirmDelete(rec);
+            }}
+          />
+        </>
       ) : null}
     </SettingsGroup>
   );

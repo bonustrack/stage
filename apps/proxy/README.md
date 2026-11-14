@@ -100,6 +100,9 @@ GET  /names/check?label=<label>  -> { valid, available, reason? }
 GET  /names/status?address=<0x>  -> { name | null }
 GET  /names/resolve?label=<l>    -> { address | null }   (registry owner, then the KV record)
 POST /names/claim                -> { label, address, issuedAt, signature, mailKey? } -> { name, txHash, mailKey?: 'stored' | 'failed' }
+POST /names/delete               -> { address, issuedAt, signature } -> { deleted, name | null, txHash?, mail? }
+                                    (account deletion: signs deletionMessage; the operator takes the name back with no resolver,
+                                     the label is retired for good, the address mapping and the st.box mailbox are erased)
 POST /xmtp-history/<env>/upload  -> archive id (text)       413 too large   429 rate limited
 POST /xmtp-history/<env>/upload?size=<bytes> -> archive id, first part of a bigger archive
 POST /xmtp-history/<env>/upload/<id> -> archive id, next part   404 no open archive   413 past its size
