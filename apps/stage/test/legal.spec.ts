@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { LEGAL_CONTACT, LEGAL_ENTITY, legalPlainText } from '../components/legal/legal.model';
+import { LEGAL_CONTACT, LEGAL_ENTITY, PRIVACY_URL, TERMS_URL, legalPlainText } from '../components/legal/legal.model';
+import { internalLinkPath } from '../lib/safeOpenLink';
 import { PRIVACY } from '../components/legal/privacy.model';
 import { ACCOUNT_DELETION } from '../components/legal/deletion.model';
 import { deleteFailedMessage, deleteMessage } from '../components/settings/accountRemoval.model';
@@ -42,5 +43,12 @@ describe('legal pages', () => {
     expect(deleteFailedMessage('Network down.')).toBe(
       `Network down. Nothing was removed from this device. Try again, or email ${LEGAL_CONTACT}.`,
     );
+  });
+
+  test('the legal links use the hash URLs that share links use, and open inside the app', () => {
+    expect(TERMS_URL).toBe('https://stage.box/#/terms');
+    expect(PRIVACY_URL).toBe('https://stage.box/#/privacy');
+    expect(internalLinkPath(TERMS_URL)).toBe('/terms');
+    expect(internalLinkPath(PRIVACY_URL)).toBe('/privacy');
   });
 });

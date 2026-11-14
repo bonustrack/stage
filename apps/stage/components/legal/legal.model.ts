@@ -14,9 +14,9 @@ export const LEGAL_ENTITY = 'Stage Labs';
 
 export const LEGAL_CONTACT = 'admin@stage.box';
 
-export const TERMS_URL = 'https://stage.box/terms';
+export const TERMS_URL = 'https://stage.box/#/terms';
 
-export const PRIVACY_URL = 'https://stage.box/privacy';
+export const PRIVACY_URL = 'https://stage.box/#/privacy';
 
 export const TERMS_ROUTE = '/terms';
 
