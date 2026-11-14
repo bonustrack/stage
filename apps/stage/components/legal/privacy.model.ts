@@ -67,7 +67,7 @@ export const PRIVACY: LegalDoc = {
       heading: 'Deleting your data',
       paragraphs: [
         'Settings, Advanced, Delete account deletes your Stage username and st.box mail from our servers, stops notifications for the device and removes the account, its keys and its messages from the device. Remove from this device only removes it from that device.',
-        `You can also ask for deletion without the app by emailing ${LEGAL_CONTACT}. stage.box/delete-account explains both ways, and what is deleted and what is kept. Data on public blockchains and IPFS can not be erased by anyone.`,
+        `You can also ask for deletion without the app by emailing ${LEGAL_CONTACT}. stage.box/#/delete-account explains both ways, and what is deleted and what is kept. Data on public blockchains and IPFS can not be erased by anyone.`,
       ],
     },
     { heading: 'Children', paragraphs: ['Stage is not for anyone under 18, and we do not knowingly collect data from children.'] },
