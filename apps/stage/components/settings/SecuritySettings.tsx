@@ -12,8 +12,12 @@ import { securityRows } from './SecuritySettings.model';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
+import { IconKey2 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconKey2';
+import { WALLET_ENABLED } from '../../lib/features';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 import { Column } from '../layout';
+
+const KEY_ICON = WALLET_ENABLED ? IconWallet4 : IconKey2;
 
 interface RevealedKey {
   id: string;
@@ -50,7 +54,7 @@ function RevealedKeyRow({ dark, revealed }: { dark: boolean; revealed: string })
       }}
       style={{ paddingHorizontal: 14, paddingVertical: 14 }}
     >
-      <Glyph icon={IconWallet4} size={24} color={link} />
+      <Glyph icon={KEY_ICON} size={24} color={link} />
       <Column weight={1}>
         <Text size="sm" color={text}>
           Tap to copy private key
@@ -83,7 +87,7 @@ function KeyRows({ rec }: { rec: AccountRecord }): React.ReactElement {
           <SettingsNavRow
             key={k}
             label="Export private key"
-            iconStart={IconWallet4}
+            iconStart={KEY_ICON}
             iconEnd={IconChevronBottom}
             onPress={() => {
               confirmExport(rec, setRevealed);

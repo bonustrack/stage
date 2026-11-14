@@ -3,8 +3,9 @@ name: Release Mobile
 # One version-driven release for both stores. When the `version` value in
 # apps/stage/app.config.js changes on main (or on manual dispatch):
 #   android-store : EAS cloud build (production-prod, AAB) -> eas submit to the
-#                   Play internal + closed tracks; production is allowed to fail
-#                   while the Play account gate is in place.
+#                   Play internal track. Play accepts each version code once, so
+#                   closed testing and production get it by promoting the
+#                   release in Play Console, never by uploading it again.
 #   android-apk   : EAS cloud build (preview-prod, APK), checked with
 #                   scripts/verify-apk.mjs -> direct stage.apk download on the
 #                   GitHub Release v<version> and Firebase App Distribution for
@@ -126,13 +127,6 @@ jobs:
           echo "id=$(echo "$OUT" | jq -r '.[0].id')" >> "$GITHUB_OUTPUT"
       - name: Submit to Play internal
         run: eas submit -p android --profile internal --id "${{ steps.build.outputs.id }}" --non-interactive
-      - name: Submit to Play closed
-        if: ${{ !inputs.internal_only }}
-        run: eas submit -p android --profile closed --id "${{ steps.build.outputs.id }}" --non-interactive
-      - name: Submit to Play production
-        if: ${{ !inputs.internal_only }}
-        continue-on-error: true
-        run: eas submit -p android --profile production --id "${{ steps.build.outputs.id }}" --non-interactive
       - if: always()
         run: rm -f play-service-account.json
 

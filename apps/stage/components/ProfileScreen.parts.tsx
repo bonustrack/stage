@@ -60,12 +60,12 @@ export function ProfileActions({
 }: {
   dark: boolean;
   onMessage: () => void;
-  onSend: () => void;
+  onSend?: () => void;
   c: Palette;
 }): React.ReactElement {
   const actions = [
     { icon: IconBubbleAnnotation3, label: 'Message', onPress: onMessage },
-    { icon: IconPaperPlane, label: 'Send', onPress: onSend },
+    ...(onSend ? [{ icon: IconPaperPlane, label: 'Send', onPress: onSend }] : []),
   ];
   return (
     <Row gap={12} justify="start" padding={{ top: 18 }}>

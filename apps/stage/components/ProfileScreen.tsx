@@ -9,7 +9,8 @@ import { displayHandle } from '@stage-labs/client/identity/stageNames';
 import { Avatar } from './Avatar';
 import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable';
 import { Text } from '@stage-labs/kit/react-native/text';
-import { PEER_PROFILE_MENU, profileDisplayName } from './ProfileScreen.model';
+import { peerProfileMenu, profileDisplayName } from './ProfileScreen.model';
+import { WALLET_ENABLED } from '../lib/features';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import { ProfileActions, useSelfAddress } from './ProfileScreen.parts';
@@ -58,7 +59,7 @@ function EditProfileButton({ background }: { background: string }): React.ReactE
 function ProfileMenu({ isSelf, onSelect }: { isSelf: boolean; onSelect: (id: string) => void }): React.ReactElement {
   const { bg } = usePalette();
   if (isSelf) return <EditProfileButton background={bg} />;
-  return <ProfileCoverMenu items={PEER_PROFILE_MENU} onSelect={onSelect} />;
+  return <ProfileCoverMenu items={peerProfileMenu(WALLET_ENABLED)} onSelect={onSelect} />;
 }
 
 function ProfileIdentity({
@@ -116,7 +117,7 @@ function ProfileIdentity({
             <Text text={shortAddress(addr)} size="xs" color={c.text} />
           </GesturePressable>
         </Column>
-        {isSelf ? null : <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={onSend} />}
+        {isSelf ? null : <ProfileActions dark={dark} c={c} onMessage={onMessage} onSend={WALLET_ENABLED ? onSend : undefined} />}
       </Column>
     </ProfileCover>
   );

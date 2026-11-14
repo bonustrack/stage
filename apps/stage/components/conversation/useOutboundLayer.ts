@@ -13,6 +13,8 @@ import { useStableCallback } from '../../lib/useStableCallback';
 import { attempt } from '../../lib/errorPolicy';
 import { useUploadedAttachments } from '../../lib/localAttachmentCache';
 import type { OptimisticEntry } from '../composer/types';
+import { walletFreeEntry } from '../../lib/walletContent.model';
+import { WALLET_ENABLED } from '../../lib/features';
 
 function useStickyBottom(
   allBubblesLength: number,
@@ -44,7 +46,7 @@ function useFeedBubbles(events: HistoryEntry[], myUri: string, deletedIds: Delet
         .filter((e) => !isReaction(e) && !isLeftOnlyUpdate(e) && !isDeleteRequest(e) && !isCallSignalEntry(e))
         .map((e) => {
           const by = deletedIds.get(e.id);
-          return by ? deletedView(e, by) : e;
+          return by ? deletedView(e, by) : walletFreeEntry(e, WALLET_ENABLED);
         }),
     [events, deletedIds, deletedView],
   );

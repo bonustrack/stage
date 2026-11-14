@@ -1,4 +1,5 @@
 import { decodeAccountTransfer, type AccountTransfer } from '@stage-labs/client/accounts/transfer';
+import { WALLET_ENABLED } from '../../lib/features';
 
 type ImportParse = { ok: true; transfer: AccountTransfer } | { ok: false; error: string };
 
@@ -11,10 +12,10 @@ export function parseImportInput(text: string): ImportParse {
   return transfer === null ? { ok: false, error: IMPORT_INVALID } : { ok: true, transfer };
 }
 
-export function transferWarning(kind: AccountTransfer['kind']): string {
+export function transferWarning(kind: AccountTransfer['kind'], wallet = WALLET_ENABLED): string {
   return kind === 'pk'
     ? 'This code contains the private key of this account. Anyone who scans it controls the account.'
-    : 'This code contains your recovery phrase. Anyone who scans it controls every smart wallet account derived from it.';
+    : `This code contains your recovery phrase. Anyone who scans it controls every ${wallet ? 'smart wallet ' : ''}account derived from it.`;
 }
 
 export const TRANSFER_HOW_TO =

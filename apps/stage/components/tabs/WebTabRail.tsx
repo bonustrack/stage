@@ -18,6 +18,7 @@ import { useBoardHome } from './boardHome';
 import { menuPagesFor, isMenuPageOpen, isMenuPageRoute } from './menuPages';
 import { isTabRoute } from './splitRoutes';
 import { useDeveloperMode } from '../../lib/developerMode';
+import { WALLET_ENABLED } from '../../lib/features';
 import { Column, Row, pinnedEdges } from '../layout';
 import { chatsTabOpensNewChat, homeTabPresentation } from './WebTabRail.model';
 
@@ -29,11 +30,13 @@ export const TAB_BADGE_POSITION = { position: 'absolute', top: -3, right: -3 } a
 
 const WEB_TAB_BAR_HEIGHT = 60;
 
-export const TAB_ICONS: readonly (readonly [TabName | 'contacts', CentralIcon])[] = [
+const ALL_TAB_ICONS: readonly (readonly [TabName | 'contacts', CentralIcon])[] = [
   ['index', IconBubble3],
   ['contacts', IconGroup1],
   ['wallet', IconWallet4],
 ];
+
+export const TAB_ICONS = ALL_TAB_ICONS.filter(([name]) => WALLET_ENABLED || name !== 'wallet');
 
 const TAB_LABELS: Record<TabName | 'contacts', string> = {
   index: 'Chats',

@@ -1,3 +1,5 @@
+import { WALLET_ENABLED } from '../../lib/features';
+
 export type SecurityRowKey = 'backupPhrase' | 'showPhrase' | 'exportKey';
 
 export interface SecurityRowsInput {
@@ -7,23 +9,33 @@ export interface SecurityRowsInput {
   keyRevealed: boolean;
 }
 
-export const BACKUP_PHRASE_COPY = {
-  label: 'Back up recovery phrase',
-  description: 'Back up your recovery phrase so you can recover this wallet if you lose your device. You can do this anytime.',
-  revealed: 'Write these words down in order and keep them somewhere safe. Anyone with this phrase controls your wallet.',
-  saved: 'Recovery phrase backed up',
-  missing: 'No recovery phrase on this device.',
-  unreadable: 'Could not read recovery phrase',
-} as const;
+export function phraseCopy(wallet: boolean) {
+  const noun = wallet ? 'wallet' : 'account';
+  return {
+    backup: {
+      label: 'Back up recovery phrase',
+      description: `Back up your recovery phrase so you can recover this ${noun} if you lose your device. You can do this anytime.`,
+      revealed: `Write these words down in order and keep them somewhere safe. Anyone with this phrase controls your ${noun}.`,
+      saved: 'Recovery phrase backed up',
+      missing: 'No recovery phrase on this device.',
+      unreadable: 'Could not read recovery phrase',
+    },
+    show: {
+      label: 'Show recovery phrase',
+      description: `View the words that restore this ${noun}.`,
+      revealed: `Anyone with this phrase controls your ${noun}. It hides again after a minute.`,
+      confirmTitle: 'Show recovery phrase?',
+      confirmMessage: `Anyone who sees it controls your ${noun}. Make sure nobody is watching your screen.`,
+      confirmLabel: 'Show',
+    },
+  } as const;
+}
 
-export const SHOW_PHRASE_COPY = {
-  label: 'Show recovery phrase',
-  description: 'View the words that restore this wallet.',
-  revealed: 'Anyone with this phrase controls your wallet. It hides again after a minute.',
-  confirmTitle: 'Show recovery phrase?',
-  confirmMessage: 'Anyone who sees it controls your wallet. Make sure nobody is watching your screen.',
-  confirmLabel: 'Show',
-} as const;
+const PHRASE_COPY = phraseCopy(WALLET_ENABLED);
+
+export const BACKUP_PHRASE_COPY = PHRASE_COPY.backup;
+
+export const SHOW_PHRASE_COPY = PHRASE_COPY.show;
 
 export type PhraseRowMode = 'backup' | 'show';
 

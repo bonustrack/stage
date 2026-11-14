@@ -4,6 +4,7 @@ import {
   SHOW_PHRASE_COPY,
   SHOWN_PHRASE_TIMEOUT_MS,
   phrasePanelActions,
+  phraseCopy,
   phraseRowCopy,
   securityRows,
   type SecurityRowsInput,
@@ -44,6 +45,13 @@ describe('recovery phrase panel', () => {
     expect(phrasePanelActions('show')).toEqual(['hide']);
     expect(SHOW_PHRASE_COPY.confirmTitle).toBe('Show recovery phrase?');
     expect(SHOW_PHRASE_COPY.confirmLabel).toBe('Show');
+  });
+
+  test('a build without the wallet warns about the account, never the wallet', () => {
+    const copy = phraseCopy(false);
+    expect(copy.show.confirmMessage).toBe('Anyone who sees it controls your account. Make sure nobody is watching your screen.');
+    expect(JSON.stringify(copy)).not.toContain('wallet');
+    expect(phraseCopy(true).backup.revealed).toContain('controls your wallet');
   });
 
   test('shown phrase hides after about a minute', () => {

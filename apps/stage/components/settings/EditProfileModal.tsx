@@ -12,6 +12,12 @@ import { getPeerAvatar, getPeerDescription, getPeerDisplayName, invalidatePeerPr
 import { saveBasenameProfile, type ProfileChanges } from '../../lib/profile';
 import { changedFields, draftFrom, draftProblem, hasChanges, type ProfileDraft } from './ProfileSettings.edit.model';
 import { Column } from '../layout';
+import { WALLET_ENABLED } from '../../lib/features';
+
+function savedStatus(hash: string): string {
+  const where = WALLET_ENABLED ? `Saved onchain (${hash.slice(0, 10)}…).` : 'Saved.';
+  return `${where} It can take a minute to appear everywhere.`;
+}
 
 function pictureChanges(picture: PictureChoice): Pick<ProfileChanges, 'image' | 'removeImage'> {
   if (picture.kind === 'new') return { image: picture.file };
@@ -50,11 +56,11 @@ function EditProfileSection({
       return;
     }
     setBusy(true);
-    setStatus('Uploading and sending the transaction…');
+    setStatus(WALLET_ENABLED ? 'Uploading and sending the transaction…' : 'Saving your profile…');
     void saveBasenameProfile(address, name, { ...changedFields(current, draft), ...pictureChanges(picture) })
       .then((hash) => {
         onSaved();
-        setStatus(hash ? `Saved onchain (${hash.slice(0, 10)}…). It can take a minute to appear everywhere.` : 'Nothing to save.');
+        setStatus(hash ? savedStatus(hash) : 'Nothing to save.');
         capabilities.toast('Profile saved.');
       })
       .catch((err: unknown) => {

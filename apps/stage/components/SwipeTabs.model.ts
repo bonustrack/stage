@@ -1,16 +1,32 @@
 import { BOARD_ROUTE } from './tabs/splitRoutes';
 import { isMenuPageRoute } from './tabs/menuPages';
+import { WALLET_ENABLED } from '../lib/features';
 
-export const TAB_ORDER = ['index', 'contacts', 'wallet', 'settings'] as const;
-export type TabName = (typeof TAB_ORDER)[number] | 'board';
+const HOME_TABS = ['index', 'contacts', 'wallet', 'settings'] as const;
+type HomeTab = (typeof HOME_TABS)[number];
+export type TabName = HomeTab | 'board';
+
+export function tabOrder(wallet: boolean): readonly HomeTab[] {
+  return HOME_TABS.filter((tab) => wallet || tab !== 'wallet');
+}
+
+export const TAB_ORDER = tabOrder(WALLET_ENABLED);
 
 export const TAB_HREF = { index: '/', board: BOARD_ROUTE, contacts: '/contacts', wallet: '/wallet', settings: '/settings' } as const;
 
+function homeTabAt(pathname: string): HomeTab {
+  if (pathname === '/contacts') return 'contacts';
+  if (pathname.startsWith('/wallet')) return 'wallet';
+  if (pathname.startsWith('/settings') || isMenuPageRoute(pathname)) return 'settings';
+  return 'index';
+}
+
+export function tabIndexIn(order: readonly HomeTab[], pathname: string): number {
+  return Math.max(0, order.indexOf(homeTabAt(pathname)));
+}
+
 export function homeTabIndex(pathname: string): number {
-  if (pathname === '/contacts') return 1;
-  if (pathname.startsWith('/wallet')) return 2;
-  if (pathname.startsWith('/settings') || isMenuPageRoute(pathname)) return 3;
-  return 0;
+  return tabIndexIn(TAB_ORDER, pathname);
 }
 
 export function hasTabsPager(pathname: string, web: boolean): boolean {

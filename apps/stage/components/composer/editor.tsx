@@ -27,6 +27,7 @@ import { usePalette } from '../../lib/theme';
 import { useHover } from '../hover';
 import { HoverTooltip } from '../HoverTooltip';
 import { Column, PAGE_GUTTER, SCROLLBAR_ON_HOVER, SELF_SCROLLBAR } from '../layout';
+import { WALLET_ENABLED } from '../../lib/features';
 
 const COMPOSER_ICON_INSET = 7;
 
@@ -321,6 +322,10 @@ export function buildAttachActions(a: {
   recordVoice?: () => Promise<void>;
 }): AttachAction[] {
   const voice: AttachAction[] = a.recordVoice ? [[IconMicrophone, 'Voice message', a.recordVoice]] : [];
+  const walletActions: AttachAction[] = [
+    [IconPencil, 'Sign', a.openSig],
+    [IconWallet4, 'Payment', a.openTx],
+  ];
   return [
     ...voice,
     [IconImages1, 'Image', a.pickImage],
@@ -328,7 +333,6 @@ export function buildAttachActions(a: {
     [IconPaperclip3, 'File', a.pickFile],
     [IconMapPin, 'Location', a.pickLocation],
     [IconChart3, 'Poll', a.openPoll],
-    [IconPencil, 'Sign', a.openSig],
-    [IconWallet4, 'Payment', a.openTx],
+    ...(WALLET_ENABLED ? walletActions : []),
   ];
 }

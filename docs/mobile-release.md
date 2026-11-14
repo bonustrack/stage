@@ -20,12 +20,24 @@ The compiler generates memoization during the build, not a persistent message or
 
 ## What runs
 
-| Job             | What it does                                                                                                                                                                                    |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `android-store` | EAS cloud build (`production-prod`, AAB) then `eas submit` to the Play `internal` and `closed` tracks. `production` is attempted but allowed to fail while the Play account gate is in place.   |
-| `android-apk`   | EAS cloud build (`preview-prod`, APK), checked with `scripts/verify-apk.mjs`, then attached to the GitHub Release `v<version>` as the direct download `releases/download/v<version>/stage.apk`. |
-| `testers`       | Pushes that APK to the Firebase App Distribution `testers` group.                                                                                                                               |
-| `ios`           | EAS cloud build (`production-prod`) then `eas submit` to TestFlight. Skips with a warning until the Apple secrets exist.                                                                        |
+| Job             | What it does                                                                                                                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `android-store` | EAS cloud build (`production-prod`, AAB) then `eas submit` to the Play `internal` track. Play accepts a version code once, so closed testing and production get the build by promoting the release in Play Console. |
+| `android-apk`   | EAS cloud build (`preview-prod`, APK), checked with `scripts/verify-apk.mjs`, then attached to the GitHub Release `v<version>` as the direct download `releases/download/v<version>/stage.apk`.                     |
+| `testers`       | Pushes that APK to the Firebase App Distribution `testers` group.                                                                                                                                                   |
+| `ios`           | EAS cloud build (`production-prod`) then `eas submit` to TestFlight. Skips with a warning until the Apple secrets exist.                                                                                            |
+
+## Store builds hide the wallet, calls and Developer mode
+
+The first Play Store release ships as a plain encrypted messenger. Three build flags, read in `apps/stage/lib/features.ts`, are on unless set to `off`:
+
+| Flag                         | Off in                                                      | What `off` does                                                                                                                                                                                                                                                                                                         |
+| ---------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_WALLET`         | `production` (Play, App Store), `preview-prod` (GitHub APK) | No Wallet tab or swipe page, wallet routes redirect home (deep links included), no Wallet settings row, no profile Send, no Sign or Payment in the composer, no x402 card. Payment and signature messages from others show as "Unsupported message" in the chat and the chat list. Copy says account instead of wallet. |
+| `EXPO_PUBLIC_CALLS`          | `production`                                                | No call buttons, no ringing, no call service. `app.config.js` skips `withCalls` and adds `withNoForegroundServices`, which removes the call, screen share and background location services and blocks the foreground service and Bluetooth permissions, so the Play foreground service declaration is "none".           |
+| `EXPO_PUBLIC_DEVELOPER_MODE` | `production`, `preview-prod`                                | No Developer mode toggle, and a synced "on" from another device is ignored, so Dashboard, Storage and Inbox stay hidden.                                                                                                                                                                                                |
+
+The account key is still the smart account (the XMTP identity), so the recovery phrase and its backup stay. Web, desktop, dev clients and branch previews keep every feature. The `production` profile has no update channel, so a store binary cannot receive an OTA update and the flags cannot change after review: turning a feature back on is a new store release, with the Play Financial features declaration updated to a non-custodial cryptocurrency wallet before the wallet returns.
 
 ## Android APKs
 

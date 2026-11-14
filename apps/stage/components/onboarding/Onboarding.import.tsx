@@ -20,6 +20,7 @@ import {
   visibleSuggestions,
 } from './RecoveryPhrase.model';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
+import { WALLET_ENABLED } from '../../lib/features';
 
 function SuggestionChips({ words, onPick }: { words: string[]; onPick: (word: string) => void }): React.ReactElement | null {
   const pal = usePalette();
@@ -255,7 +256,7 @@ export function ImportStep({
     />
   );
   return (
-    <OnboardingCard title="Import wallet" about={IMPORT_ABOUT} footer={footer}>
+    <OnboardingCard title={WALLET_ENABLED ? 'Import wallet' : 'Import account'} about={IMPORT_ABOUT} footer={footer}>
       {scanning ? (
         <QrScanner dark={dark} onScan={onScan} />
       ) : scanned ? (

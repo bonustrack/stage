@@ -1,14 +1,20 @@
+import { WALLET_ENABLED } from '../../lib/features';
+
 export const HERO_YELLOW = '#fafe69';
 export const HERO_BLACK = '#000000';
 export const HERO_WHITE = '#ffffff';
 
-export const HERO_COPY = {
-  eyebrow: 'Private by default',
-  title: 'Your agent is the product',
-  paragraph:
-    'Stage is a private, end-to-end encrypted messenger with a built-in wallet, free usernames and avatars. Channels, multiple accounts, and agents as contacts.',
-  cta: 'Get started →',
-} as const;
+export function heroCopy(wallet: boolean) {
+  const extras = wallet ? 'a built-in wallet, free usernames and avatars' : 'free usernames and avatars';
+  return {
+    eyebrow: 'Private by default',
+    title: 'Your agent is the product',
+    paragraph: `Stage is a private, end-to-end encrypted messenger with ${extras}. Channels, multiple accounts, and agents as contacts.`,
+    cta: 'Get started →',
+  } as const;
+}
+
+export const HERO_COPY = heroCopy(WALLET_ENABLED);
 
 export const BANNER = {
   lead: 'Psst! Stage is in early access. ',

@@ -18,11 +18,14 @@
     "production": {
       "extends": "base",
       "autoIncrement": true,
-      "env": { "APP_VARIANT": "prod" },
+      "env": { "APP_VARIANT": "prod", "EXPO_PUBLIC_WALLET": "off", "EXPO_PUBLIC_CALLS": "off", "EXPO_PUBLIC_DEVELOPER_MODE": "off" },
       "android": { "gradleCommand": ":app:bundleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86_64" }
     },
     "development-prod": { "extends": "development", "env": { "APP_VARIANT": "prod" } },
-    "preview-prod": { "extends": "preview", "env": { "APP_VARIANT": "prod" } },
+    "preview-prod": {
+      "extends": "preview",
+      "env": { "APP_VARIANT": "prod", "EXPO_PUBLIC_WALLET": "off", "EXPO_PUBLIC_DEVELOPER_MODE": "off" }
+    },
     "production-prod": { "extends": "production" }
   },
   "submit": {

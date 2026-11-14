@@ -8,8 +8,8 @@ export function profileDisplayName(address: string, resolvedName: string | null 
 
 export const COPY_ADDRESS_ITEM: MenuItem<'copy-address'> = { id: 'copy-address', label: 'Copy address', icon: 'IconSquareBehindSquare1' };
 
-export const PEER_PROFILE_MENU: MenuItem<'message' | 'send' | 'copy-address'>[] = [
-  { id: 'message', label: 'Message', icon: 'IconBubbleAnnotation3' },
-  { id: 'send', label: 'Send', icon: 'IconPaperPlane' },
-  COPY_ADDRESS_ITEM,
-];
+const SEND_ITEM: MenuItem<'send'> = { id: 'send', label: 'Send', icon: 'IconPaperPlane' };
+
+export function peerProfileMenu(wallet: boolean): MenuItem<'message' | 'send' | 'copy-address'>[] {
+  return [{ id: 'message', label: 'Message', icon: 'IconBubbleAnnotation3' }, ...(wallet ? [SEND_ITEM] : []), COPY_ADDRESS_ITEM];
+}
