@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import {
   parseNameCheck,
   parseNameClaim,
+  parseNameDeletion,
   type NameCheck,
   type ProfileImage,
   type ProfileProgress,
@@ -21,7 +22,7 @@ import {
   baseProfileClient,
   inspectNameSetup,
 } from '@stage-labs/client/identity/onchainProfile';
-import { claimMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
+import { claimMessage, deletionMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
 import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { getSelectedAccount, getViemAccount, type AccountRecord } from './accounts';
 import { getAccountSelection } from './accountSelection';
@@ -156,6 +157,25 @@ async function signForAccount(account: ProfileAccount, message: string): Promise
   if (!local) throw new Error('This account cannot sign messages');
   assertCurrent();
   return local.signMessage({ message });
+}
+
+const DELETION_TIMEOUT_MS = 90_000;
+
+export async function deleteAccountServerData(): Promise<void> {
+  const account = await profileAccount();
+  const address = account.record.address;
+  const issuedAt = Date.now();
+  const signature = await signForAccount(account, deletionMessage({ address, issuedAt }));
+  account.assertCurrent();
+  await profileRequest(
+    `${linkProxyBase()}/names/delete`,
+    { method: 'POST', headers: HEADERS, body: JSON.stringify({ address, issuedAt, signature }) },
+    async (res) => {
+      const body = parseNameDeletion(await res.json());
+      if (!res.ok || body.deleted !== true) throw new Error(body.error ?? `account deletion failed (${res.status})`);
+    },
+    DELETION_TIMEOUT_MS,
+  );
 }
 
 export function checkStageName(label: string): Promise<NameCheck> {

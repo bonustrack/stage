@@ -1,11 +1,11 @@
-import { PRIVACY_ROUTE, TERMS_ROUTE } from '../legal/legal.model';
+import { DELETION_ROUTE, PRIVACY_ROUTE, TERMS_ROUTE } from '../legal/legal.model';
 
 export const SIGNUP_ROUTE = '/signup';
 export const IMPORT_ROUTE = '/import';
 
 const ONBOARDING_ROUTES: ReadonlySet<string> = new Set([SIGNUP_ROUTE, IMPORT_ROUTE]);
 
-const PUBLIC_ROUTES: ReadonlySet<string> = new Set([TERMS_ROUTE, PRIVACY_ROUTE]);
+const PUBLIC_ROUTES: ReadonlySet<string> = new Set([TERMS_ROUTE, PRIVACY_ROUTE, DELETION_ROUTE]);
 
 export function isOnboardingRoute(pathname: string): boolean {
   return ONBOARDING_ROUTES.has(pathname);

@@ -6,6 +6,7 @@ export interface NamesChain {
   subnameOwner(label: string): Promise<Hex | null>;
   issue(label: string, owner: Hex, onSubmitted?: (hash: Hex) => Promise<void>): Promise<Hex>;
   confirm(hash: Hex): Promise<Hex>;
+  release(label: string): Promise<Hex>;
 }
 
 export interface NamesStore {

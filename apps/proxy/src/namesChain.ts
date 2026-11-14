@@ -67,5 +67,13 @@ export function makeNamesChain(operatorKey: Hex, rpcUrl: string): NamesChain {
       await onSubmitted?.(hash);
       return mined(hash);
     },
+    release: async (label) => {
+      const hash = await wallet.writeContract({
+        ...registry,
+        functionName: 'setSubnodeRecord',
+        args: [parentNode, keccak256(stringToBytes(label)), account.address, ZERO, 0n],
+      });
+      return mined(hash);
+    },
   };
 }

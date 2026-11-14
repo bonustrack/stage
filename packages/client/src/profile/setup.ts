@@ -83,6 +83,10 @@ export function parseNameCheck(raw: unknown): NameCheck {
 export function parseNameClaim(raw: unknown): z.infer<typeof nameClaim> {
   return parseOrThrow('username registration', nameClaim, raw);
 }
+const nameDeletion = z.object({ deleted: z.boolean().optional(), name: z.string().nullable().optional(), error: z.string().optional() });
+export function parseNameDeletion(raw: unknown): z.infer<typeof nameDeletion> {
+  return parseOrThrow('account deletion', nameDeletion, raw);
+}
 
 function preparedIdentity(value: AccountRecord): (string | number | undefined)[] {
   return [value.id, value.address.toLowerCase(), value.type, value.dbDir, value.phraseId, value.hdIndex, value.ownerAddress?.toLowerCase()];
