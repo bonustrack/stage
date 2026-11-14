@@ -10,6 +10,25 @@ export const COPY_ADDRESS_ITEM: MenuItem<'copy-address'> = { id: 'copy-address',
 
 const SEND_ITEM: MenuItem<'send'> = { id: 'send', label: 'Send', icon: 'IconPaperPlane' };
 
-export function peerProfileMenu(wallet: boolean): MenuItem<'message' | 'send' | 'copy-address'>[] {
-  return [{ id: 'message', label: 'Message', icon: 'IconBubbleAnnotation3' }, ...(wallet ? [SEND_ITEM] : []), COPY_ADDRESS_ITEM];
+type PeerMenuId = 'message' | 'send' | 'copy-address' | 'report' | 'block' | 'unblock';
+
+const REPORT_ITEM: MenuItem<'report'> = { id: 'report', label: 'Report', icon: 'IconFlag1' };
+
+function blockItem(blocked: boolean | null): MenuItem<'block' | 'unblock'>[] {
+  if (blocked === null) return [];
+  return [
+    blocked
+      ? { id: 'unblock', label: 'Unblock', icon: 'IconCircleBanSign' }
+      : { id: 'block', label: 'Block', icon: 'IconCircleBanSign', danger: true },
+  ];
+}
+
+export function peerProfileMenu(wallet: boolean, blocked: boolean | null): MenuItem<PeerMenuId>[] {
+  return [
+    { id: 'message', label: 'Message', icon: 'IconBubbleAnnotation3' },
+    ...(wallet ? [SEND_ITEM] : []),
+    COPY_ADDRESS_ITEM,
+    REPORT_ITEM,
+    ...blockItem(blocked),
+  ];
 }

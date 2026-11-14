@@ -1,23 +1,34 @@
 import type { MenuItem } from '../appIcons';
 
-type BubbleMenuItem = MenuItem<'reply' | 'copy' | 'select' | 'addToDashboard' | 'shareLink' | 'delete'>;
+type BubbleMenuItem = MenuItem<'reply' | 'copy' | 'select' | 'addToDashboard' | 'shareLink' | 'report' | 'delete'>;
 
-export function bubbleMenuItems(
-  hasText: boolean,
-  {
-    selectText,
-    canDelete = false,
-    frame = false,
-    developerMode = false,
-  }: { selectText: boolean; canDelete?: boolean; frame?: boolean; developerMode?: boolean },
-): BubbleMenuItem[] {
-  const items: (BubbleMenuItem | false)[] = [
+interface BubbleMenuOptions {
+  selectText: boolean;
+  canDelete?: boolean;
+  canReport?: boolean;
+  frame?: boolean;
+  developerMode?: boolean;
+}
+
+const COPY: BubbleMenuItem = { id: 'copy', icon: 'IconSquareBehindSquare1', label: 'Copy' };
+const SELECT: BubbleMenuItem = { id: 'select', icon: 'IconFileBend', label: 'Select' };
+
+function textItems(hasText: boolean, selectText: boolean): BubbleMenuItem[] {
+  if (!hasText) return [];
+  return selectText ? [COPY, SELECT] : [COPY];
+}
+
+function when(on: boolean | undefined, item: BubbleMenuItem): BubbleMenuItem[] {
+  return on === true ? [item] : [];
+}
+
+export function bubbleMenuItems(hasText: boolean, o: BubbleMenuOptions): BubbleMenuItem[] {
+  return [
     { id: 'reply', icon: 'IconArrowUndoUp', label: 'Reply' },
-    hasText && { id: 'copy', icon: 'IconSquareBehindSquare1', label: 'Copy' },
-    hasText && selectText && { id: 'select', icon: 'IconFileBend', label: 'Select' },
-    frame && developerMode && { id: 'addToDashboard', icon: 'IconBento', label: 'Add to dashboard' },
+    ...textItems(hasText, o.selectText),
+    ...when(o.frame === true && o.developerMode === true, { id: 'addToDashboard', icon: 'IconBento', label: 'Add to dashboard' }),
     { id: 'shareLink', icon: 'IconPaperPlane', label: 'Share link' },
-    canDelete && { id: 'delete', icon: 'IconTrashCan', label: 'Delete', danger: true },
+    ...when(o.canReport, { id: 'report', icon: 'IconFlag1', label: 'Report' }),
+    ...when(o.canDelete, { id: 'delete', icon: 'IconTrashCan', label: 'Delete', danger: true }),
   ];
-  return items.filter((item): item is BubbleMenuItem => item !== false);
 }

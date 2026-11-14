@@ -13,6 +13,7 @@ import { capabilities } from '../../lib/capabilities';
 import { checkMainUpdate, devClientInfo, loadMainUpdate } from '../../lib/devClientUpdates';
 import { report } from '../../lib/errorPolicy';
 import { mainUpdateMessage } from './DevClientUpdate.model';
+import { PRIVACY_URL, TERMS_URL } from '../legal/legal.model';
 import { Column, Row, PAGE_GUTTER } from '../layout';
 
 const STAGE_GITHUB_URL = 'https://github.com/bonustrack/stage';
@@ -182,6 +183,11 @@ export function SettingsAboutFooter(): React.ReactElement {
         <FooterLink href={STAGE_GITHUB_URL} label="bonustrack/stage">
           <GithubLogo size={GITHUB_ICON_SIZE} color={sub} />
         </FooterLink>
+      </Row>
+      <Row align="center" justify="center" gap={4} wrap>
+        <FooterLink href={TERMS_URL} label="Terms of Use" />
+        <Text {...FOOTER_TEXT}>·</Text>
+        <FooterLink href={PRIVACY_URL} label="Privacy Policy" />
       </Row>
       <DevClientUpdate />
     </Column>

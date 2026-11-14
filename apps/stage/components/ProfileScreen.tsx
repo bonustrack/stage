@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from '../lib/safeArea';
 import { shortAddress } from '@stage-labs/client/identity/format';
 import { useActiveAccountRecord } from '../modules/messaging/account';
@@ -11,6 +12,8 @@ import { GesturePressable } from '@stage-labs/kit/react-native/gesture-pressable
 import { Text } from '@stage-labs/kit/react-native/text';
 import { peerProfileMenu, profileDisplayName } from './ProfileScreen.model';
 import { WALLET_ENABLED } from '../lib/features';
+import { isPersonBlocked } from '../lib/moderation';
+import { confirmBlockPerson, confirmReportPerson, unblockPersonNow } from './moderation/reportFlows';
 import { capabilities } from '../lib/capabilities';
 import { ImageViewer } from './ImageViewer';
 import { ProfileActions, useSelfAddress } from './ProfileScreen.parts';
@@ -56,10 +59,37 @@ function EditProfileButton({ background }: { background: string }): React.ReactE
   );
 }
 
-function ProfileMenu({ isSelf, onSelect }: { isSelf: boolean; onSelect: (id: string) => void }): React.ReactElement {
+function ProfileMenu({
+  isSelf,
+  blocked,
+  onSelect,
+}: {
+  isSelf: boolean;
+  blocked: boolean | null;
+  onSelect: (id: string) => void;
+}): React.ReactElement {
   const { bg } = usePalette();
   if (isSelf) return <EditProfileButton background={bg} />;
-  return <ProfileCoverMenu items={peerProfileMenu(WALLET_ENABLED)} onSelect={onSelect} />;
+  return <ProfileCoverMenu items={peerProfileMenu(WALLET_ENABLED, blocked)} onSelect={onSelect} />;
+}
+
+function usePeerModeration(addr: string, isSelf: boolean): { blocked: boolean | null; actions: Record<string, () => void> } {
+  const query = useQuery({ queryKey: ['personBlocked', addr.toLowerCase()], queryFn: () => isPersonBlocked(addr), enabled: !isSelf });
+  const refresh = (): void => {
+    void query.refetch();
+  };
+  const actions = {
+    report: () => {
+      confirmReportPerson({ address: addr, name: getPeerName(addr) ?? null }, refresh);
+    },
+    block: () => {
+      confirmBlockPerson(addr, refresh);
+    },
+    unblock: () => {
+      unblockPersonNow(addr, refresh);
+    },
+  };
+  return { blocked: query.data ?? null, actions };
 }
 
 function ProfileIdentity({
@@ -142,7 +172,9 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
   const onSend = (): void => {
     router.push({ pathname: '/wallet/send', params: { to: addr } });
   };
+  const moderation = usePeerModeration(addr, isSelf);
   const menuActions: Record<string, () => void> = {
+    ...moderation.actions,
     message: onMessage,
     send: onSend,
     'copy-address': () => {
@@ -159,6 +191,7 @@ export function ProfileScreen({ address: addr }: { address: string }): React.Rea
         trailing={
           <ProfileMenu
             isSelf={isSelf}
+            blocked={moderation.blocked}
             onSelect={(id) => {
               menuActions[id]?.();
             }}

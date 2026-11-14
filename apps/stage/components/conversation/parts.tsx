@@ -146,6 +146,7 @@ interface BubbleActions {
   select: () => void;
   addToDashboard: () => void;
   shareLink: () => void;
+  report: () => void;
   delete: () => void;
 }
 
@@ -196,6 +197,7 @@ export function BubbleActionMenu({
   target,
   anchor,
   canDelete,
+  canReport,
   onClose,
   onReact,
   onReply,
@@ -203,11 +205,13 @@ export function BubbleActionMenu({
   onSelect,
   onAddToDashboard,
   onShareLink,
+  onReport,
   onDelete,
 }: {
   target: HistoryEntry | null;
   anchor: MenuAnchor;
   canDelete: boolean;
+  canReport: boolean;
   onClose: () => void;
   onReact: (emoji: string) => void;
   onReply: () => void;
@@ -215,6 +219,7 @@ export function BubbleActionMenu({
   onSelect: () => void;
   onAddToDashboard?: () => void;
   onShareLink: () => void;
+  onReport: () => void;
   onDelete: () => void;
 }): React.ReactElement {
   const anchored = useAnchoredMenus();
@@ -225,6 +230,7 @@ export function BubbleActionMenu({
   const items = bubbleMenuItems(!!target?.text, {
     selectText: SELECT_TEXT,
     canDelete,
+    canReport,
     frame: onAddToDashboard !== undefined,
     developerMode,
   });
@@ -243,6 +249,7 @@ export function BubbleActionMenu({
         select: onSelect,
         addToDashboard: onAddToDashboard ?? onClose,
         shareLink: onShareLink,
+        report: onReport,
         delete: onDelete,
       }}
     />

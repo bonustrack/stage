@@ -10,7 +10,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { Platform, Text, TextInput } from 'react-native';
 import { RootStack, rootStackScreenOptions, TABS_SCREEN_OPTIONS, useDocumentScrollRestore } from '../lib/navigation';
 import { usePathname } from 'expo-router';
-import { isOnboardingRoute } from '../components/onboarding/nextRoute.model';
+import { isOnboardingRoute, needsAccountRoute } from '../components/onboarding/nextRoute.model';
 import { useEffectiveColorScheme, usePalette } from '../lib/theme';
 import { KitThemeProvider } from '@stage-labs/kit/react-native/theme-context';
 import { bootKitFonts, useKitFontsLoaded } from '../lib/kitFonts';
@@ -137,7 +137,7 @@ function RootLayoutInner(): React.ReactElement {
 
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);
-  const routing = shell.showOnboarding && !isOnboardingRoute(pathname) && pathname !== '/';
+  const routing = shell.showOnboarding && needsAccountRoute(pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
