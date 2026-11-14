@@ -21,6 +21,7 @@ import {
 } from '../../lib/developerMode';
 import { RetryNotice } from '../chrome/RetryNotice';
 import { reported } from '../../lib/errorPolicy';
+import { DEVELOPER_MODE_AVAILABLE, WALLET_ENABLED } from '../../lib/features';
 import { isPushSupported } from '../../lib/pushRegister';
 import { setCustomTheme, setThemePreference, useCustomTheme, useEffectiveColorScheme, useThemePreference } from '../../lib/theme';
 import { getPeerHandle, getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
@@ -158,17 +159,21 @@ function PreferencesGroup(): React.ReactElement {
           capabilities.navigate(settingsSection('appearance').href);
         }}
       />
-      <SettingsToggleRow
-        label="Developer mode"
-        name="developer-mode"
-        checked={developerMode}
-        disabled={!developerModeLoaded}
-        description="Show Check sync, Storage, Inbox and Dashboard on all your devices."
-        onChange={(enabled) => {
-          void setDeveloperMode(enabled).catch(reported('developerMode.save'));
-        }}
-      />
-      {developerModeFailed ? <RetryNotice message="Developer mode could not be loaded." onRetry={retryDeveloperMode} /> : null}
+      {DEVELOPER_MODE_AVAILABLE ? (
+        <SettingsToggleRow
+          label="Developer mode"
+          name="developer-mode"
+          checked={developerMode}
+          disabled={!developerModeLoaded}
+          description="Show Check sync, Storage, Inbox and Dashboard on all your devices."
+          onChange={(enabled) => {
+            void setDeveloperMode(enabled).catch(reported('developerMode.save'));
+          }}
+        />
+      ) : null}
+      {DEVELOPER_MODE_AVAILABLE && developerModeFailed ? (
+        <RetryNotice message="Developer mode could not be loaded." onRetry={retryDeveloperMode} />
+      ) : null}
     </SettingsGroup>
   );
 }
@@ -209,7 +214,7 @@ function MoreGroup(): React.ReactElement {
       ))}
       {row('security', 'Recovery phrase and private key')}
       {row('devices', 'Devices and history', count === null ? undefined : `${count} signed in`)}
-      {row('wallet', 'Wallet', address ? shortAddress(address) : undefined)}
+      {WALLET_ENABLED ? row('wallet', 'Wallet', address ? shortAddress(address) : undefined) : null}
       {row('advanced', 'Advanced')}
     </SettingsGroup>
   );

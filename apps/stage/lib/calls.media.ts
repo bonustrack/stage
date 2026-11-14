@@ -8,10 +8,11 @@ import { NO_ROUTES, joinedHeadset, parseAudioRoutes, speakerTarget, type AudioRo
 import { cancelScreenPicker, startScreenPicker } from './calls.screen';
 import { ignore, ignored, report } from './errorPolicy';
 import { makeValue } from './storeCore';
+import { CALLS_ENABLED } from './features';
 import { stopMedia, stopTrack, type CallStream, type CallTrack, type CapturedMedia } from './calls.types';
 
-export const callsSupported = true;
-export const screenShareSupported = true;
+export const callsSupported = CALLS_ENABLED;
+export const screenShareSupported = CALLS_ENABLED;
 const CAMERA = { width: 640, height: 360, frameRate: 24, facingMode: 'user' };
 let audioStarted = false;
 let captureEpoch = 0;

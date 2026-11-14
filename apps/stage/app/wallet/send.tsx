@@ -16,6 +16,7 @@ import { IconArrowDown } from '@central-icons-react-native/round-outlined-radius
 import { sendTokenFor, type TokenChoice } from '../../components/wallet/screen/model';
 import { TokenSelector, useSelectedBalance } from '../../components/wallet/TokenSelector';
 import { Column, Row, ScreenScroll } from '../../components/layout';
+import { WalletGate } from '../../components/wallet/WalletGate';
 
 const RESOLVING_SPINNER = 24;
 
@@ -232,7 +233,7 @@ function SendFields({
   );
 }
 
-export default function WalletSend(): React.ReactElement {
+function WalletSend(): React.ReactElement {
   const router = useRouter();
   const params = useLocalSearchParams<{ to?: string; symbol?: string; chainId?: string }>();
 
@@ -252,5 +253,13 @@ export default function WalletSend(): React.ReactElement {
         selector={<TokenSelector value={token} onChange={setToken} />}
       />
     </Column>
+  );
+}
+
+export default function WalletSendRoute(): React.ReactElement | null {
+  return (
+    <WalletGate>
+      <WalletSend />
+    </WalletGate>
   );
 }

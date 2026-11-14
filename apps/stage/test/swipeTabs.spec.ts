@@ -1,5 +1,14 @@
 import { describe, expect, test } from 'bun:test';
-import { hasTabsPager, homePageName, homeTabIndex, swipedTabIndex, TAB_HREF, TAB_ORDER } from '../components/SwipeTabs.model';
+import {
+  hasTabsPager,
+  homePageName,
+  homeTabIndex,
+  swipedTabIndex,
+  tabIndexIn,
+  tabOrder,
+  TAB_HREF,
+  TAB_ORDER,
+} from '../components/SwipeTabs.model';
 
 describe('mobile tab swipes', () => {
   const destination = (pathname: string, translation: number, velocity = 0): string => {
@@ -46,5 +55,13 @@ describe('mobile tab swipes', () => {
     expect(homePageName('/contacts', true)).toBe('contacts');
     expect(homePageName('/wallet', true)).toBe('wallet');
     expect(homePageName('/settings', true)).toBe('settings');
+  });
+
+  test('a build without the wallet drops its tab and every later tab moves up one place', () => {
+    const order = tabOrder(false);
+    expect(order).toEqual(['index', 'contacts', 'settings']);
+    expect(tabIndexIn(order, '/settings')).toBe(2);
+    expect(tabIndexIn(order, '/dashboard')).toBe(2);
+    expect(tabIndexIn(order, '/wallet')).toBe(0);
   });
 });

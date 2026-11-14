@@ -19,11 +19,14 @@ import { useVisibleUnreadCount } from '../../components/home/unreadCount';
 import { unreadBadgeLabel } from '../../lib/format';
 import { AccountAvatar } from '../../components/AccountAvatarButton';
 import { SETTINGS_ROUTE } from '../../lib/routes';
+import { WALLET_ENABLED } from '../../lib/features';
 import { Landing } from '../../components/landing/Landing';
 import { useAccountGate } from '../../lib/accountGate';
 import { useOpenNewChat } from '../../components/home/newChatFocus';
 import { Column } from '../../components/layout';
 import { appIcon } from '../../components/widgets';
+
+const HIDDEN_TAB_ROUTES = WALLET_ENABLED ? ['board', 'settings'] : ['wallet', 'board', 'settings'];
 
 const WIDE_TAB_TITLES: Record<string, string> = { '/wallet': 'Wallet' };
 
@@ -190,8 +193,9 @@ export default function TabsLayout(): React.ReactElement {
             },
           }}
         />
-        <Tabs.Screen name="board" options={{ href: null }} />
-        <Tabs.Screen name="settings" options={{ href: null }} />
+        {HIDDEN_TAB_ROUTES.map((name) => (
+          <Tabs.Screen key={name} name={name} options={{ href: null }} />
+        ))}
       </Tabs>
       <PagerOverlay
         insetTop={insets.top}

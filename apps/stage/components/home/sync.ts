@@ -30,7 +30,9 @@ import { mergePaintedRows, visibleRowsDiff, type Row } from './model';
 import { schedulePushTopicRefresh } from '../../lib/pushRegister';
 import { report, recover, attempt } from '../../lib/errorPolicy';
 import { presentInboundNotification } from '../../lib/pushNotify';
-import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { isGroupUpdateTypeId } from '@stage-labs/client/xmtp/humanize';
+import { chatPreviewOf } from '../../lib/walletContent.model';
+import { WALLET_ENABLED } from '../../lib/features';
 import { applyInbound } from '@stage-labs/client/xmtp/channelsCache';
 import { ROW_PREVIEW_MAX_CHARS, type StreamedMessage } from '@stage-labs/client/xmtp/summarizeRow';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
@@ -99,7 +101,7 @@ function makeMissRefresher(isCancelled: () => boolean, refresh: () => Promise<vo
 
 function rowPreviewOf(msg: StreamedMessage): string {
   try {
-    return previewOfXmtpContent(msg.content, msg.contentTypeId);
+    return chatPreviewOf(msg.content, msg.contentTypeId, WALLET_ENABLED);
   } catch {
     return `[${msg.contentTypeId ?? 'unknown'}]`;
   }

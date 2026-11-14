@@ -26,6 +26,18 @@ const PROD_NAME = 'Stage';
 
 const IS_PROD = process.env.APP_VARIANT === 'prod';
 
+const CALLS = process.env.EXPO_PUBLIC_CALLS !== 'off';
+
+const CALL_PERMISSIONS = [
+  'android.permission.FOREGROUND_SERVICE',
+  'android.permission.FOREGROUND_SERVICE_MICROPHONE',
+  'android.permission.FOREGROUND_SERVICE_CAMERA',
+  'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
+  'android.permission.BLUETOOTH',
+  'android.permission.BLUETOOTH_ADMIN',
+  'android.permission.BLUETOOTH_CONNECT',
+];
+
 const variant = IS_PROD
   ? {
       name: PROD_NAME,
@@ -87,6 +99,8 @@ const config = {
       'android.permission.READ_MEDIA_VISUAL_USER_SELECTED',
       'android.permission.READ_EXTERNAL_STORAGE',
       'android.permission.WRITE_EXTERNAL_STORAGE',
+      'com.google.android.gms.permission.AD_ID',
+      ...(CALLS ? [] : CALL_PERMISSIONS),
     ],
     adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#0f1115' },
     androidStatusBar: { barStyle: 'light-content', translucent: true },
@@ -117,9 +131,15 @@ const config = {
     ],
     [
       'expo-audio',
-      { microphonePermission: `Allow ${variant.name} to use your microphone for on-device dictation, calls and voice messages.` },
+      {
+        microphonePermission: `Allow ${variant.name} to use your microphone for on-device dictation, ${CALLS ? 'calls and ' : ''}voice messages.`,
+        enableBackgroundPlayback: false,
+      },
     ],
-    ['expo-camera', { cameraPermission: `Allow ${variant.name} to use your camera for video calls, photos and QR codes.` }],
+    [
+      'expo-camera',
+      { cameraPermission: `Allow ${variant.name} to use your camera for ${CALLS ? 'video calls, ' : ''}photos and QR codes.` },
+    ],
     ['expo-location', { locationAlwaysAndWhenInUsePermission: `Allow ${variant.name} to share your current location in chat.` }],
     [
       'expo-media-library',
@@ -136,7 +156,7 @@ const config = {
     './plugins/withGradleMemory',
     './plugins/withBouncyCastleDedup',
     './plugins/withXmtpNotificationService',
-    './plugins/withCalls',
+    CALLS ? './plugins/withCalls' : './plugins/withNoForegroundServices',
     ...(!IS_PROD ? ['./plugins/withCrashReport'] : []),
   ],
   notification: { icon: './assets/notification-icon.png', color: '#ffffff', iosDisplayInForeground: true, androidMode: 'default' },

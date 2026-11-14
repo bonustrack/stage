@@ -32,6 +32,14 @@ describe('setup copy', () => {
     expect(setupHint({ message: 'boom', accountId: '0xabc', retry: 'messaging' })).toContain('wallet is ready');
   });
 
+  test('a build without the wallet says account instead of wallet', () => {
+    expect(stageLabel('wallet', {}, false)).toBe('Creating your account key');
+    expect(stageLabel('wallet', { restore: true }, false)).toBe('Restoring your account key');
+    expect(stageLabel('messaging', {}, false)).toBe('Setting up secure messaging');
+    expect(setupHint(null, false)).not.toContain('wallet');
+    expect(setupHint({ message: 'boom', accountId: '0xabc', retry: 'messaging' }, false)).toContain('account is ready');
+  });
+
   test('a messaging retry keeps the existing wallet, other failures may start over', () => {
     expect(setupLinks({ message: 'x', retry: 'restart' })).toEqual(['startOver']);
     expect(setupLinks({ message: 'x', accountId: '0xabc', retry: 'messaging' })).toEqual([]);

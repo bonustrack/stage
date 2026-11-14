@@ -6,7 +6,9 @@ import { lineOfConv } from '@stage-labs/client/xmtp/line';
 import { rowMessagesOf } from '../../lib/xmtp.messages';
 import { NO_TAGS, groupTagsOf, type GroupTags } from '@stage-labs/client/xmtp/labels';
 import { isControlBody, type XmtpConsent } from '../../lib/xmtp.types';
-import { isGroupUpdateTypeId, previewOfXmtpContent } from '@stage-labs/client/xmtp/humanize';
+import { isGroupUpdateTypeId } from '@stage-labs/client/xmtp/humanize';
+import { chatPreviewOf } from '../../lib/walletContent.model';
+import { WALLET_ENABLED } from '../../lib/features';
 import { revivesClearedChat } from '@stage-labs/client/xmtp/readState';
 import { channelStampSeed } from '@stage-labs/kit/avatar';
 import {
@@ -96,7 +98,7 @@ function previewOfMessage(last: StreamedMessage | undefined, dm: boolean, msgs: 
   const deletedBy = deletedRowBy(last, msgs, rights);
   if (deletedBy) return deletedTextOf(deletedBy);
   try {
-    return previewOfXmtpContent(last.content, last.contentTypeId);
+    return chatPreviewOf(last.content, last.contentTypeId, WALLET_ENABLED);
   } catch {
     return `[${last.contentTypeId ?? 'unknown'}]`;
   }

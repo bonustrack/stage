@@ -8,6 +8,7 @@ import { getSelectedAccount } from './accounts';
 import { getAccountEpoch, subscribeAccountEpoch } from './accountEpoch';
 import { getAccountSelection, subscribeAccountSelection } from './accountSelection';
 import { report } from './errorPolicy';
+import { DEVELOPER_MODE_AVAILABLE } from './features';
 import { createValueStore } from './persistedStore';
 import { makeListeners, useStoreValue } from './storeCore';
 import { editDeveloperMode } from './syncedSettings.model';
@@ -37,7 +38,7 @@ let pending: Promise<void> | null = null;
 const changes = makeListeners();
 const loaded = (): boolean => loadedSelection === getAccountSelection() && prefs.isCurrentAccount();
 const failed = (): boolean => failedSelection === getAccountSelection();
-const enabled = (): boolean => loaded() && prefs.get().enabled;
+const enabled = (): boolean => DEVELOPER_MODE_AVAILABLE && loaded() && prefs.get().enabled;
 
 async function refresh(): Promise<void> {
   const selection = getAccountSelection();

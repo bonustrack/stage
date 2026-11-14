@@ -11,6 +11,7 @@ import { usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { Column, ScreenScroll } from '../../components/layout';
+import { WalletGate } from '../../components/wallet/WalletGate';
 
 const ADDRESS_LABEL = 'Wallet address (tap to copy)';
 const ADDRESS_HINT =
@@ -56,7 +57,7 @@ function QrPanel({ address, border }: { address: string; border: string }): Reac
   );
 }
 
-export default function WalletReceive(): React.ReactElement {
+function WalletReceive(): React.ReactElement {
   const { border } = usePalette();
 
   const { data: active } = useQuery({ queryKey: ['receiveActiveAccount'], queryFn: getActiveAccount });
@@ -78,5 +79,13 @@ export default function WalletReceive(): React.ReactElement {
         </Column>
       </ScreenScroll>
     </Column>
+  );
+}
+
+export default function WalletReceiveRoute(): React.ReactElement | null {
+  return (
+    <WalletGate>
+      <WalletReceive />
+    </WalletGate>
   );
 }
