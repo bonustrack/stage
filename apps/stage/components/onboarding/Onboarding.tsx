@@ -15,6 +15,7 @@ import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius
 import { IconArrowRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRight';
 import { Button } from '@stage-labs/kit/react-native/button';
 import { OnboardingCard, SkipLink } from './OnboardingCard';
+import { TermsNotice } from '../legal/TermsNotice';
 import { UsernameField, useUsernameInput } from '../UsernameField';
 import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
 import { Column } from '../layout';
@@ -57,13 +58,16 @@ function UsernameStep({
       about={USERNAME_COPY.about}
       footer={footer}
       after={
-        <SkipLink
-          label="Or import"
-          disabled={busy}
-          onPress={() => {
-            router.navigate(IMPORT_ROUTE);
-          }}
-        />
+        <>
+          <SkipLink
+            label="Or import"
+            disabled={busy}
+            onPress={() => {
+              router.navigate(IMPORT_ROUTE);
+            }}
+          />
+          <TermsNotice />
+        </>
       }
     >
       <UsernameField input={input} busy={busy} />

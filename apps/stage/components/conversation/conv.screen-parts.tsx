@@ -38,6 +38,9 @@ import { report } from '../../lib/errorPolicy';
 import { frameOf } from '../frame/frame.model';
 import { addChatFrameToDashboard } from '../frame/frameDashboard';
 import type { HistoryEntry } from '@stage-labs/client/types';
+import { canReportMessage, type ReportedMessage } from '../moderation/report.model';
+import { confirmReportMessage } from '../moderation/reportFlows';
+import { peerLabel } from '../../lib/peerProfiles';
 import { Text } from '@stage-labs/kit/react-native/text';
 import { CHANNEL_WAITING_NOTICE, OUTSIDE_CHANNEL_NOTICE } from '@stage-labs/client/xmtp/clientErrors';
 import { homeRoute } from '../tabs/boardHome';
@@ -227,7 +230,22 @@ export function ConversationSearchTopnav({
   );
 }
 
+function reportedMessageOf(c: Conv, convId: string, entry: HistoryEntry): ReportedMessage {
+  const senderAddress = c.senderEthOf(entry.from);
+  return {
+    sender: senderAddress ?? entry.from,
+    senderName: senderAddress === null ? null : peerLabel(senderAddress),
+    convId,
+    chatName: c.isGroup ? convTitle(c).text : null,
+    group: c.isGroup,
+    messageId: entry.id,
+    sentAt: entry.ts,
+    content: previewOf(entry),
+  };
+}
+
 function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): React.ReactElement {
+  const router = useRouter();
   const {
     isGroup,
     peerAddr,
@@ -247,6 +265,7 @@ function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): Re
       target={menuFor}
       anchor={menuAnchor}
       canDelete={canDeleteMessage(menuFor, { myUri, deleted: deletedIds, superAdmin: isSuperAdmin })}
+      canReport={canReportMessage(menuFor, myUri)}
       onClose={() => {
         setMenuFor(null);
       }}
@@ -272,6 +291,14 @@ function ConversationMessageMenu({ c, convId }: { c: Conv; convId: string }): Re
       onShareLink={() => {
         const path = conversationSharePath(convId, !isGroup ? peerAddr : null);
         if (menuFor) void Share.share({ message: `${shareUrlFor(path)}?m=${menuFor.id}` });
+        setMenuFor(null);
+      }}
+      onReport={() => {
+        if (menuFor) {
+          confirmReportMessage(reportedMessageOf(c, convId, menuFor), () => {
+            router.replace(homeRoute());
+          });
+        }
         setMenuFor(null);
       }}
       onDelete={() => {

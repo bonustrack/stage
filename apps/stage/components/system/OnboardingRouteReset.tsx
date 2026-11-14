@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { router, useGlobalSearchParams, usePathname, useRootNavigationState } from 'expo-router';
-import { isOnboardingRoute, nextRouteFor, signupHref } from '../onboarding/nextRoute.model';
+import { needsAccountRoute, nextRouteFor, signupHref } from '../onboarding/nextRoute.model';
 import { currentRoute, prettifyRouteQuery } from '../../lib/routes';
 
 export function OnboardingRouteReset({ ready, showing }: { ready: boolean; showing: boolean }): null {
@@ -9,7 +9,7 @@ export function OnboardingRouteReset({ ready, showing }: { ready: boolean; showi
   const navReady = useRootNavigationState()?.key !== undefined;
   const active = ready && showing && navReady;
   useEffect(() => {
-    if (!active || isOnboardingRoute(pathname) || pathname === '/') return;
+    if (!active || !needsAccountRoute(pathname)) return;
     router.replace(signupHref(nextRouteFor(currentRoute(pathname))));
   }, [active, pathname]);
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { profileDisplayName } from '../components/ProfileScreen.model';
+import { peerProfileMenu, profileDisplayName } from '../components/ProfileScreen.model';
 
 describe('profileDisplayName', () => {
   test('empty address shows loading placeholder', () => {
@@ -14,5 +14,14 @@ describe('profileDisplayName', () => {
     expect(profileDisplayName('0xabc', undefined, '0x12…cd')).toBe('0x12…cd');
     expect(profileDisplayName('0xabc', null, '0x12…cd')).toBe('0x12…cd');
     expect(profileDisplayName('0xabc', '   ', '0x12…cd')).toBe('0x12…cd');
+  });
+});
+
+describe('peerProfileMenu', () => {
+  test('offers Report, and Block or Unblock once the block state is known', () => {
+    expect(peerProfileMenu(false, false).map((i) => i.id)).toEqual(['message', 'copy-address', 'report', 'block']);
+    expect(peerProfileMenu(false, true).map((i) => i.id)).toEqual(['message', 'copy-address', 'report', 'unblock']);
+    expect(peerProfileMenu(false, null).map((i) => i.id)).toEqual(['message', 'copy-address', 'report']);
+    expect(peerProfileMenu(true, false).map((i) => i.id)).toEqual(['message', 'send', 'copy-address', 'report', 'block']);
   });
 });

@@ -8,6 +8,7 @@ import { IconBento } from '@central-icons-react-native/round-outlined-radius-1-s
 import { IconBubble3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubble3';
 import { IconBubbleAnnotation3 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconBubbleAnnotation3';
 import { IconCheckmark1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCheckmark1';
+import { IconCircleBanSign } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleBanSign';
 import { IconCircleDashed } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCircleDashed';
 import { IconCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconCode';
 import { IconColumns3Wide } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconColumns3Wide';
@@ -49,6 +50,7 @@ export const APP_ICONS = {
   IconBubble3,
   IconBubbleAnnotation3,
   IconCheckmark1,
+  IconCircleBanSign,
   IconCircleDashed,
   IconCode,
   IconColumns3Wide,

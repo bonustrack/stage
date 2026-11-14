@@ -7,6 +7,7 @@ import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { Row } from '../layout';
 import { FormField } from '../FormField';
 import { OnboardingCard } from './OnboardingCard';
+import { TermsNotice } from '../legal/TermsNotice';
 import { usePalette, DANGER } from '../../lib/theme';
 import { QrScanner } from '../accounts/QrScanner';
 import { parseImportInput } from '../accounts/ImportAccountPanel.model';
@@ -256,7 +257,12 @@ export function ImportStep({
     />
   );
   return (
-    <OnboardingCard title={WALLET_ENABLED ? 'Import wallet' : 'Import account'} about={IMPORT_ABOUT} footer={footer}>
+    <OnboardingCard
+      title={WALLET_ENABLED ? 'Import wallet' : 'Import account'}
+      about={IMPORT_ABOUT}
+      footer={footer}
+      after={<TermsNotice />}
+    >
       {scanning ? (
         <QrScanner dark={dark} onScan={onScan} />
       ) : scanned ? (

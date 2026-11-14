@@ -48,4 +48,15 @@ describe('bubbleMenuItems', () => {
     expect(bubbleMenuItems(false, { selectText: true }).map((i) => i.id)).toEqual(['reply', 'shareLink']);
     expect(bubbleMenuItems(false, { selectText: false }).map((i) => i.id)).toEqual(['reply', 'shareLink']);
   });
+
+  test('a message from someone else can be reported, after Share link and before Delete', () => {
+    expect(bubbleMenuItems(true, { selectText: false, canReport: true, canDelete: true }).map((i) => i.id)).toEqual([
+      'reply',
+      'copy',
+      'shareLink',
+      'report',
+      'delete',
+    ]);
+    expect(bubbleMenuItems(true, { selectText: false }).map((i) => i.id)).not.toContain('report');
+  });
 });
