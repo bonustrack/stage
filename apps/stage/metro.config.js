@@ -22,6 +22,12 @@ config.resolver.extraNodeModules = {
   ...Object.fromEntries(Object.entries(nodeCorePolyfills).map(([name, target]) => [name, require.resolve(target)])),
 };
 
+const expoTransformOptions = config.transformer.getTransformOptions;
+config.transformer.getTransformOptions = async (entryPoints, options, getDependenciesOf) => {
+  const base = await expoTransformOptions(entryPoints, options, getDependenciesOf);
+  return { ...base, transform: { ...base.transform, inlineRequires: options.platform !== 'web' } };
+};
+
 if (process.env.STAGE_EXTENSION === '1') {
   config.transformer.asyncRequireModulePath = require.resolve('./extension/asyncRequire');
 }
