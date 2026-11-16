@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  memo,
   useCallback,
   useEffect,
   useImperativeHandle,
@@ -71,17 +72,30 @@ function useListRefs(): ListRefs {
   return useMemo(() => ({ root, content, items }), []);
 }
 
-function orderedData<T>(props: VirtualListProps<T>): readonly T[] {
-  const data: readonly T[] = Array.from(props.data ?? []);
-  return props.inverted === true ? [...data].reverse() : data;
+function orderedData<T>(source: VirtualListProps<T>['data'], inverted: boolean | null | undefined): readonly T[] {
+  const data: readonly T[] = Array.from(source ?? []);
+  return inverted === true ? [...data].reverse() : data;
 }
+
+interface RowContentProps<T> {
+  item: T;
+  index: number;
+  renderItem: VirtualListProps<T>['renderItem'];
+  extraData: unknown;
+}
+
+function RowContent<T>({ item, index, renderItem }: RowContentProps<T>): React.ReactNode {
+  return renderItem?.({ item, index, separators: SEPARATORS }) ?? null;
+}
+
+const PureRowContent = memo(RowContent) as typeof RowContent;
 
 function sourceIndex<T>(props: VirtualListProps<T>, index: number, count: number): number {
   return props.inverted === true ? count - 1 - index : index;
 }
 
 function virtualizerOptions<T>(props: VirtualListProps<T>, scrollMargin: number, viewport: number) {
-  const data = orderedData(props);
+  const data = orderedData(props.data, props.inverted);
   const count = data.length;
   const estimate = props.estimatedItemSize ?? ESTIMATED_ITEM_SIZE;
   const keyOf = props.keyExtractor;
@@ -235,7 +249,10 @@ function VirtualRows<T>({
   refs: ListRefs;
   virtualizer: ListVirtualizer;
 }): React.ReactElement {
-  const data = useMemo(() => orderedData(props), [props]);
+  const { data: source, inverted, renderItem } = props;
+  const extraData: unknown = props.extraData;
+  const data = useMemo(() => orderedData(source, inverted), [source, inverted]);
+  const Content = props.strictMode === true ? PureRowContent : RowContent;
   const scrollMargin = virtualizer.options.scrollMargin;
   return (
     <div ref={refs.items} style={{ position: 'relative', height: virtualizer.getTotalSize() }}>
@@ -249,7 +266,7 @@ function VirtualRows<T>({
             data-index={row.index}
             style={{ ...ITEM_STYLE, transform: `translateY(${itemTranslate(row.start, scrollMargin)}px)` }}
           >
-            {props.renderItem?.({ item, index: sourceIndex(props, row.index, data.length), separators: SEPARATORS })}
+            <Content item={item} index={sourceIndex(props, row.index, data.length)} renderItem={renderItem} extraData={extraData} />
           </div>
         );
       })}

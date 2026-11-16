@@ -43,6 +43,7 @@ export interface VirtualListProps<T> extends SharedFlatListProps<T> {
   anchor?: 'start' | 'end';
   estimatedItemSize?: number;
   stickToEnd?: () => boolean;
+  strictMode?: boolean;
 }
 
 export interface ListAnchor {

@@ -278,7 +278,7 @@ export function ConversationFeed({
   const { loadOlder, hasMore, loadingOlder, status, listRef, allBubbles } = c;
   const { text: sub, link: head } = usePalette();
   const topPad = useSafeAreaInsets().top + TOPNAV_HEIGHT;
-  const { renderItem, extraData } = useFeedRenderItem(c);
+  const renderItem = useFeedRenderItem(c);
   const intro = <ConversationIntro c={c} convId={convId} />;
   const refs = useFeedScrollRefs(convId);
   const rows = useMemo(() => (UPRIGHT ? [...allBubbles].reverse() : allBubbles), [allBubbles]);
@@ -308,7 +308,7 @@ export function ConversationFeed({
         key={convId}
         ref={listRef}
         data={rows}
-        extraData={extraData}
+        strictMode
         inverted={o.inverted}
         anchor={UPRIGHT ? 'end' : 'start'}
         stickToEnd={() => refs.positioned.current && c.isAtBottomRef.current}

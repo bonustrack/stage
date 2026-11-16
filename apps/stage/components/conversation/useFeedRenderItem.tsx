@@ -76,75 +76,6 @@ interface FeedLocals {
 
 type RenderItem = ({ item }: { item: Bubble }) => React.ReactElement;
 
-function useFeedExtraData(c: ConvState, l: Pick<FeedLocals, 'reactorNames' | 'replyingToId' | 'menuForId'>): readonly unknown[] {
-  const {
-    profilesVersion,
-    optimisticReactions,
-    optimisticRemovals,
-    ownReactions,
-    displayVotes,
-    displayOwnVotes,
-    displayOpenAnswers,
-    callRecords,
-    confirmedIds,
-    selectedForCopy,
-    groupDescription,
-    groupLabels,
-    consentAllowed,
-    signingIds,
-    payingIds,
-    jumpHighlightId,
-    deletedIds,
-  } = c;
-  const { reactorNames, replyingToId, menuForId } = l;
-  return useMemo(
-    () => [
-      profilesVersion,
-      optimisticReactions,
-      reactorNames,
-      optimisticRemovals,
-      ownReactions,
-      displayVotes,
-      displayOwnVotes,
-      displayOpenAnswers,
-      callRecords,
-      confirmedIds,
-      selectedForCopy,
-      groupDescription,
-      groupLabels,
-      consentAllowed,
-      signingIds,
-      payingIds,
-      replyingToId,
-      jumpHighlightId,
-      menuForId,
-      deletedIds,
-    ],
-    [
-      profilesVersion,
-      optimisticReactions,
-      reactorNames,
-      optimisticRemovals,
-      ownReactions,
-      displayVotes,
-      displayOwnVotes,
-      displayOpenAnswers,
-      callRecords,
-      confirmedIds,
-      selectedForCopy,
-      groupDescription,
-      groupLabels,
-      consentAllowed,
-      signingIds,
-      payingIds,
-      replyingToId,
-      jumpHighlightId,
-      menuForId,
-      deletedIds,
-    ],
-  );
-}
-
 function renderFeedBubble(item: Bubble, c: ConvState, l: FeedLocals): React.ReactElement {
   const { deletedIds, myUri } = c;
   const senderEthAddress = c.senderEthOf(item.from);
@@ -252,7 +183,7 @@ function useBubbleRenderer(c: ConvState, l: FeedLocals): RenderItem {
   );
 }
 
-export function useFeedRenderItem(c: ConvState, highlight?: string): { renderItem: RenderItem; extraData: readonly unknown[] } {
+export function useFeedRenderItem(c: ConvState, highlight?: string): RenderItem {
   const { events, myUri, senderEthOf, profilesVersion, reactions, setSelectedForCopy } = c;
   const sub = usePalette().text;
   const dark = useEffectiveColorScheme() === 'dark';
@@ -260,7 +191,6 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): { renderIte
   const replyingToId = c.replyingTo?.id;
   const menuForId = c.menuFor?.id;
   const reactorNames = useReactorNames(reactions, myUri, senderEthOf, profilesVersion);
-  const extraData = useFeedExtraData(c, { reactorNames, replyingToId, menuForId });
 
   const eventsById = useMemo(() => new Map(events.map((e) => [e.id, e])), [events]);
 
@@ -288,7 +218,7 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): { renderIte
     [router],
   );
 
-  const renderItem = useBubbleRenderer(c, {
+  return useBubbleRenderer(c, {
     sub,
     dark,
     replyingToId,
@@ -300,6 +230,4 @@ export function useFeedRenderItem(c: ConvState, highlight?: string): { renderIte
     onAvatarPress,
     highlight,
   });
-
-  return { renderItem, extraData };
 }

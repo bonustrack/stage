@@ -18,7 +18,7 @@ export function ConversationSearch({ line, query, c }: { line: string; query: st
 
   const q = query.trim();
 
-  const { renderItem, extraData } = useFeedRenderItem(c, q);
+  const renderItem = useFeedRenderItem(c, q);
 
   useEffect(() => {
     const epoch = ++scanEpoch.current;
@@ -58,7 +58,7 @@ export function ConversationSearch({ line, query, c }: { line: string; query: st
     <VirtualList<HistoryEntry>
       style={{ backgroundColor: bg }}
       data={result.hits}
-      extraData={extraData}
+      strictMode
       inverted
       keyExtractor={(h) => h.id}
       keyboardShouldPersistTaps="handled"
