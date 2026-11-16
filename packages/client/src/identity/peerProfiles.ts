@@ -28,11 +28,22 @@ export type OnchainProfileResolver = (address: string) => Promise<OnchainProfile
 const store = new Map<string, PeerProfile>();
 const pending = new Set<string>();
 const listeners = new Set<() => void>();
+const revisions = new Map<string, number>();
 let onchainResolver: OnchainProfileResolver | null = null;
 const ONCHAIN_CONCURRENCY = 4;
 
 export function setOnchainProfileResolver(resolver: OnchainProfileResolver | null): void {
   onchainResolver = resolver;
+}
+
+function bump(address: string): void {
+  revisions.set(address, (revisions.get(address) ?? 0) + 1);
+}
+
+export function peerProfilesRevision(addresses: readonly string[]): number {
+  let sum = 0;
+  for (const address of addresses) sum += revisions.get(address.toLowerCase()) ?? 0;
+  return sum;
 }
 
 function notify(): void {
@@ -72,7 +83,10 @@ function applyNames(chunk: string[], names: Record<string, string>): boolean {
   let changed = false;
   for (const a of chunk) {
     const before = store.get(a);
-    if (!before || before.name !== names[a]) changed = true;
+    if (!before || before.name !== names[a]) {
+      changed = true;
+      bump(a);
+    }
     store.set(a, { ...before, name: names[a], stale: undefined });
   }
   return changed;
@@ -90,6 +104,7 @@ function applyOnchain(address: string, profile: OnchainProfile | null): boolean 
   };
   if (before && (Object.keys(next) as (keyof PeerProfile)[]).every((k) => before[k] === next[k])) return false;
   store.set(address, next);
+  bump(address);
   return true;
 }
 
@@ -150,6 +165,7 @@ export function seedPeerProfiles(entries: PeerProfileEntries): void {
       source: persisted.source,
       stale: true,
     });
+    bump(key);
     added = true;
   }
   if (added) notify();

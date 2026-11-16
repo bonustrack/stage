@@ -7,6 +7,7 @@ import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { useAccountEpoch } from '../../lib/accountEpoch';
 import { usePeerProfiles, peerLabel } from '../../lib/peerProfiles';
 import { getDraft, useDraftsVersion } from '../../lib/drafts';
+import { markChatsShown } from '../../lib/startupTiming';
 import { NewChatScreen } from './NewChatScreen';
 import { useWebTabRail } from '../../lib/webLayout';
 import { HomeError, RowChannelMenu, useChannelRowRenderer } from './parts';
@@ -87,6 +88,9 @@ function ChannelsHome({ panRef, pane, menu }: { panRef?: SimultaneousRefs; pane:
   const { text: fg, link: head } = usePalette();
   const st = useHomeState();
   const { rows, pinned, rowMenu } = st;
+  useEffect(() => {
+    if (rows) markChatsShown();
+  }, [rows]);
   const { enabledLabels, toggleLabel, unreadOnly, toggleUnread, clearAllFilters, query, setQuery } = useHomeFilters();
   const [filtering, setFiltering] = useState(false);
   const view = useHomeViewOf('chats');

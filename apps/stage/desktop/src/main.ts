@@ -21,14 +21,15 @@ const site = siteBaseFor(remoteUi);
 let pendingLink = deepLinkIn(process.argv);
 
 function openLink(link: string): void {
+  const url = desktopRouteUrl(site, link);
   const win = frontWindow();
   if (win === null) {
-    createWindow(site, desktopRouteUrl(site, link));
+    createWindow(site, url);
     return;
   }
   if (win.isMinimized()) win.restore();
   win.focus();
-  void win.loadURL(desktopRouteUrl(site, link));
+  if (url !== site) void win.loadURL(url);
 }
 
 async function systemMediaAccess(kinds: readonly ('video' | 'audio')[]): Promise<boolean> {

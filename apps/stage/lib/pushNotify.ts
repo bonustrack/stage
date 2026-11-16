@@ -2,9 +2,12 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { notificationIdsForConv } from './pushNotify.model';
 
-Notifications.setNotificationHandler({
-  handleNotification: () => Promise.resolve({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true }),
-});
+export function installNotificationHandler(): void {
+  Notifications.setNotificationHandler({
+    handleNotification: () =>
+      Promise.resolve({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: true }),
+  });
+}
 
 async function ensureChannel(): Promise<void> {
   if (Platform.OS !== 'android') return;

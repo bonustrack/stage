@@ -15,7 +15,7 @@ import {
   type TabNavigationState,
   type TabRouterOptions,
 } from 'expo-router/react-navigation';
-import { useEffect, useLayoutEffect } from 'react';
+import { Activity, useEffect, useLayoutEffect } from 'react';
 import { usePathname, withLayoutContext } from 'expo-router';
 import { WEB_TAB_BACK_BEHAVIOR } from './navigation.model';
 import { Column } from '@stage-labs/kit/react-native/column';
@@ -49,13 +49,11 @@ function focusedScreen<State extends NavigationState>(state: State, descriptors:
   return descriptors[route.key]?.render() ?? null;
 }
 
-const HIDDEN = { display: 'none' } as const;
-
 function stackScreens<State extends NavigationState>(state: State, descriptors: Record<string, FlowDescriptor<State>>): React.ReactNode {
   return state.routes.map((route, i) => (
-    <Column key={route.key} style={i === state.index ? undefined : HIDDEN}>
-      {descriptors[route.key]?.render() ?? null}
-    </Column>
+    <Activity key={route.key} mode={i === state.index ? 'visible' : 'hidden'}>
+      <Column>{descriptors[route.key]?.render() ?? null}</Column>
+    </Activity>
   ));
 }
 

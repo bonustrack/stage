@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import { Pressable } from '@stage-labs/kit/react-native/pressable';
 import { Glyph } from '@stage-labs/kit/react-native/glyph';
 import { GestureDetector } from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
+import Animated, { Extrapolation, interpolate, useAnimatedStyle, type SharedValue } from 'react-native-reanimated';
 import { Avatar } from '../Avatar';
 import type { MessengerBubbleProps } from './props';
 import { BubbleContent } from './content';
@@ -32,6 +32,18 @@ function BubbleAvatar({
     <Pressable onPress={() => onPress?.(address)} hitSlop={6} style={{ marginTop: 2 }}>
       <Avatar address={address} size="sm" style={{ backgroundColor: bg }} />
     </Pressable>
+  );
+}
+
+function ReplyHint({ swipeX, color }: { swipeX: SharedValue<number>; color: string }): React.ReactElement {
+  const style = useAnimatedStyle(() => ({
+    opacity: interpolate(swipeX.value, [-64, -20, 0], [1, 0.35, 0], Extrapolation.CLAMP),
+    transform: [{ scale: interpolate(swipeX.value, [-64, 0], [1, 0.6], Extrapolation.CLAMP) }],
+  }));
+  return (
+    <Animated.View pointerEvents="none" style={[style, { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }]}>
+      <Glyph icon={IconArrowUndoUp} size={20} color={color} />
+    </Animated.View>
   );
 }
 
@@ -104,12 +116,7 @@ function MessengerBubbleBase(props: MessengerBubbleProps): React.ReactElement {
         },
       ]}
     >
-      <Animated.View
-        pointerEvents="none"
-        style={[g.replyHintStyle, { position: 'absolute', right: 16, top: 0, bottom: 0, justifyContent: 'center' }]}
-      >
-        <Glyph icon={IconArrowUndoUp} size={20} color={sub} />
-      </Animated.View>
+      {g.swiped ? <ReplyHint swipeX={g.swipeX} color={sub} /> : null}
       <BubbleAvatar address={senderEthAddress} bg={pal.border} onPress={onAvatarPress} />
       <BubbleColumn p={props} fg={fg} sub={sub} pillBg={pal.border} interaction={interaction} />
     </Animated.View>

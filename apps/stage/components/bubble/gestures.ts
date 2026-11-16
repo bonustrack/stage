@@ -1,10 +1,10 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Platform, Vibration, type View } from 'react-native';
 import { Gesture, type GestureType } from 'react-native-gesture-handler';
 import { useGestureHandlerRef } from 'expo-router/js-stack';
 import { initialMenuAnchor, type MenuAnchor } from './props';
 import type { MenuPoint } from '../AnchoredMenu.model';
-import { useAnimatedStyle, useSharedValue, withSpring, runOnJS, interpolate, Extrapolation } from 'react-native-reanimated';
+import { useAnimatedStyle, useSharedValue, withSpring, runOnJS } from 'react-native-reanimated';
 
 interface BubbleGestureInput {
   pending?: boolean;
@@ -29,6 +29,7 @@ export function useBubbleGestures(input: BubbleGestureInput) {
   const { pending, onReply, onReact, onOpenMenu } = input;
   const swipeX = useSharedValue(0);
   const crossed = useSharedValue(false);
+  const [swiped, setSwiped] = useState(false);
   const rowRef = useRef<View>(null);
   const lastAnchor = useRef<MenuAnchor>({ y: 0, height: 0 });
   const navGestureRef = useGestureHandlerRef() as React.RefObject<React.ComponentType | undefined> | null;
@@ -62,6 +63,9 @@ export function useBubbleGestures(input: BubbleGestureInput) {
     return pan
       .onBegin(() => {
         crossed.value = false;
+      })
+      .onStart(() => {
+        runOnJS(setSwiped)(true);
       })
       .onChange((e) => {
         const raw = Math.min(0, e.translationX);
@@ -107,10 +111,6 @@ export function useBubbleGestures(input: BubbleGestureInput) {
   }, [replyPan, longPress, doubleTap]);
 
   const swipeStyle = useAnimatedStyle(() => ({ transform: [{ translateX: swipeX.value }] }));
-  const replyHintStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(swipeX.value, [-64, -20, 0], [1, 0.35, 0], Extrapolation.CLAMP),
-    transform: [{ scale: interpolate(swipeX.value, [-64, 0], [1, 0.6], Extrapolation.CLAMP) }],
-  }));
 
-  return { rowRef, tapGestures, openMenu, swipeStyle, replyHintStyle };
+  return { rowRef, tapGestures, openMenu, swipeStyle, swipeX, swiped };
 }

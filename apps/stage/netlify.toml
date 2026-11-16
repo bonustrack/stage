@@ -10,7 +10,7 @@
 # imports, the root install files or the patches changed, and always when
 # there is no earlier build to compare with (exit 0 skips).
 [build]
-command = 'bun install --frozen-lockfile && bash ../../scripts/check-source.sh && bun run build:web'
+command = 'bun install --frozen-lockfile && bash ../../scripts/check-source.sh && bun run build:web && node ../../scripts/web-bundle-budget.mjs dist'
 publish = "dist"
 ignore = '[ -n "$CACHED_COMMIT_REF" ] && [ "$CACHED_COMMIT_REF" != "$COMMIT_REF" ] && git diff --quiet "$CACHED_COMMIT_REF" "$COMMIT_REF" -- . ../../packages ../../patches ../../scripts ../../.github/workflows/ci.yml ../../.oxlintrc.json ../../stage.config.js ../../package.json ../../bun.lock ../../bunfig.toml'
 

@@ -1,8 +1,9 @@
-import { useEffect, useReducer } from 'react';
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   ensurePeerProfiles,
   getPeerAvatar,
   peerProfileEntries,
+  peerProfilesRevision,
   seedPeerProfiles,
   setOnchainProfileResolver,
   subscribePeerProfiles,
@@ -27,9 +28,11 @@ export {
   invalidatePeerProfile,
 } from '@stage-labs/client/identity/peerProfiles';
 
-setOnchainProfileResolver((address) =>
-  resolveOnchainProfile(baseProfileClient(), address, (peer) => fetchIssuedName(linkProxyBase(), peer)),
-);
+export function installPeerProfileResolver(): void {
+  setOnchainProfileResolver((address) =>
+    resolveOnchainProfile(baseProfileClient(), address, (peer) => fetchIssuedName(linkProxyBase(), peer)),
+  );
+}
 
 export function peerAvatarUrl(address: string, displayPx: number): string {
   return stampAvatarUrl(address, displayPx, avatarCacheKey(getPeerAvatar(address)));
@@ -52,13 +55,11 @@ export function hydratePeerProfiles(): Promise<void> {
 }
 
 export function usePeerProfiles(addresses: (string | null | undefined)[]): number {
-  const [version, bump] = useReducer((x: number) => x + 1, 0);
   const key = addresses.filter(Boolean).join(',');
+  const watched = useMemo(() => (key === '' ? [] : key.split(',')), [key]);
   useEffect(() => {
-    ensurePeerProfiles(addresses);
-    return subscribePeerProfiles(() => {
-      bump();
-    });
-  }, [key]);
-  return version;
+    ensurePeerProfiles(watched);
+  }, [watched]);
+  const revision = useCallback(() => peerProfilesRevision(watched), [watched]);
+  return useSyncExternalStore(subscribePeerProfiles, revision, revision);
 }

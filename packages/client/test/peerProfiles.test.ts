@@ -4,6 +4,7 @@ import {
   getPeerName,
   isPeerResolved,
   peerProfileEntries,
+  peerProfilesRevision,
   seedPeerProfiles,
   subscribePeerProfiles,
 } from '../src/identity/peerProfiles';
@@ -14,6 +15,8 @@ const RENAMED = '0x0000000000000000000000000000000000000003';
 const FRESH = '0x0000000000000000000000000000000000000004';
 const ALICE = '0x0000000000000000000000000000000000000005';
 const NAMED_ALICE = '0x0000000000000000000000000000000000000006';
+const WATCHED = '0x0000000000000000000000000000000000000007';
+const OTHER = '0x0000000000000000000000000000000000000008';
 
 let lookups: string[][] = [];
 let answer: Record<string, string> = {};
@@ -109,5 +112,26 @@ describe('the store can be mirrored to disk', () => {
     expect(entries[TONY]).toBe('Tony');
     expect(entries[NAMELESS]).toBeNull();
     expect(entries[RENAMED]).toBe('After');
+  });
+});
+
+describe('a revision moves only for the addresses that changed', () => {
+  test('a new name moves its revision and leaves other addresses alone', async () => {
+    seedPeerProfiles({ [WATCHED]: 'Watched' });
+    const watched = peerProfilesRevision([WATCHED]);
+    const other = peerProfilesRevision([OTHER]);
+    answer = { [OTHER]: 'Other' };
+    ensurePeerProfiles([OTHER]);
+    await settled();
+    expect(peerProfilesRevision([WATCHED])).toBe(watched);
+    expect(peerProfilesRevision([OTHER])).toBeGreaterThan(other);
+  });
+
+  test('an unchanged lookup keeps the revision', async () => {
+    const before = peerProfilesRevision([WATCHED]);
+    answer = { [WATCHED]: 'Watched' };
+    ensurePeerProfiles([WATCHED]);
+    await settled();
+    expect(peerProfilesRevision([WATCHED])).toBe(before);
   });
 });

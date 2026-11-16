@@ -291,7 +291,7 @@ function useConvPeople(events: HistoryEntry[], fields: ReturnType<typeof useConv
   );
 
   const selfAddr = selfInboxId ? (inboxToAddr[selfInboxId] ?? null) : null;
-  const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs]);
+  const profilesVersion = usePeerProfiles([peerAddr, selfAddr, ...memberAddrs, ...Object.values(knownAddrs)]);
   const mentionCandidates = useMentionCandidates(isGroup, memberAddrs, peerAddr, profilesVersion);
   return { senderEthOf, profilesVersion, mentionCandidates };
 }

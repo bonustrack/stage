@@ -35,6 +35,8 @@ import { KeyboardResync } from '../components/system/KeyboardResync';
 import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
 import { installAlertShim } from '../lib/alertHost';
+import { installNotificationHandler } from '../lib/pushNotify';
+import { installPeerProfileResolver } from '../lib/peerProfiles';
 import { SplitSidebar } from '../components/tabs/SplitSidebar';
 import { ignored, reported } from '../lib/errorPolicy';
 import { useTabRole } from '../lib/tabLock';
@@ -46,6 +48,8 @@ const queryClient = getQueryClient();
 applyWebGlobalStyles();
 installPlainTextCopy();
 installAlertShim();
+installNotificationHandler();
+installPeerProfileResolver();
 bootKitFonts();
 if (Platform.OS === 'web' && location.protocol !== 'chrome-extension:' && !isOnboardingRoute(location.hash.slice(1).replace(/\?.*$/, ''))) {
   void ensureActiveAccount()

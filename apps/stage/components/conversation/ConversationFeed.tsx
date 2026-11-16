@@ -27,6 +27,7 @@ import { Column, VirtualList } from '../layout';
 
 const UPRIGHT = Platform.OS === 'web';
 const FEED_ESTIMATED_ROW = 80;
+const FEED_WINDOW_SCREENS = 7;
 
 type ConvState = ReturnType<typeof useConversationState>;
 
@@ -315,7 +316,7 @@ export function ConversationFeed({
         showsVerticalScrollIndicator={Platform.OS === 'web'}
         maintainVisibleContentPosition={feedPositionHold(UPRIGHT, c.showJump, AT_BOTTOM_THRESHOLD_PX)}
         keyExtractor={c.rowKeyOf}
-        windowSize={11}
+        windowSize={FEED_WINDOW_SCREENS}
         initialNumToRender={firstBatch}
         maxToRenderPerBatch={10}
         removeClippedSubviews

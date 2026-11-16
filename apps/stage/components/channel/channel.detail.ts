@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -7,9 +7,9 @@ import { memberAddressesOf } from '../../modules/messaging/convRow.model';
 import { groupEditRights, leaveGroupConv, removeGroupMembers } from '../../lib/xmtp.groups';
 import { lineOfConv, convIdOfLine } from '@stage-labs/client/xmtp/line';
 import { shortAddress } from '@stage-labs/client/identity/format';
-import { ensurePeerProfiles, getPeerName, subscribePeerProfiles } from '@stage-labs/client/identity/peerProfiles';
 import type { GroupEditRights } from '@stage-labs/client/xmtp/groups';
 import { capabilities } from '../../lib/capabilities';
+import { getPeerName, usePeerProfiles } from '../../lib/peerProfiles';
 import { LEAVE_CHANNEL_CONFIRM } from '../ChannelMenu.model';
 import { homeRoute } from '../tabs/boardHome';
 
@@ -48,21 +48,14 @@ function useMemberDirectory(
   convId: string | undefined,
   row: ReturnType<typeof useConvRow>,
 ): { members: string[]; memberNames: Names; memberRoles: Roles } {
-  const [memberNames, setMemberNames] = useState<Names>({});
   const members = useMemo(() => [...memberAddressesOf(row)].sort((x, y) => x.localeCompare(y)), [row]);
   const memberRoles = useChannelRoles(convId, row?.inboxToAddr ?? NO_MAP);
-
-  useEffect(() => {
-    if (members.length === 0) return;
-    const recompute = (): void => {
-      const next: Names = {};
-      for (const m of members) next[m] = getPeerName(m) ?? null;
-      setMemberNames(next);
-    };
-    ensurePeerProfiles(members);
-    recompute();
-    return subscribePeerProfiles(recompute);
-  }, [members]);
+  const profiles = usePeerProfiles(members);
+  const memberNames = useMemo(() => {
+    const next: Names = {};
+    for (const m of members) next[m] = getPeerName(m) ?? null;
+    return next;
+  }, [members, profiles]);
 
   return { members, memberNames, memberRoles };
 }

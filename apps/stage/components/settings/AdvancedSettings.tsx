@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { getOrCreateXmtpClient, resetActiveXmtpStore, selfEthAddress } from '../../lib/xmtp.client';
@@ -8,6 +9,8 @@ import { capabilities } from '../../lib/capabilities';
 import { SettingsButtonRow, SettingsGroup, SettingsPage, SettingsValueRow } from './SettingsPage';
 import { confirmDelete, confirmRemove } from './accountRemoval';
 import { DANGER_FOOTNOTE } from './accountRemoval.model';
+import { startupMarks } from '../../lib/startupTiming';
+import { startupRows } from './startupTiming.model';
 import { IconArrowRotateClockwise } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRotateClockwise';
 import { IconTrashCan } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconTrashCan';
 
@@ -66,6 +69,18 @@ function IdentityGroup(): React.ReactElement | null {
   );
 }
 
+function StartupGroup(): React.ReactElement | null {
+  const rows = startupRows(startupMarks(), Platform.OS === 'web');
+  if (rows.length === 0) return null;
+  return (
+    <SettingsGroup title="Startup" footnote="Measured on this device for the current launch. Nothing is sent anywhere.">
+      {rows.map((r) => (
+        <SettingsValueRow key={r.label} label={r.label} value={r.value} />
+      ))}
+    </SettingsGroup>
+  );
+}
+
 function DangerGroup(): React.ReactElement {
   const rec = useActiveAccountRecord();
   return (
@@ -99,6 +114,7 @@ export function AdvancedSettings(): React.ReactElement {
   return (
     <SettingsPage title="Advanced">
       <IdentityGroup />
+      <StartupGroup />
       <DangerGroup />
     </SettingsPage>
   );
