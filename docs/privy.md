@@ -7,22 +7,31 @@ Microsoft, GitHub, an email code or a web3 wallet**. The social and email logins
 and never touches Privy. This page says how the sign-in works and what to
 configure.
 
-Without `EXPO_PUBLIC_PRIVY_APP_ID` the social buttons do not show and nothing
-from Privy loads. `EXPO_PUBLIC_PRIVY_LOGINS` lists which ones show (default
-`google`; for example `google,github,email`). The wallet button needs no
-Privy app.
+Without `EXPO_PUBLIC_PRIVY_APP_ID` the social and email sign-ins do not show
+and nothing from Privy loads. With it, the buttons follow the Privy
+dashboard: `lib/privyLogins.ts` reads which logins are on from Privy's public
+app config (`https://auth.privy.io/api/v1/apps/<app id>`, parsed by
+`privyAppLogins`), so switching Google, GitHub, email or the Microsoft
+provider on or off there is enough. The sign-up page shows button-shaped
+placeholders until that answers, and only the wallet if it fails. The wallet
+button needs no Privy app.
 
 ## The sign-up page
 
-`/signup` offers the ways in, never a username: **Create account** (a new
-recovery phrase account), the social logins, **Continue with wallet** and
-**Or import**. Create account then asks for a username and a profile, which
-the setup claims and publishes with sponsored gas. A social or wallet sign-in
-signs in first; if that address has no Stage name yet (`ownedStageLabel`),
-the **claim** step asks for one and only claims it (free, through the names
-service): publishing the name's records would cost the address gas. The
-wallet picker opens over the sign-up page, and setup starts once a wallet
-connected.
+`/signup` offers the ways in, never a username: an **email** field (with
+**Continue with email**), the social logins and **Continue with wallet**.
+Email sends the code and moves to the `emailCode` step (the code, Send a new
+code, Use a different email), with no redirect. The wallet picker lists the
+browser wallets and WalletConnect, then **Create a new wallet** (a new
+recovery phrase account: a username, a profile, then the setup claims and
+publishes them with sponsored gas) and **Import a wallet** (the import page).
+A build without the wallet option (store builds, or no browser wallet and no
+WalletConnect) keeps **Create account** and **Or import** on the page
+instead. A social, email or wallet sign-in signs in first; if that address has
+no Stage name yet (`ownedStageLabel`), the **claim** step asks for one and
+only claims it (free, through the names service): publishing the name's
+records would cost the address gas. Settings, Sign in again for an email
+account uses the same steps in a modal (`components/privy/EmailSignIn.tsx`).
 
 ## What a Privy account is
 
@@ -153,12 +162,11 @@ bot protection in Privy, add `https://challenges.cloudflare.com` to
    off: Stage connects wallets itself.
 3. **Microsoft** is not built into Privy: it is a custom provider, and custom
    providers need Privy's paid Scale plan once the app is in production. On
-   the Free plan, switch the provider off and leave `microsoft` out of
-   `EXPO_PUBLIC_PRIVY_LOGINS` (stage.box does). It is set up as a custom provider
-   (Authentication, **Add custom provider** at the bottom of the page), named
-   `microsoft` (or set `EXPO_PUBLIC_PRIVY_MICROSOFT_PROVIDER` to the name you
-   pick; it is used as `custom:microsoft`), and the button shows once
-   `EXPO_PUBLIC_PRIVY_LOGINS` lists `microsoft`. Register an app at
+   the Free plan, keep the provider switched off (stage.box does) and the
+   button stays hidden. It is set up as a custom provider (Authentication,
+   **Add custom provider** at the bottom of the page) whose name contains
+   `microsoft` (the app uses that provider, `custom:microsoft` here), and the
+   button shows while it is switched on. Register an app at
    <https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade>
    for personal and work accounts, with the Web redirect URI
    `https://auth.privy.io/api/v1/oauth/callback`, then

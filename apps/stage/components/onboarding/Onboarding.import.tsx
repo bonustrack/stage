@@ -22,8 +22,6 @@ import {
 } from './RecoveryPhrase.model';
 import { IconQrCode } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconQrCode';
 import { WALLET_ENABLED } from '../../lib/features';
-import { PrivyLoginButtons } from './PrivyLoginButtons';
-import type { PrivyLoginMethod } from '@stage-labs/client/accounts/types';
 
 function SuggestionChips({ words, onPick }: { words: string[]; onPick: (word: string) => void }): React.ReactElement | null {
   const pal = usePalette();
@@ -123,7 +121,6 @@ function ImportFooter({
   onContinue,
   onStopScan,
   onStartScan,
-  onPrivy,
 }: {
   dark: boolean;
   busy: boolean;
@@ -132,7 +129,6 @@ function ImportFooter({
   onContinue: () => void;
   onStopScan: () => void;
   onStartScan: () => void;
-  onPrivy: (method: PrivyLoginMethod) => void;
 }): React.ReactElement {
   const pal = usePalette();
   if (scanning)
@@ -175,7 +171,6 @@ function ImportFooter({
         disabled={busy}
         onPress={onStartScan}
       />
-      <PrivyLoginButtons dark={dark} busy={busy} onPick={onPrivy} />
     </>
   );
 }
@@ -188,12 +183,10 @@ export function ImportStep({
   dark,
   busy,
   onTransfer,
-  onPrivy,
 }: {
   dark: boolean;
   busy: boolean;
   onTransfer: (transfer: AccountTransfer) => void;
-  onPrivy: (method: PrivyLoginMethod) => void;
 }): React.ReactElement {
   const pal = usePalette();
   const [typing, setTyping] = useState<PhraseTyping>({ text: '', pending: '' });
@@ -261,7 +254,6 @@ export function ImportStep({
         setScanned(false);
         setScanning(true);
       }}
-      onPrivy={onPrivy}
     />
   );
   return (

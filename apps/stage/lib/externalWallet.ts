@@ -7,7 +7,15 @@ import { findInjectedWallet, injectedWallets } from './injectedWallets';
 import { WALLETCONNECT_PROJECT_ID } from './privyConfig';
 import type { Eip1193Provider } from './privy.types';
 import { sameAddress } from './privyProvider.model';
-import { chooseWallet, closeWalletPicker, showConnecting, whenPickerCancelled, type WalletChoice } from './walletPicker';
+import { SignInCancelled } from './signInCancelled';
+import {
+  chooseWallet,
+  closeWalletPicker,
+  showConnecting,
+  whenPickerCancelled,
+  type ConnectChoice,
+  type WalletChoice,
+} from './walletPicker';
 
 const WALLETCONNECT = 'walletconnect';
 const RECENT_KEY = 'wallet.recent';
@@ -34,21 +42,20 @@ async function connectInjected(rdns: string): Promise<Connected> {
   return { address: getAddress(address), connector: wallet.rdns };
 }
 
-async function connectChoice(choice: WalletChoice): Promise<Connected> {
+async function connectChoice(choice: ConnectChoice): Promise<Connected> {
   if (choice.kind === 'injected') return connectInjected(choice.rdns);
   showConnecting(null);
   const { connectWalletConnect } = await import('./walletConnect');
   return { address: getAddress(await connectWalletConnect()), connector: WALLETCONNECT };
 }
 
-function directChoice(): WalletChoice | null {
+function directChoice(): ConnectChoice | null {
   return injectedWallets().length === 0 && WALLETCONNECT_PROJECT_ID !== undefined ? { kind: 'walletconnect' } : null;
 }
 
-export async function connectExternalWallet(note: string | null = null): Promise<string> {
-  const recent = await appStorage.get(RECENT_KEY).catch(ignored(null, 'cache'));
-  const choice = await chooseWallet({ note, recent, only: directChoice() });
+async function finishConnect(choice: WalletChoice): Promise<string> {
   try {
+    if (choice.kind === 'create' || choice.kind === 'import') throw new SignInCancelled();
     const work = connectChoice(choice);
     void work.catch(ignored(undefined, 'ui'));
     const connected = await Promise.race([work, whenPickerCancelled()]);
@@ -58,6 +65,24 @@ export async function connectExternalWallet(note: string | null = null): Promise
   } finally {
     closeWalletPicker();
   }
+}
+
+async function recentConnector(): Promise<string | null> {
+  return appStorage.get(RECENT_KEY).catch(ignored(null, 'cache'));
+}
+
+export async function connectExternalWallet(note: string | null = null): Promise<string> {
+  const choice = await chooseWallet({ note, recent: await recentConnector(), only: directChoice(), account: false });
+  return finishConnect(choice);
+}
+
+export type WalletSignIn = { kind: 'connected'; address: string } | { kind: 'create' } | { kind: 'import' };
+
+export async function pickSignInWallet(): Promise<WalletSignIn> {
+  const choice = await chooseWallet({ note: null, recent: await recentConnector(), only: null, account: true });
+  if (choice.kind !== 'create' && choice.kind !== 'import') return { kind: 'connected', address: await finishConnect(choice) };
+  closeWalletPicker();
+  return { kind: choice.kind };
 }
 
 async function injectedFor(wallet: InjectedWallet, address: string): Promise<Eip1193Provider | null> {

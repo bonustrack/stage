@@ -3,13 +3,16 @@ import { SignInCancelled } from './signInCancelled';
 import { makeValue } from './storeCore';
 import { makeDeferred, type Deferred } from './watched';
 
-export type WalletChoice = { kind: 'injected'; rdns: string } | { kind: 'walletconnect' };
+export type ConnectChoice = { kind: 'injected'; rdns: string } | { kind: 'walletconnect' };
+
+export type WalletChoice = ConnectChoice | { kind: 'create' } | { kind: 'import' };
 
 export interface WalletPickerView {
   view: 'list' | 'waiting' | 'walletconnect';
   note: string | null;
   wallet: string | null;
   recent: string | null;
+  account: boolean;
 }
 
 const picker = makeValue<WalletPickerView | null>(null);
@@ -27,18 +30,19 @@ function cancelledSignal(): Deferred<never> {
 export interface PickerStart {
   note: string | null;
   recent: string | null;
-  only: WalletChoice | null;
+  only: ConnectChoice | null;
+  account: boolean;
 }
 
-export function chooseWallet({ note, recent, only }: PickerStart): Promise<WalletChoice> {
+export function chooseWallet({ note, recent, only, account }: PickerStart): Promise<WalletChoice> {
   cancelWalletPicker();
   cancelled = cancelledSignal();
-  if (only !== null) {
-    picker.set({ view: only.kind === 'walletconnect' ? 'walletconnect' : 'waiting', note, wallet: null, recent });
+  if (only !== null && !account) {
+    picker.set({ view: only.kind === 'walletconnect' ? 'walletconnect' : 'waiting', note, wallet: null, recent, account });
     return Promise.resolve(only);
   }
   choice = makeDeferred<WalletChoice>();
-  picker.set({ view: 'list', note, wallet: null, recent });
+  picker.set({ view: 'list', note, wallet: null, recent, account });
   return choice.promise;
 }
 
@@ -50,7 +54,7 @@ export function pickWallet(next: WalletChoice): void {
 
 export function showConnecting(wallet: string | null): void {
   const current = picker.get();
-  const kept = { note: current?.note ?? null, recent: current?.recent ?? null };
+  const kept = { note: current?.note ?? null, recent: current?.recent ?? null, account: current?.account ?? false };
   picker.set(wallet === null ? { view: 'walletconnect', wallet: null, ...kept } : { view: 'waiting', wallet, ...kept });
 }
 
