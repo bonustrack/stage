@@ -79,6 +79,13 @@ describe('signInCopy', () => {
     expect(signInCopy('microsoft').mismatch).toContain('Microsoft');
   });
 
+  test('an email sign-in talks about the email address, not a brand', () => {
+    const copy = signInCopy('email');
+    expect(copy.title).toBe('Signed in with email');
+    expect(copy.note).toContain('no recovery phrase');
+    expect(copy.mismatch).toBe('That is a different email address. Sign in with the one this account uses.');
+  });
+
   test('a web3 wallet keeps its own recovery phrase', () => {
     const copy = signInCopy('wallet');
     expect(copy.title).toBe('Signed in with your wallet');

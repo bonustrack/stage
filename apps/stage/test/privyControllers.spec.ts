@@ -30,12 +30,15 @@ function webWallet(address: string, walletClientType: string, log: string[] = []
   };
 }
 
+const WEB_EMBEDDED_LINK = { type: 'wallet', address: EMBEDDED, chainType: 'ethereum', walletClientType: 'privy' };
+const EMAIL = 'ada@example.com';
+const GOOD_CODE = '123456';
+
 const googleUser = (withWallet: boolean): WebPrivyUser => ({
-  linkedAccounts: [
-    { type: 'google_oauth' },
-    ...(withWallet ? [{ type: 'wallet', address: EMBEDDED, chainType: 'ethereum', walletClientType: 'privy' }] : []),
-  ],
+  linkedAccounts: [{ type: 'google_oauth' }, ...(withWallet ? [WEB_EMBEDDED_LINK] : [])],
 });
+
+const webEmailUser = (address: string): WebPrivyUser => ({ linkedAccounts: [{ type: 'email', address }] });
 
 const READY: WebPrivyState = {
   ready: true,
@@ -46,12 +49,22 @@ const READY: WebPrivyState = {
   oauth: { status: 'initial' },
 };
 
-function webHarness(initial: WebPrivyState, returned = false) {
+function webHarness(initial: WebPrivyState, returned = false, codeEmail = EMAIL) {
   const state = makeWatched(initial);
   const log: string[] = [];
   const actions: WebPrivyActions = {
     initOAuth: (provider) => {
       log.push(`oauth:${provider}`);
+      return Promise.resolve();
+    },
+    sendEmailCode: (email) => {
+      log.push(`email:${email}`);
+      return Promise.resolve();
+    },
+    loginWithEmailCode: (code) => {
+      log.push(`code:${code}`);
+      if (code !== GOOD_CODE) return Promise.reject(new Error('Invalid code'));
+      state.set({ ...state.get(), authenticated: true, user: webEmailUser(codeEmail) });
       return Promise.resolve();
     },
     logout: () => {
@@ -61,7 +74,8 @@ function webHarness(initial: WebPrivyState, returned = false) {
     },
     createWallet: () => {
       log.push('createWallet');
-      state.set({ ...state.get(), user: googleUser(true) });
+      const linked = state.get().user?.linkedAccounts ?? googleUser(false).linkedAccounts;
+      state.set({ ...state.get(), user: { linkedAccounts: [...linked, WEB_EMBEDDED_LINK] } });
       return Promise.resolve();
     },
   };
@@ -134,6 +148,28 @@ describe('web sign-in', () => {
     const h = webHarness({ ...READY, authenticated: true, user: googleUser(true), oauth: { status: 'done' } }, true);
     expect(h.controller.login('microsoft', 'login')).rejects.toThrow('Microsoft');
   });
+
+  test('an email sign-in ends the old session, sends the code, then signs in and creates the wallet', async () => {
+    const h = webHarness({ ...READY, authenticated: true, user: googleUser(true) });
+    await h.controller.sendEmailCode(EMAIL);
+    expect(await h.controller.loginWithEmail(EMAIL, GOOD_CODE)).toEqual({ address: EMBEDDED, method: 'email' });
+    expect(h.log).toEqual(['logout', `email:${EMAIL}`, `code:${GOOD_CODE}`, 'createWallet']);
+  });
+
+  test('a wrong email code is reported and signs nobody in', () => {
+    const h = webHarness(READY);
+    expect(h.controller.loginWithEmail(EMAIL, '000000')).rejects.toThrow('Invalid code');
+  });
+
+  test('an email sign-in that lands on another address is refused', () => {
+    const h = webHarness(READY, false, 'someone@else.com');
+    expect(h.controller.loginWithEmail(EMAIL, GOOD_CODE)).rejects.toThrow('did not finish');
+  });
+
+  test('the email match ignores case and spaces', async () => {
+    const h = webHarness(READY, false, ' Ada@Example.COM ');
+    expect(await h.controller.loginWithEmail(EMAIL, GOOD_CODE)).toEqual({ address: EMBEDDED, method: 'email' });
+  });
 });
 
 describe('web signer', () => {
@@ -160,11 +196,10 @@ describe('web signer', () => {
   });
 });
 
+const NATIVE_EMBEDDED_LINK = { type: 'wallet', address: EMBEDDED, chain_type: 'ethereum', wallet_client_type: 'privy' };
+
 const nativeUser = (withWallet: boolean): NativePrivyUser => ({
-  linked_accounts: [
-    { type: 'google_oauth' },
-    ...(withWallet ? [{ type: 'wallet', address: EMBEDDED, chain_type: 'ethereum', wallet_client_type: 'privy' }] : []),
-  ],
+  linked_accounts: [{ type: 'google_oauth' }, ...(withWallet ? [NATIVE_EMBEDDED_LINK] : [])],
 });
 
 function nativeHarness(initial: NativePrivyState) {
@@ -177,6 +212,17 @@ function nativeHarness(initial: NativePrivyState) {
       state.set({ ...state.get(), user: nativeUser(false) });
       return Promise.resolve(nativeUser(false));
     },
+    sendEmailCode: (email) => {
+      log.push(`email:${email}`);
+      return Promise.resolve({ success: true });
+    },
+    loginWithEmailCode: (email, code) => {
+      log.push(`code:${email}:${code}`);
+      if (code !== GOOD_CODE) return Promise.resolve(undefined);
+      const user: NativePrivyUser = { linked_accounts: [{ type: 'email', address: email }] };
+      state.set({ ...state.get(), user });
+      return Promise.resolve(user);
+    },
     logout: () => {
       log.push('logout');
       state.set({ ...state.get(), user: null, wallets: [] });
@@ -184,7 +230,8 @@ function nativeHarness(initial: NativePrivyState) {
     },
     createWallet: () => {
       log.push('createWallet');
-      state.set({ ...state.get(), user: nativeUser(true), wallets: [embedded] });
+      const linked = state.get().user?.linked_accounts ?? nativeUser(false).linked_accounts;
+      state.set({ ...state.get(), user: { linked_accounts: [...linked, NATIVE_EMBEDDED_LINK] }, wallets: [embedded] });
       return Promise.resolve();
     },
   };
@@ -202,6 +249,18 @@ describe('native sign-in', () => {
     const h = nativeHarness({ ready: true, user: nativeUser(true), wallets: [] });
     expect(await h.controller.login('google', 'login')).toEqual({ address: EMBEDDED, method: 'google' });
     expect(h.log).toEqual(['logout', 'oauth:google', 'createWallet']);
+  });
+
+  test('an email sign-in replaces the old session, checks the code and creates the wallet', async () => {
+    const h = nativeHarness({ ready: true, user: nativeUser(true), wallets: [] });
+    await h.controller.sendEmailCode(EMAIL);
+    expect(await h.controller.loginWithEmail(EMAIL, GOOD_CODE)).toEqual({ address: EMBEDDED, method: 'email' });
+    expect(h.log).toEqual(['logout', `email:${EMAIL}`, `code:${EMAIL}:${GOOD_CODE}`, 'createWallet']);
+  });
+
+  test('a wrong email code asks to check it', () => {
+    const h = nativeHarness({ ready: true, user: null, wallets: [] });
+    expect(h.controller.loginWithEmail(EMAIL, '000000')).rejects.toThrow('That code did not work');
   });
 
   test('an embedded wallet that is not loaded asks to sign in again', () => {

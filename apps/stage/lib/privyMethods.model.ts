@@ -1,6 +1,6 @@
 import type { PrivyLoginMethod } from '@stage-labs/client/accounts/types';
 
-const SOCIAL_METHODS: readonly PrivyLoginMethod[] = ['google', 'microsoft', 'github'];
+const SOCIAL_METHODS: readonly PrivyLoginMethod[] = ['google', 'microsoft', 'github', 'email'];
 const DEFAULT_SOCIALS: readonly PrivyLoginMethod[] = ['google'];
 
 export function socialsFrom(raw: string | undefined): PrivyLoginMethod[] {

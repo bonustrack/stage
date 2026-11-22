@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PrivyProvider, useCreateWallet, useLoginWithOAuth, usePrivy, useWallets, type PrivyClientConfig } from '@privy-io/react-auth';
+import {
+  PrivyProvider,
+  useCreateWallet,
+  useLoginWithEmail,
+  useLoginWithOAuth,
+  usePrivy,
+  useWallets,
+  type PrivyClientConfig,
+} from '@privy-io/react-auth';
 import { base, mainnet, sepolia } from 'viem/chains';
 import { report } from '../../lib/errorPolicy';
 import { makeWatched } from '../../lib/watched';
@@ -32,10 +40,17 @@ function PrivyBridge({ host }: { host: PrivyRuntimeHost }): null {
   const { ready, authenticated, user, logout } = usePrivy();
   const { wallets, ready: walletsReady } = useWallets();
   const { initOAuth, state: oauth } = useLoginWithOAuth();
+  const { sendCode, loginWithCode } = useLoginWithEmail();
   const { createWallet } = useCreateWallet();
   const [state] = useState(() => makeWatched<WebPrivyState>(INITIAL));
   const actions = useRef<WebPrivyActions | null>(null);
-  const current: WebPrivyActions = { initOAuth: (provider) => initOAuth({ provider }), logout, createWallet };
+  const current: WebPrivyActions = {
+    initOAuth: (provider) => initOAuth({ provider }),
+    sendEmailCode: (email) => sendCode({ email }),
+    loginWithEmailCode: (code) => loginWithCode({ code }),
+    logout,
+    createWallet,
+  };
   useEffect(() => {
     actions.current = current;
     state.set({ ready, authenticated, user, wallets, walletsReady, oauth });

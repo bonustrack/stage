@@ -1,11 +1,17 @@
 import { concatHex, isAddress, isHex, keccak256, stringToHex, type Hex } from 'viem';
 import type { AccountRecord, PrivyLoginMethod } from './types';
 
-export const PRIVY_LOGIN_METHODS: readonly PrivyLoginMethod[] = ['google', 'microsoft', 'github', 'wallet'];
+export const PRIVY_LOGIN_METHODS: readonly PrivyLoginMethod[] = ['google', 'microsoft', 'github', 'email', 'wallet'];
 
 export type PrivySignerKind = 'embedded' | 'external';
 
-const METHOD_NAMES: Record<PrivyLoginMethod, string> = { google: 'Google', microsoft: 'Microsoft', github: 'GitHub', wallet: 'Wallet' };
+const METHOD_NAMES: Record<PrivyLoginMethod, string> = {
+  google: 'Google',
+  microsoft: 'Microsoft',
+  github: 'GitHub',
+  email: 'email',
+  wallet: 'Wallet',
+};
 
 const SIGNATURE_BYTES = 65;
 

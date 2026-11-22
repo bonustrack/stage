@@ -57,6 +57,13 @@ describe('privy methods', () => {
     expect(privySignerKind('github')).toBe('embedded');
     expect(isPrivyLoginMethod('github')).toBe(true);
   });
+
+  test('an email sign-in uses the embedded wallet and reads as a plain word', () => {
+    expect(privySignerKind('email')).toBe('embedded');
+    expect(isPrivyLoginMethod('email')).toBe(true);
+    expect(privyMethodName('email')).toBe('email');
+    expect(privyLoginOf(privyAccountRecord(ADDRESS, 'email'))).toBe('email');
+  });
 });
 
 describe('unlock signature', () => {

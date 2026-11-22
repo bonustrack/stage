@@ -95,6 +95,14 @@ export async function privyLogin(method: PrivyLoginMethod, purpose: PrivyLoginPu
   return (await privyController()).login(method, purpose);
 }
 
+export async function privySendEmailCode(email: string): Promise<void> {
+  await (await privyController()).sendEmailCode(email);
+}
+
+export async function privyLoginWithEmail(email: string, code: string): Promise<PrivySession> {
+  return (await privyController()).loginWithEmail(email, code);
+}
+
 export async function privyProvider(account: PrivySession): Promise<Eip1193Provider> {
   return (await privyController()).provider(account);
 }

@@ -1,15 +1,15 @@
-# Sign-in with Google, Microsoft, GitHub or a wallet
+# Sign-in with Google, Microsoft, GitHub, email or a wallet
 
 Stage accounts can be created with a recovery phrase (the default), imported
 with a phrase, a private key or a QR code, or signed in with **Google,
-Microsoft, GitHub or a web3 wallet**. The social logins go through
+Microsoft, GitHub, an email code or a web3 wallet**. The social and email logins go through
 [Privy](https://privy.io); a web3 wallet connects through Stage's own picker
 and never touches Privy. This page says how the sign-in works and what to
 configure.
 
 Without `EXPO_PUBLIC_PRIVY_APP_ID` the social buttons do not show and nothing
 from Privy loads. `EXPO_PUBLIC_PRIVY_LOGINS` lists which ones show (default
-`google`; for example `google,microsoft,github`). The wallet button needs no
+`google`; for example `google,github,email`). The wallet button needs no
 Privy app.
 
 ## The sign-up page
@@ -26,14 +26,14 @@ connected.
 
 ## What a Privy account is
 
-| Sign-in                   | Key                                          | Stage address        |
-| ------------------------- | -------------------------------------------- | -------------------- |
-| Google, Microsoft, GitHub | Privy embedded wallet (kept by Privy)        | the embedded wallet  |
-| Web3 wallet               | the user's wallet (browser or WalletConnect) | the wallet's address |
+| Sign-in                          | Key                                          | Stage address        |
+| -------------------------------- | -------------------------------------------- | -------------------- |
+| Google, Microsoft, GitHub, email | Privy embedded wallet (kept by Privy)        | the embedded wallet  |
+| Web3 wallet                      | the user's wallet (browser or WalletConnect) | the wallet's address |
 
 The address is the XMTP identity (an EOA, like an imported private key), so a
 wallet's existing Basename and XMTP inbox carry over. It is an account record
-of type `privy` with `login: 'google' | 'microsoft' | 'github' | 'wallet'`. It is **not**
+of type `privy` with `login: 'google' | 'microsoft' | 'github' | 'email' | 'wallet'`. It is **not**
 a Kernel smart account: there is no recovery phrase, no Link a device, and
 transactions are paid by the address itself (no sponsored gas).
 
@@ -84,8 +84,10 @@ installation, and otherwise imports an archive if one arrives within its
 - `packages/client/src/accounts/privy.ts`: account record, unlock message,
   derived signatures.
 - `apps/stage/lib/signIn.ts`: `signInSession(method)`, the one entry for every
-  method: a wallet goes to `lib/externalWallet.ts`, Google and Microsoft to
-  `lib/privyBridge.ts` (`privyLogin`, `privyProvider`, `privyForget`), which
+  method: a wallet goes to `lib/externalWallet.ts`, email to `lib/emailSignIn.ts`
+  (our modal, `components/privy/EmailSignIn.tsx`: address, then the 6-digit
+  code, through `privySendEmailCode`/`privyLoginWithEmail`), Google and
+  Microsoft to `lib/privyBridge.ts` (`privyLogin`, `privyProvider`, `privyForget`), which
   mounts the Privy host on first use.
 - `apps/stage/lib/privySigner.ts`, `lib/eoaSigner.ts`: viem wallet client over
   the wallet's EIP-1193 provider, shared with imported keys.
@@ -142,8 +144,9 @@ bot protection in Privy, add `https://challenges.cloudflare.com` to
 ## Set up
 
 1. Create the app at <https://dashboard.privy.io> and copy its **App ID**.
-2. **Login methods** (User management, Authentication): turn on **Google**
-   and **GitHub** (Socials). For production add your own OAuth credentials
+2. **Login methods** (User management, Authentication): turn on **Email**,
+   **Google** and **GitHub** (Socials). Email needs nothing else: Privy sends
+   the code from its own address (a custom sender is an Enterprise feature). For production add your own OAuth credentials
    there: Google at <https://console.cloud.google.com/auth/clients>, GitHub at
    <https://github.com/settings/applications/new>, both with the callback
    `https://auth.privy.io/api/v1/oauth/callback`. External wallets can stay

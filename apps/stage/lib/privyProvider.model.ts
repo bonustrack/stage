@@ -6,6 +6,10 @@ export function sameAddress(a: string | null | undefined, b: string | null | und
   return typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
 }
 
+export function sameEmail(a: string | null | undefined, b: string | null | undefined): boolean {
+  return typeof a === 'string' && typeof b === 'string' && a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
 export function isEmbeddedClient(walletClientType: string | undefined): boolean {
   return walletClientType === 'privy' || walletClientType === 'privy-v2';
 }

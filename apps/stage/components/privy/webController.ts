@@ -2,7 +2,7 @@ import { privyMethodName } from '@stage-labs/client/accounts/privy';
 import type { PrivyLoginMethod } from '@stage-labs/client/accounts/types';
 import { ignored, reported } from '../../lib/errorPolicy';
 import type { PrivyOAuthProvider } from '../../lib/privyConfig';
-import { arrayParamsProvider, isEmbeddedClient, sameAddress, switchingProvider } from '../../lib/privyProvider.model';
+import { arrayParamsProvider, isEmbeddedClient, sameAddress, sameEmail, switchingProvider } from '../../lib/privyProvider.model';
 import type { Eip1193Provider, PrivyController, PrivyLoginPurpose, PrivySession } from '../../lib/privy.types';
 import type { Watched } from '../../lib/watched';
 import type { PrivyRuntimeHost } from './runtimeHost';
@@ -38,6 +38,8 @@ export interface WebPrivyState {
 
 export interface WebPrivyActions {
   initOAuth: (provider: PrivyOAuthProvider) => Promise<void>;
+  sendEmailCode: (email: string) => Promise<void>;
+  loginWithEmailCode: (code: string) => Promise<void>;
   logout: () => Promise<void>;
   createWallet: () => Promise<unknown>;
 }
@@ -74,11 +76,14 @@ function oauthSettled(state: WebPrivyState): boolean {
   return state.authenticated && state.user !== null;
 }
 
+async function signOutFirst(ctx: WebPrivyContext): Promise<void> {
+  if (!ctx.state.get().authenticated) return;
+  await ctx.actions().logout();
+  await ctx.state.until((state) => !state.authenticated, READY_MS, NOT_READY);
+}
+
 async function startOAuth(ctx: WebPrivyContext, method: PrivyLoginMethod, purpose: PrivyLoginPurpose): Promise<never> {
-  if (ctx.state.get().authenticated) {
-    await ctx.actions().logout();
-    await ctx.state.until((state) => !state.authenticated, READY_MS, NOT_READY);
-  }
+  await signOutFirst(ctx);
   await ctx.host.pending.write(method, purpose);
   await ctx.actions().initOAuth(ctx.host.oauthProvider(method));
   return ctx.leave();
@@ -104,6 +109,24 @@ async function socialLogin(ctx: WebPrivyContext, method: PrivyLoginMethod, purpo
     throw new Error(`Sign-in with ${privyMethodName(method)} did not finish. Try again.`);
   }
   return { address: await embeddedAddress(ctx), method };
+}
+
+async function sendEmailCode(ctx: WebPrivyContext, email: string): Promise<void> {
+  await ctx.state.until((state) => state.ready, READY_MS, NOT_READY);
+  await signOutFirst(ctx);
+  await ctx.actions().sendEmailCode(email);
+}
+
+function hasEmail(user: WebPrivyUser | null, email: string): boolean {
+  return user?.linkedAccounts.some((account) => account.type === 'email' && sameEmail(account.address, email)) === true;
+}
+
+async function emailLogin(ctx: WebPrivyContext, email: string, code: string): Promise<PrivySession> {
+  await ctx.state.until((state) => state.ready, READY_MS, NOT_READY);
+  await ctx.actions().loginWithEmailCode(code);
+  await ctx.state.until((state) => state.authenticated && state.user !== null, READY_MS, NOT_READY);
+  if (!hasEmail(ctx.state.get().user, email)) throw new Error('Sign-in with email did not finish. Try again.');
+  return { address: await embeddedAddress(ctx), method: 'email' };
 }
 
 async function embeddedWallet(ctx: WebPrivyContext, account: PrivySession): Promise<WebPrivyWallet> {
@@ -136,6 +159,8 @@ async function forget(ctx: WebPrivyContext, account: PrivySession): Promise<void
 export function makeWebPrivyController(ctx: WebPrivyContext): PrivyController {
   return {
     login: (method, purpose) => socialLogin(ctx, method, purpose),
+    sendEmailCode: (email) => sendEmailCode(ctx, email),
+    loginWithEmail: (email, code) => emailLogin(ctx, email, code),
     provider: (account) => providerFor(ctx, account),
     forget: (account) => forget(ctx, account),
   };

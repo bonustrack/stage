@@ -7,10 +7,10 @@ import { holdOnboarding } from '../../lib/accountGate';
 import { getActiveAccount } from '../../lib/accounts';
 import { capabilities } from '../../lib/capabilities';
 import { report, reported } from '../../lib/errorPolicy';
-import { connectExternalWallet } from '../../lib/externalWallet';
 import { ownedStageLabel } from '../../lib/mailKey';
 import type { EditableProfile } from '../../lib/onboarding.core';
 import { privyReturnHandled, returnedPrivyLogin, returnedPrivyMethod } from '../../lib/privyBridge';
+import { signInSession } from '../../lib/signIn';
 import { SignInCancelled } from '../../lib/signInCancelled';
 import type { ProfileSetup } from './Onboarding.profile.model';
 import type { Stage } from './flow';
@@ -98,13 +98,13 @@ function signInFailed(err: unknown): void {
 
 function privyStarter(start: (choice: Choice) => void): (method: PrivyLoginMethod) => void {
   return (method) => {
-    if (method !== 'wallet') {
+    if (method !== 'wallet' && method !== 'email') {
       start({ kind: 'privy', method });
       return;
     }
-    void connectExternalWallet()
-      .then((address) => {
-        start({ kind: 'privy', method, address });
+    void signInSession(method)
+      .then((session) => {
+        start({ kind: 'privy', method, address: session.address });
       })
       .catch(signInFailed);
   };

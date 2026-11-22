@@ -13,6 +13,8 @@ export type PrivyLoginPurpose = 'login' | 'reauth';
 
 export interface PrivyController {
   login: (method: PrivyLoginMethod, purpose: PrivyLoginPurpose) => Promise<PrivySession>;
+  sendEmailCode: (email: string) => Promise<void>;
+  loginWithEmail: (email: string, code: string) => Promise<PrivySession>;
   provider: (account: PrivySession) => Promise<Eip1193Provider>;
   forget: (account: PrivySession) => Promise<void>;
 }

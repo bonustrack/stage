@@ -36,6 +36,10 @@ describe('loginMethodsFor', () => {
     expect(socialsFrom('')).toEqual([]);
   });
 
+  test('email is listed like a social login, after them and before the web3 wallet', () => {
+    expect(loginMethodsFor({ ...WEB, socials: socialsFrom('email,google,github') })).toEqual(['google', 'github', 'email', 'wallet']);
+  });
+
   test('a build without the wallet hides the web3 wallet', () => {
     expect(loginMethodsFor({ ...WEB, walletFeature: false })).toEqual(['google', 'microsoft']);
   });

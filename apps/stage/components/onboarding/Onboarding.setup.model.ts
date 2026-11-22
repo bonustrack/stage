@@ -38,6 +38,7 @@ const SIGN_IN_LABELS: Record<PrivyLoginMethod, string> = {
   google: 'Signing in with Google',
   microsoft: 'Signing in with Microsoft',
   github: 'Signing in with GitHub',
+  email: 'Signing in with email',
   wallet: 'Connecting your wallet',
 };
 

@@ -34,6 +34,7 @@ import { ShareHost } from '../components/share/ShareHost';
 import { KeyboardResync } from '../components/system/KeyboardResync';
 import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
+import { EmailSignIn } from '../components/privy/EmailSignIn';
 import { PrivyHost, useSignInReturnCover } from '../components/privy/PrivyHost';
 import { WalletPicker } from '../components/wallets/WalletPicker';
 import { installAlertShim } from '../lib/alertHost';
@@ -173,6 +174,7 @@ function RootLayoutInner(): React.ReactElement {
           <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
           <PrivyHost />
           <WalletPicker />
+          <EmailSignIn />
         </KeyboardProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>
