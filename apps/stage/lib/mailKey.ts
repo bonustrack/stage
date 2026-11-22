@@ -15,13 +15,13 @@ const checked = new Set<string>();
 
 export async function claimMailKey(rec: AccountRecord, label: string): Promise<Hex | undefined> {
   if (!isMailboxLabel(label)) return undefined;
-  const { signMessage } = await signingKeyForRecord(rec);
-  return mailPublicKeyHex(await deriveMailKey(label, signMessage));
+  const { signStable } = await signingKeyForRecord(rec);
+  return mailPublicKeyHex(await deriveMailKey(label, signStable));
 }
 
 export async function registerOwnMailKey(rec: AccountRecord, label: string): Promise<void> {
-  const { signMessage } = await signingKeyForRecord(rec);
-  await registerMailKey(linkProxyBase(), label, await deriveMailKey(label, signMessage), signMessage);
+  const { signMessage, signStable } = await signingKeyForRecord(rec);
+  await registerMailKey(linkProxyBase(), label, await deriveMailKey(label, signStable), signMessage);
 }
 
 export async function ownedStageLabel(address: string): Promise<string | null> {
@@ -35,8 +35,8 @@ async function syncActiveMailKey(): Promise<void> {
   if (rec === null || checked.has(rec.address)) return;
   const label = await ownedStageLabel(rec.address);
   if (label !== null && isMailboxLabel(label)) {
-    const { signMessage } = await lazySigningKeyForRecord(rec);
-    await ensureMailKey(linkProxyBase(), label, rec.address, signMessage);
+    const { signMessage, signStable } = await lazySigningKeyForRecord(rec);
+    await ensureMailKey(linkProxyBase(), label, rec.address, signMessage, signStable);
   }
   checked.add(rec.address);
 }

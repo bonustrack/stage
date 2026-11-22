@@ -62,10 +62,25 @@ describe('web Content Security Policy', () => {
     expect(sources.get('style-src')).toEqual(["'self'", "'unsafe-inline'"]);
     expect(sources.get('img-src')).toEqual(["'self'", 'https:', 'data:', 'blob:']);
     expect(sources.get('media-src')).toEqual(["'self'", 'https:', 'data:', 'blob:']);
-    expect(sources.get('connect-src')).toEqual(["'self'", 'https:', 'data:', 'blob:']);
+    expect(sources.get('connect-src')).toEqual([
+      "'self'",
+      'https:',
+      'data:',
+      'blob:',
+      'wss://relay.walletconnect.com',
+      'wss://relay.walletconnect.org',
+    ]);
   });
 
-  test.each(['frame-src', 'object-src', 'base-uri', 'form-action', 'frame-ancestors'])('disallows %s', (directive) => {
+  test('frames only the Privy wallet and the WalletConnect domain check', () => {
+    expect(sources.get('frame-src')).toEqual([
+      'https://auth.privy.io',
+      'https://verify.walletconnect.com',
+      'https://verify.walletconnect.org',
+    ]);
+  });
+
+  test.each(['object-src', 'base-uri', 'form-action', 'frame-ancestors'])('disallows %s', (directive) => {
     expect(sources.get(directive)).toEqual(["'none'"]);
   });
 

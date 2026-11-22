@@ -87,6 +87,7 @@ export interface HistoryOps<Cl> {
   sendSyncRequest: (client: Cl, serverUrl: string) => Promise<unknown>;
   syncDeviceGroups: (client: Cl) => Promise<unknown>;
   processSyncArchive: (client: Cl) => Promise<unknown>;
+  otherInstallations: (client: Cl) => Promise<number>;
 }
 
 interface ClientPrimitives<Cl, C, M> {

@@ -91,9 +91,15 @@ async function waitForArchive(run: number, deadline: number): Promise<HistorySyn
   return problem === null ? 'timeout' : 'error';
 }
 
+async function hasOtherDevice(): Promise<boolean> {
+  const client = await sdk.client();
+  return (await within(sdk.history.otherInstallations(client), REQUEST_MS, HISTORY_COPY.requestSlow)) > 0;
+}
+
 async function syncOnce(run: number, deadline: number): Promise<HistorySyncPhase> {
   try {
     await messagingReady();
+    if (!(await hasOtherDevice())) return 'nothing';
     await within(requestHistorySync(), REQUEST_MS, HISTORY_COPY.requestSlow);
   } catch (err) {
     report('historySync.request', err);

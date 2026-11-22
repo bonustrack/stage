@@ -8,7 +8,8 @@ import { isPushSupported, unregisterPushFromServer } from '../../lib/pushRegiste
 import { reloadApp } from '../../lib/reloadApp';
 import { capabilities } from '../../lib/capabilities';
 import { report } from '../../lib/errorPolicy';
-import { DELETING_TOAST, deleteFailedMessage, deleteMessage, removeMessage } from './accountRemoval.model';
+import { privyLoginOf, privyMethodName } from '@stage-labs/client/accounts/privy';
+import { DELETING_TOAST, deleteFailedMessage, deleteMessage, logOutMessage, removeMessage } from './accountRemoval.model';
 
 async function removeAndMoveOn(id: string): Promise<void> {
   try {
@@ -33,6 +34,20 @@ function nameOf(rec: AccountRecord): string {
 export function confirmRemove(rec: AccountRecord): void {
   void capabilities
     .confirm({ title: 'Remove from this device', message: removeMessage(nameOf(rec)), confirmLabel: 'Remove', destructive: true })
+    .then((ok) => {
+      if (ok) void removeAndMoveOn(rec.id);
+    });
+}
+
+export function confirmLogOut(rec: AccountRecord): void {
+  const method = privyMethodName(privyLoginOf(rec));
+  void capabilities
+    .confirm({
+      title: 'Log out',
+      message: logOutMessage(nameOf(rec), method === 'Wallet' ? 'your wallet' : method),
+      confirmLabel: 'Log out',
+      destructive: true,
+    })
     .then((ok) => {
       if (ok) void removeAndMoveOn(rec.id);
     });

@@ -5,6 +5,7 @@ dist
 apps/stage/desktop/release
 apps/stage/desktop/web
 apps/stage/public/wasm
+apps/stage/public/privy
 *.tgz
 *.log
 .env

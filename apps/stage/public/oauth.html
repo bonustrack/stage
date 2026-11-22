@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Return to Stage</title>
+    <link rel="icon" href="/favicon.svg" />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
+        font-family: system-ui, sans-serif;
+        text-align: center;
+      }
+      main {
+        max-width: 360px;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 8px;
+      }
+      p {
+        margin: 0 0 24px;
+        opacity: 0.7;
+      }
+      a {
+        display: inline-block;
+        padding: 12px 24px;
+        border-radius: 999px;
+        border: 1px solid currentColor;
+        color: inherit;
+        text-decoration: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Return to Stage</h1>
+      <p>You are signed in. Go back to the Stage app to finish.</p>
+      <a id="open" href="stage://oauth">Open Stage</a>
+    </main>
+    <script src="/oauth.js"></script>
+  </body>
+</html>

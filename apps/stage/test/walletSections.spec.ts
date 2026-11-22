@@ -18,6 +18,18 @@ describe('walletAccountRows', () => {
     ]);
   });
 
+  test('a Privy account names how it signs in', () => {
+    const model = { label: 'Main', hdIndex: null, isSmart: false, activeSigner: '' };
+    expect(walletAccountRows({ ...model, rec: { type: 'privy', login: 'google' } })[1]).toEqual({
+      label: 'Type',
+      value: 'Google sign-in (Privy)',
+    });
+    expect(walletAccountRows({ ...model, rec: { type: 'privy', login: 'wallet' } })[1]).toEqual({
+      label: 'Type',
+      value: 'Connected wallet',
+    });
+  });
+
   test('smart account with hd index and signer', () => {
     expect(walletAccountRows({ label: 'Main', hdIndex: 0, isSmart: true, rec: { type: 'seed' }, activeSigner: 'Recovery key' })).toEqual([
       { label: 'Name', value: 'Main' },

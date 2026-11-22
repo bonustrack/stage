@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@stage-labs/client": "workspace:*",
-    "viem": "^2.51.0"
+    "viem": "^2.57.8"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250601.0",

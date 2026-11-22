@@ -22,6 +22,14 @@ describe('deep links', () => {
     expect(desktopRouteUrl(APP_HOME, 'stage://')).toBe(APP_HOME);
     expect(desktopRouteUrl(APP_HOME, 'https://evil.example/#/x')).toBe(APP_HOME);
   });
+
+  test('hands a sign-in return to the page as a query, with only the sign-in fields', () => {
+    const link = 'stage://oauth?privy_oauth_code=c1&privy_oauth_state=s1&privy_oauth_provider=google&next=evil';
+    expect(desktopRouteUrl(APP_HOME, link)).toBe(
+      'stage-app://stage.box/?privy_oauth_code=c1&privy_oauth_state=s1&privy_oauth_provider=google',
+    );
+    expect(desktopRouteUrl(APP_HOME, 'stage://oauth?privy_oauth_code=c1')).toBe('stage-app://stage.box/#/oauth?privy_oauth_code=c1');
+  });
 });
 
 describe('sameSite', () => {

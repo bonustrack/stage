@@ -33,11 +33,14 @@ import { useWebTabRail } from '../../lib/webLayout';
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { EditProfileModal } from './EditProfileModal';
 import { applyPush } from './NotificationsSettings';
-import { SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
+import { SettingsButtonRow, SettingsGroup, SettingsNavRow, SettingsPage, SettingsToggleRow, THEME_OPTIONS } from './SettingsPage';
+import { confirmLogOut } from './accountRemoval';
+import { IconDoor } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconDoor';
 import { SettingsAboutFooter } from './SettingsAboutFooter';
 import { settingsSection } from './settingsCatalog.model';
 import { menuPagesFor } from '../tabs/menuPages';
 import { Column, Row, PAGE_GUTTER } from '../layout';
+import { securityRowLabel } from './SecuritySettings.model';
 
 function accountDisplayName(peerName: string | null | undefined, label: string | undefined, fallback: string): string {
   const candidate = peerName ?? label;
@@ -178,9 +181,24 @@ function PreferencesGroup(): React.ReactElement {
   );
 }
 
+function LogOutRow({ rec }: { rec: ReturnType<typeof useActiveAccountRecord> }): React.ReactElement | null {
+  if (rec?.type !== 'privy') return null;
+  return (
+    <SettingsButtonRow
+      label="Log out"
+      iconStart={IconDoor}
+      danger
+      onPress={() => {
+        confirmLogOut(rec);
+      }}
+    />
+  );
+}
+
 function MoreGroup(): React.ReactElement {
   const count = useDeviceCount();
-  const address = useActiveAccountRecord()?.address;
+  const rec = useActiveAccountRecord();
+  const address = rec?.address;
   const boxes = useMailboxes().data;
   const developerMode = useDeveloperMode();
   const pages = useWebTabRail() ? [] : menuPagesFor((boxes?.length ?? 0) > 0, developerMode);
@@ -212,10 +230,11 @@ function MoreGroup(): React.ReactElement {
           }}
         />
       ))}
-      {row('security', 'Recovery phrase and private key')}
+      {row('security', securityRowLabel(rec?.type))}
       {row('devices', 'Devices and history', count === null ? undefined : `${count} signed in`)}
       {WALLET_ENABLED ? row('wallet', 'Wallet', address ? shortAddress(address) : undefined) : null}
       {row('advanced', 'Advanced')}
+      <LogOutRow rec={rec} />
     </SettingsGroup>
   );
 }

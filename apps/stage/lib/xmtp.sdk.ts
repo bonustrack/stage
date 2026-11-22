@@ -311,6 +311,8 @@ export const sdk: XmtpSdk<NativeClient, Conversation, NativeMessage> = {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
     processSyncArchive: (client) => client.processSyncArchive(),
+    otherInstallations: async (client) =>
+      (await client.inboxState(true)).installations.filter((installation) => installation.id !== client.installationId).length,
   },
   nativeErrorLog,
   isGroup: (conv) => conv instanceof Group,

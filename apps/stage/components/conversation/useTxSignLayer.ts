@@ -14,7 +14,8 @@ import { capabilities } from '../../lib/capabilities';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
 import type { TypedDataDefinition } from 'viem';
 import { base } from 'viem/chains';
-import { getActiveAccount, getActiveViemAccount } from '../../lib/accounts';
+import { getActiveAccount } from '../../lib/accounts';
+import { activeEoaSigner } from '../../lib/eoaSigner';
 import { kernelClientForRecord } from '../../lib/zerodev/client';
 import { paymentBlocker } from './pay.model';
 
@@ -38,7 +39,7 @@ async function requestSigner(): Promise<RequestSigner> {
       signMessage: (args) => kernel.signMessage(args as Parameters<typeof kernel.signMessage>[0]),
     };
   }
-  const local = await getActiveViemAccount();
+  const local = await activeEoaSigner();
   if (!local) throw new Error('No active wallet to sign with');
   return local;
 }

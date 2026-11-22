@@ -1,7 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'expo-router';
+import { errorMessage } from '@stage-labs/client/errors';
 import type { AccountTransfer } from '@stage-labs/client/accounts/transfer';
+import type { PrivyLoginMethod } from '@stage-labs/client/accounts/types';
+import { holdOnboarding } from '../../lib/accountGate';
+import { getActiveAccount } from '../../lib/accounts';
+import { capabilities } from '../../lib/capabilities';
+import { report, reported } from '../../lib/errorPolicy';
+import { connectExternalWallet } from '../../lib/externalWallet';
+import { ownedStageLabel } from '../../lib/mailKey';
 import type { EditableProfile } from '../../lib/onboarding.core';
+import { privyReturnHandled, returnedPrivyLogin, returnedPrivyMethod } from '../../lib/privyBridge';
+import { SignInCancelled } from '../../lib/signInCancelled';
 import type { ProfileSetup } from './Onboarding.profile.model';
 import type { Stage } from './flow';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
@@ -9,7 +19,7 @@ import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRun
 import { IMPORT_ROUTE } from './nextRoute.model';
 import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
 
-export type Step = 'username' | 'profile' | 'import' | 'setup' | 'edit';
+export type Step = 'signup' | 'username' | 'profile' | 'import' | 'setup' | 'edit' | 'claim';
 
 export interface OnboardingFlow {
   step: Step;
@@ -17,11 +27,15 @@ export interface OnboardingFlow {
   stage: Stage;
   setupErr: SetupErr | null;
   plan: SetupPlan;
+  onCreate: () => void;
   onUsernameContinue: (label: string) => void;
+  onUsernameBack: () => void;
   onProfileContinue: (details: ProfileDetails) => void;
   onProfileSkip: () => void;
   onProfileBack: () => void;
   onImportTransfer: (transfer: AccountTransfer) => void;
+  onPrivy: (method: PrivyLoginMethod) => void;
+  onClaimDone: () => void;
   history: HistoryControls;
   onSetupRetry: () => void;
   onSetupBack: () => void;
@@ -40,14 +54,105 @@ function importChoice(transfer: AccountTransfer): Choice {
   return transfer.kind === 'phrase' ? { kind: 'restore', phrase: transfer.phrase } : { kind: 'importKey', pk: transfer.pk };
 }
 
+function useReturnedSignIn(resume: (method: PrivyLoginMethod) => void, giveUp: () => void): void {
+  const handled = useRef(false);
+  useEffect(() => {
+    const method = returnedPrivyMethod();
+    if (method === null || handled.current) return;
+    handled.current = true;
+    void returnedPrivyLogin()
+      .then((pending) => {
+        if (pending?.purpose === 'reauth') {
+          giveUp();
+          return;
+        }
+        privyReturnHandled();
+        resume(pending?.method ?? method);
+      })
+      .catch(reported('onboarding.privyReturn'));
+  });
+}
+
+async function needsUsername(): Promise<boolean> {
+  const rec = await getActiveAccount();
+  return rec?.type === 'privy' && (await ownedStageLabel(rec.address)) === null;
+}
+
+function afterSetup(onDone: () => void, claim: () => void): () => void {
+  return () => {
+    void needsUsername()
+      .then((needed) => {
+        if (needed) claim();
+        else onDone();
+      })
+      .catch((err: unknown) => {
+        report('onboarding.nameCheck', err);
+        onDone();
+      });
+  };
+}
+
+function signInFailed(err: unknown): void {
+  if (!(err instanceof SignInCancelled)) capabilities.toast(errorMessage(err));
+}
+
+function privyStarter(start: (choice: Choice) => void): (method: PrivyLoginMethod) => void {
+  return (method) => {
+    if (method !== 'wallet') {
+      start({ kind: 'privy', method });
+      return;
+    }
+    void connectExternalWallet()
+      .then((address) => {
+        start({ kind: 'privy', method, address });
+      })
+      .catch(signInFailed);
+  };
+}
+
+type RecoveryHandlers = Pick<OnboardingFlow, 'onSetupEdit' | 'onRecoverySave' | 'onRecoveryBack'>;
+
+function recoveryHandlers(
+  editableProfile: () => Promise<EditableProfile | null>,
+  setProfileRecovery: (value: EditableProfile | null) => void,
+  setStep: (step: Step) => void,
+  start: (choice: Choice) => void,
+): RecoveryHandlers {
+  return {
+    onSetupEdit: () => {
+      void editableProfile().then((value) => {
+        if (value === null) return;
+        setProfileRecovery(value);
+        setStep('edit');
+      });
+    },
+    onRecoverySave: (profile) => {
+      setProfileRecovery(null);
+      start({ kind: 'editProfile', profile });
+    },
+    onRecoveryBack: () => {
+      setProfileRecovery(null);
+      setStep('setup');
+    },
+  };
+}
+
 export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
-  const [flowStep, setStep] = useState<Step>('username');
+  const [flowStep, setStep] = useState<Step>(() => (returnedPrivyMethod() === null ? 'signup' : 'setup'));
   const [label, setLabel] = useState('');
   const [pending, setPending] = useState<Choice | null>(null);
   const [profileRecovery, setProfileRecovery] = useState<EditableProfile | null>(null);
-  const runner = useSetupRunner(onDone);
+  const claim = (): void => {
+    holdOnboarding(true);
+    setStep('claim');
+  };
+  const runner = useSetupRunner(afterSetup(onDone, claim), () => {
+    setPending(null);
+    setStep('signup');
+  });
   const atImportRoute = usePathname() === IMPORT_ROUTE;
-  const step: Step = runner.recovering && flowStep !== 'edit' ? 'setup' : flowStep === 'username' && atImportRoute ? 'import' : flowStep;
+  const showsSetup = runner.recovering && flowStep !== 'edit' && flowStep !== 'claim';
+  const step: Step = showsSetup ? 'setup' : flowStep === 'signup' && atImportRoute ? 'import' : flowStep;
 
   const start = (choice: Choice): void => {
     setPending(choice);
@@ -55,23 +160,31 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     runner.run(choice);
   };
 
+  useReturnedSignIn(
+    (method) => {
+      start({ kind: 'privy', method });
+    },
+    () => {
+      setStep('signup');
+    },
+  );
+
   const startOver = (): void => {
     void runner.startOver().then((cleared) => {
       if (!cleared) return;
       setPending(null);
       setLabel('');
-      setStep('username');
+      setStep('signup');
     });
   };
 
   const onSetupRetry = (): void => {
     const err = runner.setupErr;
-    if (err?.retry === 'create') runner.resume();
-    else if (err?.accountId !== undefined && err.retry === 'messaging') runner.resume(err.accountId);
+    if (err !== null && (err.retry === 'create' || (err.retry === 'messaging' && err.accountId !== undefined))) runner.resume(err);
     else if (pending) start(pending);
     else {
       runner.reset();
-      setStep('username');
+      setStep('signup');
     }
   };
 
@@ -81,10 +194,16 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     stage: runner.stage,
     setupErr: runner.setupErr,
     plan: runner.plan,
+    onCreate: () => {
+      setStep('username');
+    },
     onUsernameContinue: (next) => {
       setLabel(next);
       if (next === '') start({ kind: 'create' });
       else setStep('profile');
+    },
+    onUsernameBack: () => {
+      setStep('signup');
     },
     onProfileContinue: (details) => {
       start(createChoice(label, details));
@@ -98,25 +217,15 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     onImportTransfer: (transfer) => {
       start(importChoice(transfer));
     },
+    onPrivy: privyStarter(start),
+    onClaimDone: () => {
+      holdOnboarding(false);
+      onDone();
+    },
     history: runner.history,
     onSetupRetry,
     onSetupBack: startOver,
-    onSetupEdit: () => {
-      void runner.editableProfile().then((value) => {
-        if (value !== null) {
-          setProfileRecovery(value);
-          setStep('edit');
-        }
-      });
-    },
     profileRecovery,
-    onRecoverySave: (profile) => {
-      setProfileRecovery(null);
-      start({ kind: 'editProfile', profile });
-    },
-    onRecoveryBack: () => {
-      setProfileRecovery(null);
-      setStep('setup');
-    },
+    ...recoveryHandlers(runner.editableProfile, setProfileRecovery, setStep, start),
   };
 }

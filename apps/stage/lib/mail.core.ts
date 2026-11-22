@@ -35,10 +35,15 @@ export interface InboxState {
   failed: string[];
 }
 
+export interface MailSigner {
+  sign: SignMessage;
+  signStable: SignMessage;
+}
+
 interface MailDeps {
   activeAccount: () => Promise<AccountRecord | null>;
   ownedLabel: (address: string) => Promise<string | null>;
-  signer: (rec: AccountRecord) => Promise<SignMessage>;
+  signer: (rec: AccountRecord) => Promise<MailSigner>;
   selection: () => number;
   baseUrl: () => string;
 }
@@ -59,7 +64,7 @@ function openIndex(keys: MailKeyPair, box: Mailbox, item: MailListItem): MailInd
 }
 
 function mailCredentials(deps: MailDeps) {
-  const signers = new Map<string, Promise<SignMessage>>();
+  const signers = new Map<string, Promise<MailSigner>>();
   const keys = new Map<string, Promise<MailKeyPair>>();
   const sessions = new Map<string, Promise<MailSession>>();
   const activated = new Set<string>();
@@ -74,18 +79,22 @@ function mailCredentials(deps: MailDeps) {
   }
   const forBox = <T>(box: Mailbox, cache: Map<string, Promise<T>>, make: () => Promise<T>): Promise<T> =>
     current(box.selection, () => memoized(cache, mailboxKey(box), make));
-  const signerFor = (box: Mailbox): Promise<SignMessage> =>
+  const signerFor = (box: Mailbox): Promise<MailSigner> =>
     forBox(box, signers, async () => {
       const rec = await current(box.selection, deps.activeAccount);
       if (rec?.id !== box.accountId || rec.address.toLowerCase() !== box.address.toLowerCase()) {
         throw new Error('This mailbox is not in the active account.');
       }
-      const sign = await current(box.selection, () => deps.signer(rec));
-      return (message) => current(box.selection, () => sign(message));
+      const signer = await current(box.selection, () => deps.signer(rec));
+      return {
+        sign: (message) => current(box.selection, () => signer.sign(message)),
+        signStable: (message) => current(box.selection, () => signer.signStable(message)),
+      };
     });
-  const keyFor = (box: Mailbox): Promise<MailKeyPair> => forBox(box, keys, async () => deriveMailKey(box.label, await signerFor(box)));
+  const keyFor = (box: Mailbox): Promise<MailKeyPair> =>
+    forBox(box, keys, async () => deriveMailKey(box.label, (await signerFor(box)).signStable));
   async function sessionFor(box: Mailbox): Promise<MailSession> {
-    const open = async (): Promise<MailSession> => openMailSession(deps.baseUrl(), box.label, await signerFor(box));
+    const open = async (): Promise<MailSession> => openMailSession(deps.baseUrl(), box.label, (await signerFor(box)).sign);
     const session = await forBox(box, sessions, open);
     if (session.expiresAt - SESSION_MARGIN_MS > Date.now()) return session;
     sessions.delete(mailboxKey(box));
@@ -108,8 +117,8 @@ function mailCredentials(deps: MailDeps) {
   async function activate(box: Mailbox): Promise<void> {
     check(box.selection);
     if (activated.has(mailboxKey(box))) return;
-    const sign = await signerFor(box);
-    await current(box.selection, () => ensureMailKey(deps.baseUrl(), box.label, box.address, sign));
+    const { sign, signStable } = await signerFor(box);
+    await current(box.selection, () => ensureMailKey(deps.baseUrl(), box.label, box.address, sign, signStable));
     activated.add(mailboxKey(box));
   }
   return {
