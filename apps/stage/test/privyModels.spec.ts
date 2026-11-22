@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { redirectSystemPath } from '../app/+native-intent';
-import { loginMethodsFor, socialsFrom, type PrivySupport } from '../lib/privyMethods.model';
+import { loginMethodsFor, type PrivySupport } from '../lib/privyMethods.model';
 import { parsePendingLogin } from '../lib/privyPending.model';
 import { arrayParamsProvider, isEmbeddedClient, sameAddress, switchTargetOf, switchingProvider } from '../lib/privyProvider.model';
 import { hashQuery, oauthReturnOf, withOAuthReturn } from '../lib/privyReturn.model';
@@ -30,14 +30,9 @@ describe('loginMethodsFor', () => {
     expect(loginMethodsFor({ ...WEB, credentiallessFrames: false })).toEqual(['wallet']);
   });
 
-  test('shows the social logins the build lists, Google alone by default', () => {
-    expect(loginMethodsFor({ ...WEB, socials: socialsFrom(undefined) })).toEqual(['google', 'wallet']);
-    expect(loginMethodsFor({ ...WEB, socials: socialsFrom(' github, Google ,apple') })).toEqual(['google', 'github', 'wallet']);
-    expect(socialsFrom('')).toEqual([]);
-  });
-
-  test('email is listed like a social login, after them and before the web3 wallet', () => {
-    expect(loginMethodsFor({ ...WEB, socials: socialsFrom('email,google,github') })).toEqual(['google', 'github', 'email', 'wallet']);
+  test('shows the sign-ins Privy has switched on, then the web3 wallet', () => {
+    expect(loginMethodsFor({ ...WEB, socials: ['google', 'github', 'email'] })).toEqual(['google', 'github', 'email', 'wallet']);
+    expect(loginMethodsFor({ ...WEB, socials: [] })).toEqual(['wallet']);
   });
 
   test('a build without the wallet hides the web3 wallet', () => {

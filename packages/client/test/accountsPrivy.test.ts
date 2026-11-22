@@ -4,6 +4,7 @@ import {
   isPrivyLoginMethod,
   isUnlockSignature,
   privyAccountRecord,
+  privyAppLogins,
   privyLoginOf,
   privyMethodName,
   privySignerKind,
@@ -87,5 +88,34 @@ describe('unlock signature', () => {
     expect(first).not.toBe(derivedSignature(UNLOCK, 'st.box mail key v1 for bob'));
     expect(first).not.toBe(derivedSignature(`0x${'cd'.repeat(65)}`, 'st.box mail key v1 for alice'));
     expect(first).toMatch(/^0x[0-9a-f]{130}$/);
+  });
+});
+
+describe('privyAppLogins', () => {
+  test('lists the sign-ins switched on in the Privy dashboard, in button order', () => {
+    const logins = privyAppLogins({
+      google_oauth: true,
+      github_oauth: true,
+      email_auth: true,
+      twitter_oauth: true,
+      custom_oauth_providers: [{ provider: 'custom:microsoft', provider_display_name: 'microsoft', enabled: true }],
+    });
+    expect(logins).toEqual({ methods: ['google', 'microsoft', 'github', 'email'], microsoftProvider: 'custom:microsoft' });
+  });
+
+  test('a switched-off Microsoft provider and missing flags show nothing', () => {
+    const logins = privyAppLogins({ google_oauth: false, custom_oauth_providers: [{ provider: 'custom:microsoft', enabled: false }] });
+    expect(logins).toEqual({ methods: [], microsoftProvider: null });
+  });
+
+  test('finds Microsoft under another provider name by its display name', () => {
+    const logins = privyAppLogins({
+      custom_oauth_providers: [{ provider: 'custom:msft', provider_display_name: 'Microsoft', enabled: true }],
+    });
+    expect(logins.microsoftProvider).toBe('custom:msft');
+  });
+
+  test('refuses a config that is not an object', () => {
+    expect(() => privyAppLogins('nope')).toThrow('privy.appConfig');
   });
 });

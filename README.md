@@ -125,8 +125,6 @@ value is public). Set them in the Netlify site (web) and the EAS build profiles
 | `EXPO_PUBLIC_DEVELOPER_MODE`           | `off` hides the Developer mode toggle (store builds, GitHub APK)                                   |
 | `EXPO_PUBLIC_PRIVY_APP_ID`             | Privy app: turns on the Google, Microsoft and GitHub sign-in                                       |
 | `EXPO_PUBLIC_PRIVY_CLIENT_ID`          | Privy app client: optional on web, needed on phones                                                |
-| `EXPO_PUBLIC_PRIVY_LOGINS`             | Social and email sign-ins to show, e.g. `google,github,email` (default `google`)                   |
-| `EXPO_PUBLIC_PRIVY_MICROSOFT_PROVIDER` | Name of the Microsoft custom OAuth provider in Privy (default `microsoft`)                         |
 | `EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect project: the QR code for phone wallets, and the wallet sign-in on phones and desktop |
 
 Sign-in with Google, Microsoft, GitHub, email or a wallet is set up in [`docs/privy.md`](docs/privy.md).

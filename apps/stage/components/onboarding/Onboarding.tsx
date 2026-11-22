@@ -20,6 +20,7 @@ import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
 import { Column } from '../layout';
 import { SignUpStep } from './Onboarding.signup';
 import { ClaimStep } from './Onboarding.claim';
+import { EmailCodeStep } from './Onboarding.email';
 
 export interface OnboardingProps {
   onDone: () => void;
@@ -101,6 +102,8 @@ function stepBack(f: Flow): (() => void) | null {
   if (f.step === 'username') return f.onUsernameBack;
   if (f.step === 'profile') return f.onProfileBack;
   if (f.step === 'edit') return f.onRecoveryBack;
+  if (f.step === 'emailCode') return f.onEmailCodeBack;
+  if (f.step === 'import') return f.onImportBack;
   return null;
 }
 
@@ -155,7 +158,12 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       padding={{ top: pageTopPadding(height) + insets.top, bottom: 24 + insets.bottom }}
     >
       <StepChrome f={f} top={STEP_ICON_INSET + insets.top} color={pal.link} />
-      {f.step === 'signup' ? <SignUpStep dark={dark} busy={f.busy} onCreate={f.onCreate} onPrivy={f.onPrivy} /> : null}
+      {f.step === 'signup' ? (
+        <SignUpStep dark={dark} busy={f.busy} onCreate={f.onCreate} onPrivy={f.onPrivy} onEmailCodeSent={f.onEmailCodeSent} />
+      ) : null}
+      {f.step === 'emailCode' && f.emailSentTo !== null ? (
+        <EmailCodeStep email={f.emailSentTo} onSignedIn={f.onEmailSignedIn} onBack={f.onEmailCodeBack} />
+      ) : null}
       {f.step === 'claim' ? <ClaimStep dark={dark} onDone={f.onClaimDone} /> : null}
       <KeptStep f={f} own="username">
         <UsernameStep dark={dark} busy={f.busy} onContinue={f.onUsernameContinue} />
@@ -166,7 +174,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       {f.step === 'edit' && f.profileRecovery !== null ? (
         <ProfileRecoveryStep recovery={f.profileRecovery} dark={dark} busy={f.busy} onSave={f.onRecoverySave} />
       ) : null}
-      {f.step === 'import' ? <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} onPrivy={f.onPrivy} /> : null}
+      {f.step === 'import' ? <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} /> : null}
       {f.step === 'setup' ? (
         <SetupStep
           dark={dark}

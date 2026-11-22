@@ -2,7 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { SignInCancelled } from '../lib/signInCancelled';
 import { addressesOf, legacyWallet, walletFromAnnouncement, withWallet } from '../lib/injectedWallets.model';
 import { cancelWalletPicker, chooseWallet, closeWalletPicker, pickWallet, showConnecting, whenPickerCancelled } from '../lib/walletPicker';
-import { NO_WALLET, orderEntries, tagOf, walletPickerCopy } from '../components/wallets/WalletPicker.model';
+import { ACCOUNT_ENTRIES, NO_WALLET, orderEntries, tagOf, walletPickerCopy } from '../components/wallets/WalletPicker.model';
 
 const provider = { request: () => Promise.resolve(null) };
 const ICON = 'data:image/svg+xml;base64,PHN2Zy8+';
@@ -50,7 +50,7 @@ describe('browser wallet discovery', () => {
 
 describe('wallet picker', () => {
   test('resolves with the picked wallet and keeps the note while connecting', async () => {
-    const choice = chooseWallet({ note: 'Connect 0x12…34 to continue.', recent: null, only: null });
+    const choice = chooseWallet({ note: 'Connect 0x12…34 to continue.', recent: null, only: null, account: false });
     pickWallet({ kind: 'injected', rdns: 'io.metamask' });
     expect(await choice).toEqual({ kind: 'injected', rdns: 'io.metamask' });
     showConnecting('MetaMask');
@@ -58,7 +58,7 @@ describe('wallet picker', () => {
   });
 
   test('cancelling rejects both the choice and a connection in progress', async () => {
-    const choice = chooseWallet({ note: null, recent: null, only: null });
+    const choice = chooseWallet({ note: null, recent: null, only: null, account: false });
     const connecting = whenPickerCancelled();
     cancelWalletPicker();
     expect(choice).rejects.toBeInstanceOf(SignInCancelled);
@@ -66,23 +66,39 @@ describe('wallet picker', () => {
   });
 
   test('goes straight to WalletConnect when it is the only option', async () => {
-    expect(await chooseWallet({ note: null, recent: null, only: { kind: 'walletconnect' } })).toEqual({ kind: 'walletconnect' });
+    expect(await chooseWallet({ note: null, recent: null, only: { kind: 'walletconnect' }, account: false })).toEqual({
+      kind: 'walletconnect',
+    });
+    closeWalletPicker();
+  });
+
+  test('from sign-up the list always shows, so a new or imported wallet can be picked', async () => {
+    const choice = chooseWallet({ note: null, recent: null, only: { kind: 'walletconnect' }, account: true });
+    pickWallet({ kind: 'create' });
+    expect(await choice).toEqual({ kind: 'create' });
     closeWalletPicker();
   });
 });
 
 describe('wallet picker copy', () => {
   test('names the wallet to approve in and shows the note on the list', () => {
-    expect(walletPickerCopy({ view: 'waiting', note: null, wallet: 'MetaMask', recent: null }, false, false)).toEqual({
+    expect(walletPickerCopy({ view: 'waiting', note: null, wallet: 'MetaMask', recent: null, account: false }, false, false)).toEqual({
       title: 'Approve in MetaMask',
       about: 'Approve the connection in MetaMask to continue.',
     });
-    expect(walletPickerCopy({ view: 'list', note: 'Connect 0x12…34 to continue.', wallet: null, recent: null }, false, false).about).toBe(
-      'Connect 0x12…34 to continue.',
-    );
-    expect(walletPickerCopy({ view: 'walletconnect', note: null, wallet: null, recent: null }, false, false).about).toContain(
-      'WalletConnect',
-    );
+    expect(
+      walletPickerCopy({ view: 'list', note: 'Connect 0x12…34 to continue.', wallet: null, recent: null, account: false }, false, false)
+        .about,
+    ).toBe('Connect 0x12…34 to continue.');
+    expect(
+      walletPickerCopy({ view: 'walletconnect', note: null, wallet: null, recent: null, account: false }, false, false).about,
+    ).toContain('WalletConnect');
+  });
+
+  test('from sign-up the list offers a wallet you have or a new one', () => {
+    const copy = walletPickerCopy({ view: 'list', note: null, wallet: null, recent: null, account: true }, false, false);
+    expect(copy.title).toBe('Continue with wallet');
+    expect(ACCOUNT_ENTRIES.map((entry) => entry.name)).toEqual(['Create a new wallet', 'Import a wallet']);
   });
 
   test('a QR code is for scanning on a computer and for another device on a phone', () => {

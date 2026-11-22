@@ -9,17 +9,17 @@ import { capabilities } from '../../lib/capabilities';
 import { report, reported } from '../../lib/errorPolicy';
 import { ownedStageLabel } from '../../lib/mailKey';
 import type { EditableProfile } from '../../lib/onboarding.core';
+import { pickSignInWallet } from '../../lib/externalWallet';
 import { privyReturnHandled, returnedPrivyLogin, returnedPrivyMethod } from '../../lib/privyBridge';
-import { signInSession } from '../../lib/signIn';
 import { SignInCancelled } from '../../lib/signInCancelled';
 import type { ProfileSetup } from './Onboarding.profile.model';
 import type { Stage } from './flow';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import { useSetupRunner, type Choice, type HistoryControls } from './useSetupRunner';
-import { IMPORT_ROUTE } from './nextRoute.model';
+import { IMPORT_ROUTE, SIGNUP_ROUTE } from './nextRoute.model';
 import { EMPTY_DETAILS, profileSetupFrom, type ProfileDetails } from './Onboarding.profile.model';
 
-export type Step = 'signup' | 'username' | 'profile' | 'import' | 'setup' | 'edit' | 'claim';
+export type Step = 'signup' | 'username' | 'profile' | 'import' | 'setup' | 'edit' | 'claim' | 'emailCode';
 
 export interface OnboardingFlow {
   step: Step;
@@ -27,6 +27,11 @@ export interface OnboardingFlow {
   stage: Stage;
   setupErr: SetupErr | null;
   plan: SetupPlan;
+  emailSentTo: string | null;
+  onEmailCodeSent: (email: string) => void;
+  onEmailCodeBack: () => void;
+  onEmailSignedIn: (address: string) => void;
+  onImportBack: () => void;
   onCreate: () => void;
   onUsernameContinue: (label: string) => void;
   onUsernameBack: () => void;
@@ -96,17 +101,44 @@ function signInFailed(err: unknown): void {
   if (!(err instanceof SignInCancelled)) capabilities.toast(errorMessage(err));
 }
 
-function privyStarter(start: (choice: Choice) => void): (method: PrivyLoginMethod) => void {
+function privyStarter(start: (choice: Choice) => void, onCreate: () => void): (method: PrivyLoginMethod) => void {
   return (method) => {
-    if (method !== 'wallet' && method !== 'email') {
+    if (method !== 'wallet') {
       start({ kind: 'privy', method });
       return;
     }
-    void signInSession(method)
-      .then((session) => {
-        start({ kind: 'privy', method, address: session.address });
+    void pickSignInWallet()
+      .then((picked) => {
+        if (picked.kind === 'create') onCreate();
+        else if (picked.kind === 'import') capabilities.navigate(IMPORT_ROUTE);
+        else start({ kind: 'privy', method, address: picked.address });
       })
       .catch(signInFailed);
+  };
+}
+
+type EmailHandlers = Pick<OnboardingFlow, 'onEmailCodeSent' | 'onEmailCodeBack' | 'onEmailSignedIn' | 'onImportBack'>;
+
+function emailHandlers(
+  setEmailSentTo: (email: string | null) => void,
+  setStep: (step: Step) => void,
+  start: (choice: Choice) => void,
+): EmailHandlers {
+  return {
+    onEmailCodeSent: (email) => {
+      setEmailSentTo(email);
+      setStep('emailCode');
+    },
+    onEmailCodeBack: () => {
+      setEmailSentTo(null);
+      setStep('signup');
+    },
+    onEmailSignedIn: (address) => {
+      start({ kind: 'privy', method: 'email', address });
+    },
+    onImportBack: () => {
+      capabilities.navigate(SIGNUP_ROUTE);
+    },
   };
 }
 
@@ -141,6 +173,7 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
   const [flowStep, setStep] = useState<Step>(() => (returnedPrivyMethod() === null ? 'signup' : 'setup'));
   const [label, setLabel] = useState('');
   const [pending, setPending] = useState<Choice | null>(null);
+  const [emailSentTo, setEmailSentTo] = useState<string | null>(null);
   const [profileRecovery, setProfileRecovery] = useState<EditableProfile | null>(null);
   const claim = (): void => {
     holdOnboarding(true);
@@ -194,6 +227,8 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     stage: runner.stage,
     setupErr: runner.setupErr,
     plan: runner.plan,
+    emailSentTo,
+    ...emailHandlers(setEmailSentTo, setStep, start),
     onCreate: () => {
       setStep('username');
     },
@@ -217,7 +252,9 @@ export function useOnboardingFlow(onDone: () => void): OnboardingFlow {
     onImportTransfer: (transfer) => {
       start(importChoice(transfer));
     },
-    onPrivy: privyStarter(start),
+    onPrivy: privyStarter(start, () => {
+      setStep('username');
+    }),
     onClaimDone: () => {
       holdOnboarding(false);
       onDone();

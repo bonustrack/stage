@@ -17,14 +17,31 @@ function pairingCopy(phone: boolean): WalletPickerCopy {
   return { title: 'Scan with your wallet', about: 'Scan this code with a wallet app on your phone, then approve the connection there.' };
 }
 
+function listCopy(view: WalletPickerView | null): WalletPickerCopy {
+  if (view?.account === true)
+    return { title: 'Continue with wallet', about: 'Use a wallet you already have, or create a new one for free.' };
+  return { title: 'Connect a wallet', about: view?.note ?? null };
+}
+
 export function walletPickerCopy(view: WalletPickerView | null, pairing: boolean, phone: boolean): WalletPickerCopy {
   if (pairing) return pairingCopy(phone);
   if (view?.view === 'waiting' && view.wallet !== null) {
     return { title: `Approve in ${view.wallet}`, about: `Approve the connection in ${view.wallet} to continue.` };
   }
   if (view?.view === 'walletconnect') return { title: 'Connect a wallet', about: 'Preparing WalletConnect…' };
-  return { title: 'Connect a wallet', about: view?.note ?? null };
+  return listCopy(view);
 }
+
+export interface AccountEntry {
+  kind: 'create' | 'import';
+  name: string;
+  detail: string;
+}
+
+export const ACCOUNT_ENTRIES: readonly AccountEntry[] = [
+  { kind: 'create', name: 'Create a new wallet', detail: 'Free, with a recovery phrase you keep' },
+  { kind: 'import', name: 'Import a wallet', detail: 'Recovery phrase, or a code from another device' },
+];
 
 export const WALLETCONNECT_ID = 'walletconnect';
 

@@ -1,4 +1,6 @@
 import { concatHex, isAddress, isHex, keccak256, stringToHex, type Hex } from 'viem';
+import { z } from 'zod';
+import { parseOrThrow } from '../validate';
 import type { AccountRecord, PrivyLoginMethod } from './types';
 
 export const PRIVY_LOGIN_METHODS: readonly PrivyLoginMethod[] = ['google', 'microsoft', 'github', 'email', 'wallet'];
@@ -56,4 +58,42 @@ export function derivedSignature(unlock: Hex, message: string): Hex {
   const r = keccak256(concatHex([seed, '0x01']));
   const s = keccak256(concatHex([seed, '0x02']));
   return concatHex([r, s, '0x1b']);
+}
+
+const customProviderSchema = z.object({
+  provider: z.string(),
+  provider_display_name: z.string().optional(),
+  enabled: z.boolean().optional(),
+});
+
+const appConfigSchema = z.object({
+  google_oauth: z.boolean().optional(),
+  github_oauth: z.boolean().optional(),
+  email_auth: z.boolean().optional(),
+  custom_oauth_providers: z.array(customProviderSchema).optional(),
+});
+
+export interface PrivyAppLogins {
+  methods: PrivyLoginMethod[];
+  microsoftProvider: string | null;
+}
+
+function isMicrosoft(name: string | undefined): boolean {
+  return name !== undefined && /microsoft/i.test(name);
+}
+
+function microsoftProviderOf(providers: readonly z.infer<typeof customProviderSchema>[]): string | null {
+  const found = providers.find((p) => p.enabled === true && (isMicrosoft(p.provider) || isMicrosoft(p.provider_display_name)));
+  return found?.provider ?? null;
+}
+
+export function privyAppLogins(raw: unknown): PrivyAppLogins {
+  const config = parseOrThrow('privy.appConfig', appConfigSchema, raw);
+  const microsoftProvider = microsoftProviderOf(config.custom_oauth_providers ?? []);
+  const methods: PrivyLoginMethod[] = [];
+  if (config.google_oauth === true) methods.push('google');
+  if (microsoftProvider !== null) methods.push('microsoft');
+  if (config.github_oauth === true) methods.push('github');
+  if (config.email_auth === true) methods.push('email');
+  return { methods, microsoftProvider };
 }
