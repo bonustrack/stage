@@ -6,6 +6,9 @@ function isLaunchUrl(path: string): boolean {
   return m !== null && (m[1] ?? '').replace(/\/+$/, '') === '';
 }
 
-export function redirectSystemPath({ path }: { path: string; initial: boolean }): string {
+const SIGN_IN_RETURN = /[?&]privy_oauth_(code|state)=/;
+
+export function redirectSystemPath({ path, initial }: { path: string; initial: boolean }): string {
+  if (SIGN_IN_RETURN.test(path)) return initial ? '/' : '';
   return isLaunchUrl(path) ? '/' : path;
 }

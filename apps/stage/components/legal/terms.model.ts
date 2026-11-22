@@ -2,7 +2,7 @@ import { LEGAL_CONTACT, LEGAL_ENTITY, type LegalDoc } from './legal.model';
 
 export const TERMS: LegalDoc = {
   title: 'Terms of Use',
-  updated: 'November 14, 2026',
+  updated: 'November 22, 2026',
   intro: `Stage is a private, end-to-end encrypted messenger made by ${LEGAL_ENTITY} ("we", "us"). These terms apply to the Stage apps and to stage.box. By creating or importing an account, you agree to them.`,
   sections: [
     {
@@ -13,6 +13,7 @@ export const TERMS: LegalDoc = {
       heading: 'Your account',
       paragraphs: [
         'Your account is a key created on your device and protected by a recovery phrase. We never receive your recovery phrase or keys, so we can not restore an account for you. Keep your recovery phrase private and backed up: anyone who has it controls your account.',
+        'If you sign in with Google, Microsoft, GitHub, email or a web3 wallet instead, there is no Stage recovery phrase. That sign-in, or your wallet, controls the account: keep it secure, because we can not restore it either.',
         'You are responsible for what is sent from your account.',
       ],
     },

@@ -1,7 +1,6 @@
-import { isAddress, createWalletClient, type Account, type Chain, type Hex, type Transport, type WalletClient } from 'viem';
-import { getActiveViemAccount } from './accounts';
+import { isAddress, type Account, type Chain, type Hex, type Transport, type WalletClient } from 'viem';
+import { activeEoaSigner } from './eoaSigner';
 import { VIEM_CHAINS } from '@stage-labs/client/wallet/assets';
-import { broviderTransport } from '@stage-labs/client/wallet/client';
 import { buildPublicTransfer, type BuildTransferArgs } from '@stage-labs/client/wallet/send';
 
 interface SendParams {
@@ -12,11 +11,11 @@ interface SendParams {
 }
 
 async function walletClientFor(chainId: number): Promise<{ client: WalletClient<Transport, Chain, Account>; chain: Chain }> {
-  const local = await getActiveViemAccount();
-  if (!local) throw new Error('No in-app wallet to send from');
+  const signer = await activeEoaSigner();
+  if (!signer) throw new Error('No in-app wallet to send from');
   const chain = VIEM_CHAINS[chainId];
   if (!chain) throw new Error(`Unsupported chain ${chainId}`);
-  return { client: createWalletClient({ account: local, chain, transport: broviderTransport(chainId) }), chain };
+  return { client: await signer.walletClient(chain), chain };
 }
 
 export async function sendNativeOrToken({ to, amount, asset, chainId }: SendParams): Promise<Hex> {

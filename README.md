@@ -114,15 +114,22 @@ bun run --cwd packages/kit storybook    # gallery of every kit component (Vite, 
 value is public). Set them in the Netlify site (web) and the EAS build profiles
 (`eas.json`, mobile); secrets never go in `eas.json` or the repo.
 
-| Var                              | Purpose                                                           |
-| -------------------------------- | ----------------------------------------------------------------- |
-| `EXPO_PUBLIC_ZERODEV_PROJECT_ID` | ZeroDev smart-account project (Base)                              |
-| `EXPO_PUBLIC_ZERODEV_RPC`        | Optional RPC override for the smart-account client                |
-| `EXPO_PUBLIC_LINKPROXY_URL`      | Base URL of the proxy Worker (default `https://proxy.stage.box`)  |
-| `EXPO_PUBLIC_PUSH_SERVER_URL`    | Push server base URL                                              |
-| `EXPO_PUBLIC_WALLET`             | `off` hides the wallet (store builds and the GitHub APK)          |
-| `EXPO_PUBLIC_CALLS`              | `off` hides calls and drops their Android services (store builds) |
-| `EXPO_PUBLIC_DEVELOPER_MODE`     | `off` hides the Developer mode toggle (store builds, GitHub APK)  |
+| Var                                    | Purpose                                                                                            |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `EXPO_PUBLIC_ZERODEV_PROJECT_ID`       | ZeroDev smart-account project (Base)                                                               |
+| `EXPO_PUBLIC_ZERODEV_RPC`              | Optional RPC override for the smart-account client                                                 |
+| `EXPO_PUBLIC_LINKPROXY_URL`            | Base URL of the proxy Worker (default `https://proxy.stage.box`)                                   |
+| `EXPO_PUBLIC_PUSH_SERVER_URL`          | Push server base URL                                                                               |
+| `EXPO_PUBLIC_WALLET`                   | `off` hides the wallet (store builds and the GitHub APK)                                           |
+| `EXPO_PUBLIC_CALLS`                    | `off` hides calls and drops their Android services (store builds)                                  |
+| `EXPO_PUBLIC_DEVELOPER_MODE`           | `off` hides the Developer mode toggle (store builds, GitHub APK)                                   |
+| `EXPO_PUBLIC_PRIVY_APP_ID`             | Privy app: turns on the Google, Microsoft and GitHub sign-in                                       |
+| `EXPO_PUBLIC_PRIVY_CLIENT_ID`          | Privy app client: optional on web, needed on phones                                                |
+| `EXPO_PUBLIC_PRIVY_LOGINS`             | Social and email sign-ins to show, e.g. `google,github,email` (default `google`)                   |
+| `EXPO_PUBLIC_PRIVY_MICROSOFT_PROVIDER` | Name of the Microsoft custom OAuth provider in Privy (default `microsoft`)                         |
+| `EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID` | WalletConnect project: the QR code for phone wallets, and the wallet sign-in on phones and desktop |
+
+Sign-in with Google, Microsoft, GitHub, email or a wallet is set up in [`docs/privy.md`](docs/privy.md).
 
 Attachments (already client-side encrypted) upload to the proxy Worker
 (`POST /attachments`), which stores the ciphertext in the `stage` R2 bucket

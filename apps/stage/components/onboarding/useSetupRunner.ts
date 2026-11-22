@@ -1,18 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert } from 'react-native';
+import { useEffect, useState } from 'react';
 import type { Hex } from 'viem';
 import { txErrorMessage } from '@stage-labs/client/wallet/txError';
+import type { PrivyLoginMethod } from '@stage-labs/client/accounts/types';
 import { holdOnboarding } from '../../lib/accountGate';
+import { report } from '../../lib/errorPolicy';
+import { SignInCancelled } from '../../lib/signInCancelled';
 import { AccountSetupError, type EditableProfile } from '../../lib/onboarding.core';
 import { clearPendingSetup, readPendingSetup } from '../../lib/onboardingPending';
 import { syncHistoryToEnd } from '../../lib/history';
+import { historySyncSettled } from '../../lib/history.model';
 import {
   createWallet,
   resumeCreatedWallet,
+  resumeSavedSetup,
   editableCreatedProfile,
   editCreatedProfile,
   restoreWallet,
   importKeyAccount,
+  signInWithPrivy,
   bringMessagingOnline,
   XmtpSetupError,
   type SetupWarning,
@@ -20,12 +25,28 @@ import {
 } from './flow';
 import type { SetupErr, SetupPlan } from './Onboarding.setup.model';
 import type { ProfileSetup } from './Onboarding.profile.model';
+import {
+  heldSetupWarning,
+  historyStalled,
+  holdWarning,
+  onSetupCancel,
+  onSetupDone,
+  resetSetupState,
+  setupBusy,
+  setupCancelled,
+  setupDone,
+  setupError,
+  setupPlan,
+  setupRunning,
+  setupStage,
+} from './setupState';
 
 export type Choice =
   | { kind: 'create'; profile?: ProfileSetup }
   | { kind: 'editProfile'; profile: ProfileSetup }
   | { kind: 'restore'; phrase: string }
-  | { kind: 'importKey'; pk: Hex };
+  | { kind: 'importKey'; pk: Hex }
+  | { kind: 'privy'; method: PrivyLoginMethod; address?: string };
 
 export interface SetupRunner {
   busy: boolean;
@@ -34,7 +55,7 @@ export interface SetupRunner {
   plan: SetupPlan;
   run: (choice: Choice) => void;
   recovering: boolean;
-  resume: (accountId?: string) => void;
+  resume: (err: SetupErr) => void;
   startOver: () => Promise<boolean>;
   editableProfile: () => Promise<EditableProfile | null>;
   history: HistoryControls;
@@ -54,7 +75,22 @@ function errorFrom(e: unknown): SetupErr {
   if (e instanceof XmtpSetupError) return { message: e.message, accountId: e.accountId, retry: 'messaging' };
   return { message: describe(e), retry: 'restart' };
 }
-async function runChoice(choice: Choice, onStage: (s: Stage) => void): Promise<SetupWarning> {
+async function assertNoSavedSetup(): Promise<void> {
+  const pending = await readPendingSetup();
+  if (pending === null) return;
+  throw new AccountSetupError(pending.stage, pending.account?.id, new Error('Continue the saved account setup instead of replacing it.'));
+}
+
+function planFor(choice: Choice): SetupPlan {
+  if (choice.kind === 'privy') return { signIn: choice.method };
+  const restore = choice.kind === 'restore' || choice.kind === 'importKey';
+  const profile = (choice.kind === 'create' || choice.kind === 'editProfile') && choice.profile !== undefined;
+  return { restore, profile, history: restore };
+}
+
+async function runChoice(choice: Choice): Promise<SetupWarning> {
+  const onStage = setupStage.set;
+  if (choice.kind === 'privy') return signInWithPrivy(choice.method, onStage, choice.address);
   if (choice.kind === 'create') return createWallet(onStage, choice.profile);
   if (choice.kind === 'editProfile') {
     await editCreatedProfile(choice.profile);
@@ -63,39 +99,90 @@ async function runChoice(choice: Choice, onStage: (s: Stage) => void): Promise<S
   if (choice.kind === 'restore') return restoreWallet(choice.phrase, onStage);
   return importKeyAccount(choice.pk, onStage);
 }
-function useLatch(): [boolean, (next: boolean) => void, () => boolean] {
-  const [value, setValueState] = useState(false);
-  const latched = useRef(false);
-  const setValue = (next: boolean): void => {
-    latched.current = next;
-    setValueState(next);
-  };
-  return [value, setValue, () => latched.current];
+
+function finish(warning: SetupWarning): void {
+  setupRunning.set(false);
+  setupBusy.set(false);
+  holdOnboarding(false);
+  setupDone(warning);
 }
 
-function useSetupRecovery(
-  setPlan: (plan: SetupPlan) => void,
-  setStage: (stage: Stage) => void,
-  setError: (err: SetupErr | null) => void,
-): { initializing: boolean; recovering: boolean; reset: () => void } {
+async function tail(sync: boolean, warning: SetupWarning): Promise<void> {
+  if (sync) {
+    setupStage.set('history');
+    historyStalled.set(false);
+    if (!historySyncSettled(await syncHistoryToEnd())) {
+      holdWarning(warning);
+      historyStalled.set(true);
+      return;
+    }
+  }
+  setupStage.set('finishing');
+  finish(warning);
+}
+
+const history: Omit<HistoryControls, 'stalled'> = {
+  retry: () => {
+    if (historyStalled.get()) void tail(true, heldSetupWarning());
+  },
+  continueWithout: () => {
+    if (!historyStalled.get()) return;
+    historyStalled.set(false);
+    setupStage.set('finishing');
+    finish(heldSetupWarning());
+  },
+};
+
+function execute(work: () => Promise<SetupWarning>, sync: () => boolean, first: Stage): void {
+  if (setupBusy.get()) return;
+  holdOnboarding(true);
+  setupRunning.set(true);
+  setupBusy.set(true);
+  setupError.set(null);
+  setupStage.set(first);
+  void work()
+    .then((warning) => tail(sync(), warning))
+    .catch((e: unknown) => {
+      setupRunning.set(false);
+      setupBusy.set(false);
+      if (e instanceof SignInCancelled) {
+        holdOnboarding(false);
+        setupCancelled();
+        return;
+      }
+      report('onboarding.setup', e);
+      setupError.set(errorFrom(e));
+    });
+}
+
+function interrupted(message: string, accountId?: string): void {
+  holdOnboarding(true);
+  setupError.set({ retry: 'create', accountId, message });
+}
+
+function useSetupRecovery(): { initializing: boolean; recovering: boolean; reset: () => void } {
   const [initializing, setInitializing] = useState(true);
   const [recovering, setRecovering] = useState(false);
   useEffect(() => {
     let alive = true;
+    if (setupRunning.get()) {
+      setRecovering(true);
+      setInitializing(false);
+      return;
+    }
+    resetSetupState();
     void readPendingSetup()
       .then((pending) => {
         if (!alive || pending === null) return;
         setRecovering(true);
-        holdOnboarding(true);
-        setPlan({ profile: pending.profile !== undefined });
-        setStage(pending.stage);
-        setError({ retry: 'create', accountId: pending.account?.id, message: 'Setup was interrupted before it finished.' });
+        setupPlan.set({ profile: pending.profile !== undefined });
+        setupStage.set(pending.stage);
+        interrupted('Setup was interrupted before it finished.', pending.account?.id);
       })
       .catch((e: unknown) => {
         if (!alive) return;
         setRecovering(true);
-        holdOnboarding(true);
-        setError({ retry: 'create', message: describe(e) });
+        interrupted(describe(e));
       })
       .finally(() => {
         if (alive) setInitializing(false);
@@ -103,7 +190,7 @@ function useSetupRecovery(
     return () => {
       alive = false;
     };
-  }, [setPlan, setStage, setError]);
+  }, []);
   return {
     initializing,
     recovering,
@@ -113,139 +200,66 @@ function useSetupRecovery(
   };
 }
 
-function useCompletion(onDone: () => void): (warning: SetupWarning) => void {
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  return (warning) => {
-    if (!mounted.current) return;
-    onDone();
-    if (warning !== null) Alert.alert(warning.title, warning.message);
-  };
+function reset(): void {
+  setupError.set(null);
+  holdOnboarding(false);
 }
 
-function useHistoryTail(
-  setStage: (stage: Stage) => void,
-  finish: (warning: SetupWarning) => void,
-): { tail: (sync: boolean, warning: SetupWarning) => Promise<void>; history: HistoryControls } {
-  const [stalled, setStalled, isStalled] = useLatch();
-  const heldWarning = useRef<SetupWarning>(null);
-  const tail = async (sync: boolean, warning: SetupWarning): Promise<void> => {
-    if (sync) {
-      setStage('history');
-      setStalled(false);
-      if ((await syncHistoryToEnd()) !== 'done') {
-        heldWarning.current = warning;
-        setStalled(true);
-        return;
-      }
-    }
-    setStage('finishing');
-    finish(warning);
-  };
-  return {
-    tail,
-    history: {
-      stalled,
-      retry: () => {
-        if (isStalled()) void tail(true, heldWarning.current);
-      },
-      continueWithout: () => {
-        if (isStalled()) {
-          setStalled(false);
-          setStage('finishing');
-          finish(heldWarning.current);
-        }
-      },
-    },
-  };
+async function startOverFrom(err: SetupErr | null): Promise<boolean> {
+  if (setupBusy.get() || err?.retry !== 'restart') return false;
+  try {
+    await assertNoSavedSetup();
+    await clearPendingSetup();
+    reset();
+    return true;
+  } catch (e) {
+    setupError.set(errorFrom(e));
+    return false;
+  }
 }
 
-export function useSetupRunner(onDone: () => void): SetupRunner {
-  const [busy, setBusy, isBusy] = useLatch();
-  const [stage, setStage] = useState<Stage>('wallet');
-  const [setupErr, setSetupErr] = useState<SetupErr | null>(null);
-  const [plan, setPlan] = useState<SetupPlan>({});
-  const recovery = useSetupRecovery(setPlan, setStage, setSetupErr);
-  const complete = useCompletion(onDone);
-  const finish = (warning: SetupWarning): void => {
-    holdOnboarding(false);
-    setBusy(false);
-    complete(warning);
-  };
-  const { tail, history } = useHistoryTail(setStage, finish);
-  const reset = (): void => {
-    setSetupErr(null);
-    holdOnboarding(false);
-  };
-  const execute = (work: () => Promise<SetupWarning>, sync: boolean, first: Stage): void => {
-    if (isBusy()) return;
-    holdOnboarding(true);
-    setBusy(true);
-    setSetupErr(null);
-    setStage(first);
-    void work()
-      .then((warning) => tail(sync, warning))
-      .catch((e: unknown) => {
-        setBusy(false);
-        setSetupErr(errorFrom(e));
-      });
-  };
+async function editableProfileOf(err: SetupErr | null): Promise<EditableProfile | null> {
+  if (setupBusy.get()) return null;
+  setupBusy.set(true);
+  try {
+    return await editableCreatedProfile();
+  } catch (e) {
+    setupError.set({ retry: 'create', accountId: err?.accountId, message: describe(e) });
+    return null;
+  } finally {
+    setupBusy.set(false);
+  }
+}
+
+export function useSetupRunner(onDone: () => void, onCancel: () => void): SetupRunner {
+  const busy = setupBusy.use();
+  const stage = setupStage.use();
+  const setupErr = setupError.use();
+  const plan = setupPlan.use();
+  const stalled = historyStalled.use();
+  const recovery = useSetupRecovery();
+  useEffect(() => onSetupDone(onDone), [onDone]);
+  useEffect(() => onSetupCancel(onCancel), [onCancel]);
   const run = (choice: Choice): void => {
-    if (isBusy()) return;
-    const restore = choice.kind === 'restore' || choice.kind === 'importKey';
-    setPlan({
-      restore,
-      profile: (choice.kind === 'create' || choice.kind === 'editProfile') && choice.profile !== undefined,
-      history: restore,
-    });
-    execute(() => runChoice(choice, setStage), restore, 'wallet');
-  };
-  const resume = (accountId?: string): void => {
+    if (setupBusy.get()) return;
+    const next = planFor(choice);
+    setupPlan.set(next);
     execute(
-      async () => {
-        if (accountId === undefined) return resumeCreatedWallet(setStage);
-        await bringMessagingOnline(accountId, setStage);
-        return null;
-      },
-      plan.history === true,
-      'messaging',
+      () => runChoice(choice),
+      () => next.history === true,
+      'wallet',
     );
   };
-  const startOver = async (): Promise<boolean> => {
-    if (isBusy() || setupErr?.retry !== 'restart') return false;
-    try {
-      const pending = await readPendingSetup();
-      if (pending !== null)
-        throw new AccountSetupError(
-          pending.stage,
-          pending.account?.id,
-          new Error('Continue the saved account setup instead of replacing it.'),
-        );
-      await clearPendingSetup();
-      recovery.reset();
-      reset();
-      return true;
-    } catch (e) {
-      setSetupErr(errorFrom(e));
-      return false;
-    }
-  };
-  const editableProfile = async (): Promise<EditableProfile | null> => {
-    if (isBusy()) return null;
-    setBusy(true);
-    try {
-      return await editableCreatedProfile();
-    } catch (e) {
-      setSetupErr({ retry: 'create', accountId: setupErr?.accountId, message: describe(e) });
-      return null;
-    } finally {
-      setBusy(false);
-    }
+  const resume = (err: SetupErr): void => {
+    execute(
+      async () => {
+        if (err.retry === 'create') return resumeSavedSetup(err.accountId, setupStage.set);
+        if (err.accountId !== undefined) await bringMessagingOnline(err.accountId, setupStage.set);
+        return null;
+      },
+      () => setupPlan.get().history === true,
+      'messaging',
+    );
   };
   return {
     busy: busy || recovery.initializing,
@@ -255,9 +269,13 @@ export function useSetupRunner(onDone: () => void): SetupRunner {
     plan,
     run,
     resume,
-    startOver,
-    editableProfile,
-    history,
+    startOver: async () => {
+      const cleared = await startOverFrom(setupErr);
+      if (cleared) recovery.reset();
+      return cleared;
+    },
+    editableProfile: () => editableProfileOf(setupErr),
+    history: { stalled, ...history },
     reset,
   };
 }

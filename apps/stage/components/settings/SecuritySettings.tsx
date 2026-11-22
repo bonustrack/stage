@@ -8,7 +8,11 @@ import { getPrivateKey, canExportPrivateKey, type AccountRecord } from '../../li
 import { useActiveAccountRecord } from '../../modules/messaging/account';
 import { SettingsGroup, SettingsNavRow, SettingsPage } from './SettingsPage';
 import { RecoveryPhraseRow, useWalletBackedUp } from './RecoveryPhraseRow';
-import { securityRows } from './SecuritySettings.model';
+import { securityRows, signInCopy } from './SecuritySettings.model';
+import { errorMessage } from '@stage-labs/client/errors';
+import { privyLoginOf } from '@stage-labs/client/accounts/privy';
+import { signInSession } from '../../lib/signIn';
+import { sameAddress } from '../../lib/privyProvider.model';
 import { useEffectiveColorScheme, usePalette } from '../../lib/theme';
 import { IconSquareBehindSquare1 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconSquareBehindSquare1';
 import { IconWallet4 } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconWallet4';
@@ -16,6 +20,7 @@ import { IconKey2 } from '@central-icons-react-native/round-outlined-radius-1-st
 import { WALLET_ENABLED } from '../../lib/features';
 import { IconChevronBottom } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconChevronBottom';
 import { Column } from '../layout';
+import { SignInCancelled } from '../../lib/signInCancelled';
 
 const KEY_ICON = WALLET_ENABLED ? IconWallet4 : IconKey2;
 
@@ -103,7 +108,36 @@ function KeyRows({ rec }: { rec: AccountRecord }): React.ReactElement {
 
 const SECURITY_FOOTNOTE = 'Your recovery phrase or private key controls your account. Keep it somewhere safe.';
 
+function SignInRows({ rec }: { rec: AccountRecord }): React.ReactElement {
+  const method = privyLoginOf(rec);
+  const copy = signInCopy(method);
+  const [busy, setBusy] = useState(false);
+  const again = (): void => {
+    if (busy) return;
+    setBusy(true);
+    signInSession(method, 'reauth')
+      .then((session) => {
+        capabilities.toast(sameAddress(session.address, rec.address) ? copy.done : copy.mismatch);
+      })
+      .catch((err: unknown) => {
+        if (!(err instanceof SignInCancelled)) capabilities.toast(errorMessage(err));
+      })
+      .finally(() => {
+        setBusy(false);
+      });
+  };
+  return (
+    <SettingsGroup title={copy.title} footnote={copy.note}>
+      <SettingsNavRow label={copy.action} iconStart={KEY_ICON} onPress={again} />
+    </SettingsGroup>
+  );
+}
+
+function AccountRows({ rec }: { rec: AccountRecord }): React.ReactElement {
+  return rec.type === 'privy' ? <SignInRows rec={rec} /> : <KeyRows rec={rec} />;
+}
+
 export function SecuritySettings(): React.ReactElement {
   const rec = useActiveAccountRecord();
-  return <SettingsPage title="Security">{rec ? <KeyRows rec={rec} /> : null}</SettingsPage>;
+  return <SettingsPage title="Security">{rec ? <AccountRows rec={rec} /> : null}</SettingsPage>;
 }

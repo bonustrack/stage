@@ -58,11 +58,17 @@ export async function registerMailKey(
   await postJson(proxyBase, 'key', { label, publicKey, issuedAt, signature });
 }
 
-export async function ensureMailKey(proxyBase: string, label: string, address: string, signMessage: SignMessage): Promise<boolean> {
+export async function ensureMailKey(
+  proxyBase: string,
+  label: string,
+  address: string,
+  signMessage: SignMessage,
+  signStable: SignMessage = signMessage,
+): Promise<boolean> {
   const res = await mailCall(proxyBase, `key?label=${encodeURIComponent(label)}`, { method: 'GET' });
   const status = parseOrThrow('mail key status', KEY_STATUS_SCHEMA, await res.json());
   if (status.owner !== address.toLowerCase() || status.publicKey !== null) return false;
-  await registerMailKey(proxyBase, label, await deriveMailKey(label, signMessage), signMessage);
+  await registerMailKey(proxyBase, label, await deriveMailKey(label, signStable), signMessage);
   return true;
 }
 

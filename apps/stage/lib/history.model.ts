@@ -1,6 +1,6 @@
 import { errorMessage } from '@stage-labs/client/errors';
 
-export type HistorySyncPhase = 'idle' | 'requesting' | 'waiting' | 'done' | 'timeout' | 'error';
+export type HistorySyncPhase = 'idle' | 'requesting' | 'waiting' | 'done' | 'nothing' | 'timeout' | 'error';
 
 export const HISTORY_COPY = {
   notReady: 'Messaging is not ready yet. Try again in a moment.',
@@ -45,6 +45,8 @@ export function historySyncPhaseLabel(phase: HistorySyncPhase, problem?: string 
       return WAITING_LABEL;
     case 'done':
       return 'History synced from your other device.';
+    case 'nothing':
+      return 'No other device is signed in to this account, so there is no history to sync.';
     case 'timeout':
       return 'No answer from your other device yet. Open Stage there and try again.';
     case 'error':
@@ -52,6 +54,10 @@ export function historySyncPhaseLabel(phase: HistorySyncPhase, problem?: string 
     default:
       return null;
   }
+}
+
+export function historySyncSettled(phase: HistorySyncPhase): boolean {
+  return phase === 'done' || phase === 'nothing';
 }
 
 export function historySyncIsActive(phase: HistorySyncPhase): boolean {

@@ -19,7 +19,10 @@ const NO_KEYS: readonly string[] = [];
 const access = makeMailAccess({
   activeAccount: getSelectedAccount,
   ownedLabel: ownedStageLabel,
-  signer: async (rec) => (await signingKeyForRecord(rec)).signMessage,
+  signer: async (rec) => {
+    const { signMessage, signStable } = await signingKeyForRecord(rec);
+    return { sign: signMessage, signStable };
+  },
   selection: getAccountSelection,
   baseUrl: linkProxyBase,
 });

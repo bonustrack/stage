@@ -7,6 +7,10 @@ export function removeMessage(name: string): string {
   return `Remove ${name} from this device? Without a backup of the recovery phrase or private key this account is unrecoverable. Its local XMTP database is deleted from this device.`;
 }
 
+export function logOutMessage(name: string, method: string): string {
+  return `Log out of ${name}? Sign in with ${method} again to come back to it. Its messages on this device are deleted, and come back only if you are still signed in to it on another device.`;
+}
+
 export function deleteMessage(name: string): string {
   return `Delete ${name}? Stage deletes your username and st.box mail from its servers, stops notifications and removes the account, its keys and its messages from this device. Nobody can take your username after you. Devices where you are still signed in keep the account until you remove it there. This can not be undone.`;
 }

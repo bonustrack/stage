@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams, useRouter } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useWindowDimensions } from 'react-native';
 import { Glyph, type CentralIcon } from '@stage-labs/kit/react-native/glyph';
 import { RailTooltip } from '../tabs/RailTooltip';
@@ -10,15 +10,16 @@ import { ImportStep } from './Onboarding.import';
 import { ProfileStep } from './Onboarding.profile';
 import { ProfileRecoveryStep } from './Onboarding.recovery';
 import { useOnboardingFlow } from './useOnboardingFlow';
-import { safeNextRoute, IMPORT_ROUTE } from './nextRoute.model';
+import { safeNextRoute } from './nextRoute.model';
 import { IconArrowLeft } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowLeft';
 import { IconArrowRight } from '@central-icons-react-native/round-outlined-radius-1-stroke-2/IconArrowRight';
 import { Button } from '@stage-labs/kit/react-native/button';
-import { OnboardingCard, SkipLink } from './OnboardingCard';
-import { TermsNotice } from '../legal/TermsNotice';
+import { OnboardingCard } from './OnboardingCard';
 import { UsernameField, useUsernameInput } from '../UsernameField';
 import { USERNAME_COPY, usernameReady } from '../UsernameField.model';
 import { Column } from '../layout';
+import { SignUpStep } from './Onboarding.signup';
+import { ClaimStep } from './Onboarding.claim';
 
 export interface OnboardingProps {
   onDone: () => void;
@@ -34,7 +35,6 @@ function UsernameStep({
   onContinue: (label: string) => void;
 }): React.ReactElement {
   const pal = usePalette();
-  const router = useRouter();
   const input = useUsernameInput();
   const footer = (
     <Button
@@ -53,23 +53,7 @@ function UsernameStep({
     />
   );
   return (
-    <OnboardingCard
-      title={USERNAME_COPY.title}
-      about={USERNAME_COPY.about}
-      footer={footer}
-      after={
-        <>
-          <SkipLink
-            label="Or import"
-            disabled={busy}
-            onPress={() => {
-              router.navigate(IMPORT_ROUTE);
-            }}
-          />
-          <TermsNotice />
-        </>
-      }
-    >
+    <OnboardingCard title={USERNAME_COPY.title} about={USERNAME_COPY.about} footer={footer}>
       <UsernameField input={input} busy={busy} />
     </OnboardingCard>
   );
@@ -114,6 +98,7 @@ function StepIcon({
 type Flow = ReturnType<typeof useOnboardingFlow>;
 
 function stepBack(f: Flow): (() => void) | null {
+  if (f.step === 'username') return f.onUsernameBack;
   if (f.step === 'profile') return f.onProfileBack;
   if (f.step === 'edit') return f.onRecoveryBack;
   return null;
@@ -170,6 +155,8 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       padding={{ top: pageTopPadding(height) + insets.top, bottom: 24 + insets.bottom }}
     >
       <StepChrome f={f} top={STEP_ICON_INSET + insets.top} color={pal.link} />
+      {f.step === 'signup' ? <SignUpStep dark={dark} busy={f.busy} onCreate={f.onCreate} onPrivy={f.onPrivy} /> : null}
+      {f.step === 'claim' ? <ClaimStep dark={dark} onDone={f.onClaimDone} /> : null}
       <KeptStep f={f} own="username">
         <UsernameStep dark={dark} busy={f.busy} onContinue={f.onUsernameContinue} />
       </KeptStep>
@@ -179,7 +166,7 @@ export function Onboarding({ onDone }: OnboardingProps): React.ReactElement {
       {f.step === 'edit' && f.profileRecovery !== null ? (
         <ProfileRecoveryStep recovery={f.profileRecovery} dark={dark} busy={f.busy} onSave={f.onRecoverySave} />
       ) : null}
-      {f.step === 'import' ? <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} /> : null}
+      {f.step === 'import' ? <ImportStep dark={dark} busy={f.busy} onTransfer={f.onImportTransfer} onPrivy={f.onPrivy} /> : null}
       {f.step === 'setup' ? (
         <SetupStep
           dark={dark}

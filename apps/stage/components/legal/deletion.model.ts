@@ -2,7 +2,7 @@ import { LEGAL_CONTACT, type LegalDoc } from './legal.model';
 
 export const ACCOUNT_DELETION: LegalDoc = {
   title: 'Delete your Stage account',
-  updated: 'November 14, 2026',
+  updated: 'November 22, 2026',
   intro:
     'You can delete your Stage account, and the data Stage keeps on its servers for it, at any time. This page explains how, and what is deleted.',
   sections: [
@@ -32,6 +32,7 @@ export const ACCOUNT_DELETION: LegalDoc = {
         'Records on public networks can not be erased by anyone: your address and its past username records on the Base blockchain, and profile pictures on IPFS.',
         'Encrypted files you sent stay available to the people in the chat. They are not linked to your account and we can not open them. Encrypted history archives are deleted within 3 days.',
         'Reports you sent, or that were made about you, may be kept as long as needed for safety and legal reasons.',
+        `If you signed in with Google, Microsoft, GitHub or email, Privy keeps your sign-in record until you ask us to delete it by email at ${LEGAL_CONTACT}.`,
       ],
     },
     { heading: 'Contact', paragraphs: [`Questions about deleting your data: ${LEGAL_CONTACT}.`] },

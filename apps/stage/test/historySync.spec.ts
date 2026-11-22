@@ -2,6 +2,7 @@ import { describe, expect, jest, test } from 'bun:test';
 import {
   historyProblemMessage,
   historySyncIsActive,
+  historySyncSettled,
   historySyncPhaseLabel,
   isMissingArchive,
   settleBy,
@@ -31,6 +32,15 @@ describe('history sync phases', () => {
     expect(historySyncIsActive('requesting')).toBe(true);
     expect(historySyncIsActive('waiting')).toBe(true);
     expect(historySyncIsActive('done')).toBe(false);
+  });
+
+  test('an account with no other device settles at once with nothing to sync', () => {
+    expect(historySyncPhaseLabel('nothing')).toContain('No other device');
+    expect(historySyncIsActive('nothing')).toBe(false);
+    expect(historySyncSettled('nothing')).toBe(true);
+    expect(historySyncSettled('done')).toBe(true);
+    expect(historySyncSettled('timeout')).toBe(false);
+    expect(historySyncSettled('error')).toBe(false);
   });
 
   test('the timeout label asks to open Stage on the other device', () => {

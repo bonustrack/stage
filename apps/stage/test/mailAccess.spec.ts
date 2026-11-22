@@ -90,7 +90,10 @@ async function harness() {
       lookedUp.push(address);
       return lookup.run(address);
     },
-    signer: (rec) => signing.run(rec),
+    signer: async (rec) => {
+      const sign = await signing.run(rec);
+      return { sign, signStable: sign };
+    },
     selection: () => selection,
     baseUrl: () => 'https://mail.test',
   });

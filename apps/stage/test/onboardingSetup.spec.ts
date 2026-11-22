@@ -40,6 +40,20 @@ describe('setup copy', () => {
     expect(setupHint({ message: 'boom', accountId: '0xabc', retry: 'messaging' }, false)).toContain('account is ready');
   });
 
+  test('a Privy sign-in names the method and has no recovery phrase wording', () => {
+    expect(setupTitle(null, { signIn: 'google' })).toBe('Signing you in');
+    expect(stageLabel('wallet', { signIn: 'google' })).toBe('Signing in with Google');
+    expect(stageLabel('wallet', { signIn: 'microsoft' })).toBe('Signing in with Microsoft');
+    expect(stageLabel('wallet', { signIn: 'github' })).toBe('Signing in with GitHub');
+    expect(stageLabel('wallet', { signIn: 'wallet' })).toBe('Connecting your wallet');
+    expect(setupStages({ signIn: 'wallet' })).toEqual(['wallet', 'messaging', 'finishing']);
+    expect(setupHint(null, true, { signIn: 'wallet' })).toContain('signatures');
+    expect(setupHint(null, true, { signIn: 'google' })).not.toContain('signatures');
+    const retry = setupHint({ message: 'boom', accountId: '0xabc', retry: 'messaging' }, true, { signIn: 'google' });
+    expect(retry).toContain('signed in');
+    expect(retry).not.toContain('recovery phrase');
+  });
+
   test('a messaging retry keeps the existing wallet, other failures may start over', () => {
     expect(setupLinks({ message: 'x', retry: 'restart' })).toEqual(['startOver']);
     expect(setupLinks({ message: 'x', accountId: '0xabc', retry: 'messaging' })).toEqual([]);

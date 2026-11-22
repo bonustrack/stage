@@ -155,7 +155,7 @@ export function SetupStep({
   return (
     <OnboardingCard
       title={setupTitle(setupErr, plan)}
-      about={historyHint ?? setupHint(setupErr)}
+      about={historyHint ?? setupHint(setupErr, undefined, plan)}
       footer={actions}
       after={
         <Column gap={16}>

@@ -2,7 +2,7 @@ import { LEGAL_CONTACT, LEGAL_ENTITY, type LegalDoc } from './legal.model';
 
 export const PRIVACY: LegalDoc = {
   title: 'Privacy Policy',
-  updated: 'November 14, 2026',
+  updated: 'November 22, 2026',
   intro: `${LEGAL_ENTITY} makes Stage, a private, end-to-end encrypted messenger. We built it so that we can not read your messages. We do not sell data, show ads or use analytics, tracking or advertising IDs. This policy explains what Stage handles and why.`,
   sections: [
     {
@@ -10,6 +10,7 @@ export const PRIVACY: LegalDoc = {
       paragraphs: [
         'Your account is a key created on your device. Its recovery phrase and private keys stay in the secure storage of your device and are never sent to us.',
         'Your account has a public address on the Base blockchain. It identifies you on the XMTP messaging network, so people can message you.',
+        'You can also sign in with Google, Microsoft or GitHub, or with your email address and a code sent to it. These sign-ins go through Privy, which receives your email address (and your name, from Google, Microsoft or GitHub), sends the code when you sign in with email, and keeps the key of your account in its secure hardware, where only your sign-in can use it. We do not receive your password for these services. You can also sign in with a web3 wallet: Stage connects to it directly and your wallet keeps the key; when you scan a code, WalletConnect relays the connection between Stage and your wallet. Your device stores a signature made at sign-in to protect your notifications and mail.',
       ],
     },
     {
@@ -60,13 +61,14 @@ export const PRIVACY: LegalDoc = {
     {
       heading: 'Service providers',
       paragraphs: [
-        'We use Cloudflare (servers and storage), Fly.io (push server), Google Firebase Cloud Messaging and Apple Push Notification service (notifications), the XMTP network (messages), Base and ZeroDev (accounts and usernames), IPFS (profile pictures), Stamp (avatars) and OpenStreetMap (maps). They process data only to provide these services.',
+        'We use Cloudflare (servers and storage), Fly.io (push server), Privy (sign-in with Google, Microsoft, GitHub or email), WalletConnect (connecting a web3 wallet), Google Firebase Cloud Messaging and Apple Push Notification service (notifications), the XMTP network (messages), Base and ZeroDev (accounts and usernames), IPFS (profile pictures), Stamp (avatars) and OpenStreetMap (maps). They process data only to provide these services.',
       ],
     },
     {
       heading: 'Deleting your data',
       paragraphs: [
         'Settings, Advanced, Delete account deletes your Stage username and st.box mail from our servers, stops notifications for the device and removes the account, its keys and its messages from the device. Remove from this device only removes it from that device.',
+        `If you signed in with Google, Microsoft, GitHub or email, Privy keeps your sign-in record after you delete the account in the app. Email ${LEGAL_CONTACT} and we delete it within 30 days.`,
         `You can also ask for deletion without the app by emailing ${LEGAL_CONTACT}. stage.box/#/delete-account explains both ways, and what is deleted and what is kept. Data on public blockchains and IPFS can not be erased by anyone.`,
       ],
     },

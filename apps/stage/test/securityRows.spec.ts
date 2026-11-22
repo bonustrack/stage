@@ -7,8 +7,11 @@ import {
   phraseCopy,
   phraseRowCopy,
   securityRows,
+  signInCopy,
+  securityRowLabel,
   type SecurityRowsInput,
 } from '../components/settings/SecuritySettings.model';
+import { logOutMessage } from '../components/settings/accountRemoval.model';
 
 const SMART: SecurityRowsInput = { isSmart: true, backedUp: true, canExportKey: false, keyRevealed: false };
 
@@ -56,5 +59,45 @@ describe('recovery phrase panel', () => {
 
   test('shown phrase hides after about a minute', () => {
     expect(SHOWN_PHRASE_TIMEOUT_MS).toBe(60_000);
+  });
+});
+
+describe('securityRowLabel', () => {
+  test('a Privy account has no phrase or key to show', () => {
+    expect(securityRowLabel('privy')).toBe('Sign-in');
+    expect(securityRowLabel('smart')).toBe('Recovery phrase and private key');
+    expect(securityRowLabel(undefined)).toBe('Recovery phrase and private key');
+  });
+});
+
+describe('signInCopy', () => {
+  test('a social sign-in explains there is no phrase to back up', () => {
+    const copy = signInCopy('google');
+    expect(copy.title).toBe('Signed in with Google');
+    expect(copy.note).toContain('no recovery phrase');
+    expect(copy.action).toBe('Sign in again');
+    expect(signInCopy('microsoft').mismatch).toContain('Microsoft');
+  });
+
+  test('an email sign-in talks about the email address, not a brand', () => {
+    const copy = signInCopy('email');
+    expect(copy.title).toBe('Signed in with email');
+    expect(copy.note).toContain('no recovery phrase');
+    expect(copy.mismatch).toBe('That is a different email address. Sign in with the one this account uses.');
+  });
+
+  test('a web3 wallet keeps its own recovery phrase', () => {
+    const copy = signInCopy('wallet');
+    expect(copy.title).toBe('Signed in with your wallet');
+    expect(copy.note).toContain('recovery phrase');
+    expect(copy.action).toBe('Reconnect wallet');
+  });
+});
+
+describe('logOutMessage', () => {
+  test('says how to come back and what happens to the messages here', () => {
+    const message = logOutMessage('0x9724...f139', 'Google');
+    expect(message).toContain('Sign in with Google again');
+    expect(message).toContain('messages on this device are deleted');
   });
 });

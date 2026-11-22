@@ -34,6 +34,9 @@ import { ShareHost } from '../components/share/ShareHost';
 import { KeyboardResync } from '../components/system/KeyboardResync';
 import { CallHost } from '../components/call/CallHost';
 import { OnboardingRouteReset } from '../components/system/OnboardingRouteReset';
+import { EmailSignIn } from '../components/privy/EmailSignIn';
+import { PrivyHost, useSignInReturnCover } from '../components/privy/PrivyHost';
+import { WalletPicker } from '../components/wallets/WalletPicker';
 import { installAlertShim } from '../lib/alertHost';
 import { installNotificationHandler } from '../lib/pushNotify';
 import { installPeerProfileResolver } from '../lib/peerProfiles';
@@ -142,6 +145,7 @@ function RootLayoutInner(): React.ReactElement {
   const gatesOpen = loaded && onboarding.ready && restore.ready;
   const shell = useShellGates(gatesOpen, onboarding.hasAccount);
   const routing = shell.showOnboarding && needsAccountRoute(pathname);
+  const signingIn = useSignInReturnCover(pathname);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -155,7 +159,7 @@ function RootLayoutInner(): React.ReactElement {
             </RootStack>
           </WebContentFrame>
           <SplitSidebar visible={shell.sidebarVisible} />
-          {!gatesOpen || routing ? (
+          {!gatesOpen || routing || signingIn ? (
             <Column surface="surface" align="center" justify="center" style={viewportFill()}>
               <Spinner size={28} color={dark ? '#ffffff' : '#000000'} />
             </Column>
@@ -168,6 +172,9 @@ function RootLayoutInner(): React.ReactElement {
           <ShareHost active={shell.sidebarVisible} />
           <CallHost active={shell.sidebarVisible} />
           <OnboardingRouteReset ready={gatesOpen} showing={shell.showOnboarding} />
+          <PrivyHost />
+          <WalletPicker />
+          <EmailSignIn />
         </KeyboardProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>

@@ -1,3 +1,5 @@
+import { privyMethodName } from '@stage-labs/client/accounts/privy';
+import type { PrivyLoginMethod } from '@stage-labs/client/accounts/types';
 import { WALLET_ENABLED } from '../../lib/features';
 
 export type SecurityRowKey = 'backupPhrase' | 'showPhrase' | 'exportKey';
@@ -49,6 +51,47 @@ export function phraseRowCopy(mode: PhraseRowMode): { label: string; description
 
 export function phrasePanelActions(mode: PhraseRowMode): PhrasePanelAction[] {
   return mode === 'backup' ? ['hide', 'saved'] : ['hide'];
+}
+
+export interface SignInCopy {
+  title: string;
+  note: string;
+  action: string;
+  done: string;
+  mismatch: string;
+}
+
+export function securityRowLabel(accountType: string | undefined): string {
+  return accountType === 'privy' ? 'Sign-in' : 'Recovery phrase and private key';
+}
+
+const WALLET_SIGN_IN_COPY: SignInCopy = {
+  title: 'Signed in with your wallet',
+  note: 'Your wallet signs for this account. Whoever holds its recovery phrase controls the account, so keep it safe.',
+  action: 'Reconnect wallet',
+  done: 'Wallet connected.',
+  mismatch: 'That is a different wallet. Connect the one this account uses.',
+};
+
+const EMAIL_SIGN_IN_COPY: SignInCopy = {
+  title: 'Signed in with email',
+  note: 'A code sent to your email unlocks the key of this account, which Privy keeps for you. There is no recovery phrase to back up: sign in with the same email on a new device to get the account back.',
+  action: 'Sign in again',
+  done: 'Signed in again.',
+  mismatch: 'That is a different email address. Sign in with the one this account uses.',
+};
+
+export function signInCopy(method: PrivyLoginMethod): SignInCopy {
+  if (method === 'wallet') return WALLET_SIGN_IN_COPY;
+  if (method === 'email') return EMAIL_SIGN_IN_COPY;
+  const name = privyMethodName(method);
+  return {
+    title: `Signed in with ${name}`,
+    note: `Your ${name} sign-in unlocks the key of this account, which Privy keeps for you. There is no recovery phrase to back up: sign in with ${name} on a new device to get the account back.`,
+    action: 'Sign in again',
+    done: 'Signed in again.',
+    mismatch: `That is a different ${name} account. Sign in with the one this account uses.`,
+  };
 }
 
 export function securityRows(input: SecurityRowsInput): SecurityRowKey[] {

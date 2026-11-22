@@ -1,6 +1,8 @@
-export type AccountType = 'smart' | 'generated' | 'privateKey';
+export type AccountType = 'smart' | 'generated' | 'privateKey' | 'privy';
 
-export const ACCOUNT_TYPES: readonly AccountType[] = ['smart', 'generated', 'privateKey'];
+export const ACCOUNT_TYPES: readonly AccountType[] = ['smart', 'generated', 'privateKey', 'privy'];
+
+export type PrivyLoginMethod = 'google' | 'microsoft' | 'github' | 'email' | 'wallet';
 
 export interface AccountRecord {
   id: string;
@@ -13,4 +15,5 @@ export interface AccountRecord {
   hdIndex?: number;
   phraseId?: string;
   ownerAddress?: string;
+  login?: PrivyLoginMethod;
 }

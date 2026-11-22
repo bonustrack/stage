@@ -1,13 +1,14 @@
 import './cryptoShim';
 import { secureStorage } from '../platform/storage';
-import type { PrivateKeyAccount } from 'viem/accounts';
 import type { Hex } from 'viem';
-import { getViemAccount, adoptLegacyKey, deleteKey, deletePhrase, importPrivateKey, primaryPhraseId } from './zerodev/keyring';
+import { adoptLegacyKey, deleteKey, deletePhrase, importPrivateKey, primaryPhraseId } from './zerodev/keyring';
 import { LEGACY_DB_DIR } from '@stage-labs/client/accounts/keys';
 import { addLocalAccountToList, resolveActiveAccount } from '@stage-labs/client/accounts/registry';
 import { nextHdIndex } from '@stage-labs/client/accounts/hdIndex';
 import { readSmartHdIndexHighWater } from './zerodev/hdIndexStore';
-import { ACCOUNT_TYPES, type AccountRecord } from '@stage-labs/client/accounts/types';
+import { ACCOUNT_TYPES, type AccountRecord, type PrivyLoginMethod } from '@stage-labs/client/accounts/types';
+import { privyAccountRecord } from '@stage-labs/client/accounts/privy';
+import { forgetPrivyAccount } from './privySigner';
 import { recover, ignored } from './errorPolicy';
 import { accountSelectionChanged } from './accountSelection';
 import { reloadApp } from './reloadApp';
@@ -127,12 +128,6 @@ export function getActiveAccountStrict(): Promise<AccountRecord | null> {
   return activeAccount(true);
 }
 
-export async function getActiveViemAccount(): Promise<PrivateKeyAccount | null> {
-  const rec = await getActiveAccount();
-  if (!rec || rec.type === 'smart') return null;
-  return getViemAccount(rec.id);
-}
-
 export async function addSmartAccount(rec: AccountRecord): Promise<AccountRecord> {
   const id = rec.id.toLowerCase();
   const list = await loadAccountsForWrite();
@@ -150,6 +145,20 @@ export async function addPrivateKeyAccount(pk: Hex): Promise<AccountRecord> {
   await persist(next);
   await setActiveAccountId(record.id);
   return record;
+}
+
+export interface AddedPrivyAccount {
+  record: AccountRecord;
+  alreadyImported: boolean;
+}
+
+export async function addPrivyAccount(address: string, method: PrivyLoginMethod): Promise<AddedPrivyAccount> {
+  const fresh = privyAccountRecord(address, method);
+  const list = await loadAccountsForWrite();
+  const existing = list.find((a) => a.id === fresh.id);
+  if (existing === undefined) await persist([...list, fresh]);
+  await setActiveAccountId(fresh.id);
+  return { record: existing ?? fresh, alreadyImported: existing !== undefined };
 }
 
 export async function nextSmartHdIndex(phraseId: string): Promise<number> {
@@ -177,6 +186,7 @@ export async function removeAccount(id: string): Promise<AccountRecord[]> {
       if (first) await setActiveAccountId(first.id);
       else await secureStorage.delete(ACTIVE_KEY).catch(ignored(undefined, 'cleanup'));
     }
+    if (rec?.type === 'privy') await forgetPrivyAccount(rec);
     const removedPhrase = rec?.type === 'smart' ? rec.phraseId : undefined;
     const stillUsed = new Set(next.flatMap((a) => (a.type === 'smart' && a.phraseId ? [a.phraseId] : [])));
     if (removedPhrase && !stillUsed.has(removedPhrase)) {

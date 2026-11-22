@@ -93,6 +93,7 @@
     "./wallet/prices": "./src/wallet/prices.ts",
     "./accounts/types": "./src/accounts/types.ts",
     "./accounts/keys": "./src/accounts/keys.ts",
+    "./accounts/privy": "./src/accounts/privy.ts",
     "./accounts/registry": "./src/accounts/registry.ts",
     "./accounts/transfer": "./src/accounts/transfer.ts",
     "./accounts/hdIndex": "./src/accounts/hdIndex.ts",
@@ -109,7 +110,7 @@
     "@noble/hashes": "^1.8.0",
     "@zerodev/ecdsa-validator": "5.4.9",
     "@zerodev/sdk": "5.5.10",
-    "viem": "^2.51.0",
+    "viem": "^2.57.8",
     "zod": "^3.25.76"
   },
   "devDependencies": {

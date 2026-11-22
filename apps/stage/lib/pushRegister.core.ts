@@ -98,7 +98,7 @@ const groupKeys = new Map<string, Promise<string>>();
 
 async function pushGroupKey(rec: AccountRecord): Promise<string> {
   return memoized(groupKeys, rec.address, () =>
-    signingKeyForRecord(rec).then(({ signMessage }) => derivePushGroupKey(rec.address, signMessage)),
+    signingKeyForRecord(rec).then(({ signStable }) => derivePushGroupKey(rec.address, signStable)),
   );
 }
 
@@ -157,7 +157,7 @@ async function senderGroupKey(account: AccountRecord, inboxId: string): Promise<
   const id = `${account.address.toLowerCase()}:${inboxId}`;
   const known = senderGroupKeys.get(id);
   if (known) return known;
-  const pending = signingKeyForRecord(account).then(({ signMessage }) => deriveSenderFilterGroupKey(account.address, inboxId, signMessage));
+  const pending = signingKeyForRecord(account).then(({ signStable }) => deriveSenderFilterGroupKey(account.address, inboxId, signStable));
   senderGroupKeys.set(id, pending);
   pending.catch(() => {
     senderGroupKeys.delete(id);

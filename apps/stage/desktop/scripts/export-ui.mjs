@@ -21,4 +21,5 @@ function run(command, args) {
 
 rmSync(outDir, { recursive: true, force: true });
 run('node', ['scripts/copy-xmtp-wasm.js']);
+run('bun', ['scripts/build-privy-runtime.js']);
 run('bunx', ['expo', 'export', '--platform', 'web', '--output-dir', outDir]);

@@ -288,6 +288,12 @@ export const sdk: XmtpSdk<WebClient, Conversation, DecodedMessage> = {
     sendSyncRequest: (client, serverUrl) => client.sendSyncRequest(ARCHIVE_OPTIONS, serverUrl),
     syncDeviceGroups: (client) => client.syncAllDeviceSyncGroups(),
     processSyncArchive: (client) => client.processSyncArchive(null),
+    otherInstallations: async (client) => {
+      const inboxId = client.inboxId;
+      if (inboxId === undefined) return 0;
+      const [state] = await client.preferences.fetchInboxStates([inboxId]);
+      return (state?.installations ?? []).filter((installation) => installation.id !== client.installationId).length;
+    },
   },
   isGroup: (conv) => conv instanceof Group,
   isActive: (conv) => conv.isActive(),

@@ -11,7 +11,7 @@ import {
   runProfileSetup,
 } from '@stage-labs/client/profile/setup';
 import { base } from 'viem/chains';
-import { createWalletClient, namehash, type Hex } from 'viem';
+import { namehash, type Hex } from 'viem';
 import { normalize } from 'viem/ens';
 import { PINEAPPLE_UPLOAD_URL, parsePineappleResponse } from '@stage-labs/client/profile/upload';
 import { encodeNameSetup, encodeSetTextRecords, type ContractCall } from '@stage-labs/client/identity/basenameWrite';
@@ -23,8 +23,8 @@ import {
   inspectNameSetup,
 } from '@stage-labs/client/identity/onchainProfile';
 import { claimMessage, deletionMessage, fetchIssuedName, stageNameOf } from '@stage-labs/client/identity/stageNames';
-import { broviderTransport } from '@stage-labs/client/wallet/client';
-import { getSelectedAccount, getViemAccount, type AccountRecord } from './accounts';
+import { getSelectedAccount, type AccountRecord } from './accounts';
+import { eoaSignerFor } from './eoaSigner';
 import { getAccountSelection } from './accountSelection';
 import { linkProxyBase } from './linkProxy';
 import { invalidatePeerProfile } from './peerProfiles';
@@ -92,9 +92,9 @@ async function sendOnBase(account: ProfileAccount, calls: ContractCall[]): Promi
     assertCurrent();
     return hash;
   }
-  const local = await getViemAccount(record.id);
+  const local = await eoaSignerFor(record);
   if (!local) throw new Error('This account cannot save a profile.');
-  const wallet = createWalletClient({ account: local, chain: base, transport: broviderTransport(base.id) });
+  const wallet = await local.walletClient(base);
   let hash: Hex = '0x';
   for (const call of calls) {
     assertCurrent();
@@ -153,7 +153,7 @@ async function signForAccount(account: ProfileAccount, message: string): Promise
     assertCurrent();
     return kernel.signMessage({ message } as Parameters<typeof kernel.signMessage>[0]);
   }
-  const local = await getViemAccount(record.id);
+  const local = await eoaSignerFor(record);
   if (!local) throw new Error('This account cannot sign messages');
   assertCurrent();
   return local.signMessage({ message });

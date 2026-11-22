@@ -1,11 +1,22 @@
+import { privyMethodName } from '@stage-labs/client/accounts/privy';
+import type { PrivyLoginMethod } from '@stage-labs/client/accounts/types';
+
 export type WalletDeployState = 'loading' | 'deployed' | 'counterfactual' | 'unknown';
 
 export interface WalletAccountModel {
   label: string;
   hdIndex: number | null;
   isSmart: boolean;
-  rec: { type: string };
+  rec: { type: string; login?: PrivyLoginMethod };
   activeSigner: string;
+}
+
+function accountTypeLabel(model: WalletAccountModel): string {
+  if (model.isSmart) return 'Smart account (ZeroDev Kernel)';
+  if (model.rec.type !== 'privy') return `Legacy (${model.rec.type})`;
+  return model.rec.login === undefined || model.rec.login === 'wallet'
+    ? 'Connected wallet'
+    : `${privyMethodName(model.rec.login)} sign-in (Privy)`;
 }
 
 export function walletDeployLabel(d: WalletDeployState): string {
@@ -23,7 +34,7 @@ export interface WalletValueRow {
 export function walletAccountRows(model: WalletAccountModel): WalletValueRow[] {
   const rows: WalletValueRow[] = [{ label: 'Name', value: model.label }];
   if (model.hdIndex != null) rows.push({ label: 'HD index', value: `#${model.hdIndex}` });
-  rows.push({ label: 'Type', value: model.isSmart ? 'Smart account (ZeroDev Kernel)' : `Legacy (${model.rec.type})` });
+  rows.push({ label: 'Type', value: accountTypeLabel(model) });
   if (model.isSmart) rows.push({ label: 'Active signer', value: model.activeSigner });
   return rows;
 }

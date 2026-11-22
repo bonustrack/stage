@@ -1,4 +1,4 @@
-import { getActiveViemAccount } from './accounts';
+import { activeEoaSigner } from './eoaSigner';
 import { linkProxyBase } from './linkProxy';
 import type { X402Accept } from './useLinkPreview';
 import { buildAuthorization, buildTypedData, buildPaymentHeader, randomNonce } from '@stage-labs/client/x402/payment';
@@ -41,7 +41,7 @@ export async function payX402Exact({
   x402Version?: number;
 }): Promise<X402PayResult> {
   assertExactChallenge(accept);
-  const local = await getActiveViemAccount();
+  const local = await activeEoaSigner();
   if (!local) throw new Error('No in-app wallet to pay with');
   const authorization = buildAuthorization({ from: local.address, accept, now: Math.floor(Date.now() / 1000), nonce: randomNonce() });
   const signature = await local.signTypedData(buildTypedData(accept, authorization));

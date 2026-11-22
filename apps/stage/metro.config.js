@@ -22,6 +22,32 @@ config.resolver.extraNodeModules = {
   ...Object.fromEntries(Object.entries(nodeCorePolyfills).map(([name, target]) => [name, require.resolve(target)])),
 };
 
+const isInstalled = (name) => {
+  try {
+    require.resolve(`${name}/package.json`, { paths: [projectRoot] });
+    return true;
+  } catch {
+    return false;
+  }
+};
+const privyOptionalPeers = ['permissionless', 'expo-apple-authentication'].filter((name) => !isInstalled(name));
+const isPrivyOptionalPeer = (name) => privyOptionalPeers.some((peer) => name === peer || name.startsWith(`${peer}/`));
+const resolveWith = (context, moduleName, platform, overrides) => {
+  const scoped = { ...context, ...overrides };
+  return scoped.resolveRequest(scoped, moduleName, platform);
+};
+const upstreamResolveRequest = config.resolver.resolveRequest;
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (isPrivyOptionalPeer(moduleName)) return { type: 'empty' };
+  if (platform !== 'web' && moduleName === 'jose') {
+    return resolveWith(context, moduleName, platform, { unstable_conditionNames: ['browser'] });
+  }
+  if (platform !== 'web' && (moduleName === 'zustand' || moduleName.startsWith('zustand/'))) {
+    return resolveWith(context, moduleName, platform, { unstable_enablePackageExports: false });
+  }
+  return (upstreamResolveRequest ?? context.resolveRequest)(context, moduleName, platform);
+};
+
 const expoTransformOptions = config.transformer.getTransformOptions;
 config.transformer.getTransformOptions = async (entryPoints, options, getDependenciesOf) => {
   const base = await expoTransformOptions(entryPoints, options, getDependenciesOf);
