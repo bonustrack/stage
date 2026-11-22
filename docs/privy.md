@@ -148,7 +148,10 @@ bot protection in Privy, add `https://challenges.cloudflare.com` to
    <https://github.com/settings/applications/new>, both with the callback
    `https://auth.privy.io/api/v1/oauth/callback`. External wallets can stay
    off: Stage connects wallets itself.
-3. **Microsoft** is not built into Privy: it is a custom provider
+3. **Microsoft** is not built into Privy: it is a custom provider, and custom
+   providers need Privy's paid Scale plan once the app is in production. On
+   the Free plan, switch the provider off and leave `microsoft` out of
+   `EXPO_PUBLIC_PRIVY_LOGINS` (stage.box does). It is set up as a custom provider
    (Authentication, **Add custom provider** at the bottom of the page), named
    `microsoft` (or set `EXPO_PUBLIC_PRIVY_MICROSOFT_PROVIDER` to the name you
    pick; it is used as `custom:microsoft`), and the button shows once
